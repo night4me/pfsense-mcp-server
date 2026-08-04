@@ -6,7 +6,7 @@ from __future__ import annotations
 from ..capabilities import Capability
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
-from .read import interfaces, system_status
+from .read import gateway_status, gateways, interfaces, system_status
 
 
 class ToolRegistry:
@@ -21,6 +21,8 @@ class ToolRegistry:
             self._register_system_read()
         if Capability.INTERFACE_READ in self._capabilities:
             self._register_interface_read()
+        if Capability.GATEWAY_READ in self._capabilities:
+            self._register_gateway_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -31,3 +33,12 @@ class ToolRegistry:
         fn = interfaces.build(self._client)
         wrapped = audit_logged("pfsense_get_interfaces", self._identity)(fn)
         self._mcp.tool()(wrapped)
+
+    def _register_gateway_read(self) -> None:
+        gateways_fn = gateways.build(self._client)
+        wrapped_gateways = audit_logged("pfsense_get_gateways", self._identity)(gateways_fn)
+        self._mcp.tool()(wrapped_gateways)
+
+        status_fn = gateway_status.build(self._client)
+        wrapped_status = audit_logged("pfsense_get_gateway_status", self._identity)(status_fn)
+        self._mcp.tool()(wrapped_status)

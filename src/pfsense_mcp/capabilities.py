@@ -9,6 +9,7 @@ from enum import Enum, auto
 class Capability(Enum):
     SYSTEM_READ = auto()
     INTERFACE_READ = auto()
+    GATEWAY_READ = auto()
     FIREWALL_READ = auto()
     ALIAS_READ = auto()
     SERVICE_READ = auto()
@@ -19,5 +20,5 @@ class Capability(Enum):
 
 
 SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
-    {Capability.SYSTEM_READ, Capability.INTERFACE_READ}
+    {Capability.SYSTEM_READ, Capability.INTERFACE_READ, Capability.GATEWAY_READ}
 )

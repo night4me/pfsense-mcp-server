@@ -32,5 +32,15 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    ROUTING_GATEWAYS = EndpointInfo(
+        path_suffix="/routing/gateways",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    STATUS_GATEWAYS = EndpointInfo(
+        path_suffix="/status/gateways",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # INTERFACES = EndpointInfo("/interfaces", verified=False, min_api_version=ApiVersion.V2)

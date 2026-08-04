@@ -1,0 +1,30 @@
+{
+  "code": 200,
+  "status": "ok",
+  "response_id": "SUCCESS",
+  "message": "",
+  "data": [
+    {
+      "id": 0,
+      "name": "WAN_DHCP",
+      "srcip": "198.51.100.10",
+      "monitorip": "198.51.100.1",
+      "delay": 12.345,
+      "stddev": 1.2,
+      "loss": 0.0,
+      "status": "none",
+      "substatus": "none"
+    },
+    {
+      "id": 1,
+      "name": "OPT1_GW",
+      "srcip": "203.0.113.10",
+      "monitorip": "203.0.113.1",
+      "delay": 0.0,
+      "stddev": 0.0,
+      "loss": 100.0,
+      "status": "down",
+      "substatus": "highdelay"
+    }
+  ]
+}
