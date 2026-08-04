@@ -36,3 +36,9 @@ class PfSenseAPIError(PfSenseMCPError):
 class UnsupportedOperationError(PfSenseMCPError):
     """Raised when a call requests an HTTP method, path, or API
     version not permitted by this build."""
+
+
+class PfSenseResponseShapeError(PfSenseMCPError):
+    """Raised when a pfSense API response does not match the shape
+    expected for the endpoint being parsed (missing/wrong-typed
+    fields). Never includes the raw response body or field values."""

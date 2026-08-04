@@ -18,4 +18,6 @@ class Capability(Enum):
     SERVICE_WRITE = auto()
 
 
-SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset({Capability.SYSTEM_READ})
+SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
+    {Capability.SYSTEM_READ, Capability.INTERFACE_READ}
+)

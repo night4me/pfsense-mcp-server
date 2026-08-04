@@ -18,6 +18,11 @@ dev = [
     "respx>=0.21,<1.0",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+    "live: makes a real network call to a live pfSense instance; skipped unless PFSENSE_RUN_LIVE_TESTS=true is set explicitly.",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
