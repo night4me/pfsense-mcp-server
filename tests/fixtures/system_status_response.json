@@ -1,0 +1,27 @@
+{
+  "code": 200,
+  "status": "ok",
+  "response_id": "SUCCESS",
+  "message": "",
+  "data": {
+    "platform": "Netgate pfSense Plus",
+    "serial": "",
+    "netgate_id": "ANONYMIZED0000000000",
+    "uptime": "20 Hours 40 Minutes 03 Seconds",
+    "bios_vendor": "American Megatrends Inc.",
+    "bios_version": "5.6.5",
+    "bios_date": "06/30/2018",
+    "kernel_pti": true,
+    "mds_mitigation": "inactive",
+    "temp_c": 55,
+    "temp_f": 132.8,
+    "cpu_model": "Intel(R) Core(TM) i3-5005U CPU @ 2.00GHz",
+    "cpu_load_avg": [0.71, 0.68, 0.67],
+    "cpu_count": 4,
+    "cpu_usage": 17.75,
+    "mbuf_usage": null,
+    "mem_usage": 41,
+    "swap_usage": 0,
+    "disk_usage": 4
+  }
+}

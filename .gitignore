@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+
+# Local logs (must never be committed)
+*.log
+logs/
+
+# Defensive only — no secret material should ever exist in this repo,
+# but these patterns guard against an accidental copy.
+*.key
+*secret*
+*credential*
+.env
