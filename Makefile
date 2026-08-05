@@ -1,7 +1,8 @@
 .PHONY: validate quick syntax-check lint typecheck test live-skip-check \
         endpoint-registry-check profile-registration-check get-only-check \
         tools-write-check security-scan fixture-safety-check query-param-check \
-        git-report _ruff-format _ruff-check _mypy
+        git-report _ruff-format _ruff-check _mypy \
+        capture-fixture audit-fixture approve-fixture
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -135,3 +136,29 @@ quick:
 	@echo "  OK"
 	@echo "--------------------------------------------------------"
 	@echo "QUICK: PASSED (7/7 stages)"
+
+# Fixture-capture workflow. Deliberately outside quick/validate — an
+# occasional, human-supervised workflow, not a CI gate.
+#
+# capture-fixture: writes a sanitized PROPOSAL under .fixture_proposals/
+#   (never directly into tests/fixtures/). Requires the endpoint to be
+#   both verified=True AND have an explicit entry in CAPTURE_POLICIES.
+#   Usage: make capture-fixture ENDPOINT=FIREWALL_STATES PARAMS="--param limit=5"
+#
+# audit-fixture: dry-run only. Independently re-verifies a proposal
+#   against fixture_safety, security_scan, and the sanitizer's own
+#   audit logic. Never copies anything.
+#   Usage: make audit-fixture PROPOSAL=.fixture_proposals/firewall_states_response.proposed.json
+#
+# approve-fixture: re-runs the exact same audit; only if every check
+#   passes, copies the proposal into tests/fixtures/. Never stages or
+#   commits — prints the follow-up staging command for a human to run next.
+#   Usage: make approve-fixture PROPOSAL=.fixture_proposals/firewall_states_response.proposed.json
+capture-fixture:
+	@$(PYTHON) scripts/capture_fixture.py $(ENDPOINT) $(PARAMS)
+
+audit-fixture:
+	@$(PYTHON) scripts/audit_fixture.py $(PROPOSAL)
+
+approve-fixture:
+	@$(PYTHON) scripts/audit_fixture.py $(PROPOSAL) --approve

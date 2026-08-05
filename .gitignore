@@ -13,6 +13,11 @@ build/
 # make validate output (junit-xml report) — working output, not a repo artifact
 .validate/
 
+# capture_fixture.py proposals — untrusted, unaudited candidates.
+# Never committed directly; audit_fixture.py --approve copies an
+# audited proposal into tests/fixtures/ explicitly.
+.fixture_proposals/
+
 # Local logs (must never be committed)
 *.log
 logs/
