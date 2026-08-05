@@ -1276,3 +1276,130 @@ def test_get_interface_configs_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interface_configs()
     assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_NAT_PORT_FORWARDS_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_nat_port_forwards_response.json"
+FIREWALL_NAT_PORT_FORWARDS_IDENTIFYING_FIELDS = ("source", "destination", "target", "created_by", "updated_by")
+
+
+def _firewall_nat_port_forwards_body() -> dict:
+    return json.loads(FIREWALL_NAT_PORT_FORWARDS_FIXTURE.read_text())
+
+
+def _firewall_nat_port_forwards_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_nat_port_forwards_body()
+    transport.register("GET", "/api/v2/firewall/nat/port_forwards?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_nat_port_forwards_omits_identifying_fields_by_default():
+    client, _ = _firewall_nat_port_forwards_client()
+    rules = client.get_firewall_nat_port_forwards()
+    assert len(rules) == 5
+    for rule in rules:
+        for field in FIREWALL_NAT_PORT_FORWARDS_IDENTIFYING_FIELDS:
+            assert getattr(rule, field) is None
+
+
+def test_get_firewall_nat_port_forwards_includes_identifying_fields_when_requested():
+    client, _ = _firewall_nat_port_forwards_client()
+    rules = client.get_firewall_nat_port_forwards(include_identifying_metadata=True)
+    first = next(r for r in rules if r.id == 0)
+    assert first.target == "198.51.100.10"
+
+
+def test_get_firewall_nat_port_forwards_maps_non_sensitive_fields():
+    client, _ = _firewall_nat_port_forwards_client()
+    rules = client.get_firewall_nat_port_forwards()
+    first = next(r for r in rules if r.id == 0)
+    assert first.descr == "DelugeTorrent"
+    assert first.interface == "wan"
+    assert first.protocol == "tcp"
+    assert first.destination_port == "58846"
+
+
+def test_get_firewall_nat_port_forwards_only_calls_endpoint_with_default_limit():
+    client, transport = _firewall_nat_port_forwards_client()
+    client.get_firewall_nat_port_forwards()
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/port_forwards?limit=100")]
+
+
+def test_get_firewall_nat_port_forwards_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_nat_port_forwards_body()
+    transport.register("GET", "/api/v2/firewall/nat/port_forwards?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_nat_port_forwards(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/port_forwards?limit=5")]
+
+
+def test_get_firewall_nat_port_forwards_rejects_zero_limit():
+    client, _ = _firewall_nat_port_forwards_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_port_forwards(limit=0)
+
+
+def test_get_firewall_nat_port_forwards_rejects_limit_above_max():
+    client, _ = _firewall_nat_port_forwards_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_port_forwards(limit=501)
+
+
+def test_get_firewall_nat_port_forwards_invalid_limit_never_calls_transport():
+    client, transport = _firewall_nat_port_forwards_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_port_forwards(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_nat_port_forwards_missing_data_key_raises_shape_error():
+    body = _firewall_nat_port_forwards_body()
+    del body["data"]
+    client, _ = _firewall_nat_port_forwards_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_port_forwards()
+
+
+def test_get_firewall_nat_port_forwards_data_wrong_type_raises_shape_error():
+    body = _firewall_nat_port_forwards_body()
+    body["data"] = "not-a-list"
+    client, _ = _firewall_nat_port_forwards_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_port_forwards()
+
+
+def test_get_firewall_nat_port_forwards_item_wrong_type_raises_shape_error():
+    body = _firewall_nat_port_forwards_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_nat_port_forwards_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_port_forwards()
+
+
+def test_get_firewall_nat_port_forwards_required_field_missing_raises_shape_error():
+    body = _firewall_nat_port_forwards_body()
+    del body["data"][0]["descr"]
+    client, _ = _firewall_nat_port_forwards_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_port_forwards()
+
+
+def test_get_firewall_nat_port_forwards_invalid_field_type_raises_shape_error():
+    body = _firewall_nat_port_forwards_body()
+    body["data"][0]["descr"] = 123
+    client, _ = _firewall_nat_port_forwards_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_port_forwards()
+
+
+def test_get_firewall_nat_port_forwards_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_nat_port_forwards_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _firewall_nat_port_forwards_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_nat_port_forwards()
+    assert sentinel not in str(excinfo.value)

@@ -9,6 +9,7 @@ from .audit import audit_logged
 from .read import (
     firewall_aliases,
     firewall_apply_status,
+    firewall_nat_port_forwards,
     firewall_rules,
     firewall_states,
     firewall_states_size,
@@ -46,6 +47,8 @@ class ToolRegistry:
             self._register_system_info_read()
         if Capability.INTERFACE_CONFIG_READ in self._capabilities:
             self._register_interface_config_read()
+        if Capability.FIREWALL_NAT_READ in self._capabilities:
+            self._register_firewall_nat_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -101,4 +104,9 @@ class ToolRegistry:
     def _register_interface_config_read(self) -> None:
         fn = interface_configs.build(self._client)
         wrapped = audit_logged("pfsense_get_interface_configs", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_firewall_nat_read(self) -> None:
+        fn = firewall_nat_port_forwards.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_nat_port_forwards", self._identity)(fn)
         self._mcp.tool()(wrapped)

@@ -152,6 +152,13 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "FIREWALL_NAT_PORT_FORWARDS": CapturePolicy(
+        endpoint_attr="FIREWALL_NAT_PORT_FORWARDS",
+        result_shape="list",
+        identifying_fields=frozenset({"source", "destination", "target", "created_by", "updated_by"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=500)},
+        default_max_items=5,
+    ),
 }
 
 

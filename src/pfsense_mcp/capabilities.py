@@ -15,6 +15,7 @@ class Capability(Enum):
     SERVICE_READ = auto()
     SYSTEM_INFO_READ = auto()
     INTERFACE_CONFIG_READ = auto()
+    FIREWALL_NAT_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -31,5 +32,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.SERVICE_READ,
         Capability.SYSTEM_INFO_READ,
         Capability.INTERFACE_CONFIG_READ,
+        Capability.FIREWALL_NAT_READ,
     }
 )

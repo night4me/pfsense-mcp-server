@@ -264,6 +264,34 @@ _INTERFACE_CONFIGS_BODY = {
 }
 
 
+_FIREWALL_NAT_PORT_FORWARDS_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "interface": "wan",
+            "ipprotocol": "inet",
+            "protocol": "tcp",
+            "source": "any",
+            "source_port": None,
+            "destination": "wan:ip",
+            "destination_port": "58846",
+            "target": "198.51.100.10",
+            "local_port": "58846",
+            "disabled": False,
+            "nordr": False,
+            "nosync": False,
+            "descr": "DelugeTorrent",
+            "natreflection": None,
+            "associated_rule_id": None,
+            "created_time": 1761601391,
+            "created_by": "admin@198.51.100.11 (Local Database)",
+            "updated_time": 1761601391,
+            "updated_by": "admin@198.51.100.11 (Local Database)",
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -273,6 +301,7 @@ def _client(
     with_service: bool = False,
     with_system_version: bool = False,
     with_interface_configs: bool = False,
+    with_nat_port_forwards: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -315,6 +344,13 @@ def _client(
     if with_interface_configs:
         transport.register(
             "GET", "/api/v2/interfaces?limit=100", status_code=200, text=json.dumps(_INTERFACE_CONFIGS_BODY)
+        )
+    if with_nat_port_forwards:
+        transport.register(
+            "GET",
+            "/api/v2/firewall/nat/port_forwards?limit=100",
+            status_code=200,
+            text=json.dumps(_FIREWALL_NAT_PORT_FORWARDS_BODY),
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -627,6 +663,36 @@ def test_registered_interface_configs_tool_invokes_client_and_redacts_by_default
     assert configs[0].descr == "WAN"
     assert configs[0].ipaddr is None
     assert configs[0].dhcphostname is None
+
+
+def test_registry_registers_nat_port_forwards_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_nat_port_forwards=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_NAT_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_firewall_nat_port_forwards"
+
+
+def test_registry_does_not_register_nat_port_forwards_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_firewall_nat_port_forwards" not in names
+
+
+def test_registered_nat_port_forwards_tool_invokes_client_and_redacts_by_default():
+    mcp = FakeMCP()
+    client = _client(with_nat_port_forwards=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_NAT_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_firewall_nat_port_forwards")
+    rules = fn()
+    assert len(rules) == 1
+    assert rules[0].descr == "DelugeTorrent"
+    assert rules[0].target is None
+    assert rules[0].created_by is None
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

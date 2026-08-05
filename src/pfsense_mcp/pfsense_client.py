@@ -9,6 +9,7 @@ from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
+from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_config import InterfaceConfig
 from .models.interfaces import InterfaceStatus
@@ -31,6 +32,10 @@ SERVICE_STATUS_MAX_LIMIT = 100
 
 INTERFACE_CONFIGS_MIN_LIMIT = 1
 INTERFACE_CONFIGS_MAX_LIMIT = 100
+
+
+FIREWALL_NAT_PORT_FORWARDS_MIN_LIMIT = 1
+FIREWALL_NAT_PORT_FORWARDS_MAX_LIMIT = 500
 
 
 class PfSenseClient:
@@ -289,5 +294,38 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /interfaces response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_firewall_nat_port_forwards(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FirewallNatPortForward]:
+        if not (FIREWALL_NAT_PORT_FORWARDS_MIN_LIMIT <= limit <= FIREWALL_NAT_PORT_FORWARDS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_NAT_PORT_FORWARDS_MIN_LIMIT} and "
+                f"{FIREWALL_NAT_PORT_FORWARDS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_NAT_PORT_FORWARDS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /firewall/nat/port_forwards response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /firewall/nat/port_forwards response 'data' was not a list.")
+
+        results: list[FirewallNatPortForward] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /firewall/nat/port_forwards response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(
+                    FirewallNatPortForward.from_api(item, include_identifying_metadata=include_identifying_metadata)
+                )
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /firewall/nat/port_forwards response contained an entry that failed schema validation."
                 ) from None
         return results

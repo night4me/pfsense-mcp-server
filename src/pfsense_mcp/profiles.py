@@ -31,6 +31,7 @@ AuditorProfile = Profile(
             Capability.SERVICE_READ,
             Capability.SYSTEM_INFO_READ,
             Capability.INTERFACE_CONFIG_READ,
+            Capability.FIREWALL_NAT_READ,
         }
     ),
 )
