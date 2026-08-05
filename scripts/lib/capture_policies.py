@@ -282,6 +282,20 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "SYSTEM_RESTAPI_SETTINGS": CapturePolicy(
+        endpoint_attr="SYSTEM_RESTAPI_SETTINGS",
+        result_shape="object",
+        # ha_sync_username is a credential paired 1:1 with the (never
+        # returned by pfSense's own API) ha_sync_password field for
+        # HA-peer sync authentication -- a genuine auth credential,
+        # not a general account username, so it is identifying at
+        # both the model and fixture layers. Everything else here is
+        # ordinary REST API service configuration (enabled state,
+        # auth methods, JWT expiry, logging level, allowed
+        # interfaces) and stays visible.
+        identifying_fields=frozenset({"ha_sync_username"}),
+        default_max_items=1,
+    ),
 }
 
 

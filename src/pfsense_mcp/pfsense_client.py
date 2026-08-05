@@ -24,6 +24,7 @@ from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
+from .models.system_rest_api_settings import SystemRestApiSettings
 from .models.system_version import SystemVersion
 from .rest_api_client import RestApiClient
 
@@ -593,3 +594,18 @@ class PfSenseClient:
             return CarpStatus.from_api(data)
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError("pfSense /status/carp response failed schema validation.") from None
+
+    def get_system_restapi_settings(self, *, include_identifying_metadata: bool = False) -> SystemRestApiSettings:
+        raw = self._rest.get(Endpoints.SYSTEM_RESTAPI_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /system/restapi/settings response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /system/restapi/settings response 'data' was not an object.")
+        try:
+            return SystemRestApiSettings.from_api(data, include_identifying_metadata=include_identifying_metadata)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /system/restapi/settings response failed schema validation."
+            ) from None

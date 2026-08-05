@@ -436,6 +436,31 @@ _INTERFACE_BRIDGES_BODY = {
 _STATUS_CARP_BODY = {"data": {"enable": False, "maintenance_mode": False}}
 
 
+_SYSTEM_RESTAPI_SETTINGS_BODY = {
+    "data": {
+        "allow_development_packages": False,
+        "allow_pre_releases": False,
+        "allowed_interfaces": ["lan"],
+        "auth_methods": ["BasicAuth", "KeyAuth"],
+        "enabled": True,
+        "expose_sensitive_fields": False,
+        "ha_sync": False,
+        "ha_sync_hosts": [],
+        "ha_sync_username": "",
+        "ha_sync_validate_certs": False,
+        "hateoas": False,
+        "jwt_exp": 3600,
+        "keep_backup": True,
+        "log_level": "LOG_WARNING",
+        "log_successful_auth": True,
+        "login_protection": True,
+        "override_sensitive_fields": [],
+        "read_only": True,
+        "represent_interfaces_as": "id",
+    }
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -455,6 +480,7 @@ def _client(
     with_dhcp_servers: bool = False,
     with_interface_bridges: bool = False,
     with_carp_status: bool = False,
+    with_system_restapi_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -541,6 +567,13 @@ def _client(
         )
     if with_carp_status:
         transport.register("GET", "/api/v2/status/carp", status_code=200, text=json.dumps(_STATUS_CARP_BODY))
+    if with_system_restapi_settings:
+        transport.register(
+            "GET",
+            "/api/v2/system/restapi/settings",
+            status_code=200,
+            text=json.dumps(_SYSTEM_RESTAPI_SETTINGS_BODY),
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -1152,6 +1185,34 @@ def test_registered_carp_status_tool_invokes_client():
     status = fn()
     assert status.enable is False
     assert status.maintenance_mode is False
+
+
+def test_registry_registers_system_restapi_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_system_restapi_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_RESTAPI_SETTINGS_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_system_restapi_settings"
+
+
+def test_registry_does_not_register_system_restapi_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_system_restapi_settings" not in names
+
+
+def test_registered_system_restapi_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_system_restapi_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_RESTAPI_SETTINGS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_system_restapi_settings")
+    settings = fn()
+    assert settings.enabled is True
+    assert settings.ha_sync_username is None
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

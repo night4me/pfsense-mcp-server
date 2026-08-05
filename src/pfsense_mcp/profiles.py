@@ -40,6 +40,7 @@ AuditorProfile = Profile(
             Capability.DHCP_SERVER_READ,
             Capability.INTERFACE_VIRTUAL_READ,
             Capability.STATUS_CARP_READ,
+            Capability.SYSTEM_RESTAPI_SETTINGS_READ,
         }
     ),
 )

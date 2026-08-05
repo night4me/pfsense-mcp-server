@@ -1,0 +1,32 @@
+{
+  "code": 200,
+  "data": {
+    "allow_development_packages": false,
+    "allow_pre_releases": false,
+    "allowed_interfaces": [
+      "lan"
+    ],
+    "auth_methods": [
+      "BasicAuth",
+      "KeyAuth"
+    ],
+    "enabled": true,
+    "expose_sensitive_fields": false,
+    "ha_sync": false,
+    "ha_sync_hosts": [],
+    "ha_sync_username": "",
+    "ha_sync_validate_certs": false,
+    "hateoas": false,
+    "jwt_exp": 3600,
+    "keep_backup": true,
+    "log_level": "LOG_WARNING",
+    "log_successful_auth": true,
+    "login_protection": true,
+    "override_sensitive_fields": [],
+    "read_only": true,
+    "represent_interfaces_as": "id"
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

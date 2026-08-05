@@ -132,5 +132,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    SYSTEM_RESTAPI_SETTINGS = EndpointInfo(
+        path_suffix="/system/restapi/settings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)

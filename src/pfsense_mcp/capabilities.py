@@ -24,6 +24,7 @@ class Capability(Enum):
     DHCP_SERVER_READ = auto()
     INTERFACE_VIRTUAL_READ = auto()
     STATUS_CARP_READ = auto()
+    SYSTEM_RESTAPI_SETTINGS_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -49,5 +50,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.DHCP_SERVER_READ,
         Capability.INTERFACE_VIRTUAL_READ,
         Capability.STATUS_CARP_READ,
+        Capability.SYSTEM_RESTAPI_SETTINGS_READ,
     }
 )
