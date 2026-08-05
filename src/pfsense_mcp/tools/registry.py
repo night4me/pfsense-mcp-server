@@ -15,6 +15,7 @@ from .read import (
     gateway_status,
     gateways,
     interfaces,
+    service_status,
     system_status,
 )
 
@@ -37,6 +38,8 @@ class ToolRegistry:
             self._register_firewall_read()
         if Capability.ALIAS_READ in self._capabilities:
             self._register_alias_read()
+        if Capability.SERVICE_READ in self._capabilities:
+            self._register_service_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -77,4 +80,9 @@ class ToolRegistry:
     def _register_alias_read(self) -> None:
         fn = firewall_aliases.build(self._client)
         wrapped = audit_logged("pfsense_get_firewall_aliases", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_service_read(self) -> None:
+        fn = service_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_service_status", self._identity)(fn)
         self._mcp.tool()(wrapped)

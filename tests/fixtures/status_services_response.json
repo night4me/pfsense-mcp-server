@@ -1,0 +1,78 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "description": "Status Traffic Totals data collection daemon",
+      "enabled": true,
+      "id": 0,
+      "name": "vnstatd",
+      "status": true
+    },
+    {
+      "description": "VMware Guest Daemon",
+      "enabled": true,
+      "id": 1,
+      "name": "vmware-guestd",
+      "status": false
+    },
+    {
+      "description": "VMware Kernel Modules",
+      "enabled": true,
+      "id": 2,
+      "name": "vmware-kmod",
+      "status": false
+    },
+    {
+      "description": "Darkstat bandwidth monitoring daemon",
+      "enabled": true,
+      "id": 3,
+      "name": "darkstat",
+      "status": true
+    },
+    {
+      "description": "iperf Network Performance Testing Daemon",
+      "enabled": true,
+      "id": 4,
+      "name": "iperf",
+      "status": false
+    },
+    {
+      "description": "ntopng Network Traffic Monitor",
+      "enabled": true,
+      "id": 5,
+      "name": "ntopng",
+      "status": true
+    },
+    {
+      "description": "DNS Resolver",
+      "enabled": true,
+      "id": 6,
+      "name": "unbound",
+      "status": true
+    },
+    {
+      "description": "NTP clock sync",
+      "enabled": true,
+      "id": 7,
+      "name": "ntpd",
+      "status": true
+    },
+    {
+      "description": "System Logger Daemon",
+      "enabled": true,
+      "id": 8,
+      "name": "syslogd",
+      "status": true
+    },
+    {
+      "description": "Kea DHCP Server",
+      "enabled": true,
+      "id": 9,
+      "name": "kea-dhcp4",
+      "status": true
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

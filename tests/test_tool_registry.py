@@ -189,12 +189,26 @@ _FIREWALL_ALIASES_BODY = {
 }
 
 
+_SERVICE_STATUS_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "name": "unbound",
+            "description": "DNS Resolver",
+            "enabled": True,
+            "status": True,
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
     with_gateways: bool = False,
     with_firewall: bool = False,
     with_alias: bool = False,
+    with_service: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -227,6 +241,10 @@ def _client(
     if with_alias:
         transport.register(
             "GET", "/api/v2/firewall/aliases?limit=100", status_code=200, text=json.dumps(_FIREWALL_ALIASES_BODY)
+        )
+    if with_service:
+        transport.register(
+            "GET", "/api/v2/status/services?limit=100", status_code=200, text=json.dumps(_SERVICE_STATUS_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -446,6 +464,37 @@ def test_registered_firewall_aliases_tool_invokes_client_and_redacts_by_default(
     assert aliases[0].descr == "TWE"
     assert aliases[0].address is None
     assert aliases[0].detail is None
+
+
+def test_registry_registers_service_status_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_service=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICE_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_service_status"
+
+
+def test_registry_does_not_register_service_status_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_service_status" not in names
+
+
+def test_registered_service_status_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_service=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICE_READ}))
+    registry.register_all()
+    service_fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_service_status")
+    services = service_fn()
+    assert len(services) == 1
+    assert services[0].name == "unbound"
+    assert services[0].description == "DNS Resolver"
+    assert services[0].enabled is True
+    assert services[0].status is True
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

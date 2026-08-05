@@ -122,6 +122,12 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=500)},
         default_max_items=5,
     ),
+    "STATUS_SERVICES": CapturePolicy(
+        endpoint_attr="STATUS_SERVICES",
+        result_shape="list",
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

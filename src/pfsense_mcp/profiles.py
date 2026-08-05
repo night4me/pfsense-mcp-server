@@ -28,6 +28,7 @@ AuditorProfile = Profile(
             Capability.GATEWAY_READ,
             Capability.FIREWALL_READ,
             Capability.ALIAS_READ,
+            Capability.SERVICE_READ,
         }
     ),
 )

@@ -954,3 +954,116 @@ def test_get_firewall_aliases_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_firewall_aliases()
     assert sentinel not in str(excinfo.value)
+
+
+STATUS_SERVICES_FIXTURE = Path(__file__).parent / "fixtures" / "status_services_response.json"
+
+
+def _service_status_body() -> dict:
+    return json.loads(STATUS_SERVICES_FIXTURE.read_text())
+
+
+def _service_status_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _service_status_body()
+    transport.register("GET", "/api/v2/status/services?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_service_status_maps_fields():
+    client, _ = _service_status_client()
+    services = client.get_service_status()
+    assert len(services) == 10
+    vnstatd = next(s for s in services if s.name == "vnstatd")
+    assert vnstatd.id == 0
+    assert vnstatd.description == "Status Traffic Totals data collection daemon"
+    assert vnstatd.enabled is True
+    assert vnstatd.status is True
+    vmware_guestd = next(s for s in services if s.name == "vmware-guestd")
+    assert vmware_guestd.status is False
+
+
+def test_get_service_status_only_calls_status_services_endpoint_with_default_limit():
+    client, transport = _service_status_client()
+    client.get_service_status()
+    assert transport.calls == [("GET", "/api/v2/status/services?limit=100")]
+
+
+def test_get_service_status_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _service_status_body()
+    transport.register("GET", "/api/v2/status/services?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_service_status(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/services?limit=5")]
+
+
+def test_get_service_status_rejects_zero_limit():
+    client, _ = _service_status_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_service_status(limit=0)
+
+
+def test_get_service_status_rejects_limit_above_max():
+    client, _ = _service_status_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_service_status(limit=101)
+
+
+def test_get_service_status_invalid_limit_never_calls_transport():
+    client, transport = _service_status_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_service_status(limit=0)
+    assert transport.calls == []
+
+
+def test_get_service_status_missing_data_key_raises_shape_error():
+    body = _service_status_body()
+    del body["data"]
+    client, _ = _service_status_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_service_status()
+
+
+def test_get_service_status_data_wrong_type_raises_shape_error():
+    body = _service_status_body()
+    body["data"] = "not-a-list"
+    client, _ = _service_status_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_service_status()
+
+
+def test_get_service_status_item_wrong_type_raises_shape_error():
+    body = _service_status_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _service_status_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_service_status()
+
+
+def test_get_service_status_required_field_missing_raises_shape_error():
+    body = _service_status_body()
+    del body["data"][0]["name"]
+    client, _ = _service_status_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_service_status()
+
+
+def test_get_service_status_invalid_field_type_raises_shape_error():
+    body = _service_status_body()
+    body["data"][0]["id"] = "not-a-number"
+    client, _ = _service_status_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_service_status()
+
+
+def test_get_service_status_shape_error_does_not_leak_raw_field_values():
+    body = _service_status_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["id"] = sentinel
+    client, _ = _service_status_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_service_status()
+    assert sentinel not in str(excinfo.value)

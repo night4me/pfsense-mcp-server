@@ -67,5 +67,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    STATUS_SERVICES = EndpointInfo(
+        path_suffix="/status/services",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # INTERFACES = EndpointInfo("/interfaces", verified=False, min_api_version=ApiVersion.V2)

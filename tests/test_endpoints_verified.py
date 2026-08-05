@@ -118,6 +118,18 @@ def test_firewall_aliases_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.FIREWALL_ALIASES.path_suffix == "/firewall/aliases"
 
 
+def test_status_services_is_declared_verified():
+    assert Endpoints.STATUS_SERVICES.verified is True
+
+
+def test_status_services_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_SERVICES.path_suffix.startswith("/api")
+
+
+def test_status_services_path_suffix_is_correct():
+    assert Endpoints.STATUS_SERVICES.path_suffix == "/status/services"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

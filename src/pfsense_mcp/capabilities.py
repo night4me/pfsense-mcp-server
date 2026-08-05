@@ -26,5 +26,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.GATEWAY_READ,
         Capability.FIREWALL_READ,
         Capability.ALIAS_READ,
+        Capability.SERVICE_READ,
     }
 )
