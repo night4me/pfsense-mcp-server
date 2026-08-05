@@ -1067,3 +1067,75 @@ def test_get_service_status_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_service_status()
     assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_VERSION_FIXTURE = Path(__file__).parent / "fixtures" / "system_version_response.json"
+
+
+def _system_version_body() -> dict:
+    return json.loads(SYSTEM_VERSION_FIXTURE.read_text())
+
+
+def _system_version_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_version_body()
+    transport.register("GET", "/api/v2/system/version", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_version_maps_fields():
+    client, _ = _system_version_client()
+    result = client.get_system_version()
+    assert result.base == "26.03.1"
+    assert result.buildtime == "20260731-1801"
+    assert result.patch == "0"
+    assert result.version == "host.example.invalid"
+
+
+def test_get_system_version_only_calls_system_version_endpoint():
+    client, transport = _system_version_client()
+    client.get_system_version()
+    assert transport.calls == [("GET", "/api/v2/system/version")]
+
+
+def test_get_system_version_missing_data_key_raises_shape_error():
+    body = _system_version_body()
+    del body["data"]
+    client, _ = _system_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_version()
+
+
+def test_get_system_version_data_wrong_type_raises_shape_error():
+    body = _system_version_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_version()
+
+
+def test_get_system_version_required_field_missing_raises_shape_error():
+    body = _system_version_body()
+    del body["data"]["base"]
+    client, _ = _system_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_version()
+
+
+def test_get_system_version_invalid_field_type_raises_shape_error():
+    body = _system_version_body()
+    body["data"]["base"] = 123
+    client, _ = _system_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_version()
+
+
+def test_get_system_version_shape_error_does_not_leak_raw_field_values():
+    body = _system_version_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["base"] = [sentinel]
+    client, _ = _system_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_version()
+    assert sentinel not in str(excinfo.value)

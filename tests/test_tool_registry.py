@@ -202,6 +202,16 @@ _SERVICE_STATUS_BODY = {
 }
 
 
+_SYSTEM_VERSION_BODY = {
+    "data": {
+        "base": "26.03.1",
+        "buildtime": "20260731-1801",
+        "patch": "0",
+        "version": "26.03.1-RELEASE",
+    }
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -209,6 +219,7 @@ def _client(
     with_firewall: bool = False,
     with_alias: bool = False,
     with_service: bool = False,
+    with_system_version: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -246,6 +257,8 @@ def _client(
         transport.register(
             "GET", "/api/v2/status/services?limit=100", status_code=200, text=json.dumps(_SERVICE_STATUS_BODY)
         )
+    if with_system_version:
+        transport.register("GET", "/api/v2/system/version", status_code=200, text=json.dumps(_SYSTEM_VERSION_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -495,6 +508,36 @@ def test_registered_service_status_tool_invokes_client():
     assert services[0].description == "DNS Resolver"
     assert services[0].enabled is True
     assert services[0].status is True
+
+
+def test_registry_registers_system_version_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_system_version=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_INFO_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_system_version"
+
+
+def test_registry_does_not_register_system_version_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_system_version" not in names
+
+
+def test_registered_system_version_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_system_version=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_INFO_READ}))
+    registry.register_all()
+    version_fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_system_version")
+    result = version_fn()
+    assert result.base == "26.03.1"
+    assert result.buildtime == "20260731-1801"
+    assert result.patch == "0"
+    assert result.version == "26.03.1-RELEASE"
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

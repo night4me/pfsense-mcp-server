@@ -17,6 +17,7 @@ from .read import (
     interfaces,
     service_status,
     system_status,
+    system_version,
 )
 
 
@@ -40,6 +41,8 @@ class ToolRegistry:
             self._register_alias_read()
         if Capability.SERVICE_READ in self._capabilities:
             self._register_service_read()
+        if Capability.SYSTEM_INFO_READ in self._capabilities:
+            self._register_system_info_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -85,4 +88,9 @@ class ToolRegistry:
     def _register_service_read(self) -> None:
         fn = service_status.build(self._client)
         wrapped = audit_logged("pfsense_get_service_status", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_system_info_read(self) -> None:
+        fn = system_version.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_version", self._identity)(fn)
         self._mcp.tool()(wrapped)

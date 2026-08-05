@@ -13,6 +13,7 @@ from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interfaces import InterfaceStatus
 from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
+from .models.system_version import SystemVersion
 from .rest_api_client import RestApiClient
 
 FIREWALL_STATES_MIN_LIMIT = 1
@@ -242,3 +243,16 @@ class PfSenseClient:
                     "pfSense /status/services response contained an entry that failed schema validation."
                 ) from None
         return results
+
+    def get_system_version(self) -> SystemVersion:
+        raw = self._rest.get(Endpoints.SYSTEM_VERSION)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /system/version response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /system/version response 'data' was not an object.")
+        try:
+            return SystemVersion.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError("pfSense /system/version response failed schema validation.") from None

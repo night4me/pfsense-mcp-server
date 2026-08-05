@@ -17,6 +17,10 @@ def test_auditor_profile_has_firewall_read():
     assert Capability.FIREWALL_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_system_info_read():
+    assert Capability.SYSTEM_INFO_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 
