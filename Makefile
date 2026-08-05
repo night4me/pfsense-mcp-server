@@ -2,7 +2,8 @@
         endpoint-registry-check profile-registration-check get-only-check \
         tools-write-check security-scan fixture-safety-check query-param-check \
         git-report _ruff-format _ruff-check _mypy \
-        capture-fixture audit-fixture approve-fixture
+        capture-fixture audit-fixture approve-fixture \
+        scaffold-capability
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -162,3 +163,10 @@ audit-fixture:
 
 approve-fixture:
 	@$(PYTHON) scripts/audit_fixture.py $(PROPOSAL) --approve
+
+# Capability-scaffolding proposal generator. Never modifies src/ or
+# tests/ — writes only under .capability_proposals/<name>/. No network
+# access, no credentials. Human review + manual apply is mandatory.
+#   Usage: make scaffold-capability MANIFEST=capability_manifests/x.json DISCOVERY=.discovery_snapshots/x.json
+scaffold-capability:
+	@$(PYTHON) scripts/scaffold_capability.py $(MANIFEST) --discovery-snapshot $(DISCOVERY)

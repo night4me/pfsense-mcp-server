@@ -18,6 +18,10 @@ build/
 # audited proposal into tests/fixtures/ explicitly.
 .fixture_proposals/
 
+# scaffold_capability.py proposals — generated code proposals for
+# human review only. Never applied, staged, or committed by the tool.
+.capability_proposals/
+
 # Local logs (must never be committed)
 *.log
 logs/
