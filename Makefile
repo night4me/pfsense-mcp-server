@@ -3,7 +3,7 @@
         tools-write-check security-scan fixture-safety-check query-param-check \
         git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
-        scaffold-capability
+        scaffold-capability checkpoint
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -170,3 +170,11 @@ approve-fixture:
 #   Usage: make scaffold-capability MANIFEST=capability_manifests/x.json DISCOVERY=.discovery_snapshots/x.json
 scaffold-capability:
 	@$(PYTHON) scripts/scaffold_capability.py $(MANIFEST) --discovery-snapshot $(DISCOVERY)
+
+# Lightweight checkpoint utility: writes CHECKPOINT.md and
+# .checkpoint/state.json summarizing git/test/backlog state, so a new
+# Claude session can resume without rereading the full conversation.
+# Pure Python, no network access. Never modifies the repository except
+# those two output files.
+checkpoint:
+	@$(PYTHON) scripts/checkpoint.py

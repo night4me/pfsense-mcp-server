@@ -1,0 +1,236 @@
+{
+  "backlog": {
+    "blocked": [],
+    "completed": [
+      "SYSTEM_READ",
+      "INTERFACE_READ",
+      "GATEWAY_READ",
+      "FIREWALL_READ"
+    ],
+    "next_capability": "FIREWALL_ALIAS_READ",
+    "remaining": [
+      {
+        "name": "FIREWALL_ALIAS_READ",
+        "priority": "High"
+      },
+      {
+        "name": "FIREWALL_NAT_READ",
+        "priority": "High"
+      },
+      {
+        "name": "INTERFACE_CONFIG_READ",
+        "priority": "High"
+      },
+      {
+        "name": "STATUS_SERVICES_READ",
+        "priority": "High"
+      },
+      {
+        "name": "STATUS_DHCP_LEASES_READ",
+        "priority": "High"
+      },
+      {
+        "name": "SYSTEM_INFO_READ",
+        "priority": "High"
+      },
+      {
+        "name": "SYSTEM_CERTIFICATE_READ",
+        "priority": "High"
+      },
+      {
+        "name": "SERVICES_DHCP_READ",
+        "priority": "High"
+      },
+      {
+        "name": "USER_READ",
+        "priority": "High"
+      },
+      {
+        "name": "FIREWALL_SCHEDULE_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "FIREWALL_VIRTUAL_IP_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "INTERFACE_VIRTUAL_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "ROUTING_GATEWAY_GROUP_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "ROUTING_STATIC_ROUTE_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "STATUS_CARP_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "STATUS_LOGS_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "STATUS_IPSEC_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "STATUS_OPENVPN_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "STATUS_WIREGUARD_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "SYSTEM_RESTAPI_SETTINGS_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "SYSTEM_HA_SYNC_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "SERVICES_DNS_RESOLVER_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "USER_AUTH_SERVER_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "VPN_IPSEC_CONFIG_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "VPN_OPENVPN_SERVER_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "VPN_OPENVPN_CLIENT_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "VPN_WIREGUARD_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "DIAGNOSTICS_ARP_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "DIAGNOSTICS_CONFIG_HISTORY_READ",
+        "priority": "Medium"
+      },
+      {
+        "name": "FIREWALL_SINGLETON_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "FIREWALL_TRAFFIC_SHAPER_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "FIREWALL_ADVANCED_SETTINGS_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SYSTEM_PACKAGE_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SYSTEM_TUNABLE_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SYSTEM_NOTIFICATIONS_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_DNS_FORWARDER_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_BIND_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_NTP_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_SSH_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_CRON_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_WATCHDOG_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_ACME_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_FREERADIUS_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "SERVICES_HAPROXY_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "VPN_OPENVPN_CLIENT_EXPORT_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "DIAGNOSTICS_TABLES_READ",
+        "priority": "Low"
+      },
+      {
+        "name": "AUTH_KEYS_READ",
+        "priority": "Low"
+      }
+    ]
+  },
+  "branch": "main",
+  "git": {
+    "clean": false,
+    "modified": [
+      "Makefile"
+    ],
+    "staged": [],
+    "untracked": [
+      ".checkpoint/",
+      "CHECKPOINT.md",
+      "scripts/checkpoint.py",
+      "tests/test_checkpoint.py"
+    ]
+  },
+  "latest_commit": {
+    "hash": "a9a6d0d773282960cd3fd91c2c8c1b7068234d7b",
+    "message": "Add read-only DHCP static mapping capability"
+  },
+  "mcp": {
+    "tool_count": 19
+  },
+  "notes": [
+    "docs/READ_BACKLOG.md Status column appears stale: 14 capabilities are actually supported in capabilities.py, but only 4 rows are marked Done in the backlog doc. Capability names may also differ between the doc and the real Capability enum (e.g. historical naming changes) \u2014 treat 'next_capability' as a suggestion to verify, not a guarantee."
+  ],
+  "schema_version": 1,
+  "tests": {
+    "make_quick": "passed",
+    "make_validate": "passed",
+    "pytest": {
+      "passed": 665,
+      "skipped": 18
+    }
+  },
+  "timestamp_utc": "2026-08-05T22:05:11.594762+00:00"
+}
