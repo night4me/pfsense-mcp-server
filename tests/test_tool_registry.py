@@ -212,6 +212,58 @@ _SYSTEM_VERSION_BODY = {
 }
 
 
+_INTERFACE_CONFIGS_BODY = {
+    "data": [
+        {
+            "adv_dhcp_config_advanced": False,
+            "adv_dhcp_config_file_override": False,
+            "adv_dhcp_config_file_override_path": "",
+            "adv_dhcp_option_modifiers": "",
+            "adv_dhcp_pt_backoff_cutoff": None,
+            "adv_dhcp_pt_initial_interval": None,
+            "adv_dhcp_pt_reboot": None,
+            "adv_dhcp_pt_retry": None,
+            "adv_dhcp_pt_select_timeout": None,
+            "adv_dhcp_pt_timeout": None,
+            "adv_dhcp_pt_values": "SavedCfg",
+            "adv_dhcp_request_options": "",
+            "adv_dhcp_required_options": "",
+            "adv_dhcp_send_options": "",
+            "alias_address": "",
+            "alias_subnet": 32,
+            "blockbogons": True,
+            "blockpriv": True,
+            "descr": "WAN",
+            "dhcphostname": "REDACTED-hostname",
+            "dhcprejectfrom": [],
+            "enable": True,
+            "gateway": None,
+            "gateway_6rd": "",
+            "gatewayv6": None,
+            "id": "wan",
+            "if": "igb0",
+            "ipaddr": "198.51.100.10",
+            "ipaddrv6": None,
+            "ipv6usev4iface": None,
+            "media": None,
+            "mediaopt": None,
+            "mss": None,
+            "mtu": None,
+            "prefix_6rd": None,
+            "prefix_6rd_v4plen": None,
+            "slaacusev4iface": None,
+            "spoofmac": "",
+            "subnet": None,
+            "subnetv6": None,
+            "track6_interface": None,
+            "track6_prefix_id_hex": None,
+            "typev4": "dhcp",
+            "typev6": "none",
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -220,6 +272,7 @@ def _client(
     with_alias: bool = False,
     with_service: bool = False,
     with_system_version: bool = False,
+    with_interface_configs: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -259,6 +312,10 @@ def _client(
         )
     if with_system_version:
         transport.register("GET", "/api/v2/system/version", status_code=200, text=json.dumps(_SYSTEM_VERSION_BODY))
+    if with_interface_configs:
+        transport.register(
+            "GET", "/api/v2/interfaces?limit=100", status_code=200, text=json.dumps(_INTERFACE_CONFIGS_BODY)
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -538,6 +595,38 @@ def test_registered_system_version_tool_invokes_client():
     assert result.buildtime == "20260731-1801"
     assert result.patch == "0"
     assert result.version == "26.03.1-RELEASE"
+
+
+def test_registry_registers_interface_configs_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_interface_configs=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_CONFIG_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_interface_configs"
+
+
+def test_registry_does_not_register_interface_configs_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_interface_configs" not in names
+
+
+def test_registered_interface_configs_tool_invokes_client_and_redacts_by_default():
+    mcp = FakeMCP()
+    client = _client(with_interface_configs=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_CONFIG_READ}))
+    registry.register_all()
+    configs_fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_interface_configs")
+    configs = configs_fn()
+    assert len(configs) == 1
+    assert configs[0].id == "wan"
+    assert configs[0].if_ == "igb0"
+    assert configs[0].descr == "WAN"
+    assert configs[0].ipaddr is None
+    assert configs[0].dhcphostname is None
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

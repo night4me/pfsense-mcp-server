@@ -1139,3 +1139,140 @@ def test_get_system_version_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_version()
     assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_CONFIGS_FIXTURE = Path(__file__).parent / "fixtures" / "interfaces_response.json"
+INTERFACE_CONFIGS_IDENTIFYING_FIELDS = (
+    "alias_address",
+    "dhcphostname",
+    "gateway",
+    "gatewayv6",
+    "ipaddr",
+    "ipaddrv6",
+    "spoofmac",
+    "subnet",
+    "subnetv6",
+)
+
+
+def _interface_configs_body() -> dict:
+    return json.loads(INTERFACE_CONFIGS_FIXTURE.read_text())
+
+
+def _interface_configs_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_configs_body()
+    transport.register("GET", "/api/v2/interfaces?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_configs_omits_identifying_fields_by_default():
+    client, _ = _interface_configs_client()
+    configs = client.get_interface_configs()
+    assert len(configs) == 5
+    for config in configs:
+        for field in INTERFACE_CONFIGS_IDENTIFYING_FIELDS:
+            assert getattr(config, field) is None
+
+
+def test_get_interface_configs_includes_identifying_fields_when_requested():
+    client, _ = _interface_configs_client()
+    configs = client.get_interface_configs(include_identifying_metadata=True)
+    lan = next(c for c in configs if c.id == "lan")
+    assert lan.ipaddr == "198.51.100.10"
+
+
+def test_get_interface_configs_maps_non_sensitive_fields():
+    client, _ = _interface_configs_client()
+    configs = client.get_interface_configs()
+    wan = next(c for c in configs if c.id == "wan")
+    assert wan.if_ == "igb0"
+    assert wan.descr == "WAN"
+    assert wan.enable is True
+    assert wan.typev4 == "dhcp"
+
+
+def test_get_interface_configs_only_calls_interfaces_endpoint_with_default_limit():
+    client, transport = _interface_configs_client()
+    client.get_interface_configs()
+    assert transport.calls == [("GET", "/api/v2/interfaces?limit=100")]
+
+
+def test_get_interface_configs_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_configs_body()
+    transport.register("GET", "/api/v2/interfaces?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_configs(limit=5)
+    assert transport.calls == [("GET", "/api/v2/interfaces?limit=5")]
+
+
+def test_get_interface_configs_rejects_zero_limit():
+    client, _ = _interface_configs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_configs(limit=0)
+
+
+def test_get_interface_configs_rejects_limit_above_max():
+    client, _ = _interface_configs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_configs(limit=101)
+
+
+def test_get_interface_configs_invalid_limit_never_calls_transport():
+    client, transport = _interface_configs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_configs(limit=0)
+    assert transport.calls == []
+
+
+def test_get_interface_configs_missing_data_key_raises_shape_error():
+    body = _interface_configs_body()
+    del body["data"]
+    client, _ = _interface_configs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_configs()
+
+
+def test_get_interface_configs_data_wrong_type_raises_shape_error():
+    body = _interface_configs_body()
+    body["data"] = "not-a-list"
+    client, _ = _interface_configs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_configs()
+
+
+def test_get_interface_configs_item_wrong_type_raises_shape_error():
+    body = _interface_configs_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_configs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_configs()
+
+
+def test_get_interface_configs_required_field_missing_raises_shape_error():
+    body = _interface_configs_body()
+    del body["data"][0]["descr"]
+    client, _ = _interface_configs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_configs()
+
+
+def test_get_interface_configs_invalid_field_type_raises_shape_error():
+    body = _interface_configs_body()
+    body["data"][0]["descr"] = 123
+    client, _ = _interface_configs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_configs()
+
+
+def test_get_interface_configs_shape_error_does_not_leak_raw_field_values():
+    body = _interface_configs_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _interface_configs_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_configs()
+    assert sentinel not in str(excinfo.value)

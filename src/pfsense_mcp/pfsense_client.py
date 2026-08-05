@@ -10,6 +10,7 @@ from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
 from .models.gateways import GatewayConfig, GatewayStatus
+from .models.interface_config import InterfaceConfig
 from .models.interfaces import InterfaceStatus
 from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
@@ -26,6 +27,10 @@ FIREWALL_ALIASES_MAX_LIMIT = 500
 
 SERVICE_STATUS_MIN_LIMIT = 1
 SERVICE_STATUS_MAX_LIMIT = 100
+
+
+INTERFACE_CONFIGS_MIN_LIMIT = 1
+INTERFACE_CONFIGS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -256,3 +261,33 @@ class PfSenseClient:
             return SystemVersion.from_api(data)
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError("pfSense /system/version response failed schema validation.") from None
+
+    def get_interface_configs(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[InterfaceConfig]:
+        if not (INTERFACE_CONFIGS_MIN_LIMIT <= limit <= INTERFACE_CONFIGS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {INTERFACE_CONFIGS_MIN_LIMIT} and {INTERFACE_CONFIGS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.INTERFACES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /interfaces response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /interfaces response 'data' was not a list.")
+
+        results: list[InterfaceConfig] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError("pfSense /interfaces response contained a non-object entry in 'data'.")
+            try:
+                results.append(
+                    InterfaceConfig.from_api(item, include_identifying_metadata=include_identifying_metadata)
+                )
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /interfaces response contained an entry that failed schema validation."
+                ) from None
+        return results

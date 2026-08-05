@@ -14,6 +14,7 @@ from .read import (
     firewall_states_size,
     gateway_status,
     gateways,
+    interface_configs,
     interfaces,
     service_status,
     system_status,
@@ -43,6 +44,8 @@ class ToolRegistry:
             self._register_service_read()
         if Capability.SYSTEM_INFO_READ in self._capabilities:
             self._register_system_info_read()
+        if Capability.INTERFACE_CONFIG_READ in self._capabilities:
+            self._register_interface_config_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -93,4 +96,9 @@ class ToolRegistry:
     def _register_system_info_read(self) -> None:
         fn = system_version.build(self._client)
         wrapped = audit_logged("pfsense_get_system_version", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_interface_config_read(self) -> None:
+        fn = interface_configs.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_configs", self._identity)(fn)
         self._mcp.tool()(wrapped)

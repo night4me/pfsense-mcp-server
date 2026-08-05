@@ -142,6 +142,18 @@ def test_system_version_path_suffix_is_correct():
     assert Endpoints.SYSTEM_VERSION.path_suffix == "/system/version"
 
 
+def test_interfaces_is_declared_verified():
+    assert Endpoints.INTERFACES.verified is True
+
+
+def test_interfaces_path_suffix_has_no_api_prefix():
+    assert not Endpoints.INTERFACES.path_suffix.startswith("/api")
+
+
+def test_interfaces_path_suffix_is_correct():
+    assert Endpoints.INTERFACES.path_suffix == "/interfaces"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

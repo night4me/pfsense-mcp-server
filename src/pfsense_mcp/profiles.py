@@ -30,6 +30,7 @@ AuditorProfile = Profile(
             Capability.ALIAS_READ,
             Capability.SERVICE_READ,
             Capability.SYSTEM_INFO_READ,
+            Capability.INTERFACE_CONFIG_READ,
         }
     ),
 )

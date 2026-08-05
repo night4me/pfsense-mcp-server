@@ -133,6 +133,25 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "INTERFACES": CapturePolicy(
+        endpoint_attr="INTERFACES",
+        result_shape="list",
+        identifying_fields=frozenset(
+            {
+                "ipaddr",
+                "ipaddrv6",
+                "gateway",
+                "gatewayv6",
+                "subnet",
+                "subnetv6",
+                "spoofmac",
+                "alias_address",
+                "dhcphostname",
+            }
+        ),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 
