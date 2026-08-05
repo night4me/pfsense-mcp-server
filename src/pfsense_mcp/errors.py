@@ -42,3 +42,8 @@ class PfSenseResponseShapeError(PfSenseMCPError):
     """Raised when a pfSense API response does not match the shape
     expected for the endpoint being parsed (missing/wrong-typed
     fields). Never includes the raw response body or field values."""
+
+
+class PfSenseRequestValidationError(PfSenseMCPError):
+    """Raised when caller-supplied arguments are invalid before any
+    request is made to pfSense (e.g. an out-of-range limit)."""

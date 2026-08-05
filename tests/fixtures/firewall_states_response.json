@@ -1,0 +1,42 @@
+{
+  "code": 200,
+  "status": "ok",
+  "response_id": "SUCCESS",
+  "message": "",
+  "data": [
+    {
+      "id": 0,
+      "interface": "wan",
+      "protocol": "tcp",
+      "direction": "out",
+      "source": "198.51.100.10:51234",
+      "destination": "203.0.113.5:443",
+      "state": "ESTABLISHED:ESTABLISHED",
+      "age": "00:05:12",
+      "expires_in": "23:59:48",
+      "packets_total": 120,
+      "packets_in": 60,
+      "packets_out": 60,
+      "bytes_total": 45000,
+      "bytes_in": 20000,
+      "bytes_out": 25000
+    },
+    {
+      "id": 1,
+      "interface": "lan",
+      "protocol": "udp",
+      "direction": "in",
+      "source": "192.0.2.50:33445",
+      "destination": "192.0.2.1:53",
+      "state": "MULTIPLE:MULTIPLE",
+      "age": "00:00:02",
+      "expires_in": "00:00:28",
+      "packets_total": 2,
+      "packets_in": 1,
+      "packets_out": 1,
+      "bytes_total": 150,
+      "bytes_in": 75,
+      "bytes_out": 75
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "status": "ok",
+  "response_id": "SUCCESS",
+  "message": "",
+  "data": {
+    "applied": true,
+    "pending_subsystems": []
+  }
+}

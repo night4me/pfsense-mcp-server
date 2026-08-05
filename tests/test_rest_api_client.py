@@ -72,3 +72,37 @@ def test_post_is_rejected_as_unsupported():
     client = _client(transport)
     with pytest.raises(UnsupportedOperationError):
         client._request("POST", "/api/v2/status/system")
+
+
+def test_get_with_params_appends_query_string():
+    transport = MockTransport()
+    body = {"code": 200, "status": "ok", "response_id": "SUCCESS", "data": []}
+    transport.register("GET", "/api/v2/firewall/states?limit=5", status_code=200, text=json.dumps(body))
+    client = _client(transport)
+
+    result = client.get(Endpoints.FIREWALL_STATES, params={"limit": 5})
+
+    assert result == body
+    assert transport.calls == [("GET", "/api/v2/firewall/states?limit=5")]
+
+
+def test_get_without_params_has_no_query_string():
+    transport = MockTransport()
+    body = {"code": 200, "status": "ok", "response_id": "SUCCESS", "data": {}}
+    transport.register("GET", "/api/v2/firewall/apply", status_code=200, text=json.dumps(body))
+    client = _client(transport)
+
+    client.get(Endpoints.FIREWALL_APPLY_STATUS)
+
+    assert transport.calls == [("GET", "/api/v2/firewall/apply")]
+
+
+def test_get_with_empty_params_has_no_query_string():
+    transport = MockTransport()
+    body = {"code": 200, "status": "ok", "response_id": "SUCCESS", "data": {}}
+    transport.register("GET", "/api/v2/firewall/apply", status_code=200, text=json.dumps(body))
+    client = _client(transport)
+
+    client.get(Endpoints.FIREWALL_APPLY_STATUS, params={})
+
+    assert transport.calls == [("GET", "/api/v2/firewall/apply")]

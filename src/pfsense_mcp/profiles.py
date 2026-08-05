@@ -21,7 +21,9 @@ class Profile:
 
 AuditorProfile = Profile(
     name="auditor",
-    capabilities=frozenset({Capability.SYSTEM_READ, Capability.INTERFACE_READ, Capability.GATEWAY_READ}),
+    capabilities=frozenset(
+        {Capability.SYSTEM_READ, Capability.INTERFACE_READ, Capability.GATEWAY_READ, Capability.FIREWALL_READ}
+    ),
 )
 
 EngineerProfile = Profile(

@@ -42,5 +42,25 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    FIREWALL_RULES = EndpointInfo(
+        path_suffix="/firewall/rules",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    FIREWALL_STATES = EndpointInfo(
+        path_suffix="/firewall/states",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    FIREWALL_STATES_SIZE = EndpointInfo(
+        path_suffix="/firewall/states/size",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    FIREWALL_APPLY_STATUS = EndpointInfo(
+        path_suffix="/firewall/apply",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # INTERFACES = EndpointInfo("/interfaces", verified=False, min_api_version=ApiVersion.V2)

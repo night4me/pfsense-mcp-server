@@ -10,6 +10,7 @@ import json
 import logging
 import time
 from typing import Any
+from urllib.parse import urlencode
 
 from .api_version import ApiVersion, version_at_least
 from .endpoints import EndpointInfo
@@ -32,13 +33,15 @@ class RestApiClient:
         self._identity = identity
         self._api_version = api_version
 
-    def get(self, endpoint: EndpointInfo) -> dict[str, Any]:
+    def get(self, endpoint: EndpointInfo, *, params: dict[str, str | int] | None = None) -> dict[str, Any]:
         if not version_at_least(self._api_version, endpoint.min_api_version):
             raise UnsupportedOperationError(
                 f"Endpoint requires API version >= {endpoint.min_api_version.value}, "
                 f"client is configured for {self._api_version.value}."
             )
         path = f"/api/{self._api_version.value}{endpoint.path_suffix}"
+        if params:
+            path = f"{path}?{urlencode(params)}"
         return self._request("GET", path)
 
     def _request(self, method: str, path: str) -> dict[str, Any]:

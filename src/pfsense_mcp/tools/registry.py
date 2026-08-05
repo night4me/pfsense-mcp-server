@@ -6,7 +6,16 @@ from __future__ import annotations
 from ..capabilities import Capability
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
-from .read import gateway_status, gateways, interfaces, system_status
+from .read import (
+    firewall_apply_status,
+    firewall_rules,
+    firewall_states,
+    firewall_states_size,
+    gateway_status,
+    gateways,
+    interfaces,
+    system_status,
+)
 
 
 class ToolRegistry:
@@ -23,6 +32,8 @@ class ToolRegistry:
             self._register_interface_read()
         if Capability.GATEWAY_READ in self._capabilities:
             self._register_gateway_read()
+        if Capability.FIREWALL_READ in self._capabilities:
+            self._register_firewall_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -42,3 +53,20 @@ class ToolRegistry:
         status_fn = gateway_status.build(self._client)
         wrapped_status = audit_logged("pfsense_get_gateway_status", self._identity)(status_fn)
         self._mcp.tool()(wrapped_status)
+
+    def _register_firewall_read(self) -> None:
+        rules_fn = firewall_rules.build(self._client)
+        wrapped_rules = audit_logged("pfsense_get_firewall_rules", self._identity)(rules_fn)
+        self._mcp.tool()(wrapped_rules)
+
+        states_fn = firewall_states.build(self._client)
+        wrapped_states = audit_logged("pfsense_get_firewall_states", self._identity)(states_fn)
+        self._mcp.tool()(wrapped_states)
+
+        states_size_fn = firewall_states_size.build(self._client)
+        wrapped_states_size = audit_logged("pfsense_get_firewall_states_size", self._identity)(states_size_fn)
+        self._mcp.tool()(wrapped_states_size)
+
+        apply_status_fn = firewall_apply_status.build(self._client)
+        wrapped_apply_status = audit_logged("pfsense_get_firewall_apply_status", self._identity)(apply_status_fn)
+        self._mcp.tool()(wrapped_apply_status)
