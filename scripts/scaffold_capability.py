@@ -406,6 +406,7 @@ def build_proposal(manifest: CapabilityManifest, discovery_path: Path, output_na
         capability_name=manifest.capability_name,
         client_method_name=manifest.client_method_name,
         model_class_name=manifest.model_class_name,
+        model_module_name=model_module_name,
         identifying_fields=manifest.identifying_fields,
         response_shape=manifest.response_shape,
         bounded_param_name=bounded_name,

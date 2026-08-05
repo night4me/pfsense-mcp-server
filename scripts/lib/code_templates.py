@@ -414,6 +414,7 @@ def render_live_test_file(
     capability_name: str,
     client_method_name: str,
     model_class_name: str,
+    model_module_name: str,
     identifying_fields: tuple[str, ...],
     response_shape: str,
     bounded_param_name: str | None,
@@ -434,6 +435,13 @@ def render_live_test_file(
     lines.append("")
     lines.append("from pfsense_mcp.config import load_api_key, load_config")
     lines.append("from pfsense_mcp.factory import build_pfsense_client")
+    # Only object-shape responses reference the model class by name
+    # (an `isinstance(result, ModelClass)` assertion below); list-shape
+    # responses only ever check `isinstance(result, list)` plus
+    # attribute access on items, so importing the model class there
+    # would be an unused import (ruff F401).
+    if response_shape != "list":
+        lines.append(f"from pfsense_mcp.models.{model_module_name} import {model_class_name}")
     lines.append("")
     lines.append('_RUN_LIVE = os.environ.get("PFSENSE_RUN_LIVE_TESTS", "").strip().lower() == "true"')
     lines.append("")

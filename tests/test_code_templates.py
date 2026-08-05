@@ -353,12 +353,16 @@ def test_render_live_test_file_list_shape_without_identifying_fields_parses():
         capability_name="SERVICE_READ",
         client_method_name="get_service_status",
         model_class_name="ServiceStatus",
+        model_module_name="service_status",
         identifying_fields=(),
         response_shape="list",
         bounded_param_name="limit",
     )
     ast.parse(src)
     assert "for item in result:" not in src
+    # List-shape never references the model class by name; importing
+    # it anyway would be an unused import (ruff F401).
+    assert "import ServiceStatus" not in src
 
 
 def test_render_live_test_file_list_shape_with_identifying_fields_still_parses():
@@ -366,6 +370,7 @@ def test_render_live_test_file_list_shape_with_identifying_fields_still_parses()
         capability_name="WIDGETS_READ",
         client_method_name="get_widgets",
         model_class_name="Widget",
+        model_module_name="widget",
         identifying_fields=("secret",),
         response_shape="list",
         bounded_param_name="limit",
@@ -373,6 +378,43 @@ def test_render_live_test_file_list_shape_with_identifying_fields_still_parses()
     ast.parse(src)
     assert "for item in result:" in src
     assert "assert item.secret is None" in src
+
+
+def test_render_live_test_file_object_shape_imports_model_class():
+    # Regression test: the object-shape branch asserts
+    # `isinstance(result, ModelClass)` but the generated file never
+    # imported ModelClass — syntactically valid (ast.parse passes) but
+    # a NameError at actual test runtime. First caught when
+    # SYSTEM_INFO_READ became the first object-shape capability to go
+    # through the real generator (all earlier object-shape capabilities
+    # predate scaffold_capability.py).
+    #
+    # Uses "service_status" (a real, already-committed module under
+    # src/pfsense_mcp/models/) rather than a synthetic name: ruff's
+    # first-party import classification depends on the target module
+    # actually existing on disk, so a made-up module name here would
+    # get misclassified and produce a spurious ruff isort finding
+    # unrelated to what this test is actually checking.
+    src = render_live_test_file(
+        capability_name="SERVICE_READ",
+        client_method_name="get_service_status",
+        model_class_name="ServiceStatus",
+        model_module_name="service_status",
+        identifying_fields=(),
+        response_shape="object",
+        bounded_param_name=None,
+    )
+    ast.parse(src)
+    assert "from pfsense_mcp.models.service_status import ServiceStatus" in src
+    assert "isinstance(result, ServiceStatus)" in src
+
+    check = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "--stdin-filename=test_live_service_status.py", "-"],
+        input=src,
+        capture_output=True,
+        text=True,
+    )
+    assert check.returncode == 0, check.stdout + check.stderr
 
 
 _MULTILINE_CAPABILITIES_SAMPLE = (
