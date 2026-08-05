@@ -250,6 +250,18 @@ def test_dhcp_servers_path_suffix_is_correct():
     assert Endpoints.DHCP_SERVERS.path_suffix == "/services/dhcp_servers"
 
 
+def test_interface_bridges_is_declared_verified():
+    assert Endpoints.INTERFACE_BRIDGES.verified is True
+
+
+def test_interface_bridges_path_suffix_has_no_api_prefix():
+    assert not Endpoints.INTERFACE_BRIDGES.path_suffix.startswith("/api")
+
+
+def test_interface_bridges_path_suffix_is_correct():
+    assert Endpoints.INTERFACE_BRIDGES.path_suffix == "/interface/bridges"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

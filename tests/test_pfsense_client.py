@@ -2158,3 +2158,106 @@ def test_get_dhcp_servers_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_dhcp_servers()
     assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_BRIDGES_FIXTURE = Path(__file__).parent / "fixtures" / "interface_bridges_response.json"
+
+
+def _interface_bridges_body() -> dict:
+    return json.loads(INTERFACE_BRIDGES_FIXTURE.read_text())
+
+
+def _interface_bridges_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_bridges_body()
+    transport.register("GET", "/api/v2/interface/bridges?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_bridges_maps_fields():
+    client, _ = _interface_bridges_client()
+    raw = _interface_bridges_body()["data"]
+    bridges = client.get_interface_bridges()
+    assert len(bridges) == 1
+    assert bridges[0].bridgeif == raw[0]["bridgeif"]
+    assert bridges[0].members == raw[0]["members"]
+    assert bridges[0].descr == raw[0]["descr"]
+
+
+def test_get_interface_bridges_only_calls_endpoint_with_default_limit():
+    client, transport = _interface_bridges_client()
+    client.get_interface_bridges()
+    assert transport.calls == [("GET", "/api/v2/interface/bridges?limit=100")]
+
+
+def test_get_interface_bridges_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_bridges_body()
+    transport.register("GET", "/api/v2/interface/bridges?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_bridges(limit=2)
+    assert transport.calls == [("GET", "/api/v2/interface/bridges?limit=2")]
+
+
+def test_get_interface_bridges_rejects_zero_limit():
+    client, _ = _interface_bridges_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_bridges(limit=0)
+
+
+def test_get_interface_bridges_rejects_limit_above_max():
+    client, _ = _interface_bridges_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_bridges(limit=101)
+
+
+def test_get_interface_bridges_missing_data_key_raises_shape_error():
+    body = _interface_bridges_body()
+    del body["data"]
+    client, _ = _interface_bridges_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_bridges()
+
+
+def test_get_interface_bridges_data_wrong_type_raises_shape_error():
+    body = _interface_bridges_body()
+    body["data"] = "not-a-list"
+    client, _ = _interface_bridges_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_bridges()
+
+
+def test_get_interface_bridges_item_wrong_type_raises_shape_error():
+    body = _interface_bridges_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_bridges_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_bridges()
+
+
+def test_get_interface_bridges_required_field_missing_raises_shape_error():
+    body = _interface_bridges_body()
+    del body["data"][0]["members"]
+    client, _ = _interface_bridges_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_bridges()
+
+
+def test_get_interface_bridges_invalid_field_type_raises_shape_error():
+    body = _interface_bridges_body()
+    body["data"][0]["members"] = 123
+    client, _ = _interface_bridges_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_bridges()
+
+
+def test_get_interface_bridges_shape_error_does_not_leak_raw_field_values():
+    body = _interface_bridges_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["bridgeif"] = [sentinel]
+    client, _ = _interface_bridges_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_bridges()
+    assert sentinel not in str(excinfo.value)

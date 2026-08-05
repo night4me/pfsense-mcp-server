@@ -53,6 +53,10 @@ def test_auditor_profile_has_dhcp_server_read():
     assert Capability.DHCP_SERVER_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_interface_virtual_read():
+    assert Capability.INTERFACE_VIRTUAL_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 

@@ -15,6 +15,7 @@ from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.gateways import GatewayConfig, GatewayStatus
+from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
 from .models.interfaces import InterfaceStatus
 from .models.pf_sense_user import PfSenseUser
@@ -67,6 +68,10 @@ DHCP_STATIC_MAPPINGS_MAX_LIMIT = 100
 
 DHCP_SERVERS_MIN_LIMIT = 1
 DHCP_SERVERS_MAX_LIMIT = 100
+
+
+INTERFACE_BRIDGES_MIN_LIMIT = 1
+INTERFACE_BRIDGES_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -544,5 +549,33 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /services/dhcp_servers response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_interface_bridges(self, *, limit: int = 100) -> list[InterfaceBridge]:
+        if not (INTERFACE_BRIDGES_MIN_LIMIT <= limit <= INTERFACE_BRIDGES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {INTERFACE_BRIDGES_MIN_LIMIT} and {INTERFACE_BRIDGES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.INTERFACE_BRIDGES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /interface/bridges response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /interface/bridges response 'data' was not a list.")
+
+        results: list[InterfaceBridge] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /interface/bridges response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(InterfaceBridge.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /interface/bridges response contained an entry that failed schema validation."
                 ) from None
         return results

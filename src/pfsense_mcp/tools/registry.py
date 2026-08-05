@@ -19,6 +19,7 @@ from .read import (
     firewall_states_size,
     gateway_status,
     gateways,
+    interface_bridges,
     interface_configs,
     interfaces,
     service_status,
@@ -68,6 +69,8 @@ class ToolRegistry:
             self._register_dhcp_static_mapping_read()
         if Capability.DHCP_SERVER_READ in self._capabilities:
             self._register_dhcp_server_read()
+        if Capability.INTERFACE_VIRTUAL_READ in self._capabilities:
+            self._register_interface_virtual_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -164,4 +167,9 @@ class ToolRegistry:
     def _register_dhcp_server_read(self) -> None:
         fn = dhcp_servers.build(self._client)
         wrapped = audit_logged("pfsense_get_dhcp_servers", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_interface_virtual_read(self) -> None:
+        fn = interface_bridges.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_bridges", self._identity)(fn)
         self._mcp.tool()(wrapped)

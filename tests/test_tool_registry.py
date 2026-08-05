@@ -421,6 +421,18 @@ _DHCP_SERVERS_BODY = {
 }
 
 
+_INTERFACE_BRIDGES_BODY = {
+    "data": [
+        {
+            "bridgeif": "bridge0",
+            "descr": "Test Bridge",
+            "id": 0,
+            "members": ["opt1", "opt2"],
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -438,6 +450,7 @@ def _client(
     with_dhcp_leases: bool = False,
     with_dhcp_static_mappings: bool = False,
     with_dhcp_servers: bool = False,
+    with_interface_bridges: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -517,6 +530,10 @@ def _client(
     if with_dhcp_servers:
         transport.register(
             "GET", "/api/v2/services/dhcp_servers?limit=100", status_code=200, text=json.dumps(_DHCP_SERVERS_BODY)
+        )
+    if with_interface_bridges:
+        transport.register(
+            "GET", "/api/v2/interface/bridges?limit=100", status_code=200, text=json.dumps(_INTERFACE_BRIDGES_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1072,6 +1089,35 @@ def test_registered_dhcp_servers_tool_invokes_client():
     assert servers[0].id == "lan"
     assert servers[0].range_from == "198.51.100.10"
     assert servers[0].range_to == "198.51.100.11"
+
+
+def test_registry_registers_interface_bridges_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_interface_bridges=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_VIRTUAL_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_interface_bridges"
+
+
+def test_registry_does_not_register_interface_bridges_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_interface_bridges" not in names
+
+
+def test_registered_interface_bridges_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_interface_bridges=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_VIRTUAL_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_interface_bridges")
+    bridges = fn()
+    assert len(bridges) == 1
+    assert bridges[0].bridgeif == "bridge0"
+    assert bridges[0].members == ["opt1", "opt2"]
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

@@ -264,6 +264,19 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "INTERFACE_BRIDGES": CapturePolicy(
+        endpoint_attr="INTERFACE_BRIDGES",
+        result_shape="list",
+        # bridgeif/members are ordinary interface identifiers (core
+        # purpose of a bridge-interface inventory capability) and stay
+        # visible at both layers. descr is stricter here than at the
+        # model layer: it holds this install's real custom label for
+        # the bridge, which is installation-specific, so only the
+        # fixture synthesizes it — runtime keeps it visible.
+        identifying_fields=frozenset({"descr"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

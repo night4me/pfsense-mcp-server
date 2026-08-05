@@ -1,0 +1,18 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "bridgeif": "bridge0",
+      "descr": "REDACTED-descr",
+      "id": 0,
+      "members": [
+        "opt1",
+        "opt2",
+        "opt3"
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
