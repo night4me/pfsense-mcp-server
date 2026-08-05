@@ -1,0 +1,209 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Synthetic test schema",
+    "version": "v0.0.0"
+  },
+  "servers": [{"url": "/", "description": "Synthetic"}],
+  "tags": [{"name": "WIDGET", "description": "Synthetic widget resources"}],
+  "paths": {
+    "/api/v2/widget/gadgets": {
+      "get": {
+        "tags": ["WIDGET"],
+        "summary": "Get gadgets",
+        "description": "Retrieves configured gadgets.",
+        "operationId": "getGadgets",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "Max objects to return.",
+            "schema": {"type": "integer", "default": 50}
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "description": "Sort order.",
+            "schema": {"type": "string", "nullable": true, "enum": ["SORT_ASC", "SORT_DESC"]}
+          },
+          {
+            "in": "query",
+            "name": "id",
+            "description": "Target either by numeric ID or string name.",
+            "schema": {"oneOf": [{"type": "integer"}, {"type": "string"}]}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/Success"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {"$ref": "#/components/schemas/Gadget"}
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["WIDGET"],
+        "summary": "Create a gadget",
+        "description": "Creates a new gadget.",
+        "operationId": "createGadget",
+        "responses": {"200": {"description": "ok", "content": {}}}
+      }
+    },
+    "/api/v2/widget/gadgets/count": {
+      "get": {
+        "tags": ["WIDGET"],
+        "summary": "Get gadget count",
+        "description": "Retrieves the current and maximum gadget count.",
+        "operationId": "getGadgetCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/Success"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {"$ref": "#/components/schemas/GadgetCount"}
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/widget/sprockets": {
+      "get": {
+        "tags": ["WIDGET"],
+        "summary": "Get sprockets",
+        "description": "Retrieves configured sprockets.",
+        "operationId": "getSprockets",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "label",
+            "description": "Filter by label.",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/Success"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {"$ref": "#/components/schemas/Sprocket"}
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["WIDGET"],
+        "summary": "Delete a sprocket",
+        "description": "Deletes a sprocket.",
+        "operationId": "deleteSprocket",
+        "responses": {"200": {"description": "ok", "content": {}}}
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Success": {
+        "type": "object",
+        "properties": {
+          "code": {"type": "integer", "default": 200},
+          "status": {"type": "string", "default": "ok"},
+          "response_id": {"type": "string"},
+          "message": {"type": "string"},
+          "data": {"description": "The data requested from the API."}
+        }
+      },
+      "Gadget": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "name": {"type": "string", "nullable": true},
+          "status": {"type": "string", "nullable": true, "enum": ["ACTIVE", "INACTIVE"]},
+          "weight": {"type": "number", "format": "float", "nullable": true}
+        }
+      },
+      "GadgetCount": {
+        "type": "object",
+        "properties": {
+          "count": {"type": "integer"},
+          "max_count": {"type": "integer", "nullable": true}
+        }
+      },
+      "Sprocket": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "details": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "allOf": [
+                {"type": "object", "properties": {}},
+                {"$ref": "#/components/schemas/SprocketDetail"}
+              ]
+            }
+          }
+        }
+      },
+      "SprocketDetail": {
+        "type": "object",
+        "properties": {
+          "label": {"type": "string", "nullable": true},
+          "extra": {
+            "allOf": [
+              {"$ref": "#/components/schemas/SprocketDetailExtra"}
+            ]
+          }
+        }
+      },
+      "SprocketDetailExtra": {
+        "type": "object",
+        "properties": {
+          "code": {"type": "string", "enum": ["A", "B", "C"]},
+          "note": {"type": "string", "nullable": true}
+        }
+      }
+    }
+  }
+}

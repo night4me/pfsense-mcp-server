@@ -19,6 +19,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
+pythonpath = ["scripts"]
 markers = [
     "live: makes a real network call to a live pfSense instance; skipped unless PFSENSE_RUN_LIVE_TESTS=true is set explicitly.",
 ]
