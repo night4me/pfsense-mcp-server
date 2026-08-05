@@ -2261,3 +2261,74 @@ def test_get_interface_bridges_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interface_bridges()
     assert sentinel not in str(excinfo.value)
+
+
+STATUS_CARP_FIXTURE = Path(__file__).parent / "fixtures" / "status_carp_response.json"
+
+
+def _status_carp_body() -> dict:
+    return json.loads(STATUS_CARP_FIXTURE.read_text())
+
+
+def _status_carp_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_carp_body()
+    transport.register("GET", "/api/v2/status/carp", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_carp_status_maps_fields():
+    client, _ = _status_carp_client()
+    raw = _status_carp_body()["data"]
+    status = client.get_carp_status()
+    assert status.enable == raw["enable"]
+    assert status.maintenance_mode == raw["maintenance_mode"]
+
+
+def test_get_carp_status_only_calls_carp_endpoint():
+    client, transport = _status_carp_client()
+    client.get_carp_status()
+    assert transport.calls == [("GET", "/api/v2/status/carp")]
+
+
+def test_get_carp_status_missing_data_key_raises_shape_error():
+    body = _status_carp_body()
+    del body["data"]
+    client, _ = _status_carp_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_carp_status()
+
+
+def test_get_carp_status_data_wrong_type_raises_shape_error():
+    body = _status_carp_body()
+    body["data"] = "not-an-object"
+    client, _ = _status_carp_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_carp_status()
+
+
+def test_get_carp_status_required_field_missing_raises_shape_error():
+    body = _status_carp_body()
+    del body["data"]["enable"]
+    client, _ = _status_carp_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_carp_status()
+
+
+def test_get_carp_status_invalid_field_type_raises_shape_error():
+    body = _status_carp_body()
+    body["data"]["maintenance_mode"] = "not-a-bool"
+    client, _ = _status_carp_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_carp_status()
+
+
+def test_get_carp_status_shape_error_does_not_leak_raw_field_values():
+    body = _status_carp_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["maintenance_mode"] = sentinel
+    client, _ = _status_carp_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_carp_status()
+    assert sentinel not in str(excinfo.value)

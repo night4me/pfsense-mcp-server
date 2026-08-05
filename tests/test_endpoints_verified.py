@@ -262,6 +262,18 @@ def test_interface_bridges_path_suffix_is_correct():
     assert Endpoints.INTERFACE_BRIDGES.path_suffix == "/interface/bridges"
 
 
+def test_status_carp_is_declared_verified():
+    assert Endpoints.STATUS_CARP.verified is True
+
+
+def test_status_carp_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_CARP.path_suffix.startswith("/api")
+
+
+def test_status_carp_path_suffix_is_correct():
+    assert Endpoints.STATUS_CARP.path_suffix == "/status/carp"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

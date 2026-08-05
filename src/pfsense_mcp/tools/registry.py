@@ -7,6 +7,7 @@ from ..capabilities import Capability
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
+    carp_status,
     dhcp_leases,
     dhcp_servers,
     dhcp_static_mappings,
@@ -71,6 +72,8 @@ class ToolRegistry:
             self._register_dhcp_server_read()
         if Capability.INTERFACE_VIRTUAL_READ in self._capabilities:
             self._register_interface_virtual_read()
+        if Capability.STATUS_CARP_READ in self._capabilities:
+            self._register_status_carp_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -172,4 +175,9 @@ class ToolRegistry:
     def _register_interface_virtual_read(self) -> None:
         fn = interface_bridges.build(self._client)
         wrapped = audit_logged("pfsense_get_interface_bridges", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_status_carp_read(self) -> None:
+        fn = carp_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_carp_status", self._identity)(fn)
         self._mcp.tool()(wrapped)

@@ -277,6 +277,11 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "STATUS_CARP": CapturePolicy(
+        endpoint_attr="STATUS_CARP",
+        result_shape="object",
+        default_max_items=1,
+    ),
 }
 
 

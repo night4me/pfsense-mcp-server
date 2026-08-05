@@ -433,6 +433,9 @@ _INTERFACE_BRIDGES_BODY = {
 }
 
 
+_STATUS_CARP_BODY = {"data": {"enable": False, "maintenance_mode": False}}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -451,6 +454,7 @@ def _client(
     with_dhcp_static_mappings: bool = False,
     with_dhcp_servers: bool = False,
     with_interface_bridges: bool = False,
+    with_carp_status: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -535,6 +539,8 @@ def _client(
         transport.register(
             "GET", "/api/v2/interface/bridges?limit=100", status_code=200, text=json.dumps(_INTERFACE_BRIDGES_BODY)
         )
+    if with_carp_status:
+        transport.register("GET", "/api/v2/status/carp", status_code=200, text=json.dumps(_STATUS_CARP_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -1118,6 +1124,34 @@ def test_registered_interface_bridges_tool_invokes_client():
     assert len(bridges) == 1
     assert bridges[0].bridgeif == "bridge0"
     assert bridges[0].members == ["opt1", "opt2"]
+
+
+def test_registry_registers_carp_status_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_carp_status=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.STATUS_CARP_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_carp_status"
+
+
+def test_registry_does_not_register_carp_status_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_carp_status" not in names
+
+
+def test_registered_carp_status_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_carp_status=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.STATUS_CARP_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_carp_status")
+    status = fn()
+    assert status.enable is False
+    assert status.maintenance_mode is False
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

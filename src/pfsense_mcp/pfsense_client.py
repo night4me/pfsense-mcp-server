@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
+from .models.carp_status import CarpStatus
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
@@ -579,3 +580,16 @@ class PfSenseClient:
                     "pfSense /interface/bridges response contained an entry that failed schema validation."
                 ) from None
         return results
+
+    def get_carp_status(self) -> CarpStatus:
+        raw = self._rest.get(Endpoints.STATUS_CARP)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /status/carp response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /status/carp response 'data' was not an object.")
+        try:
+            return CarpStatus.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError("pfSense /status/carp response failed schema validation.") from None
