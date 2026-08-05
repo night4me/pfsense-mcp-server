@@ -307,8 +307,14 @@ def check_tool_name_shape(mcp_tool_name: str) -> None:
     if not mcp_tool_name.startswith("pfsense_get_"):
         raise ScaffoldRefusal("tool-name-not-get-shaped", mcp_tool_name)
     lowered = mcp_tool_name.lower()
+    # Token-exact match, not substring containment: a naive `verb in
+    # lowered` check false-positives on any ordinary noun that happens
+    # to contain a mutating verb as a substring (e.g. "settings"
+    # contains "set", "address" contains "add"), which would refuse
+    # legitimate read-only tool names.
+    tokens = lowered.replace("pfsense_get_", "").split("_")
     for verb in _MUTATING_VERBS:
-        if verb in lowered.replace("pfsense_get_", ""):
+        if verb in tokens:
             raise ScaffoldRefusal("tool-name-contains-mutating-verb", f"{mcp_tool_name} contains {verb!r}")
 
 

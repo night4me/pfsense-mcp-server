@@ -568,6 +568,19 @@ def test_refuses_tool_name_with_mutating_verb(tmp_path, monkeypatch):
     assert excinfo.value.category == "tool-name-contains-mutating-verb"
 
 
+def test_allows_tool_name_containing_mutating_verb_as_substring_of_a_noun(tmp_path, monkeypatch):
+    # Regression test: "settings" contains "set" and "address" contains
+    # "add" as substrings, but neither is the mutating verb itself.
+    # check_tool_name_shape must match whole underscore-delimited
+    # tokens, not any substring, or these ordinary read-only tool
+    # names would be wrongly refused.
+    fake_repo = _make_fake_repo(tmp_path / "repo")
+    _patch_paths(monkeypatch, fake_repo)
+    manifest = _manifest(tmp_path, mcp_tool_name="pfsense_get_system_restapi_settings")
+    discovery = _discovery_snapshot(tmp_path)
+    sc.build_proposal(sc.load_manifest(manifest), discovery, "x")
+
+
 def test_refuses_existing_proposal_directory(tmp_path, monkeypatch):
     fake_repo = _make_fake_repo(tmp_path / "repo")
     _patch_paths(monkeypatch, fake_repo)
