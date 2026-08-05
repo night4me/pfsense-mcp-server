@@ -29,6 +29,10 @@ def test_auditor_profile_has_firewall_nat_read():
     assert Capability.FIREWALL_NAT_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_user_read():
+    assert Capability.USER_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 

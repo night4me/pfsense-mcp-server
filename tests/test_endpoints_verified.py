@@ -178,6 +178,18 @@ def test_firewall_nat_outbound_mode_path_suffix_is_correct():
     assert Endpoints.FIREWALL_NAT_OUTBOUND_MODE.path_suffix == "/firewall/nat/outbound/mode"
 
 
+def test_users_is_declared_verified():
+    assert Endpoints.USERS.verified is True
+
+
+def test_users_path_suffix_has_no_api_prefix():
+    assert not Endpoints.USERS.path_suffix.startswith("/api")
+
+
+def test_users_path_suffix_is_correct():
+    assert Endpoints.USERS.path_suffix == "/users"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

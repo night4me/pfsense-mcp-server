@@ -164,6 +164,31 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "USERS": CapturePolicy(
+        endpoint_attr="USERS",
+        result_shape="list",
+        # Administrative-usefulness policy: only authorizedkeys/ipsecpsk
+        # are genuine secrets at runtime — descr/uid/priv/cert are
+        # ordinary object metadata and stay visible in both the model
+        # and the committed fixture. `name` is intentionally stricter
+        # here than at the model layer: it stays visible at runtime
+        # (the model's own identifying_fields tuple does not include
+        # it — see models/pf_sense_user.py), but this committed test
+        # fixture uses synthesized names, not this project's real
+        # account list.
+        identifying_fields=frozenset({"name", "authorizedkeys", "ipsecpsk"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+        # authorizedkeys/ipsecpsk are already declared identifying
+        # above (redacted whenever non-empty via the identifying-field
+        # path); they are empty strings for every account on this
+        # instance, so the sanitizer's post-check otherwise flags them
+        # as "sensitive-looking but not redacted" (empty values are
+        # never substituted). Reviewed: this does not bypass the
+        # identifying-field redaction itself, only the pre-redaction
+        # hard-refusal gate for a field already covered another way.
+        benign_fields=frozenset({"authorizedkeys", "ipsecpsk"}),
+    ),
 }
 
 

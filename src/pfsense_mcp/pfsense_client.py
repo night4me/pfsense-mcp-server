@@ -14,6 +14,7 @@ from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_config import InterfaceConfig
 from .models.interfaces import InterfaceStatus
+from .models.pf_sense_user import PfSenseUser
 from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
 from .models.system_version import SystemVersion
@@ -37,6 +38,10 @@ INTERFACE_CONFIGS_MAX_LIMIT = 100
 
 FIREWALL_NAT_PORT_FORWARDS_MIN_LIMIT = 1
 FIREWALL_NAT_PORT_FORWARDS_MAX_LIMIT = 500
+
+
+USERS_MIN_LIMIT = 1
+USERS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -345,3 +350,29 @@ class PfSenseClient:
             raise PfSenseResponseShapeError(
                 "pfSense /firewall/nat/outbound/mode response failed schema validation."
             ) from None
+
+    def get_users(self, *, include_identifying_metadata: bool = False, limit: int = 100) -> list[PfSenseUser]:
+        if not (USERS_MIN_LIMIT <= limit <= USERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {USERS_MIN_LIMIT} and {USERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.USERS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /users response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /users response 'data' was not a list.")
+
+        results: list[PfSenseUser] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError("pfSense /users response contained a non-object entry in 'data'.")
+            try:
+                results.append(PfSenseUser.from_api(item, include_identifying_metadata=include_identifying_metadata))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /users response contained an entry that failed schema validation."
+                ) from None
+        return results

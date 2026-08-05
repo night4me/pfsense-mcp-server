@@ -1,0 +1,62 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "authorizedkeys": "",
+      "cert": null,
+      "descr": "System Administrator",
+      "disabled": false,
+      "expires": "",
+      "id": 0,
+      "ipsecpsk": "",
+      "name": "REDACTED-name",
+      "priv": [
+        "user-shell-access"
+      ],
+      "scope": "system",
+      "uid": 0
+    },
+    {
+      "authorizedkeys": "",
+      "cert": null,
+      "descr": "API MCP",
+      "disabled": false,
+      "expires": "",
+      "id": 1,
+      "ipsecpsk": "",
+      "name": "REDACTED-name",
+      "priv": null,
+      "scope": "user",
+      "uid": 2001
+    },
+    {
+      "authorizedkeys": "",
+      "cert": null,
+      "descr": "api-mcp-admin",
+      "disabled": false,
+      "expires": "",
+      "id": 2,
+      "ipsecpsk": "",
+      "name": "REDACTED-name",
+      "priv": null,
+      "scope": "user",
+      "uid": 2002
+    },
+    {
+      "authorizedkeys": "",
+      "cert": null,
+      "descr": "",
+      "disabled": false,
+      "expires": "",
+      "id": 3,
+      "ipsecpsk": "",
+      "name": "REDACTED-name",
+      "priv": null,
+      "scope": "user",
+      "uid": 2000
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

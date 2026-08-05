@@ -1478,3 +1478,147 @@ def test_get_firewall_nat_outbound_mode_shape_error_does_not_leak_raw_field_valu
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_firewall_nat_outbound_mode()
     assert sentinel not in str(excinfo.value)
+
+
+USERS_FIXTURE = Path(__file__).parent / "fixtures" / "users_response.json"
+USERS_IDENTIFYING_FIELDS = ("authorizedkeys", "ipsecpsk")
+
+
+def _users_body() -> dict:
+    return json.loads(USERS_FIXTURE.read_text())
+
+
+def _users_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _users_body()
+    transport.register("GET", "/api/v2/users?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_users_omits_identifying_fields_by_default():
+    client, _ = _users_client()
+    users = client.get_users()
+    assert len(users) == 4
+    for user in users:
+        for field in USERS_IDENTIFYING_FIELDS:
+            assert getattr(user, field) is None
+
+
+def test_get_users_object_metadata_is_visible_by_default():
+    # name/descr/uid/priv/cert are ordinary object metadata (username,
+    # description, reference ID, role, certificate reference), not
+    # secrets: administrative-usefulness policy keeps them visible
+    # without requiring include_identifying_metadata=True.
+    client, _ = _users_client()
+    raw = _users_body()["data"]
+    users = client.get_users()
+    assert [u.name for u in users] == [row["name"] for row in raw]
+    assert [u.descr for u in users] == [row["descr"] for row in raw]
+    assert [u.uid for u in users] == [row["uid"] for row in raw]
+    assert [u.priv for u in users] == [row["priv"] for row in raw]
+    assert [u.cert for u in users] == [row["cert"] for row in raw]
+
+
+def test_get_users_includes_identifying_fields_when_requested():
+    client, _ = _users_client()
+    raw = _users_body()["data"][0]
+    users = client.get_users(include_identifying_metadata=True)
+    first = users[0]
+    assert first.authorizedkeys == raw["authorizedkeys"]
+    assert first.ipsecpsk == raw["ipsecpsk"]
+
+
+def test_get_users_maps_non_sensitive_fields():
+    client, _ = _users_client()
+    users = client.get_users()
+    first = users[0]
+    assert first.id == 0
+    assert first.disabled is False
+    assert first.expires == ""
+    assert first.scope == "system"
+
+
+def test_get_users_only_calls_users_endpoint_with_default_limit():
+    client, transport = _users_client()
+    client.get_users()
+    assert transport.calls == [("GET", "/api/v2/users?limit=100")]
+
+
+def test_get_users_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _users_body()
+    transport.register("GET", "/api/v2/users?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_users(limit=5)
+    assert transport.calls == [("GET", "/api/v2/users?limit=5")]
+
+
+def test_get_users_rejects_zero_limit():
+    client, _ = _users_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_users(limit=0)
+
+
+def test_get_users_rejects_limit_above_max():
+    client, _ = _users_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_users(limit=101)
+
+
+def test_get_users_invalid_limit_never_calls_transport():
+    client, transport = _users_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_users(limit=0)
+    assert transport.calls == []
+
+
+def test_get_users_missing_data_key_raises_shape_error():
+    body = _users_body()
+    del body["data"]
+    client, _ = _users_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_users()
+
+
+def test_get_users_data_wrong_type_raises_shape_error():
+    body = _users_body()
+    body["data"] = "not-a-list"
+    client, _ = _users_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_users()
+
+
+def test_get_users_item_wrong_type_raises_shape_error():
+    body = _users_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _users_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_users()
+
+
+def test_get_users_required_field_missing_raises_shape_error():
+    body = _users_body()
+    del body["data"][0]["name"]
+    client, _ = _users_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_users()
+
+
+def test_get_users_invalid_field_type_raises_shape_error():
+    body = _users_body()
+    body["data"][0]["disabled"] = "not-a-bool"
+    client, _ = _users_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_users()
+
+
+def test_get_users_shape_error_does_not_leak_raw_field_values():
+    body = _users_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["disabled"] = [sentinel]
+    client, _ = _users_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_users()
+    assert sentinel not in str(excinfo.value)

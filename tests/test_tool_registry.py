@@ -292,6 +292,25 @@ _FIREWALL_NAT_PORT_FORWARDS_BODY = {
 }
 
 
+_USERS_BODY = {
+    "data": [
+        {
+            "authorizedkeys": "",
+            "cert": None,
+            "descr": "Test Account",
+            "disabled": False,
+            "expires": "",
+            "id": 0,
+            "ipsecpsk": "",
+            "name": "testuser",
+            "priv": ["test-priv"],
+            "scope": "system",
+            "uid": 0,
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -303,6 +322,7 @@ def _client(
     with_interface_configs: bool = False,
     with_nat_port_forwards: bool = False,
     with_nat_outbound_mode: bool = False,
+    with_users: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -357,6 +377,8 @@ def _client(
         transport.register(
             "GET", "/api/v2/firewall/nat/outbound/mode", status_code=200, text=json.dumps({"data": {"mode": "hybrid"}})
         )
+    if with_users:
+        transport.register("GET", "/api/v2/users?limit=100", status_code=200, text=json.dumps(_USERS_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -725,6 +747,42 @@ def test_registered_nat_outbound_mode_tool_invokes_client():
     fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_firewall_nat_outbound_mode")
     result = fn()
     assert result.mode == "hybrid"
+
+
+def test_registry_registers_users_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_users=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.USER_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_users"
+
+
+def test_registry_does_not_register_users_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_users" not in names
+
+
+def test_registered_users_tool_invokes_client_and_redacts_by_default():
+    mcp = FakeMCP()
+    client = _client(with_users=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.USER_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_users")
+    users = fn()
+    assert len(users) == 1
+    assert users[0].id == 0
+    assert users[0].scope == "system"
+    assert users[0].name == "testuser"
+    assert users[0].descr == "Test Account"
+    assert users[0].uid == 0
+    assert users[0].priv == ["test-priv"]
+    assert users[0].authorizedkeys is None
+    assert users[0].ipsecpsk is None
+    assert users[0].cert is None
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():
