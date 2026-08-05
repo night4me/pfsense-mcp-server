@@ -458,9 +458,10 @@ def render_live_test_file(
         lines.append("        assert isinstance(result, list)")
         if bounded_param_name:
             lines.append("        assert len(result) <= 5  # deliberately small: never pull the full live table")
-        lines.append("        for item in result:")
-        for name in identifying_fields:
-            lines.append(f"            assert item.{name} is None")
+        if identifying_fields:
+            lines.append("        for item in result:")
+            for name in identifying_fields:
+                lines.append(f"            assert item.{name} is None")
     else:
         lines.append(f"        assert isinstance(result, {model_class_name})")
         for name in identifying_fields:
@@ -610,7 +611,11 @@ def insert_new_capability_enum_member(source: str, capability_name: str) -> str:
     return replace_anchor(source, _READ_MARKER_COMMENT, replacement, anchor_name="write-capability marker comment")
 
 
-_CAPABILITY_FROZENSET_RE = re.compile(r"\{Capability\.[A-Za-z0-9_., ]+\}")
+# Matches both ruff format's single-line style (small sets) and its
+# multi-line, one-member-per-line, trailing-comma style (once a set no
+# longer fits the line-length limit) — \s already spans newlines, so
+# no re.DOTALL is needed.
+_CAPABILITY_FROZENSET_RE = re.compile(r"\{\s*Capability\.\w+(?:\s*,\s*Capability\.\w+)*\s*,?\s*\}")
 
 
 def find_capability_frozenset_literal(source: str) -> str:
@@ -629,7 +634,28 @@ def find_capability_frozenset_literal(source: str) -> str:
 
 
 def insert_into_capability_frozenset(source: str, anchor_set_text: str, capability_name: str) -> str:
-    if not anchor_set_text.endswith("}"):
-        raise AnchorError("invalid-anchor", "capability frozenset anchor must end with '}'")
-    new_set_text = anchor_set_text[:-1] + f", Capability.{capability_name}" + "}"
+    if not anchor_set_text.startswith("{") or not anchor_set_text.endswith("}"):
+        raise AnchorError("invalid-anchor", "capability frozenset anchor must be a '{...}' literal")
+
+    names = re.findall(r"Capability\.(\w+)", anchor_set_text)
+    if capability_name in names:
+        raise AnchorError("already-in-frozenset", f"Capability.{capability_name} is already present")
+    names.append(capability_name)
+
+    if "\n" in anchor_set_text:
+        # Multi-line, trailing-comma style: re-render deterministically
+        # from the parsed member list rather than patching around the
+        # existing trailing comma, which would risk a double comma.
+        # Preserve the exact member/closing-brace indentation in use.
+        member_indent_match = re.search(r"\n(\s+)Capability\.", anchor_set_text)
+        closing_indent_match = re.search(r"\n(\s*)\}\Z", anchor_set_text)
+        if not member_indent_match or not closing_indent_match:
+            raise AnchorError("invalid-anchor", "could not determine indentation of multi-line frozenset literal")
+        member_indent = member_indent_match.group(1)
+        closing_indent = closing_indent_match.group(1)
+        body = "".join(f"{member_indent}Capability.{n},\n" for n in names)
+        new_set_text = "{\n" + body + closing_indent + "}"
+    else:
+        new_set_text = "{" + ", ".join(f"Capability.{n}" for n in names) + "}"
+
     return replace_anchor(source, anchor_set_text, new_set_text, anchor_name="capability frozenset literal")

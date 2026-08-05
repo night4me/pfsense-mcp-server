@@ -13,6 +13,7 @@ from lib.code_templates import (
     GeneratedField,
     append_at_end_of_file,
     append_to_method_body,
+    find_capability_frozenset_literal,
     find_method_body_end,
     insert_after_anchor,
     insert_client_model_import,
@@ -22,6 +23,7 @@ from lib.code_templates import (
     insert_register_all_dispatch,
     openapi_type_to_python,
     render_client_method,
+    render_live_test_file,
     render_model_file,
     render_register_method,
     render_register_method_extension,
@@ -340,3 +342,80 @@ def test_insert_client_model_import_result_passes_ruff():
         text=True,
     )
     assert fmt.returncode == 0, fmt.stdout + fmt.stderr
+
+
+def test_render_live_test_file_list_shape_without_identifying_fields_parses():
+    # Regression test: a list-shaped capability with zero identifying
+    # fields (e.g. STATUS_SERVICES_READ) used to generate an empty
+    # `for item in result:` loop body, which is a SyntaxError. The
+    # loop must be omitted entirely when there is nothing to assert.
+    src = render_live_test_file(
+        capability_name="SERVICE_READ",
+        client_method_name="get_service_status",
+        model_class_name="ServiceStatus",
+        identifying_fields=(),
+        response_shape="list",
+        bounded_param_name="limit",
+    )
+    ast.parse(src)
+    assert "for item in result:" not in src
+
+
+def test_render_live_test_file_list_shape_with_identifying_fields_still_parses():
+    src = render_live_test_file(
+        capability_name="WIDGETS_READ",
+        client_method_name="get_widgets",
+        model_class_name="Widget",
+        identifying_fields=("secret",),
+        response_shape="list",
+        bounded_param_name="limit",
+    )
+    ast.parse(src)
+    assert "for item in result:" in src
+    assert "assert item.secret is None" in src
+
+
+_MULTILINE_CAPABILITIES_SAMPLE = (
+    "SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(\n"
+    "    {\n"
+    "        Capability.SYSTEM_READ,\n"
+    "        Capability.INTERFACE_READ,\n"
+    "        Capability.GATEWAY_READ,\n"
+    "        Capability.FIREWALL_READ,\n"
+    "        Capability.ALIAS_READ,\n"
+    "    }\n"
+    ")\n"
+)
+
+
+def test_find_capability_frozenset_literal_handles_multiline_ruff_format():
+    # Regression test: once enough capabilities are active that ruff
+    # format wraps the frozenset across multiple lines (one member per
+    # line, trailing comma), the anchor regex must still find it.
+    literal = find_capability_frozenset_literal(_MULTILINE_CAPABILITIES_SAMPLE)
+    assert literal.startswith("{") and literal.endswith("}")
+    assert "Capability.ALIAS_READ" in literal
+
+
+def test_insert_into_capability_frozenset_multiline_no_double_comma():
+    literal = find_capability_frozenset_literal(_MULTILINE_CAPABILITIES_SAMPLE)
+    result = insert_into_capability_frozenset(_MULTILINE_CAPABILITIES_SAMPLE, literal, "SERVICE_READ")
+    assert ",," not in result
+    assert ", ," not in result
+    assert "Capability.SERVICE_READ" in result
+    ast.parse("class Capability:\n    pass\n\n\n" + result)
+
+    check = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "--stdin-filename=capabilities.py", "-"],
+        input="from enum import Enum\n\n\nclass Capability(Enum):\n    pass\n\n\n" + result,
+        capture_output=True,
+        text=True,
+    )
+    assert check.returncode == 0, check.stdout + check.stderr
+
+
+def test_insert_into_capability_frozenset_singleline_still_works():
+    src = "X = frozenset({Capability.A, Capability.B})\n"
+    literal = find_capability_frozenset_literal(src)
+    result = insert_into_capability_frozenset(src, literal, "C")
+    assert "{Capability.A, Capability.B, Capability.C}" in result
