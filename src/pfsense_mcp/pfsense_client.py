@@ -9,6 +9,7 @@ from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
+from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_config import InterfaceConfig
@@ -329,3 +330,18 @@ class PfSenseClient:
                     "pfSense /firewall/nat/port_forwards response contained an entry that failed schema validation."
                 ) from None
         return results
+
+    def get_firewall_nat_outbound_mode(self) -> FirewallNatOutboundMode:
+        raw = self._rest.get(Endpoints.FIREWALL_NAT_OUTBOUND_MODE)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /firewall/nat/outbound/mode response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /firewall/nat/outbound/mode response 'data' was not an object.")
+        try:
+            return FirewallNatOutboundMode.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /firewall/nat/outbound/mode response failed schema validation."
+            ) from None

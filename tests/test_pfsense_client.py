@@ -1403,3 +1403,78 @@ def test_get_firewall_nat_port_forwards_shape_error_does_not_leak_raw_field_valu
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_firewall_nat_port_forwards()
     assert sentinel not in str(excinfo.value)
+
+
+# GENERATED PROPOSAL for get_firewall_nat_outbound_mode — review before use.
+def _get_firewall_nat_outbound_mode_body() -> dict:
+    # TODO(human): replace with the approved fixture's actual content
+    return {"data": {}}
+
+
+FIREWALL_NAT_OUTBOUND_MODE_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_nat_outbound_mode_response.json"
+
+
+def _firewall_nat_outbound_mode_body() -> dict:
+    return json.loads(FIREWALL_NAT_OUTBOUND_MODE_FIXTURE.read_text())
+
+
+def _firewall_nat_outbound_mode_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_nat_outbound_mode_body()
+    transport.register("GET", "/api/v2/firewall/nat/outbound/mode", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_nat_outbound_mode_maps_fields():
+    client, _ = _firewall_nat_outbound_mode_client()
+    result = client.get_firewall_nat_outbound_mode()
+    assert result.mode == "hybrid"
+
+
+def test_get_firewall_nat_outbound_mode_only_calls_expected_endpoint():
+    client, transport = _firewall_nat_outbound_mode_client()
+    client.get_firewall_nat_outbound_mode()
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/outbound/mode")]
+
+
+def test_get_firewall_nat_outbound_mode_missing_data_key_raises_shape_error():
+    body = _firewall_nat_outbound_mode_body()
+    del body["data"]
+    client, _ = _firewall_nat_outbound_mode_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mode()
+
+
+def test_get_firewall_nat_outbound_mode_data_wrong_type_raises_shape_error():
+    body = _firewall_nat_outbound_mode_body()
+    body["data"] = "not-an-object"
+    client, _ = _firewall_nat_outbound_mode_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mode()
+
+
+def test_get_firewall_nat_outbound_mode_required_field_missing_raises_shape_error():
+    body = _firewall_nat_outbound_mode_body()
+    del body["data"]["mode"]
+    client, _ = _firewall_nat_outbound_mode_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mode()
+
+
+def test_get_firewall_nat_outbound_mode_invalid_field_type_raises_shape_error():
+    body = _firewall_nat_outbound_mode_body()
+    body["data"]["mode"] = 123
+    client, _ = _firewall_nat_outbound_mode_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mode()
+
+
+def test_get_firewall_nat_outbound_mode_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_nat_outbound_mode_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["mode"] = [sentinel]
+    client, _ = _firewall_nat_outbound_mode_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_nat_outbound_mode()
+    assert sentinel not in str(excinfo.value)

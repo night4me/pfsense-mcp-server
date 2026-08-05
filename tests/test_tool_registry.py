@@ -302,6 +302,7 @@ def _client(
     with_system_version: bool = False,
     with_interface_configs: bool = False,
     with_nat_port_forwards: bool = False,
+    with_nat_outbound_mode: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -351,6 +352,10 @@ def _client(
             "/api/v2/firewall/nat/port_forwards?limit=100",
             status_code=200,
             text=json.dumps(_FIREWALL_NAT_PORT_FORWARDS_BODY),
+        )
+    if with_nat_outbound_mode:
+        transport.register(
+            "GET", "/api/v2/firewall/nat/outbound/mode", status_code=200, text=json.dumps({"data": {"mode": "hybrid"}})
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -670,8 +675,8 @@ def test_registry_registers_nat_port_forwards_tool_when_capability_present():
     client = _client(with_nat_port_forwards=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_NAT_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
-    assert mcp.registered[0].__name__ == "pfsense_get_firewall_nat_port_forwards"
+    names = {fn.__name__ for fn in mcp.registered}
+    assert "pfsense_get_firewall_nat_port_forwards" in names
 
 
 def test_registry_does_not_register_nat_port_forwards_tool_without_capability():
@@ -693,6 +698,33 @@ def test_registered_nat_port_forwards_tool_invokes_client_and_redacts_by_default
     assert rules[0].descr == "DelugeTorrent"
     assert rules[0].target is None
     assert rules[0].created_by is None
+
+
+def test_registry_registers_nat_outbound_mode_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_nat_outbound_mode=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_NAT_READ}))
+    registry.register_all()
+    names = {fn.__name__ for fn in mcp.registered}
+    assert "pfsense_get_firewall_nat_outbound_mode" in names
+
+
+def test_registry_does_not_register_nat_outbound_mode_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_firewall_nat_outbound_mode" not in names
+
+
+def test_registered_nat_outbound_mode_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_nat_outbound_mode=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_NAT_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_firewall_nat_outbound_mode")
+    result = fn()
+    assert result.mode == "hybrid"
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

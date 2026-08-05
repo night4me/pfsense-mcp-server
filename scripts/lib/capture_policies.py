@@ -159,6 +159,11 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=500)},
         default_max_items=5,
     ),
+    "FIREWALL_NAT_OUTBOUND_MODE": CapturePolicy(
+        endpoint_attr="FIREWALL_NAT_OUTBOUND_MODE",
+        result_shape="object",
+        default_max_items=1,
+    ),
 }
 
 

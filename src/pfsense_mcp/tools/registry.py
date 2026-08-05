@@ -9,6 +9,7 @@ from .audit import audit_logged
 from .read import (
     firewall_aliases,
     firewall_apply_status,
+    firewall_nat_outbound_mode,
     firewall_nat_port_forwards,
     firewall_rules,
     firewall_states,
@@ -110,3 +111,9 @@ class ToolRegistry:
         fn = firewall_nat_port_forwards.build(self._client)
         wrapped = audit_logged("pfsense_get_firewall_nat_port_forwards", self._identity)(fn)
         self._mcp.tool()(wrapped)
+
+        firewall_nat_outbound_mode_fn = firewall_nat_outbound_mode.build(self._client)
+        firewall_nat_outbound_mode_wrapped = audit_logged("pfsense_get_firewall_nat_outbound_mode", self._identity)(
+            firewall_nat_outbound_mode_fn
+        )
+        self._mcp.tool()(firewall_nat_outbound_mode_wrapped)

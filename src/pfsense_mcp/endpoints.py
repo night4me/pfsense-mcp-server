@@ -87,5 +87,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    FIREWALL_NAT_OUTBOUND_MODE = EndpointInfo(
+        path_suffix="/firewall/nat/outbound/mode",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)
