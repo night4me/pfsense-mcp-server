@@ -22,7 +22,13 @@ class Profile:
 AuditorProfile = Profile(
     name="auditor",
     capabilities=frozenset(
-        {Capability.SYSTEM_READ, Capability.INTERFACE_READ, Capability.GATEWAY_READ, Capability.FIREWALL_READ}
+        {
+            Capability.SYSTEM_READ,
+            Capability.INTERFACE_READ,
+            Capability.GATEWAY_READ,
+            Capability.FIREWALL_READ,
+            Capability.ALIAS_READ,
+        }
     ),
 )
 

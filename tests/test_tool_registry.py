@@ -175,9 +175,26 @@ _FIREWALL_STATES_SIZE_BODY = {
 
 _FIREWALL_APPLY_BODY = {"data": {"applied": True, "pending_subsystems": []}}
 
+_FIREWALL_ALIASES_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "name": "IPTV",
+            "descr": "TWE",
+            "type": "network",
+            "address": ["198.51.100.10/20"],
+            "detail": ["REDACTED-detail"],
+        }
+    ]
+}
+
 
 def _client(
-    *, with_interfaces: bool = False, with_gateways: bool = False, with_firewall: bool = False
+    *,
+    with_interfaces: bool = False,
+    with_gateways: bool = False,
+    with_firewall: bool = False,
+    with_alias: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -207,6 +224,10 @@ def _client(
             "GET", "/api/v2/firewall/states/size", status_code=200, text=json.dumps(_FIREWALL_STATES_SIZE_BODY)
         )
         transport.register("GET", "/api/v2/firewall/apply", status_code=200, text=json.dumps(_FIREWALL_APPLY_BODY))
+    if with_alias:
+        transport.register(
+            "GET", "/api/v2/firewall/aliases?limit=100", status_code=200, text=json.dumps(_FIREWALL_ALIASES_BODY)
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -394,6 +415,37 @@ def test_registered_firewall_apply_status_tool_invokes_client():
     status = apply_fn()
     assert status.applied is True
     assert status.pending_subsystems == []
+
+
+def test_registry_registers_firewall_aliases_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_alias=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.ALIAS_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_firewall_aliases"
+
+
+def test_registry_does_not_register_firewall_aliases_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_firewall_aliases" not in names
+
+
+def test_registered_firewall_aliases_tool_invokes_client_and_redacts_by_default():
+    mcp = FakeMCP()
+    client = _client(with_alias=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.ALIAS_READ}))
+    registry.register_all()
+    aliases_fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_firewall_aliases")
+    aliases = aliases_fn()
+    assert len(aliases) == 1
+    assert aliases[0].name == "IPTV"
+    assert aliases[0].descr == "TWE"
+    assert aliases[0].address is None
+    assert aliases[0].detail is None
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

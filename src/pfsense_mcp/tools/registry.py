@@ -7,6 +7,7 @@ from ..capabilities import Capability
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
+    firewall_aliases,
     firewall_apply_status,
     firewall_rules,
     firewall_states,
@@ -34,6 +35,8 @@ class ToolRegistry:
             self._register_gateway_read()
         if Capability.FIREWALL_READ in self._capabilities:
             self._register_firewall_read()
+        if Capability.ALIAS_READ in self._capabilities:
+            self._register_alias_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -70,3 +73,8 @@ class ToolRegistry:
         apply_status_fn = firewall_apply_status.build(self._client)
         wrapped_apply_status = audit_logged("pfsense_get_firewall_apply_status", self._identity)(apply_status_fn)
         self._mcp.tool()(wrapped_apply_status)
+
+    def _register_alias_read(self) -> None:
+        fn = firewall_aliases.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_aliases", self._identity)(fn)
+        self._mcp.tool()(wrapped)

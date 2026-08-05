@@ -115,6 +115,13 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "FIREWALL_ALIASES": CapturePolicy(
+        endpoint_attr="FIREWALL_ALIASES",
+        result_shape="list",
+        identifying_fields=frozenset({"address", "detail"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=500)},
+        default_max_items=5,
+    ),
 }
 
 

@@ -821,3 +821,136 @@ def test_get_firewall_apply_status_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_firewall_apply_status()
     assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_ALIASES_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_aliases_response.json"
+FIREWALL_ALIASES_IDENTIFYING_FIELDS = ("address", "detail")
+
+
+def _firewall_aliases_body() -> dict:
+    return json.loads(FIREWALL_ALIASES_FIXTURE.read_text())
+
+
+def _firewall_aliases_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_aliases_body()
+    transport.register("GET", "/api/v2/firewall/aliases?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_aliases_omits_identifying_fields_by_default():
+    client, _ = _firewall_aliases_client()
+    aliases = client.get_firewall_aliases()
+    assert len(aliases) == 4
+    for alias in aliases:
+        for field in FIREWALL_ALIASES_IDENTIFYING_FIELDS:
+            assert getattr(alias, field) is None
+
+
+def test_get_firewall_aliases_includes_identifying_fields_when_requested():
+    client, _ = _firewall_aliases_client()
+    aliases = client.get_firewall_aliases(include_identifying_metadata=True)
+    iptv = next(a for a in aliases if a.name == "IPTV")
+    assert iptv.address == [
+        "198.51.100.10/20",
+        "198.51.100.11/16",
+        "198.51.100.12/8",
+        "198.51.100.13/8",
+        "198.51.100.14/4",
+    ]
+    assert iptv.detail == ["REDACTED-detail"] * 5
+
+
+def test_get_firewall_aliases_maps_non_sensitive_fields():
+    client, _ = _firewall_aliases_client()
+    aliases = client.get_firewall_aliases()
+    iptv = next(a for a in aliases if a.name == "IPTV")
+    assert iptv.id == 0
+    assert iptv.descr == "TWE"
+    assert iptv.type == "network"
+
+
+def test_get_firewall_aliases_only_calls_firewall_aliases_endpoint_with_default_limit():
+    client, transport = _firewall_aliases_client()
+    client.get_firewall_aliases()
+    assert transport.calls == [("GET", "/api/v2/firewall/aliases?limit=100")]
+
+
+def test_get_firewall_aliases_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_aliases_body()
+    transport.register("GET", "/api/v2/firewall/aliases?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_aliases(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/aliases?limit=5")]
+
+
+def test_get_firewall_aliases_rejects_zero_limit():
+    client, _ = _firewall_aliases_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_aliases(limit=0)
+
+
+def test_get_firewall_aliases_rejects_limit_above_max():
+    client, _ = _firewall_aliases_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_aliases(limit=501)
+
+
+def test_get_firewall_aliases_invalid_limit_never_calls_transport():
+    client, transport = _firewall_aliases_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_aliases(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_aliases_missing_data_key_raises_shape_error():
+    body = _firewall_aliases_body()
+    del body["data"]
+    client, _ = _firewall_aliases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_aliases()
+
+
+def test_get_firewall_aliases_data_wrong_type_raises_shape_error():
+    body = _firewall_aliases_body()
+    body["data"] = "not-a-list"
+    client, _ = _firewall_aliases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_aliases()
+
+
+def test_get_firewall_aliases_item_wrong_type_raises_shape_error():
+    body = _firewall_aliases_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_aliases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_aliases()
+
+
+def test_get_firewall_aliases_required_field_missing_raises_shape_error():
+    body = _firewall_aliases_body()
+    del body["data"][0]["name"]
+    client, _ = _firewall_aliases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_aliases()
+
+
+def test_get_firewall_aliases_invalid_field_type_raises_shape_error():
+    body = _firewall_aliases_body()
+    body["data"][0]["id"] = "not-a-number"
+    client, _ = _firewall_aliases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_aliases()
+
+
+def test_get_firewall_aliases_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_aliases_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["id"] = sentinel
+    client, _ = _firewall_aliases_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_aliases()
+    assert sentinel not in str(excinfo.value)

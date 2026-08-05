@@ -20,5 +20,11 @@ class Capability(Enum):
 
 
 SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
-    {Capability.SYSTEM_READ, Capability.INTERFACE_READ, Capability.GATEWAY_READ, Capability.FIREWALL_READ}
+    {
+        Capability.SYSTEM_READ,
+        Capability.INTERFACE_READ,
+        Capability.GATEWAY_READ,
+        Capability.FIREWALL_READ,
+        Capability.ALIAS_READ,
+    }
 )

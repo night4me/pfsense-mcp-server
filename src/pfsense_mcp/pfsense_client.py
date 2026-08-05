@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
+from .models.firewall_alias import FirewallAlias
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interfaces import InterfaceStatus
 from .models.system import SystemStatus
@@ -15,6 +16,10 @@ from .rest_api_client import RestApiClient
 
 FIREWALL_STATES_MIN_LIMIT = 1
 FIREWALL_STATES_MAX_LIMIT = 500
+
+
+FIREWALL_ALIASES_MIN_LIMIT = 1
+FIREWALL_ALIASES_MAX_LIMIT = 500
 
 
 class PfSenseClient:
@@ -174,3 +179,33 @@ class PfSenseClient:
             return FirewallApplyStatus.from_api(data)
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError("pfSense firewall/apply response failed schema validation.") from None
+
+    def get_firewall_aliases(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FirewallAlias]:
+        if not (FIREWALL_ALIASES_MIN_LIMIT <= limit <= FIREWALL_ALIASES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_ALIASES_MIN_LIMIT} and {FIREWALL_ALIASES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_ALIASES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /firewall/aliases response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /firewall/aliases response 'data' was not a list.")
+
+        results: list[FirewallAlias] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /firewall/aliases response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(FirewallAlias.from_api(item, include_identifying_metadata=include_identifying_metadata))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /firewall/aliases response contained an entry that failed schema validation."
+                ) from None
+        return results

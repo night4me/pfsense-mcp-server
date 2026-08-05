@@ -104,6 +104,20 @@ def test_firewall_apply_status_path_suffix_is_correct():
     assert Endpoints.FIREWALL_APPLY_STATUS.path_suffix == "/firewall/apply"
 
 
+def test_firewall_aliases_is_declared_verified():
+    assert Endpoints.FIREWALL_ALIASES.verified is True
+
+
+def test_firewall_aliases_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FIREWALL_ALIASES.path_suffix.startswith("/api")
+
+
+def test_firewall_aliases_path_suffix_is_the_plural_list_endpoint():
+    # FIREWALL_ALIAS_READ must use the plural aliases list, never the
+    # singular id-scoped /api/v2/firewall/alias endpoint.
+    assert Endpoints.FIREWALL_ALIASES.path_suffix == "/firewall/aliases"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented
