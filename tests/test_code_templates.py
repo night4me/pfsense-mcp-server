@@ -4,6 +4,8 @@ generation and anchor-based insertion, synthetic source only."""
 from __future__ import annotations
 
 import ast
+import subprocess
+import sys
 
 import pytest
 from lib.code_templates import (
@@ -13,6 +15,7 @@ from lib.code_templates import (
     append_to_method_body,
     find_method_body_end,
     insert_after_anchor,
+    insert_client_model_import,
     insert_into_capability_frozenset,
     insert_new_capability_enum_member,
     insert_read_import,
@@ -225,3 +228,115 @@ def test_insert_into_capability_frozenset():
 def test_append_at_end_of_file():
     result = append_at_end_of_file("line1\nline2\n", "line3\n")
     assert result == "line1\nline2\nline3\n"
+
+
+_CLIENT_IMPORTS_SAMPLE = (
+    '"""PfSenseClient — domain layer."""\n'
+    "\n"
+    "from __future__ import annotations\n"
+    "\n"
+    "from pydantic import ValidationError\n"
+    "\n"
+    "from .endpoints import Endpoints\n"
+    "from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError\n"
+    "from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize\n"
+    "from .models.gateways import GatewayConfig, GatewayStatus\n"
+    "from .models.interfaces import InterfaceStatus\n"
+    "from .models.system import SystemStatus\n"
+    "from .rest_api_client import RestApiClient\n"
+    "\n"
+    "\n"
+    "class PfSenseClient:\n"
+    "    def __init__(self, rest: RestApiClient) -> None:\n"
+    "        self._rest = rest\n"
+    "\n"
+    "    def use_everything(\n"
+    "        self,\n"
+    "    ) -> (\n"
+    "        Endpoints\n"
+    "        | PfSenseRequestValidationError\n"
+    "        | PfSenseResponseShapeError\n"
+    "        | ValidationError\n"
+    "        | FirewallApplyStatus\n"
+    "        | FirewallRule\n"
+    "        | FirewallState\n"
+    "        | FirewallStatesSize\n"
+    "        | GatewayConfig\n"
+    "        | GatewayStatus\n"
+    "        | InterfaceStatus\n"
+    "        | SystemStatus\n"
+    "    ):\n"
+    "        raise NotImplementedError\n"
+)
+
+
+def test_insert_client_model_import_adds_new_module_in_sorted_position():
+    result = insert_client_model_import(_CLIENT_IMPORTS_SAMPLE, "firewall_alias", "FirewallAlias")
+    lines = result.splitlines()
+    firewall_idx = lines.index(
+        "from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize"
+    )
+    alias_idx = lines.index("from .models.firewall_alias import FirewallAlias")
+    gateways_idx = lines.index("from .models.gateways import GatewayConfig, GatewayStatus")
+    assert firewall_idx < alias_idx < gateways_idx
+    ast.parse(result)
+
+
+def test_insert_client_model_import_extends_existing_module_without_duplicate_line():
+    result = insert_client_model_import(_CLIENT_IMPORTS_SAMPLE, "gateways", "GatewayGroup")
+    assert result.count("from .models.gateways import") == 1
+    assert "from .models.gateways import GatewayConfig, GatewayGroup, GatewayStatus" in result
+
+
+def test_insert_client_model_import_refuses_exact_duplicate():
+    with pytest.raises(AnchorError) as excinfo:
+        insert_client_model_import(_CLIENT_IMPORTS_SAMPLE, "firewall", "FirewallRule")
+    assert excinfo.value.category == "already-imported"
+
+
+def test_insert_client_model_import_refuses_missing_block():
+    source = '"""No model imports here."""\n\nfrom __future__ import annotations\n'
+    with pytest.raises(AnchorError) as excinfo:
+        insert_client_model_import(source, "firewall_alias", "FirewallAlias")
+    assert excinfo.value.category == "anchor-missing"
+
+
+def test_insert_client_model_import_refuses_ambiguous_non_contiguous_block():
+    source = (
+        "from .models.firewall import FirewallRule\n\nSOME_CONSTANT = 1\n\nfrom .models.gateways import GatewayConfig\n"
+    )
+    with pytest.raises(AnchorError) as excinfo:
+        insert_client_model_import(source, "firewall_alias", "FirewallAlias")
+    assert excinfo.value.category == "anchor-ambiguous"
+
+
+def test_insert_client_model_import_result_parses_with_ast():
+    result = insert_client_model_import(_CLIENT_IMPORTS_SAMPLE, "firewall_alias", "FirewallAlias")
+    ast.parse(result)
+
+
+def test_insert_client_model_import_result_passes_ruff():
+    # Mirror real usage: the newly imported class is only unused in
+    # isolation. In practice scaffold_capability.py always appends a
+    # client method that consumes it (render_client_method) in the
+    # same pass, so append an equivalent stub consumer here too —
+    # otherwise ruff's unused-import check (F401) would fail for a
+    # reason unrelated to import placement/duplication correctness.
+    result = insert_client_model_import(_CLIENT_IMPORTS_SAMPLE, "firewall_alias", "FirewallAlias")
+    result += "\n    def get_firewall_aliases(self) -> FirewallAlias:\n        raise NotImplementedError\n"
+
+    check = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "--stdin-filename=pfsense_client.py", "-"],
+        input=result,
+        capture_output=True,
+        text=True,
+    )
+    assert check.returncode == 0, check.stdout + check.stderr
+
+    fmt = subprocess.run(
+        [sys.executable, "-m", "ruff", "format", "--check", "--stdin-filename=pfsense_client.py", "-"],
+        input=result,
+        capture_output=True,
+        text=True,
+    )
+    assert fmt.returncode == 0, fmt.stdout + fmt.stderr

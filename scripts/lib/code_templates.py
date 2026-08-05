@@ -356,6 +356,55 @@ def render_client_method(
 
 
 # ------------------------------------------------------------------
+# pfsense_client.py model-import insertion
+# ------------------------------------------------------------------
+
+_MODELS_IMPORT_LINE_RE = re.compile(r"^from \.models\.(\w+) import (.+)$", re.MULTILINE)
+_MODELS_IMPORT_BLOCK_RE = re.compile(r"(?:^from \.models\.\w+ import .+\n)+", re.MULTILINE)
+
+
+def insert_client_model_import(source: str, model_module_name: str, model_class_name: str) -> str:
+    """Ensures `from .models.<model_module_name> import <model_class_name>`
+    is present in pfsense_client.py, in sorted order alongside the
+    other `from .models.X import ...` lines (matching the existing,
+    isort-compatible ordering already used there).
+
+    Refuses (AnchorError) if that contiguous import block is missing
+    or not found exactly once — never guesses where to insert. Never
+    duplicates an already-imported name: if model_class_name is
+    already imported from model_module_name, refuses with category
+    'already-imported' instead of writing a second copy.
+    """
+    blocks = list(_MODELS_IMPORT_BLOCK_RE.finditer(source))
+    if not blocks:
+        raise AnchorError("anchor-missing", "no 'from .models.X import ...' block found")
+    if len(blocks) > 1:
+        raise AnchorError("anchor-ambiguous", "'from .models.X import ...' lines are not one contiguous block")
+    block = blocks[0]
+
+    parsed: dict[str, list[str]] = {}
+    for line in block.group(0).splitlines():
+        match = _MODELS_IMPORT_LINE_RE.match(line)
+        if not match:
+            raise AnchorError("malformed-import-block", f"unrecognized line in models import block: {line!r}")
+        module, names_raw = match.group(1), match.group(2)
+        parsed[module] = [n.strip() for n in names_raw.split(",")]
+
+    if model_module_name in parsed:
+        if model_class_name in parsed[model_module_name]:
+            raise AnchorError(
+                "already-imported",
+                f"{model_class_name!r} is already imported from .models.{model_module_name}",
+            )
+        parsed[model_module_name] = sorted(parsed[model_module_name] + [model_class_name])
+    else:
+        parsed[model_module_name] = [model_class_name]
+
+    new_block = "".join(f"from .models.{module} import {', '.join(parsed[module])}\n" for module in sorted(parsed))
+    return source[: block.start()] + new_block + source[block.end() :]
+
+
+# ------------------------------------------------------------------
 # Live test file (opt-in)
 # ------------------------------------------------------------------
 

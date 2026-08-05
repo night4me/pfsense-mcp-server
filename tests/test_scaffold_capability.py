@@ -8,9 +8,11 @@ ever read, never written, by this tool)."""
 
 from __future__ import annotations
 
+import ast
 import json
 import shutil
 import subprocess
+from enum import Enum, auto
 from pathlib import Path
 
 import pytest
@@ -18,6 +20,23 @@ import scaffold_capability as sc
 
 REAL_REPO_ROOT = Path(__file__).resolve().parent.parent
 REAL_FIXTURE = REAL_REPO_ROOT / "tests" / "fixtures" / "firewall_states_size_response.json"
+
+
+class _FakeCapability(Enum):
+    """Mirrors _CAPABILITIES_PY below exactly. detect_capability_state()
+    reads the live Capability enum / SUPPORTED_CAPABILITIES_THIS_BUILD
+    (correctly, for real usage against the real repo) rather than
+    parsing the fake repo's capabilities.py text — so these tests must
+    monkeypatch those two names too, not just file paths, or a fake-repo
+    capability-state case can silently start reading real repo state."""
+
+    SYSTEM_READ = auto()
+    FIREWALL_READ = auto()
+    ALIAS_READ = auto()
+    FIREWALL_WRITE = auto()
+
+
+_FAKE_SUPPORTED_CAPABILITIES_THIS_BUILD = frozenset({_FakeCapability.SYSTEM_READ, _FakeCapability.FIREWALL_READ})
 
 _CAPABILITIES_PY = '''"""Capability model."""
 
@@ -155,6 +174,11 @@ def _patch_paths(monkeypatch, fake_repo: Path):
     monkeypatch.setattr(sc, "TEST_CLIENT_PATH", fake_repo / "tests" / "test_pfsense_client.py")
     monkeypatch.setattr(sc, "MODELS_DIR", fake_repo / "src" / "pfsense_mcp" / "models")
     monkeypatch.setattr(sc, "TOOLS_READ_DIR", fake_repo / "src" / "pfsense_mcp" / "tools" / "read")
+    # detect_capability_state() reads these two names directly (not the
+    # fake capabilities.py file text), so they must be faked too — see
+    # _FakeCapability's docstring above.
+    monkeypatch.setattr(sc, "Capability", _FakeCapability)
+    monkeypatch.setattr(sc, "SUPPORTED_CAPABILITIES_THIS_BUILD", _FAKE_SUPPORTED_CAPABILITIES_THIS_BUILD)
 
 
 def _discovery_snapshot(tmp_path) -> Path:
@@ -279,6 +303,16 @@ def test_activate_existing_placeholder_capability(tmp_path, monkeypatch):
     assert "ALIAS_READ = auto()" not in caps_patch  # already existed, not re-added
     assert "Capability.ALIAS_READ" in caps_patch  # frozenset extended
 
+    # Regression check: the new model class (AliasDemo, in a brand-new
+    # models/alias_demo.py module) must be imported into the proposed
+    # pfsense_client.py automatically — no manual import correction
+    # should ever be required after scaffolding.
+    client_patch = (proposal_dir / "diffs" / "pfsense_client.patch").read_text()
+    assert "from .models.alias_demo import AliasDemo" in client_patch
+    client_full = (proposal_dir / "proposed_full_files" / "pfsense_client.py").read_text()
+    assert "from .models.alias_demo import AliasDemo" in client_full
+    ast.parse(client_full)
+
     assert _snapshot_repo_files(fake_repo) == before
 
 
@@ -305,9 +339,15 @@ def test_new_capability_case(tmp_path, monkeypatch):
     assert (proposal_dir / "diffs" / "test_profiles.snippet.py").is_file()
 
     for f in ("new_files/models/brand_new_demo.py", "new_files/tools_read/brand_new_demo.py"):
-        import ast
-
         ast.parse((proposal_dir / f).read_text())
+
+    # Regression check: same as the "activate" case above — no manual
+    # model-import correction should ever be required after scaffolding.
+    client_patch = (proposal_dir / "diffs" / "pfsense_client.patch").read_text()
+    assert "from .models.brand_new_demo import BrandNewDemo" in client_patch
+    client_full = (proposal_dir / "proposed_full_files" / "pfsense_client.py").read_text()
+    assert "from .models.brand_new_demo import BrandNewDemo" in client_full
+    ast.parse(client_full)
 
     assert _snapshot_repo_files(fake_repo) == before
 

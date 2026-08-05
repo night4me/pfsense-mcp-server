@@ -48,6 +48,7 @@ from lib.code_templates import (  # noqa: E402
     append_at_end_of_file,
     append_to_method_body,
     find_capability_frozenset_literal,
+    insert_client_model_import,
     insert_into_capability_frozenset,
     insert_new_capability_enum_member,
     insert_read_import,
@@ -426,7 +427,7 @@ def build_proposal(manifest: CapabilityManifest, discovery_path: Path, output_na
         bounded_param_max_const=max_const,
     )
     client_original = CLIENT_PATH.read_text(encoding="utf-8")
-    client_proposed = client_original
+    client_proposed = insert_client_model_import(client_original, model_module_name, manifest.model_class_name)
     if bounded_name:
         const_block = f"{min_const} = {bounded_min}\n{max_const} = {bounded_max}\n"
         client_proposed = insert_after_anchor_constants(client_proposed, const_block)
