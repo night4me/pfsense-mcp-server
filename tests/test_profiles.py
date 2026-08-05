@@ -49,6 +49,10 @@ def test_auditor_profile_has_dhcp_static_mapping_read():
     assert Capability.DHCP_STATIC_MAPPING_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_dhcp_server_read():
+    assert Capability.DHCP_SERVER_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 

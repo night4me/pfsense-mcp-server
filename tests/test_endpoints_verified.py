@@ -238,6 +238,18 @@ def test_dhcp_server_static_mappings_path_suffix_is_correct():
     assert Endpoints.DHCP_SERVER_STATIC_MAPPINGS.path_suffix == "/services/dhcp_server/static_mappings"
 
 
+def test_dhcp_servers_is_declared_verified():
+    assert Endpoints.DHCP_SERVERS.verified is True
+
+
+def test_dhcp_servers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DHCP_SERVERS.path_suffix.startswith("/api")
+
+
+def test_dhcp_servers_path_suffix_is_correct():
+    assert Endpoints.DHCP_SERVERS.path_suffix == "/services/dhcp_servers"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

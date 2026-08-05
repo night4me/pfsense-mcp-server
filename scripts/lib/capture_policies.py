@@ -248,6 +248,22 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "DHCP_SERVERS": CapturePolicy(
+        endpoint_attr="DHCP_SERVERS",
+        result_shape="list",
+        # DHCP server (scope) configuration per interface: range,
+        # gateway, DNS/NTP/WINS servers, and embedded static mappings.
+        # Same DHCP-inventory exception as STATUS_DHCP_LEASES/
+        # DHCP_SERVER_STATIC_MAPPINGS: ip/mac/domain fields stay
+        # visible (core purpose of this capability), auto-sanitized
+        # generically regardless of identifying_fields. descr only
+        # appears nested inside each server's embedded `staticmap`
+        # entries; it is stricter here than at the model layer for the
+        # same reason as the dedicated static-mapping capability.
+        identifying_fields=frozenset({"descr"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

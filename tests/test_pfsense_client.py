@@ -2050,3 +2050,111 @@ def test_get_dhcp_static_mappings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_dhcp_static_mappings()
     assert sentinel not in str(excinfo.value)
+
+
+DHCP_SERVERS_FIXTURE = Path(__file__).parent / "fixtures" / "services_dhcp_servers_response.json"
+
+
+def _dhcp_servers_body() -> dict:
+    return json.loads(DHCP_SERVERS_FIXTURE.read_text())
+
+
+def _dhcp_servers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dhcp_servers_body()
+    transport.register("GET", "/api/v2/services/dhcp_servers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dhcp_servers_maps_fields():
+    client, _ = _dhcp_servers_client()
+    raw = _dhcp_servers_body()["data"]
+    servers = client.get_dhcp_servers()
+    assert len(servers) == 2
+    assert servers[0].id == raw[0]["id"]
+    assert servers[0].interface == raw[0]["interface"]
+    assert servers[0].range_from == raw[0]["range_from"]
+    assert servers[0].range_to == raw[0]["range_to"]
+    assert servers[0].enable == raw[0]["enable"]
+    assert servers[0].staticmap == raw[0]["staticmap"]
+    assert servers[1].dnsserver == raw[1]["dnsserver"]
+    assert servers[1].mac_deny == raw[1]["mac_deny"]
+
+
+def test_get_dhcp_servers_only_calls_endpoint_with_default_limit():
+    client, transport = _dhcp_servers_client()
+    client.get_dhcp_servers()
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_servers?limit=100")]
+
+
+def test_get_dhcp_servers_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _dhcp_servers_body()
+    transport.register("GET", "/api/v2/services/dhcp_servers?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_dhcp_servers(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_servers?limit=2")]
+
+
+def test_get_dhcp_servers_rejects_zero_limit():
+    client, _ = _dhcp_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_servers(limit=0)
+
+
+def test_get_dhcp_servers_rejects_limit_above_max():
+    client, _ = _dhcp_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_servers(limit=101)
+
+
+def test_get_dhcp_servers_missing_data_key_raises_shape_error():
+    body = _dhcp_servers_body()
+    del body["data"]
+    client, _ = _dhcp_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_servers()
+
+
+def test_get_dhcp_servers_data_wrong_type_raises_shape_error():
+    body = _dhcp_servers_body()
+    body["data"] = "not-a-list"
+    client, _ = _dhcp_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_servers()
+
+
+def test_get_dhcp_servers_item_wrong_type_raises_shape_error():
+    body = _dhcp_servers_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _dhcp_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_servers()
+
+
+def test_get_dhcp_servers_required_field_missing_raises_shape_error():
+    body = _dhcp_servers_body()
+    del body["data"][0]["id"]
+    client, _ = _dhcp_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_servers()
+
+
+def test_get_dhcp_servers_invalid_field_type_raises_shape_error():
+    body = _dhcp_servers_body()
+    body["data"][0]["id"] = 123
+    client, _ = _dhcp_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_servers()
+
+
+def test_get_dhcp_servers_shape_error_does_not_leak_raw_field_values():
+    body = _dhcp_servers_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["id"] = [sentinel]
+    client, _ = _dhcp_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dhcp_servers()
+    assert sentinel not in str(excinfo.value)

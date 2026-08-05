@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.dhcp_lease import DhcpLease
+from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
@@ -62,6 +63,10 @@ DHCP_LEASES_MAX_LIMIT = 100
 
 DHCP_STATIC_MAPPINGS_MIN_LIMIT = 1
 DHCP_STATIC_MAPPINGS_MAX_LIMIT = 100
+
+
+DHCP_SERVERS_MIN_LIMIT = 1
+DHCP_SERVERS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -511,5 +516,33 @@ class PfSenseClient:
                 raise PfSenseResponseShapeError(
                     "pfSense /services/dhcp_server/static_mappings response contained an entry "
                     "that failed schema validation."
+                ) from None
+        return results
+
+    def get_dhcp_servers(self, *, limit: int = 100) -> list[DhcpServer]:
+        if not (DHCP_SERVERS_MIN_LIMIT <= limit <= DHCP_SERVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DHCP_SERVERS_MIN_LIMIT} and {DHCP_SERVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DHCP_SERVERS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/dhcp_servers response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /services/dhcp_servers response 'data' was not a list.")
+
+        results: list[DhcpServer] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/dhcp_servers response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(DhcpServer.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/dhcp_servers response contained an entry that failed schema validation."
                 ) from None
         return results

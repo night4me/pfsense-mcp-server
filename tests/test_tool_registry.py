@@ -386,6 +386,41 @@ _DHCP_STATIC_MAPPINGS_BODY = {
 }
 
 
+_DHCP_SERVERS_BODY = {
+    "data": [
+        {
+            "defaultleasetime": None,
+            "denyunknown": None,
+            "dhcpleaseinlocaltime": False,
+            "disablepingcheck": False,
+            "dnsserver": None,
+            "domain": "",
+            "domainsearchlist": [],
+            "enable": True,
+            "failover_peerip": "",
+            "gateway": "",
+            "id": "lan",
+            "ignorebootp": False,
+            "ignoreclientuids": False,
+            "interface": "lan",
+            "mac_allow": [],
+            "mac_deny": [],
+            "maxleasetime": None,
+            "nonak": False,
+            "ntpserver": None,
+            "numberoptions": None,
+            "pool": [],
+            "range_from": "198.51.100.10",
+            "range_to": "198.51.100.11",
+            "staticarp": False,
+            "staticmap": [],
+            "statsgraph": False,
+            "winsserver": None,
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -402,6 +437,7 @@ def _client(
     with_user_groups: bool = False,
     with_dhcp_leases: bool = False,
     with_dhcp_static_mappings: bool = False,
+    with_dhcp_servers: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -477,6 +513,10 @@ def _client(
             "/api/v2/services/dhcp_server/static_mappings?limit=100",
             status_code=200,
             text=json.dumps(_DHCP_STATIC_MAPPINGS_BODY),
+        )
+    if with_dhcp_servers:
+        transport.register(
+            "GET", "/api/v2/services/dhcp_servers?limit=100", status_code=200, text=json.dumps(_DHCP_SERVERS_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1002,6 +1042,36 @@ def test_registered_dhcp_static_mappings_tool_invokes_client():
     assert mappings[0].mac == "02:00:00:00:00:01"
     assert mappings[0].ipaddr == "198.51.100.10"
     assert mappings[0].hostname == "testhost"
+
+
+def test_registry_registers_dhcp_servers_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_dhcp_servers=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_SERVER_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_dhcp_servers"
+
+
+def test_registry_does_not_register_dhcp_servers_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_dhcp_servers" not in names
+
+
+def test_registered_dhcp_servers_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_dhcp_servers=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_SERVER_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_dhcp_servers")
+    servers = fn()
+    assert len(servers) == 1
+    assert servers[0].id == "lan"
+    assert servers[0].range_from == "198.51.100.10"
+    assert servers[0].range_to == "198.51.100.11"
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():
