@@ -65,6 +65,10 @@ def test_auditor_profile_has_system_restapi_settings_read():
     assert Capability.SYSTEM_RESTAPI_SETTINGS_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_system_ha_sync_read():
+    assert Capability.SYSTEM_HA_SYNC_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 

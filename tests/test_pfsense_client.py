@@ -2421,3 +2421,92 @@ def test_get_system_restapi_settings_shape_error_does_not_leak_raw_field_values(
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_restapi_settings()
     assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_HASYNC_FIXTURE = Path(__file__).parent / "fixtures" / "system_hasync_response.json"
+SYSTEM_HASYNC_IDENTIFYING_FIELDS = ("username", "pfhostid")
+
+
+def _system_hasync_body() -> dict:
+    return json.loads(SYSTEM_HASYNC_FIXTURE.read_text())
+
+
+def _system_hasync_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_hasync_body()
+    transport.register("GET", "/api/v2/system/hasync", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_hasync_omits_identifying_fields_by_default():
+    client, _ = _system_hasync_client()
+    hasync = client.get_system_hasync()
+    for field in SYSTEM_HASYNC_IDENTIFYING_FIELDS:
+        assert getattr(hasync, field) is None
+
+
+def test_get_system_hasync_object_metadata_is_visible_by_default():
+    client, _ = _system_hasync_client()
+    raw = _system_hasync_body()["data"]
+    hasync = client.get_system_hasync()
+    assert hasync.pfsyncenabled == raw["pfsyncenabled"]
+    assert hasync.pfsyncinterface == raw["pfsyncinterface"]
+    assert hasync.pfsyncpeerip == raw["pfsyncpeerip"]
+    assert hasync.synchronizerules == raw["synchronizerules"]
+
+
+def test_get_system_hasync_includes_identifying_fields_when_requested():
+    client, _ = _system_hasync_client()
+    raw = _system_hasync_body()["data"]
+    hasync = client.get_system_hasync(include_identifying_metadata=True)
+    assert hasync.username == raw["username"]
+    assert hasync.pfhostid == raw["pfhostid"]
+
+
+def test_get_system_hasync_only_calls_hasync_endpoint():
+    client, transport = _system_hasync_client()
+    client.get_system_hasync()
+    assert transport.calls == [("GET", "/api/v2/system/hasync")]
+
+
+def test_get_system_hasync_missing_data_key_raises_shape_error():
+    body = _system_hasync_body()
+    del body["data"]
+    client, _ = _system_hasync_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hasync()
+
+
+def test_get_system_hasync_data_wrong_type_raises_shape_error():
+    body = _system_hasync_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_hasync_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hasync()
+
+
+def test_get_system_hasync_required_field_missing_raises_shape_error():
+    body = _system_hasync_body()
+    del body["data"]["pfsyncenabled"]
+    client, _ = _system_hasync_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hasync()
+
+
+def test_get_system_hasync_invalid_field_type_raises_shape_error():
+    body = _system_hasync_body()
+    body["data"]["pfsyncenabled"] = "not-a-bool"
+    client, _ = _system_hasync_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hasync()
+
+
+def test_get_system_hasync_shape_error_does_not_leak_raw_field_values():
+    body = _system_hasync_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["pfsyncenabled"] = sentinel
+    client, _ = _system_hasync_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_hasync()
+    assert sentinel not in str(excinfo.value)

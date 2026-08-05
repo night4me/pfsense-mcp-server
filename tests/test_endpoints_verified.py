@@ -286,6 +286,18 @@ def test_system_restapi_settings_path_suffix_is_correct():
     assert Endpoints.SYSTEM_RESTAPI_SETTINGS.path_suffix == "/system/restapi/settings"
 
 
+def test_system_hasync_is_declared_verified():
+    assert Endpoints.SYSTEM_HASYNC.verified is True
+
+
+def test_system_hasync_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_HASYNC.path_suffix.startswith("/api")
+
+
+def test_system_hasync_path_suffix_is_correct():
+    assert Endpoints.SYSTEM_HASYNC.path_suffix == "/system/hasync"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

@@ -24,6 +24,7 @@ from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
+from .models.system_ha_sync import SystemHaSync
 from .models.system_rest_api_settings import SystemRestApiSettings
 from .models.system_version import SystemVersion
 from .rest_api_client import RestApiClient
@@ -609,3 +610,16 @@ class PfSenseClient:
             raise PfSenseResponseShapeError(
                 "pfSense /system/restapi/settings response failed schema validation."
             ) from None
+
+    def get_system_hasync(self, *, include_identifying_metadata: bool = False) -> SystemHaSync:
+        raw = self._rest.get(Endpoints.SYSTEM_HASYNC)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /system/hasync response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /system/hasync response 'data' was not an object.")
+        try:
+            return SystemHaSync.from_api(data, include_identifying_metadata=include_identifying_metadata)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError("pfSense /system/hasync response failed schema validation.") from None

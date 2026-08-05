@@ -25,6 +25,7 @@ from .read import (
     interfaces,
     service_status,
     system_certificates,
+    system_hasync,
     system_restapi_settings,
     system_status,
     system_version,
@@ -77,6 +78,8 @@ class ToolRegistry:
             self._register_status_carp_read()
         if Capability.SYSTEM_RESTAPI_SETTINGS_READ in self._capabilities:
             self._register_system_restapi_settings_read()
+        if Capability.SYSTEM_HA_SYNC_READ in self._capabilities:
+            self._register_system_ha_sync_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -188,4 +191,9 @@ class ToolRegistry:
     def _register_system_restapi_settings_read(self) -> None:
         fn = system_restapi_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_system_restapi_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_system_ha_sync_read(self) -> None:
+        fn = system_hasync.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_hasync", self._identity)(fn)
         self._mcp.tool()(wrapped)

@@ -296,6 +296,22 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         identifying_fields=frozenset({"ha_sync_username"}),
         default_max_items=1,
     ),
+    "SYSTEM_HASYNC": CapturePolicy(
+        endpoint_attr="SYSTEM_HASYNC",
+        result_shape="object",
+        # username pairs with the (never returned by pfSense's own
+        # API) password field for HA-peer sync authentication -- a
+        # genuine auth credential, not a general account username.
+        # pfhostid is a persistent per-installation host identifier,
+        # same class as netgate_id/serial. Both are identifying at the
+        # model layer. pfsyncpeerip/synchronizetoip are ordinary peer
+        # network addresses (core purpose of an HA-sync status
+        # capability) and stay visible, auto-sanitized generically in
+        # the fixture regardless of identifying_fields. Every
+        # synchronize* field is a plain config toggle.
+        identifying_fields=frozenset({"username", "pfhostid"}),
+        default_max_items=1,
+    ),
 }
 
 

@@ -461,6 +461,40 @@ _SYSTEM_RESTAPI_SETTINGS_BODY = {
 }
 
 
+_SYSTEM_HASYNC_BODY = {
+    "data": {
+        "adminsync": False,
+        "pfhostid": None,
+        "pfsyncenabled": False,
+        "pfsyncinterface": "lo0",
+        "pfsyncpeerip": None,
+        "synchronizealiases": False,
+        "synchronizeauthservers": False,
+        "synchronizecaptiveportal": False,
+        "synchronizecerts": False,
+        "synchronizedhcpd": False,
+        "synchronizedhcpdv6": False,
+        "synchronizedhcrelay": False,
+        "synchronizedhcrelay6": False,
+        "synchronizednsforwarder": False,
+        "synchronizeipsec": False,
+        "synchronizekea6": False,
+        "synchronizenat": False,
+        "synchronizeopenvpn": False,
+        "synchronizerules": False,
+        "synchronizeschedules": False,
+        "synchronizestaticroutes": False,
+        "synchronizetoip": None,
+        "synchronizetrafficshaper": False,
+        "synchronizetrafficshaperlimiter": False,
+        "synchronizeusers": False,
+        "synchronizevirtualip": False,
+        "synchronizewol": False,
+        "username": None,
+    }
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -481,6 +515,7 @@ def _client(
     with_interface_bridges: bool = False,
     with_carp_status: bool = False,
     with_system_restapi_settings: bool = False,
+    with_system_hasync: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -574,6 +609,8 @@ def _client(
             status_code=200,
             text=json.dumps(_SYSTEM_RESTAPI_SETTINGS_BODY),
         )
+    if with_system_hasync:
+        transport.register("GET", "/api/v2/system/hasync", status_code=200, text=json.dumps(_SYSTEM_HASYNC_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -1213,6 +1250,34 @@ def test_registered_system_restapi_settings_tool_invokes_client():
     settings = fn()
     assert settings.enabled is True
     assert settings.ha_sync_username is None
+
+
+def test_registry_registers_system_hasync_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_system_hasync=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_HA_SYNC_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_system_hasync"
+
+
+def test_registry_does_not_register_system_hasync_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_system_hasync" not in names
+
+
+def test_registered_system_hasync_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_system_hasync=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_HA_SYNC_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_system_hasync")
+    hasync = fn()
+    assert hasync.pfsyncinterface == "lo0"
+    assert hasync.username is None
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

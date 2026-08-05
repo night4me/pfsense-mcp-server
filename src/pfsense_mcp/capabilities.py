@@ -25,6 +25,7 @@ class Capability(Enum):
     INTERFACE_VIRTUAL_READ = auto()
     STATUS_CARP_READ = auto()
     SYSTEM_RESTAPI_SETTINGS_READ = auto()
+    SYSTEM_HA_SYNC_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -51,5 +52,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.INTERFACE_VIRTUAL_READ,
         Capability.STATUS_CARP_READ,
         Capability.SYSTEM_RESTAPI_SETTINGS_READ,
+        Capability.SYSTEM_HA_SYNC_READ,
     }
 )
