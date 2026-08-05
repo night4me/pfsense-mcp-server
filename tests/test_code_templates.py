@@ -104,6 +104,30 @@ def test_render_model_file_without_identifying_fields_has_no_metadata_param():
     assert "_WIDGET_IDENTIFYING_FIELDS" not in src
 
 
+def test_render_model_file_escapes_reserved_keyword_field_name():
+    # Regression test: pfSense's /interfaces endpoint literally names a
+    # field "if" (physical interface name) — using it verbatim as a
+    # Python class attribute / constructor kwarg name is a SyntaxError.
+    # A trailing underscore (the standard Python convention, cf.
+    # "type_", "class_") must be used for the Python identifier while
+    # the raw dict subscript keeps reading via the original API name.
+    fields = [
+        GeneratedField(name="if", python_type="str", nullable=False),
+        GeneratedField(name="descr", python_type="str", nullable=False),
+    ]
+    src = render_model_file("Widget", fields, (), "object")
+    ast.parse(src)
+    assert "if_: str" in src
+    assert 'if_=data["if"]' in src
+    assert "    if:" not in src
+
+
+def test_generated_field_identifier_property():
+    assert GeneratedField(name="if", python_type="str", nullable=False).identifier == "if_"
+    assert GeneratedField(name="class", python_type="str", nullable=False).identifier == "class_"
+    assert GeneratedField(name="descr", python_type="str", nullable=False).identifier == "descr"
+
+
 def test_render_tool_file_list_shape_parses():
     src = render_tool_file(
         tool_module_name="widgets",

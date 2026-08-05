@@ -214,13 +214,14 @@ def cross_check_fields(
             raise ScaffoldRefusal(
                 "fixture-shape-mismatch", "manifest declares 'list' but fixture 'data' is empty or not a list"
             )
-        sample = data[0]
+        samples = data
     else:
         if not isinstance(data, dict):
             raise ScaffoldRefusal(
                 "fixture-shape-mismatch", "manifest declares 'object' but fixture 'data' is not an object"
             )
-        sample = data
+        samples = [data]
+    sample = samples[0]
     if not isinstance(sample, dict):
         raise ScaffoldRefusal("fixture-shape-mismatch", "fixture sample item is not an object")
 
@@ -232,7 +233,15 @@ def cross_check_fields(
         if not _value_matches_schema_type(value, schema_field.get("type")):
             raise ScaffoldRefusal("field-type-mismatch", f"field name: {name}")
         py_type = openapi_type_to_python(schema_field.get("type"))
-        nullable = bool(schema_field.get("nullable")) or value is None
+        # Nullability must reflect every sampled item, not just the
+        # first: a field can be null in some rows and populated in
+        # others even when the discovery schema declares it
+        # non-nullable (observed on pfSense's own /interfaces
+        # endpoint — adv_dhcp_pt_values/dhcprejectfrom are populated
+        # for a DHCP-mode interface but null for a static one).
+        nullable = bool(schema_field.get("nullable")) or any(
+            not isinstance(item, dict) or item.get(name) is None for item in samples
+        )
         fields.append(GeneratedField(name=name, python_type=py_type, nullable=nullable))
 
     return sorted(fields, key=lambda f: f.name)

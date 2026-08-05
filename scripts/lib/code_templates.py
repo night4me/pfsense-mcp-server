@@ -14,6 +14,7 @@ never guesses, never silently picks the "closest" match.
 
 from __future__ import annotations
 
+import keyword
 import re
 from dataclasses import dataclass
 
@@ -100,6 +101,19 @@ class GeneratedField:
     def annotation(self) -> str:
         return f"{self.python_type} | None" if self.nullable else self.python_type
 
+    @property
+    def identifier(self) -> str:
+        """The Python-safe attribute/kwarg name for this field. Equal
+        to `name` unless `name` collides with a reserved keyword (e.g.
+        pfSense's own /interfaces endpoint literally names a field
+        "if" for the physical interface name) — in that case a
+        trailing underscore is appended, the standard Python
+        convention (cf. "type_", "class_"). `name` itself is always
+        used unchanged as the dict key when reading from the raw API
+        response, since that is a string subscript, not an
+        identifier."""
+        return f"{self.name}_" if keyword.iskeyword(self.name) else self.name
+
 
 # ------------------------------------------------------------------
 # Model file
@@ -145,9 +159,9 @@ def render_model_file(
     lines.append("")
     lines.append(f"class {model_class_name}(BaseModel):")
     for f in non_identifying:
-        lines.append(f"    {f.name}: {f.annotation}")
+        lines.append(f"    {f.identifier}: {f.annotation}")
     for f in identifying:
-        lines.append(f"    {f.name}: {f.python_type} | None = Field(")
+        lines.append(f"    {f.identifier}: {f.python_type} | None = Field(")
         lines.append("        default=None,")
         lines.append(
             '        description="Identifying device metadata. Populated only when include_identifying_metadata=True.",'
@@ -164,7 +178,7 @@ def render_model_file(
         lines.append(f"        identifying = {{field: data[field] for field in {tuple_name}}}")
         lines.append("        return cls(")
         for f in non_identifying:
-            lines.append(f'            {f.name}=data["{f.name}"],')
+            lines.append(f'            {f.identifier}=data["{f.name}"],')
         lines.append(
             "            **{field: (value if include_identifying_metadata else None) "
             "for field, value in identifying.items()},"
@@ -174,7 +188,7 @@ def render_model_file(
         lines.append(f'    def from_api(cls, data: dict[str, Any]) -> "{model_class_name}":')
         lines.append("        return cls(")
         for f in non_identifying:
-            lines.append(f'            {f.name}=data["{f.name}"],')
+            lines.append(f'            {f.identifier}=data["{f.name}"],')
         lines.append("        )")
 
     return "\n".join(lines) + "\n"

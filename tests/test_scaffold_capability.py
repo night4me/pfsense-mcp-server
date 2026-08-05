@@ -686,3 +686,36 @@ def test_diff_reproduces_proposed_full_file_exactly(tmp_path, monkeypatch):
 
     reconstructed = _apply_unified_diff(original, diff_text)
     assert reconstructed == proposed_full
+
+
+def test_cross_check_fields_nullable_reflects_every_sampled_item():
+    # Regression test: pfSense's own /interfaces endpoint declares
+    # adv_dhcp_pt_values/dhcprejectfrom as non-nullable in its OpenAPI
+    # schema, yet a static-mode interface has them null while a
+    # DHCP-mode interface has them populated. Checking only the first
+    # fixture item (as this function used to) produced a model field
+    # typed as required-non-nullable that then failed real validation
+    # for every other row.
+    discovery_endpoint = {
+        "response_fields": [
+            {"name": "id", "type": "string", "nullable": False},
+            {"name": "note", "type": "string", "nullable": False},
+        ]
+    }
+    fixture_data = {
+        "data": [
+            {"id": "wan", "note": "populated"},
+            {"id": "lan", "note": None},
+        ]
+    }
+    fields = sc.cross_check_fields(discovery_endpoint, fixture_data, "list")
+    by_name = {f.name: f for f in fields}
+    assert by_name["id"].nullable is False
+    assert by_name["note"].nullable is True
+
+
+def test_cross_check_fields_all_non_null_stays_non_nullable():
+    discovery_endpoint = {"response_fields": [{"name": "id", "type": "string", "nullable": False}]}
+    fixture_data = {"data": [{"id": "wan"}, {"id": "lan"}]}
+    fields = sc.cross_check_fields(discovery_endpoint, fixture_data, "list")
+    assert fields[0].nullable is False
