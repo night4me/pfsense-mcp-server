@@ -206,6 +206,43 @@ def test_pem_marker_causes_refusal():
     assert "MIIBogSecretMaterial" not in str(excinfo.value)
 
 
+def test_rsa_private_key_pem_marker_causes_refusal():
+    policy = _policy()
+    with pytest.raises(SanitizationRefusal) as excinfo:
+        Sanitizer(policy).run({"prv": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogSecretMaterial=="})
+    assert excinfo.value.category == "pem-key-material"
+
+
+def test_ec_private_key_pem_marker_causes_refusal():
+    policy = _policy()
+    with pytest.raises(SanitizationRefusal) as excinfo:
+        Sanitizer(policy).run({"prv": "-----BEGIN EC PRIVATE KEY-----\nMIIBogSecretMaterial=="})
+    assert excinfo.value.category == "pem-key-material"
+
+
+def test_openssh_private_key_pem_marker_causes_refusal():
+    policy = _policy()
+    with pytest.raises(SanitizationRefusal) as excinfo:
+        Sanitizer(policy).run({"prv": "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXk="})
+    assert excinfo.value.category == "pem-key-material"
+
+
+def test_public_certificate_pem_does_not_cause_refusal():
+    # Regression test: a bare "-----BEGIN " marker used to match every
+    # PEM block type, including plain public certificates — which are
+    # not secret and must remain capturable. Only private-key-shaped
+    # PEM content should hard-refuse.
+    policy = _policy()
+    result = Sanitizer(policy).run({"crt": "-----BEGIN CERTIFICATE-----\nMIIEezCCA2OgAwIBAgIU=="})
+    assert result.sanitized["crt"] == "-----BEGIN CERTIFICATE-----\nMIIEezCCA2OgAwIBAgIU=="
+
+
+def test_certificate_request_pem_does_not_cause_refusal():
+    policy = _policy()
+    result = Sanitizer(policy).run({"csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIICWjCCAUICAQA=="})
+    assert result.sanitized["csr"] == "-----BEGIN CERTIFICATE REQUEST-----\nMIICWjCCAUICAQA=="
+
+
 def test_credential_path_shaped_value_causes_refusal():
     # Concatenated: this file is not an approved marker location.
     credential_path = "/home/user" + "/private" + "/pfsense/api-mcp-admin" + ".key"

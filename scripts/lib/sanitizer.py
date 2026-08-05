@@ -87,7 +87,12 @@ def _is_suspicious_by_name_and_value(field_name: str, value: str) -> bool:
     return False
 
 
-_PEM_MARKERS = ("-----BEGIN ", "PRIVATE KEY", "BEGIN RSA", "BEGIN OPENSSH", "BEGIN EC PRIVATE KEY")
+# Deliberately specific to private-key material only. A bare
+# "-----BEGIN " marker would also match plain public certificates,
+# CSRs, and CRLs (e.g. "-----BEGIN CERTIFICATE-----"), which are not
+# secret and must remain capturable — only PEM blocks that are
+# themselves private-key-shaped are hard-refused here.
+_PEM_MARKERS = ("PRIVATE KEY", "BEGIN RSA", "BEGIN OPENSSH", "BEGIN EC PRIVATE KEY")
 _CREDENTIAL_PATH_RE = re.compile(r"\.(key|pem|p12|pfx)\b", re.IGNORECASE)
 _HIGH_ENTROPY_SHAPE_RE = re.compile(r"^[A-Za-z0-9+/=_-]{20,}$")
 _ENTROPY_THRESHOLD_BITS_PER_CHAR = 3.5
