@@ -26,9 +26,7 @@ def test_request_sends_api_key_header_and_returns_response():
 
 @respx.mock
 def test_connect_error_raises_transport_connection_error():
-    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(
-        side_effect=httpx.ConnectError("boom")
-    )
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=httpx.ConnectError("boom"))
     transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
     try:
         with pytest.raises(TransportConnectionError):
@@ -39,9 +37,7 @@ def test_connect_error_raises_transport_connection_error():
 
 @respx.mock
 def test_timeout_raises_transport_timeout_error():
-    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(
-        side_effect=httpx.TimeoutException("boom")
-    )
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=httpx.TimeoutException("boom"))
     transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
     try:
         with pytest.raises(TransportTimeoutError):

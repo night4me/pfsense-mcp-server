@@ -15,4 +15,5 @@ def build(client: PfSenseClient) -> Callable[[], FirewallApplyStatus]:
         have pending changes. Read-only. Contains no identifying
         metadata."""
         return client.get_firewall_apply_status()
+
     return pfsense_get_firewall_apply_status

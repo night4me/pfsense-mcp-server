@@ -18,4 +18,5 @@ def build(client: PfSenseClient) -> Callable[..., list[GatewayConfig]]:
         IP address and monitor IP override in the response. Defaults
         to False."""
         return client.get_gateways(include_identifying_metadata=include_identifying_metadata)
+
     return pfsense_get_gateways

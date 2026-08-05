@@ -18,4 +18,5 @@ def build(client: PfSenseClient) -> Callable[..., list[GatewayStatus]]:
         source IP and monitored target IP in the response. Defaults
         to False."""
         return client.get_gateway_status(include_identifying_metadata=include_identifying_metadata)
+
     return pfsense_get_gateway_status

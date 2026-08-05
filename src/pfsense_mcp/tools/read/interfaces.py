@@ -19,4 +19,5 @@ def build(client: PfSenseClient) -> Callable[..., list[InterfaceStatus]]:
         IPv4/IPv6 addresses, subnets, and gateways in the response.
         Defaults to False."""
         return client.get_interfaces(include_identifying_metadata=include_identifying_metadata)
+
     return pfsense_get_interfaces

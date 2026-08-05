@@ -4,7 +4,7 @@ import pytest
 
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.endpoints import Endpoints
-from pfsense_mcp.errors import PfSenseAPIError, PfSenseAuthError, PfSenseConnectionError, UnsupportedOperationError
+from pfsense_mcp.errors import PfSenseAPIError, PfSenseAuthError, UnsupportedOperationError
 from pfsense_mcp.rest_api_client import RestApiClient
 from pfsense_mcp.transport.mock import MockTransport
 
@@ -28,7 +28,9 @@ def test_get_success_returns_parsed_json():
 def test_get_401_raises_auth_error():
     transport = MockTransport()
     transport.register(
-        "GET", "/api/v2/status/system", status_code=401,
+        "GET",
+        "/api/v2/status/system",
+        status_code=401,
         text=json.dumps({"response_id": "AUTH_AUTHENTICATION_FAILED"}),
     )
     client = _client(transport)

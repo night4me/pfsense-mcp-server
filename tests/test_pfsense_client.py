@@ -19,7 +19,14 @@ FIREWALL_STATES_SIZE_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_st
 FIREWALL_APPLY_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_apply_response.json"
 
 INTERFACES_IDENTIFYING_FIELDS = (
-    "macaddr", "ipaddr", "subnet", "linklocal", "ipaddrv6", "subnetv6", "gateway", "gatewayv6",
+    "macaddr",
+    "ipaddr",
+    "subnet",
+    "linklocal",
+    "ipaddrv6",
+    "subnetv6",
+    "gateway",
+    "gatewayv6",
 )
 
 GATEWAYS_IDENTIFYING_FIELDS = ("gateway", "monitor")

@@ -96,9 +96,7 @@ def _fetch_schema_live(config: PfSenseConfig, api_key: str) -> dict[str, Any]:
     transport = HttpTransport(config.base_url, api_key, verify)
     try:
         rest_client = RestApiClient(transport, identity=config.identity, api_version=config.api_version)
-        schema_endpoint = EndpointInfo(
-            path_suffix=_SCHEMA_PATH_SUFFIX, verified=True, min_api_version=ApiVersion.V2
-        )
+        schema_endpoint = EndpointInfo(path_suffix=_SCHEMA_PATH_SUFFIX, verified=True, min_api_version=ApiVersion.V2)
         # Verified live: GET /api/v2/schema/openapi returns the raw OpenAPI
         # document directly (no {code,status,data} envelope) — unlike every
         # domain/resource endpoint in pfsense_client.py, there is no "data"
@@ -118,7 +116,9 @@ def resolve_ref(schema_doc: dict[str, Any], ref: str) -> dict[str, Any]:
     return node
 
 
-def _resolve_node(schema_doc: dict[str, Any], node: dict[str, Any], _seen: frozenset[str] = frozenset()) -> dict[str, Any]:
+def _resolve_node(
+    schema_doc: dict[str, Any], node: dict[str, Any], _seen: frozenset[str] = frozenset()
+) -> dict[str, Any]:
     """Recursively resolve $ref and merge allOf, following references of
     references to arbitrary depth. _seen guards against reference cycles."""
     if "$ref" in node:
@@ -159,7 +159,9 @@ def _type_of(node: dict[str, Any]) -> str | None:
     return None
 
 
-def _describe_property(schema_doc: dict[str, Any], name: str, prop: dict[str, Any], required_names: set[str]) -> FieldInfo:
+def _describe_property(
+    schema_doc: dict[str, Any], name: str, prop: dict[str, Any], required_names: set[str]
+) -> FieldInfo:
     resolved = _resolve_node(schema_doc, prop)
 
     field_type = _type_of(resolved)
@@ -255,7 +257,9 @@ def _matches(path: str, operation: dict[str, Any], query: str | None, area: str 
     return True
 
 
-def find_endpoints(schema_doc: dict[str, Any], *, query: str | None = None, area: str | None = None) -> list[EndpointMatch]:
+def find_endpoints(
+    schema_doc: dict[str, Any], *, query: str | None = None, area: str | None = None
+) -> list[EndpointMatch]:
     """The single query surface of this module: given a schema
     document and an optional search term/area, return every matching
     GET endpoint, fully described, sorted deterministically by path

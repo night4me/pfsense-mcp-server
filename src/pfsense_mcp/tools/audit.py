@@ -27,11 +27,16 @@ def audit_logged(tool_name: str, identity: str) -> Callable[[F], F]:
                 duration_ms = (time.monotonic() - start) * 1000
                 logger.warning(
                     "tool_failed tool=%s identity=%s duration_ms=%.1f error=%s",
-                    tool_name, identity, duration_ms, type(exc).__name__,
+                    tool_name,
+                    identity,
+                    duration_ms,
+                    type(exc).__name__,
                 )
                 raise
             duration_ms = (time.monotonic() - start) * 1000
             logger.info("tool_succeeded tool=%s identity=%s duration_ms=%.1f", tool_name, identity, duration_ms)
             return result
+
         return wrapper  # type: ignore[return-value]
+
     return decorator

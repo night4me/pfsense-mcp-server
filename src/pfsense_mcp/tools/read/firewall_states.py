@@ -24,4 +24,5 @@ def build(client: PfSenseClient) -> Callable[..., list[FirewallState]]:
         100). A firewall can hold millions of states; this must
         stay bounded."""
         return client.get_firewall_states(include_identifying_metadata=include_identifying_metadata, limit=limit)
+
     return pfsense_get_firewall_states

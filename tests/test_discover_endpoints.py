@@ -10,8 +10,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 import discover_endpoints
 from lib.openapi import (
     _resolve_node,

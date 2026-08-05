@@ -16,4 +16,5 @@ def build(client: PfSenseClient) -> Callable[..., SystemStatus]:
         include_identifying_metadata: if True, includes the device's
         Netgate ID in the response. Defaults to False."""
         return client.get_system_status(include_identifying_metadata=include_identifying_metadata)
+
     return pfsense_get_system_status

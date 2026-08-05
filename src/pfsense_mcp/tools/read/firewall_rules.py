@@ -18,4 +18,5 @@ def build(client: PfSenseClient) -> Callable[..., list[FirewallRule]]:
         source/destination address and the creating/updating admin's
         username+IP in the response. Defaults to False."""
         return client.get_firewall_rules(include_identifying_metadata=include_identifying_metadata)
+
     return pfsense_get_firewall_rules

@@ -66,9 +66,7 @@ class PfSenseClient:
                     "pfSense routing/gateways response contained a non-object entry in 'data'."
                 )
             try:
-                gateways.append(
-                    GatewayConfig.from_api(item, include_identifying_metadata=include_identifying_metadata)
-                )
+                gateways.append(GatewayConfig.from_api(item, include_identifying_metadata=include_identifying_metadata))
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense routing/gateways response contained an entry that failed schema validation."
@@ -91,9 +89,7 @@ class PfSenseClient:
                     "pfSense status/gateways response contained a non-object entry in 'data'."
                 )
             try:
-                statuses.append(
-                    GatewayStatus.from_api(item, include_identifying_metadata=include_identifying_metadata)
-                )
+                statuses.append(GatewayStatus.from_api(item, include_identifying_metadata=include_identifying_metadata))
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense status/gateways response contained an entry that failed schema validation."
@@ -128,8 +124,7 @@ class PfSenseClient:
     ) -> list[FirewallState]:
         if not (FIREWALL_STATES_MIN_LIMIT <= limit <= FIREWALL_STATES_MAX_LIMIT):
             raise PfSenseRequestValidationError(
-                f"limit must be between {FIREWALL_STATES_MIN_LIMIT} and {FIREWALL_STATES_MAX_LIMIT} "
-                f"(got {limit})."
+                f"limit must be between {FIREWALL_STATES_MIN_LIMIT} and {FIREWALL_STATES_MAX_LIMIT} (got {limit})."
             )
 
         raw = self._rest.get(Endpoints.FIREWALL_STATES, params={"limit": limit})
@@ -165,9 +160,7 @@ class PfSenseClient:
         try:
             return FirewallStatesSize.from_api(data)
         except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense firewall/states/size response failed schema validation."
-            ) from None
+            raise PfSenseResponseShapeError("pfSense firewall/states/size response failed schema validation.") from None
 
     def get_firewall_apply_status(self) -> FirewallApplyStatus:
         raw = self._rest.get(Endpoints.FIREWALL_APPLY_STATUS)
@@ -180,6 +173,4 @@ class PfSenseClient:
         try:
             return FirewallApplyStatus.from_api(data)
         except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense firewall/apply response failed schema validation."
-            ) from None
+            raise PfSenseResponseShapeError("pfSense firewall/apply response failed schema validation.") from None

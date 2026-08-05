@@ -61,8 +61,12 @@ class Application:
         report = build_diagnostics_report(config, type(self._transport).__name__)
         logger.info(
             "startup_ok identity=%s profile=%s capabilities=%s tls_mode=%s api_version=%s transport=%s",
-            report.identity, report.profile_name, ",".join(report.capabilities),
-            report.tls_mode, report.api_version, report.transport_type,
+            report.identity,
+            report.profile_name,
+            ",".join(report.capabilities),
+            report.tls_mode,
+            report.api_version,
+            report.transport_type,
         )
 
     def shutdown(self) -> None:

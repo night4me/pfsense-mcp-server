@@ -16,56 +16,162 @@ class FakeMCP:
         def decorator(fn):
             self.registered.append(fn)
             return fn
+
         return decorator
 
 
-_INTERFACES_BODY = {"data": [{
-    "id": 0, "name": "wan", "descr": "WAN", "hwif": "igb0", "macaddr": "02:00:00:aa:bb:cc",
-    "mtu": "1500", "enable": True, "status": "up", "ipaddr": "198.51.100.10",
-    "subnet": "255.255.255.0", "linklocal": None, "ipaddrv6": None, "subnetv6": None,
-    "inerrs": 0, "outerrs": 0, "collisions": 0, "inbytes": 1000, "inbytespass": 1000,
-    "outbytes": 2000, "outbytespass": 2000, "inpkts": 10, "inpktspass": 10, "outpkts": 20,
-    "outpktspass": 20, "dhcplink": "up", "media": "1000baseT <full-duplex>",
-    "gateway": "198.51.100.1", "gatewayv6": None,
-}]}
+_INTERFACES_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "name": "wan",
+            "descr": "WAN",
+            "hwif": "igb0",
+            "macaddr": "02:00:00:aa:bb:cc",
+            "mtu": "1500",
+            "enable": True,
+            "status": "up",
+            "ipaddr": "198.51.100.10",
+            "subnet": "255.255.255.0",
+            "linklocal": None,
+            "ipaddrv6": None,
+            "subnetv6": None,
+            "inerrs": 0,
+            "outerrs": 0,
+            "collisions": 0,
+            "inbytes": 1000,
+            "inbytespass": 1000,
+            "outbytes": 2000,
+            "outbytespass": 2000,
+            "inpkts": 10,
+            "inpktspass": 10,
+            "outpkts": 20,
+            "outpktspass": 20,
+            "dhcplink": "up",
+            "media": "1000baseT <full-duplex>",
+            "gateway": "198.51.100.1",
+            "gatewayv6": None,
+        }
+    ]
+}
 
-_GATEWAYS_BODY = {"data": [{
-    "id": 0, "name": "WAN_DHCP", "descr": "Interface WAN Gateway", "disabled": False,
-    "ipprotocol": "inet", "interface": "wan", "gateway": "198.51.100.1",
-    "monitor_disable": False, "monitor": "198.51.100.1", "action_disable": False,
-    "force_down": False, "dpinger_dont_add_static_route": False, "gw_down_kill_states": "",
-    "nonlocalgateway": False, "weight": 1, "data_payload": 1, "latencylow": 200,
-    "latencyhigh": 500, "losslow": 10, "losshigh": 20, "interval": 500, "loss_interval": 2000,
-    "time_period": 60000, "alert_interval": 1000,
-}]}
+_GATEWAYS_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "name": "WAN_DHCP",
+            "descr": "Interface WAN Gateway",
+            "disabled": False,
+            "ipprotocol": "inet",
+            "interface": "wan",
+            "gateway": "198.51.100.1",
+            "monitor_disable": False,
+            "monitor": "198.51.100.1",
+            "action_disable": False,
+            "force_down": False,
+            "dpinger_dont_add_static_route": False,
+            "gw_down_kill_states": "",
+            "nonlocalgateway": False,
+            "weight": 1,
+            "data_payload": 1,
+            "latencylow": 200,
+            "latencyhigh": 500,
+            "losslow": 10,
+            "losshigh": 20,
+            "interval": 500,
+            "loss_interval": 2000,
+            "time_period": 60000,
+            "alert_interval": 1000,
+        }
+    ]
+}
 
-_GATEWAY_STATUS_BODY = {"data": [{
-    "id": 0, "name": "WAN_DHCP", "srcip": "198.51.100.10", "monitorip": "198.51.100.1",
-    "delay": 12.345, "stddev": 1.2, "loss": 0.0, "status": "none", "substatus": "none",
-}]}
+_GATEWAY_STATUS_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "name": "WAN_DHCP",
+            "srcip": "198.51.100.10",
+            "monitorip": "198.51.100.1",
+            "delay": 12.345,
+            "stddev": 1.2,
+            "loss": 0.0,
+            "status": "none",
+            "substatus": "none",
+        }
+    ]
+}
 
-_FIREWALL_RULES_BODY = {"data": [{
-    "id": 0, "type": "pass", "interface": ["wan"], "ipprotocol": "inet", "protocol": "tcp",
-    "icmptype": None, "source": "198.51.100.10", "source_port": None, "destination": "203.0.113.5",
-    "destination_port": "443", "descr": "Allow HTTPS", "disabled": False, "log": True, "dscp": None,
-    "tag": "", "statetype": "keep state", "tcp_flags_any": False, "tcp_flags_out_of": None,
-    "tcp_flags_set": None, "gateway": None, "sched": None, "dnpipe": None, "pdnpipe": None,
-    "defaultqueue": None, "ackqueue": None, "floating": False, "quick": None, "direction": None,
-    "tracker": 1700000000, "associated_rule_id": None, "created_time": 1700000000,
-    "created_by": "admin@198.51.100.20", "updated_time": 1700000100, "updated_by": "admin@198.51.100.20",
-}]}
+_FIREWALL_RULES_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "type": "pass",
+            "interface": ["wan"],
+            "ipprotocol": "inet",
+            "protocol": "tcp",
+            "icmptype": None,
+            "source": "198.51.100.10",
+            "source_port": None,
+            "destination": "203.0.113.5",
+            "destination_port": "443",
+            "descr": "Allow HTTPS",
+            "disabled": False,
+            "log": True,
+            "dscp": None,
+            "tag": "",
+            "statetype": "keep state",
+            "tcp_flags_any": False,
+            "tcp_flags_out_of": None,
+            "tcp_flags_set": None,
+            "gateway": None,
+            "sched": None,
+            "dnpipe": None,
+            "pdnpipe": None,
+            "defaultqueue": None,
+            "ackqueue": None,
+            "floating": False,
+            "quick": None,
+            "direction": None,
+            "tracker": 1700000000,
+            "associated_rule_id": None,
+            "created_time": 1700000000,
+            "created_by": "admin@198.51.100.20",
+            "updated_time": 1700000100,
+            "updated_by": "admin@198.51.100.20",
+        }
+    ]
+}
 
-_FIREWALL_STATES_BODY = {"data": [{
-    "id": 0, "interface": "wan", "protocol": "tcp", "direction": "out",
-    "source": "198.51.100.10:51234", "destination": "203.0.113.5:443",
-    "state": "ESTABLISHED:ESTABLISHED", "age": "00:05:12", "expires_in": "23:59:48",
-    "packets_total": 120, "packets_in": 60, "packets_out": 60,
-    "bytes_total": 45000, "bytes_in": 20000, "bytes_out": 25000,
-}]}
+_FIREWALL_STATES_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "interface": "wan",
+            "protocol": "tcp",
+            "direction": "out",
+            "source": "198.51.100.10:51234",
+            "destination": "203.0.113.5:443",
+            "state": "ESTABLISHED:ESTABLISHED",
+            "age": "00:05:12",
+            "expires_in": "23:59:48",
+            "packets_total": 120,
+            "packets_in": 60,
+            "packets_out": 60,
+            "bytes_total": 45000,
+            "bytes_in": 20000,
+            "bytes_out": 25000,
+        }
+    ]
+}
 
-_FIREWALL_STATES_SIZE_BODY = {"data": {
-    "maximumstates": 500000, "defaultmaximumstates": 500000, "currentstates": 42,
-}}
+_FIREWALL_STATES_SIZE_BODY = {
+    "data": {
+        "maximumstates": 500000,
+        "defaultmaximumstates": 500000,
+        "currentstates": 42,
+    }
+}
 
 _FIREWALL_APPLY_BODY = {"data": {"applied": True, "pending_subsystems": []}}
 
@@ -74,31 +180,33 @@ def _client(
     *, with_interfaces: bool = False, with_gateways: bool = False, with_firewall: bool = False
 ) -> PfSenseClient:
     transport = MockTransport()
-    body = {"data": {
-        "platform": "Netgate pfSense Plus", "uptime": "1 Hour", "cpu_model": "x",
-        "cpu_count": 1, "cpu_usage": 1.0, "mem_usage": 1, "swap_usage": 0, "disk_usage": 1,
-    }}
+    body = {
+        "data": {
+            "platform": "Netgate pfSense Plus",
+            "uptime": "1 Hour",
+            "cpu_model": "x",
+            "cpu_count": 1,
+            "cpu_usage": 1.0,
+            "mem_usage": 1,
+            "swap_usage": 0,
+            "disk_usage": 1,
+        }
+    }
     transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps(body))
     if with_interfaces:
         transport.register("GET", "/api/v2/status/interfaces", status_code=200, text=json.dumps(_INTERFACES_BODY))
     if with_gateways:
         transport.register("GET", "/api/v2/routing/gateways", status_code=200, text=json.dumps(_GATEWAYS_BODY))
-        transport.register(
-            "GET", "/api/v2/status/gateways", status_code=200, text=json.dumps(_GATEWAY_STATUS_BODY)
-        )
+        transport.register("GET", "/api/v2/status/gateways", status_code=200, text=json.dumps(_GATEWAY_STATUS_BODY))
     if with_firewall:
-        transport.register(
-            "GET", "/api/v2/firewall/rules", status_code=200, text=json.dumps(_FIREWALL_RULES_BODY)
-        )
+        transport.register("GET", "/api/v2/firewall/rules", status_code=200, text=json.dumps(_FIREWALL_RULES_BODY))
         transport.register(
             "GET", "/api/v2/firewall/states?limit=100", status_code=200, text=json.dumps(_FIREWALL_STATES_BODY)
         )
         transport.register(
             "GET", "/api/v2/firewall/states/size", status_code=200, text=json.dumps(_FIREWALL_STATES_SIZE_BODY)
         )
-        transport.register(
-            "GET", "/api/v2/firewall/apply", status_code=200, text=json.dumps(_FIREWALL_APPLY_BODY)
-        )
+        transport.register("GET", "/api/v2/firewall/apply", status_code=200, text=json.dumps(_FIREWALL_APPLY_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -221,8 +329,10 @@ def test_registry_registers_all_firewall_tools_when_capability_present():
     registry.register_all()
     names = {fn.__name__ for fn in mcp.registered}
     assert names == {
-        "pfsense_get_firewall_rules", "pfsense_get_firewall_states",
-        "pfsense_get_firewall_states_size", "pfsense_get_firewall_apply_status",
+        "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_states",
+        "pfsense_get_firewall_states_size",
+        "pfsense_get_firewall_apply_status",
     }
 
 
@@ -290,16 +400,27 @@ def test_registry_registers_all_tools_when_all_capabilities_present():
     mcp = FakeMCP()
     client = _client(with_interfaces=True, with_gateways=True, with_firewall=True)
     registry = ToolRegistry(
-        mcp, client, "api-mcp-admin",
-        frozenset({
-            Capability.SYSTEM_READ, Capability.INTERFACE_READ, Capability.GATEWAY_READ, Capability.FIREWALL_READ,
-        }),
+        mcp,
+        client,
+        "api-mcp-admin",
+        frozenset(
+            {
+                Capability.SYSTEM_READ,
+                Capability.INTERFACE_READ,
+                Capability.GATEWAY_READ,
+                Capability.FIREWALL_READ,
+            }
+        ),
     )
     registry.register_all()
     names = {fn.__name__ for fn in mcp.registered}
     assert names == {
-        "pfsense_get_system_status", "pfsense_get_interfaces",
-        "pfsense_get_gateways", "pfsense_get_gateway_status",
-        "pfsense_get_firewall_rules", "pfsense_get_firewall_states",
-        "pfsense_get_firewall_states_size", "pfsense_get_firewall_apply_status",
+        "pfsense_get_system_status",
+        "pfsense_get_interfaces",
+        "pfsense_get_gateways",
+        "pfsense_get_gateway_status",
+        "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_states",
+        "pfsense_get_firewall_states_size",
+        "pfsense_get_firewall_apply_status",
     }

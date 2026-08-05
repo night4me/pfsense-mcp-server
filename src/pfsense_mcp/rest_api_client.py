@@ -53,9 +53,7 @@ class RestApiClient:
             response = self._transport.request(method, path)
         except TransportConnectionError:
             duration_ms = (time.monotonic() - start) * 1000
-            logger.warning(
-                "connection_error identity=%s path=%s duration_ms=%.1f", self._identity, path, duration_ms
-            )
+            logger.warning("connection_error identity=%s path=%s duration_ms=%.1f", self._identity, path, duration_ms)
             raise PfSenseConnectionError(f"Could not connect to pfSense host for {path}") from None
         except TransportTimeoutError:
             duration_ms = (time.monotonic() - start) * 1000
@@ -69,20 +67,32 @@ class RestApiClient:
         if response.status_code in (401, 403):
             logger.warning(
                 "auth_error identity=%s path=%s status=%s response_id=%s duration_ms=%.1f",
-                self._identity, path, response.status_code, response_id, duration_ms,
+                self._identity,
+                path,
+                response.status_code,
+                response_id,
+                duration_ms,
             )
             raise PfSenseAuthError(f"Authentication failed for identity {self._identity!r}")
 
         if response.status_code >= 400:
             logger.warning(
                 "api_error identity=%s path=%s status=%s response_id=%s duration_ms=%.1f",
-                self._identity, path, response.status_code, response_id, duration_ms,
+                self._identity,
+                path,
+                response.status_code,
+                response_id,
+                duration_ms,
             )
             raise PfSenseAPIError(response.status_code, "pfSense API returned an error status.")
 
         logger.info(
             "response identity=%s path=%s status=%s response_id=%s duration_ms=%.1f",
-            self._identity, path, response.status_code, response_id, duration_ms,
+            self._identity,
+            path,
+            response.status_code,
+            response_id,
+            duration_ms,
         )
 
         if body is None:

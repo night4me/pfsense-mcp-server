@@ -44,7 +44,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--area", default=None, help="Filter to a resource area / OpenAPI tag (ANDed with query).")
     parser.add_argument(
-        "--schema-file", type=Path, default=None, help="Load the schema from a local JSON file instead of the live instance."
+        "--schema-file",
+        type=Path,
+        default=None,
+        help="Load the schema from a local JSON file instead of the live instance.",
     )
     parser.add_argument("--json", action="store_true", help="Emit the structured, versioned JSON report.")
     parser.add_argument(
