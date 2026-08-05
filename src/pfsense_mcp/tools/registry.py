@@ -19,6 +19,7 @@ from .read import (
     interface_configs,
     interfaces,
     service_status,
+    system_certificates,
     system_status,
     system_version,
     users,
@@ -53,6 +54,8 @@ class ToolRegistry:
             self._register_firewall_nat_read()
         if Capability.USER_READ in self._capabilities:
             self._register_user_read()
+        if Capability.SYSTEM_CERTIFICATE_READ in self._capabilities:
+            self._register_system_certificate_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -124,4 +127,9 @@ class ToolRegistry:
     def _register_user_read(self) -> None:
         fn = users.build(self._client)
         wrapped = audit_logged("pfsense_get_users", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_system_certificate_read(self) -> None:
+        fn = system_certificates.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_certificates", self._identity)(fn)
         self._mcp.tool()(wrapped)

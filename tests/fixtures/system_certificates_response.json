@@ -1,0 +1,32 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "caref": null,
+            "crt": "REDACTED-during-public-exposure-audit-historical-cert-purged",
+      "csr": null,
+      "descr": "REDACTED-descr",
+      "id": 0,
+      "refid": "REDACTED-refid",
+      "type": "server",
+      "valid_days_left": -34,
+      "valid_from": "2025-05-30 23:08:25",
+      "valid_until": "2026-07-02 23:08:25"
+    },
+    {
+      "caref": "REDACTED-caref",
+            "crt": "REDACTED-during-public-exposure-audit-historical-cert-purged",
+      "csr": null,
+      "descr": "REDACTED-descr",
+      "id": 1,
+      "refid": "REDACTED-refid",
+      "type": "server",
+      "valid_days_left": 3219,
+      "valid_from": "2025-06-01 21:43:17",
+      "valid_until": "2035-05-30 21:43:17"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

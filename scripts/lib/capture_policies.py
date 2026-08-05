@@ -189,6 +189,23 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         # hard-refusal gate for a field already covered another way.
         benign_fields=frozenset({"authorizedkeys", "ipsecpsk"}),
     ),
+    "SYSTEM_CERTIFICATES": CapturePolicy(
+        endpoint_attr="SYSTEM_CERTIFICATES",
+        result_shape="list",
+        # Administrative-usefulness policy: crt/csr are public PKI
+        # artifacts (certificate/CSR, never the private key — pfSense's
+        # own GET response never includes "prv"), and type/validity
+        # fields are operational; the model has no identifying_fields
+        # so all of this stays visible at runtime. descr/refid/caref
+        # are stricter here than at the model layer: this install's
+        # real certificate names and reference IDs are
+        # installation-specific, so the committed test fixture
+        # synthesizes them (fixture policy may be stricter than
+        # runtime redaction — see models/system_certificate.py).
+        identifying_fields=frozenset({"descr", "refid", "caref"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

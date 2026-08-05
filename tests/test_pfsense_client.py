@@ -1622,3 +1622,108 @@ def test_get_users_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_users()
     assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_CERTIFICATES_FIXTURE = Path(__file__).parent / "fixtures" / "system_certificates_response.json"
+
+
+def _system_certificates_body() -> dict:
+    return json.loads(SYSTEM_CERTIFICATES_FIXTURE.read_text())
+
+
+def _system_certificates_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_certificates_body()
+    transport.register("GET", "/api/v2/system/certificates?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_certificates_maps_fields():
+    client, _ = _system_certificates_client()
+    raw = _system_certificates_body()["data"]
+    certs = client.get_system_certificates()
+    assert len(certs) == 2
+    assert certs[0].descr == raw[0]["descr"]
+    assert certs[0].type == raw[0]["type"]
+    assert certs[0].refid == raw[0]["refid"]
+    assert certs[0].crt == raw[0]["crt"]
+    assert certs[0].valid_days_left == raw[0]["valid_days_left"]
+
+
+def test_get_system_certificates_only_calls_endpoint_with_default_limit():
+    client, transport = _system_certificates_client()
+    client.get_system_certificates()
+    assert transport.calls == [("GET", "/api/v2/system/certificates?limit=100")]
+
+
+def test_get_system_certificates_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _system_certificates_body()
+    transport.register("GET", "/api/v2/system/certificates?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_system_certificates(limit=5)
+    assert transport.calls == [("GET", "/api/v2/system/certificates?limit=5")]
+
+
+def test_get_system_certificates_rejects_zero_limit():
+    client, _ = _system_certificates_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_certificates(limit=0)
+
+
+def test_get_system_certificates_rejects_limit_above_max():
+    client, _ = _system_certificates_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_certificates(limit=101)
+
+
+def test_get_system_certificates_missing_data_key_raises_shape_error():
+    body = _system_certificates_body()
+    del body["data"]
+    client, _ = _system_certificates_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificates()
+
+
+def test_get_system_certificates_data_wrong_type_raises_shape_error():
+    body = _system_certificates_body()
+    body["data"] = "not-a-list"
+    client, _ = _system_certificates_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificates()
+
+
+def test_get_system_certificates_item_wrong_type_raises_shape_error():
+    body = _system_certificates_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_certificates_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificates()
+
+
+def test_get_system_certificates_required_field_missing_raises_shape_error():
+    body = _system_certificates_body()
+    del body["data"][0]["descr"]
+    client, _ = _system_certificates_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificates()
+
+
+def test_get_system_certificates_invalid_field_type_raises_shape_error():
+    body = _system_certificates_body()
+    body["data"][0]["descr"] = 123
+    client, _ = _system_certificates_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificates()
+
+
+def test_get_system_certificates_shape_error_does_not_leak_raw_field_values():
+    body = _system_certificates_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _system_certificates_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_certificates()
+    assert sentinel not in str(excinfo.value)

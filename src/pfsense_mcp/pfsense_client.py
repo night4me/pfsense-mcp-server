@@ -17,6 +17,7 @@ from .models.interfaces import InterfaceStatus
 from .models.pf_sense_user import PfSenseUser
 from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
+from .models.system_certificate import SystemCertificate
 from .models.system_version import SystemVersion
 from .rest_api_client import RestApiClient
 
@@ -42,6 +43,10 @@ FIREWALL_NAT_PORT_FORWARDS_MAX_LIMIT = 500
 
 USERS_MIN_LIMIT = 1
 USERS_MAX_LIMIT = 100
+
+
+SYSTEM_CERTIFICATES_MIN_LIMIT = 1
+SYSTEM_CERTIFICATES_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -374,5 +379,34 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /users response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_system_certificates(self, *, limit: int = 100) -> list[SystemCertificate]:
+        if not (SYSTEM_CERTIFICATES_MIN_LIMIT <= limit <= SYSTEM_CERTIFICATES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SYSTEM_CERTIFICATES_MIN_LIMIT} and "
+                f"{SYSTEM_CERTIFICATES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SYSTEM_CERTIFICATES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /system/certificates response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /system/certificates response 'data' was not a list.")
+
+        results: list[SystemCertificate] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /system/certificates response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(SystemCertificate.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /system/certificates response contained an entry that failed schema validation."
                 ) from None
         return results

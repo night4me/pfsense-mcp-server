@@ -311,6 +311,24 @@ _USERS_BODY = {
 }
 
 
+_SYSTEM_CERTIFICATES_BODY = {
+    "data": [
+        {
+            "caref": None,
+            "crt": "-----BEGIN CERTIFICATE-----\nMIIEezCCA2Og==",
+            "csr": None,
+            "descr": "Test Certificate",
+            "id": 0,
+            "refid": "test-refid",
+            "type": "server",
+            "valid_days_left": 100,
+            "valid_from": "2025-01-01 00:00:00",
+            "valid_until": "2026-01-01 00:00:00",
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -323,6 +341,7 @@ def _client(
     with_nat_port_forwards: bool = False,
     with_nat_outbound_mode: bool = False,
     with_users: bool = False,
+    with_system_certificates: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -379,6 +398,13 @@ def _client(
         )
     if with_users:
         transport.register("GET", "/api/v2/users?limit=100", status_code=200, text=json.dumps(_USERS_BODY))
+    if with_system_certificates:
+        transport.register(
+            "GET",
+            "/api/v2/system/certificates?limit=100",
+            status_code=200,
+            text=json.dumps(_SYSTEM_CERTIFICATES_BODY),
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -783,6 +809,36 @@ def test_registered_users_tool_invokes_client_and_redacts_by_default():
     assert users[0].authorizedkeys is None
     assert users[0].ipsecpsk is None
     assert users[0].cert is None
+
+
+def test_registry_registers_system_certificates_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_system_certificates=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_CERTIFICATE_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_system_certificates"
+
+
+def test_registry_does_not_register_system_certificates_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_system_certificates" not in names
+
+
+def test_registered_system_certificates_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_system_certificates=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_CERTIFICATE_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_system_certificates")
+    certs = fn()
+    assert len(certs) == 1
+    assert certs[0].descr == "Test Certificate"
+    assert certs[0].type == "server"
+    assert certs[0].crt.startswith("-----BEGIN CERTIFICATE-----")
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():
