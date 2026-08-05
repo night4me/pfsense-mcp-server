@@ -329,6 +329,21 @@ _SYSTEM_CERTIFICATES_BODY = {
 }
 
 
+_USER_GROUPS_BODY = {
+    "data": [
+        {
+            "description": "Test Group",
+            "gid": 1999,
+            "id": 0,
+            "member": ["testuser"],
+            "name": "testgroup",
+            "priv": ["page-all"],
+            "scope": "system",
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -342,6 +357,7 @@ def _client(
     with_nat_outbound_mode: bool = False,
     with_users: bool = False,
     with_system_certificates: bool = False,
+    with_user_groups: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -405,6 +421,8 @@ def _client(
             status_code=200,
             text=json.dumps(_SYSTEM_CERTIFICATES_BODY),
         )
+    if with_user_groups:
+        transport.register("GET", "/api/v2/user/groups?limit=100", status_code=200, text=json.dumps(_USER_GROUPS_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -839,6 +857,36 @@ def test_registered_system_certificates_tool_invokes_client():
     assert certs[0].descr == "Test Certificate"
     assert certs[0].type == "server"
     assert certs[0].crt.startswith("-----BEGIN CERTIFICATE-----")
+
+
+def test_registry_registers_user_groups_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_user_groups=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.USER_GROUP_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_user_groups"
+
+
+def test_registry_does_not_register_user_groups_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_user_groups" not in names
+
+
+def test_registered_user_groups_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_user_groups=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.USER_GROUP_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_user_groups")
+    groups = fn()
+    assert len(groups) == 1
+    assert groups[0].name == "testgroup"
+    assert groups[0].member == ["testuser"]
+    assert groups[0].priv == ["page-all"]
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

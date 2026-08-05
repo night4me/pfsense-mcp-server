@@ -206,6 +206,20 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "USER_GROUPS": CapturePolicy(
+        endpoint_attr="USER_GROUPS",
+        result_shape="list",
+        # name/description/gid/priv/scope are ordinary object metadata
+        # (group name, role assignment), visible at both layers. member
+        # is stricter here than at the model layer: it's an array of
+        # real account usernames, which are installation-specific, so
+        # the committed test fixture synthesizes them — runtime keeps
+        # them visible (group membership is core administrative value
+        # for this capability, matching USER_READ's username policy).
+        identifying_fields=frozenset({"member"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

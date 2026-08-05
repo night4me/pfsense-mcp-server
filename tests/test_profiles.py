@@ -37,6 +37,10 @@ def test_auditor_profile_has_system_certificate_read():
     assert Capability.SYSTEM_CERTIFICATE_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_user_group_read():
+    assert Capability.USER_GROUP_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 

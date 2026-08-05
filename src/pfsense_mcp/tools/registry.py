@@ -22,6 +22,7 @@ from .read import (
     system_certificates,
     system_status,
     system_version,
+    user_groups,
     users,
 )
 
@@ -56,6 +57,8 @@ class ToolRegistry:
             self._register_user_read()
         if Capability.SYSTEM_CERTIFICATE_READ in self._capabilities:
             self._register_system_certificate_read()
+        if Capability.USER_GROUP_READ in self._capabilities:
+            self._register_user_group_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -132,4 +135,9 @@ class ToolRegistry:
     def _register_system_certificate_read(self) -> None:
         fn = system_certificates.build(self._client)
         wrapped = audit_logged("pfsense_get_system_certificates", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_user_group_read(self) -> None:
+        fn = user_groups.build(self._client)
+        wrapped = audit_logged("pfsense_get_user_groups", self._identity)(fn)
         self._mcp.tool()(wrapped)

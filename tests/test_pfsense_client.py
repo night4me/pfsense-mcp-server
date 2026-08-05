@@ -1727,3 +1727,109 @@ def test_get_system_certificates_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_certificates()
     assert sentinel not in str(excinfo.value)
+
+
+USER_GROUPS_FIXTURE = Path(__file__).parent / "fixtures" / "user_groups_response.json"
+
+
+def _user_groups_body() -> dict:
+    return json.loads(USER_GROUPS_FIXTURE.read_text())
+
+
+def _user_groups_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _user_groups_body()
+    transport.register("GET", "/api/v2/user/groups?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_user_groups_maps_fields():
+    client, _ = _user_groups_client()
+    raw = _user_groups_body()["data"]
+    groups = client.get_user_groups()
+    assert len(groups) == 2
+    assert groups[1].name == raw[1]["name"]
+    assert groups[1].description == raw[1]["description"]
+    assert groups[1].gid == raw[1]["gid"]
+    assert groups[1].member == raw[1]["member"]
+    assert groups[1].priv == raw[1]["priv"]
+    assert groups[1].scope == raw[1]["scope"]
+
+
+def test_get_user_groups_only_calls_endpoint_with_default_limit():
+    client, transport = _user_groups_client()
+    client.get_user_groups()
+    assert transport.calls == [("GET", "/api/v2/user/groups?limit=100")]
+
+
+def test_get_user_groups_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _user_groups_body()
+    transport.register("GET", "/api/v2/user/groups?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_user_groups(limit=5)
+    assert transport.calls == [("GET", "/api/v2/user/groups?limit=5")]
+
+
+def test_get_user_groups_rejects_zero_limit():
+    client, _ = _user_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_user_groups(limit=0)
+
+
+def test_get_user_groups_rejects_limit_above_max():
+    client, _ = _user_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_user_groups(limit=101)
+
+
+def test_get_user_groups_missing_data_key_raises_shape_error():
+    body = _user_groups_body()
+    del body["data"]
+    client, _ = _user_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_user_groups()
+
+
+def test_get_user_groups_data_wrong_type_raises_shape_error():
+    body = _user_groups_body()
+    body["data"] = "not-a-list"
+    client, _ = _user_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_user_groups()
+
+
+def test_get_user_groups_item_wrong_type_raises_shape_error():
+    body = _user_groups_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _user_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_user_groups()
+
+
+def test_get_user_groups_required_field_missing_raises_shape_error():
+    body = _user_groups_body()
+    del body["data"][0]["name"]
+    client, _ = _user_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_user_groups()
+
+
+def test_get_user_groups_invalid_field_type_raises_shape_error():
+    body = _user_groups_body()
+    body["data"][0]["name"] = 123
+    client, _ = _user_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_user_groups()
+
+
+def test_get_user_groups_shape_error_does_not_leak_raw_field_values():
+    body = _user_groups_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["name"] = [sentinel]
+    client, _ = _user_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_user_groups()
+    assert sentinel not in str(excinfo.value)

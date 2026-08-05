@@ -1,0 +1,32 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "description": "All Users",
+      "gid": 1998,
+      "id": 0,
+      "member": null,
+      "name": "all",
+      "priv": null,
+      "scope": "system"
+    },
+    {
+      "description": "System Administrators",
+      "gid": 1999,
+      "id": 1,
+      "member": [
+        "REDACTED-member",
+        "REDACTED-member",
+        "REDACTED-member"
+      ],
+      "name": "admins",
+      "priv": [
+        "page-all"
+      ],
+      "scope": "system"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
