@@ -16,6 +16,8 @@ pfsense-mcp-server = "pfsense_mcp.server:main"
 dev = [
     "pytest>=8.0,<9.0",
     "respx>=0.21,<1.0",
+    "ruff>=0.6,<1.0",
+    "mypy>=1.10,<2.0",
 ]
 
 [tool.pytest.ini_options]
@@ -23,6 +25,17 @@ pythonpath = ["scripts"]
 markers = [
     "live: makes a real network call to a live pfSense instance; skipped unless PFSENSE_RUN_LIVE_TESTS=true is set explicitly.",
 ]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/pfsense_mcp", "scripts"]
 
 [build-system]
 requires = ["hatchling"]

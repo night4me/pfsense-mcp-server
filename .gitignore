@@ -6,8 +6,12 @@ __pycache__/
 venv/
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 dist/
 build/
+
+# make validate output (junit-xml report) — working output, not a repo artifact
+.validate/
 
 # Local logs (must never be committed)
 *.log
