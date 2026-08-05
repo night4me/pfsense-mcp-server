@@ -220,6 +220,22 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "STATUS_DHCP_LEASES": CapturePolicy(
+        endpoint_attr="STATUS_DHCP_LEASES",
+        result_shape="list",
+        # ip/mac/hostname are the whole point of a DHCP lease
+        # inventory capability and stay visible per explicit policy;
+        # the sanitizer's generic IP/MAC/hostname substitution already
+        # applies to them regardless of identifying_fields, so the
+        # committed fixture is safe without declaring them here. descr
+        # is stricter here than at the model layer: it holds this
+        # install's real per-device labels (installation-specific),
+        # so only the fixture synthesizes it — runtime keeps it
+        # visible.
+        identifying_fields=frozenset({"descr"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

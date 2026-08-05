@@ -344,6 +344,24 @@ _USER_GROUPS_BODY = {
 }
 
 
+_DHCP_LEASES_BODY = {
+    "data": [
+        {
+            "active_status": "static",
+            "descr": "Test Device",
+            "ends": "",
+            "hostname": "testhost",
+            "id": 0,
+            "if": "lan",
+            "ip": "198.51.100.10",
+            "mac": "02:00:00:00:00:01",
+            "online_status": "active/online",
+            "starts": "",
+        }
+    ]
+}
+
+
 def _client(
     *,
     with_interfaces: bool = False,
@@ -358,6 +376,7 @@ def _client(
     with_users: bool = False,
     with_system_certificates: bool = False,
     with_user_groups: bool = False,
+    with_dhcp_leases: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -423,6 +442,10 @@ def _client(
         )
     if with_user_groups:
         transport.register("GET", "/api/v2/user/groups?limit=100", status_code=200, text=json.dumps(_USER_GROUPS_BODY))
+    if with_dhcp_leases:
+        transport.register(
+            "GET", "/api/v2/status/dhcp_server/leases?limit=100", status_code=200, text=json.dumps(_DHCP_LEASES_BODY)
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -887,6 +910,36 @@ def test_registered_user_groups_tool_invokes_client():
     assert groups[0].name == "testgroup"
     assert groups[0].member == ["testuser"]
     assert groups[0].priv == ["page-all"]
+
+
+def test_registry_registers_dhcp_leases_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_dhcp_leases=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_LEASE_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_dhcp_leases"
+
+
+def test_registry_does_not_register_dhcp_leases_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_dhcp_leases" not in names
+
+
+def test_registered_dhcp_leases_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_dhcp_leases=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_LEASE_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_dhcp_leases")
+    leases = fn()
+    assert len(leases) == 1
+    assert leases[0].ip == "198.51.100.10"
+    assert leases[0].mac == "02:00:00:00:00:01"
+    assert leases[0].hostname == "testhost"
 
 
 def test_registry_registers_all_tools_when_all_capabilities_present():

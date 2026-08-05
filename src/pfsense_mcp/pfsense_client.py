@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
+from .models.dhcp_lease import DhcpLease
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
@@ -52,6 +53,10 @@ SYSTEM_CERTIFICATES_MAX_LIMIT = 100
 
 USER_GROUPS_MIN_LIMIT = 1
 USER_GROUPS_MAX_LIMIT = 100
+
+
+DHCP_LEASES_MIN_LIMIT = 1
+DHCP_LEASES_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -439,5 +444,33 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /user/groups response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_dhcp_leases(self, *, limit: int = 100) -> list[DhcpLease]:
+        if not (DHCP_LEASES_MIN_LIMIT <= limit <= DHCP_LEASES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DHCP_LEASES_MIN_LIMIT} and {DHCP_LEASES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_DHCP_LEASES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /status/dhcp_server/leases response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /status/dhcp_server/leases response 'data' was not a list.")
+
+        results: list[DhcpLease] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /status/dhcp_server/leases response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(DhcpLease.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /status/dhcp_server/leases response contained an entry that failed schema validation."
                 ) from None
         return results

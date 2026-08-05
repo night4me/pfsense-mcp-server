@@ -35,6 +35,7 @@ AuditorProfile = Profile(
             Capability.USER_READ,
             Capability.SYSTEM_CERTIFICATE_READ,
             Capability.USER_GROUP_READ,
+            Capability.DHCP_LEASE_READ,
         }
     ),
 )

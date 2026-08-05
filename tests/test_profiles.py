@@ -41,6 +41,10 @@ def test_auditor_profile_has_user_group_read():
     assert Capability.USER_GROUP_READ in AuditorProfile.capabilities
 
 
+def test_auditor_profile_has_dhcp_lease_read():
+    assert Capability.DHCP_LEASE_READ in AuditorProfile.capabilities
+
+
 def test_engineer_profile_has_no_capabilities_yet():
     assert EngineerProfile.capabilities == frozenset()
 

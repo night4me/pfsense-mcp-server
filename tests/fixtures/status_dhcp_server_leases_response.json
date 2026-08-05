@@ -1,0 +1,68 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "active_status": "static",
+      "descr": "REDACTED-descr",
+      "ends": "",
+      "hostname": "host.example.invalid",
+      "id": 0,
+      "if": "lan",
+      "ip": "198.51.100.10",
+      "mac": "02:00:00:00:00:01",
+      "online_status": "active/online",
+      "starts": ""
+    },
+    {
+      "active_status": "static",
+      "descr": "REDACTED-descr",
+      "ends": "",
+      "hostname": "host.example.invalid",
+      "id": 1,
+      "if": "lan",
+      "ip": "198.51.100.11",
+      "mac": "02:00:00:00:00:02",
+      "online_status": "active/online",
+      "starts": ""
+    },
+    {
+      "active_status": "static",
+      "descr": "REDACTED-descr",
+      "ends": "",
+      "hostname": "host.example.invalid",
+      "id": 2,
+      "if": "lan",
+      "ip": "198.51.100.12",
+      "mac": "02:00:00:00:00:03",
+      "online_status": "active/online",
+      "starts": ""
+    },
+    {
+      "active_status": "static",
+      "descr": "REDACTED-descr",
+      "ends": "",
+      "hostname": "",
+      "id": 3,
+      "if": "lan",
+      "ip": "198.51.100.13",
+      "mac": "02:00:00:00:00:04",
+      "online_status": "active/online",
+      "starts": ""
+    },
+    {
+      "active_status": "static",
+      "descr": "REDACTED-descr",
+      "ends": "",
+      "hostname": "",
+      "id": 4,
+      "if": "lan",
+      "ip": "198.51.100.14",
+      "mac": "02:00:00:00:00:05",
+      "online_status": "active/online",
+      "starts": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

@@ -1833,3 +1833,110 @@ def test_get_user_groups_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_user_groups()
     assert sentinel not in str(excinfo.value)
+
+
+STATUS_DHCP_LEASES_FIXTURE = Path(__file__).parent / "fixtures" / "status_dhcp_server_leases_response.json"
+
+
+def _dhcp_leases_body() -> dict:
+    return json.loads(STATUS_DHCP_LEASES_FIXTURE.read_text())
+
+
+def _dhcp_leases_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dhcp_leases_body()
+    transport.register("GET", "/api/v2/status/dhcp_server/leases?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dhcp_leases_maps_fields():
+    client, _ = _dhcp_leases_client()
+    raw = _dhcp_leases_body()["data"]
+    leases = client.get_dhcp_leases()
+    assert len(leases) == 5
+    assert leases[0].ip == raw[0]["ip"]
+    assert leases[0].mac == raw[0]["mac"]
+    assert leases[0].hostname == raw[0]["hostname"]
+    assert leases[0].descr == raw[0]["descr"]
+    assert leases[0].if_ == raw[0]["if"]
+    assert leases[0].active_status == raw[0]["active_status"]
+    assert leases[0].online_status == raw[0]["online_status"]
+
+
+def test_get_dhcp_leases_only_calls_endpoint_with_default_limit():
+    client, transport = _dhcp_leases_client()
+    client.get_dhcp_leases()
+    assert transport.calls == [("GET", "/api/v2/status/dhcp_server/leases?limit=100")]
+
+
+def test_get_dhcp_leases_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _dhcp_leases_body()
+    transport.register("GET", "/api/v2/status/dhcp_server/leases?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_dhcp_leases(limit=2)
+    assert transport.calls == [("GET", "/api/v2/status/dhcp_server/leases?limit=2")]
+
+
+def test_get_dhcp_leases_rejects_zero_limit():
+    client, _ = _dhcp_leases_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_leases(limit=0)
+
+
+def test_get_dhcp_leases_rejects_limit_above_max():
+    client, _ = _dhcp_leases_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_leases(limit=101)
+
+
+def test_get_dhcp_leases_missing_data_key_raises_shape_error():
+    body = _dhcp_leases_body()
+    del body["data"]
+    client, _ = _dhcp_leases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_leases()
+
+
+def test_get_dhcp_leases_data_wrong_type_raises_shape_error():
+    body = _dhcp_leases_body()
+    body["data"] = "not-a-list"
+    client, _ = _dhcp_leases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_leases()
+
+
+def test_get_dhcp_leases_item_wrong_type_raises_shape_error():
+    body = _dhcp_leases_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _dhcp_leases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_leases()
+
+
+def test_get_dhcp_leases_required_field_missing_raises_shape_error():
+    body = _dhcp_leases_body()
+    del body["data"][0]["id"]
+    client, _ = _dhcp_leases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_leases()
+
+
+def test_get_dhcp_leases_invalid_field_type_raises_shape_error():
+    body = _dhcp_leases_body()
+    body["data"][0]["id"] = "not-a-number"
+    client, _ = _dhcp_leases_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_leases()
+
+
+def test_get_dhcp_leases_shape_error_does_not_leak_raw_field_values():
+    body = _dhcp_leases_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["id"] = [sentinel]
+    client, _ = _dhcp_leases_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dhcp_leases()
+    assert sentinel not in str(excinfo.value)

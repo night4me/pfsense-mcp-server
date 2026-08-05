@@ -214,6 +214,18 @@ def test_user_groups_path_suffix_is_correct():
     assert Endpoints.USER_GROUPS.path_suffix == "/user/groups"
 
 
+def test_status_dhcp_leases_is_declared_verified():
+    assert Endpoints.STATUS_DHCP_LEASES.verified is True
+
+
+def test_status_dhcp_leases_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_DHCP_LEASES.path_suffix.startswith("/api")
+
+
+def test_status_dhcp_leases_path_suffix_is_correct():
+    assert Endpoints.STATUS_DHCP_LEASES.path_suffix == "/status/dhcp_server/leases"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented
