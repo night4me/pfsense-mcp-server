@@ -8,6 +8,7 @@ from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
     dhcp_leases,
+    dhcp_static_mappings,
     firewall_aliases,
     firewall_apply_status,
     firewall_nat_outbound_mode,
@@ -62,6 +63,8 @@ class ToolRegistry:
             self._register_user_group_read()
         if Capability.DHCP_LEASE_READ in self._capabilities:
             self._register_dhcp_lease_read()
+        if Capability.DHCP_STATIC_MAPPING_READ in self._capabilities:
+            self._register_dhcp_static_mapping_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -148,4 +151,9 @@ class ToolRegistry:
     def _register_dhcp_lease_read(self) -> None:
         fn = dhcp_leases.build(self._client)
         wrapped = audit_logged("pfsense_get_dhcp_leases", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_dhcp_static_mapping_read(self) -> None:
+        fn = dhcp_static_mappings.build(self._client)
+        wrapped = audit_logged("pfsense_get_dhcp_static_mappings", self._identity)(fn)
         self._mcp.tool()(wrapped)

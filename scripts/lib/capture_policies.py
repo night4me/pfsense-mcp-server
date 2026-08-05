@@ -236,6 +236,18 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "DHCP_SERVER_STATIC_MAPPINGS": CapturePolicy(
+        endpoint_attr="DHCP_SERVER_STATIC_MAPPINGS",
+        result_shape="list",
+        # Same DHCP-inventory exception as STATUS_DHCP_LEASES:
+        # mac/ipaddr/hostname stay visible (core purpose of a static
+        # mapping inventory), auto-sanitized generically in the
+        # fixture regardless of identifying_fields. descr is stricter
+        # here than at the model layer for the same reason as leases.
+        identifying_fields=frozenset({"descr"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

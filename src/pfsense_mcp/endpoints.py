@@ -112,5 +112,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    DHCP_SERVER_STATIC_MAPPINGS = EndpointInfo(
+        path_suffix="/services/dhcp_server/static_mappings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)

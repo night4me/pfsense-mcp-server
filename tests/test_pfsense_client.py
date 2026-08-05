@@ -1940,3 +1940,113 @@ def test_get_dhcp_leases_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_dhcp_leases()
     assert sentinel not in str(excinfo.value)
+
+
+DHCP_STATIC_MAPPINGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_dhcp_server_static_mappings_response.json"
+
+
+def _dhcp_static_mappings_body() -> dict:
+    return json.loads(DHCP_STATIC_MAPPINGS_FIXTURE.read_text())
+
+
+def _dhcp_static_mappings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dhcp_static_mappings_body()
+    transport.register(
+        "GET", "/api/v2/services/dhcp_server/static_mappings?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dhcp_static_mappings_maps_fields():
+    client, _ = _dhcp_static_mappings_client()
+    raw = _dhcp_static_mappings_body()["data"]
+    mappings = client.get_dhcp_static_mappings()
+    assert len(mappings) == 5
+    assert mappings[0].mac == raw[0]["mac"]
+    assert mappings[0].ipaddr == raw[0]["ipaddr"]
+    assert mappings[0].hostname == raw[0]["hostname"]
+    assert mappings[0].descr == raw[0]["descr"]
+    assert mappings[0].parent_id == raw[0]["parent_id"]
+    assert mappings[0].arp_table_static_entry == raw[0]["arp_table_static_entry"]
+
+
+def test_get_dhcp_static_mappings_only_calls_endpoint_with_default_limit():
+    client, transport = _dhcp_static_mappings_client()
+    client.get_dhcp_static_mappings()
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/static_mappings?limit=100")]
+
+
+def test_get_dhcp_static_mappings_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _dhcp_static_mappings_body()
+    transport.register(
+        "GET", "/api/v2/services/dhcp_server/static_mappings?limit=2", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_dhcp_static_mappings(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/static_mappings?limit=2")]
+
+
+def test_get_dhcp_static_mappings_rejects_zero_limit():
+    client, _ = _dhcp_static_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_static_mappings(limit=0)
+
+
+def test_get_dhcp_static_mappings_rejects_limit_above_max():
+    client, _ = _dhcp_static_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_static_mappings(limit=101)
+
+
+def test_get_dhcp_static_mappings_missing_data_key_raises_shape_error():
+    body = _dhcp_static_mappings_body()
+    del body["data"]
+    client, _ = _dhcp_static_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_static_mappings()
+
+
+def test_get_dhcp_static_mappings_data_wrong_type_raises_shape_error():
+    body = _dhcp_static_mappings_body()
+    body["data"] = "not-a-list"
+    client, _ = _dhcp_static_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_static_mappings()
+
+
+def test_get_dhcp_static_mappings_item_wrong_type_raises_shape_error():
+    body = _dhcp_static_mappings_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _dhcp_static_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_static_mappings()
+
+
+def test_get_dhcp_static_mappings_required_field_missing_raises_shape_error():
+    body = _dhcp_static_mappings_body()
+    del body["data"][0]["mac"]
+    client, _ = _dhcp_static_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_static_mappings()
+
+
+def test_get_dhcp_static_mappings_invalid_field_type_raises_shape_error():
+    body = _dhcp_static_mappings_body()
+    body["data"][0]["mac"] = 123
+    client, _ = _dhcp_static_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_static_mappings()
+
+
+def test_get_dhcp_static_mappings_shape_error_does_not_leak_raw_field_values():
+    body = _dhcp_static_mappings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["mac"] = [sentinel]
+    client, _ = _dhcp_static_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dhcp_static_mappings()
+    assert sentinel not in str(excinfo.value)

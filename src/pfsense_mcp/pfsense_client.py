@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.dhcp_lease import DhcpLease
+from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
@@ -57,6 +58,10 @@ USER_GROUPS_MAX_LIMIT = 100
 
 DHCP_LEASES_MIN_LIMIT = 1
 DHCP_LEASES_MAX_LIMIT = 100
+
+
+DHCP_STATIC_MAPPINGS_MIN_LIMIT = 1
+DHCP_STATIC_MAPPINGS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -472,5 +477,39 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /status/dhcp_server/leases response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_dhcp_static_mappings(self, *, limit: int = 100) -> list[DhcpStaticMapping]:
+        if not (DHCP_STATIC_MAPPINGS_MIN_LIMIT <= limit <= DHCP_STATIC_MAPPINGS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DHCP_STATIC_MAPPINGS_MIN_LIMIT} and "
+                f"{DHCP_STATIC_MAPPINGS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DHCP_SERVER_STATIC_MAPPINGS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError(
+                "pfSense /services/dhcp_server/static_mappings response did not contain 'data'."
+            )
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/dhcp_server/static_mappings response 'data' was not a list."
+            )
+
+        results: list[DhcpStaticMapping] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/dhcp_server/static_mappings response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(DhcpStaticMapping.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/dhcp_server/static_mappings response contained an entry "
+                    "that failed schema validation."
                 ) from None
         return results

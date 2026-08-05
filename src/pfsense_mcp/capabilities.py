@@ -20,6 +20,7 @@ class Capability(Enum):
     SYSTEM_CERTIFICATE_READ = auto()
     USER_GROUP_READ = auto()
     DHCP_LEASE_READ = auto()
+    DHCP_STATIC_MAPPING_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -41,5 +42,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.SYSTEM_CERTIFICATE_READ,
         Capability.USER_GROUP_READ,
         Capability.DHCP_LEASE_READ,
+        Capability.DHCP_STATIC_MAPPING_READ,
     }
 )
