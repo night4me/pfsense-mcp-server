@@ -7,6 +7,7 @@ from ..capabilities import Capability
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
+    acme_settings,
     arp_table,
     bind_settings,
     carp_status,
@@ -115,6 +116,8 @@ class ToolRegistry:
             self._register_services_ssh_read()
         if Capability.SERVICES_CRON_READ in self._capabilities:
             self._register_services_cron_read()
+        if Capability.SERVICES_ACME_READ in self._capabilities:
+            self._register_services_acme_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -296,4 +299,9 @@ class ToolRegistry:
     def _register_services_cron_read(self) -> None:
         fn = cron_jobs.build(self._client)
         wrapped = audit_logged("pfsense_get_cron_jobs", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_services_acme_read(self) -> None:
+        fn = acme_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_acme_settings", self._identity)(fn)
         self._mcp.tool()(wrapped)

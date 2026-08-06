@@ -53,6 +53,7 @@ AuditorProfile = Profile(
             Capability.SERVICES_NTP_READ,
             Capability.SERVICES_SSH_READ,
             Capability.SERVICES_CRON_READ,
+            Capability.SERVICES_ACME_READ,
         }
     ),
 )

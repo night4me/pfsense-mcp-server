@@ -443,6 +443,11 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "ACME_SETTINGS": CapturePolicy(
+        endpoint_attr="ACME_SETTINGS",
+        result_shape="object",
+        default_max_items=1,
+    ),
 }
 
 

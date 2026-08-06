@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
+from .models.acme_settings import AcmeSettings
 from .models.arp_table_entry import ArpTableEntry
 from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
@@ -966,3 +967,18 @@ class PfSenseClient:
                     "pfSense /services/cron/jobs response contained an entry that failed schema validation."
                 ) from None
         return results
+
+    def get_acme_settings(self) -> AcmeSettings:
+        raw = self._rest.get(Endpoints.ACME_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/acme/settings response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /services/acme/settings response 'data' was not an object.")
+        try:
+            return AcmeSettings.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/acme/settings response failed schema validation."
+            ) from None

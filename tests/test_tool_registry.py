@@ -683,6 +683,9 @@ _CRON_JOBS_BODY = {
 }
 
 
+_ACME_SETTINGS_BODY = {"data": {"enable": False, "writecerts": False}}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -776,6 +779,7 @@ def _client(
     with_ntp_time_servers: bool = False,
     with_ssh_settings: bool = False,
     with_cron_jobs: bool = False,
+    with_acme_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -936,6 +940,10 @@ def _client(
     if with_cron_jobs:
         transport.register(
             "GET", "/api/v2/services/cron/jobs?limit=100", status_code=200, text=json.dumps(_CRON_JOBS_BODY)
+        )
+    if with_acme_settings:
+        transport.register(
+            "GET", "/api/v2/services/acme/settings", status_code=200, text=json.dumps(_ACME_SETTINGS_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -2015,3 +2023,31 @@ def test_registered_cron_jobs_tool_invokes_client():
     assert len(jobs) == 1
     assert jobs[0].command == "/usr/sbin/newsyslog"
     assert jobs[0].who == "root"
+
+
+def test_registry_registers_acme_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_acme_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_ACME_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_acme_settings"
+
+
+def test_registry_does_not_register_acme_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_acme_settings" not in names
+
+
+def test_registered_acme_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_acme_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_ACME_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_acme_settings")
+    settings = fn()
+    assert settings.enable is False
+    assert settings.writecerts is False

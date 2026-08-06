@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "data": {
+    "enable": false,
+    "writecerts": false
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
