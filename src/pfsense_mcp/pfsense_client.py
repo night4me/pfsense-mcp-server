@@ -147,6 +147,27 @@ def _parse_object_response(raw: dict[str, Any], response_label: str, factory: Ca
         raise PfSenseResponseShapeError(f"pfSense {response_label} response failed schema validation.") from None
 
 
+def _parse_list_response(raw: dict[str, Any], response_label: str, factory: Callable[[dict[str, Any]], T]) -> list[T]:
+    if "data" not in raw:
+        raise PfSenseResponseShapeError(f"pfSense {response_label} response did not contain 'data'.")
+    data = raw["data"]
+    if not isinstance(data, list):
+        raise PfSenseResponseShapeError(f"pfSense {response_label} response 'data' was not a list.")
+    results: list[T] = []
+    for item in data:
+        if not isinstance(item, dict):
+            raise PfSenseResponseShapeError(
+                f"pfSense {response_label} response contained a non-object entry in 'data'."
+            )
+        try:
+            results.append(factory(item))
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                f"pfSense {response_label} response contained an entry that failed schema validation."
+            ) from None
+    return results
+
+
 class PfSenseClient:
     def __init__(self, rest_client: RestApiClient) -> None:
         self._rest = rest_client
@@ -161,97 +182,35 @@ class PfSenseClient:
 
     def get_interfaces(self, *, include_identifying_metadata: bool = False) -> list[InterfaceStatus]:
         raw = self._rest.get(Endpoints.STATUS_INTERFACES)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense status/interfaces response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense status/interfaces response 'data' was not a list.")
-
-        interfaces: list[InterfaceStatus] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense status/interfaces response contained a non-object entry in 'data'."
-                )
-            try:
-                interfaces.append(
-                    InterfaceStatus.from_api(item, include_identifying_metadata=include_identifying_metadata)
-                )
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense status/interfaces response contained an entry that failed schema validation."
-                ) from None
-        return interfaces
+        return _parse_list_response(
+            raw,
+            "status/interfaces",
+            lambda data: InterfaceStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_gateways(self, *, include_identifying_metadata: bool = False) -> list[GatewayConfig]:
         raw = self._rest.get(Endpoints.ROUTING_GATEWAYS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense routing/gateways response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense routing/gateways response 'data' was not a list.")
-
-        gateways: list[GatewayConfig] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense routing/gateways response contained a non-object entry in 'data'."
-                )
-            try:
-                gateways.append(GatewayConfig.from_api(item, include_identifying_metadata=include_identifying_metadata))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense routing/gateways response contained an entry that failed schema validation."
-                ) from None
-        return gateways
+        return _parse_list_response(
+            raw,
+            "routing/gateways",
+            lambda data: GatewayConfig.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_gateway_status(self, *, include_identifying_metadata: bool = False) -> list[GatewayStatus]:
         raw = self._rest.get(Endpoints.STATUS_GATEWAYS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense status/gateways response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense status/gateways response 'data' was not a list.")
-
-        statuses: list[GatewayStatus] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense status/gateways response contained a non-object entry in 'data'."
-                )
-            try:
-                statuses.append(GatewayStatus.from_api(item, include_identifying_metadata=include_identifying_metadata))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense status/gateways response contained an entry that failed schema validation."
-                ) from None
-        return statuses
+        return _parse_list_response(
+            raw,
+            "status/gateways",
+            lambda data: GatewayStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_firewall_rules(self, *, include_identifying_metadata: bool = False) -> list[FirewallRule]:
         raw = self._rest.get(Endpoints.FIREWALL_RULES)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense firewall/rules response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense firewall/rules response 'data' was not a list.")
-
-        rules: list[FirewallRule] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense firewall/rules response contained a non-object entry in 'data'."
-                )
-            try:
-                rules.append(FirewallRule.from_api(item, include_identifying_metadata=include_identifying_metadata))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense firewall/rules response contained an entry that failed schema validation."
-                ) from None
-        return rules
+        return _parse_list_response(
+            raw,
+            "firewall/rules",
+            lambda data: FirewallRule.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_firewall_states(
         self, *, include_identifying_metadata: bool = False, limit: int = 100
@@ -262,26 +221,11 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.FIREWALL_STATES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense firewall/states response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense firewall/states response 'data' was not a list.")
-
-        states: list[FirewallState] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense firewall/states response contained a non-object entry in 'data'."
-                )
-            try:
-                states.append(FirewallState.from_api(item, include_identifying_metadata=include_identifying_metadata))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense firewall/states response contained an entry that failed schema validation."
-                ) from None
-        return states
+        return _parse_list_response(
+            raw,
+            "firewall/states",
+            lambda data: FirewallState.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_firewall_states_size(self) -> FirewallStatesSize:
         raw = self._rest.get(Endpoints.FIREWALL_STATES_SIZE)
@@ -300,26 +244,11 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.FIREWALL_ALIASES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /firewall/aliases response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /firewall/aliases response 'data' was not a list.")
-
-        results: list[FirewallAlias] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /firewall/aliases response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(FirewallAlias.from_api(item, include_identifying_metadata=include_identifying_metadata))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /firewall/aliases response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(
+            raw,
+            "/firewall/aliases",
+            lambda data: FirewallAlias.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_service_status(self, *, limit: int = 100) -> list[ServiceStatus]:
         if not (SERVICE_STATUS_MIN_LIMIT <= limit <= SERVICE_STATUS_MAX_LIMIT):
@@ -328,26 +257,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.STATUS_SERVICES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /status/services response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /status/services response 'data' was not a list.")
-
-        results: list[ServiceStatus] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /status/services response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(ServiceStatus.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /status/services response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/status/services", ServiceStatus.from_api)
 
     def get_system_version(self) -> SystemVersion:
         raw = self._rest.get(Endpoints.SYSTEM_VERSION)
@@ -362,26 +272,11 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.INTERFACES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /interfaces response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /interfaces response 'data' was not a list.")
-
-        results: list[InterfaceConfig] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError("pfSense /interfaces response contained a non-object entry in 'data'.")
-            try:
-                results.append(
-                    InterfaceConfig.from_api(item, include_identifying_metadata=include_identifying_metadata)
-                )
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /interfaces response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(
+            raw,
+            "/interfaces",
+            lambda data: InterfaceConfig.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_firewall_nat_port_forwards(
         self, *, include_identifying_metadata: bool = False, limit: int = 100
@@ -393,28 +288,13 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.FIREWALL_NAT_PORT_FORWARDS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /firewall/nat/port_forwards response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /firewall/nat/port_forwards response 'data' was not a list.")
-
-        results: list[FirewallNatPortForward] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /firewall/nat/port_forwards response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(
-                    FirewallNatPortForward.from_api(item, include_identifying_metadata=include_identifying_metadata)
-                )
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /firewall/nat/port_forwards response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(
+            raw,
+            "/firewall/nat/port_forwards",
+            lambda data: FirewallNatPortForward.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
 
     def get_firewall_nat_outbound_mode(self) -> FirewallNatOutboundMode:
         raw = self._rest.get(Endpoints.FIREWALL_NAT_OUTBOUND_MODE)
@@ -427,24 +307,11 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.USERS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /users response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /users response 'data' was not a list.")
-
-        results: list[PfSenseUser] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError("pfSense /users response contained a non-object entry in 'data'.")
-            try:
-                results.append(PfSenseUser.from_api(item, include_identifying_metadata=include_identifying_metadata))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /users response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(
+            raw,
+            "/users",
+            lambda data: PfSenseUser.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_system_certificates(self, *, limit: int = 100) -> list[SystemCertificate]:
         if not (SYSTEM_CERTIFICATES_MIN_LIMIT <= limit <= SYSTEM_CERTIFICATES_MAX_LIMIT):
@@ -454,26 +321,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.SYSTEM_CERTIFICATES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /system/certificates response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /system/certificates response 'data' was not a list.")
-
-        results: list[SystemCertificate] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /system/certificates response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(SystemCertificate.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /system/certificates response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/system/certificates", SystemCertificate.from_api)
 
     def get_user_groups(self, *, limit: int = 100) -> list[PfSenseUserGroup]:
         if not (USER_GROUPS_MIN_LIMIT <= limit <= USER_GROUPS_MAX_LIMIT):
@@ -482,24 +330,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.USER_GROUPS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /user/groups response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /user/groups response 'data' was not a list.")
-
-        results: list[PfSenseUserGroup] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError("pfSense /user/groups response contained a non-object entry in 'data'.")
-            try:
-                results.append(PfSenseUserGroup.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /user/groups response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/user/groups", PfSenseUserGroup.from_api)
 
     def get_dhcp_leases(self, *, limit: int = 100) -> list[DhcpLease]:
         if not (DHCP_LEASES_MIN_LIMIT <= limit <= DHCP_LEASES_MAX_LIMIT):
@@ -508,26 +339,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.STATUS_DHCP_LEASES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /status/dhcp_server/leases response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /status/dhcp_server/leases response 'data' was not a list.")
-
-        results: list[DhcpLease] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /status/dhcp_server/leases response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(DhcpLease.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /status/dhcp_server/leases response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/status/dhcp_server/leases", DhcpLease.from_api)
 
     def get_dhcp_static_mappings(self, *, limit: int = 100) -> list[DhcpStaticMapping]:
         if not (DHCP_STATIC_MAPPINGS_MIN_LIMIT <= limit <= DHCP_STATIC_MAPPINGS_MAX_LIMIT):
@@ -537,31 +349,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.DHCP_SERVER_STATIC_MAPPINGS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError(
-                "pfSense /services/dhcp_server/static_mappings response did not contain 'data'."
-            )
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/dhcp_server/static_mappings response 'data' was not a list."
-            )
-
-        results: list[DhcpStaticMapping] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/dhcp_server/static_mappings response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(DhcpStaticMapping.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/dhcp_server/static_mappings response contained an entry "
-                    "that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/services/dhcp_server/static_mappings", DhcpStaticMapping.from_api)
 
     def get_dhcp_servers(self, *, limit: int = 100) -> list[DhcpServer]:
         if not (DHCP_SERVERS_MIN_LIMIT <= limit <= DHCP_SERVERS_MAX_LIMIT):
@@ -570,26 +358,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.DHCP_SERVERS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/dhcp_servers response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /services/dhcp_servers response 'data' was not a list.")
-
-        results: list[DhcpServer] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/dhcp_servers response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(DhcpServer.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/dhcp_servers response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/services/dhcp_servers", DhcpServer.from_api)
 
     def get_interface_bridges(self, *, limit: int = 100) -> list[InterfaceBridge]:
         if not (INTERFACE_BRIDGES_MIN_LIMIT <= limit <= INTERFACE_BRIDGES_MAX_LIMIT):
@@ -598,26 +367,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.INTERFACE_BRIDGES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /interface/bridges response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /interface/bridges response 'data' was not a list.")
-
-        results: list[InterfaceBridge] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /interface/bridges response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(InterfaceBridge.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /interface/bridges response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/interface/bridges", InterfaceBridge.from_api)
 
     def get_carp_status(self) -> CarpStatus:
         raw = self._rest.get(Endpoints.STATUS_CARP)
@@ -649,31 +399,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.DNS_RESOLVER_HOST_OVERRIDES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError(
-                "pfSense /services/dns_resolver/host_overrides response did not contain 'data'."
-            )
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/dns_resolver/host_overrides response 'data' was not a list."
-            )
-
-        results: list[DnsResolverHostOverride] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/dns_resolver/host_overrides response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(DnsResolverHostOverride.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/dns_resolver/host_overrides response contained an entry "
-                    "that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/services/dns_resolver/host_overrides", DnsResolverHostOverride.from_api)
 
     def get_dns_resolver_settings(self) -> DnsResolverSettings:
         raw = self._rest.get(Endpoints.DNS_RESOLVER_SETTINGS)
@@ -686,26 +412,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.DIAGNOSTICS_ARP_TABLE, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /diagnostics/arp_table response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /diagnostics/arp_table response 'data' was not a list.")
-
-        results: list[ArpTableEntry] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /diagnostics/arp_table response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(ArpTableEntry.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /diagnostics/arp_table response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/diagnostics/arp_table", ArpTableEntry.from_api)
 
     def get_firewall_traffic_shaper_limiters(self, *, limit: int = 100) -> list[FirewallTrafficShaperLimiter]:
         if not (FIREWALL_TRAFFIC_SHAPER_LIMITERS_MIN_LIMIT <= limit <= FIREWALL_TRAFFIC_SHAPER_LIMITERS_MAX_LIMIT):
@@ -715,29 +422,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.FIREWALL_TRAFFIC_SHAPER_LIMITERS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError(
-                "pfSense /firewall/traffic_shaper/limiters response did not contain 'data'."
-            )
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /firewall/traffic_shaper/limiters response 'data' was not a list.")
-
-        results: list[FirewallTrafficShaperLimiter] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /firewall/traffic_shaper/limiters response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(FirewallTrafficShaperLimiter.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /firewall/traffic_shaper/limiters response contained an entry "
-                    "that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/firewall/traffic_shaper/limiters", FirewallTrafficShaperLimiter.from_api)
 
     def get_firewall_advanced_settings(self) -> FirewallAdvancedSettings:
         raw = self._rest.get(Endpoints.FIREWALL_ADVANCED_SETTINGS)
@@ -750,26 +435,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.SYSTEM_PACKAGES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /system/packages response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /system/packages response 'data' was not a list.")
-
-        results: list[SystemPackage] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /system/packages response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(SystemPackage.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /system/packages response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/system/packages", SystemPackage.from_api)
 
     def get_system_tunables(self, *, limit: int = 100) -> list[SystemTunable]:
         if not (SYSTEM_TUNABLES_MIN_LIMIT <= limit <= SYSTEM_TUNABLES_MAX_LIMIT):
@@ -778,26 +444,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.SYSTEM_TUNABLES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /system/tunables response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /system/tunables response 'data' was not a list.")
-
-        results: list[SystemTunable] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /system/tunables response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(SystemTunable.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /system/tunables response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/system/tunables", SystemTunable.from_api)
 
     def get_email_notification_settings(
         self, *, include_identifying_metadata: bool = False
@@ -826,26 +473,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.NTP_TIME_SERVERS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/ntp/time_servers response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /services/ntp/time_servers response 'data' was not a list.")
-
-        results: list[NtpTimeServer] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/ntp/time_servers response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(NtpTimeServer.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/ntp/time_servers response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/services/ntp/time_servers", NtpTimeServer.from_api)
 
     def get_ssh_settings(self) -> SshSettings:
         raw = self._rest.get(Endpoints.SERVICES_SSH)
@@ -858,26 +486,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.CRON_JOBS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/cron/jobs response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /services/cron/jobs response 'data' was not a list.")
-
-        results: list[CronJob] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/cron/jobs response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(CronJob.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /services/cron/jobs response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/services/cron/jobs", CronJob.from_api)
 
     def get_acme_settings(self) -> AcmeSettings:
         raw = self._rest.get(Endpoints.ACME_SETTINGS)
@@ -895,26 +504,7 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.DIAGNOSTICS_TABLES, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /diagnostics/tables response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /diagnostics/tables response 'data' was not a list.")
-
-        results: list[DiagnosticsTable] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError(
-                    "pfSense /diagnostics/tables response contained a non-object entry in 'data'."
-                )
-            try:
-                results.append(DiagnosticsTable.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /diagnostics/tables response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/diagnostics/tables", DiagnosticsTable.from_api)
 
     def get_auth_keys(self, *, limit: int = 100) -> list[AuthKey]:
         if not (AUTH_KEYS_MIN_LIMIT <= limit <= AUTH_KEYS_MAX_LIMIT):
@@ -923,21 +513,4 @@ class PfSenseClient:
             )
 
         raw = self._rest.get(Endpoints.AUTH_KEYS, params={"limit": limit})
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /auth/keys response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, list):
-            raise PfSenseResponseShapeError("pfSense /auth/keys response 'data' was not a list.")
-
-        results: list[AuthKey] = []
-        for item in data:
-            if not isinstance(item, dict):
-                raise PfSenseResponseShapeError("pfSense /auth/keys response contained a non-object entry in 'data'.")
-            try:
-                results.append(AuthKey.from_api(item))
-            except (KeyError, TypeError, ValidationError):
-                raise PfSenseResponseShapeError(
-                    "pfSense /auth/keys response contained an entry that failed schema validation."
-                ) from None
-        return results
+        return _parse_list_response(raw, "/auth/keys", AuthKey.from_api)
