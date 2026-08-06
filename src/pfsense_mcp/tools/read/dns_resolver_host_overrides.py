@@ -1,4 +1,4 @@
-"""pfsense_get_dns_resolver_host_overrides tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_dns_resolver_host_overrides tool definition."""
 
 from __future__ import annotations
 

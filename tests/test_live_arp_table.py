@@ -1,4 +1,4 @@
-"""Live integration test for get_arp_table. GENERATED PROPOSAL — review before use.
+"""Live integration test for get_arp_table.
 
 Opt-in only: requires PFSENSE_RUN_LIVE_TESTS=true in addition to
 credentials. Never prints or persists a complete response — only

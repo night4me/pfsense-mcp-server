@@ -1,4 +1,4 @@
-"""pfsense_get_ntp_time_servers tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_ntp_time_servers tool definition."""
 
 from __future__ import annotations
 

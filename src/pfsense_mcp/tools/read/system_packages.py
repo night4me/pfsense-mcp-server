@@ -1,4 +1,4 @@
-"""pfsense_get_system_packages tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_system_packages tool definition."""
 
 from __future__ import annotations
 

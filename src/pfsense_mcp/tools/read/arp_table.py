@@ -1,4 +1,4 @@
-"""pfsense_get_arp_table tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_arp_table tool definition."""
 
 from __future__ import annotations
 

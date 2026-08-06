@@ -1,4 +1,4 @@
-"""Live integration test for get_cron_jobs. GENERATED PROPOSAL — review before use.
+"""Live integration test for get_cron_jobs.
 
 Opt-in only: requires PFSENSE_RUN_LIVE_TESTS=true in addition to
 credentials. Never prints or persists a complete response — only

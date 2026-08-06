@@ -1,6 +1,6 @@
 """Model for the NtpTimeServer capability endpoint.
 
-GENERATED PROPOSAL — review before use. Field types/nullability were
+Field types/nullability were
 derived from a saved OpenAPI discovery snapshot and cross-checked
 against an approved fixture; identifying_fields is exactly what the
 capability manifest declared, never inferred.

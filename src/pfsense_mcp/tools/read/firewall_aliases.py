@@ -1,4 +1,4 @@
-"""pfsense_get_firewall_aliases tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_firewall_aliases tool definition."""
 
 from __future__ import annotations
 

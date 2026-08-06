@@ -1,4 +1,4 @@
-"""pfsense_get_cron_jobs tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_cron_jobs tool definition."""
 
 from __future__ import annotations
 

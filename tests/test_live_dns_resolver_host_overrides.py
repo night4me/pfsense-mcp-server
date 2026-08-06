@@ -1,4 +1,4 @@
-"""Live integration test for get_dns_resolver_host_overrides. GENERATED PROPOSAL — review before use.
+"""Live integration test for get_dns_resolver_host_overrides.
 
 Opt-in only: requires PFSENSE_RUN_LIVE_TESTS=true in addition to
 credentials. Never prints or persists a complete response — only

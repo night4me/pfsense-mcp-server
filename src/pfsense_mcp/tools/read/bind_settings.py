@@ -1,4 +1,4 @@
-"""pfsense_get_bind_settings tool definition. GENERATED PROPOSAL — review before use."""
+"""pfsense_get_bind_settings tool definition."""
 
 from __future__ import annotations
 
