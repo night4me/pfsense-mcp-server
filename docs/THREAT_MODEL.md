@@ -41,9 +41,10 @@ invoke every tool in the selected profile.
 ### TB2 — process to local filesystem
 
 Configuration arrives through environment variables. The API key and optional
-CA bundle are local files. Key ownership, type, symlink state, permissions, and
-size are validated. Logs and local stores depend on operating-system directory
-permissions.
+CA bundle are local files. On the supported Linux production platform, the key
+is opened with `O_NOFOLLOW`; ownership, type, permissions, and size are checked
+with `fstat()`, and the same descriptor is read and reliably closed. Logs and
+local stores depend on operating-system directory permissions.
 
 ### TB3 — server to pfSense over HTTPS
 
@@ -123,7 +124,7 @@ or exploit ambiguous network outcomes.
 | Category | Threats | Current mitigations | Residual risk |
 |---|---|---|---|
 | Spoofing | Caller claims another identity; attacker impersonates pfSense; contract identity substitution | Local launcher is the caller boundary; `PFSENSE_IDENTITY` is explicitly upstream identity; HTTPS strict/default or explicit CA; future contracts require store-loaded target binding | No per-message caller identity; `insecure` TLS permits upstream spoofing; Tier 1 binding not yet implemented |
-| Tampering | Modify capability/profile, endpoints, key/CA files, fixtures, artifacts, responses, logs | Explicit registries; static GET/WRITE checks; key metadata validation; typed models; fixture audit; pinned actions; artifact member checks; file permissions | Launch-account compromise defeats local integrity; `lstat` then open has a local race; logs are not cryptographically append-only |
+| Tampering | Modify capability/profile, endpoints, key/CA files, fixtures, artifacts, responses, logs | Explicit registries; static GET/WRITE checks; descriptor-bound `O_NOFOLLOW`/`fstat()` key loading; typed models; fixture audit; pinned actions; artifact member checks; file permissions | Launch-account compromise defeats local integrity; logs are not cryptographically append-only |
 | Repudiation | Caller denies sensitive metadata request or tool use; future mutation lacks trace | Structured tool audit records tool, upstream identity, disclosure choice, outcome class, duration; future write audit designed separately | stdio caller has no individual identity; local log owner can alter files; current audit is operational, not non-repudiation evidence |
 | Information disclosure | Credentials in schemas/output/errors/logs/fixtures/docs; topology leakage; exception/body leakage | Credential fields removed; upstream values ignored; optional metadata default-off; sanitized typed errors; no values/messages in audit; fixture hard refusal; security scan; private report policy | Ordinary READ data is still sensitive; public certificates identify infrastructure; trusted caller can request optional metadata; local launcher controls the credential |
 | Denial of service | Large limits, slow appliance, malformed responses, log exhaustion, repeated calls | Limits bounded 1–100; HTTP timeouts; response shape validation; rotating bounded logs; process-local stdio; fail-closed config | No per-caller rate limit; a channel controller can saturate process/upstream within timeout/limit bounds; upstream can remain slow or unavailable |
@@ -150,7 +151,8 @@ or exploit ambiguous network outcomes.
 
 ### Credential and data controls
 
-- API key loaded from a bounded, owner-only, regular non-symlink file.
+- API key opened without following symlinks, validated by descriptor, read from
+  the same inode within strict bounds, and closed on every path.
 - Password, PSK, private-key, plaintext API-key, and stored-hash fields excluded
   from public models and schemas.
 - Optional sensitive metadata omitted by default and disclosure choice audited.
@@ -189,23 +191,19 @@ or exploit ambiguous network outcomes.
    aid an attacker.
 3. **Explicit insecure TLS:** operator-selected `insecure` mode permits a
    man-in-the-middle to observe the API key and forge responses.
-4. **Local file race:** key metadata is validated before a separate path open.
-   Secure 0700 parent directories prevent an unprivileged local actor from
-   exploiting this in the intended deployment.
-5. **Log integrity:** rotating local logs are value-minimized but not
+4. **Log integrity:** rotating local logs are value-minimized but not
    cryptographically tamper-evident.
-6. **Dependency compromise:** pinned actions reduce workflow drift, but Python
+5. **Dependency compromise:** pinned actions reduce workflow drift, but Python
    dependencies use bounded ranges rather than hashes/lock constraints.
-7. **Certificate identity:** public certificates can contain production
+6. **Certificate identity:** public certificates can contain production
    identifiers; committed fixture provenance remains uncertain.
-8. **Dormant-code drift:** Tier 0 modules can accumulate defects despite being
+7. **Dormant-code drift:** Tier 0 modules can accumulate defects despite being
    unreachable; tests and activation gates must remain mandatory.
-9. **No current rate limiting:** a trusted-channel attacker can cause bounded
+8. **No current rate limiting:** a trusted-channel attacker can cause bounded
    upstream load and local log activity.
 
 ## Future considerations
 
-- Use file-descriptor-based `O_NOFOLLOW`/`fstat()` key loading where supported.
 - Evaluate dependency constraints, provenance/attestation, and advisory scanning
   after CI baseline stability.
 - Consider per-caller authorization only if transport expands beyond trusted

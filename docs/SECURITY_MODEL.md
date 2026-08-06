@@ -69,9 +69,14 @@ the `X-API-Key` header. HTTPS is mandatory. Strict system trust is the
 default; an explicit CA file can be used for an internal CA. TLS
 verification can be disabled only by explicit startup configuration.
 
-The key-file path must identify a readable, bounded regular file, may not
-be a symbolic link, must be owned by the current process user, and must
-not grant any permissions to group or other users.
+Linux is the supported production platform for credential loading. The key
+file is opened read-only with `O_NOFOLLOW`, then its type, effective-user
+ownership, permissions, and size are validated with `fstat()` before a bounded
+first line is read from that same descriptor. The descriptor is closed on
+every path. This binds validation and reading to one inode and prevents path
+replacement from substituting a different file. Platforms without the
+required safe-open primitive are rejected with a clear configuration error;
+they do not silently use weaker path-based validation.
 
 ## Audit data
 

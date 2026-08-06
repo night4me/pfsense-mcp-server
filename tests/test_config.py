@@ -18,8 +18,9 @@ def _base_env(key_file) -> dict[str, str]:
 
 
 def test_missing_key_file_fails_closed(tmp_path):
-    with pytest.raises(ConfigurationError, match="not found"):
-        load_config(_base_env(tmp_path / "does-not-exist.key"))
+    config = load_config(_base_env(tmp_path / "does-not-exist.key"))
+    with pytest.raises(ConfigurationError, match="could not be opened"):
+        load_api_key(config)
 
 
 def test_unreadable_key_file_fails_closed(tmp_path):
@@ -27,8 +28,10 @@ def test_unreadable_key_file_fails_closed(tmp_path):
     key_file.write_text("fake-key-value\n")
     key_file.chmod(0o000)
     try:
-        with pytest.raises(ConfigurationError, match="not readable"):
-            load_config(_base_env(key_file))
+        config = load_config(_base_env(key_file))
+        if not os.access(key_file, os.R_OK):
+            with pytest.raises(ConfigurationError, match="could not be opened"):
+                load_api_key(config)
     finally:
         key_file.chmod(0o600)
 
@@ -183,29 +186,34 @@ def test_key_file_symlink_is_rejected(tmp_path):
     target.write_text("fake-key-value\n")
     link = tmp_path / "link.key"
     link.symlink_to(target)
+    config = load_config(_base_env(link))
     with pytest.raises(ConfigurationError, match="symbolic link"):
-        load_config(_base_env(link))
+        load_api_key(config)
 
 
 def test_key_file_directory_is_rejected(tmp_path):
+    config = load_config(_base_env(tmp_path))
     with pytest.raises(ConfigurationError, match="regular file"):
-        load_config(_base_env(tmp_path))
+        load_api_key(config)
 
 
 def test_key_file_size_is_bounded(tmp_path):
     key_file = tmp_path / "large.key"
     key_file.write_text("x" * (16 * 1024 + 1))
+    config = load_config(_base_env(key_file))
     with pytest.raises(ConfigurationError, match="maximum allowed size"):
-        load_config(_base_env(key_file))
+        load_api_key(config)
 
 
-def test_key_file_with_group_or_other_permissions_is_rejected(tmp_path):
+@pytest.mark.parametrize("mode", [0o640, 0o604])
+def test_key_file_with_group_or_other_permissions_is_rejected(tmp_path, mode):
     key_file = tmp_path / "permissive.key"
     key_file.write_text("fake-key-value\n")
     env = _base_env(key_file)
-    key_file.chmod(0o640)
+    key_file.chmod(mode)
+    config = load_config(env)
     with pytest.raises(ConfigurationError, match="group or other"):
-        load_config(env)
+        load_api_key(config)
 
 
 def test_key_file_owned_by_another_user_is_rejected(tmp_path, monkeypatch):
@@ -213,16 +221,138 @@ def test_key_file_owned_by_another_user_is_rejected(tmp_path, monkeypatch):
     key_file.write_text("fake-key-value\n")
     env = _base_env(key_file)
     monkeypatch.setattr(os, "geteuid", lambda: key_file.stat().st_uid + 1)
+    config = load_config(env)
     with pytest.raises(ConfigurationError, match="current user"):
-        load_config(env)
+        load_api_key(config)
 
 
 def test_key_file_control_character_is_rejected(tmp_path):
     key_file = tmp_path / "control.key"
-    key_file.write_bytes(b"fake\x00key\n")
+    key_file.write_bytes(b"fake\tkey\n")
     config = load_config(_base_env(key_file))
     with pytest.raises(ConfigurationError, match="control characters"):
         load_api_key(config)
+
+
+def test_key_file_nul_byte_is_rejected(tmp_path):
+    key_file = tmp_path / "nul.key"
+    key_file.write_bytes(b"fake\x00key\n")
+    config = load_config(_base_env(key_file))
+    with pytest.raises(ConfigurationError, match="NUL byte"):
+        load_api_key(config)
+
+
+def test_key_file_first_line_length_is_bounded(tmp_path):
+    key_file = tmp_path / "long-line.key"
+    key_file.write_bytes(b"x" * 4097 + b"\n")
+    config = load_config(_base_env(key_file))
+    with pytest.raises(ConfigurationError, match="first line is too long"):
+        load_api_key(config)
+
+
+def test_key_file_invalid_utf8_is_rejected(tmp_path):
+    key_file = tmp_path / "invalid-utf8.key"
+    key_file.write_bytes(b"fake-\xff-key\n")
+    config = load_config(_base_env(key_file))
+    with pytest.raises(ConfigurationError, match="valid UTF-8"):
+        load_api_key(config)
+
+
+def test_key_file_loading_requires_nofollow_support(tmp_path, monkeypatch):
+    key_file = tmp_path / "present.key"
+    key_file.write_text("fake-key-value\n")
+    config = load_config(_base_env(key_file))
+    monkeypatch.delattr(os, "O_NOFOLLOW", raising=False)
+    with pytest.raises(ConfigurationError, match="unsupported on this platform"):
+        load_api_key(config)
+
+
+def test_key_file_descriptor_is_closed_after_success(tmp_path, monkeypatch):
+    key_file = tmp_path / "present.key"
+    key_file.write_text("fake-key-value\n")
+    config = load_config(_base_env(key_file))
+    real_open = os.open
+    descriptors: list[int] = []
+
+    def capture_open(path, flags):
+        descriptor = real_open(path, flags)
+        descriptors.append(descriptor)
+        return descriptor
+
+    monkeypatch.setattr(os, "open", capture_open)
+    assert load_api_key(config) == "fake-key-value"
+    assert len(descriptors) == 1
+    with pytest.raises(OSError):
+        os.fstat(descriptors[0])
+
+
+def test_key_file_descriptor_is_closed_after_failure(tmp_path, monkeypatch):
+    key_file = tmp_path / "permissive.key"
+    key_file.write_text("fake-key-value\n")
+    config = load_config(_base_env(key_file))
+    key_file.chmod(0o640)
+    real_open = os.open
+    descriptors: list[int] = []
+
+    def capture_open(path, flags):
+        descriptor = real_open(path, flags)
+        descriptors.append(descriptor)
+        return descriptor
+
+    monkeypatch.setattr(os, "open", capture_open)
+    with pytest.raises(ConfigurationError, match="group or other"):
+        load_api_key(config)
+    assert len(descriptors) == 1
+    with pytest.raises(OSError):
+        os.fstat(descriptors[0])
+
+
+def test_key_file_inode_and_contents_remain_bound_after_path_replacement(tmp_path, monkeypatch):
+    key_file = tmp_path / "active.key"
+    key_file.write_text("original-key-value\n")
+    replacement = tmp_path / "replacement.key"
+    replacement.write_text("replacement-key-value\n")
+    replacement.chmod(0o600)
+    original_inode = key_file.stat().st_ino
+    config = load_config(_base_env(key_file))
+    displaced = tmp_path / "displaced.key"
+    real_fstat = os.fstat
+    real_read = os.read
+    descriptor_inode: int | None = None
+
+    def replace_path_after_fstat(descriptor):
+        nonlocal descriptor_inode
+        metadata = real_fstat(descriptor)
+        descriptor_inode = metadata.st_ino
+        key_file.rename(displaced)
+        replacement.rename(key_file)
+        return metadata
+
+    def verify_descriptor_before_read(descriptor, size):
+        assert real_fstat(descriptor).st_ino == original_inode
+        assert key_file.stat().st_ino != original_inode
+        return real_read(descriptor, size)
+
+    monkeypatch.setattr(os, "fstat", replace_path_after_fstat)
+    monkeypatch.setattr(os, "read", verify_descriptor_before_read)
+
+    assert load_api_key(config) == "original-key-value"
+    assert descriptor_inode == original_inode
+    assert key_file.read_text() == "replacement-key-value\n"
+
+
+def test_key_file_errors_and_logs_never_contain_key_contents(tmp_path, caplog):
+    sentinel = "SENTINEL_KEY_VALUE_MUST_NOT_LEAK"
+    key_file = tmp_path / "invalid.key"
+    key_file.write_bytes(sentinel.encode() + b"\x00tail\n")
+    config = load_config(_base_env(key_file))
+    caplog.set_level("DEBUG")
+
+    with pytest.raises(ConfigurationError) as captured:
+        load_api_key(config)
+
+    assert sentinel not in str(captured.value)
+    assert sentinel not in caplog.text
 
 
 def test_auto_tls_requires_existing_regular_readable_ca_file(tmp_path):

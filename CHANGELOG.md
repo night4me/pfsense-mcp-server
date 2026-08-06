@@ -34,6 +34,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Tool annotations remain untrusted client hints; capability, endpoint,
   GET-only, credential, audit, and WRITE-inactivity controls remain
   authoritative.
+- Bound API-key metadata validation and bounded reading to one non-following
+  file descriptor, eliminating path replacement between check and use.
 
 ## [0.2.1] - 2026-08-06
 

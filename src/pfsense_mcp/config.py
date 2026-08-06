@@ -11,6 +11,7 @@ import os
 import stat
 from collections.abc import Mapping
 from dataclasses import dataclass
+from errno import ELOOP
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -43,24 +44,34 @@ class PfSenseConfig:
     allowed_tools: frozenset[str] | None = None
 
 
-def _validate_key_file(key_file: Path) -> None:
+def _open_key_file(key_file: Path) -> int:
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        raise ConfigurationError("Secure key-file loading is unsupported on this platform")
+
+    flags = os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0)
     try:
-        metadata = key_file.lstat()
+        return os.open(key_file, flags)
+    except OSError as exc:
+        if exc.errno == ELOOP:
+            raise ConfigurationError(f"Key file must not be a symbolic link: {key_file}") from None
+        raise ConfigurationError(f"Key file could not be opened: {key_file}") from None
+
+
+def _validate_key_file_descriptor(key_file: Path, descriptor: int) -> None:
+    try:
+        metadata = os.fstat(descriptor)
     except OSError:
-        raise ConfigurationError(f"Key file not found: {key_file}")
-    if stat.S_ISLNK(metadata.st_mode):
-        raise ConfigurationError(f"Key file must not be a symbolic link: {key_file}")
+        raise ConfigurationError(f"Key file metadata could not be read: {key_file}") from None
+
     if not stat.S_ISREG(metadata.st_mode):
         raise ConfigurationError(f"Key file is not a regular file: {key_file}")
-    if not os.access(key_file, os.R_OK):
-        raise ConfigurationError(f"Key file is not readable: {key_file}")
-    if metadata.st_size > _KEY_FILE_MAX_BYTES:
-        raise ConfigurationError(f"Key file exceeds the maximum allowed size: {key_file}")
-
     if metadata.st_uid != os.geteuid():
         raise ConfigurationError(f"Key file must be owned by the current user: {key_file}")
     if stat.S_IMODE(metadata.st_mode) & 0o077:
         raise ConfigurationError(f"Key file must not grant permissions to group or other users: {key_file}")
+    if metadata.st_size > _KEY_FILE_MAX_BYTES:
+        raise ConfigurationError(f"Key file exceeds the maximum allowed size: {key_file}")
 
 
 def _contains_control_characters(value: str) -> bool:
@@ -193,8 +204,6 @@ def load_config(env: dict[str, str] | None = None) -> PfSenseConfig:
 
     log_max_bytes, log_backup_count = load_logging_config(env)
 
-    _validate_key_file(key_file)
-
     return PfSenseConfig(
         base_url=base_url,
         identity=identity,
@@ -210,19 +219,34 @@ def load_config(env: dict[str, str] | None = None) -> PfSenseConfig:
 
 
 def load_api_key(config: PfSenseConfig) -> str:
-    """Read only the first line of the key file. The returned value
-    must never be logged, printed, or included in any exception
-    message by any caller of this function."""
+    """Validate and read the key through one non-following descriptor.
+
+    The returned value must never be logged, printed, or included in any
+    exception message by any caller of this function.
+    """
+    descriptor = _open_key_file(config.key_file)
     try:
-        with config.key_file.open("r", encoding="utf-8") as fh:
-            first_line = fh.readline()
-    except OSError:
-        raise ConfigurationError(f"Key file could not be read: {config.key_file}") from None
-    key = first_line.strip()
+        _validate_key_file_descriptor(config.key_file, descriptor)
+        try:
+            first_line = os.read(descriptor, _KEY_LINE_MAX_LENGTH + 1).split(b"\n", maxsplit=1)[0]
+        except OSError:
+            raise ConfigurationError(f"Key file could not be read: {config.key_file}") from None
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError:
+            raise ConfigurationError(f"Key file descriptor could not be closed: {config.key_file}") from None
+
+    if len(first_line) > _KEY_LINE_MAX_LENGTH:
+        raise ConfigurationError(f"Key file first line is too long: {config.key_file}")
+    if b"\x00" in first_line:
+        raise ConfigurationError(f"Key file first line contains a NUL byte: {config.key_file}")
+    if any(byte < 32 or byte == 127 for byte in first_line):
+        raise ConfigurationError(f"Key file first line contains control characters: {config.key_file}")
+    try:
+        key = first_line.decode("utf-8").strip()
+    except UnicodeDecodeError:
+        raise ConfigurationError(f"Key file first line is not valid UTF-8: {config.key_file}") from None
     if not key:
         raise ConfigurationError(f"Key file is empty: {config.key_file}")
-    if len(key) > _KEY_LINE_MAX_LENGTH:
-        raise ConfigurationError(f"Key file first line is too long: {config.key_file}")
-    if _contains_control_characters(key):
-        raise ConfigurationError(f"Key file first line contains control characters: {config.key_file}")
     return key
