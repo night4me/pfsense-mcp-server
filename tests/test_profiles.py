@@ -108,3 +108,7 @@ def test_auditor_profile_has_system_package_read():
 
 def test_auditor_profile_has_system_tunable_read():
     assert Capability.SYSTEM_TUNABLE_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_system_notifications_read():
+    assert Capability.SYSTEM_NOTIFICATIONS_READ in AuditorProfile.capabilities

@@ -580,6 +580,23 @@ _SYSTEM_TUNABLES_BODY = {
 }
 
 
+_EMAIL_NOTIFICATION_SETTINGS_BODY = {
+    "data": {
+        "authentication_mechanism": "PLAIN",
+        "disable": False,
+        "fromaddress": "test-from@example.invalid",
+        "ipaddress": "198.51.100.30",
+        "notifyemailaddress": "test-notify@example.invalid",
+        "password": "test-password",
+        "port": "587",
+        "ssl": True,
+        "sslvalidate": True,
+        "timeout": 20,
+        "username": "test-smtp-user",
+    }
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -667,6 +684,7 @@ def _client(
     with_firewall_advanced_settings: bool = False,
     with_system_packages: bool = False,
     with_system_tunables: bool = False,
+    with_email_notification_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -801,6 +819,13 @@ def _client(
     if with_system_tunables:
         transport.register(
             "GET", "/api/v2/system/tunables?limit=100", status_code=200, text=json.dumps(_SYSTEM_TUNABLES_BODY)
+        )
+    if with_email_notification_settings:
+        transport.register(
+            "GET",
+            "/api/v2/system/notifications/email_settings",
+            status_code=200,
+            text=json.dumps(_EMAIL_NOTIFICATION_SETTINGS_BODY),
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1701,3 +1726,48 @@ def test_registered_system_tunables_tool_invokes_client():
     assert len(tunables) == 1
     assert tunables[0].tunable == "net.inet.tcp.test"
     assert tunables[0].value == "1"
+
+
+def test_registry_registers_email_notification_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_email_notification_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_NOTIFICATIONS_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_email_notification_settings"
+
+
+def test_registry_does_not_register_email_notification_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_email_notification_settings" not in names
+
+
+def test_registered_email_notification_settings_tool_redacts_by_default():
+    mcp = FakeMCP()
+    client = _client(with_email_notification_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_NOTIFICATIONS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_email_notification_settings")
+    settings = fn()
+    assert settings.disable is False
+    assert settings.port == "587"
+    assert settings.username is None
+    assert settings.password is None
+    assert settings.fromaddress is None
+    assert settings.notifyemailaddress is None
+    assert settings.ipaddress is None
+
+
+def test_registered_email_notification_settings_tool_reveals_identifying_metadata_when_requested():
+    mcp = FakeMCP()
+    client = _client(with_email_notification_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_NOTIFICATIONS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_email_notification_settings")
+    settings = fn(include_identifying_metadata=True)
+    assert settings.username == "test-smtp-user"
+    assert settings.password == "test-password"
+    assert settings.fromaddress == "test-from@example.invalid"

@@ -14,6 +14,7 @@ from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.dns_resolver_host_override import DnsResolverHostOverride
 from .models.dns_resolver_settings import DnsResolverSettings
+from .models.email_notification_settings import EmailNotificationSettings
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_advanced_settings import FirewallAdvancedSettings
 from .models.firewall_alias import FirewallAlias
@@ -832,3 +833,24 @@ class PfSenseClient:
                     "pfSense /system/tunables response contained an entry that failed schema validation."
                 ) from None
         return results
+
+    def get_email_notification_settings(
+        self, *, include_identifying_metadata: bool = False
+    ) -> EmailNotificationSettings:
+        raw = self._rest.get(Endpoints.SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError(
+                "pfSense /system/notifications/email_settings response did not contain 'data'."
+            )
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError(
+                "pfSense /system/notifications/email_settings response 'data' was not an object."
+            )
+        try:
+            return EmailNotificationSettings.from_api(data, include_identifying_metadata=include_identifying_metadata)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /system/notifications/email_settings response failed schema validation."
+            ) from None

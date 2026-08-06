@@ -48,6 +48,7 @@ AuditorProfile = Profile(
             Capability.FIREWALL_ADVANCED_SETTINGS_READ,
             Capability.SYSTEM_PACKAGE_READ,
             Capability.SYSTEM_TUNABLE_READ,
+            Capability.SYSTEM_NOTIFICATIONS_READ,
         }
     ),
 )

@@ -390,6 +390,20 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=20,
     ),
+    "SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS": CapturePolicy(
+        endpoint_attr="SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS",
+        result_shape="object",
+        # password is the SMTP auth password -- a genuine secret,
+        # hard-refused. username/fromaddress/notifyemailaddress/
+        # ipaddress are real personal contact info / SMTP account
+        # identity, not ordinary administrative object names -- unlike
+        # most other capabilities today, these are redacted by default
+        # at the model layer too (matching the manifest's
+        # identifying_fields), not just fixture-only.
+        hard_refusal_fields=frozenset({"password"}),
+        identifying_fields=frozenset({"username", "fromaddress", "notifyemailaddress", "ipaddress", "password"}),
+        default_max_items=1,
+    ),
 }
 
 

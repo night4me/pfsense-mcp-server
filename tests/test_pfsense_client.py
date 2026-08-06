@@ -3183,3 +3183,102 @@ def test_get_system_tunables_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_tunables()
     assert sentinel not in str(excinfo.value)
+
+
+EMAIL_NOTIFICATION_SETTINGS_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "system_notifications_email_settings_response.json"
+)
+EMAIL_NOTIFICATION_SETTINGS_IDENTIFYING_FIELDS = (
+    "username",
+    "password",
+    "fromaddress",
+    "notifyemailaddress",
+    "ipaddress",
+)
+
+
+def _email_notification_settings_body() -> dict:
+    return json.loads(EMAIL_NOTIFICATION_SETTINGS_FIXTURE.read_text())
+
+
+def _email_notification_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _email_notification_settings_body()
+    transport.register("GET", "/api/v2/system/notifications/email_settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_email_notification_settings_omits_identifying_fields_by_default():
+    client, _ = _email_notification_settings_client()
+    settings = client.get_email_notification_settings()
+    for field in EMAIL_NOTIFICATION_SETTINGS_IDENTIFYING_FIELDS:
+        assert getattr(settings, field) is None
+
+
+def test_get_email_notification_settings_object_metadata_is_visible_by_default():
+    client, _ = _email_notification_settings_client()
+    raw = _email_notification_settings_body()["data"]
+    settings = client.get_email_notification_settings()
+    assert settings.authentication_mechanism == raw["authentication_mechanism"]
+    assert settings.disable == raw["disable"]
+    assert settings.port == raw["port"]
+    assert settings.ssl == raw["ssl"]
+    assert settings.sslvalidate == raw["sslvalidate"]
+    assert settings.timeout == raw["timeout"]
+
+
+def test_get_email_notification_settings_includes_identifying_fields_when_requested():
+    client, _ = _email_notification_settings_client()
+    raw = _email_notification_settings_body()["data"]
+    settings = client.get_email_notification_settings(include_identifying_metadata=True)
+    for field in EMAIL_NOTIFICATION_SETTINGS_IDENTIFYING_FIELDS:
+        assert getattr(settings, field) == raw[field]
+
+
+def test_get_email_notification_settings_only_calls_settings_endpoint():
+    client, transport = _email_notification_settings_client()
+    client.get_email_notification_settings()
+    assert transport.calls == [("GET", "/api/v2/system/notifications/email_settings")]
+
+
+def test_get_email_notification_settings_missing_data_key_raises_shape_error():
+    body = _email_notification_settings_body()
+    del body["data"]
+    client, _ = _email_notification_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_email_notification_settings()
+
+
+def test_get_email_notification_settings_data_wrong_type_raises_shape_error():
+    body = _email_notification_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _email_notification_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_email_notification_settings()
+
+
+def test_get_email_notification_settings_required_field_missing_raises_shape_error():
+    body = _email_notification_settings_body()
+    del body["data"]["port"]
+    client, _ = _email_notification_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_email_notification_settings()
+
+
+def test_get_email_notification_settings_invalid_field_type_raises_shape_error():
+    body = _email_notification_settings_body()
+    body["data"]["disable"] = "not-a-bool"
+    client, _ = _email_notification_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_email_notification_settings()
+
+
+def test_get_email_notification_settings_shape_error_does_not_leak_raw_field_values():
+    body = _email_notification_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["disable"] = sentinel
+    client, _ = _email_notification_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_email_notification_settings()
+    assert sentinel not in str(excinfo.value)

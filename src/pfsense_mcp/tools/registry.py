@@ -14,6 +14,7 @@ from .read import (
     dhcp_static_mappings,
     dns_resolver_host_overrides,
     dns_resolver_settings,
+    email_notification_settings,
     firewall_advanced_settings,
     firewall_aliases,
     firewall_apply_status,
@@ -99,6 +100,8 @@ class ToolRegistry:
             self._register_system_package_read()
         if Capability.SYSTEM_TUNABLE_READ in self._capabilities:
             self._register_system_tunable_read()
+        if Capability.SYSTEM_NOTIFICATIONS_READ in self._capabilities:
+            self._register_system_notifications_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -251,4 +254,9 @@ class ToolRegistry:
     def _register_system_tunable_read(self) -> None:
         fn = system_tunables.build(self._client)
         wrapped = audit_logged("pfsense_get_system_tunables", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_system_notifications_read(self) -> None:
+        fn = email_notification_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_email_notification_settings", self._identity)(fn)
         self._mcp.tool()(wrapped)
