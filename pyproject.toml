@@ -1,6 +1,6 @@
 [project]
 name = "pfsense-mcp-server"
-version = "0.2.1"
+version = "0.2.2"
 description = "Local MCP server exposing strongly-typed pfSense REST API tools with inert write infrastructure."
 requires-python = ">=3.11"
 dependencies = [
@@ -18,6 +18,10 @@ dev = [
     "respx>=0.21,<1.0",
     "ruff>=0.6,<1.0",
     "mypy>=1.10,<2.0",
+    "build>=1.2,<2.0",
+    "hatchling>=1.25,<2.0",
+    "pytest-cov>=5.0,<8.0",
+    "bandit>=1.7,<2.0",
 ]
 
 [tool.pytest.ini_options]
@@ -36,6 +40,31 @@ select = ["E", "F", "I"]
 [tool.mypy]
 python_version = "3.11"
 files = ["src/pfsense_mcp", "scripts"]
+
+[tool.coverage.run]
+branch = true
+source = ["pfsense_mcp"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    # Reviewed local-only tooling: subprocess calls use fixed argv with
+    # shell=False; validate_junit parses only pytest's local report.
+    "scripts/checkpoint.py",
+    "scripts/git_report.py",
+    "scripts/scaffold_capability.py",
+    "scripts/security_scan.py",
+    "scripts/validate_junit.py",
+]
+
+[tool.bandit.assert_used]
+# These assertions narrow types after validate_tls_settings has enforced
+# the AUTO/CA-file invariant; they are not runtime authorization checks.
+skips = ["*/tls.py", "src/pfsense_mcp/tls.py"]
 
 [build-system]
 requires = ["hatchling"]

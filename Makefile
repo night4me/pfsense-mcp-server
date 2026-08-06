@@ -4,7 +4,8 @@
         write-infrastructure-check write-allow-list-check write-capability-check \
         git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
-        scaffold-capability checkpoint
+        scaffold-capability checkpoint \
+        coverage security-static package-check
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -160,6 +161,30 @@ quick:
 	@echo "  OK"
 	@echo "--------------------------------------------------------"
 	@echo "QUICK: PASSED (9/9 stages)"
+
+coverage:
+	@$(PYTHON) -m pytest --cov=pfsense_mcp --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
+
+security-static:
+	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts
+
+package-check:
+	@$(PYTHON) -m build --no-isolation --sdist --wheel
+	@$(PYTHON) scripts/verify_distribution.py dist
+	@tmp_dir=$$(mktemp -d); \
+	  trap 'rm -rf "$$tmp_dir"' EXIT; \
+	  if $(PYTHON) -m venv "$$tmp_dir/venv" >/dev/null 2>&1; then \
+	    "$$tmp_dir/venv/bin/python" -m pip install --quiet dist/*.whl; \
+	  elif command -v uv >/dev/null; then \
+	    uv venv --quiet --python $(PYTHON) --clear "$$tmp_dir/venv"; \
+	    uv pip install --quiet --python "$$tmp_dir/venv/bin/python" dist/*.whl; \
+	  else \
+	    echo "package-check: clean environment creation requires ensurepip or uv" >&2; exit 1; \
+	  fi; \
+	  "$$tmp_dir/venv/bin/python" -c "import pfsense_mcp.server"; \
+	  if "$$tmp_dir/venv/bin/pfsense-mcp-server" >"$$tmp_dir/stdout" 2>"$$tmp_dir/stderr"; then exit 1; fi; \
+	  grep -q "configuration error" "$$tmp_dir/stderr"; \
+	  ! grep -q "Traceback" "$$tmp_dir/stderr"
 
 # Fixture-capture workflow. Deliberately outside quick/validate — an
 # occasional, human-supervised workflow, not a CI gate.

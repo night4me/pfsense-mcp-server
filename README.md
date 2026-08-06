@@ -5,8 +5,10 @@ pfSense REST API at a single managed pfSense Plus instance.
 
 ## Status
 
-v0.2.1 release candidate — security hardening of the accepted v0.2.0
-inert WRITE-infrastructure release. No mutating capability is active.
+v0.2.1 is the current published release. It hardens credential handling,
+auditing, error sanitization, configuration, and fixtures while keeping
+the accepted v0.2.0 WRITE infrastructure inert. No mutating capability is
+active.
 
 ## Scope (current phase)
 
@@ -36,6 +38,11 @@ and lifecycle — via `factory.py` for client construction and
 `diagnostics.py` reports local server health (configuration validity,
 TLS mode, active API version, registered capabilities, transport
 type) without ever contacting pfSense.
+
+The authoritative capability profile gates registration before a tool can
+be exposed. The default auditor profile contains the accepted READ set;
+the engineer placeholder contains no capabilities. Endpoint registries
+independently enforce GET-only access and an empty WRITE allow-list.
 
 ## Credentials
 
@@ -72,7 +79,36 @@ Credential material is never part of a public model or MCP schema and
 is ignored if pfSense includes it in a READ response. Optional
 `include_identifying_metadata` arguments disclose sensitive operational
 metadata only; they never disclose passwords, pre-shared keys, private
-keys, or API-key plaintext. See `docs/SECURITY_MODEL.md`.
+keys, or API-key plaintext. See the [security model](docs/SECURITY_MODEL.md)
+and [vulnerability reporting policy](SECURITY.md).
+
+The supported MCP transport is local stdio. The process launching and
+controlling that channel is the caller-authentication boundary; this is
+not a multi-tenant network service. Public CI has no production
+configuration and never contacts a pfSense appliance.
+
+## Installation
+
+Create an isolated environment and install the published source or a
+locally built wheel:
+
+```console
+python -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install .
+```
+
+For development, install the project with its test and analysis tools:
+
+```console
+.venv/bin/python -m pip install -e ".[dev]"
+make quick
+make validate
+```
+
+Additional release checks are documented in the
+[release checklist](docs/RELEASE_CHECKLIST.md). Live private-infrastructure
+acceptance is separate, opt-in, and never part of public CI.
 
 ## Running
 

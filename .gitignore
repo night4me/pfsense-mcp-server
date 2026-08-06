@@ -9,6 +9,9 @@ venv/
 .ruff_cache/
 dist/
 build/
+.coverage
+coverage.xml
+htmlcov/
 
 # make validate output (junit-xml report) — working output, not a repo artifact
 .validate/
