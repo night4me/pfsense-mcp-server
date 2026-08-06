@@ -370,6 +370,20 @@ def build_proposal(manifest: CapabilityManifest, discovery_path: Path, output_na
     fields = apply_field_overrides(fields, manifest)
     warnings = check_redaction_consistency(manifest, discovery_endpoint, policy)
 
+    # A manifest-declared identifying field can end up entirely absent
+    # from every generated field (e.g. the fixture sample never had
+    # the key at all, not merely a null value) -- render_model_file
+    # already filters by intersecting with `fields`, so the model
+    # silently omits such a field. Every other template must use this
+    # same intersected set, not the raw manifest declaration: passing
+    # the raw declaration produces client/tool code that still calls
+    # `from_api(..., include_identifying_metadata=...)` against a
+    # model whose from_api no longer accepts that parameter (always
+    # fails at runtime), and a live-test file that asserts an
+    # attribute the model doesn't have (always fails at collection).
+    field_names = {f.name for f in fields}
+    effective_identifying_fields = tuple(name for name in manifest.identifying_fields if name in field_names)
+
     tool_module_name = manifest.mcp_tool_name.removeprefix("pfsense_get_")
     model_module_name = _to_snake(manifest.model_class_name)
     check_collisions(manifest, tool_module_name, model_module_name)
@@ -393,7 +407,7 @@ def build_proposal(manifest: CapabilityManifest, discovery_path: Path, output_na
     if proposal_dir.exists():
         raise ScaffoldRefusal("proposal-destination-exists", str(proposal_dir))
 
-    has_identifying = bool(manifest.identifying_fields)
+    has_identifying = bool(effective_identifying_fields)
 
     # --- generate new-file content -----------------------------------
     model_src = render_model_file(
@@ -422,7 +436,7 @@ def build_proposal(manifest: CapabilityManifest, discovery_path: Path, output_na
         client_method_name=manifest.client_method_name,
         model_class_name=manifest.model_class_name,
         model_module_name=model_module_name,
-        identifying_fields=manifest.identifying_fields,
+        identifying_fields=effective_identifying_fields,
         response_shape=manifest.response_shape,
         bounded_param_name=bounded_name,
     )
@@ -497,7 +511,7 @@ def build_proposal(manifest: CapabilityManifest, discovery_path: Path, output_na
         client_method_name=manifest.client_method_name,
         model_class_name=manifest.model_class_name,
         fields=fields,
-        identifying_fields=manifest.identifying_fields,
+        identifying_fields=effective_identifying_fields,
         response_shape=manifest.response_shape,
         endpoint_path=endpoint.path_suffix,
     )

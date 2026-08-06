@@ -732,3 +732,90 @@ def test_cross_check_fields_all_non_null_stays_non_nullable():
     fixture_data = {"data": [{"id": "wan"}, {"id": "lan"}]}
     fields = sc.cross_check_fields(discovery_endpoint, fixture_data, "list")
     assert fields[0].nullable is False
+
+
+def test_identifying_field_absent_from_fixture_sample_omitted_consistently(tmp_path, monkeypatch):
+    # A manifest-declared identifying field can be valid in both the
+    # discovery schema and the capture policy, yet be entirely absent
+    # (key missing, not merely null) from every item in the approved
+    # fixture sample -- observed on pfSense's own
+    # /services/ntp/settings endpoint (serverauthkey). render_model_file
+    # already drops such a field from the generated model via its own
+    # fields-intersection; every other generated artifact (client
+    # method, tool, live test, client test skeleton) must agree, or the
+    # generated code references a parameter/attribute the model
+    # doesn't have and always fails at runtime.
+    fake_repo = _make_fake_repo(tmp_path / "repo")
+    _patch_paths(monkeypatch, fake_repo)
+
+    discovery_doc = {
+        "schema_version": 1,
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "endpoints": [
+            {
+                "path": "/api/v2/status/system",
+                "method": "get",
+                "tags": ["STATUS"],
+                "summary": "s",
+                "description": "d",
+                "sibling_methods": ["get"],
+                "mutating_methods_exist": False,
+                "query_parameters": [],
+                "response_fields": [
+                    {
+                        "name": "platform",
+                        "type": "string",
+                        "nullable": False,
+                        "enum": None,
+                        "format": None,
+                        "required": False,
+                    },
+                    {
+                        "name": "netgate_id",
+                        "type": "string",
+                        "nullable": True,
+                        "enum": None,
+                        "format": None,
+                        "required": False,
+                    },
+                ],
+            }
+        ],
+    }
+    discovery = tmp_path / "discovery.json"
+    discovery.write_text(json.dumps(discovery_doc))
+
+    fixture_path = fake_repo / "tests" / "fixtures" / "absent_identifying_demo_response.json"
+    fixture_path.write_text(json.dumps({"data": {"platform": "Netgate pfSense Plus"}}))
+
+    manifest = _manifest(
+        tmp_path,
+        capability_name="ABSENT_IDENTIFYING_DEMO_READ",
+        endpoint_symbol="SYSTEM_STATUS",
+        model_class_name="AbsentIdentifyingDemo",
+        client_method_name="get_absent_identifying_demo",
+        mcp_tool_name="pfsense_get_absent_identifying_demo",
+        identifying_fields=["netgate_id"],
+        approved_fixture_path="tests/fixtures/absent_identifying_demo_response.json",
+    )
+
+    proposal_dir = sc.build_proposal(sc.load_manifest(manifest), discovery, "demo_absent_identifying")
+
+    model_src = (proposal_dir / "new_files" / "models" / "absent_identifying_demo.py").read_text()
+    assert "netgate_id" not in model_src
+    assert "include_identifying_metadata" not in model_src
+    ast.parse(model_src)
+
+    tool_src = (proposal_dir / "new_files" / "tools_read" / "absent_identifying_demo.py").read_text()
+    assert "include_identifying_metadata" not in tool_src
+    ast.parse(tool_src)
+
+    client_patch = (proposal_dir / "diffs" / "pfsense_client.patch").read_text()
+    assert "include_identifying_metadata" not in client_patch
+
+    client_full = (proposal_dir / "proposed_full_files" / "pfsense_client.py").read_text()
+    ast.parse(client_full)
+
+    live_test_src = (proposal_dir / "new_files" / "tests" / "test_live_absent_identifying_demo.py").read_text()
+    assert "netgate_id" not in live_test_src
+    ast.parse(live_test_src)
