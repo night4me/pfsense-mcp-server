@@ -73,7 +73,7 @@ class RestApiClient:
                 response_id,
                 duration_ms,
             )
-            raise PfSenseAuthError(f"Authentication failed for identity {self._identity!r}")
+            raise PfSenseAuthError("Authentication with pfSense failed.")
 
         if response.status_code >= 400:
             logger.warning(

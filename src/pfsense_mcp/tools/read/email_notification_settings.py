@@ -17,8 +17,8 @@ def build(client: PfSenseClient) -> Callable[..., EmailNotificationSettings]:
         authentication mechanism. Read-only.
 
         include_identifying_metadata: if True, includes the SMTP
-        username, from/notify addresses, server IP, and password.
-        Defaults to False."""
+        username, from/notify addresses, and server IP. Passwords are
+        never returned. Defaults to False."""
         return client.get_email_notification_settings(include_identifying_metadata=include_identifying_metadata)
 
     return pfsense_get_email_notification_settings

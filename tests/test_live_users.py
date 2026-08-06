@@ -37,6 +37,6 @@ def test_get_users_live_structure_only():
         for item in result:
             assert isinstance(item.name, str)  # visible by default: ordinary object metadata
             assert item.authorizedkeys is None
-            assert item.ipsecpsk is None
+            assert "ipsecpsk" not in type(item).model_fields
     finally:
         transport.close()

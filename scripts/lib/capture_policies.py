@@ -167,8 +167,9 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
     "USERS": CapturePolicy(
         endpoint_attr="USERS",
         result_shape="list",
-        # Administrative-usefulness policy: only authorizedkeys/ipsecpsk
-        # are genuine secrets at runtime — descr/uid/priv/cert are
+        # ipsecpsk is a credential and is hard-refused. authorizedkeys is
+        # public cryptographic material but remains sensitive metadata.
+        # descr/uid/priv/cert are
         # ordinary object metadata and stay visible in both the model
         # and the committed fixture. `name` is intentionally stricter
         # here than at the model layer: it stays visible at runtime
@@ -176,18 +177,14 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         # it — see models/pf_sense_user.py), but this committed test
         # fixture uses synthesized names, not this project's real
         # account list.
-        identifying_fields=frozenset({"name", "authorizedkeys", "ipsecpsk"}),
+        hard_refusal_fields=frozenset({"ipsecpsk"}),
+        identifying_fields=frozenset({"name", "authorizedkeys"}),
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
-        # authorizedkeys/ipsecpsk are already declared identifying
-        # above (redacted whenever non-empty via the identifying-field
-        # path); they are empty strings for every account on this
-        # instance, so the sanitizer's post-check otherwise flags them
-        # as "sensitive-looking but not redacted" (empty values are
-        # never substituted). Reviewed: this does not bypass the
-        # identifying-field redaction itself, only the pre-redaction
-        # hard-refusal gate for a field already covered another way.
-        benign_fields=frozenset({"authorizedkeys", "ipsecpsk"}),
+        # authorizedkeys is already declared identifying above. Empty
+        # public-key values need no substitution, so the post-check may
+        # treat that field as benign after identifying-field handling.
+        benign_fields=frozenset({"authorizedkeys"}),
     ),
     "SYSTEM_CERTIFICATES": CapturePolicy(
         endpoint_attr="SYSTEM_CERTIFICATES",
@@ -393,15 +390,15 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
     "SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS": CapturePolicy(
         endpoint_attr="SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS",
         result_shape="object",
-        # password is the SMTP auth password -- a genuine secret,
-        # hard-refused. username/fromaddress/notifyemailaddress/
+        # password is the SMTP auth password -- a genuine secret and
+        # hard-refused, never identifying metadata. username/fromaddress/notifyemailaddress/
         # ipaddress are real personal contact info / SMTP account
         # identity, not ordinary administrative object names -- unlike
         # most other capabilities today, these are redacted by default
         # at the model layer too (matching the manifest's
         # identifying_fields), not just fixture-only.
         hard_refusal_fields=frozenset({"password"}),
-        identifying_fields=frozenset({"username", "fromaddress", "notifyemailaddress", "ipaddress", "password"}),
+        identifying_fields=frozenset({"username", "fromaddress", "notifyemailaddress", "ipaddress"}),
         default_max_items=1,
     ),
     "BIND_SETTINGS": CapturePolicy(
@@ -468,10 +465,10 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         # key is the plaintext API key material (when present -- the
         # API typically only returns it once at creation, null on
         # subsequent reads); hash is the stored key hash used for
-        # verification. Both are genuine credential material,
-        # hard-refused. username/descr are account-identifying.
+        # verification. Both are genuine credential material and
+        # hard-refused, never identifying metadata. username/descr are account-identifying.
         hard_refusal_fields=frozenset({"key", "hash"}),
-        identifying_fields=frozenset({"key", "hash", "username", "descr"}),
+        identifying_fields=frozenset({"hash", "username", "descr"}),
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),

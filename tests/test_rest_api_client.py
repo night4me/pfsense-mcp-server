@@ -34,16 +34,18 @@ def test_get_401_raises_auth_error():
         text=json.dumps({"response_id": "AUTH_AUTHENTICATION_FAILED"}),
     )
     client = _client(transport)
-    with pytest.raises(PfSenseAuthError):
+    with pytest.raises(PfSenseAuthError) as excinfo:
         client.get(Endpoints.SYSTEM_STATUS)
+    assert "api-mcp-admin" not in str(excinfo.value)
 
 
 def test_get_403_raises_auth_error():
     transport = MockTransport()
     transport.register("GET", "/api/v2/status/system", status_code=403, text="{}")
     client = _client(transport)
-    with pytest.raises(PfSenseAuthError):
+    with pytest.raises(PfSenseAuthError) as excinfo:
         client.get(Endpoints.SYSTEM_STATUS)
+    assert "api-mcp-admin" not in str(excinfo.value)
 
 
 def test_get_500_raises_api_error():

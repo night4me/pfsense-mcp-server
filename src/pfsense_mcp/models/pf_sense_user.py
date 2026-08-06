@@ -2,12 +2,12 @@
 
 Field types/nullability were derived from a saved OpenAPI discovery
 snapshot and cross-checked against an approved fixture.
-Administrative-usefulness policy: only genuinely secret values are
-redacted. name/descr/uid/priv/cert are ordinary object metadata
+Administrative-usefulness policy: genuine secret values are excluded
+from the public model entirely. name/descr/uid/priv/cert are ordinary object metadata
 (username, description, reference ID, role, certificate reference)
-and are always visible. authorizedkeys (raw SSH key material) and
-ipsecpsk (pre-shared key) are the only identifying_fields, redacted
-by default, opt-in only.
+and are always visible. authorizedkeys is public cryptographic material
+that remains redacted by default and opt-in only. ipsecpsk is a secret
+and is ignored unconditionally.
 """
 
 from __future__ import annotations
@@ -16,10 +16,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-_PF_SENSE_USER_IDENTIFYING_FIELDS = (
-    "authorizedkeys",
-    "ipsecpsk",
-)
+_PF_SENSE_USER_IDENTIFYING_FIELDS = ("authorizedkeys",)
 
 
 class PfSenseUser(BaseModel):
@@ -33,10 +30,6 @@ class PfSenseUser(BaseModel):
     scope: str | None
     uid: int | None
     authorizedkeys: str | None = Field(
-        default=None,
-        description="Identifying device metadata. Populated only when include_identifying_metadata=True.",
-    )
-    ipsecpsk: str | None = Field(
         default=None,
         description="Identifying device metadata. Populated only when include_identifying_metadata=True.",
     )

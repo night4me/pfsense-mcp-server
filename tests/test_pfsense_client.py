@@ -58,6 +58,33 @@ def test_get_system_status_includes_netgate_id_when_requested():
     assert status.netgate_id == "ANONYMIZED0000000000"
 
 
+def test_get_system_status_missing_data_key_raises_shape_error():
+    transport = MockTransport()
+    transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps({"status": "ok"}))
+    client = PfSenseClient(RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2))
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_status()
+
+
+def test_get_system_status_data_wrong_type_raises_shape_error():
+    transport = MockTransport()
+    transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps({"data": []}))
+    client = PfSenseClient(RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2))
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_status()
+
+
+def test_get_system_status_schema_error_is_sanitized():
+    sentinel = "SENTINEL-SYSTEM-STATUS-SECRET"
+    body = {"data": {"platform": [sentinel]}}
+    transport = MockTransport()
+    transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps(body))
+    client = PfSenseClient(RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2))
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_status()
+    assert sentinel not in str(excinfo.value)
+
+
 def _interfaces_body() -> dict:
     return json.loads(INTERFACES_FIXTURE.read_text())
 
@@ -1475,7 +1502,7 @@ def test_get_firewall_nat_outbound_mode_shape_error_does_not_leak_raw_field_valu
 
 
 USERS_FIXTURE = Path(__file__).parent / "fixtures" / "users_response.json"
-USERS_IDENTIFYING_FIELDS = ("authorizedkeys", "ipsecpsk")
+USERS_IDENTIFYING_FIELDS = ("authorizedkeys",)
 
 
 def _users_body() -> dict:
@@ -1520,7 +1547,6 @@ def test_get_users_includes_identifying_fields_when_requested():
     users = client.get_users(include_identifying_metadata=True)
     first = users[0]
     assert first.authorizedkeys == raw["authorizedkeys"]
-    assert first.ipsecpsk == raw["ipsecpsk"]
 
 
 def test_get_users_maps_non_sensitive_fields():
@@ -3184,7 +3210,6 @@ EMAIL_NOTIFICATION_SETTINGS_FIXTURE = (
 )
 EMAIL_NOTIFICATION_SETTINGS_IDENTIFYING_FIELDS = (
     "username",
-    "password",
     "fromaddress",
     "notifyemailaddress",
     "ipaddress",
@@ -3959,18 +3984,13 @@ def _auth_keys_client(body: dict | None = None) -> tuple[PfSenseClient, MockTran
     return PfSenseClient(rest_client), transport
 
 
-def test_get_auth_keys_omits_key_by_default():
-    client, _ = _auth_keys_client()
-    keys = client.get_auth_keys()
-    assert keys[0].key is None
-
-
-def test_get_auth_keys_includes_key_when_requested():
+def test_get_auth_keys_ignores_upstream_plaintext_key():
     body = _auth_keys_body()
     body["data"][0]["key"] = "test-plaintext-key-value"
     client, _ = _auth_keys_client(body)
-    keys = client.get_auth_keys(include_identifying_metadata=True)
-    assert keys[0].key == "test-plaintext-key-value"
+    keys = client.get_auth_keys()
+    assert "key" not in type(keys[0]).model_fields
+    assert "test-plaintext-key-value" not in keys[0].model_dump_json()
 
 
 def test_get_auth_keys_maps_non_identifying_fields():

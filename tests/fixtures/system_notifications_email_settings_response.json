@@ -6,7 +6,6 @@
     "fromaddress": null,
     "ipaddress": null,
     "notifyemailaddress": null,
-    "password": null,
     "port": "25",
     "ssl": false,
     "sslvalidate": false,

@@ -35,6 +35,6 @@ def test_get_auth_keys_live_structure_only():
         assert isinstance(result, list)
         assert len(result) <= 5  # deliberately small: never pull the full live table
         for item in result:
-            assert item.key is None
+            assert "key" not in type(item).model_fields
     finally:
         transport.close()

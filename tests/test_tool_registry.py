@@ -1420,7 +1420,6 @@ def test_registered_users_tool_invokes_client_and_redacts_by_default():
     assert users[0].uid == 0
     assert users[0].priv == ["test-priv"]
     assert users[0].authorizedkeys is None
-    assert users[0].ipsecpsk is None
     assert users[0].cert is None
 
 
@@ -1946,7 +1945,6 @@ def test_registered_email_notification_settings_tool_redacts_by_default():
     assert settings.disable is False
     assert settings.port == "587"
     assert settings.username is None
-    assert settings.password is None
     assert settings.fromaddress is None
     assert settings.notifyemailaddress is None
     assert settings.ipaddress is None
@@ -1960,7 +1958,6 @@ def test_registered_email_notification_settings_tool_reveals_identifying_metadat
     fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_email_notification_settings")
     settings = fn(include_identifying_metadata=True)
     assert settings.username == "test-smtp-user"
-    assert settings.password == "test-password"
     assert settings.fromaddress == "test-from@example.invalid"
 
 
@@ -2200,7 +2197,7 @@ def test_registry_does_not_register_auth_keys_tool_without_capability():
     assert "pfsense_get_auth_keys" not in names
 
 
-def test_registered_auth_keys_tool_redacts_by_default_but_shows_username():
+def test_registered_auth_keys_tool_shows_non_secret_metadata():
     mcp = FakeMCP()
     client = _client(with_auth_keys=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.AUTH_KEYS_READ}))
@@ -2210,10 +2207,9 @@ def test_registered_auth_keys_tool_redacts_by_default_but_shows_username():
     assert len(keys) == 1
     assert keys[0].descr == "Test API key"
     assert keys[0].username == "test-admin"
-    assert keys[0].key is None
 
 
-def test_registered_auth_keys_tool_reveals_key_when_requested():
+def test_registered_auth_keys_tool_ignores_upstream_key_unconditionally():
     mcp = FakeMCP()
     body = {
         "data": [
@@ -2234,7 +2230,6 @@ def test_registered_auth_keys_tool_reveals_key_when_requested():
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.AUTH_KEYS_READ}))
     registry.register_all()
     fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_auth_keys")
-    keys_default = fn()
-    assert keys_default[0].key is None
-    keys_revealed = fn(include_identifying_metadata=True)
-    assert keys_revealed[0].key == "test-plaintext-key-value"
+    keys = fn()
+    assert "key" not in type(keys[0]).model_fields
+    assert "test-plaintext-key-value" not in keys[0].model_dump_json()

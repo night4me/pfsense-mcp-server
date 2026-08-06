@@ -16,7 +16,6 @@ _EMAIL_NOTIFICATION_SETTINGS_IDENTIFYING_FIELDS = (
     "fromaddress",
     "ipaddress",
     "notifyemailaddress",
-    "password",
     "username",
 )
 
@@ -37,10 +36,6 @@ class EmailNotificationSettings(BaseModel):
         description="Identifying device metadata. Populated only when include_identifying_metadata=True.",
     )
     notifyemailaddress: str | None = Field(
-        default=None,
-        description="Identifying device metadata. Populated only when include_identifying_metadata=True.",
-    )
-    password: str | None = Field(
         default=None,
         description="Identifying device metadata. Populated only when include_identifying_metadata=True.",
     )

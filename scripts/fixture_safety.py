@@ -24,6 +24,7 @@ from lib.security_patterns import (  # noqa: E402
     is_locally_administered_mac,
     is_safe_ipv4,
 )
+from lib.security_policy import find_prohibited_credential_fields  # noqa: E402
 
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 
@@ -77,6 +78,9 @@ def check_fixture_text(name: str, text: str) -> tuple[list[str], list[str]]:
             failures.append(f"{name}: credential-path-like string found: {pattern!r}")
 
     doc = json.loads(text)
+
+    for field_path in find_prohibited_credential_fields(doc):
+        failures.append(f"{name}: prohibited credential field found at {field_path}")
 
     for netgate_id in _find_netgate_ids(doc):
         if netgate_id != _APPROVED_NETGATE_ID_PLACEHOLDER:

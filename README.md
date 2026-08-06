@@ -5,8 +5,8 @@ pfSense REST API at a single managed pfSense Plus instance.
 
 ## Status
 
-v0.1.0 — READ-only phase accepted and frozen. See
-`docs/ACCEPTANCE_v0.1.0.md`.
+v0.2.1 release candidate — security hardening of the accepted v0.2.0
+inert WRITE-infrastructure release. No mutating capability is active.
 
 ## Scope (current phase)
 
@@ -63,9 +63,16 @@ be set explicitly. Switching to `auto` later (once a CA file exists)
 requires no code change — only this configuration.
 
 `PFSENSE_PROFILE=engineer` currently grants no capabilities — write
-tools do not exist yet in this build. It is a named placeholder for
-when `tools/write/` is implemented under a separate, explicitly
-authorized phase.
+tools are not registered or reachable. It is a named placeholder for
+a separate, explicitly authorized future phase.
+
+## Security policy
+
+Credential material is never part of a public model or MCP schema and
+is ignored if pfSense includes it in a READ response. Optional
+`include_identifying_metadata` arguments disclose sensitive operational
+metadata only; they never disclose passwords, pre-shared keys, private
+keys, or API-key plaintext. See `docs/SECURITY_MODEL.md`.
 
 ## Running
 

@@ -36,6 +36,7 @@ from lib.security_patterns import (
     is_locally_administered_mac,
     is_safe_ipv4,
 )
+from lib.security_policy import find_prohibited_credential_fields
 
 APPROVED_NETGATE_ID_PLACEHOLDER = "ANONYMIZED0000000000"
 _SERIAL_PLACEHOLDER = "SYNTHETIC-SERIAL-0000"
@@ -457,6 +458,9 @@ def audit_sanitized_data(
     the field-name list recorded in that proposal's manifest) — the
     same logic runs in both places, never duplicated."""
     problems: list[str] = []
+
+    for field_path in find_prohibited_credential_fields(data):
+        problems.append(f"{field_path}: prohibited credential field must not appear in an approved fixture")
 
     text = json.dumps(data)
     for ip in find_ipv4_literals(text):

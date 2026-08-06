@@ -136,7 +136,15 @@ class PfSenseClient:
 
     def get_system_status(self, *, include_identifying_metadata: bool = False) -> SystemStatus:
         raw = self._rest.get(Endpoints.SYSTEM_STATUS)
-        return SystemStatus.from_api(raw.get("data", {}), include_identifying_metadata=include_identifying_metadata)
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense status/system response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense status/system response 'data' was not an object.")
+        try:
+            return SystemStatus.from_api(data, include_identifying_metadata=include_identifying_metadata)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError("pfSense status/system response failed schema validation.") from None
 
     def get_interfaces(self, *, include_identifying_metadata: bool = False) -> list[InterfaceStatus]:
         raw = self._rest.get(Endpoints.STATUS_INTERFACES)
@@ -1038,7 +1046,7 @@ class PfSenseClient:
                 ) from None
         return results
 
-    def get_auth_keys(self, *, include_identifying_metadata: bool = False, limit: int = 100) -> list[AuthKey]:
+    def get_auth_keys(self, *, limit: int = 100) -> list[AuthKey]:
         if not (AUTH_KEYS_MIN_LIMIT <= limit <= AUTH_KEYS_MAX_LIMIT):
             raise PfSenseRequestValidationError(
                 f"limit must be between {AUTH_KEYS_MIN_LIMIT} and {AUTH_KEYS_MAX_LIMIT} (got {limit})."
@@ -1057,7 +1065,7 @@ class PfSenseClient:
             if not isinstance(item, dict):
                 raise PfSenseResponseShapeError("pfSense /auth/keys response contained a non-object entry in 'data'.")
             try:
-                results.append(AuthKey.from_api(item, include_identifying_metadata=include_identifying_metadata))
+                results.append(AuthKey.from_api(item))
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /auth/keys response contained an entry that failed schema validation."

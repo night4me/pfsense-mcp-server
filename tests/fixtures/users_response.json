@@ -8,7 +8,6 @@
       "disabled": false,
       "expires": "",
       "id": 0,
-      "ipsecpsk": "",
       "name": "REDACTED-name",
       "priv": [
         "user-shell-access"
@@ -23,7 +22,6 @@
       "disabled": false,
       "expires": "",
       "id": 1,
-      "ipsecpsk": "",
       "name": "REDACTED-name",
       "priv": null,
       "scope": "user",
@@ -36,7 +34,6 @@
       "disabled": false,
       "expires": "",
       "id": 2,
-      "ipsecpsk": "",
       "name": "REDACTED-name",
       "priv": null,
       "scope": "user",
@@ -49,7 +46,6 @@
       "disabled": false,
       "expires": "",
       "id": 3,
-      "ipsecpsk": "",
       "name": "REDACTED-name",
       "priv": null,
       "scope": "user",

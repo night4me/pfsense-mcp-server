@@ -9,6 +9,7 @@ internal CA certificate is available to configure.
 
 from __future__ import annotations
 
+import os
 from enum import Enum
 from pathlib import Path
 
@@ -28,6 +29,16 @@ def validate_tls_settings(mode: TLSMode, ca_file: Path | None) -> None:
         raise ConfigurationError("PFSENSE_TLS_MODE=auto requires PFSENSE_TLS_CA_FILE")
     if mode is TLSMode.INSECURE and ca_file is not None:
         raise ConfigurationError("PFSENSE_TLS_CA_FILE must not be set when PFSENSE_TLS_MODE=insecure")
+
+
+def validate_tls_ca_file(mode: TLSMode, ca_file: Path | None) -> None:
+    if mode is not TLSMode.AUTO:
+        return
+    assert ca_file is not None
+    if not ca_file.is_file():
+        raise ConfigurationError(f"TLS CA file not found or not a regular file: {ca_file}")
+    if not os.access(ca_file, os.R_OK):
+        raise ConfigurationError(f"TLS CA file is not readable: {ca_file}")
 
 
 def resolve_verify(mode: TLSMode, ca_file: Path | None) -> bool | str:

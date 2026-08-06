@@ -38,6 +38,6 @@ def test_get_email_notification_settings_live_structure_only():
         assert result.fromaddress is None
         assert result.notifyemailaddress is None
         assert result.ipaddress is None
-        assert result.password is None
+        assert "password" not in type(result).model_fields
     finally:
         transport.close()

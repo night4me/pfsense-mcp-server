@@ -1,7 +1,7 @@
 [project]
 name = "pfsense-mcp-server"
-version = "0.1.0"
-description = "Local MCP server exposing strongly-typed, read-only pfSense REST API tools."
+version = "0.2.1"
+description = "Local MCP server exposing strongly-typed pfSense REST API tools with inert write infrastructure."
 requires-python = ">=3.11"
 dependencies = [
     "mcp>=1.0.0,<2.0.0",

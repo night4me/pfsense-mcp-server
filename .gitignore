@@ -34,4 +34,5 @@ logs/
 *.key
 *secret*
 *credential*
+!tests/test_credential_non_disclosure.py
 .env

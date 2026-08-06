@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from fixture_safety import check_fixture_text
 
 
@@ -63,3 +64,9 @@ def test_check_fixture_text_small_data_array_has_no_advisory():
     small_data = [{"id": i} for i in range(2)]
     _failures, advisories = check_fixture_text("fake.json", _body(small_data))
     assert advisories == []
+
+
+@pytest.mark.parametrize("field", ["ipsecpsk", "password", "key"])
+def test_check_fixture_text_rejects_prohibited_credential_field_even_when_empty(field):
+    failures, _advisories = check_fixture_text("fake.json", _body([{field: None}]))
+    assert any("prohibited credential field" in failure for failure in failures)

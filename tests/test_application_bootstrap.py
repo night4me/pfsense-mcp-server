@@ -31,6 +31,7 @@ def test_bootstrap_exits_when_key_file_missing(monkeypatch, tmp_path):
 def test_bootstrap_succeeds_with_valid_config(monkeypatch, tmp_path):
     key_file = tmp_path / "test.key"
     key_file.write_text("fake-key-value\n")
+    key_file.chmod(0o600)
     monkeypatch.setenv("PFSENSE_API_URL", "https://pfsense.example.invalid")
     monkeypatch.setenv("PFSENSE_IDENTITY", "api-mcp-admin")
     monkeypatch.setenv("PFSENSE_API_KEY_FILE", str(key_file))

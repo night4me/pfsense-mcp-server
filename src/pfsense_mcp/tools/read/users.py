@@ -15,8 +15,8 @@ def build(client: PfSenseClient) -> Callable[..., list[PfSenseUser]]:
         expiration, and scope. Read-only.
 
         include_identifying_metadata: if True, also includes
-        authorized SSH keys and the IPsec pre-shared key (the only
-        genuinely secret fields). Defaults to False.
+        authorized public SSH keys. Secret fields such as IPsec
+        pre-shared keys are never returned. Defaults to False.
 
         limit: maximum number of accounts to return (1-100, default
         100)."""

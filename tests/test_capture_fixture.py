@@ -142,6 +142,7 @@ def _fake_raw_firewall_states():
 def _patch_live_fetch(monkeypatch, tmp_path, sentinel_key: str, raw=None):
     key_file = tmp_path / "test.key"
     key_file.write_text(f"{sentinel_key}\n")
+    key_file.chmod(0o600)
     monkeypatch.setenv("PFSENSE_API_URL", "https://pfsense.example.invalid")
     monkeypatch.setenv("PFSENSE_IDENTITY", "test-identity")
     monkeypatch.setenv("PFSENSE_API_KEY_FILE", str(key_file))
