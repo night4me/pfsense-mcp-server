@@ -100,3 +100,7 @@ def test_auditor_profile_has_firewall_traffic_shaper_read():
 
 def test_auditor_profile_has_firewall_advanced_settings_read():
     assert Capability.FIREWALL_ADVANCED_SETTINGS_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_system_package_read():
+    assert Capability.SYSTEM_PACKAGE_READ in AuditorProfile.capabilities

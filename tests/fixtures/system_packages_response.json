@@ -1,0 +1,89 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "descr": "The cron utility is used to manage commands on a schedule.",
+      "id": 0,
+      "installed_version": "0.3.8_8",
+      "latest_version": "0.3.8_8",
+      "name": "pfSense-pkg-Cron",
+      "shortname": "Cron",
+      "update_available": false
+    },
+    {
+      "descr": "darkstat is a network statistics gatherer. It's a packet sniffer that runs as a\nbackground process on a cable/DSL router, gathers all sorts of statistics about\nnetwork usage, and serves them over HTTP.",
+      "id": 1,
+      "installed_version": "3.1.6",
+      "latest_version": "3.1.6",
+      "name": "pfSense-pkg-darkstat",
+      "shortname": "darkstat",
+      "update_available": false
+    },
+    {
+      "descr": "Iperf is a tool for testing network throughput, loss, and jitter.",
+      "id": 2,
+      "installed_version": "3.0.6",
+      "latest_version": "3.0.6",
+      "name": "pfSense-pkg-iperf",
+      "shortname": "iperf",
+      "update_available": false
+    },
+    {
+      "descr": "Netgate(R) Nexus revolutionizes multi-instance management for pfSense(R) Plus,\nempowering operators to effortlessly manage hundreds of pfSense Plus\ninstances through a secure, unified, and intuitive interface. With its\ncomprehensive GUI and robust REST API, Netgate Nexus gives your organization\nthe flexibility to tailor and automate critical operational tasks, driving\ngreater efficiency and agility. Whether you're scaling deployments or\nstreamlining network management, Netgate Nexus delivers the control and\ncustomization you need to stay ahead.\n\nBuild Version: e770492a4c3ff171e8e8b207ade8eafe695af207",
+      "id": 3,
+      "installed_version": "26.03.1",
+      "latest_version": "26.03.1",
+      "name": "pfSense-pkg-Nexus",
+      "shortname": "Nexus",
+      "update_available": false
+    },
+    {
+      "descr": "Nmap is a utility for network exploration or security auditing.<br/>\n\t\t\tIt supports ping scanning (determine which hosts are\n\t\t\tup), many port scanning techniques (determine what\n\t\t\tservices the hosts are offering), version detection\n\t\t\t(determine what application/service is running on a\n\t\t\tport), and TCP/IP fingerprinting (remote host OS or\n\t\t\tdevice identification).  It also offers flexible target\n\t\t\tand port specification, decoy/stealth scanning, SunRPC\n\t\t\tscanning, and more.",
+      "id": 4,
+      "installed_version": "1.4.4_12",
+      "latest_version": "1.4.4_12",
+      "name": "pfSense-pkg-nmap",
+      "shortname": "nmap",
+      "update_available": false
+    },
+    {
+      "descr": "ntopng (replaces ntop) is a network probe that shows network usage in a way\nsimilar to what top does for processes. In interactive mode, it displays the\nnetwork status on the user's terminal. In Web mode it acts as a Web server,\ncreating an HTML dump of the network status. It sports a NetFlow/sFlow\nemitter/collector, an HTTP-based client interface for creating ntop-centric\nmonitoring applications, and RRD for persistently storing traffic statistics.",
+      "id": 5,
+      "installed_version": "6.2.0_6",
+      "latest_version": "6.2.0_6",
+      "name": "pfSense-pkg-ntopng",
+      "shortname": "ntopng",
+      "update_available": false
+    },
+    {
+      "descr": "VMware Tools is a suite of utilities that enhances the performance of the\nvirtual machine's guest operating system and improves management of the virtual\nmachine.",
+      "id": 6,
+      "installed_version": "10.1.0_8,1",
+      "latest_version": "10.1.0_8,1",
+      "name": "pfSense-pkg-Open-VM-Tools",
+      "shortname": "Open-VM-Tools",
+      "update_available": false
+    },
+    {
+      "descr": "The shellcmd utility is used to manage commands on system startup.",
+      "id": 7,
+      "installed_version": "1.0.7",
+      "latest_version": "1.0.7",
+      "name": "pfSense-pkg-Shellcmd",
+      "shortname": "Shellcmd",
+      "update_available": false
+    },
+    {
+      "descr": "Traffic Totals page under the Status menu, which will give a total amount of \ntraffic passed In/Out over the period of hours, days, and months. \nUses vnStat for data collection.",
+      "id": 8,
+      "installed_version": "2.3.5_2",
+      "latest_version": "2.3.5_3",
+      "name": "pfSense-pkg-Status_Traffic_Totals",
+      "shortname": "Status_Traffic_Totals",
+      "update_available": true
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

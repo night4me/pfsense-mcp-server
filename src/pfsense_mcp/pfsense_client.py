@@ -30,6 +30,7 @@ from .models.service_status import ServiceStatus
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
 from .models.system_ha_sync import SystemHaSync
+from .models.system_package import SystemPackage
 from .models.system_rest_api_settings import SystemRestApiSettings
 from .models.system_version import SystemVersion
 from .rest_api_client import RestApiClient
@@ -92,6 +93,10 @@ ARP_TABLE_MAX_LIMIT = 100
 
 FIREWALL_TRAFFIC_SHAPER_LIMITERS_MIN_LIMIT = 1
 FIREWALL_TRAFFIC_SHAPER_LIMITERS_MAX_LIMIT = 100
+
+
+SYSTEM_PACKAGES_MIN_LIMIT = 1
+SYSTEM_PACKAGES_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -766,3 +771,31 @@ class PfSenseClient:
             raise PfSenseResponseShapeError(
                 "pfSense /firewall/advanced_settings response failed schema validation."
             ) from None
+
+    def get_system_packages(self, *, limit: int = 100) -> list[SystemPackage]:
+        if not (SYSTEM_PACKAGES_MIN_LIMIT <= limit <= SYSTEM_PACKAGES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SYSTEM_PACKAGES_MIN_LIMIT} and {SYSTEM_PACKAGES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SYSTEM_PACKAGES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /system/packages response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /system/packages response 'data' was not a list.")
+
+        results: list[SystemPackage] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /system/packages response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(SystemPackage.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /system/packages response contained an entry that failed schema validation."
+                ) from None
+        return results

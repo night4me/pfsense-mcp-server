@@ -30,6 +30,7 @@ class Capability(Enum):
     DIAGNOSTICS_ARP_READ = auto()
     FIREWALL_TRAFFIC_SHAPER_READ = auto()
     FIREWALL_ADVANCED_SETTINGS_READ = auto()
+    SYSTEM_PACKAGE_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -61,5 +62,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.DIAGNOSTICS_ARP_READ,
         Capability.FIREWALL_TRAFFIC_SHAPER_READ,
         Capability.FIREWALL_ADVANCED_SETTINGS_READ,
+        Capability.SYSTEM_PACKAGE_READ,
     }
 )

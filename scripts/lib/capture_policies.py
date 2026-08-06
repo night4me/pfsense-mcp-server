@@ -373,6 +373,15 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         # or secret.
         default_max_items=1,
     ),
+    "SYSTEM_PACKAGES": CapturePolicy(
+        endpoint_attr="SYSTEM_PACKAGES",
+        result_shape="list",
+        # Package names/descriptions/versions are public catalog
+        # metadata, not installation-specific secrets. No identifying
+        # fields.
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=20,
+    ),
 }
 
 

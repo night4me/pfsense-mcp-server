@@ -31,6 +31,7 @@ from .read import (
     service_status,
     system_certificates,
     system_hasync,
+    system_packages,
     system_restapi_settings,
     system_status,
     system_version,
@@ -93,6 +94,8 @@ class ToolRegistry:
             self._register_firewall_traffic_shaper_read()
         if Capability.FIREWALL_ADVANCED_SETTINGS_READ in self._capabilities:
             self._register_firewall_advanced_settings_read()
+        if Capability.SYSTEM_PACKAGE_READ in self._capabilities:
+            self._register_system_package_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -235,4 +238,9 @@ class ToolRegistry:
     def _register_firewall_advanced_settings_read(self) -> None:
         fn = firewall_advanced_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_firewall_advanced_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_system_package_read(self) -> None:
+        fn = system_packages.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_packages", self._identity)(fn)
         self._mcp.tool()(wrapped)

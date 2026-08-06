@@ -553,6 +553,21 @@ _TRAFFIC_SHAPER_LIMITERS_BODY = {
 _FIREWALL_ADVANCED_SETTINGS_BODY = {"data": {"aliasesresolveinterval": 300, "checkaliasesurlcert": True}}
 
 
+_SYSTEM_PACKAGES_BODY = {
+    "data": [
+        {
+            "descr": "Test package.",
+            "id": 0,
+            "installed_version": "1.0.0",
+            "latest_version": "1.0.0",
+            "name": "pfSense-pkg-Test",
+            "shortname": "Test",
+            "update_available": False,
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -638,6 +653,7 @@ def _client(
     with_arp_table: bool = False,
     with_traffic_shaper_limiters: bool = False,
     with_firewall_advanced_settings: bool = False,
+    with_system_packages: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -764,6 +780,10 @@ def _client(
             "/api/v2/firewall/advanced_settings",
             status_code=200,
             text=json.dumps(_FIREWALL_ADVANCED_SETTINGS_BODY),
+        )
+    if with_system_packages:
+        transport.register(
+            "GET", "/api/v2/system/packages?limit=100", status_code=200, text=json.dumps(_SYSTEM_PACKAGES_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1606,3 +1626,32 @@ def test_registered_firewall_advanced_settings_tool_invokes_client():
     settings = fn()
     assert settings.aliasesresolveinterval == 300
     assert settings.checkaliasesurlcert is True
+
+
+def test_registry_registers_system_packages_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_system_packages=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_PACKAGE_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_system_packages"
+
+
+def test_registry_does_not_register_system_packages_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_system_packages" not in names
+
+
+def test_registered_system_packages_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_system_packages=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_PACKAGE_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_system_packages")
+    packages = fn()
+    assert len(packages) == 1
+    assert packages[0].name == "pfSense-pkg-Test"
+    assert packages[0].installed_version == "1.0.0"

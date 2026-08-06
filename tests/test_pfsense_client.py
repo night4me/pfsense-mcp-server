@@ -2977,3 +2977,106 @@ def test_get_firewall_advanced_settings_shape_error_does_not_leak_raw_field_valu
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_firewall_advanced_settings()
     assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_PACKAGES_FIXTURE = Path(__file__).parent / "fixtures" / "system_packages_response.json"
+
+
+def _system_packages_body() -> dict:
+    return json.loads(SYSTEM_PACKAGES_FIXTURE.read_text())
+
+
+def _system_packages_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_packages_body()
+    transport.register("GET", "/api/v2/system/packages?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_packages_maps_fields():
+    client, _ = _system_packages_client()
+    raw = _system_packages_body()["data"]
+    packages = client.get_system_packages()
+    assert len(packages) == len(raw)
+    assert packages[0].name == raw[0]["name"]
+    assert packages[0].descr == raw[0]["descr"]
+    assert packages[0].installed_version == raw[0]["installed_version"]
+
+
+def test_get_system_packages_only_calls_endpoint_with_default_limit():
+    client, transport = _system_packages_client()
+    client.get_system_packages()
+    assert transport.calls == [("GET", "/api/v2/system/packages?limit=100")]
+
+
+def test_get_system_packages_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _system_packages_body()
+    transport.register("GET", "/api/v2/system/packages?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_system_packages(limit=2)
+    assert transport.calls == [("GET", "/api/v2/system/packages?limit=2")]
+
+
+def test_get_system_packages_rejects_zero_limit():
+    client, _ = _system_packages_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_packages(limit=0)
+
+
+def test_get_system_packages_rejects_limit_above_max():
+    client, _ = _system_packages_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_packages(limit=101)
+
+
+def test_get_system_packages_missing_data_key_raises_shape_error():
+    body = _system_packages_body()
+    del body["data"]
+    client, _ = _system_packages_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_packages()
+
+
+def test_get_system_packages_data_wrong_type_raises_shape_error():
+    body = _system_packages_body()
+    body["data"] = "not-a-list"
+    client, _ = _system_packages_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_packages()
+
+
+def test_get_system_packages_item_wrong_type_raises_shape_error():
+    body = _system_packages_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_packages_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_packages()
+
+
+def test_get_system_packages_required_field_missing_raises_shape_error():
+    body = _system_packages_body()
+    del body["data"][0]["name"]
+    client, _ = _system_packages_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_packages()
+
+
+def test_get_system_packages_invalid_field_type_raises_shape_error():
+    body = _system_packages_body()
+    body["data"][0]["update_available"] = "not-a-bool"
+    client, _ = _system_packages_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_packages()
+
+
+def test_get_system_packages_shape_error_does_not_leak_raw_field_values():
+    body = _system_packages_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["name"] = [sentinel]
+    client, _ = _system_packages_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_packages()
+    assert sentinel not in str(excinfo.value)
