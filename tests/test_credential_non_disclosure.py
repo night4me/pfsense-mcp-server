@@ -51,6 +51,25 @@ def test_prohibited_credentials_are_absent_from_every_mcp_schema():
         assert _property_names(tool.outputSchema).isdisjoint(PROHIBITED_FIELDS)
 
 
+def test_all_read_tools_have_exact_annotations_without_schema_side_effects():
+    mcp = FastMCP("annotation-test")
+    client = PfSenseClient(RestApiClient(MockTransport(), identity="upstream", api_version=ApiVersion.V2))
+    ToolRegistry(mcp, client, "upstream", AuditorProfile.capabilities).register_all()
+    tools = asyncio.run(mcp.list_tools())
+
+    assert len(tools) == 41
+    for tool in tools:
+        assert tool.annotations is not None
+        assert tool.annotations.model_dump(exclude_none=True) == {
+            "readOnlyHint": True,
+            "openWorldHint": True,
+        }
+        assert "readOnlyHint" not in _property_names(tool.inputSchema)
+        assert "openWorldHint" not in _property_names(tool.outputSchema)
+        assert _property_names(tool.inputSchema).isdisjoint(PROHIBITED_FIELDS)
+        assert _property_names(tool.outputSchema).isdisjoint(PROHIBITED_FIELDS)
+
+
 def test_auth_keys_tool_input_no_longer_has_disclosure_argument():
     mcp = FastMCP("schema-test")
     client = PfSenseClient(RestApiClient(MockTransport(), identity="upstream", api_version=ApiVersion.V2))

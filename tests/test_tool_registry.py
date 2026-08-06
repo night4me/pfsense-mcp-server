@@ -11,8 +11,11 @@ from pfsense_mcp.transport.mock import MockTransport
 class FakeMCP:
     def __init__(self) -> None:
         self.registered = []
+        self.annotations = []
 
-    def tool(self):
+    def tool(self, *, annotations=None):
+        self.annotations.append(annotations)
+
         def decorator(fn):
             self.registered.append(fn)
             return fn
@@ -1028,6 +1031,18 @@ def test_registry_registers_system_status_tool_when_capability_present():
     registry.register_all()
     assert len(mcp.registered) == 1
     assert mcp.registered[0].__name__ == "pfsense_get_system_status"
+
+
+def test_registered_read_tool_uses_the_shared_annotation_policy():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+
+    assert len(mcp.annotations) == 1
+    assert mcp.annotations[0].model_dump(exclude_none=True) == {
+        "readOnlyHint": True,
+        "openWorldHint": True,
+    }
 
 
 def test_registry_registers_nothing_when_no_capabilities():
