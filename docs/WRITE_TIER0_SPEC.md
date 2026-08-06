@@ -1,5 +1,12 @@
 # WRITE Tier 0 — Infrastructure-Only Implementation Specification
 
+> **Historical design specification.** Tier 0 has since been implemented and
+> accepted as inert infrastructure. Counts and file-state descriptions below
+> describe the v0.1.0 design baseline, not the current production build. The
+> current build registers 41 READ tools and zero WRITE tools. Any future Tier 1
+> work must follow [TIER1_ROADMAP.md](TIER1_ROADMAP.md), the current
+> [security model](SECURITY_MODEL.md), and fresh explicit approval.
+
 ## Context
 
 v0.1.0 (READ-only) is accepted and frozen (`docs/ACCEPTANCE_v0.1.0.md`, commit

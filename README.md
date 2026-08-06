@@ -202,8 +202,13 @@ separate process with separate configuration for another appliance.
 ## Documentation
 
 - [MCP tool reference](docs/API.md)
+- [Client setup examples](examples/README.md)
+- [Architecture diagrams](docs/ARCHITECTURE_DIAGRAMS.md)
+- [Architecture decisions](docs/adr/README.md)
+- [Threat model](docs/THREAT_MODEL.md)
 - [Security model](docs/SECURITY_MODEL.md)
 - [Vulnerability reporting](SECURITY.md)
+- [Public roadmap](docs/ROADMAP.md)
 - [Contribution guide](CONTRIBUTING.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Accepted releases](docs/ACCEPTANCE_v0.2.1.md)

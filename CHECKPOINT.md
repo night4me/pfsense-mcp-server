@@ -1,5 +1,11 @@
 # Project Checkpoint
 
+> **Historical generated snapshot.** This file records an early development
+> checkpoint and is not the current project status or roadmap. See
+> [README.md](README.md#status), [docs/ROADMAP.md](docs/ROADMAP.md), and the
+> current Git history for authoritative information. Do not use the capability
+> counts or resume instructions below to authorize new work.
+
 Generated: 2026-08-06T13:28:58.874273+00:00
 
 ## Project status
