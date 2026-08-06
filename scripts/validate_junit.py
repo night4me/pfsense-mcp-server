@@ -10,6 +10,8 @@ Stages:
   profile-registration  every test in test_profiles.py / test_tool_registry.py passed
   get-only              test_post_is_rejected_as_unsupported passed
   query-param           the URL-encoding and limit-boundary tests passed
+  write-infrastructure  every test_write_*.py / test_recovery_contract.py /
+                        test_rollback.py test case passed
 
 Read-only: only reads the given XML file. Exits 0 or 1.
 """
@@ -113,12 +115,31 @@ def check_query_param(results: list[CaseResult]) -> list[str]:
     return failures
 
 
+_WRITE_INFRASTRUCTURE_CLASSNAME_SUBSTRINGS = (
+    "test_write_",
+    "test_recovery_contract",
+    "test_rollback",
+    "test_pfsense_write_client",
+    "test_tool_registry_write",
+)
+
+
+def check_write_infrastructure(results: list[CaseResult]) -> list[str]:
+    matched: list[CaseResult] = []
+    for substring in _WRITE_INFRASTRUCTURE_CLASSNAME_SUBSTRINGS:
+        matched.extend(_select(results, classname_contains=substring))
+    if not matched:
+        return ["no write-infrastructure test cases found in the report"]
+    return [f"{r.classname}::{r.name} was '{r.outcome}', expected 'passed'" for r in matched if r.outcome != "passed"]
+
+
 _STAGES = {
     "live-skip": check_live_skip,
     "endpoint-registry": check_endpoint_registry,
     "profile-registration": check_profile_registration,
     "get-only": check_get_only,
     "query-param": check_query_param,
+    "write-infrastructure": check_write_infrastructure,
 }
 
 

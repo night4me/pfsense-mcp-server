@@ -128,6 +128,18 @@ class ToolRegistry:
         if Capability.AUTH_KEYS_READ in self._capabilities:
             self._register_auth_keys_read()
 
+        self.register_all_write()
+
+    def register_all_write(self) -> None:
+        """Write-capability registration dispatch point. Empty in this
+        build — no *_WRITE capability is ever present in self._capabilities
+        (independently enforced by scripts/write_capability_check.py).
+        Each future write capability adds one
+        `if Capability.X_WRITE in self._capabilities:
+        self._register_x_write()` branch here, mirroring register_all()'s
+        existing per-capability dispatch pattern above, under a
+        separately authorized tier."""
+
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
         wrapped = audit_logged("pfsense_get_system_status", self._identity)(fn)

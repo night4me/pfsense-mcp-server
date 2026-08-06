@@ -7,18 +7,16 @@ from __future__ import annotations
 
 import logging
 import sys
-from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
 from .config import ConfigurationError, load_api_key, load_config, load_logging_config
 from .diagnostics import build_diagnostics_report
 from .factory import build_pfsense_client
+from .logging_setup import DEFAULT_LOG_DIR as LOG_DIR
 from .logging_setup import configure_logging
 from .tools.registry import ToolRegistry
 from .transport.http import HttpTransport
-
-LOG_DIR = Path.home() / ".local" / "state" / "pfsense-mcp-server"
 
 
 class Application:

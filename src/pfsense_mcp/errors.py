@@ -47,3 +47,10 @@ class PfSenseResponseShapeError(PfSenseMCPError):
 class PfSenseRequestValidationError(PfSenseMCPError):
     """Raised when caller-supplied arguments are invalid before any
     request is made to pfSense (e.g. an out-of-range limit)."""
+
+
+class WriteNotAllowedError(PfSenseMCPError):
+    """Raised when a mutation is refused because it targets an endpoint
+    not present in the write allow-list (WriteEndpoints), or lacks a
+    valid, open Recovery Contract. Never includes the rejected payload
+    or any pre-state snapshot content in its message."""

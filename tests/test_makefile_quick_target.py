@@ -2,11 +2,12 @@
 
 These tests parse the Makefile text directly (never invoke `make`) to
 confirm the constraints agreed for `make quick`: it must show its own
-7-stage progress labels (never validate's 13-stage labels), must not
+9-stage progress labels (never validate's 16-stage labels), must not
 generate a JUnit report, and must not call any of the validate-only
 tooling (fixture safety, bounded-parameter audit, JUnit
-post-processing, or the git report). `validate` itself must remain
-unchanged — still all 13 original stages.
+post-processing, or the git report). `validate` must contain all 16
+stages (the original 13 plus the three write-infrastructure stages
+added alongside WRITE Tier 0).
 """
 
 from __future__ import annotations
@@ -44,22 +45,22 @@ def test_quick_target_exists():
     assert re.search(r"^quick:", text, re.MULTILINE) is not None
 
 
-def test_quick_has_exactly_seven_numbered_stage_labels():
+def test_quick_has_exactly_nine_numbered_stage_labels():
     block = _target_block(_makefile_text(), "quick")
-    labels = re.findall(r"\[\d/7\]", block)
-    assert labels == [f"[{n}/7]" for n in range(1, 8)]
+    labels = re.findall(r"\[\d/9\]", block)
+    assert labels == [f"[{n}/9]" for n in range(1, 10)]
 
 
-def test_no_slash_13_labels_occur_inside_quick_recipe():
+def test_no_slash_16_labels_occur_inside_quick_recipe():
     block = _target_block(_makefile_text(), "quick")
-    assert "/13]" not in block
+    assert "/16]" not in block
 
 
-def test_validate_still_contains_all_original_13_stages():
+def test_validate_still_contains_all_16_stages():
     text = _makefile_text()
     validate_block = _target_block(text, "validate")
     # validate's own summary line, plus each dependency's recipe carries
-    # its own [N/13] label — collect labels from validate's prerequisite
+    # its own [N/16] label — collect labels from validate's prerequisite
     # targets, not just validate's own (mostly prerequisite-only) block.
     prereqs = [
         "syntax-check",
@@ -74,6 +75,9 @@ def test_validate_still_contains_all_original_13_stages():
         "security-scan",
         "fixture-safety-check",
         "query-param-check",
+        "write-infrastructure-check",
+        "write-allow-list-check",
+        "write-capability-check",
         "git-report",
     ]
     for target in prereqs:
@@ -84,8 +88,8 @@ def test_validate_still_contains_all_original_13_stages():
     all_labels = set()
     for target in prereqs:
         block = _target_block(text, target)
-        all_labels.update(re.findall(r"\[\s*\d+/13\]", block))
-    assert len(all_labels) == 13, f"expected 13 distinct stage labels, found {sorted(all_labels)}"
+        all_labels.update(re.findall(r"\[\s*\d+/16\]", block))
+    assert len(all_labels) == 16, f"expected 16 distinct stage labels, found {sorted(all_labels)}"
 
 
 def test_ruff_and_mypy_commands_defined_only_in_internal_shared_targets():
@@ -131,7 +135,13 @@ def test_quick_does_not_call_validate_only_tooling():
 
 def test_quick_does_call_the_expected_scripts():
     block = _target_block(_makefile_text(), "quick")
-    for expected in ("get_only_check.py", "tools_write_check.py", "security_scan.py"):
+    for expected in (
+        "get_only_check.py",
+        "tools_write_check.py",
+        "security_scan.py",
+        "write_allow_list_check.py",
+        "write_capability_check.py",
+    ):
         assert expected in block, f"quick's recipe is missing the expected call to {expected}"
     assert re.search(r"pytest\s+-q\s*$", block, re.MULTILINE), "quick's recipe is missing a bare `pytest -q` run"
 

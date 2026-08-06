@@ -14,6 +14,8 @@ import logging.handlers
 import os
 from pathlib import Path
 
+DEFAULT_LOG_DIR = Path.home() / ".local" / "state" / "pfsense-mcp-server"
+
 
 class SecretRedactionFilter(logging.Filter):
     def __init__(self) -> None:

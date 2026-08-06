@@ -1,14 +1,14 @@
 # Project Checkpoint
 
-Generated: 2026-08-06T12:54:10.375681+00:00
+Generated: 2026-08-06T13:28:58.874273+00:00
 
 ## Project status
 
 - Current branch: `main`
-- Latest commit hash: `51e86a22a72eee63aff65dd7e9ad6de6df688a38`
-- Latest commit message: Update README scope section to reflect current capability count
+- Latest commit hash: `75a563b1d8e63394aa00d134425ddf813dc8a90e`
+- Latest commit message: docs: record v0.1.0 READ acceptance
 - Git status: dirty
-- pytest totals: 1026 passed, 41 skipped
+- pytest totals: 1070 passed, 42 skipped
 - make quick: passed
 - make validate: passed
 
@@ -73,9 +73,39 @@ Remaining capabilities (priority order):
 Modified files:
 - .checkpoint/state.json
 - CHECKPOINT.md
-- README.md
+- Makefile
+- scripts/get_only_check.py
+- scripts/validate_junit.py
+- src/pfsense_mcp/application.py
+- src/pfsense_mcp/errors.py
+- src/pfsense_mcp/logging_setup.py
+- src/pfsense_mcp/tools/registry.py
+- tests/test_get_only_check.py
+- tests/test_makefile_quick_target.py
 Untracked files:
-- docs/ACCEPTANCE_v0.1.0.md
+- docs/ACCEPTANCE_v0.2.0.md
+- docs/WRITE_TIER0_SPEC.md
+- scripts/write_allow_list_check.py
+- scripts/write_capability_check.py
+- src/pfsense_mcp/pfsense_write_client.py
+- src/pfsense_mcp/recovery.py
+- src/pfsense_mcp/rollback.py
+- src/pfsense_mcp/write_api_client.py
+- src/pfsense_mcp/write_audit.py
+- src/pfsense_mcp/write_endpoints.py
+- src/pfsense_mcp/write_types.py
+- tests/test_live_write_allow_list_empty.py
+- tests/test_pfsense_write_client.py
+- tests/test_recovery_contract.py
+- tests/test_rollback.py
+- tests/test_tool_registry_write.py
+- tests/test_write_allow_list_check.py
+- tests/test_write_api_client.py
+- tests/test_write_audit.py
+- tests/test_write_capability_check.py
+- tests/test_write_endpoints.py
+- tests/test_write_integration_dry_run.py
+- tests/test_write_types.py
 
 ## Resume prompt
 
@@ -93,7 +123,7 @@ Continue following the throughput-first policy.
 
 ## Engineering handoff
 
-- Latest completed capability (by commit): Update README scope section to reflect current capability count
+- Latest completed capability (by commit): docs: record v0.1.0 READ acceptance
 - Latest MCP tool count: 41
 - Known blocked endpoints/capabilities: none
 - Next recommended capability: FIREWALL_ALIAS_READ
