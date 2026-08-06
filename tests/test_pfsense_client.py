@@ -5,6 +5,7 @@ import pytest
 
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.errors import PfSenseRequestValidationError, PfSenseResponseShapeError
+from pfsense_mcp.models.system import SystemStatus
 from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.rest_api_client import RestApiClient
 from pfsense_mcp.transport.mock import MockTransport
@@ -62,16 +63,18 @@ def test_get_system_status_missing_data_key_raises_shape_error():
     transport = MockTransport()
     transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps({"status": "ok"}))
     client = PfSenseClient(RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2))
-    with pytest.raises(PfSenseResponseShapeError):
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_status()
+    assert str(excinfo.value) == "pfSense status/system response did not contain 'data'."
 
 
 def test_get_system_status_data_wrong_type_raises_shape_error():
     transport = MockTransport()
     transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps({"data": []}))
     client = PfSenseClient(RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2))
-    with pytest.raises(PfSenseResponseShapeError):
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_status()
+    assert str(excinfo.value) == "pfSense status/system response 'data' was not an object."
 
 
 def test_get_system_status_schema_error_is_sanitized():
@@ -82,7 +85,17 @@ def test_get_system_status_schema_error_is_sanitized():
     client = PfSenseClient(RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2))
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_status()
+    assert str(excinfo.value) == "pfSense status/system response failed schema validation."
     assert sentinel not in str(excinfo.value)
+
+
+def test_get_system_status_does_not_swallow_unrelated_factory_exception(monkeypatch):
+    def raise_unrelated(*args, **kwargs):
+        raise RuntimeError("unrelated factory failure")
+
+    monkeypatch.setattr(SystemStatus, "from_api", raise_unrelated)
+    with pytest.raises(RuntimeError, match="unrelated factory failure"):
+        _client_with_fixture().get_system_status()
 
 
 def _interfaces_body() -> dict:
@@ -162,32 +175,36 @@ def test_get_interfaces_missing_data_key_raises_shape_error():
     body = _interfaces_body()
     del body["data"]
     client, _ = _interfaces_client(body)
-    with pytest.raises(PfSenseResponseShapeError):
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interfaces()
+    assert str(excinfo.value) == "pfSense status/interfaces response did not contain 'data'."
 
 
 def test_get_interfaces_data_wrong_type_raises_shape_error():
     body = _interfaces_body()
     body["data"] = "not-a-list"
     client, _ = _interfaces_client(body)
-    with pytest.raises(PfSenseResponseShapeError):
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interfaces()
+    assert str(excinfo.value) == "pfSense status/interfaces response 'data' was not a list."
 
 
 def test_get_interfaces_item_wrong_type_raises_shape_error():
     body = _interfaces_body()
     body["data"] = ["not-an-object"]
     client, _ = _interfaces_client(body)
-    with pytest.raises(PfSenseResponseShapeError):
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interfaces()
+    assert str(excinfo.value) == "pfSense status/interfaces response contained a non-object entry in 'data'."
 
 
 def test_get_interfaces_required_field_missing_raises_shape_error():
     body = _interfaces_body()
     del body["data"][0]["inbytes"]
     client, _ = _interfaces_client(body)
-    with pytest.raises(PfSenseResponseShapeError):
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interfaces()
+    assert str(excinfo.value) == "pfSense status/interfaces response contained an entry that failed schema validation."
 
 
 def test_get_interfaces_invalid_field_type_raises_shape_error():
