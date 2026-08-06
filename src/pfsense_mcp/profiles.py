@@ -44,6 +44,7 @@ AuditorProfile = Profile(
             Capability.SYSTEM_HA_SYNC_READ,
             Capability.SERVICES_DNS_RESOLVER_READ,
             Capability.DIAGNOSTICS_ARP_READ,
+            Capability.FIREWALL_TRAFFIC_SHAPER_READ,
         }
     ),
 )

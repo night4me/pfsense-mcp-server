@@ -92,3 +92,7 @@ def test_auditor_profile_has_services_dns_resolver_read():
 
 def test_auditor_profile_has_diagnostics_arp_read():
     assert Capability.DIAGNOSTICS_ARP_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_firewall_traffic_shaper_read():
+    assert Capability.FIREWALL_TRAFFIC_SHAPER_READ in AuditorProfile.capabilities

@@ -356,6 +356,16 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "FIREWALL_TRAFFIC_SHAPER_LIMITERS": CapturePolicy(
+        endpoint_attr="FIREWALL_TRAFFIC_SHAPER_LIMITERS",
+        result_shape="list",
+        # name/description are user-authored limiter labels
+        # (fixture-only, same asymmetric pattern). Nested queue[]
+        # reuses the same field names.
+        identifying_fields=frozenset({"name", "description"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

@@ -2799,3 +2799,111 @@ def test_get_arp_table_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_arp_table()
     assert sentinel not in str(excinfo.value)
+
+
+TRAFFIC_SHAPER_LIMITERS_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_traffic_shaper_limiters_response.json"
+
+
+def _traffic_shaper_limiters_body() -> dict:
+    return json.loads(TRAFFIC_SHAPER_LIMITERS_FIXTURE.read_text())
+
+
+def _traffic_shaper_limiters_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _traffic_shaper_limiters_body()
+    transport.register(
+        "GET", "/api/v2/firewall/traffic_shaper/limiters?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_traffic_shaper_limiters_maps_fields():
+    client, _ = _traffic_shaper_limiters_client()
+    raw = _traffic_shaper_limiters_body()["data"]
+    limiters = client.get_firewall_traffic_shaper_limiters()
+    assert len(limiters) == 2
+    assert limiters[0].name == raw[0]["name"]
+    assert limiters[0].aqm == raw[0]["aqm"]
+    assert limiters[0].sched == raw[0]["sched"]
+    assert limiters[0].bandwidth == raw[0]["bandwidth"]
+
+
+def test_get_firewall_traffic_shaper_limiters_only_calls_endpoint_with_default_limit():
+    client, transport = _traffic_shaper_limiters_client()
+    client.get_firewall_traffic_shaper_limiters()
+    assert transport.calls == [("GET", "/api/v2/firewall/traffic_shaper/limiters?limit=100")]
+
+
+def test_get_firewall_traffic_shaper_limiters_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _traffic_shaper_limiters_body()
+    transport.register(
+        "GET", "/api/v2/firewall/traffic_shaper/limiters?limit=2", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_traffic_shaper_limiters(limit=2)
+    assert transport.calls == [("GET", "/api/v2/firewall/traffic_shaper/limiters?limit=2")]
+
+
+def test_get_firewall_traffic_shaper_limiters_rejects_zero_limit():
+    client, _ = _traffic_shaper_limiters_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_traffic_shaper_limiters(limit=0)
+
+
+def test_get_firewall_traffic_shaper_limiters_rejects_limit_above_max():
+    client, _ = _traffic_shaper_limiters_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_traffic_shaper_limiters(limit=101)
+
+
+def test_get_firewall_traffic_shaper_limiters_missing_data_key_raises_shape_error():
+    body = _traffic_shaper_limiters_body()
+    del body["data"]
+    client, _ = _traffic_shaper_limiters_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shaper_limiters()
+
+
+def test_get_firewall_traffic_shaper_limiters_data_wrong_type_raises_shape_error():
+    body = _traffic_shaper_limiters_body()
+    body["data"] = "not-a-list"
+    client, _ = _traffic_shaper_limiters_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shaper_limiters()
+
+
+def test_get_firewall_traffic_shaper_limiters_item_wrong_type_raises_shape_error():
+    body = _traffic_shaper_limiters_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _traffic_shaper_limiters_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shaper_limiters()
+
+
+def test_get_firewall_traffic_shaper_limiters_required_field_missing_raises_shape_error():
+    body = _traffic_shaper_limiters_body()
+    del body["data"][0]["sched"]
+    client, _ = _traffic_shaper_limiters_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shaper_limiters()
+
+
+def test_get_firewall_traffic_shaper_limiters_invalid_field_type_raises_shape_error():
+    body = _traffic_shaper_limiters_body()
+    body["data"][0]["enabled"] = "not-a-bool"
+    client, _ = _traffic_shaper_limiters_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shaper_limiters()
+
+
+def test_get_firewall_traffic_shaper_limiters_shape_error_does_not_leak_raw_field_values():
+    body = _traffic_shaper_limiters_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["name"] = [sentinel]
+    client, _ = _traffic_shaper_limiters_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_traffic_shaper_limiters()
+    assert sentinel not in str(excinfo.value)

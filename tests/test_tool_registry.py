@@ -491,6 +491,65 @@ _ARP_TABLE_BODY = {
 }
 
 
+_TRAFFIC_SHAPER_LIMITERS_BODY = {
+    "data": [
+        {
+            "aqm": "droptail",
+            "bandwidth": [{"bw": 470, "bwscale": "Mb", "bwsched": "none", "id": 0, "parent_id": 0}],
+            "buckets": None,
+            "delay": 0,
+            "description": "",
+            "ecn": None,
+            "enabled": True,
+            "id": 0,
+            "mask": "dstaddress",
+            "maskbits": 32,
+            "maskbitsv6": 128,
+            "name": "test-limiter",
+            "number": 1,
+            "param_codel_interval": 0,
+            "param_codel_target": 0,
+            "param_fq_codel_flows": 1024,
+            "param_fq_codel_interval": 100,
+            "param_fq_codel_limit": 10240,
+            "param_fq_codel_quantum": 1514,
+            "param_fq_codel_target": 5,
+            "param_fq_pie_alpha": None,
+            "param_fq_pie_beta": None,
+            "param_fq_pie_flows": None,
+            "param_fq_pie_limit": None,
+            "param_fq_pie_max_burst": None,
+            "param_fq_pie_max_ecnth": None,
+            "param_fq_pie_quantum": None,
+            "param_fq_pie_target": None,
+            "param_fq_pie_tupdate": None,
+            "param_gred_max_p": None,
+            "param_gred_max_th": None,
+            "param_gred_min_th": None,
+            "param_gred_w_q": None,
+            "param_pie_alpha": None,
+            "param_pie_beta": None,
+            "param_pie_max_burst": None,
+            "param_pie_max_ecnth": None,
+            "param_pie_target": None,
+            "param_pie_tupdate": None,
+            "param_red_max_p": None,
+            "param_red_max_th": None,
+            "param_red_min_th": None,
+            "param_red_w_q": None,
+            "pie_capdrop": None,
+            "pie_onoff": None,
+            "pie_pderand": None,
+            "pie_qdelay": None,
+            "plr": None,
+            "qlimit": None,
+            "queue": [],
+            "sched": "fq_codel",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -574,6 +633,7 @@ def _client(
     with_dns_resolver_host_overrides: bool = False,
     with_dns_resolver_settings: bool = False,
     with_arp_table: bool = False,
+    with_traffic_shaper_limiters: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -686,6 +746,13 @@ def _client(
     if with_arp_table:
         transport.register(
             "GET", "/api/v2/diagnostics/arp_table?limit=100", status_code=200, text=json.dumps(_ARP_TABLE_BODY)
+        )
+    if with_traffic_shaper_limiters:
+        transport.register(
+            "GET",
+            "/api/v2/firewall/traffic_shaper/limiters?limit=100",
+            status_code=200,
+            text=json.dumps(_TRAFFIC_SHAPER_LIMITERS_BODY),
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1471,3 +1538,32 @@ def test_registered_arp_table_tool_invokes_client():
     assert len(entries) == 1
     assert entries[0].hostname == "test-host"
     assert entries[0].ip_address == "198.51.100.10"
+
+
+def test_registry_registers_firewall_traffic_shaper_limiters_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_traffic_shaper_limiters=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_TRAFFIC_SHAPER_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_firewall_traffic_shaper_limiters"
+
+
+def test_registry_does_not_register_firewall_traffic_shaper_limiters_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_firewall_traffic_shaper_limiters" not in names
+
+
+def test_registered_firewall_traffic_shaper_limiters_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_traffic_shaper_limiters=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_TRAFFIC_SHAPER_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_firewall_traffic_shaper_limiters")
+    limiters = fn()
+    assert len(limiters) == 1
+    assert limiters[0].name == "test-limiter"
+    assert limiters[0].sched == "fq_codel"

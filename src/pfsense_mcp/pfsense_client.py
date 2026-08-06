@@ -18,6 +18,7 @@ from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, F
 from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
+from .models.firewall_traffic_shaper_limiter import FirewallTrafficShaperLimiter
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
@@ -86,6 +87,10 @@ DNS_RESOLVER_HOST_OVERRIDES_MAX_LIMIT = 100
 
 ARP_TABLE_MIN_LIMIT = 1
 ARP_TABLE_MAX_LIMIT = 100
+
+
+FIREWALL_TRAFFIC_SHAPER_LIMITERS_MIN_LIMIT = 1
+FIREWALL_TRAFFIC_SHAPER_LIMITERS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -711,5 +716,37 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /diagnostics/arp_table response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_firewall_traffic_shaper_limiters(self, *, limit: int = 100) -> list[FirewallTrafficShaperLimiter]:
+        if not (FIREWALL_TRAFFIC_SHAPER_LIMITERS_MIN_LIMIT <= limit <= FIREWALL_TRAFFIC_SHAPER_LIMITERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_TRAFFIC_SHAPER_LIMITERS_MIN_LIMIT} and "
+                f"{FIREWALL_TRAFFIC_SHAPER_LIMITERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_TRAFFIC_SHAPER_LIMITERS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError(
+                "pfSense /firewall/traffic_shaper/limiters response did not contain 'data'."
+            )
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /firewall/traffic_shaper/limiters response 'data' was not a list.")
+
+        results: list[FirewallTrafficShaperLimiter] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /firewall/traffic_shaper/limiters response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(FirewallTrafficShaperLimiter.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /firewall/traffic_shaper/limiters response contained an entry "
+                    "that failed schema validation."
                 ) from None
         return results

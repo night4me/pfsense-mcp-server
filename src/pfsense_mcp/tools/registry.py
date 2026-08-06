@@ -21,6 +21,7 @@ from .read import (
     firewall_rules,
     firewall_states,
     firewall_states_size,
+    firewall_traffic_shaper_limiters,
     gateway_status,
     gateways,
     interface_bridges,
@@ -87,6 +88,8 @@ class ToolRegistry:
             self._register_services_dns_resolver_read()
         if Capability.DIAGNOSTICS_ARP_READ in self._capabilities:
             self._register_diagnostics_arp_read()
+        if Capability.FIREWALL_TRAFFIC_SHAPER_READ in self._capabilities:
+            self._register_firewall_traffic_shaper_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -219,4 +222,9 @@ class ToolRegistry:
     def _register_diagnostics_arp_read(self) -> None:
         fn = arp_table.build(self._client)
         wrapped = audit_logged("pfsense_get_arp_table", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_firewall_traffic_shaper_read(self) -> None:
+        fn = firewall_traffic_shaper_limiters.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_traffic_shaper_limiters", self._identity)(fn)
         self._mcp.tool()(wrapped)
