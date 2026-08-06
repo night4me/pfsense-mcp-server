@@ -404,6 +404,11 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         identifying_fields=frozenset({"username", "fromaddress", "notifyemailaddress", "ipaddress", "password"}),
         default_max_items=1,
     ),
+    "BIND_SETTINGS": CapturePolicy(
+        endpoint_attr="BIND_SETTINGS",
+        result_shape="object",
+        default_max_items=1,
+    ),
 }
 
 

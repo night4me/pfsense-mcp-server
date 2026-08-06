@@ -597,6 +597,31 @@ _EMAIL_NOTIFICATION_SETTINGS_BODY = {
 }
 
 
+_BIND_SETTINGS_BODY = {
+    "data": {
+        "bind_custom_options": None,
+        "bind_dnssec_validation": "auto",
+        "bind_forwarder": False,
+        "bind_forwarder_ips": None,
+        "bind_global_settings": None,
+        "bind_hide_version": False,
+        "bind_ip_version": None,
+        "bind_logging": False,
+        "bind_notify": False,
+        "bind_ram_limit": "256M",
+        "controlport": "953",
+        "enable_bind": False,
+        "listenon": ["All"],
+        "listenport": "53",
+        "log_only": False,
+        "log_options": ["default"],
+        "log_severity": "critical",
+        "rate_enabled": False,
+        "rate_limit": None,
+    }
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -685,6 +710,7 @@ def _client(
     with_system_packages: bool = False,
     with_system_tunables: bool = False,
     with_email_notification_settings: bool = False,
+    with_bind_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -826,6 +852,10 @@ def _client(
             "/api/v2/system/notifications/email_settings",
             status_code=200,
             text=json.dumps(_EMAIL_NOTIFICATION_SETTINGS_BODY),
+        )
+    if with_bind_settings:
+        transport.register(
+            "GET", "/api/v2/services/bind/settings", status_code=200, text=json.dumps(_BIND_SETTINGS_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1771,3 +1801,31 @@ def test_registered_email_notification_settings_tool_reveals_identifying_metadat
     assert settings.username == "test-smtp-user"
     assert settings.password == "test-password"
     assert settings.fromaddress == "test-from@example.invalid"
+
+
+def test_registry_registers_bind_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_bind_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_BIND_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_bind_settings"
+
+
+def test_registry_does_not_register_bind_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_bind_settings" not in names
+
+
+def test_registered_bind_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_bind_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_BIND_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_bind_settings")
+    settings = fn()
+    assert settings.enable_bind is False
+    assert settings.listenport == "53"

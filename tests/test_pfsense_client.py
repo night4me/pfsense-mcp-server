@@ -3282,3 +3282,76 @@ def test_get_email_notification_settings_shape_error_does_not_leak_raw_field_val
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_email_notification_settings()
     assert sentinel not in str(excinfo.value)
+
+
+BIND_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_settings_response.json"
+
+
+def _bind_settings_body() -> dict:
+    return json.loads(BIND_SETTINGS_FIXTURE.read_text())
+
+
+def _bind_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _bind_settings_body()
+    transport.register("GET", "/api/v2/services/bind/settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_bind_settings_maps_fields():
+    client, _ = _bind_settings_client()
+    raw = _bind_settings_body()["data"]
+    settings = client.get_bind_settings()
+    assert settings.enable_bind == raw["enable_bind"]
+    assert settings.listenport == raw["listenport"]
+    assert settings.bind_ram_limit == raw["bind_ram_limit"]
+    assert settings.listenon == raw["listenon"]
+
+
+def test_get_bind_settings_only_calls_settings_endpoint():
+    client, transport = _bind_settings_client()
+    client.get_bind_settings()
+    assert transport.calls == [("GET", "/api/v2/services/bind/settings")]
+
+
+def test_get_bind_settings_missing_data_key_raises_shape_error():
+    body = _bind_settings_body()
+    del body["data"]
+    client, _ = _bind_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_settings()
+
+
+def test_get_bind_settings_data_wrong_type_raises_shape_error():
+    body = _bind_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _bind_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_settings()
+
+
+def test_get_bind_settings_required_field_missing_raises_shape_error():
+    body = _bind_settings_body()
+    del body["data"]["enable_bind"]
+    client, _ = _bind_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_settings()
+
+
+def test_get_bind_settings_invalid_field_type_raises_shape_error():
+    body = _bind_settings_body()
+    body["data"]["enable_bind"] = "not-a-bool"
+    client, _ = _bind_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_settings()
+
+
+def test_get_bind_settings_shape_error_does_not_leak_raw_field_values():
+    body = _bind_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["enable_bind"] = sentinel
+    client, _ = _bind_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_bind_settings()
+    assert sentinel not in str(excinfo.value)

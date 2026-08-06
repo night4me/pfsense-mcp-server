@@ -8,6 +8,7 @@ from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
     arp_table,
+    bind_settings,
     carp_status,
     dhcp_leases,
     dhcp_servers,
@@ -102,6 +103,8 @@ class ToolRegistry:
             self._register_system_tunable_read()
         if Capability.SYSTEM_NOTIFICATIONS_READ in self._capabilities:
             self._register_system_notifications_read()
+        if Capability.SERVICES_BIND_READ in self._capabilities:
+            self._register_services_bind_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -259,4 +262,9 @@ class ToolRegistry:
     def _register_system_notifications_read(self) -> None:
         fn = email_notification_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_email_notification_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_services_bind_read(self) -> None:
+        fn = bind_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_bind_settings", self._identity)(fn)
         self._mcp.tool()(wrapped)

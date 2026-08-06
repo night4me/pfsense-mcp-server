@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.arp_table_entry import ArpTableEntry
+from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
@@ -853,4 +854,19 @@ class PfSenseClient:
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError(
                 "pfSense /system/notifications/email_settings response failed schema validation."
+            ) from None
+
+    def get_bind_settings(self) -> BindSettings:
+        raw = self._rest.get(Endpoints.BIND_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/bind/settings response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /services/bind/settings response 'data' was not an object.")
+        try:
+            return BindSettings.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/bind/settings response failed schema validation."
             ) from None

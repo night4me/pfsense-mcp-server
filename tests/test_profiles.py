@@ -112,3 +112,7 @@ def test_auditor_profile_has_system_tunable_read():
 
 def test_auditor_profile_has_system_notifications_read():
     assert Capability.SYSTEM_NOTIFICATIONS_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_services_bind_read():
+    assert Capability.SERVICES_BIND_READ in AuditorProfile.capabilities

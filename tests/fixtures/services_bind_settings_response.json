@@ -1,0 +1,31 @@
+{
+  "code": 200,
+  "data": {
+    "bind_custom_options": null,
+    "bind_dnssec_validation": "auto",
+    "bind_forwarder": false,
+    "bind_forwarder_ips": null,
+    "bind_global_settings": null,
+    "bind_hide_version": false,
+    "bind_ip_version": null,
+    "bind_logging": false,
+    "bind_notify": false,
+    "bind_ram_limit": "256M",
+    "controlport": "953",
+    "enable_bind": false,
+    "listenon": [
+      "All"
+    ],
+    "listenport": "53",
+    "log_only": false,
+    "log_options": [
+      "default"
+    ],
+    "log_severity": "critical",
+    "rate_enabled": false,
+    "rate_limit": null
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
