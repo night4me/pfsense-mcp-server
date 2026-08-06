@@ -10,6 +10,7 @@ from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.arp_table_entry import ArpTableEntry
 from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
+from .models.cron_job import CronJob
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
@@ -111,6 +112,10 @@ SYSTEM_TUNABLES_MAX_LIMIT = 100
 
 NTP_TIME_SERVERS_MIN_LIMIT = 1
 NTP_TIME_SERVERS_MAX_LIMIT = 100
+
+
+CRON_JOBS_MIN_LIMIT = 1
+CRON_JOBS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -933,3 +938,31 @@ class PfSenseClient:
             return SshSettings.from_api(data)
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError("pfSense /services/ssh response failed schema validation.") from None
+
+    def get_cron_jobs(self, *, limit: int = 100) -> list[CronJob]:
+        if not (CRON_JOBS_MIN_LIMIT <= limit <= CRON_JOBS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {CRON_JOBS_MIN_LIMIT} and {CRON_JOBS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.CRON_JOBS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/cron/jobs response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /services/cron/jobs response 'data' was not a list.")
+
+        results: list[CronJob] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/cron/jobs response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(CronJob.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/cron/jobs response contained an entry that failed schema validation."
+                ) from None
+        return results

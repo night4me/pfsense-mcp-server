@@ -1,0 +1,108 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "command": "/usr/sbin/newsyslog",
+      "hour": "*",
+      "id": 0,
+      "mday": "*",
+      "minute": "*/1",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/etc/rc.periodic daily",
+      "hour": "3",
+      "id": 1,
+      "mday": "*",
+      "minute": "1",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/etc/rc.periodic weekly",
+      "hour": "4",
+      "id": 2,
+      "mday": "*",
+      "minute": "15",
+      "month": "*",
+      "wday": "6",
+      "who": "root"
+    },
+    {
+      "command": "/etc/rc.periodic monthly",
+      "hour": "5",
+      "id": 3,
+      "mday": "1",
+      "minute": "30",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/usr/bin/nice -n20 adjkerntz -a",
+      "hour": "0-5",
+      "id": 4,
+      "mday": "*",
+      "minute": "1,31",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/usr/bin/nice -n20 /etc/rc.update_bogons.sh",
+      "hour": "3",
+      "id": 5,
+      "mday": "1",
+      "minute": "1",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/usr/bin/nice -n20 /etc/rc.dyndns.update",
+      "hour": "1",
+      "id": 6,
+      "mday": "*",
+      "minute": "1",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/usr/bin/nice -n20 /usr/local/sbin/expiretable -v -t 3600 virusprot",
+      "hour": "*",
+      "id": 7,
+      "mday": "*",
+      "minute": "*/60",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/usr/bin/nice -n20 /etc/rc.update_urltables",
+      "hour": "12",
+      "id": 8,
+      "mday": "*",
+      "minute": "30",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    },
+    {
+      "command": "/usr/bin/nice -n20 /etc/rc.update_pkg_metadata",
+      "hour": "0",
+      "id": 9,
+      "mday": "*",
+      "minute": "1",
+      "month": "*",
+      "wday": "*",
+      "who": "root"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

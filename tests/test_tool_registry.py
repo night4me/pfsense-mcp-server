@@ -667,6 +667,22 @@ _SSH_SETTINGS_BODY = {
 }
 
 
+_CRON_JOBS_BODY = {
+    "data": [
+        {
+            "command": "/usr/sbin/newsyslog",
+            "hour": "*",
+            "id": 0,
+            "mday": "*",
+            "minute": "*/1",
+            "month": "*",
+            "wday": "*",
+            "who": "root",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -759,6 +775,7 @@ def _client(
     with_ntp_settings: bool = False,
     with_ntp_time_servers: bool = False,
     with_ssh_settings: bool = False,
+    with_cron_jobs: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -916,6 +933,10 @@ def _client(
         )
     if with_ssh_settings:
         transport.register("GET", "/api/v2/services/ssh", status_code=200, text=json.dumps(_SSH_SETTINGS_BODY))
+    if with_cron_jobs:
+        transport.register(
+            "GET", "/api/v2/services/cron/jobs?limit=100", status_code=200, text=json.dumps(_CRON_JOBS_BODY)
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -1965,3 +1986,32 @@ def test_registered_ssh_settings_tool_invokes_client():
     settings = fn()
     assert settings.enable is True
     assert settings.port == "22"
+
+
+def test_registry_registers_cron_jobs_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_cron_jobs=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_CRON_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_cron_jobs"
+
+
+def test_registry_does_not_register_cron_jobs_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_cron_jobs" not in names
+
+
+def test_registered_cron_jobs_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_cron_jobs=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_CRON_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_cron_jobs")
+    jobs = fn()
+    assert len(jobs) == 1
+    assert jobs[0].command == "/usr/sbin/newsyslog"
+    assert jobs[0].who == "root"

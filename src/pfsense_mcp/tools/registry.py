@@ -10,6 +10,7 @@ from .read import (
     arp_table,
     bind_settings,
     carp_status,
+    cron_jobs,
     dhcp_leases,
     dhcp_servers,
     dhcp_static_mappings,
@@ -112,6 +113,8 @@ class ToolRegistry:
             self._register_services_ntp_read()
         if Capability.SERVICES_SSH_READ in self._capabilities:
             self._register_services_ssh_read()
+        if Capability.SERVICES_CRON_READ in self._capabilities:
+            self._register_services_cron_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -288,4 +291,9 @@ class ToolRegistry:
     def _register_services_ssh_read(self) -> None:
         fn = ssh_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_ssh_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_services_cron_read(self) -> None:
+        fn = cron_jobs.build(self._client)
+        wrapped = audit_logged("pfsense_get_cron_jobs", self._identity)(fn)
         self._mcp.tool()(wrapped)

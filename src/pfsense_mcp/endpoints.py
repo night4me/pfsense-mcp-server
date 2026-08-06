@@ -202,5 +202,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    CRON_JOBS = EndpointInfo(
+        path_suffix="/services/cron/jobs",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)

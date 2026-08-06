@@ -124,3 +124,7 @@ def test_auditor_profile_has_services_ntp_read():
 
 def test_auditor_profile_has_services_ssh_read():
     assert Capability.SERVICES_SSH_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_services_cron_read():
+    assert Capability.SERVICES_CRON_READ in AuditorProfile.capabilities

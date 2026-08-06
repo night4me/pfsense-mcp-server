@@ -434,6 +434,15 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "CRON_JOBS": CapturePolicy(
+        endpoint_attr="CRON_JOBS",
+        result_shape="list",
+        # command/who are the whole point of a cron-job inventory
+        # capability -- ordinary administrative configuration, not
+        # secrets. No identifying fields.
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

@@ -3601,3 +3601,105 @@ def test_get_ssh_settings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_ssh_settings()
     assert sentinel not in str(excinfo.value)
+
+
+CRON_JOBS_FIXTURE = Path(__file__).parent / "fixtures" / "services_cron_jobs_response.json"
+
+
+def _cron_jobs_body() -> dict:
+    return json.loads(CRON_JOBS_FIXTURE.read_text())
+
+
+def _cron_jobs_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _cron_jobs_body()
+    transport.register("GET", "/api/v2/services/cron/jobs?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_cron_jobs_maps_fields():
+    client, _ = _cron_jobs_client()
+    raw = _cron_jobs_body()["data"]
+    jobs = client.get_cron_jobs()
+    assert len(jobs) == len(raw)
+    assert jobs[0].command == raw[0]["command"]
+    assert jobs[0].who == raw[0]["who"]
+
+
+def test_get_cron_jobs_only_calls_endpoint_with_default_limit():
+    client, transport = _cron_jobs_client()
+    client.get_cron_jobs()
+    assert transport.calls == [("GET", "/api/v2/services/cron/jobs?limit=100")]
+
+
+def test_get_cron_jobs_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _cron_jobs_body()
+    transport.register("GET", "/api/v2/services/cron/jobs?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_cron_jobs(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/cron/jobs?limit=2")]
+
+
+def test_get_cron_jobs_rejects_zero_limit():
+    client, _ = _cron_jobs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_cron_jobs(limit=0)
+
+
+def test_get_cron_jobs_rejects_limit_above_max():
+    client, _ = _cron_jobs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_cron_jobs(limit=101)
+
+
+def test_get_cron_jobs_missing_data_key_raises_shape_error():
+    body = _cron_jobs_body()
+    del body["data"]
+    client, _ = _cron_jobs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_cron_jobs()
+
+
+def test_get_cron_jobs_data_wrong_type_raises_shape_error():
+    body = _cron_jobs_body()
+    body["data"] = "not-a-list"
+    client, _ = _cron_jobs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_cron_jobs()
+
+
+def test_get_cron_jobs_item_wrong_type_raises_shape_error():
+    body = _cron_jobs_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _cron_jobs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_cron_jobs()
+
+
+def test_get_cron_jobs_required_field_missing_raises_shape_error():
+    body = _cron_jobs_body()
+    del body["data"][0]["command"]
+    client, _ = _cron_jobs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_cron_jobs()
+
+
+def test_get_cron_jobs_invalid_field_type_raises_shape_error():
+    body = _cron_jobs_body()
+    body["data"][0]["id"] = "not-an-int"
+    client, _ = _cron_jobs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_cron_jobs()
+
+
+def test_get_cron_jobs_shape_error_does_not_leak_raw_field_values():
+    body = _cron_jobs_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["command"] = [sentinel]
+    client, _ = _cron_jobs_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_cron_jobs()
+    assert sentinel not in str(excinfo.value)
