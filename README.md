@@ -237,6 +237,7 @@ separate process with separate configuration for another appliance.
 - [Architecture decisions](docs/adr/README.md)
 - [Offline benchmark methodology](docs/BENCHMARKS.md)
 - [Threat model](docs/THREAT_MODEL.md)
+- [Security abuse-case catalog](docs/SECURITY_TEST_CATALOG.md)
 - [Security model](docs/SECURITY_MODEL.md)
 - [Vulnerability reporting](SECURITY.md)
 - [Public roadmap](docs/ROADMAP.md)
