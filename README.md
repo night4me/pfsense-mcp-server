@@ -18,10 +18,9 @@ Key properties:
 
 ## Status
 
-v0.2.1 is the current published release. It hardens credential handling,
-auditing, error sanitization, configuration, and fixtures while keeping
-the accepted v0.2.0 WRITE infrastructure inert. No mutating capability is
-active.
+v0.2.1 is the current published release. The main branch is preparing v0.2.2
+project hardening; it is not yet published on PyPI. No mutating capability is
+active, and the accepted v0.2.0 WRITE infrastructure remains inert.
 
 ## Scope (current phase)
 
@@ -120,10 +119,12 @@ presentation and tool selection, not authorization. They do not relax
 capability profiles, the optional exact-name restriction, GET-only or endpoint
 enforcement, credential handling, auditing, or WRITE inactivity.
 
-## Installation
+## Installation from source
 
-Python 3.11 or newer is required. Clone the repository, create an isolated
-environment, and install the project:
+Linux is the supported production platform because secure credential loading
+depends on descriptor-bound Unix file semantics. Python 3.11 or newer is
+required. Clone the repository, create an isolated environment, and install
+the project:
 
 ```console
 git clone https://github.com/night4me/pfsense-mcp-server.git
@@ -132,6 +133,10 @@ python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install .
 ```
+
+The project is not currently published on PyPI. Do not use a similarly named
+package from a package index. A future PyPI installation command will be
+documented only after the owner publishes an authenticated release.
 
 ## Quick start
 
@@ -158,8 +163,11 @@ environment variables:
 }
 ```
 
-The exact outer MCP-client configuration key varies by client. The server
-communicates over stdio and produces no web interface or screenshotable UI.
+The exact outer MCP-client configuration key varies by client. Use one of the
+[verified client examples](examples/README.md), then confirm that the client
+shows 41 READ tools and no WRITE tools. A first safe call is
+`pfsense_get_system_status`. The server communicates over stdio and produces
+no web interface or screenshotable UI.
 
 For development, install the project with its test and analysis tools:
 
