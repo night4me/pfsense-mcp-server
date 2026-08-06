@@ -1,7 +1,7 @@
 [project]
 name = "pfsense-mcp-server"
 version = "0.2.2"
-description = "Local MCP server exposing strongly-typed pfSense REST API tools with inert write infrastructure."
+description = "Security-focused local MCP server exposing strongly typed READ tools for pfSense."
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["mcp", "pfsense", "networking", "firewall", "observability"]
@@ -9,6 +9,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
