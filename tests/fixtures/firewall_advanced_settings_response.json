@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "data": {
+    "aliasesresolveinterval": null,
+    "checkaliasesurlcert": false
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

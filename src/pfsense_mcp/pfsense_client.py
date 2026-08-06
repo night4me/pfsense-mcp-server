@@ -15,6 +15,7 @@ from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.dns_resolver_host_override import DnsResolverHostOverride
 from .models.dns_resolver_settings import DnsResolverSettings
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
+from .models.firewall_advanced_settings import FirewallAdvancedSettings
 from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
@@ -750,3 +751,18 @@ class PfSenseClient:
                     "that failed schema validation."
                 ) from None
         return results
+
+    def get_firewall_advanced_settings(self) -> FirewallAdvancedSettings:
+        raw = self._rest.get(Endpoints.FIREWALL_ADVANCED_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /firewall/advanced_settings response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /firewall/advanced_settings response 'data' was not an object.")
+        try:
+            return FirewallAdvancedSettings.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /firewall/advanced_settings response failed schema validation."
+            ) from None

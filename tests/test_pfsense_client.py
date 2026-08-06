@@ -2907,3 +2907,73 @@ def test_get_firewall_traffic_shaper_limiters_shape_error_does_not_leak_raw_fiel
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_firewall_traffic_shaper_limiters()
     assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_ADVANCED_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_advanced_settings_response.json"
+
+
+def _firewall_advanced_settings_body() -> dict:
+    return json.loads(FIREWALL_ADVANCED_SETTINGS_FIXTURE.read_text())
+
+
+def _firewall_advanced_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_advanced_settings_body()
+    transport.register("GET", "/api/v2/firewall/advanced_settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_advanced_settings_maps_fields():
+    client, _ = _firewall_advanced_settings_client()
+    settings = client.get_firewall_advanced_settings()
+    assert settings.aliasesresolveinterval is None
+    assert settings.checkaliasesurlcert is False
+
+
+def test_get_firewall_advanced_settings_only_calls_settings_endpoint():
+    client, transport = _firewall_advanced_settings_client()
+    client.get_firewall_advanced_settings()
+    assert transport.calls == [("GET", "/api/v2/firewall/advanced_settings")]
+
+
+def test_get_firewall_advanced_settings_missing_data_key_raises_shape_error():
+    body = _firewall_advanced_settings_body()
+    del body["data"]
+    client, _ = _firewall_advanced_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_advanced_settings()
+
+
+def test_get_firewall_advanced_settings_data_wrong_type_raises_shape_error():
+    body = _firewall_advanced_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _firewall_advanced_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_advanced_settings()
+
+
+def test_get_firewall_advanced_settings_required_field_missing_raises_shape_error():
+    body = _firewall_advanced_settings_body()
+    del body["data"]["checkaliasesurlcert"]
+    client, _ = _firewall_advanced_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_advanced_settings()
+
+
+def test_get_firewall_advanced_settings_invalid_field_type_raises_shape_error():
+    body = _firewall_advanced_settings_body()
+    body["data"]["checkaliasesurlcert"] = "not-a-bool"
+    client, _ = _firewall_advanced_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_advanced_settings()
+
+
+def test_get_firewall_advanced_settings_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_advanced_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["checkaliasesurlcert"] = [sentinel]
+    client, _ = _firewall_advanced_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_advanced_settings()
+    assert sentinel not in str(excinfo.value)

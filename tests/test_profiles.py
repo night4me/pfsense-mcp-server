@@ -96,3 +96,7 @@ def test_auditor_profile_has_diagnostics_arp_read():
 
 def test_auditor_profile_has_firewall_traffic_shaper_read():
     assert Capability.FIREWALL_TRAFFIC_SHAPER_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_firewall_advanced_settings_read():
+    assert Capability.FIREWALL_ADVANCED_SETTINGS_READ in AuditorProfile.capabilities

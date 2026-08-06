@@ -162,5 +162,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    FIREWALL_ADVANCED_SETTINGS = EndpointInfo(
+        path_suffix="/firewall/advanced_settings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)

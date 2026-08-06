@@ -366,6 +366,13 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "FIREWALL_ADVANCED_SETTINGS": CapturePolicy(
+        endpoint_attr="FIREWALL_ADVANCED_SETTINGS",
+        result_shape="object",
+        # Two plain boolean/integer tuning fields; nothing identifying
+        # or secret.
+        default_max_items=1,
+    ),
 }
 
 

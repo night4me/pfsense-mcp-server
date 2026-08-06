@@ -550,6 +550,9 @@ _TRAFFIC_SHAPER_LIMITERS_BODY = {
 }
 
 
+_FIREWALL_ADVANCED_SETTINGS_BODY = {"data": {"aliasesresolveinterval": 300, "checkaliasesurlcert": True}}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -634,6 +637,7 @@ def _client(
     with_dns_resolver_settings: bool = False,
     with_arp_table: bool = False,
     with_traffic_shaper_limiters: bool = False,
+    with_firewall_advanced_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -753,6 +757,13 @@ def _client(
             "/api/v2/firewall/traffic_shaper/limiters?limit=100",
             status_code=200,
             text=json.dumps(_TRAFFIC_SHAPER_LIMITERS_BODY),
+        )
+    if with_firewall_advanced_settings:
+        transport.register(
+            "GET",
+            "/api/v2/firewall/advanced_settings",
+            status_code=200,
+            text=json.dumps(_FIREWALL_ADVANCED_SETTINGS_BODY),
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1567,3 +1578,31 @@ def test_registered_firewall_traffic_shaper_limiters_tool_invokes_client():
     assert len(limiters) == 1
     assert limiters[0].name == "test-limiter"
     assert limiters[0].sched == "fq_codel"
+
+
+def test_registry_registers_firewall_advanced_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_firewall_advanced_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_ADVANCED_SETTINGS_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_firewall_advanced_settings"
+
+
+def test_registry_does_not_register_firewall_advanced_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_firewall_advanced_settings" not in names
+
+
+def test_registered_firewall_advanced_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_firewall_advanced_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_ADVANCED_SETTINGS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_firewall_advanced_settings")
+    settings = fn()
+    assert settings.aliasesresolveinterval == 300
+    assert settings.checkaliasesurlcert is True
