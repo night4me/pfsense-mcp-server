@@ -51,6 +51,7 @@ AuditorProfile = Profile(
             Capability.SYSTEM_NOTIFICATIONS_READ,
             Capability.SERVICES_BIND_READ,
             Capability.SERVICES_NTP_READ,
+            Capability.SERVICES_SSH_READ,
         }
     ),
 )

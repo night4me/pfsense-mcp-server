@@ -31,6 +31,7 @@ from .models.ntp_time_server import NtpTimeServer
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.service_status import ServiceStatus
+from .models.ssh_settings import SshSettings
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
 from .models.system_ha_sync import SystemHaSync
@@ -919,3 +920,16 @@ class PfSenseClient:
                     "pfSense /services/ntp/time_servers response contained an entry that failed schema validation."
                 ) from None
         return results
+
+    def get_ssh_settings(self) -> SshSettings:
+        raw = self._rest.get(Endpoints.SERVICES_SSH)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/ssh response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /services/ssh response 'data' was not an object.")
+        try:
+            return SshSettings.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError("pfSense /services/ssh response failed schema validation.") from None

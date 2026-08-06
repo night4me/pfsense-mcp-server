@@ -120,3 +120,7 @@ def test_auditor_profile_has_services_bind_read():
 
 def test_auditor_profile_has_services_ntp_read():
     assert Capability.SERVICES_NTP_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_services_ssh_read():
+    assert Capability.SERVICES_SSH_READ in AuditorProfile.capabilities

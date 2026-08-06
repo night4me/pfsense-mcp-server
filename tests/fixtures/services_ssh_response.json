@@ -1,0 +1,12 @@
+{
+  "code": 200,
+  "data": {
+    "enable": true,
+    "port": "22",
+    "sshdagentforwarding": false,
+    "sshdkeyonly": null
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

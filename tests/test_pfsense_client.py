@@ -3529,3 +3529,75 @@ def test_get_ntp_time_servers_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_ntp_time_servers()
     assert sentinel not in str(excinfo.value)
+
+
+SSH_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_ssh_response.json"
+
+
+def _ssh_settings_body() -> dict:
+    return json.loads(SSH_SETTINGS_FIXTURE.read_text())
+
+
+def _ssh_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _ssh_settings_body()
+    transport.register("GET", "/api/v2/services/ssh", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_ssh_settings_maps_fields():
+    client, _ = _ssh_settings_client()
+    raw = _ssh_settings_body()["data"]
+    settings = client.get_ssh_settings()
+    assert settings.enable == raw["enable"]
+    assert settings.port == raw["port"]
+    assert settings.sshdagentforwarding == raw["sshdagentforwarding"]
+
+
+def test_get_ssh_settings_only_calls_settings_endpoint():
+    client, transport = _ssh_settings_client()
+    client.get_ssh_settings()
+    assert transport.calls == [("GET", "/api/v2/services/ssh")]
+
+
+def test_get_ssh_settings_missing_data_key_raises_shape_error():
+    body = _ssh_settings_body()
+    del body["data"]
+    client, _ = _ssh_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_ssh_settings()
+
+
+def test_get_ssh_settings_data_wrong_type_raises_shape_error():
+    body = _ssh_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _ssh_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_ssh_settings()
+
+
+def test_get_ssh_settings_required_field_missing_raises_shape_error():
+    body = _ssh_settings_body()
+    del body["data"]["enable"]
+    client, _ = _ssh_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_ssh_settings()
+
+
+def test_get_ssh_settings_invalid_field_type_raises_shape_error():
+    body = _ssh_settings_body()
+    body["data"]["enable"] = "not-a-bool"
+    client, _ = _ssh_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_ssh_settings()
+
+
+def test_get_ssh_settings_shape_error_does_not_leak_raw_field_values():
+    body = _ssh_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["enable"] = sentinel
+    client, _ = _ssh_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_ssh_settings()
+    assert sentinel not in str(excinfo.value)

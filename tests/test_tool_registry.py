@@ -657,6 +657,16 @@ _NTP_TIME_SERVERS_BODY = {
 }
 
 
+_SSH_SETTINGS_BODY = {
+    "data": {
+        "enable": True,
+        "port": "22",
+        "sshdagentforwarding": False,
+        "sshdkeyonly": None,
+    }
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -748,6 +758,7 @@ def _client(
     with_bind_settings: bool = False,
     with_ntp_settings: bool = False,
     with_ntp_time_servers: bool = False,
+    with_ssh_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -903,6 +914,8 @@ def _client(
             status_code=200,
             text=json.dumps(_NTP_TIME_SERVERS_BODY),
         )
+    if with_ssh_settings:
+        transport.register("GET", "/api/v2/services/ssh", status_code=200, text=json.dumps(_SSH_SETTINGS_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -1924,3 +1937,31 @@ def test_registered_ntp_time_servers_tool_invokes_client():
     servers = fn()
     assert len(servers) == 1
     assert servers[0].timeserver == "test.pool.ntp.example.invalid"
+
+
+def test_registry_registers_ssh_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_ssh_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_SSH_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_ssh_settings"
+
+
+def test_registry_does_not_register_ssh_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_ssh_settings" not in names
+
+
+def test_registered_ssh_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_ssh_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_SSH_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_ssh_settings")
+    settings = fn()
+    assert settings.enable is True
+    assert settings.port == "22"

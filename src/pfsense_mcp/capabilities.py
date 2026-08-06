@@ -35,6 +35,7 @@ class Capability(Enum):
     SYSTEM_NOTIFICATIONS_READ = auto()
     SERVICES_BIND_READ = auto()
     SERVICES_NTP_READ = auto()
+    SERVICES_SSH_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -71,5 +72,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.SYSTEM_NOTIFICATIONS_READ,
         Capability.SERVICES_BIND_READ,
         Capability.SERVICES_NTP_READ,
+        Capability.SERVICES_SSH_READ,
     }
 )

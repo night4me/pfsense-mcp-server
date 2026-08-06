@@ -33,6 +33,7 @@ from .read import (
     ntp_settings,
     ntp_time_servers,
     service_status,
+    ssh_settings,
     system_certificates,
     system_hasync,
     system_packages,
@@ -109,6 +110,8 @@ class ToolRegistry:
             self._register_services_bind_read()
         if Capability.SERVICES_NTP_READ in self._capabilities:
             self._register_services_ntp_read()
+        if Capability.SERVICES_SSH_READ in self._capabilities:
+            self._register_services_ssh_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -281,3 +284,8 @@ class ToolRegistry:
         ntp_time_servers_fn = ntp_time_servers.build(self._client)
         ntp_time_servers_wrapped = audit_logged("pfsense_get_ntp_time_servers", self._identity)(ntp_time_servers_fn)
         self._mcp.tool()(ntp_time_servers_wrapped)
+
+    def _register_services_ssh_read(self) -> None:
+        fn = ssh_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_ssh_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
