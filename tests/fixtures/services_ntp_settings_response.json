@@ -1,0 +1,24 @@
+{
+  "code": 200,
+  "data": {
+    "clockstats": false,
+    "dnsresolv": "auto",
+    "enable": false,
+    "interface": null,
+    "leapsec": null,
+    "logpeer": false,
+    "logsys": false,
+    "loopstats": false,
+    "ntpmaxpeers": 5,
+    "ntpmaxpoll": null,
+    "ntpminpoll": null,
+    "orphan": 12,
+    "peerstats": false,
+    "serverauth": false,
+    "serverauthalgo": "md5",
+    "statsgraph": false
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

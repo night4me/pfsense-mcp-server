@@ -30,6 +30,8 @@ from .read import (
     interface_bridges,
     interface_configs,
     interfaces,
+    ntp_settings,
+    ntp_time_servers,
     service_status,
     system_certificates,
     system_hasync,
@@ -105,6 +107,8 @@ class ToolRegistry:
             self._register_system_notifications_read()
         if Capability.SERVICES_BIND_READ in self._capabilities:
             self._register_services_bind_read()
+        if Capability.SERVICES_NTP_READ in self._capabilities:
+            self._register_services_ntp_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -268,3 +272,12 @@ class ToolRegistry:
         fn = bind_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_bind_settings", self._identity)(fn)
         self._mcp.tool()(wrapped)
+
+    def _register_services_ntp_read(self) -> None:
+        fn = ntp_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_ntp_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+        ntp_time_servers_fn = ntp_time_servers.build(self._client)
+        ntp_time_servers_wrapped = audit_logged("pfsense_get_ntp_time_servers", self._identity)(ntp_time_servers_fn)
+        self._mcp.tool()(ntp_time_servers_wrapped)

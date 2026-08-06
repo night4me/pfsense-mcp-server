@@ -622,6 +622,41 @@ _BIND_SETTINGS_BODY = {
 }
 
 
+_NTP_SETTINGS_BODY = {
+    "data": {
+        "clockstats": False,
+        "dnsresolv": "auto",
+        "enable": True,
+        "interface": None,
+        "leapsec": None,
+        "logpeer": False,
+        "logsys": False,
+        "loopstats": False,
+        "ntpmaxpeers": 5,
+        "ntpmaxpoll": None,
+        "ntpminpoll": None,
+        "orphan": 12,
+        "peerstats": False,
+        "serverauth": False,
+        "serverauthalgo": "md5",
+        "statsgraph": False,
+    }
+}
+
+
+_NTP_TIME_SERVERS_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "noselect": False,
+            "prefer": False,
+            "timeserver": "test.pool.ntp.example.invalid",
+            "type": "server",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -711,6 +746,8 @@ def _client(
     with_system_tunables: bool = False,
     with_email_notification_settings: bool = False,
     with_bind_settings: bool = False,
+    with_ntp_settings: bool = False,
+    with_ntp_time_servers: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -856,6 +893,15 @@ def _client(
     if with_bind_settings:
         transport.register(
             "GET", "/api/v2/services/bind/settings", status_code=200, text=json.dumps(_BIND_SETTINGS_BODY)
+        )
+    if with_ntp_settings:
+        transport.register("GET", "/api/v2/services/ntp/settings", status_code=200, text=json.dumps(_NTP_SETTINGS_BODY))
+    if with_ntp_time_servers:
+        transport.register(
+            "GET",
+            "/api/v2/services/ntp/time_servers?limit=100",
+            status_code=200,
+            text=json.dumps(_NTP_TIME_SERVERS_BODY),
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1829,3 +1875,52 @@ def test_registered_bind_settings_tool_invokes_client():
     settings = fn()
     assert settings.enable_bind is False
     assert settings.listenport == "53"
+
+
+def test_registry_registers_ntp_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_ntp_settings=True, with_ntp_time_servers=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_NTP_READ}))
+    registry.register_all()
+    names = {fn.__name__ for fn in mcp.registered}
+    assert "pfsense_get_ntp_settings" in names
+
+
+def test_registry_does_not_register_ntp_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_ntp_settings" not in names
+    assert "pfsense_get_ntp_time_servers" not in names
+
+
+def test_registered_ntp_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_ntp_settings=True, with_ntp_time_servers=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_NTP_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_ntp_settings")
+    settings = fn()
+    assert settings.enable is True
+    assert settings.ntpmaxpeers == 5
+
+
+def test_registry_registers_ntp_time_servers_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_ntp_settings=True, with_ntp_time_servers=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_NTP_READ}))
+    registry.register_all()
+    names = {fn.__name__ for fn in mcp.registered}
+    assert "pfsense_get_ntp_time_servers" in names
+
+
+def test_registered_ntp_time_servers_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_ntp_settings=True, with_ntp_time_servers=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_NTP_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_ntp_time_servers")
+    servers = fn()
+    assert len(servers) == 1
+    assert servers[0].timeserver == "test.pool.ntp.example.invalid"

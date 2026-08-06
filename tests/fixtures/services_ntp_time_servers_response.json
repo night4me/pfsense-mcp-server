@@ -1,0 +1,15 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 0,
+      "noselect": false,
+      "prefer": false,
+      "timeserver": "host.example.invalid",
+      "type": "server"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

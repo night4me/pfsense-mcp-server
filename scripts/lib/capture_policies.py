@@ -409,6 +409,26 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "NTP_SETTINGS": CapturePolicy(
+        endpoint_attr="NTP_SETTINGS",
+        result_shape="object",
+        # serverauthkey is an NTP symmetric authentication key -- a
+        # genuine secret, hard-refused and redacted-by-default at the
+        # model layer, same treatment as SYSTEM_NOTIFICATIONS'
+        # password.
+        hard_refusal_fields=frozenset({"serverauthkey"}),
+        identifying_fields=frozenset({"serverauthkey"}),
+        default_max_items=1,
+    ),
+    "NTP_TIME_SERVERS": CapturePolicy(
+        endpoint_attr="NTP_TIME_SERVERS",
+        result_shape="list",
+        # timeserver is a public NTP pool/server hostname (e.g. a
+        # pfsense.pool.ntp.org entry) -- ordinary, non-sensitive
+        # configuration, not installation-specific.
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

@@ -26,6 +26,8 @@ from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
 from .models.interfaces import InterfaceStatus
+from .models.ntp_settings import NtpSettings
+from .models.ntp_time_server import NtpTimeServer
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.service_status import ServiceStatus
@@ -104,6 +106,10 @@ SYSTEM_PACKAGES_MAX_LIMIT = 100
 
 SYSTEM_TUNABLES_MIN_LIMIT = 1
 SYSTEM_TUNABLES_MAX_LIMIT = 100
+
+
+NTP_TIME_SERVERS_MIN_LIMIT = 1
+NTP_TIME_SERVERS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -870,3 +876,46 @@ class PfSenseClient:
             raise PfSenseResponseShapeError(
                 "pfSense /services/bind/settings response failed schema validation."
             ) from None
+
+    def get_ntp_settings(self) -> NtpSettings:
+        raw = self._rest.get(Endpoints.NTP_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/ntp/settings response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /services/ntp/settings response 'data' was not an object.")
+        try:
+            return NtpSettings.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/ntp/settings response failed schema validation."
+            ) from None
+
+    def get_ntp_time_servers(self, *, limit: int = 100) -> list[NtpTimeServer]:
+        if not (NTP_TIME_SERVERS_MIN_LIMIT <= limit <= NTP_TIME_SERVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {NTP_TIME_SERVERS_MIN_LIMIT} and {NTP_TIME_SERVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.NTP_TIME_SERVERS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/ntp/time_servers response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /services/ntp/time_servers response 'data' was not a list.")
+
+        results: list[NtpTimeServer] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/ntp/time_servers response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(NtpTimeServer.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/ntp/time_servers response contained an entry that failed schema validation."
+                ) from None
+        return results
