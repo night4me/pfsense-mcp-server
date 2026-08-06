@@ -48,9 +48,12 @@ endpoint_symbol
 http_method
 target_identity       canonical resource identifier, not a display label
 target_fingerprint    digest of immutable identity and accepted pre-state fields
-intent_digest         digest of canonical mutation intent, not raw payload
+normalized_intent     capability-specific canonical operation, stored protected
+intent_digest         digest of normalized intent and exact payload, not raw payload
 snapshot_digest       integrity digest of protected pre-state
+rollback_plan_version immutable capability-specific rollback semantics
 created_at / expires_at
+confirmed_at          explicit operator confirmation bound to this contract
 status / state_version
 ```
 
@@ -74,6 +77,9 @@ The current `OPEN`, `COMMITTED`, `ROLLED_BACK`, and `EXPIRED` states are not
 sufficient to describe crashes around an external side effect. Proposed states:
 
 ```text
+PREPARING
+    → PREPARED
+    → PREPARATION_FAILED
 PREPARED
     → EXECUTING
         → COMMITTED
@@ -88,10 +94,20 @@ PREPARED → EXPIRED
 ```
 
 Every transition is compare-and-set against `state_version`. Terminal states
-cannot reopen. Expiry applies only before execution begins. `OUTCOME_UNKNOWN`
-requires operator reconciliation and cannot be retried blindly.
+cannot reopen. `PREPARING` cannot authorize execution. Expiry applies only
+before execution begins and transitions `PREPARING` or `PREPARED` to `EXPIRED`.
+`OUTCOME_UNKNOWN` requires operator reconciliation and cannot be retried
+blindly. The complete event/state table must explicitly reject every transition
+not shown above.
 
 ## Milestone 0 — capability and threat-model selection
+
+The roadmap does not choose the first capability. Owner approval must select it
+using objective criteria: smallest blast radius, a reliable verified READ
+dependency, stable natural target identity, deterministic rollback, no
+network-lockout risk, no credential mutation, no service interruption, and
+independently verified OpenAPI semantics. Candidate classes may be compared in
+the decision record, but no specific capability is implied or preferred here.
 
 ### Deliverables
 
@@ -120,8 +136,9 @@ requires operator reconciliation and cannot be retried blindly.
 
 ### Work
 
-- Extend contract identity with method, canonical target, intent digest,
-  target fingerprint, snapshot digest, and state version.
+- Extend contract identity with method, canonical target, normalized intent,
+  payload/intent digest, target fingerprint, snapshot digest, rollback-plan
+  version, expiry, explicit confirmation, and state version.
 - Replace free-form contract objects at execution boundaries with contract IDs.
 - Define canonical serialization/digest rules and size limits.
 - Bind rollback plans to the same capability/endpoint/target identity.
@@ -195,6 +212,8 @@ In-memory-only state must not be presented as crash-safe recovery.
 ### Work for a persistent store
 
 - Select a local transactional backend and filesystem protection contract.
+- Define single-writer ownership or transactional multi-process semantics;
+  filesystem locking alone is not assumed sufficient.
 - Encrypt sensitive snapshots at rest with a key outside the database.
 - Use atomic state transitions and durable-before-mutation ordering.
 - Reconcile `EXECUTING`/`ROLLING_BACK` contracts after restart through safe
@@ -228,7 +247,8 @@ In-memory-only state must not be presented as crash-safe recovery.
 
 - Implement explicit JSON/body transmission in the write transport interface.
 - Bound payload size and validate capability-specific request models.
-- Define accepted status codes and response shape for the selected endpoint.
+- Define the exact accepted HTTP status and response shape for the selected
+  endpoint; generic 2xx handling is prohibited.
 - Reject redirects and unexpected content/status.
 - Mark `COMMITTED` only after HTTP success plus required read-back validation.
 - Move to `OUTCOME_UNKNOWN` when transport outcome cannot be determined.
@@ -299,6 +319,8 @@ In-memory-only state must not be presented as crash-safe recovery.
   model and selected profile.
 - Require a prepare/dry-run/confirm sequence without accepting raw contract
   objects from MCP.
+- Bind explicit confirmation to the authoritative contract ID, normalized
+  intent digest, target fingerprint, and unexpired state.
 - Audit event identity, contract ID, capability, endpoint symbol, target digest,
   transition, duration, and sanitized outcome only.
 - Enforce the accepted capability/target-scoped rate and concurrency policy and
