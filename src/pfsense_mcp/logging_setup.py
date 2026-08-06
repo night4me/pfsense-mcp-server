@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 DEFAULT_LOG_DIR = Path.home() / ".local" / "state" / "pfsense-mcp-server"
+_OWNED_HANDLER_MARKER = "_pfsense_mcp_owned"
 
 
 class SecretRedactionFilter(logging.Filter):
@@ -55,13 +56,15 @@ def configure_logging(
     _ensure_log_file(log_file)
 
     redaction_filter = SecretRedactionFilter()
+    root = logging.getLogger("pfsense_mcp")
+    shutdown_logging()
     handler = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
     )
+    setattr(handler, _OWNED_HANDLER_MARKER, True)
     handler.addFilter(redaction_filter)
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
 
-    root = logging.getLogger("pfsense_mcp")
     root.setLevel(level)
     root.addHandler(handler)
     root.propagate = False
@@ -72,3 +75,12 @@ def configure_logging(
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
     return redaction_filter
+
+
+def shutdown_logging() -> None:
+    """Close only handlers created by :func:`configure_logging`."""
+    logger = logging.getLogger("pfsense_mcp")
+    for handler in list(logger.handlers):
+        if getattr(handler, _OWNED_HANDLER_MARKER, False):
+            logger.removeHandler(handler)
+            handler.close()

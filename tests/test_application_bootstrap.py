@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from pfsense_mcp.application import Application
@@ -60,3 +62,16 @@ def test_bootstrap_fails_closed_for_unknown_allowed_tool(monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as exc_info:
         app._bootstrap()
     assert exc_info.value.code == 1
+
+
+def test_run_cleans_up_logging_when_bootstrap_fails(monkeypatch, tmp_path):
+    monkeypatch.delenv("PFSENSE_API_URL", raising=False)
+    monkeypatch.setattr("pfsense_mcp.application.LOG_DIR", tmp_path / "state")
+
+    app = Application()
+    with pytest.raises(SystemExit):
+        app.run()
+
+    assert not [
+        handler for handler in logging.getLogger("pfsense_mcp").handlers if hasattr(handler, "_pfsense_mcp_owned")
+    ]

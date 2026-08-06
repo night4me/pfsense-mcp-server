@@ -14,7 +14,7 @@ from .config import ConfigurationError, load_api_key, load_config, load_logging_
 from .diagnostics import build_diagnostics_report
 from .factory import build_pfsense_client
 from .logging_setup import DEFAULT_LOG_DIR as LOG_DIR
-from .logging_setup import configure_logging
+from .logging_setup import configure_logging, shutdown_logging
 from .tools.registry import ToolRegistry
 from .transport.http import HttpTransport
 
@@ -25,8 +25,8 @@ class Application:
         self._transport: HttpTransport | None = None
 
     def run(self) -> None:
-        self._bootstrap()
         try:
+            self._bootstrap()
             self._mcp.run()
         finally:
             self.shutdown()
@@ -76,3 +76,5 @@ class Application:
     def shutdown(self) -> None:
         if self._transport is not None:
             self._transport.close()
+            self._transport = None
+        shutdown_logging()

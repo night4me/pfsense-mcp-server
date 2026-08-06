@@ -1,7 +1,7 @@
 import logging
 import stat
 
-from pfsense_mcp.logging_setup import configure_logging
+from pfsense_mcp.logging_setup import configure_logging, shutdown_logging
 
 
 def _mode(path) -> int:
@@ -45,5 +45,36 @@ def test_configure_logging_sets_dependency_loggers_to_warning(tmp_path):
     try:
         assert logging.getLogger("httpx").level == logging.WARNING
         assert logging.getLogger("httpcore").level == logging.WARNING
+    finally:
+        _reset_logger()
+
+
+def test_repeated_configuration_replaces_and_closes_owned_handler(tmp_path):
+    logger = logging.getLogger("pfsense_mcp")
+    configure_logging(tmp_path / "state", max_bytes=1_000_000, backup_count=1)
+    try:
+        first = next(handler for handler in logger.handlers if hasattr(handler, "_pfsense_mcp_owned"))
+
+        configure_logging(tmp_path / "state", max_bytes=1_000_000, backup_count=1)
+
+        owned = [handler for handler in logger.handlers if hasattr(handler, "_pfsense_mcp_owned")]
+        assert len(owned) == 1
+        assert first.stream is None
+    finally:
+        _reset_logger()
+
+
+def test_shutdown_closes_owned_handler_without_removing_unrelated_handler(tmp_path):
+    logger = logging.getLogger("pfsense_mcp")
+    unrelated = logging.NullHandler()
+    logger.addHandler(unrelated)
+    configure_logging(tmp_path / "state", max_bytes=1_000_000, backup_count=1)
+    try:
+        owned = next(handler for handler in logger.handlers if hasattr(handler, "_pfsense_mcp_owned"))
+
+        shutdown_logging()
+
+        assert owned.stream is None
+        assert unrelated in logger.handlers
     finally:
         _reset_logger()
