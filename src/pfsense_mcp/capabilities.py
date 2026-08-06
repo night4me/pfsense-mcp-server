@@ -26,6 +26,7 @@ class Capability(Enum):
     STATUS_CARP_READ = auto()
     SYSTEM_RESTAPI_SETTINGS_READ = auto()
     SYSTEM_HA_SYNC_READ = auto()
+    SERVICES_DNS_RESOLVER_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -53,5 +54,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.STATUS_CARP_READ,
         Capability.SYSTEM_RESTAPI_SETTINGS_READ,
         Capability.SYSTEM_HA_SYNC_READ,
+        Capability.SERVICES_DNS_RESOLVER_READ,
     }
 )

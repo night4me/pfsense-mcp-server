@@ -2510,3 +2510,188 @@ def test_get_system_hasync_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_hasync()
     assert sentinel not in str(excinfo.value)
+
+
+DNS_RESOLVER_HOST_OVERRIDES_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "services_dns_resolver_host_overrides_response.json"
+)
+
+
+def _dns_resolver_host_overrides_body() -> dict:
+    return json.loads(DNS_RESOLVER_HOST_OVERRIDES_FIXTURE.read_text())
+
+
+def _dns_resolver_host_overrides_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dns_resolver_host_overrides_body()
+    transport.register(
+        "GET", "/api/v2/services/dns_resolver/host_overrides?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dns_resolver_host_overrides_maps_fields():
+    client, _ = _dns_resolver_host_overrides_client()
+    raw = _dns_resolver_host_overrides_body()["data"]
+    overrides = client.get_dns_resolver_host_overrides()
+    assert len(overrides) == 1
+    assert overrides[0].host == raw[0]["host"]
+    assert overrides[0].domain == raw[0]["domain"]
+    assert overrides[0].descr == raw[0]["descr"]
+    assert overrides[0].ip == raw[0]["ip"]
+    assert overrides[0].aliases == raw[0]["aliases"]
+
+
+def test_get_dns_resolver_host_overrides_only_calls_endpoint_with_default_limit():
+    client, transport = _dns_resolver_host_overrides_client()
+    client.get_dns_resolver_host_overrides()
+    assert transport.calls == [("GET", "/api/v2/services/dns_resolver/host_overrides?limit=100")]
+
+
+def test_get_dns_resolver_host_overrides_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _dns_resolver_host_overrides_body()
+    transport.register(
+        "GET", "/api/v2/services/dns_resolver/host_overrides?limit=2", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_dns_resolver_host_overrides(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/dns_resolver/host_overrides?limit=2")]
+
+
+def test_get_dns_resolver_host_overrides_rejects_zero_limit():
+    client, _ = _dns_resolver_host_overrides_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dns_resolver_host_overrides(limit=0)
+
+
+def test_get_dns_resolver_host_overrides_rejects_limit_above_max():
+    client, _ = _dns_resolver_host_overrides_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dns_resolver_host_overrides(limit=101)
+
+
+def test_get_dns_resolver_host_overrides_missing_data_key_raises_shape_error():
+    body = _dns_resolver_host_overrides_body()
+    del body["data"]
+    client, _ = _dns_resolver_host_overrides_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_host_overrides()
+
+
+def test_get_dns_resolver_host_overrides_data_wrong_type_raises_shape_error():
+    body = _dns_resolver_host_overrides_body()
+    body["data"] = "not-a-list"
+    client, _ = _dns_resolver_host_overrides_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_host_overrides()
+
+
+def test_get_dns_resolver_host_overrides_item_wrong_type_raises_shape_error():
+    body = _dns_resolver_host_overrides_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _dns_resolver_host_overrides_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_host_overrides()
+
+
+def test_get_dns_resolver_host_overrides_required_field_missing_raises_shape_error():
+    body = _dns_resolver_host_overrides_body()
+    del body["data"][0]["host"]
+    client, _ = _dns_resolver_host_overrides_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_host_overrides()
+
+
+def test_get_dns_resolver_host_overrides_invalid_field_type_raises_shape_error():
+    body = _dns_resolver_host_overrides_body()
+    body["data"][0]["ip"] = 123
+    client, _ = _dns_resolver_host_overrides_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_host_overrides()
+
+
+def test_get_dns_resolver_host_overrides_shape_error_does_not_leak_raw_field_values():
+    body = _dns_resolver_host_overrides_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["host"] = [sentinel]
+    client, _ = _dns_resolver_host_overrides_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dns_resolver_host_overrides()
+    assert sentinel not in str(excinfo.value)
+
+
+DNS_RESOLVER_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_dns_resolver_settings_response.json"
+
+
+def _dns_resolver_settings_body() -> dict:
+    return json.loads(DNS_RESOLVER_SETTINGS_FIXTURE.read_text())
+
+
+def _dns_resolver_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dns_resolver_settings_body()
+    transport.register("GET", "/api/v2/services/dns_resolver/settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dns_resolver_settings_maps_fields():
+    client, _ = _dns_resolver_settings_client()
+    raw = _dns_resolver_settings_body()["data"]
+    settings = client.get_dns_resolver_settings()
+    assert settings.enable == raw["enable"]
+    assert settings.dnssec == raw["dnssec"]
+    assert settings.active_interface == raw["active_interface"]
+    assert settings.outgoing_interface == raw["outgoing_interface"]
+    assert settings.sslcertref == raw["sslcertref"]
+
+
+def test_get_dns_resolver_settings_only_calls_settings_endpoint():
+    client, transport = _dns_resolver_settings_client()
+    client.get_dns_resolver_settings()
+    assert transport.calls == [("GET", "/api/v2/services/dns_resolver/settings")]
+
+
+def test_get_dns_resolver_settings_missing_data_key_raises_shape_error():
+    body = _dns_resolver_settings_body()
+    del body["data"]
+    client, _ = _dns_resolver_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_settings()
+
+
+def test_get_dns_resolver_settings_data_wrong_type_raises_shape_error():
+    body = _dns_resolver_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _dns_resolver_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_settings()
+
+
+def test_get_dns_resolver_settings_required_field_missing_raises_shape_error():
+    body = _dns_resolver_settings_body()
+    del body["data"]["enable"]
+    client, _ = _dns_resolver_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_settings()
+
+
+def test_get_dns_resolver_settings_invalid_field_type_raises_shape_error():
+    body = _dns_resolver_settings_body()
+    body["data"]["active_interface"] = 123
+    client, _ = _dns_resolver_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dns_resolver_settings()
+
+
+def test_get_dns_resolver_settings_shape_error_does_not_leak_raw_field_values():
+    body = _dns_resolver_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["sslcertref"] = [sentinel]
+    client, _ = _dns_resolver_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dns_resolver_settings()
+    assert sentinel not in str(excinfo.value)

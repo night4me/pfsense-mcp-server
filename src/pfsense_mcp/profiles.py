@@ -42,6 +42,7 @@ AuditorProfile = Profile(
             Capability.STATUS_CARP_READ,
             Capability.SYSTEM_RESTAPI_SETTINGS_READ,
             Capability.SYSTEM_HA_SYNC_READ,
+            Capability.SERVICES_DNS_RESOLVER_READ,
         }
     ),
 )

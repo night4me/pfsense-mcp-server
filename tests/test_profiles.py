@@ -84,3 +84,7 @@ def test_get_profile_returns_engineer():
 def test_get_profile_rejects_unknown_name():
     with pytest.raises(ConfigurationError):
         get_profile("nonexistent")
+
+
+def test_auditor_profile_has_services_dns_resolver_read():
+    assert Capability.SERVICES_DNS_RESOLVER_READ in AuditorProfile.capabilities

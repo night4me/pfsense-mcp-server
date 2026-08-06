@@ -142,5 +142,15 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    DNS_RESOLVER_HOST_OVERRIDES = EndpointInfo(
+        path_suffix="/services/dns_resolver/host_overrides",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    DNS_RESOLVER_SETTINGS = EndpointInfo(
+        path_suffix="/services/dns_resolver/settings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)

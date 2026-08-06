@@ -1,0 +1,18 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "aliases": null,
+      "descr": "REDACTED-descr",
+      "domain": "host.example.invalid",
+      "host": "REDACTED-host",
+      "id": 0,
+      "ip": [
+        "198.51.100.10"
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

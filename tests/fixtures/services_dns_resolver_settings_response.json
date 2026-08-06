@@ -1,0 +1,31 @@
+{
+  "code": 200,
+  "data": {
+    "active_interface": [
+      "lan",
+      "lo0"
+    ],
+    "custom_options": "",
+    "dnssec": true,
+    "enable": true,
+    "enablessl": false,
+    "forwarding": false,
+    "outgoing_interface": [
+      "wan"
+    ],
+    "port": "",
+    "python": false,
+    "python_order": null,
+    "python_script": null,
+    "regdhcp": false,
+    "regdhcpstatic": false,
+    "regovpnclients": true,
+    "sslcertref": "REDACTED-sslcertref",
+    "strictout": false,
+    "system_domain_local_zone_type": "transparent",
+    "tlsport": ""
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

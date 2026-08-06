@@ -11,6 +11,8 @@ from .models.carp_status import CarpStatus
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
+from .models.dns_resolver_host_override import DnsResolverHostOverride
+from .models.dns_resolver_settings import DnsResolverSettings
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
@@ -75,6 +77,10 @@ DHCP_SERVERS_MAX_LIMIT = 100
 
 INTERFACE_BRIDGES_MIN_LIMIT = 1
 INTERFACE_BRIDGES_MAX_LIMIT = 100
+
+
+DNS_RESOLVER_HOST_OVERRIDES_MIN_LIMIT = 1
+DNS_RESOLVER_HOST_OVERRIDES_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -623,3 +629,54 @@ class PfSenseClient:
             return SystemHaSync.from_api(data, include_identifying_metadata=include_identifying_metadata)
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError("pfSense /system/hasync response failed schema validation.") from None
+
+    def get_dns_resolver_host_overrides(self, *, limit: int = 100) -> list[DnsResolverHostOverride]:
+        if not (DNS_RESOLVER_HOST_OVERRIDES_MIN_LIMIT <= limit <= DNS_RESOLVER_HOST_OVERRIDES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DNS_RESOLVER_HOST_OVERRIDES_MIN_LIMIT} and "
+                f"{DNS_RESOLVER_HOST_OVERRIDES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DNS_RESOLVER_HOST_OVERRIDES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError(
+                "pfSense /services/dns_resolver/host_overrides response did not contain 'data'."
+            )
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/dns_resolver/host_overrides response 'data' was not a list."
+            )
+
+        results: list[DnsResolverHostOverride] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/dns_resolver/host_overrides response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(DnsResolverHostOverride.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /services/dns_resolver/host_overrides response contained an entry "
+                    "that failed schema validation."
+                ) from None
+        return results
+
+    def get_dns_resolver_settings(self) -> DnsResolverSettings:
+        raw = self._rest.get(Endpoints.DNS_RESOLVER_SETTINGS)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/dns_resolver/settings response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/dns_resolver/settings response 'data' was not an object."
+            )
+        try:
+            return DnsResolverSettings.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/dns_resolver/settings response failed schema validation."
+            ) from None

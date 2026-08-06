@@ -436,6 +436,44 @@ _INTERFACE_BRIDGES_BODY = {
 _STATUS_CARP_BODY = {"data": {"enable": False, "maintenance_mode": False}}
 
 
+_DNS_RESOLVER_HOST_OVERRIDES_BODY = {
+    "data": [
+        {
+            "aliases": None,
+            "descr": "Test override",
+            "domain": "example.invalid",
+            "host": "test-host",
+            "id": 0,
+            "ip": ["198.51.100.10"],
+        }
+    ]
+}
+
+
+_DNS_RESOLVER_SETTINGS_BODY = {
+    "data": {
+        "active_interface": ["lan"],
+        "custom_options": "",
+        "dnssec": True,
+        "enable": True,
+        "enablessl": False,
+        "forwarding": False,
+        "outgoing_interface": ["wan"],
+        "port": "",
+        "python": False,
+        "python_order": None,
+        "python_script": None,
+        "regdhcp": False,
+        "regdhcpstatic": False,
+        "regovpnclients": True,
+        "sslcertref": "test-sslcertref",
+        "strictout": False,
+        "system_domain_local_zone_type": "transparent",
+        "tlsport": "",
+    }
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -516,6 +554,8 @@ def _client(
     with_carp_status: bool = False,
     with_system_restapi_settings: bool = False,
     with_system_hasync: bool = False,
+    with_dns_resolver_host_overrides: bool = False,
+    with_dns_resolver_settings: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -611,6 +651,20 @@ def _client(
         )
     if with_system_hasync:
         transport.register("GET", "/api/v2/system/hasync", status_code=200, text=json.dumps(_SYSTEM_HASYNC_BODY))
+    if with_dns_resolver_host_overrides:
+        transport.register(
+            "GET",
+            "/api/v2/services/dns_resolver/host_overrides?limit=100",
+            status_code=200,
+            text=json.dumps(_DNS_RESOLVER_HOST_OVERRIDES_BODY),
+        )
+    if with_dns_resolver_settings:
+        transport.register(
+            "GET",
+            "/api/v2/services/dns_resolver/settings",
+            status_code=200,
+            text=json.dumps(_DNS_RESOLVER_SETTINGS_BODY),
+        )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -1308,3 +1362,61 @@ def test_registry_registers_all_tools_when_all_capabilities_present():
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_apply_status",
     }
+
+
+def test_registry_registers_dns_resolver_host_overrides_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_dns_resolver_host_overrides=True, with_dns_resolver_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_DNS_RESOLVER_READ}))
+    registry.register_all()
+    names = {fn.__name__ for fn in mcp.registered}
+    assert "pfsense_get_dns_resolver_host_overrides" in names
+
+
+def test_registry_does_not_register_dns_resolver_host_overrides_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_dns_resolver_host_overrides" not in names
+
+
+def test_registered_dns_resolver_host_overrides_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_dns_resolver_host_overrides=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_DNS_RESOLVER_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_dns_resolver_host_overrides")
+    overrides = fn()
+    assert len(overrides) == 1
+    assert overrides[0].host == "test-host"
+    assert overrides[0].domain == "example.invalid"
+
+
+def test_registry_registers_dns_resolver_settings_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_dns_resolver_host_overrides=True, with_dns_resolver_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_DNS_RESOLVER_READ}))
+    registry.register_all()
+    names = {fn.__name__ for fn in mcp.registered}
+    assert "pfsense_get_dns_resolver_settings" in names
+
+
+def test_registry_does_not_register_dns_resolver_settings_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_dns_resolver_settings" not in names
+
+
+def test_registered_dns_resolver_settings_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_dns_resolver_settings=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_DNS_RESOLVER_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_dns_resolver_settings")
+    settings = fn()
+    assert settings.enable is True
+    assert settings.dnssec is True
+    assert settings.sslcertref == "test-sslcertref"

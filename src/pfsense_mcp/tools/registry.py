@@ -11,6 +11,8 @@ from .read import (
     dhcp_leases,
     dhcp_servers,
     dhcp_static_mappings,
+    dns_resolver_host_overrides,
+    dns_resolver_settings,
     firewall_aliases,
     firewall_apply_status,
     firewall_nat_outbound_mode,
@@ -80,6 +82,8 @@ class ToolRegistry:
             self._register_system_restapi_settings_read()
         if Capability.SYSTEM_HA_SYNC_READ in self._capabilities:
             self._register_system_ha_sync_read()
+        if Capability.SERVICES_DNS_RESOLVER_READ in self._capabilities:
+            self._register_services_dns_resolver_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -197,3 +201,14 @@ class ToolRegistry:
         fn = system_hasync.build(self._client)
         wrapped = audit_logged("pfsense_get_system_hasync", self._identity)(fn)
         self._mcp.tool()(wrapped)
+
+    def _register_services_dns_resolver_read(self) -> None:
+        fn = dns_resolver_host_overrides.build(self._client)
+        wrapped = audit_logged("pfsense_get_dns_resolver_host_overrides", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+        dns_resolver_settings_fn = dns_resolver_settings.build(self._client)
+        dns_resolver_settings_wrapped = audit_logged("pfsense_get_dns_resolver_settings", self._identity)(
+            dns_resolver_settings_fn
+        )
+        self._mcp.tool()(dns_resolver_settings_wrapped)

@@ -312,6 +312,35 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         identifying_fields=frozenset({"username", "pfhostid"}),
         default_max_items=1,
     ),
+    "DNS_RESOLVER_HOST_OVERRIDES": CapturePolicy(
+        endpoint_attr="DNS_RESOLVER_HOST_OVERRIDES",
+        result_shape="list",
+        # host/domain/ip are the whole point of a DNS host-override
+        # inventory capability and stay visible per explicit policy,
+        # same exception as the DHCP inventory capabilities; ip and
+        # domain are auto-sanitized generically in the fixture
+        # regardless (domain via the hostname field-name check; ip via
+        # the IP regex). host is NOT auto-caught: a bare single-label
+        # value like "pfsense" has no dot, so it doesn't match the
+        # generic hostname-shape check, and "host" isn't in the
+        # hostname field-name set either -- it must be declared here
+        # explicitly or a real configured override name leaks into
+        # the fixture. descr/host are both stricter here than at the
+        # model layer: they hold this install's real per-entry values.
+        identifying_fields=frozenset({"descr", "host"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
+    "DNS_RESOLVER_SETTINGS": CapturePolicy(
+        endpoint_attr="DNS_RESOLVER_SETTINGS",
+        result_shape="object",
+        # sslcertref is a certificate reference ID, same treatment as
+        # SYSTEM_CERTIFICATES' refid/caref: installation-specific, so
+        # only the fixture synthesizes it. Everything else is ordinary
+        # DNS resolver service configuration and stays visible.
+        identifying_fields=frozenset({"sslcertref"}),
+        default_max_items=1,
+    ),
 }
 
 

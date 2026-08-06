@@ -298,6 +298,30 @@ def test_system_hasync_path_suffix_is_correct():
     assert Endpoints.SYSTEM_HASYNC.path_suffix == "/system/hasync"
 
 
+def test_dns_resolver_host_overrides_is_declared_verified():
+    assert Endpoints.DNS_RESOLVER_HOST_OVERRIDES.verified is True
+
+
+def test_dns_resolver_host_overrides_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DNS_RESOLVER_HOST_OVERRIDES.path_suffix.startswith("/api")
+
+
+def test_dns_resolver_host_overrides_path_suffix_is_correct():
+    assert Endpoints.DNS_RESOLVER_HOST_OVERRIDES.path_suffix == "/services/dns_resolver/host_overrides"
+
+
+def test_dns_resolver_settings_is_declared_verified():
+    assert Endpoints.DNS_RESOLVER_SETTINGS.verified is True
+
+
+def test_dns_resolver_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DNS_RESOLVER_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_dns_resolver_settings_path_suffix_is_correct():
+    assert Endpoints.DNS_RESOLVER_SETTINGS.path_suffix == "/services/dns_resolver/settings"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented
