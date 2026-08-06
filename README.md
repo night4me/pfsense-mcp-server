@@ -202,9 +202,11 @@ separate process with separate configuration for another appliance.
 ## Documentation
 
 - [MCP tool reference](docs/API.md)
+- [Future-major API review](docs/API_REVIEW.md)
 - [Client setup examples](examples/README.md)
 - [Architecture diagrams](docs/ARCHITECTURE_DIAGRAMS.md)
 - [Architecture decisions](docs/adr/README.md)
+- [Offline benchmark methodology](docs/BENCHMARKS.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Security model](docs/SECURITY_MODEL.md)
 - [Vulnerability reporting](SECURITY.md)

@@ -1,5 +1,11 @@
 # READ Capability Backlog
 
+> **Historical discovery snapshot.** This document records the initial v0.1.0
+> comparison with one pfSense REST API schema. It is not the current capability
+> status and does not authorize implementation. See [ROADMAP.md](ROADMAP.md)
+> and `src/pfsense_mcp/capabilities.py` for current planning and build state.
+> Endpoint availability also varies by appliance and installed package.
+
 Implementation roadmap for remaining GET-only ("READ") capabilities, derived
 by comparing the live pfSense REST API v2 OpenAPI schema
 (`/api/v2/schema/openapi`, 267 total paths / 243 distinct GET endpoints)

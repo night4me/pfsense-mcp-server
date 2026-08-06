@@ -11,8 +11,8 @@ treated as evidence of past runs rather than executable instructions.
 
 ## Automated checks
 
-- Scanned 108 Markdown files and resolved every relative Markdown link: zero
-  missing local targets.
+- Scanned the complete repository Markdown tree and resolved every relative
+  Markdown link: zero missing local targets.
 - Parsed all JSON and YAML configuration blocks in `examples/`: all valid.
 - Confirmed every documented Make target (`quick`, `validate`, `coverage`,
   `security-static`, and `package-check`) exists and has a valid dry run.
@@ -20,8 +20,8 @@ treated as evidence of past runs rather than executable instructions.
   in `pyproject.toml`.
 - Confirmed configuration variable names in the examples match `README.md` and
   the runtime configuration model.
-- Checked fenced blocks across `README.md`, `docs/`, and `examples/`: 52 blocks,
-  including eight Mermaid diagrams and the client JSON/YAML examples.
+- Checked fenced blocks across `README.md`, `docs/`, and `examples/`, including
+  eight Mermaid diagrams and the client JSON/YAML examples.
 
 The full offline verification later in this work provides execution evidence
 for the documented development and release commands. Commands requiring a new

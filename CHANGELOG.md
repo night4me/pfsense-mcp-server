@@ -13,6 +13,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Branch coverage reporting, Bandit, and CodeQL configuration.
 - Sdist/wheel inspection and clean installed-entry-point verification.
 - Security, contribution, release-workflow, and project-agent guidance.
+- Threat model, architecture diagrams and decisions, public roadmap, benchmark
+  methodology, and MCP client setup guides.
+- GitHub issue and pull-request templates.
+- Public API, type-quality, documentation, and final repository reviews.
 
 ### Changed
 
