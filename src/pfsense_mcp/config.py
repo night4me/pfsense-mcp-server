@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import stat
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -39,6 +40,7 @@ class PfSenseConfig:
     profile: Profile
     log_max_bytes: int
     log_backup_count: int
+    allowed_tools: frozenset[str] | None = None
 
 
 def _validate_key_file(key_file: Path) -> None:
@@ -115,6 +117,26 @@ def _parse_bounded_int(raw: str, var_name: str, *, minimum: int, maximum: int) -
     return value
 
 
+def _parse_allowed_tools(source: Mapping[str, str]) -> frozenset[str] | None:
+    if "PFSENSE_ALLOWED_TOOLS" not in source:
+        return None
+
+    raw = source["PFSENSE_ALLOWED_TOOLS"]
+    if _contains_control_characters(raw):
+        raise ConfigurationError("PFSENSE_ALLOWED_TOOLS must not contain control characters")
+    if not raw.strip():
+        return frozenset()
+
+    names = [part.strip() for part in raw.split(",")]
+    if any(not name for name in names):
+        raise ConfigurationError("PFSENSE_ALLOWED_TOOLS must be a comma-separated list without empty entries")
+    if any("*" in name or "?" in name or "[" in name or "]" in name for name in names):
+        raise ConfigurationError("PFSENSE_ALLOWED_TOOLS accepts exact tool names only; wildcards are not allowed")
+    if any(not name.startswith("pfsense_") or not name.replace("_", "").isalnum() for name in names):
+        raise ConfigurationError("PFSENSE_ALLOWED_TOOLS contains an invalid tool name")
+    return frozenset(names)
+
+
 def load_logging_config(env: dict[str, str] | None = None) -> tuple[int, int]:
     """Parse just the logging size/rotation settings. Kept separate
     from load_config() so logging can be configured correctly even if
@@ -167,6 +189,7 @@ def load_config(env: dict[str, str] | None = None) -> PfSenseConfig:
 
     profile_raw = source.get("PFSENSE_PROFILE", "auditor").strip().lower()
     profile = get_profile(profile_raw)
+    allowed_tools = _parse_allowed_tools(source)
 
     log_max_bytes, log_backup_count = load_logging_config(env)
 
@@ -180,6 +203,7 @@ def load_config(env: dict[str, str] | None = None) -> PfSenseConfig:
         tls_ca_file=tls_ca_file,
         api_version=api_version,
         profile=profile,
+        allowed_tools=allowed_tools,
         log_max_bytes=log_max_bytes,
         log_backup_count=log_backup_count,
     )

@@ -96,6 +96,41 @@ def test_default_api_version_is_v2(tmp_path):
     assert load_config(_base_env(key_file)).api_version is ApiVersion.V2
 
 
+def test_allowed_tools_absent_means_no_additional_restriction(tmp_path):
+    key_file = tmp_path / "present.key"
+    key_file.write_text("fake-key-value\n")
+    assert load_config(_base_env(key_file)).allowed_tools is None
+
+
+def test_empty_allowed_tools_registers_no_tools(tmp_path):
+    key_file = tmp_path / "present.key"
+    key_file.write_text("fake-key-value\n")
+    env = _base_env(key_file)
+    env["PFSENSE_ALLOWED_TOOLS"] = "  "
+    assert load_config(env).allowed_tools == frozenset()
+
+
+def test_allowed_tool_duplicates_are_normalized_deterministically(tmp_path):
+    key_file = tmp_path / "present.key"
+    key_file.write_text("fake-key-value\n")
+    env = _base_env(key_file)
+    env["PFSENSE_ALLOWED_TOOLS"] = "pfsense_get_system_status, pfsense_get_system_status"
+    assert load_config(env).allowed_tools == frozenset({"pfsense_get_system_status"})
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["pfsense_get_*", "pfsense_get_system_status,", "not-a-tool", "pfsense_get_system_status\nother"],
+)
+def test_invalid_allowed_tool_syntax_fails_closed(tmp_path, value):
+    key_file = tmp_path / "present.key"
+    key_file.write_text("fake-key-value\n")
+    env = _base_env(key_file)
+    env["PFSENSE_ALLOWED_TOOLS"] = value
+    with pytest.raises(ConfigurationError, match="PFSENSE_ALLOWED_TOOLS"):
+        load_config(env)
+
+
 @pytest.mark.parametrize(
     "url",
     [

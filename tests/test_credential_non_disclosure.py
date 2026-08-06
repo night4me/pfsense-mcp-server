@@ -10,7 +10,7 @@ from pfsense_mcp.models.pf_sense_user import PfSenseUser
 from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.profiles import AuditorProfile
 from pfsense_mcp.rest_api_client import RestApiClient
-from pfsense_mcp.tools.registry import ToolRegistry
+from pfsense_mcp.tools.registry import KNOWN_READ_TOOL_NAMES, ToolRegistry
 from pfsense_mcp.transport.mock import MockTransport
 
 PROHIBITED_FIELDS = {"ipsecpsk", "password", "key"}
@@ -58,6 +58,8 @@ def test_all_read_tools_have_exact_annotations_without_schema_side_effects():
     tools = asyncio.run(mcp.list_tools())
 
     assert len(tools) == 41
+    assert all(tool.name.startswith("pfsense_get_") for tool in tools)
+    assert {tool.name for tool in tools} == KNOWN_READ_TOOL_NAMES
     for tool in tools:
         assert tool.annotations is not None
         assert tool.annotations.model_dump(exclude_none=True) == {

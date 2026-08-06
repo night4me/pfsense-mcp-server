@@ -1,8 +1,12 @@
 import json
 
+import pytest
+
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.capabilities import Capability
+from pfsense_mcp.errors import ConfigurationError
 from pfsense_mcp.pfsense_client import PfSenseClient
+from pfsense_mcp.profiles import EngineerProfile
 from pfsense_mcp.rest_api_client import RestApiClient
 from pfsense_mcp.tools.registry import ToolRegistry
 from pfsense_mcp.transport.mock import MockTransport
@@ -1050,6 +1054,72 @@ def test_registry_registers_nothing_when_no_capabilities():
     registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset())
     registry.register_all()
     assert mcp.registered == []
+
+
+def test_exact_tool_restriction_registers_only_the_requested_subset():
+    mcp = FakeMCP()
+    registry = ToolRegistry(
+        mcp,
+        _client(with_gateways=True),
+        "api-mcp-admin",
+        frozenset({Capability.SYSTEM_READ, Capability.GATEWAY_READ}),
+        allowed_tools=frozenset({"pfsense_get_system_status", "pfsense_get_gateway_status"}),
+    )
+    registry.register_all()
+    assert {fn.__name__ for fn in mcp.registered} == {
+        "pfsense_get_system_status",
+        "pfsense_get_gateway_status",
+    }
+
+
+def test_empty_tool_restriction_registers_nothing():
+    mcp = FakeMCP()
+    registry = ToolRegistry(
+        mcp,
+        _client(),
+        "api-mcp-admin",
+        frozenset({Capability.SYSTEM_READ}),
+        allowed_tools=frozenset(),
+    )
+    registry.register_all()
+    assert mcp.registered == []
+
+
+def test_tool_restriction_cannot_expand_capabilities():
+    mcp = FakeMCP()
+    registry = ToolRegistry(
+        mcp,
+        _client(),
+        "api-mcp-admin",
+        frozenset(),
+        allowed_tools=frozenset({"pfsense_get_system_status"}),
+    )
+    registry.register_all()
+    assert mcp.registered == []
+
+
+def test_engineer_profile_remains_empty_with_tool_restriction():
+    mcp = FakeMCP()
+    registry = ToolRegistry(
+        mcp,
+        _client(),
+        "api-mcp-admin",
+        EngineerProfile.capabilities,
+        allowed_tools=frozenset({"pfsense_get_system_status"}),
+    )
+    registry.register_all()
+    assert mcp.registered == []
+
+
+def test_unknown_tool_restriction_fails_closed():
+    with pytest.raises(ConfigurationError, match="unknown tool"):
+        ToolRegistry(
+            FakeMCP(),
+            _client(),
+            "api-mcp-admin",
+            frozenset({Capability.SYSTEM_READ}),
+            allowed_tools=frozenset({"pfsense_get_not_a_real_tool"}),
+        )
 
 
 def test_registered_tool_invokes_client_and_returns_status():

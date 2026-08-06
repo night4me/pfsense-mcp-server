@@ -9,6 +9,7 @@ from typing import Callable
 from mcp.types import ToolAnnotations
 
 from ..capabilities import Capability
+from ..errors import ConfigurationError
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
@@ -67,13 +68,72 @@ class ReadToolAnnotationPolicy:
 
 READ_TOOL_ANNOTATION_POLICY = ReadToolAnnotationPolicy()
 
+KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
+    {
+        "pfsense_get_acme_settings",
+        "pfsense_get_arp_table",
+        "pfsense_get_auth_keys",
+        "pfsense_get_bind_settings",
+        "pfsense_get_carp_status",
+        "pfsense_get_cron_jobs",
+        "pfsense_get_dhcp_leases",
+        "pfsense_get_dhcp_servers",
+        "pfsense_get_dhcp_static_mappings",
+        "pfsense_get_diagnostics_tables",
+        "pfsense_get_dns_resolver_host_overrides",
+        "pfsense_get_dns_resolver_settings",
+        "pfsense_get_email_notification_settings",
+        "pfsense_get_firewall_advanced_settings",
+        "pfsense_get_firewall_aliases",
+        "pfsense_get_firewall_apply_status",
+        "pfsense_get_firewall_nat_outbound_mode",
+        "pfsense_get_firewall_nat_port_forwards",
+        "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_states",
+        "pfsense_get_firewall_states_size",
+        "pfsense_get_firewall_traffic_shaper_limiters",
+        "pfsense_get_freeradius_eap",
+        "pfsense_get_gateway_status",
+        "pfsense_get_gateways",
+        "pfsense_get_interface_bridges",
+        "pfsense_get_interface_configs",
+        "pfsense_get_interfaces",
+        "pfsense_get_ntp_settings",
+        "pfsense_get_ntp_time_servers",
+        "pfsense_get_service_status",
+        "pfsense_get_ssh_settings",
+        "pfsense_get_system_certificates",
+        "pfsense_get_system_hasync",
+        "pfsense_get_system_packages",
+        "pfsense_get_system_restapi_settings",
+        "pfsense_get_system_status",
+        "pfsense_get_system_tunables",
+        "pfsense_get_system_version",
+        "pfsense_get_user_groups",
+        "pfsense_get_users",
+    }
+)
+
 
 class ToolRegistry:
-    def __init__(self, mcp, client: PfSenseClient, identity: str, capabilities: frozenset[Capability]) -> None:
+    def __init__(
+        self,
+        mcp,
+        client: PfSenseClient,
+        identity: str,
+        capabilities: frozenset[Capability],
+        *,
+        allowed_tools: frozenset[str] | None = None,
+    ) -> None:
+        unknown_tools = allowed_tools - KNOWN_READ_TOOL_NAMES if allowed_tools is not None else frozenset()
+        if unknown_tools:
+            names = ", ".join(sorted(unknown_tools))
+            raise ConfigurationError(f"PFSENSE_ALLOWED_TOOLS contains unknown tool name(s): {names}")
         self._mcp = mcp
         self._client = client
         self._identity = identity
         self._capabilities = capabilities
+        self._allowed_tools = allowed_tools
 
     def register_all(self) -> None:
         if Capability.SYSTEM_READ in self._capabilities:
@@ -158,6 +218,8 @@ class ToolRegistry:
         separately authorized tier."""
 
     def _register_read_tool(self, wrapped: Callable[..., object]) -> None:
+        if self._allowed_tools is not None and wrapped.__name__ not in self._allowed_tools:
+            return
         self._mcp.tool(annotations=READ_TOOL_ANNOTATION_POLICY.to_mcp())(wrapped)
 
     def _register_system_read(self) -> None:

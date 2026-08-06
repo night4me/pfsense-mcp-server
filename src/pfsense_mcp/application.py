@@ -49,7 +49,13 @@ class Application:
             transport, pfsense_client = build_pfsense_client(config, api_key)
             self._transport = transport
 
-            registry = ToolRegistry(self._mcp, pfsense_client, config.identity, config.profile.capabilities)
+            registry = ToolRegistry(
+                self._mcp,
+                pfsense_client,
+                config.identity,
+                config.profile.capabilities,
+                allowed_tools=config.allowed_tools,
+            )
             registry.register_all()
         except ConfigurationError as exc:
             logger.error("startup_failed: %s", exc)
