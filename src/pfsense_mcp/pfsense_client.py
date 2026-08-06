@@ -3,6 +3,9 @@ never a raw dict. Tool code depends only on this class."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any, TypeVar
+
 from pydantic import ValidationError
 
 from .endpoints import Endpoints
@@ -129,6 +132,20 @@ DIAGNOSTICS_TABLES_MAX_LIMIT = 100
 AUTH_KEYS_MIN_LIMIT = 1
 AUTH_KEYS_MAX_LIMIT = 100
 
+T = TypeVar("T")
+
+
+def _parse_object_response(raw: dict[str, Any], response_label: str, factory: Callable[[dict[str, Any]], T]) -> T:
+    if "data" not in raw:
+        raise PfSenseResponseShapeError(f"pfSense {response_label} response did not contain 'data'.")
+    data = raw["data"]
+    if not isinstance(data, dict):
+        raise PfSenseResponseShapeError(f"pfSense {response_label} response 'data' was not an object.")
+    try:
+        return factory(data)
+    except (KeyError, TypeError, ValidationError):
+        raise PfSenseResponseShapeError(f"pfSense {response_label} response failed schema validation.") from None
+
 
 class PfSenseClient:
     def __init__(self, rest_client: RestApiClient) -> None:
@@ -136,15 +153,11 @@ class PfSenseClient:
 
     def get_system_status(self, *, include_identifying_metadata: bool = False) -> SystemStatus:
         raw = self._rest.get(Endpoints.SYSTEM_STATUS)
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense status/system response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense status/system response 'data' was not an object.")
-        try:
-            return SystemStatus.from_api(data, include_identifying_metadata=include_identifying_metadata)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense status/system response failed schema validation.") from None
+        return _parse_object_response(
+            raw,
+            "status/system",
+            lambda data: SystemStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_interfaces(self, *, include_identifying_metadata: bool = False) -> list[InterfaceStatus]:
         raw = self._rest.get(Endpoints.STATUS_INTERFACES)
@@ -272,29 +285,11 @@ class PfSenseClient:
 
     def get_firewall_states_size(self) -> FirewallStatesSize:
         raw = self._rest.get(Endpoints.FIREWALL_STATES_SIZE)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense firewall/states/size response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense firewall/states/size response 'data' was not an object.")
-        try:
-            return FirewallStatesSize.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense firewall/states/size response failed schema validation.") from None
+        return _parse_object_response(raw, "firewall/states/size", FirewallStatesSize.from_api)
 
     def get_firewall_apply_status(self) -> FirewallApplyStatus:
         raw = self._rest.get(Endpoints.FIREWALL_APPLY_STATUS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense firewall/apply response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense firewall/apply response 'data' was not an object.")
-        try:
-            return FirewallApplyStatus.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense firewall/apply response failed schema validation.") from None
+        return _parse_object_response(raw, "firewall/apply", FirewallApplyStatus.from_api)
 
     def get_firewall_aliases(
         self, *, include_identifying_metadata: bool = False, limit: int = 100
@@ -356,16 +351,7 @@ class PfSenseClient:
 
     def get_system_version(self) -> SystemVersion:
         raw = self._rest.get(Endpoints.SYSTEM_VERSION)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /system/version response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /system/version response 'data' was not an object.")
-        try:
-            return SystemVersion.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense /system/version response failed schema validation.") from None
+        return _parse_object_response(raw, "/system/version", SystemVersion.from_api)
 
     def get_interface_configs(
         self, *, include_identifying_metadata: bool = False, limit: int = 100
@@ -432,18 +418,7 @@ class PfSenseClient:
 
     def get_firewall_nat_outbound_mode(self) -> FirewallNatOutboundMode:
         raw = self._rest.get(Endpoints.FIREWALL_NAT_OUTBOUND_MODE)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /firewall/nat/outbound/mode response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /firewall/nat/outbound/mode response 'data' was not an object.")
-        try:
-            return FirewallNatOutboundMode.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /firewall/nat/outbound/mode response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/firewall/nat/outbound/mode", FirewallNatOutboundMode.from_api)
 
     def get_users(self, *, include_identifying_metadata: bool = False, limit: int = 100) -> list[PfSenseUser]:
         if not (USERS_MIN_LIMIT <= limit <= USERS_MAX_LIMIT):
@@ -646,44 +621,25 @@ class PfSenseClient:
 
     def get_carp_status(self) -> CarpStatus:
         raw = self._rest.get(Endpoints.STATUS_CARP)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /status/carp response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /status/carp response 'data' was not an object.")
-        try:
-            return CarpStatus.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense /status/carp response failed schema validation.") from None
+        return _parse_object_response(raw, "/status/carp", CarpStatus.from_api)
 
     def get_system_restapi_settings(self, *, include_identifying_metadata: bool = False) -> SystemRestApiSettings:
         raw = self._rest.get(Endpoints.SYSTEM_RESTAPI_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /system/restapi/settings response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /system/restapi/settings response 'data' was not an object.")
-        try:
-            return SystemRestApiSettings.from_api(data, include_identifying_metadata=include_identifying_metadata)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /system/restapi/settings response failed schema validation."
-            ) from None
+        return _parse_object_response(
+            raw,
+            "/system/restapi/settings",
+            lambda data: SystemRestApiSettings.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
 
     def get_system_hasync(self, *, include_identifying_metadata: bool = False) -> SystemHaSync:
         raw = self._rest.get(Endpoints.SYSTEM_HASYNC)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /system/hasync response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /system/hasync response 'data' was not an object.")
-        try:
-            return SystemHaSync.from_api(data, include_identifying_metadata=include_identifying_metadata)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense /system/hasync response failed schema validation.") from None
+        return _parse_object_response(
+            raw,
+            "/system/hasync",
+            lambda data: SystemHaSync.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_dns_resolver_host_overrides(self, *, limit: int = 100) -> list[DnsResolverHostOverride]:
         if not (DNS_RESOLVER_HOST_OVERRIDES_MIN_LIMIT <= limit <= DNS_RESOLVER_HOST_OVERRIDES_MAX_LIMIT):
@@ -721,20 +677,7 @@ class PfSenseClient:
 
     def get_dns_resolver_settings(self) -> DnsResolverSettings:
         raw = self._rest.get(Endpoints.DNS_RESOLVER_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/dns_resolver/settings response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/dns_resolver/settings response 'data' was not an object."
-            )
-        try:
-            return DnsResolverSettings.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/dns_resolver/settings response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/services/dns_resolver/settings", DnsResolverSettings.from_api)
 
     def get_arp_table(self, *, limit: int = 100) -> list[ArpTableEntry]:
         if not (ARP_TABLE_MIN_LIMIT <= limit <= ARP_TABLE_MAX_LIMIT):
@@ -798,18 +741,7 @@ class PfSenseClient:
 
     def get_firewall_advanced_settings(self) -> FirewallAdvancedSettings:
         raw = self._rest.get(Endpoints.FIREWALL_ADVANCED_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /firewall/advanced_settings response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /firewall/advanced_settings response 'data' was not an object.")
-        try:
-            return FirewallAdvancedSettings.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /firewall/advanced_settings response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/firewall/advanced_settings", FirewallAdvancedSettings.from_api)
 
     def get_system_packages(self, *, limit: int = 100) -> list[SystemPackage]:
         if not (SYSTEM_PACKAGES_MIN_LIMIT <= limit <= SYSTEM_PACKAGES_MAX_LIMIT):
@@ -871,52 +803,21 @@ class PfSenseClient:
         self, *, include_identifying_metadata: bool = False
     ) -> EmailNotificationSettings:
         raw = self._rest.get(Endpoints.SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError(
-                "pfSense /system/notifications/email_settings response did not contain 'data'."
-            )
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError(
-                "pfSense /system/notifications/email_settings response 'data' was not an object."
-            )
-        try:
-            return EmailNotificationSettings.from_api(data, include_identifying_metadata=include_identifying_metadata)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /system/notifications/email_settings response failed schema validation."
-            ) from None
+        return _parse_object_response(
+            raw,
+            "/system/notifications/email_settings",
+            lambda data: EmailNotificationSettings.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
 
     def get_bind_settings(self) -> BindSettings:
         raw = self._rest.get(Endpoints.BIND_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/bind/settings response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /services/bind/settings response 'data' was not an object.")
-        try:
-            return BindSettings.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/bind/settings response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/services/bind/settings", BindSettings.from_api)
 
     def get_ntp_settings(self) -> NtpSettings:
         raw = self._rest.get(Endpoints.NTP_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/ntp/settings response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /services/ntp/settings response 'data' was not an object.")
-        try:
-            return NtpSettings.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/ntp/settings response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/services/ntp/settings", NtpSettings.from_api)
 
     def get_ntp_time_servers(self, *, limit: int = 100) -> list[NtpTimeServer]:
         if not (NTP_TIME_SERVERS_MIN_LIMIT <= limit <= NTP_TIME_SERVERS_MAX_LIMIT):
@@ -948,16 +849,7 @@ class PfSenseClient:
 
     def get_ssh_settings(self) -> SshSettings:
         raw = self._rest.get(Endpoints.SERVICES_SSH)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/ssh response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /services/ssh response 'data' was not an object.")
-        try:
-            return SshSettings.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError("pfSense /services/ssh response failed schema validation.") from None
+        return _parse_object_response(raw, "/services/ssh", SshSettings.from_api)
 
     def get_cron_jobs(self, *, limit: int = 100) -> list[CronJob]:
         if not (CRON_JOBS_MIN_LIMIT <= limit <= CRON_JOBS_MAX_LIMIT):
@@ -989,33 +881,11 @@ class PfSenseClient:
 
     def get_acme_settings(self) -> AcmeSettings:
         raw = self._rest.get(Endpoints.ACME_SETTINGS)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/acme/settings response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /services/acme/settings response 'data' was not an object.")
-        try:
-            return AcmeSettings.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/acme/settings response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/services/acme/settings", AcmeSettings.from_api)
 
     def get_freeradius_eap(self) -> FreeRadiusEap:
         raw = self._rest.get(Endpoints.FREERADIUS_EAP)
-
-        if "data" not in raw:
-            raise PfSenseResponseShapeError("pfSense /services/freeradius/eap response did not contain 'data'.")
-        data = raw["data"]
-        if not isinstance(data, dict):
-            raise PfSenseResponseShapeError("pfSense /services/freeradius/eap response 'data' was not an object.")
-        try:
-            return FreeRadiusEap.from_api(data)
-        except (KeyError, TypeError, ValidationError):
-            raise PfSenseResponseShapeError(
-                "pfSense /services/freeradius/eap response failed schema validation."
-            ) from None
+        return _parse_object_response(raw, "/services/freeradius/eap", FreeRadiusEap.from_api)
 
     def get_diagnostics_tables(self, *, limit: int = 100) -> list[DiagnosticsTable]:
         if not (DIAGNOSTICS_TABLES_MIN_LIMIT <= limit <= DIAGNOSTICS_TABLES_MAX_LIMIT):
