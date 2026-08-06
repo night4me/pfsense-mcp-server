@@ -322,6 +322,186 @@ def test_dns_resolver_settings_path_suffix_is_correct():
     assert Endpoints.DNS_RESOLVER_SETTINGS.path_suffix == "/services/dns_resolver/settings"
 
 
+def test_diagnostics_arp_table_is_declared_verified():
+    assert Endpoints.DIAGNOSTICS_ARP_TABLE.verified is True
+
+
+def test_diagnostics_arp_table_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DIAGNOSTICS_ARP_TABLE.path_suffix.startswith("/api")
+
+
+def test_diagnostics_arp_table_path_suffix_is_correct():
+    assert Endpoints.DIAGNOSTICS_ARP_TABLE.path_suffix == "/diagnostics/arp_table"
+
+
+def test_firewall_traffic_shaper_limiters_is_declared_verified():
+    assert Endpoints.FIREWALL_TRAFFIC_SHAPER_LIMITERS.verified is True
+
+
+def test_firewall_traffic_shaper_limiters_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FIREWALL_TRAFFIC_SHAPER_LIMITERS.path_suffix.startswith("/api")
+
+
+def test_firewall_traffic_shaper_limiters_path_suffix_is_correct():
+    assert Endpoints.FIREWALL_TRAFFIC_SHAPER_LIMITERS.path_suffix == "/firewall/traffic_shaper/limiters"
+
+
+def test_firewall_advanced_settings_is_declared_verified():
+    assert Endpoints.FIREWALL_ADVANCED_SETTINGS.verified is True
+
+
+def test_firewall_advanced_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FIREWALL_ADVANCED_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_firewall_advanced_settings_path_suffix_is_correct():
+    assert Endpoints.FIREWALL_ADVANCED_SETTINGS.path_suffix == "/firewall/advanced_settings"
+
+
+def test_system_packages_is_declared_verified():
+    assert Endpoints.SYSTEM_PACKAGES.verified is True
+
+
+def test_system_packages_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_PACKAGES.path_suffix.startswith("/api")
+
+
+def test_system_packages_path_suffix_is_correct():
+    assert Endpoints.SYSTEM_PACKAGES.path_suffix == "/system/packages"
+
+
+def test_system_tunables_is_declared_verified():
+    assert Endpoints.SYSTEM_TUNABLES.verified is True
+
+
+def test_system_tunables_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_TUNABLES.path_suffix.startswith("/api")
+
+
+def test_system_tunables_path_suffix_is_correct():
+    assert Endpoints.SYSTEM_TUNABLES.path_suffix == "/system/tunables"
+
+
+def test_system_notifications_email_settings_is_declared_verified():
+    assert Endpoints.SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS.verified is True
+
+
+def test_system_notifications_email_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_system_notifications_email_settings_path_suffix_is_correct():
+    assert Endpoints.SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS.path_suffix == "/system/notifications/email_settings"
+
+
+def test_bind_settings_is_declared_verified():
+    assert Endpoints.BIND_SETTINGS.verified is True
+
+
+def test_bind_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.BIND_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_bind_settings_path_suffix_is_correct():
+    assert Endpoints.BIND_SETTINGS.path_suffix == "/services/bind/settings"
+
+
+def test_ntp_settings_is_declared_verified():
+    assert Endpoints.NTP_SETTINGS.verified is True
+
+
+def test_ntp_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.NTP_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_ntp_settings_path_suffix_is_correct():
+    assert Endpoints.NTP_SETTINGS.path_suffix == "/services/ntp/settings"
+
+
+def test_ntp_time_servers_is_declared_verified():
+    assert Endpoints.NTP_TIME_SERVERS.verified is True
+
+
+def test_ntp_time_servers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.NTP_TIME_SERVERS.path_suffix.startswith("/api")
+
+
+def test_ntp_time_servers_path_suffix_is_correct():
+    assert Endpoints.NTP_TIME_SERVERS.path_suffix == "/services/ntp/time_servers"
+
+
+def test_services_ssh_is_declared_verified():
+    assert Endpoints.SERVICES_SSH.verified is True
+
+
+def test_services_ssh_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SERVICES_SSH.path_suffix.startswith("/api")
+
+
+def test_services_ssh_path_suffix_is_correct():
+    assert Endpoints.SERVICES_SSH.path_suffix == "/services/ssh"
+
+
+def test_cron_jobs_is_declared_verified():
+    assert Endpoints.CRON_JOBS.verified is True
+
+
+def test_cron_jobs_path_suffix_has_no_api_prefix():
+    assert not Endpoints.CRON_JOBS.path_suffix.startswith("/api")
+
+
+def test_cron_jobs_path_suffix_is_correct():
+    assert Endpoints.CRON_JOBS.path_suffix == "/services/cron/jobs"
+
+
+def test_acme_settings_is_declared_verified():
+    assert Endpoints.ACME_SETTINGS.verified is True
+
+
+def test_acme_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.ACME_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_acme_settings_path_suffix_is_correct():
+    assert Endpoints.ACME_SETTINGS.path_suffix == "/services/acme/settings"
+
+
+def test_freeradius_eap_is_declared_verified():
+    assert Endpoints.FREERADIUS_EAP.verified is True
+
+
+def test_freeradius_eap_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FREERADIUS_EAP.path_suffix.startswith("/api")
+
+
+def test_freeradius_eap_path_suffix_is_correct():
+    assert Endpoints.FREERADIUS_EAP.path_suffix == "/services/freeradius/eap"
+
+
+def test_diagnostics_tables_is_declared_verified():
+    assert Endpoints.DIAGNOSTICS_TABLES.verified is True
+
+
+def test_diagnostics_tables_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DIAGNOSTICS_TABLES.path_suffix.startswith("/api")
+
+
+def test_diagnostics_tables_path_suffix_is_correct():
+    assert Endpoints.DIAGNOSTICS_TABLES.path_suffix == "/diagnostics/tables"
+
+
+def test_auth_keys_is_declared_verified():
+    assert Endpoints.AUTH_KEYS.verified is True
+
+
+def test_auth_keys_path_suffix_has_no_api_prefix():
+    assert not Endpoints.AUTH_KEYS.path_suffix.startswith("/api")
+
+
+def test_auth_keys_path_suffix_is_correct():
+    assert Endpoints.AUTH_KEYS.path_suffix == "/auth/keys"
+
+
 def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     # FIREWALL_READ is scoped to rules/states/states-size/apply-status
     # only. Aliases and logs are separate, not-yet-implemented

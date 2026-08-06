@@ -1405,12 +1405,6 @@ def test_get_firewall_nat_port_forwards_shape_error_does_not_leak_raw_field_valu
     assert sentinel not in str(excinfo.value)
 
 
-# GENERATED PROPOSAL for get_firewall_nat_outbound_mode — review before use.
-def _get_firewall_nat_outbound_mode_body() -> dict:
-    # TODO(human): replace with the approved fixture's actual content
-    return {"data": {}}
-
-
 FIREWALL_NAT_OUTBOUND_MODE_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_nat_outbound_mode_response.json"
 
 
