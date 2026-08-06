@@ -136,3 +136,7 @@ def test_auditor_profile_has_services_acme_read():
 
 def test_auditor_profile_has_services_freeradius_read():
     assert Capability.SERVICES_FREERADIUS_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_diagnostics_tables_read():
+    assert Capability.DIAGNOSTICS_TABLES_READ in AuditorProfile.capabilities

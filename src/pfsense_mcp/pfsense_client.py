@@ -15,6 +15,7 @@ from .models.cron_job import CronJob
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
+from .models.diagnostics_table import DiagnosticsTable
 from .models.dns_resolver_host_override import DnsResolverHostOverride
 from .models.dns_resolver_settings import DnsResolverSettings
 from .models.email_notification_settings import EmailNotificationSettings
@@ -118,6 +119,10 @@ NTP_TIME_SERVERS_MAX_LIMIT = 100
 
 CRON_JOBS_MIN_LIMIT = 1
 CRON_JOBS_MAX_LIMIT = 100
+
+
+DIAGNOSTICS_TABLES_MIN_LIMIT = 1
+DIAGNOSTICS_TABLES_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -998,3 +1003,32 @@ class PfSenseClient:
             raise PfSenseResponseShapeError(
                 "pfSense /services/freeradius/eap response failed schema validation."
             ) from None
+
+    def get_diagnostics_tables(self, *, limit: int = 100) -> list[DiagnosticsTable]:
+        if not (DIAGNOSTICS_TABLES_MIN_LIMIT <= limit <= DIAGNOSTICS_TABLES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DIAGNOSTICS_TABLES_MIN_LIMIT} and "
+                f"{DIAGNOSTICS_TABLES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DIAGNOSTICS_TABLES, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /diagnostics/tables response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /diagnostics/tables response 'data' was not a list.")
+
+        results: list[DiagnosticsTable] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /diagnostics/tables response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(DiagnosticsTable.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /diagnostics/tables response contained an entry that failed schema validation."
+                ) from None
+        return results

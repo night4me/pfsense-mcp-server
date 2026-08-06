@@ -15,6 +15,7 @@ from .read import (
     dhcp_leases,
     dhcp_servers,
     dhcp_static_mappings,
+    diagnostics_tables,
     dns_resolver_host_overrides,
     dns_resolver_settings,
     email_notification_settings,
@@ -121,6 +122,8 @@ class ToolRegistry:
             self._register_services_acme_read()
         if Capability.SERVICES_FREERADIUS_READ in self._capabilities:
             self._register_services_freeradius_read()
+        if Capability.DIAGNOSTICS_TABLES_READ in self._capabilities:
+            self._register_diagnostics_tables_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -312,4 +315,9 @@ class ToolRegistry:
     def _register_services_freeradius_read(self) -> None:
         fn = freeradius_eap.build(self._client)
         wrapped = audit_logged("pfsense_get_freeradius_eap", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_diagnostics_tables_read(self) -> None:
+        fn = diagnostics_tables.build(self._client)
+        wrapped = audit_logged("pfsense_get_diagnostics_tables", self._identity)(fn)
         self._mcp.tool()(wrapped)

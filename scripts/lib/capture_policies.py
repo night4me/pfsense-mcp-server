@@ -453,6 +453,15 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "DIAGNOSTICS_TABLES": CapturePolicy(
+        endpoint_attr="DIAGNOSTICS_TABLES",
+        result_shape="list",
+        # entries[] are pf table IP/CIDR members -- auto-sanitized
+        # generically by the IP regex. name is the pf table name
+        # (e.g. "bogons", "sshlockout"), not sensitive.
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

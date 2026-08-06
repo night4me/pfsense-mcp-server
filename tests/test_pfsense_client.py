@@ -3846,3 +3846,105 @@ def test_get_freeradius_eap_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_freeradius_eap()
     assert sentinel not in str(excinfo.value)
+
+
+DIAGNOSTICS_TABLES_FIXTURE = Path(__file__).parent / "fixtures" / "diagnostics_tables_response.json"
+
+
+def _diagnostics_tables_body() -> dict:
+    return json.loads(DIAGNOSTICS_TABLES_FIXTURE.read_text())
+
+
+def _diagnostics_tables_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _diagnostics_tables_body()
+    transport.register("GET", "/api/v2/diagnostics/tables?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_diagnostics_tables_maps_fields():
+    client, _ = _diagnostics_tables_client()
+    raw = _diagnostics_tables_body()["data"]
+    tables = client.get_diagnostics_tables()
+    assert len(tables) == len(raw)
+    assert tables[0].name == raw[0]["name"]
+    assert tables[0].entries == raw[0]["entries"]
+
+
+def test_get_diagnostics_tables_only_calls_endpoint_with_default_limit():
+    client, transport = _diagnostics_tables_client()
+    client.get_diagnostics_tables()
+    assert transport.calls == [("GET", "/api/v2/diagnostics/tables?limit=100")]
+
+
+def test_get_diagnostics_tables_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _diagnostics_tables_body()
+    transport.register("GET", "/api/v2/diagnostics/tables?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_diagnostics_tables(limit=2)
+    assert transport.calls == [("GET", "/api/v2/diagnostics/tables?limit=2")]
+
+
+def test_get_diagnostics_tables_rejects_zero_limit():
+    client, _ = _diagnostics_tables_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_diagnostics_tables(limit=0)
+
+
+def test_get_diagnostics_tables_rejects_limit_above_max():
+    client, _ = _diagnostics_tables_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_diagnostics_tables(limit=101)
+
+
+def test_get_diagnostics_tables_missing_data_key_raises_shape_error():
+    body = _diagnostics_tables_body()
+    del body["data"]
+    client, _ = _diagnostics_tables_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_diagnostics_tables()
+
+
+def test_get_diagnostics_tables_data_wrong_type_raises_shape_error():
+    body = _diagnostics_tables_body()
+    body["data"] = "not-a-list"
+    client, _ = _diagnostics_tables_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_diagnostics_tables()
+
+
+def test_get_diagnostics_tables_item_wrong_type_raises_shape_error():
+    body = _diagnostics_tables_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _diagnostics_tables_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_diagnostics_tables()
+
+
+def test_get_diagnostics_tables_required_field_missing_raises_shape_error():
+    body = _diagnostics_tables_body()
+    del body["data"][0]["name"]
+    client, _ = _diagnostics_tables_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_diagnostics_tables()
+
+
+def test_get_diagnostics_tables_invalid_field_type_raises_shape_error():
+    body = _diagnostics_tables_body()
+    body["data"][0]["entries"] = "not-a-list"
+    client, _ = _diagnostics_tables_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_diagnostics_tables()
+
+
+def test_get_diagnostics_tables_shape_error_does_not_leak_raw_field_values():
+    body = _diagnostics_tables_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["name"] = [sentinel]
+    client, _ = _diagnostics_tables_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_diagnostics_tables()
+    assert sentinel not in str(excinfo.value)

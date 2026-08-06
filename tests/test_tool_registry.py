@@ -721,6 +721,17 @@ _FREERADIUS_EAP_BODY = {
 }
 
 
+_DIAGNOSTICS_TABLES_BODY = {
+    "data": [
+        {
+            "entries": ["198.51.100.10", "198.51.100.11"],
+            "id": "bogons",
+            "name": "bogons",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -816,6 +827,7 @@ def _client(
     with_cron_jobs: bool = False,
     with_acme_settings: bool = False,
     with_freeradius_eap: bool = False,
+    with_diagnostics_tables: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -984,6 +996,10 @@ def _client(
     if with_freeradius_eap:
         transport.register(
             "GET", "/api/v2/services/freeradius/eap", status_code=200, text=json.dumps(_FREERADIUS_EAP_BODY)
+        )
+    if with_diagnostics_tables:
+        transport.register(
+            "GET", "/api/v2/diagnostics/tables?limit=100", status_code=200, text=json.dumps(_DIAGNOSTICS_TABLES_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -2119,3 +2135,32 @@ def test_registered_freeradius_eap_tool_invokes_client():
     eap = fn()
     assert eap.default_eap_type == "md5"
     assert eap.max_sessions == 4096
+
+
+def test_registry_registers_diagnostics_tables_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_diagnostics_tables=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DIAGNOSTICS_TABLES_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_diagnostics_tables"
+
+
+def test_registry_does_not_register_diagnostics_tables_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_diagnostics_tables" not in names
+
+
+def test_registered_diagnostics_tables_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_diagnostics_tables=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DIAGNOSTICS_TABLES_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_diagnostics_tables")
+    tables = fn()
+    assert len(tables) == 1
+    assert tables[0].name == "bogons"
+    assert tables[0].entries == ["198.51.100.10", "198.51.100.11"]
