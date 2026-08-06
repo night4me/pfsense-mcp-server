@@ -34,6 +34,7 @@ from .read import (
     system_packages,
     system_restapi_settings,
     system_status,
+    system_tunables,
     system_version,
     user_groups,
     users,
@@ -96,6 +97,8 @@ class ToolRegistry:
             self._register_firewall_advanced_settings_read()
         if Capability.SYSTEM_PACKAGE_READ in self._capabilities:
             self._register_system_package_read()
+        if Capability.SYSTEM_TUNABLE_READ in self._capabilities:
+            self._register_system_tunable_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -243,4 +246,9 @@ class ToolRegistry:
     def _register_system_package_read(self) -> None:
         fn = system_packages.build(self._client)
         wrapped = audit_logged("pfsense_get_system_packages", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_system_tunable_read(self) -> None:
+        fn = system_tunables.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_tunables", self._identity)(fn)
         self._mcp.tool()(wrapped)

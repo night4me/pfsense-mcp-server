@@ -568,6 +568,18 @@ _SYSTEM_PACKAGES_BODY = {
 }
 
 
+_SYSTEM_TUNABLES_BODY = {
+    "data": [
+        {
+            "descr": "Test tunable.",
+            "id": 0,
+            "tunable": "net.inet.tcp.test",
+            "value": "1",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -654,6 +666,7 @@ def _client(
     with_traffic_shaper_limiters: bool = False,
     with_firewall_advanced_settings: bool = False,
     with_system_packages: bool = False,
+    with_system_tunables: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -784,6 +797,10 @@ def _client(
     if with_system_packages:
         transport.register(
             "GET", "/api/v2/system/packages?limit=100", status_code=200, text=json.dumps(_SYSTEM_PACKAGES_BODY)
+        )
+    if with_system_tunables:
+        transport.register(
+            "GET", "/api/v2/system/tunables?limit=100", status_code=200, text=json.dumps(_SYSTEM_TUNABLES_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1655,3 +1672,32 @@ def test_registered_system_packages_tool_invokes_client():
     assert len(packages) == 1
     assert packages[0].name == "pfSense-pkg-Test"
     assert packages[0].installed_version == "1.0.0"
+
+
+def test_registry_registers_system_tunables_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_system_tunables=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_TUNABLE_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_system_tunables"
+
+
+def test_registry_does_not_register_system_tunables_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_system_tunables" not in names
+
+
+def test_registered_system_tunables_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_system_tunables=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_TUNABLE_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_system_tunables")
+    tunables = fn()
+    assert len(tunables) == 1
+    assert tunables[0].tunable == "net.inet.tcp.test"
+    assert tunables[0].value == "1"

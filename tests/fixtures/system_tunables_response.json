@@ -1,0 +1,26 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "descr": "Packet filter on the member interface",
+      "id": 0,
+      "tunable": "net.link.bridge.pfil_member",
+      "value": "0"
+    },
+    {
+      "descr": "Packet filter on the bridge interface",
+      "id": 1,
+      "tunable": "net.link.bridge.pfil_bridge",
+      "value": "1"
+    },
+    {
+      "descr": "igmp",
+      "id": 2,
+      "tunable": "host.example.invalid",
+      "value": "1"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

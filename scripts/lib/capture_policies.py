@@ -382,6 +382,14 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=20,
     ),
+    "SYSTEM_TUNABLES": CapturePolicy(
+        endpoint_attr="SYSTEM_TUNABLES",
+        result_shape="list",
+        # FreeBSD sysctl tunables (name/description/value). Ordinary
+        # kernel tuning parameters, not secrets or identifying data.
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=20,
+    ),
 }
 
 
