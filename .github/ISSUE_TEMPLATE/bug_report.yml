@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a reproducible defect without disclosing private infrastructure data.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. For a vulnerability, stop and use
+        [private vulnerability reporting](https://github.com/night4me/pfsense-mcp-server/security/advisories/new).
+        Never include credentials, real appliance identifiers, raw responses, or unsanitized logs.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release, tag, or commit SHA where the problem occurs.
+      placeholder: v0.2.2
+    validations:
+      required: true
+  - type: dropdown
+    id: python
+    attributes:
+      label: Python version
+      options:
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - Other supported version
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the defect using synthetic, non-identifying values.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Provide the smallest offline reproduction, preferably using MockTransport.
+      placeholder: |
+        1. Configure ...
+        2. Invoke ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Checks performed
+      description: List tests or diagnostics run. Include sanitized text only.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I removed credentials, appliance identifiers, raw responses, and unsanitized logs.
+          required: true
+        - label: This report does not describe an unremediated security vulnerability.
+          required: true

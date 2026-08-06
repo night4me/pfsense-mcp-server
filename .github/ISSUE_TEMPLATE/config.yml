@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/night4me/pfsense-mcp-server/security/advisories/new
+    about: Report vulnerabilities privately; never include credentials or appliance details in a public issue.
+  - name: Security policy
+    url: https://github.com/night4me/pfsense-mcp-server/security/policy
+    about: Read the supported-version and responsible-disclosure policy.

@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a compatible improvement or discuss a future capability.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the use case before the implementation. Requests do not authorize
+        new capabilities, WRITE activation, live appliance access, or public API changes.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What user need is not met today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed direction
+      description: Describe the smallest compatible approach you would like considered.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Primary area
+      options:
+        - Documentation
+        - Testing or developer tooling
+        - Existing READ behaviour
+        - New READ capability
+        - Future WRITE or Recovery Contract design
+        - Packaging or integration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and compatibility considerations
+      description: Note trust-boundary, credential, public API, or backward-compatibility effects.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I did not include credentials or identifying appliance data.
+          required: true
