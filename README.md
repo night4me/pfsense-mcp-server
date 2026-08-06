@@ -8,7 +8,10 @@ pfSense REST API at a single managed pfSense Plus instance.
 - REST API only — SSH is out of scope.
 - Read-only. No mutating tool exists in this build; `tools/write/` is
   reserved and unpopulated, and is never imported by the server.
-- One capability, one tool: SYSTEM_READ → `pfsense_get_system_status`.
+- 34 capabilities, 41 tools, spanning system, interfaces, gateways,
+  firewall, users, certificates, DHCP, DNS, NTP, SSH, cron, ACME,
+  FreeRADIUS, HA/CARP, and diagnostics. See `src/pfsense_mcp/capabilities.py`
+  for the authoritative list.
 
 ## Architecture
 
