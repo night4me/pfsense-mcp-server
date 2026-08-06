@@ -1,7 +1,20 @@
 # pfsense-mcp-server
 
-A local MCP server exposing strongly-typed, read-only tools for the
-pfSense REST API at a single managed pfSense Plus instance.
+[![CI](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
+
+A security-focused local MCP server exposing 41 strongly typed pfSense REST
+API tools. It gives an MCP client operational visibility into one managed
+pfSense Plus appliance while keeping the production path GET-only.
+
+Key properties:
+
+- explicit capability gates and typed Pydantic responses;
+- credential fields excluded from models, schemas, logs, errors, and fixtures;
+- optional sensitive metadata omitted by default;
+- fail-closed configuration and TLS verification by default;
+- 41 READ tools, zero WRITE tools, and an empty WRITE endpoint allow-list.
 
 ## Status
 
@@ -13,8 +26,9 @@ active.
 ## Scope (current phase)
 
 - REST API only — SSH is out of scope.
-- Read-only. No mutating tool exists in this build; `tools/write/` is
-  reserved and unpopulated, and is never imported by the server.
+- The production server is read-only. Accepted Tier 0 WRITE infrastructure
+  exists as dormant library code, but it is not constructed by production
+  bootstrap, has no allow-listed endpoint, and registers no MCP tool.
 - 34 capabilities, 41 tools, spanning system, interfaces, gateways,
   firewall, users, certificates, DHCP, DNS, NTP, SSH, cron, ACME,
   FreeRADIUS, HA/CARP, and diagnostics. See `src/pfsense_mcp/capabilities.py`
@@ -89,14 +103,44 @@ configuration and never contacts a pfSense appliance.
 
 ## Installation
 
-Create an isolated environment and install the published source or a
-locally built wheel:
+Python 3.11 or newer is required. Clone the repository, create an isolated
+environment, and install the project:
 
 ```console
+git clone https://github.com/night4me/pfsense-mcp-server.git
+cd pfsense-mcp-server
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install .
 ```
+
+## Quick start
+
+Create the API-key file outside the repository and restrict it to the account
+that runs the MCP server:
+
+```console
+install -m 600 /dev/null /absolute/private/path/pfsense-api.key
+```
+
+Place the key on the first line without printing it in shell history or logs.
+Then configure your MCP client to launch the console entry point with these
+environment variables:
+
+```json
+{
+  "command": "/absolute/path/to/.venv/bin/pfsense-mcp-server",
+  "env": {
+    "PFSENSE_API_URL": "https://pfsense.example.invalid",
+    "PFSENSE_IDENTITY": "api-mcp-admin",
+    "PFSENSE_API_KEY_FILE": "/absolute/private/path/pfsense-api.key",
+    "PFSENSE_TLS_MODE": "strict"
+  }
+}
+```
+
+The exact outer MCP-client configuration key varies by client. The server
+communicates over stdio and produces no web interface or screenshotable UI.
 
 For development, install the project with its test and analysis tools:
 
@@ -110,10 +154,62 @@ Additional release checks are documented in the
 [release checklist](docs/RELEASE_CHECKLIST.md). Live private-infrastructure
 acceptance is separate, opt-in, and never part of public CI.
 
-## Running
+## Direct launch
 
-    PFSENSE_API_URL=https://pfsense.example.invalid \
-    PFSENSE_IDENTITY=api-mcp-admin \
-    PFSENSE_API_KEY_FILE=/path/outside/repository/pfsense-api.key \
-    PFSENSE_TLS_MODE=insecure \
-    pfsense-mcp-server
+Direct launch is useful for confirming configuration and MCP startup. The
+process waits for MCP messages on stdin when configuration is valid.
+
+```console
+PFSENSE_API_URL=https://pfsense.example.invalid \
+PFSENSE_IDENTITY=api-mcp-admin \
+PFSENSE_API_KEY_FILE=/absolute/private/path/pfsense-api.key \
+PFSENSE_TLS_MODE=strict \
+pfsense-mcp-server
+```
+
+## Troubleshooting
+
+### The server exits with a configuration error
+
+Configuration fails closed. Confirm every required variable is present, the
+API URL is an HTTPS origin without a path, and the identity contains no control
+characters. Error messages identify the invalid setting but never print the
+key value.
+
+### The API-key file is rejected
+
+The file must be a regular non-symlink file owned by the process user, with no
+group or other permission bits, and its first line must be non-empty and
+bounded. Parent directories should normally be mode 0700.
+
+### TLS verification fails
+
+Prefer `strict` with the system trust store. For an internal CA, set
+`PFSENSE_TLS_MODE=auto` and point `PFSENSE_TLS_CA_FILE` to a readable CA
+bundle. `insecure` disables certificate verification and should be limited to
+short, explicitly accepted diagnostics.
+
+### No tools appear
+
+Use `PFSENSE_PROFILE=auditor`, the default accepted READ profile. The
+`engineer` placeholder intentionally grants no capabilities in this build.
+
+### Can this server manage more than one appliance?
+
+No. One process has one configured upstream identity and appliance. Launch a
+separate process with separate configuration for another appliance.
+
+## Documentation
+
+- [MCP tool reference](docs/API.md)
+- [Security model](docs/SECURITY_MODEL.md)
+- [Vulnerability reporting](SECURITY.md)
+- [Contribution guide](CONTRIBUTING.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Accepted releases](docs/ACCEPTANCE_v0.2.1.md)
+
+## Contributing
+
+Contributions are welcome within the documented security and approval
+boundaries. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change.
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
