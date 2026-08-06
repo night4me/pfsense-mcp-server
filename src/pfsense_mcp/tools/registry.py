@@ -27,6 +27,7 @@ from .read import (
     firewall_states,
     firewall_states_size,
     firewall_traffic_shaper_limiters,
+    freeradius_eap,
     gateway_status,
     gateways,
     interface_bridges,
@@ -118,6 +119,8 @@ class ToolRegistry:
             self._register_services_cron_read()
         if Capability.SERVICES_ACME_READ in self._capabilities:
             self._register_services_acme_read()
+        if Capability.SERVICES_FREERADIUS_READ in self._capabilities:
+            self._register_services_freeradius_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -304,4 +307,9 @@ class ToolRegistry:
     def _register_services_acme_read(self) -> None:
         fn = acme_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_acme_settings", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_services_freeradius_read(self) -> None:
+        fn = freeradius_eap.build(self._client)
+        wrapped = audit_logged("pfsense_get_freeradius_eap", self._identity)(fn)
         self._mcp.tool()(wrapped)

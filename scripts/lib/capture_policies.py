@@ -448,6 +448,11 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         result_shape="object",
         default_max_items=1,
     ),
+    "FREERADIUS_EAP": CapturePolicy(
+        endpoint_attr="FREERADIUS_EAP",
+        result_shape="object",
+        default_max_items=1,
+    ),
 }
 
 

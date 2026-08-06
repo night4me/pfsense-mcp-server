@@ -3774,3 +3774,75 @@ def test_get_acme_settings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_acme_settings()
     assert sentinel not in str(excinfo.value)
+
+
+FREERADIUS_EAP_FIXTURE = Path(__file__).parent / "fixtures" / "services_freeradius_eap_response.json"
+
+
+def _freeradius_eap_body() -> dict:
+    return json.loads(FREERADIUS_EAP_FIXTURE.read_text())
+
+
+def _freeradius_eap_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _freeradius_eap_body()
+    transport.register("GET", "/api/v2/services/freeradius/eap", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_freeradius_eap_maps_fields():
+    client, _ = _freeradius_eap_client()
+    raw = _freeradius_eap_body()["data"]
+    eap = client.get_freeradius_eap()
+    assert eap.default_eap_type == raw["default_eap_type"]
+    assert eap.max_sessions == raw["max_sessions"]
+    assert eap.ssl_ca_cert == raw["ssl_ca_cert"]
+
+
+def test_get_freeradius_eap_only_calls_eap_endpoint():
+    client, transport = _freeradius_eap_client()
+    client.get_freeradius_eap()
+    assert transport.calls == [("GET", "/api/v2/services/freeradius/eap")]
+
+
+def test_get_freeradius_eap_missing_data_key_raises_shape_error():
+    body = _freeradius_eap_body()
+    del body["data"]
+    client, _ = _freeradius_eap_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_freeradius_eap()
+
+
+def test_get_freeradius_eap_data_wrong_type_raises_shape_error():
+    body = _freeradius_eap_body()
+    body["data"] = "not-an-object"
+    client, _ = _freeradius_eap_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_freeradius_eap()
+
+
+def test_get_freeradius_eap_required_field_missing_raises_shape_error():
+    body = _freeradius_eap_body()
+    del body["data"]["default_eap_type"]
+    client, _ = _freeradius_eap_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_freeradius_eap()
+
+
+def test_get_freeradius_eap_invalid_field_type_raises_shape_error():
+    body = _freeradius_eap_body()
+    body["data"]["cache_enable"] = "not-a-bool"
+    client, _ = _freeradius_eap_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_freeradius_eap()
+
+
+def test_get_freeradius_eap_shape_error_does_not_leak_raw_field_values():
+    body = _freeradius_eap_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["cache_enable"] = sentinel
+    client, _ = _freeradius_eap_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_freeradius_eap()
+    assert sentinel not in str(excinfo.value)

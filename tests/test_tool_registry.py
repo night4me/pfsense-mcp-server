@@ -686,6 +686,41 @@ _CRON_JOBS_BODY = {
 _ACME_SETTINGS_BODY = {"data": {"enable": False, "writecerts": False}}
 
 
+_FREERADIUS_EAP_BODY = {
+    "data": {
+        "cache_enable": False,
+        "cache_lifetime": 24,
+        "cache_max_entries": 255,
+        "cisco_accounting_username_bug": False,
+        "default_eap_type": "md5",
+        "disable_weak_eap_types": False,
+        "ignore_unknown_eap_types": False,
+        "max_sessions": 4096,
+        "ocsp_enable": False,
+        "ocsp_override_cert_url": False,
+        "ocsp_url": "",
+        "peap_copy_request_to_tunnel": False,
+        "peap_default_eap_type": "mschapv2",
+        "peap_soh_enable": "Disable",
+        "peap_use_tunneled_reply": False,
+        "ssl_ca_cert": None,
+        "ssl_ca_crl": None,
+        "ssl_server_cert": None,
+        "timer_expire": 60,
+        "tls_ca_subject": None,
+        "tls_check_cert_cn": False,
+        "tls_check_cert_issuer": False,
+        "tls_fragment_size": 1024,
+        "tls_include_length": True,
+        "tls_min_version": "1.0",
+        "ttls_copy_request_to_tunnel": False,
+        "ttls_default_eap_type": "md5",
+        "ttls_include_length": True,
+        "ttls_use_tunneled_reply": False,
+    }
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -780,6 +815,7 @@ def _client(
     with_ssh_settings: bool = False,
     with_cron_jobs: bool = False,
     with_acme_settings: bool = False,
+    with_freeradius_eap: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -944,6 +980,10 @@ def _client(
     if with_acme_settings:
         transport.register(
             "GET", "/api/v2/services/acme/settings", status_code=200, text=json.dumps(_ACME_SETTINGS_BODY)
+        )
+    if with_freeradius_eap:
+        transport.register(
+            "GET", "/api/v2/services/freeradius/eap", status_code=200, text=json.dumps(_FREERADIUS_EAP_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -2051,3 +2091,31 @@ def test_registered_acme_settings_tool_invokes_client():
     settings = fn()
     assert settings.enable is False
     assert settings.writecerts is False
+
+
+def test_registry_registers_freeradius_eap_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_freeradius_eap=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_FREERADIUS_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_freeradius_eap"
+
+
+def test_registry_does_not_register_freeradius_eap_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_freeradius_eap" not in names
+
+
+def test_registered_freeradius_eap_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_freeradius_eap=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_FREERADIUS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_freeradius_eap")
+    eap = fn()
+    assert eap.default_eap_type == "md5"
+    assert eap.max_sessions == 4096

@@ -24,6 +24,7 @@ from .models.firewall_alias import FirewallAlias
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.firewall_traffic_shaper_limiter import FirewallTrafficShaperLimiter
+from .models.free_radius_eap import FreeRadiusEap
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
@@ -981,4 +982,19 @@ class PfSenseClient:
         except (KeyError, TypeError, ValidationError):
             raise PfSenseResponseShapeError(
                 "pfSense /services/acme/settings response failed schema validation."
+            ) from None
+
+    def get_freeradius_eap(self) -> FreeRadiusEap:
+        raw = self._rest.get(Endpoints.FREERADIUS_EAP)
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /services/freeradius/eap response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, dict):
+            raise PfSenseResponseShapeError("pfSense /services/freeradius/eap response 'data' was not an object.")
+        try:
+            return FreeRadiusEap.from_api(data)
+        except (KeyError, TypeError, ValidationError):
+            raise PfSenseResponseShapeError(
+                "pfSense /services/freeradius/eap response failed schema validation."
             ) from None

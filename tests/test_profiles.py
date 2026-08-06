@@ -132,3 +132,7 @@ def test_auditor_profile_has_services_cron_read():
 
 def test_auditor_profile_has_services_acme_read():
     assert Capability.SERVICES_ACME_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_services_freeradius_read():
+    assert Capability.SERVICES_FREERADIUS_READ in AuditorProfile.capabilities
