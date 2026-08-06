@@ -26,6 +26,10 @@ through 6 are accepted.
 - Dry-run performs no mutating request.
 - Execution requires a fresh authoritative Recovery Contract loaded by ID.
 - Contract, endpoint, capability, target, method, and payload intent must match.
+- Target identity is a capability-specific canonical natural identity; a
+  numeric pfSense ID is only a transient locator hint.
+- Execution atomically acquires its state, immediately re-reads the target
+  authoritatively, and refuses drift before mutation.
 - No payload, snapshot, credential, response body, or exception message enters
   logs or MCP errors.
 - HTTP success and persisted contract state must be validated before reporting
@@ -43,6 +47,7 @@ capability
 endpoint_symbol
 http_method
 target_identity       canonical resource identifier, not a display label
+target_fingerprint    digest of immutable identity and accepted pre-state fields
 intent_digest         digest of canonical mutation intent, not raw payload
 snapshot_digest       integrity digest of protected pre-state
 created_at / expires_at
@@ -56,6 +61,12 @@ the contract, verifies every binding, and performs a compare-and-transition.
 Public cryptographic digests may be audited; raw snapshot/payload values may
 not. Digest construction requires deterministic canonical serialization and a
 documented domain separator to prevent cross-purpose reuse.
+
+Target identity must be defined per capability from a unique natural key or
+tuple. Numeric array indices may be retained only as transient locator hints.
+Preparation fails on zero or multiple natural-identity matches. The immutable
+fingerprint binds the prepared target to mutation and rollback without placing
+raw identity or snapshot values in audit data.
 
 ## State machine
 
@@ -86,6 +97,8 @@ requires operator reconciliation and cannot be retried blindly.
 
 - Name one candidate capability and exact pfSense endpoint/method.
 - Document target identity and smallest reversible mutation.
+- Prove natural-identity uniqueness rules and document how unstable numeric IDs
+  are refreshed without becoming authoritative.
 - Confirm upstream API semantics, idempotency, response codes, concurrency
   behavior, and read-back endpoint.
 - Define least-privilege upstream authorization and explicit operator role.
@@ -108,10 +121,11 @@ requires operator reconciliation and cannot be retried blindly.
 ### Work
 
 - Extend contract identity with method, canonical target, intent digest,
-  snapshot digest, and state version.
+  target fingerprint, snapshot digest, and state version.
 - Replace free-form contract objects at execution boundaries with contract IDs.
 - Define canonical serialization/digest rules and size limits.
 - Bind rollback plans to the same capability/endpoint/target identity.
+- Store numeric IDs, if needed, only as non-authoritative locator hints.
 
 ### Estimated files
 
@@ -126,6 +140,8 @@ requires operator reconciliation and cannot be retried blindly.
 
 - Swapping contract IDs, targets, endpoints, capabilities, methods, or payload
   intent always fails before transport.
+- Missing targets, duplicate natural identities, target-fingerprint mismatch,
+  or locator-ID mismatch always fail before transport.
 - MCP callers cannot supply authoritative contract state.
 - Digests reveal no source values in logs/errors.
 
@@ -136,7 +152,11 @@ requires operator reconciliation and cannot be retried blindly.
 - Implement the explicit state machine and compare-and-set transitions.
 - Reject illegal, duplicate, stale-version, expired, and concurrent operations.
 - Define clock source and injectable time for deterministic expiry tests.
+- Use monotonic time for in-process deadlines and atomic store state for
+  execution, rollback, rate, and concurrency decisions.
 - Add operation IDs/idempotency keys where supported by the upstream API.
+- Define capability/target-scoped rate and in-flight concurrency policy. Rate
+  limiting is damage containment, never authorization or confirmation.
 
 ### Estimated files
 
@@ -153,6 +173,10 @@ requires operator reconciliation and cannot be retried blindly.
 - Concurrent execution attempts cannot both acquire `EXECUTING`.
 - Repeated rollback cannot produce a second mutation.
 - Expiry cannot race an acquired execution into an incorrect state.
+- Simultaneous operations for a conflicting canonical target cannot both
+  acquire execution, regardless of process or worker concurrency.
+- Dry-run, refusal, execution failure, and `OUTCOME_UNKNOWN` have explicit rate
+  accounting and reservation-release behavior.
 
 ## Milestone 3 — persistence and crash contract
 
@@ -194,6 +218,8 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Store/snapshot permissions fail closed.
 - Corrupt, missing, replayed, or foreign store records cannot authorize a
   mutation.
+- Every `OUTCOME_UNKNOWN` path has a documented manual reconciliation action;
+  no uncertain operation is retried automatically.
 - Secrets/snapshots never enter reports, logs, exceptions, fixtures, or Git.
 
 ## Milestone 4 — payload transmission and HTTP outcomes
@@ -206,6 +232,9 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Reject redirects and unexpected content/status.
 - Mark `COMMITTED` only after HTTP success plus required read-back validation.
 - Move to `OUTCOME_UNKNOWN` when transport outcome cannot be determined.
+- Immediately after atomically acquiring `EXECUTING`, authoritatively re-read
+  the target and compare natural identity, fingerprint, and transient locator
+  before sending the mutation.
 
 ### Estimated files
 
@@ -223,6 +252,8 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Tests prove the exact approved payload reaches only the approved endpoint.
 - Non-2xx, unexpected 2xx, malformed response, redirect, timeout, disconnect,
   and read-back mismatch never become `COMMITTED`.
+- Missing targets, duplicate identity matches, external drift, or numeric-ID
+  mismatch produce a safe refusal and zero mutating transport calls.
 - Payload/request headers never appear in logs or errors.
 
 ## Milestone 5 — capability-specific snapshot and rollback
@@ -231,9 +262,17 @@ In-memory-only state must not be presented as crash-safe recovery.
 
 - Capture pre-state through one existing verified READ method.
 - Define a typed, target-bound rollback plan.
+- Bind rollback to the same canonical identity and target fingerprint used for
+  preparation and mutation.
 - Validate rollback HTTP outcome and read-back equivalence.
 - Define behavior when external changes occur between snapshot and mutation or
   between mutation and rollback.
+- Evaluate pfSense config-history metadata as an optional protected recovery
+  artifact. Capture failure must block mutation; it may never be swallowed as
+  best effort.
+- Analyze whether restoring a config-history revision would overwrite unrelated
+  changes made after capture. Refuse unsafe global restoration or require
+  explicit manual reconciliation.
 
 ### Estimated files
 
@@ -246,6 +285,8 @@ In-memory-only state must not be presented as crash-safe recovery.
 ### Acceptance criteria
 
 - Snapshot target equals mutation target by canonical identity.
+- Rollback refuses missing/duplicate targets, locator mismatch, fingerprint
+  conflict, and unrelated-change risk.
 - Rollback restores accepted semantic state, not merely an HTTP success code.
 - Drift/conflict is detected and reported as a safe refusal or operator-
   reconciliation state.
@@ -260,7 +301,8 @@ In-memory-only state must not be presented as crash-safe recovery.
   objects from MCP.
 - Audit event identity, contract ID, capability, endpoint symbol, target digest,
   transition, duration, and sanitized outcome only.
-- Add rate/concurrency bounds and confirmation expiry.
+- Enforce the accepted capability/target-scoped rate and concurrency policy and
+  confirmation expiry with monotonic time and atomic state.
 
 ### Estimated files
 
@@ -289,6 +331,13 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Fault injection before/after every durable transition and transport boundary.
 - Restart tests against a temporary store.
 - Concurrency tests with simultaneous execute/rollback attempts.
+- Target tests for shifted numeric IDs, duplicate natural identity, missing
+  target, fingerprint drift, and rollback conflicts.
+- Config-history tests for capture failure, stale revision, unrelated changes,
+  and global-restore refusal.
+- Compound-operation tests where the primary step, compensating action, or both
+  fail; unresolved compensation enters `OUTCOME_UNKNOWN` and requires manual
+  reconciliation.
 - Negative schema/output/log/error/fixture scans using sentinel values.
 - Package/entry-point and Python-version CI matrix.
 - Existing complete READ regression suite and 41-tool enumeration.
@@ -350,11 +399,15 @@ inactive, and zero WRITE tools register.
 |---|---|
 | Contract substitution/replay | Store-loaded ID, immutable bindings, intent digest, expiry, state version |
 | Wrong target | Canonical target identity shared by snapshot, mutation, and rollback |
+| Unstable numeric ID | Transient locator only; authoritative natural identity and fingerprint re-read after atomic acquisition |
 | Double execution | Atomic compare-and-set plus operation/idempotency identity |
 | False commit | Exact status/shape policy and semantic read-back before `COMMITTED` |
 | Timeout after side effect | `OUTCOME_UNKNOWN` plus reconciliation, never blind retry |
+| Compound compensation failure | `OUTCOME_UNKNOWN`, value-free audit, and explicit manual reconciliation |
 | Process crash | Durable-before-mutate transitions and restart reconciliation |
 | Rollback drift | Conflict detection and operator escalation |
+| Config-history over-rollback | Capture must succeed; analyze and refuse restoration that could overwrite unrelated changes |
+| Runaway/concurrent mutation | Atomic capability/target concurrency plus monotonic rate policy, independent of authorization |
 | Snapshot disclosure | Protected store, value-free audit, secure retention/deletion |
 | Overbroad upstream privilege | Capability-specific credential/role and post-test revocation |
 | Accidental profile exposure | Explicit manifest tests and auditor-profile zero-WRITE assertion |

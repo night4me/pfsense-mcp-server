@@ -17,11 +17,23 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   methodology, and MCP client setup guides.
 - GitHub issue and pull-request templates.
 - Public API, type-quality, documentation, and final repository reviews.
+- MCP ToolAnnotations on every production READ tool.
 
 ### Changed
 
 - Package version prepared for v0.2.2 project hardening.
 - README expanded for first-time installation and operation.
+- Optional exact-name `PFSENSE_ALLOWED_TOOLS` restriction intersects with the
+  selected capability profile and fails closed on unknown names.
+- Tier 1 roadmap strengthened for canonical target fingerprints, unstable IDs,
+  config-history conflicts, atomic rate/concurrency policy, and compensation
+  failure reconciliation; Tier 1 remains blocked.
+
+### Security
+
+- Tool annotations remain untrusted client hints; capability, endpoint,
+  GET-only, credential, audit, and WRITE-inactivity controls remain
+  authoritative.
 
 ## [0.2.1] - 2026-08-06
 

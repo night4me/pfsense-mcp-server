@@ -49,6 +49,19 @@ The `engineer` profile has zero capabilities. No WRITE endpoint is
 allow-listed, no WRITE tool is registered, and the production bootstrap
 does not construct a write client.
 
+`PFSENSE_ALLOWED_TOOLS` is an optional exact-name restriction applied as an
+intersection after profile authorization. An absent value preserves the
+profile; an explicitly empty value registers nothing. Unknown names and
+wildcard forms fail closed. It can remove exposure but cannot grant a
+capability, bypass endpoint verification, or activate WRITE.
+
+All current tools publish MCP `readOnlyHint=true` and `openWorldHint=true`.
+These values help clients describe the tool and recognize that its data comes
+from a dynamic external appliance. MCP ToolAnnotations are untrusted hints,
+not security decisions. Server-side capability profiles, exact-name
+restriction, GET-only enforcement, endpoint verification, credential policy,
+audit logging, and independent WRITE-inactivity checks remain authoritative.
+
 ## Credentials and transport
 
 The pfSense API key is loaded from a configured local file and sent only in

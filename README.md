@@ -57,6 +57,8 @@ The authoritative capability profile gates registration before a tool can
 be exposed. The default auditor profile contains the accepted READ set;
 the engineer placeholder contains no capabilities. Endpoint registries
 independently enforce GET-only access and an empty WRITE allow-list.
+An optional exact-name restriction can further reduce the tools authorized by
+the selected profile; it can never add a tool or capability.
 
 ## Credentials
 
@@ -76,6 +78,7 @@ The server fails closed if the key cannot be loaded.
 | `PFSENSE_TLS_CA_FILE` | required if `PFSENSE_TLS_MODE=auto` | path to a CA bundle |
 | `PFSENSE_API_VERSION` | no (default `v2`) | `v2` |
 | `PFSENSE_PROFILE` | no (default `auditor`) | `auditor` / `engineer` |
+| `PFSENSE_ALLOWED_TOOLS` | no | comma-separated exact MCP tool names |
 | `PFSENSE_LOG_MAX_BYTES` | no (default `5000000`) | log-file rotation size |
 | `PFSENSE_LOG_BACKUP_COUNT` | no (default `5`) | rotated log files kept |
 
@@ -86,6 +89,15 @@ requires no code change — only this configuration.
 `PFSENSE_PROFILE=engineer` currently grants no capabilities — write
 tools are not registered or reachable. It is a named placeholder for
 a separate, explicitly authorized future phase.
+
+`PFSENSE_ALLOWED_TOOLS` is an optional restriction applied after the selected
+profile. If absent, the auditor profile keeps all 41 tools. If present, only
+the comma-separated exact names in both the profile and restriction register.
+Whitespace around names is ignored and duplicate names are normalized. An
+explicitly empty value registers zero tools. Unknown names, empty list entries,
+wildcards, and prefix patterns fail closed at startup. The setting can only
+remove tools; it cannot grant a capability, activate WRITE, or override an
+endpoint check.
 
 ## Security policy
 
@@ -100,6 +112,13 @@ The supported MCP transport is local stdio. The process launching and
 controlling that channel is the caller-authentication boundary; this is
 not a multi-tenant network service. Public CI has no production
 configuration and never contacts a pfSense appliance.
+
+Every current tool advertises MCP `readOnlyHint=true` and
+`openWorldHint=true`: it does not mutate pfSense, but it reads dynamic data
+from an external appliance. These annotations are untrusted client hints for
+presentation and tool selection, not authorization. They do not relax
+capability profiles, the optional exact-name restriction, GET-only or endpoint
+enforcement, credential handling, auditing, or WRITE inactivity.
 
 ## Installation
 
@@ -193,6 +212,8 @@ short, explicitly accepted diagnostics.
 
 Use `PFSENSE_PROFILE=auditor`, the default accepted READ profile. The
 `engineer` placeholder intentionally grants no capabilities in this build.
+Also check `PFSENSE_ALLOWED_TOOLS`: an explicitly empty value intentionally
+registers zero tools, and a configured subset hides every unlisted tool.
 
 ### Can this server manage more than one appliance?
 

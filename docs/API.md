@@ -20,6 +20,19 @@ connection, authentication, upstream API, validation, and response-shape
 failures are returned as typed, sanitized errors. Raw upstream bodies,
 credentials, request headers, and exception messages are never returned.
 
+Every tool advertises MCP `readOnlyHint=true` and `openWorldHint=true`.
+`destructiveHint` and `idempotentHint` are omitted because those hints are
+defined for tools that modify their environment. Annotations are untrusted
+client metadata only. They do not authorize a call or weaken capability,
+endpoint, GET-only, credential, audit, or WRITE-inactivity controls.
+
+`PFSENSE_ALLOWED_TOOLS` may restrict registration to comma-separated exact
+names from this reference. It is intersected with the selected capability
+profile: absent preserves the profile, an empty value registers zero tools,
+and unknown names or wildcard syntax fail startup. The restriction never adds
+a tool. It does not change any tool's name, parameters, return schema, or
+security behavior.
+
 Common parameters:
 
 - `limit` — integer from 1 through 100; defaults to 100. It bounds list
