@@ -1,14 +1,14 @@
 # Project Checkpoint
 
-Generated: 2026-08-05T22:05:11.594762+00:00
+Generated: 2026-08-06T12:54:10.375681+00:00
 
 ## Project status
 
 - Current branch: `main`
-- Latest commit hash: `a9a6d0d773282960cd3fd91c2c8c1b7068234d7b`
-- Latest commit message: Add read-only DHCP static mapping capability
+- Latest commit hash: `51e86a22a72eee63aff65dd7e9ad6de6df688a38`
+- Latest commit message: Update README scope section to reflect current capability count
 - Git status: dirty
-- pytest totals: 665 passed, 18 skipped
+- pytest totals: 1026 passed, 41 skipped
 - make quick: passed
 - make validate: passed
 
@@ -71,12 +71,11 @@ Remaining capabilities (priority order):
 ## Current work
 
 Modified files:
-- Makefile
-Untracked files:
-- .checkpoint/
+- .checkpoint/state.json
 - CHECKPOINT.md
-- scripts/checkpoint.py
-- tests/test_checkpoint.py
+- README.md
+Untracked files:
+- docs/ACCEPTANCE_v0.1.0.md
 
 ## Resume prompt
 
@@ -94,10 +93,10 @@ Continue following the throughput-first policy.
 
 ## Engineering handoff
 
-- Latest completed capability (by commit): Add read-only DHCP static mapping capability
-- Latest MCP tool count: 19
+- Latest completed capability (by commit): Update README scope section to reflect current capability count
+- Latest MCP tool count: 41
 - Known blocked endpoints/capabilities: none
 - Next recommended capability: FIREWALL_ALIAS_READ
 - Outstanding issues requiring attention:
-  - docs/READ_BACKLOG.md Status column appears stale: 14 capabilities are actually supported in capabilities.py, but only 4 rows are marked Done in the backlog doc. Capability names may also differ between the doc and the real Capability enum (e.g. historical naming changes) — treat 'next_capability' as a suggestion to verify, not a guarantee.
+  - docs/READ_BACKLOG.md Status column appears stale: 34 capabilities are actually supported in capabilities.py, but only 4 rows are marked Done in the backlog doc. Capability names may also differ between the doc and the real Capability enum (e.g. historical naming changes) — treat 'next_capability' as a suggestion to verify, not a guarantee.
 - Current verification status: pytest=ok, make quick=passed, make validate=passed

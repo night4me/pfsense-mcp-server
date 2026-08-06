@@ -3,6 +3,11 @@
 A local MCP server exposing strongly-typed, read-only tools for the
 pfSense REST API at a single managed pfSense Plus instance.
 
+## Status
+
+v0.1.0 — READ-only phase accepted and frozen. See
+`docs/ACCEPTANCE_v0.1.0.md`.
+
 ## Scope (current phase)
 
 - REST API only — SSH is out of scope.

@@ -203,34 +203,33 @@
   "git": {
     "clean": false,
     "modified": [
-      "Makefile"
+      ".checkpoint/state.json",
+      "CHECKPOINT.md",
+      "README.md"
     ],
     "staged": [],
     "untracked": [
-      ".checkpoint/",
-      "CHECKPOINT.md",
-      "scripts/checkpoint.py",
-      "tests/test_checkpoint.py"
+      "docs/ACCEPTANCE_v0.1.0.md"
     ]
   },
   "latest_commit": {
-    "hash": "a9a6d0d773282960cd3fd91c2c8c1b7068234d7b",
-    "message": "Add read-only DHCP static mapping capability"
+    "hash": "51e86a22a72eee63aff65dd7e9ad6de6df688a38",
+    "message": "Update README scope section to reflect current capability count"
   },
   "mcp": {
-    "tool_count": 19
+    "tool_count": 41
   },
   "notes": [
-    "docs/READ_BACKLOG.md Status column appears stale: 14 capabilities are actually supported in capabilities.py, but only 4 rows are marked Done in the backlog doc. Capability names may also differ between the doc and the real Capability enum (e.g. historical naming changes) \u2014 treat 'next_capability' as a suggestion to verify, not a guarantee."
+    "docs/READ_BACKLOG.md Status column appears stale: 34 capabilities are actually supported in capabilities.py, but only 4 rows are marked Done in the backlog doc. Capability names may also differ between the doc and the real Capability enum (e.g. historical naming changes) \u2014 treat 'next_capability' as a suggestion to verify, not a guarantee."
   ],
   "schema_version": 1,
   "tests": {
     "make_quick": "passed",
     "make_validate": "passed",
     "pytest": {
-      "passed": 665,
-      "skipped": 18
+      "passed": 1026,
+      "skipped": 41
     }
   },
-  "timestamp_utc": "2026-08-05T22:05:11.594762+00:00"
+  "timestamp_utc": "2026-08-06T12:54:10.375681+00:00"
 }
