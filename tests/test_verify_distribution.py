@@ -30,6 +30,7 @@ def test_valid_wheel_is_accepted(tmp_path):
     wheel = tmp_path / "pfsense_mcp_server-0.2.2-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as archive:
         archive.writestr("pfsense_mcp/__init__.py", "")
+        archive.writestr("pfsense_mcp/py.typed", "")
         archive.writestr("pfsense_mcp/server.py", "")
         archive.writestr("pfsense_mcp_server-0.2.2.dist-info/METADATA", "")
         archive.writestr("pfsense_mcp_server-0.2.2.dist-info/RECORD", "")
@@ -44,6 +45,7 @@ def test_wheel_without_entry_point_is_rejected(tmp_path):
     wheel = tmp_path / "pfsense_mcp_server-0.2.2-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as archive:
         archive.writestr("pfsense_mcp/__init__.py", "")
+        archive.writestr("pfsense_mcp/py.typed", "")
         archive.writestr("pfsense_mcp/server.py", "")
         archive.writestr("pfsense_mcp_server-0.2.2.dist-info/METADATA", "")
         archive.writestr("pfsense_mcp_server-0.2.2.dist-info/RECORD", "")

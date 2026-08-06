@@ -68,7 +68,13 @@ def verify_wheel(path: Path) -> None:
                 entry_points = archive.read(info)
         _require_suffixes(
             names,
-            ("pfsense_mcp/__init__.py", "pfsense_mcp/server.py", ".dist-info/METADATA", ".dist-info/RECORD"),
+            (
+                "pfsense_mcp/__init__.py",
+                "pfsense_mcp/py.typed",
+                "pfsense_mcp/server.py",
+                ".dist-info/METADATA",
+                ".dist-info/RECORD",
+            ),
             path,
         )
         expected = b"pfsense-mcp-server = pfsense_mcp.server:main"
