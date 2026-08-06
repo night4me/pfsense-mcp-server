@@ -2695,3 +2695,107 @@ def test_get_dns_resolver_settings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_dns_resolver_settings()
     assert sentinel not in str(excinfo.value)
+
+
+ARP_TABLE_FIXTURE = Path(__file__).parent / "fixtures" / "diagnostics_arp_table_response.json"
+
+
+def _arp_table_body() -> dict:
+    return json.loads(ARP_TABLE_FIXTURE.read_text())
+
+
+def _arp_table_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _arp_table_body()
+    transport.register("GET", "/api/v2/diagnostics/arp_table?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_arp_table_maps_fields():
+    client, _ = _arp_table_client()
+    raw = _arp_table_body()["data"]
+    entries = client.get_arp_table()
+    assert len(entries) == 5
+    assert entries[0].hostname == raw[0]["hostname"]
+    assert entries[0].ip_address == raw[0]["ip_address"]
+    assert entries[0].mac_address == raw[0]["mac_address"]
+    assert entries[0].interface == raw[0]["interface"]
+
+
+def test_get_arp_table_only_calls_endpoint_with_default_limit():
+    client, transport = _arp_table_client()
+    client.get_arp_table()
+    assert transport.calls == [("GET", "/api/v2/diagnostics/arp_table?limit=100")]
+
+
+def test_get_arp_table_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _arp_table_body()
+    transport.register("GET", "/api/v2/diagnostics/arp_table?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_arp_table(limit=2)
+    assert transport.calls == [("GET", "/api/v2/diagnostics/arp_table?limit=2")]
+
+
+def test_get_arp_table_rejects_zero_limit():
+    client, _ = _arp_table_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_arp_table(limit=0)
+
+
+def test_get_arp_table_rejects_limit_above_max():
+    client, _ = _arp_table_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_arp_table(limit=101)
+
+
+def test_get_arp_table_missing_data_key_raises_shape_error():
+    body = _arp_table_body()
+    del body["data"]
+    client, _ = _arp_table_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_arp_table()
+
+
+def test_get_arp_table_data_wrong_type_raises_shape_error():
+    body = _arp_table_body()
+    body["data"] = "not-a-list"
+    client, _ = _arp_table_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_arp_table()
+
+
+def test_get_arp_table_item_wrong_type_raises_shape_error():
+    body = _arp_table_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _arp_table_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_arp_table()
+
+
+def test_get_arp_table_required_field_missing_raises_shape_error():
+    body = _arp_table_body()
+    del body["data"][0]["ip_address"]
+    client, _ = _arp_table_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_arp_table()
+
+
+def test_get_arp_table_invalid_field_type_raises_shape_error():
+    body = _arp_table_body()
+    body["data"][0]["permanent"] = "not-a-bool"
+    client, _ = _arp_table_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_arp_table()
+
+
+def test_get_arp_table_shape_error_does_not_leak_raw_field_values():
+    body = _arp_table_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["ip_address"] = [sentinel]
+    client, _ = _arp_table_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_arp_table()
+    assert sentinel not in str(excinfo.value)

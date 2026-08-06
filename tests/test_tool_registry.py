@@ -474,6 +474,23 @@ _DNS_RESOLVER_SETTINGS_BODY = {
 }
 
 
+_ARP_TABLE_BODY = {
+    "data": [
+        {
+            "dnsresolve": "",
+            "expires": "Expires in 1197 seconds",
+            "hostname": "test-host",
+            "id": 0,
+            "interface": "LAN",
+            "ip_address": "198.51.100.10",
+            "mac_address": "02:00:00:00:00:01",
+            "permanent": False,
+            "type": "bridge",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -556,6 +573,7 @@ def _client(
     with_system_hasync: bool = False,
     with_dns_resolver_host_overrides: bool = False,
     with_dns_resolver_settings: bool = False,
+    with_arp_table: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -664,6 +682,10 @@ def _client(
             "/api/v2/services/dns_resolver/settings",
             status_code=200,
             text=json.dumps(_DNS_RESOLVER_SETTINGS_BODY),
+        )
+    if with_arp_table:
+        transport.register(
+            "GET", "/api/v2/diagnostics/arp_table?limit=100", status_code=200, text=json.dumps(_ARP_TABLE_BODY)
         )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
@@ -1420,3 +1442,32 @@ def test_registered_dns_resolver_settings_tool_invokes_client():
     assert settings.enable is True
     assert settings.dnssec is True
     assert settings.sslcertref == "test-sslcertref"
+
+
+def test_registry_registers_arp_table_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_arp_table=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DIAGNOSTICS_ARP_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_arp_table"
+
+
+def test_registry_does_not_register_arp_table_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_arp_table" not in names
+
+
+def test_registered_arp_table_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_arp_table=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DIAGNOSTICS_ARP_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_arp_table")
+    entries = fn()
+    assert len(entries) == 1
+    assert entries[0].hostname == "test-host"
+    assert entries[0].ip_address == "198.51.100.10"

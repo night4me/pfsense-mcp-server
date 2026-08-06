@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
+from .models.arp_table_entry import ArpTableEntry
 from .models.carp_status import CarpStatus
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
@@ -81,6 +82,10 @@ INTERFACE_BRIDGES_MAX_LIMIT = 100
 
 DNS_RESOLVER_HOST_OVERRIDES_MIN_LIMIT = 1
 DNS_RESOLVER_HOST_OVERRIDES_MAX_LIMIT = 100
+
+
+ARP_TABLE_MIN_LIMIT = 1
+ARP_TABLE_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -680,3 +685,31 @@ class PfSenseClient:
             raise PfSenseResponseShapeError(
                 "pfSense /services/dns_resolver/settings response failed schema validation."
             ) from None
+
+    def get_arp_table(self, *, limit: int = 100) -> list[ArpTableEntry]:
+        if not (ARP_TABLE_MIN_LIMIT <= limit <= ARP_TABLE_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {ARP_TABLE_MIN_LIMIT} and {ARP_TABLE_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DIAGNOSTICS_ARP_TABLE, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /diagnostics/arp_table response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /diagnostics/arp_table response 'data' was not a list.")
+
+        results: list[ArpTableEntry] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError(
+                    "pfSense /diagnostics/arp_table response contained a non-object entry in 'data'."
+                )
+            try:
+                results.append(ArpTableEntry.from_api(item))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /diagnostics/arp_table response contained an entry that failed schema validation."
+                ) from None
+        return results

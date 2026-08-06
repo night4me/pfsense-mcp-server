@@ -7,6 +7,7 @@ from ..capabilities import Capability
 from ..pfsense_client import PfSenseClient
 from .audit import audit_logged
 from .read import (
+    arp_table,
     carp_status,
     dhcp_leases,
     dhcp_servers,
@@ -84,6 +85,8 @@ class ToolRegistry:
             self._register_system_ha_sync_read()
         if Capability.SERVICES_DNS_RESOLVER_READ in self._capabilities:
             self._register_services_dns_resolver_read()
+        if Capability.DIAGNOSTICS_ARP_READ in self._capabilities:
+            self._register_diagnostics_arp_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -212,3 +215,8 @@ class ToolRegistry:
             dns_resolver_settings_fn
         )
         self._mcp.tool()(dns_resolver_settings_wrapped)
+
+    def _register_diagnostics_arp_read(self) -> None:
+        fn = arp_table.build(self._client)
+        wrapped = audit_logged("pfsense_get_arp_table", self._identity)(fn)
+        self._mcp.tool()(wrapped)

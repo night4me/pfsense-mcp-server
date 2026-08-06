@@ -341,6 +341,21 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         identifying_fields=frozenset({"sslcertref"}),
         default_max_items=1,
     ),
+    "DIAGNOSTICS_ARP_TABLE": CapturePolicy(
+        endpoint_attr="DIAGNOSTICS_ARP_TABLE",
+        result_shape="list",
+        # Same policy as the DHCP inventory capabilities: ip_address/
+        # mac_address/hostname stay visible at runtime (that's the
+        # whole point of an ARP-table capability) and are fixture-only
+        # here. hostname is auto-caught by the sanitizer's generic
+        # hostname field-name check; dnsresolve is a second, separate
+        # resolved-name field not covered by that set and must be
+        # declared explicitly or a real device name leaks into the
+        # fixture.
+        identifying_fields=frozenset({"hostname", "dnsresolve"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

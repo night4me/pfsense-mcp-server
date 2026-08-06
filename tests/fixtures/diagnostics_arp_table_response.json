@@ -1,0 +1,63 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "dnsresolve": "",
+      "expires": "Expires in 1197 seconds",
+      "hostname": "host.example.invalid",
+      "id": 0,
+      "interface": "LAN",
+      "ip_address": "198.51.100.10",
+      "mac_address": "02:00:00:00:00:01",
+      "permanent": false,
+      "type": "bridge"
+    },
+    {
+      "dnsresolve": "",
+      "expires": "Expires in 1159 seconds",
+      "hostname": "host.example.invalid",
+      "id": 1,
+      "interface": "LAN",
+      "ip_address": "198.51.100.11",
+      "mac_address": "02:00:00:00:00:02",
+      "permanent": false,
+      "type": "bridge"
+    },
+    {
+      "dnsresolve": "",
+      "expires": "Expires in 726 seconds",
+      "hostname": "host.example.invalid",
+      "id": 2,
+      "interface": "LAN",
+      "ip_address": "198.51.100.12",
+      "mac_address": "02:00:00:00:00:03",
+      "permanent": false,
+      "type": "bridge"
+    },
+    {
+      "dnsresolve": "",
+      "expires": "Expires in 1186 seconds",
+      "hostname": "host.example.invalid",
+      "id": 3,
+      "interface": "LAN",
+      "ip_address": "198.51.100.13",
+      "mac_address": "02:00:00:00:00:04",
+      "permanent": false,
+      "type": "bridge"
+    },
+    {
+      "dnsresolve": "",
+      "expires": "Expires in 719 seconds",
+      "hostname": "host.example.invalid",
+      "id": 4,
+      "interface": "LAN",
+      "ip_address": "198.51.100.14",
+      "mac_address": "02:00:00:00:00:05",
+      "permanent": false,
+      "type": "bridge"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

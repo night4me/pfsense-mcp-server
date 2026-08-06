@@ -88,3 +88,7 @@ def test_get_profile_rejects_unknown_name():
 
 def test_auditor_profile_has_services_dns_resolver_read():
     assert Capability.SERVICES_DNS_RESOLVER_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_has_diagnostics_arp_read():
+    assert Capability.DIAGNOSTICS_ARP_READ in AuditorProfile.capabilities
