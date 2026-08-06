@@ -32,6 +32,9 @@ logs/
 # Local tooling state — never part of the repository
 .claude/
 
+# External AI handoff reports — local symlink to ~/reports
+reports-ai
+
 # Defensive only — no secret material should ever exist in this repo,
 # but these patterns guard against an accidental copy.
 *.key
