@@ -97,10 +97,16 @@ packages = ["src/pfsense_mcp"]
 [tool.hatch.build.targets.sdist]
 include = [
     "/src",
+    "/AGENTS.md",
     "/CHANGELOG.md",
     "/CODE_OF_CONDUCT.md",
     "/CONTRIBUTING.md",
     "/README.md",
     "/SECURITY.md",
+    "/docs/ACCEPTANCE_v0.2.1.md",
+    "/docs/API.md",
+    "/docs/RELEASE_CHECKLIST.md",
+    "/docs/SECURITY_MODEL.md",
+    "/docs/TIER1_ROADMAP.md",
     "/pyproject.toml",
 ]

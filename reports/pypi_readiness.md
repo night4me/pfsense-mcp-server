@@ -94,9 +94,9 @@ CI reproducibility.
 ### Source distribution
 
 - File: `pfsense_mcp_server-0.2.2.tar.gz`
-- Size: 49,248 bytes
-- Members: 119
-- SHA-256: `8a1e2e93cbd79f4ff4f46677a2ab294e6706558f44194d7816fc7dcf5d3f8af7`
+- Size: 61,813 bytes
+- Members: 125
+- SHA-256: `66a62b74fc9973c0f4f6c7b8ee275fee5a6a30f8f2717dea0f4a2b3e40f77d5e`
 - Distribution verifier: passed
 - Explicit private/generated-path scan: passed
 - `twine check`: passed
