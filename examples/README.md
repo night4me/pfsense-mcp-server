@@ -2,15 +2,16 @@
 
 These guides configure supported MCP clients to launch the local
 `pfsense-mcp-server` process over stdio. Start with the project's
-[installation and credential instructions](../README.md#installation).
+[installation and credential instructions](../README.md#installation-from-source).
 
 | Client | Local stdio support | Guide |
 |---|---:|---|
 | Claude Desktop | Yes | [Claude Desktop](claude-desktop.md) |
+| OpenAI Codex CLI | Yes | [Codex CLI](codex-cli.md) |
+| ChatGPT desktop app | Yes, through the Codex host | [ChatGPT](chatgpt.md) |
 | Cursor | Yes | [Cursor](cursor.md) |
 | Visual Studio Code | Yes | [VS Code](vscode.md) |
 | Continue | Yes | [Continue](continue-dev.md) |
-| ChatGPT | No direct local connection | [ChatGPT](chatgpt.md) |
 
 ## Common security rules
 
@@ -27,3 +28,13 @@ The examples use `/absolute/path/to/...` placeholders. Replace every placeholder
 before starting the client. Client interfaces and configuration formats can
 change; consult the linked vendor documentation when a guide differs from the
 installed client version.
+
+To expose a smaller exact subset, add this optional environment variable to any
+stdio configuration:
+
+```text
+PFSENSE_ALLOWED_TOOLS=pfsense_get_system_status,pfsense_get_interfaces
+```
+
+The value can only remove tools from the selected capability profile. Unknown
+names and malformed lists fail closed. Omit it to keep all 41 Auditor tools.

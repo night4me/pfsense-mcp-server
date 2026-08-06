@@ -4,7 +4,7 @@ Cursor supports local stdio MCP servers through project or user configuration.
 
 ## Installation
 
-Follow the project [installation guide](../README.md#installation), then choose
+Follow the project [installation guide](../README.md#installation-from-source), then choose
 one configuration scope:
 
 - project: `.cursor/mcp.json` (share the structure, never private paths or data);

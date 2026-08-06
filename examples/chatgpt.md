@@ -1,41 +1,57 @@
-# ChatGPT
+# ChatGPT desktop app
 
 ## Compatibility
 
-ChatGPT cannot connect directly to a local stdio MCP server. The current
-`pfsense-mcp-server` supports local stdio only, so there is no supported ChatGPT
-configuration for this release.
-
-OpenAI's current documentation requires a remote MCP server or its secure
-tunnelling workflow for private servers. Converting this project to a remotely
-reachable service would add authentication, authorization, transport, and
-deployment requirements that are outside the supported architecture. Do not
-expose the stdio process through an ad hoc network bridge.
-
-See OpenAI's [developer mode and MCP connector documentation][openai-mcp] for
-current product availability and connection requirements.
+The current ChatGPT desktop app can use local stdio MCP servers through its
+shared Codex-host configuration. ChatGPT on the web does not read local Codex
+configuration; hosted web use requires a separately designed remote plugin or
+MCP service, which this project does not provide.
 
 ## Installation
 
-You may install the server using the main [installation guide](../README.md#installation),
-but installation alone does not make it compatible with ChatGPT. Use one of the
-local stdio clients in the [examples index](README.md) for the current release.
+Install this project from source using the [main guide](../README.md#installation-from-source).
+The executable and key file must be accessible to the local desktop process.
 
 ## Configuration
 
-None. This repository does not ship a remote MCP endpoint, OAuth support, or a
-ChatGPT connector configuration.
+Open **Settings → MCP servers**, select **Add server**, choose **STDIO**, and
+provide this absolute command:
+
+```text
+/absolute/path/to/pfsense-mcp-server/.venv/bin/pfsense-mcp-server
+```
+
+Configure these environment variables without placing the API-key value in the
+application:
+
+```text
+PFSENSE_API_URL=https://pfsense.example.invalid
+PFSENSE_IDENTITY=api-mcp-admin
+PFSENSE_API_KEY_FILE=/absolute/private/path/pfsense-api.key
+PFSENSE_TLS_MODE=strict
+```
+
+Save and restart the desktop app. The same server can instead be defined in
+`~/.codex/config.toml` as shown in the [Codex CLI guide](codex-cli.md); the
+desktop app, Codex CLI, and Codex IDE extension share that configuration on the
+same host.
 
 ## Expected behaviour
 
-The server will not appear in ChatGPT's connector list. This is an intentional
-transport boundary, not a server fault.
+Use `/mcp` in the composer to inspect connected servers. The unrestricted
+Auditor profile exposes 41 READ tools and zero WRITE tools. No browser-accessible
+endpoint is created.
 
-## Troubleshooting
+## Troubleshooting and limitations
 
-- Do not enter the pfSense API key into ChatGPT or a connector form.
-- Do not make the server publicly reachable to work around the stdio boundary.
-- If remote MCP support is added in a future release, follow that release's
-  threat model and deployment guide rather than this page.
+- ChatGPT web does not connect to this local stdio server.
+- If the server is absent, restart the desktop app and inspect its sanitized MCP
+  startup status.
+- Verify absolute paths, key-file ownership/mode, and TLS trust without
+  displaying the credential.
+- Do not expose the stdio process through an ad hoc network bridge.
 
-[openai-mcp]: https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta
+See OpenAI's current [MCP documentation][openai-mcp] for product availability
+and configuration details.
+
+[openai-mcp]: https://learn.chatgpt.com/docs/extend/mcp
