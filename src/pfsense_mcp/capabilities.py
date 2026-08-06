@@ -40,6 +40,7 @@ class Capability(Enum):
     SERVICES_ACME_READ = auto()
     SERVICES_FREERADIUS_READ = auto()
     DIAGNOSTICS_TABLES_READ = auto()
+    AUTH_KEYS_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -81,5 +82,6 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.SERVICES_ACME_READ,
         Capability.SERVICES_FREERADIUS_READ,
         Capability.DIAGNOSTICS_TABLES_READ,
+        Capability.AUTH_KEYS_READ,
     }
 )

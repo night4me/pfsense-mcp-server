@@ -1,0 +1,16 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "descr": "REDACTED-descr",
+      "hash_algo": "sha256",
+      "id": 0,
+      "key": null,
+      "length_bytes": 32,
+      "username": "admin@198.51.100.20"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

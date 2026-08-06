@@ -56,6 +56,7 @@ AuditorProfile = Profile(
             Capability.SERVICES_ACME_READ,
             Capability.SERVICES_FREERADIUS_READ,
             Capability.DIAGNOSTICS_TABLES_READ,
+            Capability.AUTH_KEYS_READ,
         }
     ),
 )

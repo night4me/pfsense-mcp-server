@@ -222,5 +222,10 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    AUTH_KEYS = EndpointInfo(
+        path_suffix="/auth/keys",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # Future entries added only after individual verification, e.g.:
     # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)

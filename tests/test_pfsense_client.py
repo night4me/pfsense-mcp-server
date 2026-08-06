@@ -3948,3 +3948,120 @@ def test_get_diagnostics_tables_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_diagnostics_tables()
     assert sentinel not in str(excinfo.value)
+
+
+AUTH_KEYS_FIXTURE = Path(__file__).parent / "fixtures" / "auth_keys_response.json"
+
+
+def _auth_keys_body() -> dict:
+    return json.loads(AUTH_KEYS_FIXTURE.read_text())
+
+
+def _auth_keys_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _auth_keys_body()
+    transport.register("GET", "/api/v2/auth/keys?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_auth_keys_omits_key_by_default():
+    client, _ = _auth_keys_client()
+    keys = client.get_auth_keys()
+    assert keys[0].key is None
+
+
+def test_get_auth_keys_includes_key_when_requested():
+    body = _auth_keys_body()
+    body["data"][0]["key"] = "test-plaintext-key-value"
+    client, _ = _auth_keys_client(body)
+    keys = client.get_auth_keys(include_identifying_metadata=True)
+    assert keys[0].key == "test-plaintext-key-value"
+
+
+def test_get_auth_keys_maps_non_identifying_fields():
+    client, _ = _auth_keys_client()
+    raw = _auth_keys_body()["data"]
+    keys = client.get_auth_keys()
+    assert keys[0].descr == raw[0]["descr"]
+    assert keys[0].username == raw[0]["username"]
+    assert keys[0].hash_algo == raw[0]["hash_algo"]
+    assert keys[0].length_bytes == raw[0]["length_bytes"]
+
+
+def test_get_auth_keys_only_calls_endpoint_with_default_limit():
+    client, transport = _auth_keys_client()
+    client.get_auth_keys()
+    assert transport.calls == [("GET", "/api/v2/auth/keys?limit=100")]
+
+
+def test_get_auth_keys_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _auth_keys_body()
+    transport.register("GET", "/api/v2/auth/keys?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_auth_keys(limit=2)
+    assert transport.calls == [("GET", "/api/v2/auth/keys?limit=2")]
+
+
+def test_get_auth_keys_rejects_zero_limit():
+    client, _ = _auth_keys_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_auth_keys(limit=0)
+
+
+def test_get_auth_keys_rejects_limit_above_max():
+    client, _ = _auth_keys_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_auth_keys(limit=101)
+
+
+def test_get_auth_keys_missing_data_key_raises_shape_error():
+    body = _auth_keys_body()
+    del body["data"]
+    client, _ = _auth_keys_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_auth_keys()
+
+
+def test_get_auth_keys_data_wrong_type_raises_shape_error():
+    body = _auth_keys_body()
+    body["data"] = "not-a-list"
+    client, _ = _auth_keys_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_auth_keys()
+
+
+def test_get_auth_keys_item_wrong_type_raises_shape_error():
+    body = _auth_keys_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _auth_keys_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_auth_keys()
+
+
+def test_get_auth_keys_required_field_missing_raises_shape_error():
+    body = _auth_keys_body()
+    del body["data"][0]["descr"]
+    client, _ = _auth_keys_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_auth_keys()
+
+
+def test_get_auth_keys_invalid_field_type_raises_shape_error():
+    body = _auth_keys_body()
+    body["data"][0]["length_bytes"] = "not-an-int"
+    client, _ = _auth_keys_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_auth_keys()
+
+
+def test_get_auth_keys_shape_error_does_not_leak_raw_field_values():
+    body = _auth_keys_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _auth_keys_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_auth_keys()
+    assert sentinel not in str(excinfo.value)

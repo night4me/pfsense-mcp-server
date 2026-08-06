@@ -732,6 +732,20 @@ _DIAGNOSTICS_TABLES_BODY = {
 }
 
 
+_AUTH_KEYS_BODY = {
+    "data": [
+        {
+            "descr": "Test API key",
+            "hash_algo": "sha256",
+            "id": 0,
+            "key": None,
+            "length_bytes": 32,
+            "username": "test-admin",
+        }
+    ]
+}
+
+
 _SYSTEM_RESTAPI_SETTINGS_BODY = {
     "data": {
         "allow_development_packages": False,
@@ -828,6 +842,7 @@ def _client(
     with_acme_settings: bool = False,
     with_freeradius_eap: bool = False,
     with_diagnostics_tables: bool = False,
+    with_auth_keys: bool = False,
 ) -> PfSenseClient:
     transport = MockTransport()
     body = {
@@ -1001,6 +1016,8 @@ def _client(
         transport.register(
             "GET", "/api/v2/diagnostics/tables?limit=100", status_code=200, text=json.dumps(_DIAGNOSTICS_TABLES_BODY)
         )
+    if with_auth_keys:
+        transport.register("GET", "/api/v2/auth/keys?limit=100", status_code=200, text=json.dumps(_AUTH_KEYS_BODY))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client)
 
@@ -2164,3 +2181,60 @@ def test_registered_diagnostics_tables_tool_invokes_client():
     assert len(tables) == 1
     assert tables[0].name == "bogons"
     assert tables[0].entries == ["198.51.100.10", "198.51.100.11"]
+
+
+def test_registry_registers_auth_keys_tool_when_capability_present():
+    mcp = FakeMCP()
+    client = _client(with_auth_keys=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.AUTH_KEYS_READ}))
+    registry.register_all()
+    assert len(mcp.registered) == 1
+    assert mcp.registered[0].__name__ == "pfsense_get_auth_keys"
+
+
+def test_registry_does_not_register_auth_keys_tool_without_capability():
+    mcp = FakeMCP()
+    registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
+    registry.register_all()
+    names = [fn.__name__ for fn in mcp.registered]
+    assert "pfsense_get_auth_keys" not in names
+
+
+def test_registered_auth_keys_tool_redacts_by_default_but_shows_username():
+    mcp = FakeMCP()
+    client = _client(with_auth_keys=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.AUTH_KEYS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_auth_keys")
+    keys = fn()
+    assert len(keys) == 1
+    assert keys[0].descr == "Test API key"
+    assert keys[0].username == "test-admin"
+    assert keys[0].key is None
+
+
+def test_registered_auth_keys_tool_reveals_key_when_requested():
+    mcp = FakeMCP()
+    body = {
+        "data": [
+            {
+                "descr": "Test API key",
+                "hash_algo": "sha256",
+                "id": 0,
+                "key": "test-plaintext-key-value",
+                "length_bytes": 32,
+                "username": "test-admin",
+            }
+        ]
+    }
+    transport = MockTransport()
+    transport.register("GET", "/api/v2/auth/keys?limit=100", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.AUTH_KEYS_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_auth_keys")
+    keys_default = fn()
+    assert keys_default[0].key is None
+    keys_revealed = fn(include_identifying_metadata=True)
+    assert keys_revealed[0].key == "test-plaintext-key-value"

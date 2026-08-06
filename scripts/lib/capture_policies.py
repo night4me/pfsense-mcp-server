@@ -462,6 +462,19 @@ CAPTURE_POLICIES: dict[str, CapturePolicy] = {
         allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
         default_max_items=10,
     ),
+    "AUTH_KEYS": CapturePolicy(
+        endpoint_attr="AUTH_KEYS",
+        result_shape="list",
+        # key is the plaintext API key material (when present -- the
+        # API typically only returns it once at creation, null on
+        # subsequent reads); hash is the stored key hash used for
+        # verification. Both are genuine credential material,
+        # hard-refused. username/descr are account-identifying.
+        hard_refusal_fields=frozenset({"key", "hash"}),
+        identifying_fields=frozenset({"key", "hash", "username", "descr"}),
+        allowed_params={"limit": BoundedInt(minimum=1, maximum=100)},
+        default_max_items=10,
+    ),
 }
 
 

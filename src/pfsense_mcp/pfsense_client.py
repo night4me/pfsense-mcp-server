@@ -9,6 +9,7 @@ from .endpoints import Endpoints
 from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.acme_settings import AcmeSettings
 from .models.arp_table_entry import ArpTableEntry
+from .models.auth_key import AuthKey
 from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
 from .models.cron_job import CronJob
@@ -123,6 +124,10 @@ CRON_JOBS_MAX_LIMIT = 100
 
 DIAGNOSTICS_TABLES_MIN_LIMIT = 1
 DIAGNOSTICS_TABLES_MAX_LIMIT = 100
+
+
+AUTH_KEYS_MIN_LIMIT = 1
+AUTH_KEYS_MAX_LIMIT = 100
 
 
 class PfSenseClient:
@@ -1030,5 +1035,31 @@ class PfSenseClient:
             except (KeyError, TypeError, ValidationError):
                 raise PfSenseResponseShapeError(
                     "pfSense /diagnostics/tables response contained an entry that failed schema validation."
+                ) from None
+        return results
+
+    def get_auth_keys(self, *, include_identifying_metadata: bool = False, limit: int = 100) -> list[AuthKey]:
+        if not (AUTH_KEYS_MIN_LIMIT <= limit <= AUTH_KEYS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {AUTH_KEYS_MIN_LIMIT} and {AUTH_KEYS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.AUTH_KEYS, params={"limit": limit})
+
+        if "data" not in raw:
+            raise PfSenseResponseShapeError("pfSense /auth/keys response did not contain 'data'.")
+        data = raw["data"]
+        if not isinstance(data, list):
+            raise PfSenseResponseShapeError("pfSense /auth/keys response 'data' was not a list.")
+
+        results: list[AuthKey] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise PfSenseResponseShapeError("pfSense /auth/keys response contained a non-object entry in 'data'.")
+            try:
+                results.append(AuthKey.from_api(item, include_identifying_metadata=include_identifying_metadata))
+            except (KeyError, TypeError, ValidationError):
+                raise PfSenseResponseShapeError(
+                    "pfSense /auth/keys response contained an entry that failed schema validation."
                 ) from None
         return results

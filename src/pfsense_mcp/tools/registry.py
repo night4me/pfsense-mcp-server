@@ -9,6 +9,7 @@ from .audit import audit_logged
 from .read import (
     acme_settings,
     arp_table,
+    auth_keys,
     bind_settings,
     carp_status,
     cron_jobs,
@@ -124,6 +125,8 @@ class ToolRegistry:
             self._register_services_freeradius_read()
         if Capability.DIAGNOSTICS_TABLES_READ in self._capabilities:
             self._register_diagnostics_tables_read()
+        if Capability.AUTH_KEYS_READ in self._capabilities:
+            self._register_auth_keys_read()
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -320,4 +323,9 @@ class ToolRegistry:
     def _register_diagnostics_tables_read(self) -> None:
         fn = diagnostics_tables.build(self._client)
         wrapped = audit_logged("pfsense_get_diagnostics_tables", self._identity)(fn)
+        self._mcp.tool()(wrapped)
+
+    def _register_auth_keys_read(self) -> None:
+        fn = auth_keys.build(self._client)
+        wrapped = audit_logged("pfsense_get_auth_keys", self._identity)(fn)
         self._mcp.tool()(wrapped)
