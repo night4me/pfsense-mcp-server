@@ -242,6 +242,7 @@ separate process with separate configuration for another appliance.
 - [Public roadmap](docs/ROADMAP.md)
 - [Contribution guide](CONTRIBUTING.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Dependency policy](docs/DEPENDENCY_POLICY.md)
 - [Accepted releases](docs/ACCEPTANCE_v0.2.1.md)
 
 ## Contributing
