@@ -43,6 +43,17 @@ ignored build state and must never be committed.
 sha256sum dist/*
 ```
 
+Before tagging, also require two isolated builds from the same commit to be
+byte-identical:
+
+```console
+make reproducible-build
+```
+
+This target derives `SOURCE_DATE_EPOCH` from `HEAD`, builds twice in temporary
+directories, compares artifact names and SHA-256 values, and removes its
+temporary files. It never uploads an artifact.
+
 Inspect wheel and sdist member names without extracting them. Confirm the
 artifacts contain the package, entry point, README metadata, and license, and
 exclude reports, `.env` files, key/private-key files, caches, fixtures, local

@@ -5,7 +5,7 @@
         contract-check docs-check git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
-        coverage security-static package-check
+        coverage security-static package-check reproducible-build
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -195,6 +195,9 @@ package-check:
 	  if "$$tmp_dir/venv/bin/pfsense-mcp-server" >"$$tmp_dir/stdout" 2>"$$tmp_dir/stderr"; then exit 1; fi; \
 	  grep -q "configuration error" "$$tmp_dir/stderr"; \
 	  ! grep -q "Traceback" "$$tmp_dir/stderr"
+
+reproducible-build:
+	@$(PYTHON) scripts/reproducible_build.py
 
 # Fixture-capture workflow. Deliberately outside quick/validate — an
 # occasional, human-supervised workflow, not a CI gate.
