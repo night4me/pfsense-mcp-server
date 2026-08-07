@@ -11,8 +11,6 @@ permissions:
   actions: read
   contents: read
   packages: read
-  security-events: write
-  statuses: read
 
 jobs:
   analyze:
@@ -25,3 +23,7 @@ jobs:
         with:
           languages: python
       - uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
+        with:
+          # Private repositories without GitHub Code Security can run the full
+          # analysis but cannot upload SARIF to the Code Scanning backend.
+          upload: never

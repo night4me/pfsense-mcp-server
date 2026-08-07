@@ -16,7 +16,9 @@ acceptance, and live access is never required to contribute.
 - Install the wheel in a clean environment and verify its entry point
   fails closed when configuration is absent.
 - Bandit Python security scan.
-- CodeQL Python analysis.
+- CodeQL Python analysis. The CI analysis is required; uploading its SARIF to
+  GitHub Code Scanning is optional and requires GitHub Code Security. Private
+  repositories without that service run analysis with upload disabled.
 - No credentials, private infrastructure, or live network calls.
 
 ## Local offline release gates
