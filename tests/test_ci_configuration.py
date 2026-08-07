@@ -105,7 +105,9 @@ def test_pypi_publish_workflow_is_oidc_only_and_disabled_by_default():
 def test_pypi_publish_workflow_builds_verified_tagged_artifacts_before_publish():
     text = _workflow_text(PUBLISH)
 
-    assert 'test "$RELEASE_TAG" = "v$package_version"' in text
+    assert 'if [ "$RELEASE_TAG" != "v$package_version" ]' in text
+    assert "Release tag does not match the package version" in text
+    assert "Refusing to build with a pre-existing dist directory" in text
     assert "python -m build --sdist --wheel" in text
     assert "verify_distribution.py dist" in text
     assert "twine check --strict dist/*" in text
