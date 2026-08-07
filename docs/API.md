@@ -4,6 +4,14 @@ Version: 0.2.2 development
 Profile: `auditor`  
 Registered tools: 41 READ, 0 WRITE
 
+The normalized public contract is checked into
+`tests/contracts/mcp_public_contract_v0.2.2.json`. It records tool names,
+descriptions, input/output schemas, annotations, capability ownership, client
+methods, and verified GET endpoint ownership. `make validate` fails on drift.
+After explicit approval of an intentional public API change, regenerate it with
+`python scripts/public_contract.py --update`, inspect the complete diff, and
+commit the snapshot with the corresponding implementation and documentation.
+
 ## Calling convention
 
 Examples use a transport-neutral representation of an MCP tool call:
