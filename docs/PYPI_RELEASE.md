@@ -74,7 +74,9 @@ there is no PyPI API token or repository secret. A build job checks out the
 release tag, proves that it matches the `pyproject.toml` version, builds and
 verifies the wheel/sdist, and passes only those artifacts to the publish job.
 Only the publish job receives `id-token: write`; all other permissions are
-read-only.
+read-only. The pinned publishing action is configured to create PEP 740
+attestations for the uploaded distributions; disabling attestations requires a
+separate reviewed workflow change.
 
 Publishing is disabled by default. Before the first upload, the owner must
 configure all of the following externally:

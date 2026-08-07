@@ -1,6 +1,6 @@
 # Architecture diagrams
 
-These diagrams describe v0.2.2 development state. Solid paths are active in
+These diagrams describe the v0.2.2 release state. Solid paths are active in
 production; future/dormant paths are explicitly labeled.
 
 ## Overall architecture

@@ -8,7 +8,8 @@ capability or authorizes a production change.
 ## Current baseline
 
 - Published release: v0.2.1 security hardening.
-- Development line: v0.2.2 project, packaging, CI, and documentation hardening.
+- Prepared release state: v0.2.2 project, packaging, CI, and documentation
+  hardening; tag, GitHub Release, and PyPI publication remain owner actions.
 - Production MCP surface: 41 READ tools, 0 WRITE tools.
 - Tier 0 WRITE infrastructure: present, tested, and inert.
 
@@ -51,7 +52,7 @@ capability or authorizes a production change.
 - Formalize generated-document freshness and remove stale state ambiguity.
 - Maintain the owner-approved license, package publication process, provenance,
   and reproducible dependency constraints.
-- Improve file-descriptor-based API-key loading as defense in depth.
+- Preserve descriptor-bound API-key loading as a security invariant.
 
 ### Possible ideas
 

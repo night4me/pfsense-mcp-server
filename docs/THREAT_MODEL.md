@@ -1,6 +1,6 @@
 # Threat model
 
-Version: 0.2.2 development  
+Version: 0.2.2 release state
 Scope: current local stdio MCP server, 41 READ tools, inert Tier 0 WRITE infrastructure
 
 ## Purpose and scope

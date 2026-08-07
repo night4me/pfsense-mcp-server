@@ -137,8 +137,15 @@ python -m venv .venv
 ```
 
 The project is not currently published on PyPI. Do not use a similarly named
-package from a package index. A future PyPI installation command will be
-documented only after the owner publishes an authenticated release.
+package from a package index. After the owner publishes the authenticated
+release, the exact-version installation command will be:
+
+```console
+python -m pip install 'pfsense-mcp-server==0.2.2'
+```
+
+Until the project page and release provenance are publicly verifiable, install
+from the reviewed source tree as shown above.
 
 ## Quick start
 

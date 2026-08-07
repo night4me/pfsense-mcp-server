@@ -1,6 +1,6 @@
 # MCP tool reference
 
-Version: 0.2.2 development  
+Version: 0.2.2 release state
 Profile: `auditor`  
 Registered tools: 41 READ, 0 WRITE
 
