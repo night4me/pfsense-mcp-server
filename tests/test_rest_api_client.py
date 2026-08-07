@@ -56,6 +56,25 @@ def test_get_500_raises_api_error():
         client.get(Endpoints.SYSTEM_STATUS)
 
 
+@pytest.mark.parametrize("status_code", [100, 300, 301, 302, 307, 308, 400, 404, 409, 429, 500, 503])
+def test_non_2xx_statuses_raise_sanitized_api_error(status_code, caplog):
+    secret = "SYNTHETIC-RESPONSE-SECRET-MUST-NOT-ESCAPE"
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        "/api/v2/status/system",
+        status_code=status_code,
+        text=json.dumps({"response_id": "SYNTHETIC", "message": secret}),
+    )
+
+    with pytest.raises(PfSenseAPIError) as excinfo:
+        _client(transport).get(Endpoints.SYSTEM_STATUS)
+
+    assert excinfo.value.status_code == status_code
+    assert secret not in str(excinfo.value)
+    assert secret not in caplog.text
+
+
 def test_get_non_json_response_raises_api_error():
     transport = MockTransport()
     transport.register("GET", "/api/v2/status/system", status_code=200, text="not json")

@@ -75,7 +75,7 @@ class RestApiClient:
             )
             raise PfSenseAuthError("Authentication with pfSense failed.")
 
-        if response.status_code >= 400:
+        if not 200 <= response.status_code < 300:
             logger.warning(
                 "api_error identity=%s path=%s status=%s response_id=%s duration_ms=%.1f",
                 self._identity,

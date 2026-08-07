@@ -44,3 +44,19 @@ def test_timeout_raises_transport_timeout_error():
             transport.request("GET", "/api/v2/status/system")
     finally:
         transport.close()
+
+
+@respx.mock
+def test_other_httpx_transport_error_is_sanitized():
+    secret = "SYNTHETIC-SECRET-MUST-NOT-ESCAPE"
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(
+        side_effect=httpx.RemoteProtocolError(secret)
+    )
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        with pytest.raises(TransportConnectionError) as excinfo:
+            transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+
+    assert secret not in str(excinfo.value)

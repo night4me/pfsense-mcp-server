@@ -23,6 +23,8 @@ class HttpTransport:
             raise TransportConnectionError(f"Could not connect for {method} {path}") from None
         except httpx.TimeoutException:
             raise TransportTimeoutError(f"Request timed out for {method} {path}") from None
+        except httpx.TransportError:
+            raise TransportConnectionError(f"Transport failed for {method} {path}") from None
         return TransportResponse(status_code=response.status_code, text=response.text)
 
     def close(self) -> None:
