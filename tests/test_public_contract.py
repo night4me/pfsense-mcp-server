@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from public_contract import SNAPSHOT, build_contract, main
+from public_contract import READ_TOOLS, SNAPSHOT, _tool_definitions, build_contract, main
 
 
 def test_public_contract_matches_approved_snapshot():
@@ -19,3 +19,12 @@ def test_public_contract_is_complete_and_security_preserving():
     assert all(tool["endpoint"]["verified"] is True for tool in tools)
     assert all(tool["annotations"] == {"openWorldHint": True, "readOnlyHint": True} for tool in tools)
     assert SNAPSHOT.is_file()
+
+
+def test_contract_descriptions_use_stable_source_docstrings():
+    definitions = _tool_definitions()
+    acme_source = (READ_TOOLS / "acme_settings.py").read_text(encoding="utf-8")
+
+    description = definitions["pfsense_get_acme_settings"][1]
+    assert "        the service is enabled" in description
+    assert description in acme_source

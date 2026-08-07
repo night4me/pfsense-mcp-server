@@ -49,21 +49,23 @@ def _single_attribute_calls(tree: ast.AST, owner: str) -> set[str]:
     }
 
 
-def _tool_client_methods() -> dict[str, str]:
-    result: dict[str, str] = {}
+def _tool_definitions() -> dict[str, tuple[str, str]]:
+    result: dict[str, tuple[str, str]] = {}
     for path in sorted(READ_TOOLS.glob("*.py")):
         if path.name == "__init__.py":
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        names = {
-            node.name
-            for node in ast.walk(tree)
-            if isinstance(node, ast.FunctionDef) and node.name.startswith("pfsense_")
-        }
+        functions = [
+            node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.startswith("pfsense_")
+        ]
         methods = _single_attribute_calls(tree, "client")
-        if len(names) != 1 or len(methods) != 1:
+        if len(functions) != 1 or len(methods) != 1:
             raise RuntimeError(f"Expected one public tool and client method in {path.relative_to(ROOT)}")
-        result[names.pop()] = methods.pop()
+        function = functions[0]
+        description = ast.get_docstring(function, clean=False)
+        if description is None:
+            raise RuntimeError(f"Expected a public tool description in {path.relative_to(ROOT)}")
+        result[function.name] = (methods.pop(), description)
     return result
 
 
@@ -96,18 +98,21 @@ def _capability_ownership() -> dict[str, str]:
 
 
 def build_contract() -> dict[str, Any]:
-    tool_methods = _tool_client_methods()
+    tool_definitions = _tool_definitions()
     client_endpoints = _client_endpoints()
     capability_ownership = _capability_ownership()
     tools: list[dict[str, Any]] = []
     for tool in sorted(_registered_tools(AuditorProfile.capabilities), key=lambda item: item.name):
-        method = tool_methods[tool.name]
+        method, description = tool_definitions[tool.name]
         endpoint_name = client_endpoints[method]
         endpoint = getattr(Endpoints, endpoint_name)
         tools.append(
             {
                 "name": tool.name,
-                "description": tool.description,
+                # FastMCP description cleanup differs between supported Python
+                # versions. Source AST text is stable and is the authoritative
+                # tool docstring that FastMCP receives before normalization.
+                "description": description,
                 "input_schema": tool.inputSchema,
                 "output_schema": tool.outputSchema,
                 "annotations": tool.annotations.model_dump(exclude_none=True, by_alias=True)
