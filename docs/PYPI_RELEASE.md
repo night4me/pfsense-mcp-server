@@ -53,15 +53,31 @@ checks.
 
 ## Trusted publishing
 
-PyPI trusted publishing with GitHub Actions OIDC is preferred over long-lived
-API tokens. The owner must configure the exact PyPI project, repository,
-workflow filename, and protected GitHub environment. The future publish job
-should have `id-token: write` and otherwise minimal permissions, consume only
-artifacts produced from the approved tag, and require environment approval.
+`.github/workflows/publish.yml` uses GitHub Actions OIDC trusted publishing;
+there is no PyPI API token or repository secret. A build job checks out the
+release tag, proves that it matches the `pyproject.toml` version, builds and
+verifies the wheel/sdist, and passes only those artifacts to the publish job.
+Only the publish job receives `id-token: write`; all other permissions are
+read-only.
 
-Do not store a PyPI token in repository files, client configuration, logs, or
-AI reports. Do not create a trusted publisher, environment, account, token, or
-workflow until the owner approves those external settings.
+Publishing is disabled by default. Before the first upload, the owner must
+configure all of the following externally:
+
+1. In PyPI, create the `pfsense-mcp-server` project or a pending Trusted
+   Publisher with owner `night4me`, repository `pfsense-mcp-server`, workflow
+   filename `publish.yml`, and environment `pypi`.
+2. In GitHub, create the protected `pypi` environment and require appropriate
+   reviewer approval. Do not add a PyPI secret.
+3. Only after PyPI and GitHub configuration is reviewed, create repository
+   variable `PYPI_TRUSTED_PUBLISHING_ENABLED` with exact value `true`.
+
+Until that variable exists, both release and manual workflow invocations skip
+the build/publish chain. This prevents a published GitHub Release from
+attempting PyPI access before the external trust relationship is ready.
+
+Do not store a PyPI token in repository files, GitHub secrets, client
+configuration, logs, or AI reports. Trusted Publisher, environment protection,
+and the enabling repository variable remain explicit owner-controlled settings.
 
 ## TestPyPI rehearsal
 
@@ -79,19 +95,19 @@ rehearsal pass. TestPyPI does not authorize production publication.
 
 ## Production PyPI publication
 
-After the commit, tag, GitHub Release, trusted-publisher settings, and explicit
-publication approval are complete, publish the already inspected artifacts.
-Prefer the approved OIDC workflow. If an owner explicitly authorizes a manual
-upload instead, use Twine's interactive/secure credential mechanism without
-placing credentials on the command line:
+After the commit, tag, trusted-publisher settings, and explicit publication
+approval are complete, publish the GitHub Release. Its `published` event starts
+the OIDC workflow. A manual dispatch is a recovery mechanism and requires an
+existing tag name; it rebuilds from that tag and refuses a tag/version mismatch.
 
 ```console
-.release-venv/bin/python -m twine upload dist/*
+gh workflow run publish.yml --ref main -f tag=v0.2.2
 ```
 
-Verify the PyPI project page, hashes, metadata, and installation of the exact
-version in a clean environment. Record only public artifact URLs and hashes in
-the release report.
+Do not dispatch manually when the release event is already running. The
+protected `pypi` environment must approve the publish job. Verify the PyPI
+project page, hashes, metadata, and installation of the exact version in a clean
+environment. Record only public artifact URLs and hashes in the release report.
 
 ## Failure and rollback
 
