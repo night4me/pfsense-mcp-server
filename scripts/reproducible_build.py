@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import hashlib
 import os
-import subprocess
+
+# Fixed local git/build commands; no shell or caller-controlled argv.
+import subprocess  # nosec B404
 import sys
 import tempfile
 from pathlib import Path
@@ -22,13 +24,17 @@ def _sha256(path: Path) -> str:
 
 
 def _source_date_epoch() -> str:
-    return subprocess.check_output(["git", "show", "-s", "--format=%ct", "HEAD"], cwd=ROOT, text=True).strip()
+    # Fixed read-only git argv.
+    return subprocess.check_output(  # nosec B603 B607
+        ["git", "show", "-s", "--format=%ct", "HEAD"], cwd=ROOT, text=True
+    ).strip()
 
 
 def _build(output: Path, epoch: str) -> None:
     environment = dict(os.environ)
     environment["SOURCE_DATE_EPOCH"] = epoch
-    subprocess.run(
+    # Fixed interpreter/build argv.
+    subprocess.run(  # nosec B603
         [sys.executable, "-m", "build", "--no-isolation", "--sdist", "--wheel", "--outdir", str(output)],
         cwd=ROOT,
         env=environment,

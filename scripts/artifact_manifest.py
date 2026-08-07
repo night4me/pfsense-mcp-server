@@ -6,7 +6,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import subprocess
+
+# Fixed local git query; no shell or caller-controlled argv.
+import subprocess  # nosec B404
 import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _git_value(format_string: str) -> str:
-    return subprocess.check_output(
+    # Fixed read-only git argv.
+    return subprocess.check_output(  # nosec B603 B607
         ["git", "show", "-s", f"--format={format_string}", "HEAD"], cwd=ROOT, text=True
     ).strip()
 

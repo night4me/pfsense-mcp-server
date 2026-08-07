@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 
-import subprocess
+# Fixed local git query; no shell or caller-controlled argv.
+import subprocess  # nosec B404
 import tomllib
 from pathlib import Path
 
@@ -11,7 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
-    status = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=normal"], cwd=ROOT, text=True)
+    # Fixed read-only git argv.
+    status = subprocess.check_output(  # nosec B603 B607
+        ["git", "status", "--porcelain", "--untracked-files=normal"], cwd=ROOT, text=True
+    )
     if status:
         print("release_state_check: tracked or untracked working-tree changes are present")
         return 1
