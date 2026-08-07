@@ -195,8 +195,9 @@ or exploit ambiguous network outcomes.
    cryptographically tamper-evident.
 5. **Dependency compromise:** pinned actions reduce workflow drift, but Python
    dependencies use bounded ranges rather than hashes/lock constraints.
-6. **Certificate identity:** public certificates can contain production
-   identifiers; committed fixture provenance remains uncertain.
+6. **Historical certificate identity:** current certificate fixtures are wholly
+   synthetic, but earlier public fixture material remains in Git history. It
+   contained public certificate data, not a private key or credential.
 7. **Dormant-code drift:** Tier 0 modules can accumulate defects despite being
    unreachable; tests and activation gates must remain mandatory.
 8. **No current rate limiting:** a trusted-channel attacker can cause bounded
@@ -210,7 +211,7 @@ or exploit ambiguous network outcomes.
   local stdio; do not bolt network exposure onto the current model.
 - Add optional tamper-evident audit forwarding without including values.
 - Add resource/rate controls if observed workloads justify them.
-- Replace the certificate fixture with wholly synthetic public material.
+- Keep certificate fixtures wholly synthetic and reject private-key material.
 - For Tier 1, require authoritative target-bound contracts, atomic legal state
   transitions, durable crash behavior, exact payload/HTTP/read-back validation,
   replay protection, and operator reconciliation for unknown outcomes.

@@ -66,6 +66,38 @@ def test_check_fixture_text_small_data_array_has_no_advisory():
     assert advisories == []
 
 
+def test_certificate_fixture_requires_synthetic_markers_and_valid_public_pem():
+    body = _body(
+        [
+            {
+                "descr": "SYNTHETIC appliance.example.invalid certificate",
+                "refid": "SYNTHETIC-cert-one",
+                "crt": "-----BEGIN CERTIFICATE-----\nYQ==\n-----END CERTIFICATE-----\n",
+            }
+        ]
+    )
+
+    failures, _advisories = check_fixture_text("system_certificates_response.json", body)
+
+    assert failures == []
+
+
+def test_certificate_fixture_rejects_unmarked_or_invalid_material():
+    body = _body([{"descr": "appliance certificate", "refid": "cert-one", "crt": "not-a-certificate"}])
+
+    failures, _advisories = check_fixture_text("system_certificates_response.json", body)
+
+    assert len(failures) == 3
+
+
+def test_fixture_safety_rejects_private_key_material():
+    marker = "-----BEGIN " + "PRIVATE KEY-----"
+
+    failures, _advisories = check_fixture_text("fake.json", _body({"material": marker}))
+
+    assert any("private-key material" in failure for failure in failures)
+
+
 @pytest.mark.parametrize("field", ["ipsecpsk", "password", "key"])
 def test_check_fixture_text_rejects_prohibited_credential_field_even_when_empty(field):
     failures, _advisories = check_fixture_text("fake.json", _body([{field: None}]))

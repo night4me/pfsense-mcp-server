@@ -13,6 +13,7 @@ or 1 (a hard-failure finding was found).
 from __future__ import annotations
 
 import json
+import ssl
 import sys
 from pathlib import Path
 
@@ -39,6 +40,11 @@ _CREDENTIAL_PATH_PATTERNS = ("api-mcp-admin" + ".key", "/private" + "/pfsense")
 # a small synthetic example. Not a hard guarantee — flagged for human
 # review, never a pipeline failure on its own.
 _ADVISORY_MAX_DATA_ENTRIES = 10
+_CERTIFICATE_FIXTURE = "system_certificates_response.json"
+_PRIVATE_KEY_MARKERS = tuple(
+    "-----BEGIN " + key_type + "-----"
+    for key_type in ("PRIVATE KEY", "RSA PRIVATE KEY", "EC PRIVATE KEY", "OPENSSH PRIVATE KEY")
+)
 
 
 def _fixture_files() -> list[Path]:
@@ -65,6 +71,10 @@ def check_fixture_text(name: str, text: str) -> tuple[list[str], list[str]]:
     failures: list[str] = []
     advisories: list[str] = []
 
+    for marker in _PRIVATE_KEY_MARKERS:
+        if marker in text:
+            failures.append(f"{name}: private-key material found")
+
     for ip in find_ipv4_literals(text):
         if not is_safe_ipv4(ip):
             failures.append(f"{name}: non-RFC5737 IPv4 literal found: {ip}")
@@ -87,6 +97,26 @@ def check_fixture_text(name: str, text: str) -> tuple[list[str], list[str]]:
             failures.append(f"{name}: netgate_id is not the approved placeholder: {netgate_id!r}")
 
     data = doc.get("data") if isinstance(doc, dict) else doc
+    if name == _CERTIFICATE_FIXTURE and isinstance(data, list):
+        for index, item in enumerate(data):
+            if not isinstance(item, dict):
+                failures.append(f"{name}: certificate entry {index} is not an object")
+                continue
+            description = item.get("descr")
+            reference = item.get("refid")
+            certificate = item.get("crt")
+            if not isinstance(description, str) or not description.startswith("SYNTHETIC "):
+                failures.append(f"{name}: certificate entry {index} lacks a synthetic description")
+            if not isinstance(reference, str) or not reference.startswith("SYNTHETIC-"):
+                failures.append(f"{name}: certificate entry {index} lacks a synthetic reference")
+            if not isinstance(certificate, str):
+                failures.append(f"{name}: certificate entry {index} lacks public certificate PEM")
+            else:
+                try:
+                    ssl.PEM_cert_to_DER_cert(certificate)
+                except ValueError:
+                    failures.append(f"{name}: certificate entry {index} has invalid public certificate PEM")
+
     if isinstance(data, list) and len(data) > _ADVISORY_MAX_DATA_ENTRIES:
         advisories.append(
             f"{name}: 'data' array has {len(data)} entries (> {_ADVISORY_MAX_DATA_ENTRIES}); "
