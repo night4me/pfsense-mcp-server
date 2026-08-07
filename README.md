@@ -3,6 +3,7 @@
 [![CI](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A security-focused local MCP server exposing 41 strongly typed pfSense REST
 API tools. It gives an MCP client operational visibility into one managed
@@ -251,3 +252,9 @@ separate process with separate configuration for another appliance.
 Contributions are welcome within the documented security and approval
 boundaries. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change.
 Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+Licensed under the [MIT License](LICENSE). The copyright notice uses the
+project contributor identity and does not assert ownership by an invented
+person or organization.

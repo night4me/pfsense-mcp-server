@@ -57,6 +57,7 @@ def test_valid_sdist_is_accepted(tmp_path):
     sdist = tmp_path / "pfsense_mcp_server-0.2.2.tar.gz"
     with tarfile.open(sdist, "w:gz") as archive:
         for name in (
+            "pfsense_mcp_server-0.2.2/LICENSE",
             "pfsense_mcp_server-0.2.2/pyproject.toml",
             "pfsense_mcp_server-0.2.2/README.md",
             "pfsense_mcp_server-0.2.2/src/pfsense_mcp/server.py",

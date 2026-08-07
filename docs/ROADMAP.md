@@ -22,15 +22,15 @@ capability or authorizes a production change.
 - Complete security, threat-model, architecture, API, contribution, and release
   documentation.
 - Keep WRITE endpoint allow-list empty and WRITE capabilities inactive.
-- Publish no package until artifacts pass inspection/Twine and the owner has
-  chosen an explicit license.
+- Publish no package until artifacts pass inspection/Twine and the approved MIT
+  license metadata is present.
 
 ### Candidate
 
 - Replace or retire stale generated checkpoint/backlog state.
 - Add tests for uncovered configuration and transport error branches.
 - Split oversized test modules without behavior changes.
-- Replace the public-certificate fixture with wholly synthetic material.
+- Maintain wholly synthetic public-certificate fixtures.
 - Add dependency advisory/constraints policy after CI baseline stability.
 
 ### Not in scope
@@ -49,8 +49,8 @@ capability or authorizes a production change.
 - Add cross-release MCP schema diffing that distinguishes additive, compatible,
   and breaking changes.
 - Formalize generated-document freshness and remove stale state ambiguity.
-- Establish owner-approved license, package publication process, provenance, and
-  reproducible dependency constraints.
+- Maintain the owner-approved license, package publication process, provenance,
+  and reproducible dependency constraints.
 - Improve file-descriptor-based API-key loading as defense in depth.
 
 ### Possible ideas

@@ -3,6 +3,8 @@ name = "pfsense-mcp-server"
 version = "0.2.2"
 description = "Security-focused local MCP server exposing strongly typed READ tools for pfSense."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 keywords = ["mcp", "pfsense", "networking", "firewall", "observability"]
 classifiers = [
@@ -102,6 +104,7 @@ include = [
     "/CHANGELOG.md",
     "/CODE_OF_CONDUCT.md",
     "/CONTRIBUTING.md",
+    "/LICENSE",
     "/README.md",
     "/SECURITY.md",
     "/docs/ACCEPTANCE_v0.2.1.md",

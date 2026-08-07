@@ -90,7 +90,7 @@ def verify_sdist(path: Path) -> None:
             if not (info.isfile() or info.isdir()):
                 raise DistributionVerificationError(f"unsupported member type in sdist: {info.name!r}")
             names.add(info.name)
-        _require_suffixes(names, ("/pyproject.toml", "/README.md", "/src/pfsense_mcp/server.py"), path)
+        _require_suffixes(names, ("/LICENSE", "/pyproject.toml", "/README.md", "/src/pfsense_mcp/server.py"), path)
 
 
 def verify_distribution(directory: Path) -> tuple[Path, Path]:
