@@ -84,6 +84,8 @@ def test_pypi_publish_workflow_is_oidc_only_and_disabled_by_default():
     assert "types: [published]" in text
     assert "workflow_dispatch:" in text
     assert "PYPI_TRUSTED_PUBLISHING_ENABLED == 'true'" in text
+    assert "inputs.confirm == 'publish-pfsense-mcp-server'" in text
+    assert "cancel-in-progress: false" in text
     assert "environment:" in text
     assert "name: pypi" in text
     assert "id-token: write" in text
@@ -104,3 +106,4 @@ def test_pypi_publish_workflow_builds_verified_tagged_artifacts_before_publish()
     assert "verify_distribution.py dist" in text
     assert "twine check --strict dist/*" in text
     assert "needs: build" in text
+    assert "packages-dir: dist/" in text

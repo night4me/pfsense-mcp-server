@@ -74,6 +74,8 @@ configure all of the following externally:
 Until that variable exists, both release and manual workflow invocations skip
 the build/publish chain. This prevents a published GitHub Release from
 attempting PyPI access before the external trust relationship is ready.
+Concurrent attempts for the same tag are serialized and never cancel an
+in-progress publication.
 
 Do not store a PyPI token in repository files, GitHub secrets, client
 configuration, logs, or AI reports. Trusted Publisher, environment protection,
@@ -101,13 +103,17 @@ the OIDC workflow. A manual dispatch is a recovery mechanism and requires an
 existing tag name; it rebuilds from that tag and refuses a tag/version mismatch.
 
 ```console
-gh workflow run publish.yml --ref main -f tag=v0.2.2
+gh workflow run publish.yml --ref main \
+  -f tag=v0.2.2 \
+  -f confirm=publish-pfsense-mcp-server
 ```
 
 Do not dispatch manually when the release event is already running. The
-protected `pypi` environment must approve the publish job. Verify the PyPI
-project page, hashes, metadata, and installation of the exact version in a clean
-environment. Record only public artifact URLs and hashes in the release report.
+exact confirmation phrase prevents an accidental manual click from starting
+the build chain. The protected `pypi` environment must approve the publish job.
+Verify the PyPI project page, hashes, metadata, and installation of the exact
+version in a clean environment. Record only public artifact URLs and hashes in
+the release report.
 
 ## Failure and rollback
 

@@ -9,14 +9,25 @@ on:
         description: Existing release tag to build and publish
         required: true
         type: string
+      confirm:
+        description: Type publish-pfsense-mcp-server to confirm manual publication
+        required: true
+        type: string
 
 permissions:
   contents: read
 
+concurrency:
+  group: pypi-${{ github.event_name == 'release' && github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
 jobs:
   build:
-    if: vars.PYPI_TRUSTED_PUBLISHING_ENABLED == 'true'
+    if: >-
+      vars.PYPI_TRUSTED_PUBLISHING_ENABLED == 'true' &&
+      (github.event_name == 'release' || inputs.confirm == 'publish-pfsense-mcp-server')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -48,6 +59,7 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     environment:
       name: pypi
       url: https://pypi.org/p/pfsense-mcp-server
@@ -60,3 +72,5 @@ jobs:
           name: python-distributions
           path: dist/
       - uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26 # v1.14.2
+        with:
+          packages-dir: dist/
