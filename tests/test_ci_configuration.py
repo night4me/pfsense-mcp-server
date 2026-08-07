@@ -29,6 +29,10 @@ def test_ci_has_supported_python_matrix_and_required_offline_checks():
     assert "make security-static" in text
 
 
+def test_ci_package_build_tool_is_bounded():
+    assert "python -m pip install 'build>=1.2,<2.0'" in _workflow_text(CI)
+
+
 def test_public_ci_has_no_live_opt_in_or_production_configuration():
     combined = _workflow_text(CI) + _workflow_text(CODEQL) + _workflow_text(PUBLISH)
     assert "PFSENSE_RUN_LIVE_TESTS" not in combined

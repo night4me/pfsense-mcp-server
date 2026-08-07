@@ -91,7 +91,7 @@ exclude_dirs = [
 skips = ["*/tls.py", "src/pfsense_mcp/tls.py"]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.25,<2.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
