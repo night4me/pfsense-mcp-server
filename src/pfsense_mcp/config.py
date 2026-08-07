@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import os
 import stat
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from errno import ELOOP
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from .api_version import ApiVersion
 from .errors import ConfigurationError
@@ -75,11 +76,14 @@ def _validate_key_file_descriptor(key_file: Path, descriptor: int) -> None:
 
 
 def _contains_control_characters(value: str) -> bool:
-    return any(ord(character) < 32 or ord(character) == 127 for character in value)
+    return any(
+        ord(character) < 32 or ord(character) == 127 or unicodedata.category(character) in {"Cf", "Zl", "Zp"}
+        for character in value
+    )
 
 
 def _validate_base_url(raw: str) -> str:
-    if raw != raw.strip() or _contains_control_characters(raw):
+    if raw != raw.strip() or _contains_control_characters(raw) or _contains_control_characters(unquote(raw)):
         raise ConfigurationError("PFSENSE_API_URL must not contain surrounding whitespace or control characters")
     try:
         parsed = urlsplit(raw)

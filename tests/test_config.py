@@ -123,7 +123,13 @@ def test_allowed_tool_duplicates_are_normalized_deterministically(tmp_path):
 
 @pytest.mark.parametrize(
     "value",
-    ["pfsense_get_*", "pfsense_get_system_status,", "not-a-tool", "pfsense_get_system_status\nother"],
+    [
+        "pfsense_get_*",
+        "pfsense_get_system_status,",
+        "not-a-tool",
+        "pfsense_get_system_status\nother",
+        "pfsense_get_system_status\u2028other",
+    ],
 )
 def test_invalid_allowed_tool_syntax_fails_closed(tmp_path, value):
     key_file = tmp_path / "present.key"
@@ -144,6 +150,8 @@ def test_invalid_allowed_tool_syntax_fails_closed(tmp_path, value):
         "https://pfsense.example.invalid?x=1",
         "https://pfsense.example.invalid#fragment",
         " https://pfsense.example.invalid",
+        "https://pfsense%0a.example.invalid",
+        "https://pfsense.example.invalid\u2028ignored",
     ],
 )
 def test_unsafe_api_urls_are_rejected(tmp_path, url):
@@ -171,7 +179,7 @@ def test_valid_api_urls_are_normalized(tmp_path, url, expected):
     assert load_config(env).base_url == expected
 
 
-@pytest.mark.parametrize("identity", [" ", "line\nbreak", "x" * 129])
+@pytest.mark.parametrize("identity", [" ", "line\nbreak", "line\u2028break", "zero\u200bwidth", "x" * 129])
 def test_invalid_identity_is_rejected(tmp_path, identity):
     key_file = tmp_path / "present.key"
     key_file.write_text("fake-key-value\n")
