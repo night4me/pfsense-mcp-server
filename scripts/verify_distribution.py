@@ -19,6 +19,7 @@ _FORBIDDEN_COMPONENTS = {
     ".env",
     ".fixture_proposals",
     ".git",
+    ".release-venv",
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
@@ -26,9 +27,18 @@ _FORBIDDEN_COMPONENTS = {
     "__pycache__",
     "private",
     "reports",
+    "reports-ai",
 }
 _FORBIDDEN_SUFFIXES = {".key", ".p12", ".pfx", ".log", ".pyc"}
 _APPROVED_SECURITY_TEST = "test_credential_non_disclosure.py"
+_PRIVATE_KEY_TYPES = (b"", b"RSA ", b"EC ", b"OPENSSH ")
+
+
+def _validate_member_content(name: str, content: bytes) -> None:
+    for key_type in _PRIVATE_KEY_TYPES:
+        marker = b"-----BEGIN " + key_type + b"PRIVATE KEY-----"
+        if marker in content:
+            raise DistributionVerificationError(f"private-key material in distribution member: {name!r}")
 
 
 def validate_member_name(raw_name: str) -> PurePosixPath:
@@ -40,6 +50,8 @@ def validate_member_name(raw_name: str) -> PurePosixPath:
     if any(part in _FORBIDDEN_COMPONENTS for part in lowered_parts):
         raise DistributionVerificationError(f"private or generated path in distribution: {raw_name!r}")
     filename = lowered_parts[-1]
+    if filename.startswith(".env."):
+        raise DistributionVerificationError(f"environment file in distribution: {raw_name!r}")
     if PurePosixPath(filename).suffix in _FORBIDDEN_SUFFIXES:
         raise DistributionVerificationError(f"prohibited file type in distribution: {raw_name!r}")
     if filename != _APPROVED_SECURITY_TEST and ("secret" in filename or "credential" in filename):
@@ -64,6 +76,8 @@ def verify_wheel(path: Path) -> None:
                 raise DistributionVerificationError(f"symbolic link in wheel: {info.filename!r}")
             normalized = str(member)
             names.add(normalized)
+            if not info.is_dir():
+                _validate_member_content(normalized, archive.read(info))
             if normalized.endswith(".dist-info/entry_points.txt"):
                 entry_points = archive.read(info)
         _require_suffixes(
@@ -90,6 +104,11 @@ def verify_sdist(path: Path) -> None:
             if not (info.isfile() or info.isdir()):
                 raise DistributionVerificationError(f"unsupported member type in sdist: {info.name!r}")
             names.add(info.name)
+            if info.isfile():
+                extracted = archive.extractfile(info)
+                if extracted is None:
+                    raise DistributionVerificationError(f"could not read sdist member: {info.name!r}")
+                _validate_member_content(info.name, extracted.read())
         _require_suffixes(
             names,
             (
