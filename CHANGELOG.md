@@ -20,6 +20,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - GitHub issue and pull-request templates.
 - Public API, type-quality, documentation, and final repository reviews.
 - MCP ToolAnnotations on every production READ tool.
+- Deterministic public MCP contract snapshot and offline release-candidate,
+  reproducible-build, documentation-consistency, and artifact-manifest checks.
+- Implementation-independent Recovery Contract field, canonicalization, state,
+  fault, and reconciliation specification for future Tier 1 review.
 
 ### Changed
 
@@ -30,6 +34,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Tier 1 roadmap strengthened for canonical target fingerprints, unstable IDs,
   config-history conflicts, atomic rate/concurrency policy, and compensation
   failure reconciliation; Tier 1 remains blocked.
+- Auditor profile now derives directly from the supported READ capability set,
+  removing a duplicated activation list without changing the capability surface.
 
 ### Security
 
@@ -41,6 +47,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Replaced certificate inventory fixtures prospectively with wholly synthetic
   `.invalid` certificate identities. No private key is committed; historical
   public certificate material remains in Git history and contained no secret.
+- Reject all non-2xx upstream statuses, including redirects, and normalize
+  remaining HTTP transport failures without exposing upstream exception text.
+- Reject encoded and Unicode control/format characters at configuration
+  boundaries that can reach URLs, tool restrictions, or logs.
+- Distribution inspection rejects private-key content and additional private,
+  generated, database, backup, and SSH artifact paths.
 
 ## [0.2.1] - 2026-08-06
 

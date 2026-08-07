@@ -30,6 +30,16 @@ capability, network transport, or Tier 1 mutation implementation.
   procedures, API parity, and security abuse-case documentation are complete.
 - Certificate fixtures use valid wholly synthetic X.509 material with only
   `.invalid` identities. No private key is committed.
+- A deterministic public-contract snapshot binds every tool schema,
+  description, annotation, capability, client method, and verified GET
+  endpoint; `make validate` fails on drift.
+- The Auditor profile uses the accepted supported-build READ set as its single
+  activation source. Engineer remains empty.
+- Offline release gates verify documentation examples/links, reproducible
+  artifacts, artifact hashes/metadata, strict package metadata, and clean-tree
+  release-state parity.
+- Future Tier 1 has a separate formal Recovery Contract and fault-model
+  specification; no runtime Tier 1 code is activated.
 
 ## CI evidence
 
@@ -62,6 +72,8 @@ CI and CodeQL results before tagging.
 - Credential values and prohibited credential fields remain absent from MCP
   schemas, outputs, logs, errors, fixtures, documentation, and distributions.
 - Production READ transport remains GET-only and independently endpoint-gated.
+- Redirects and every other non-2xx response fail closed; transport exception
+  details and upstream bodies remain sanitized.
 - Capability profiles remain authoritative; annotations and tool restrictions
   cannot grant access.
 - The Auditor profile contains 34 READ capabilities and registers exactly 41
@@ -74,7 +86,8 @@ CI and CodeQL results before tagging.
 ## Verification evidence
 
 - Full offline pytest, branch coverage, Ruff, mypy, `make quick`,
-  `make validate`, and `make package-check` pass on the release-state tree.
+  `make validate`, `make package-check`, and `make release-check` pass on the
+  release-state tree.
 - Bandit, fixture safety, repository security, GET-only, WRITE import-absence,
   empty WRITE allow-list, and WRITE-capability inactivity checks pass.
 - Fresh offline MCP enumeration confirms 41 READ tools, zero Engineer/WRITE
@@ -86,8 +99,9 @@ CI and CodeQL results before tagging.
 
 Public MCP tool names, inputs, outputs, schemas, endpoint set, capability set,
 and semantics are unchanged from v0.2.1. Unsafe API-key file configurations may
-fail earlier under descriptor-bound validation. Logging lifecycle cleanup is an
-internal reliability correction.
+fail earlier under descriptor-bound validation. Encoded/Unicode control
+characters and non-2xx redirects now fail closed. Logging lifecycle cleanup is
+an internal reliability correction.
 
 ## Known limitations
 

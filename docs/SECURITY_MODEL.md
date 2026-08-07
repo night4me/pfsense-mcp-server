@@ -69,6 +69,13 @@ the `X-API-Key` header. HTTPS is mandatory. Strict system trust is the
 default; an explicit CA file can be used for an internal CA. TLS
 verification can be disabled only by explicit startup configuration.
 
+HTTP redirects are not followed and every non-2xx status is rejected. Timeout,
+connection, TLS, protocol, and other HTTP transport failures are normalized to
+sanitized project exceptions without propagating upstream exception messages
+or response bodies. Response/decompression size limits remain a future policy
+requiring representative non-production evidence; no arbitrary bound is
+guessed for this release.
+
 Linux is the supported production platform for credential loading. The key
 file is opened read-only with `O_NOFOLLOW`, then its type, effective-user
 ownership, permissions, and size are validated with `fstat()` before a bounded
@@ -77,6 +84,10 @@ every path. This binds validation and reading to one inode and prevents path
 replacement from substituting a different file. Platforms without the
 required safe-open primitive are rejected with a clear configuration error;
 they do not silently use weaker path-based validation.
+
+Configuration values that can enter URLs, registration policy, diagnostics, or
+logs reject ASCII, percent-encoded, and Unicode control/format/line-separator
+characters. This keeps each audit/log event structurally single-line.
 
 ## Audit data
 
