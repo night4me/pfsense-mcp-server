@@ -24,6 +24,13 @@ from verify_distribution import (
         "project/reports-ai/latest.md",
         "project/token.key",
         "project/debug.log",
+        "project/.coverage",
+        "project/.ssh/config",
+        "project/id_rsa",
+        "project/state.sqlite3",
+        "project/cache.db",
+        "project/config.bak",
+        "project/secrets.yaml",
     ],
 )
 def test_member_policy_rejects_unsafe_or_private_paths(name):

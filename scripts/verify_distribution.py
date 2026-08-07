@@ -23,13 +23,15 @@ _FORBIDDEN_COMPONENTS = {
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
+    ".ssh",
     ".validate",
     "__pycache__",
     "private",
     "reports",
     "reports-ai",
 }
-_FORBIDDEN_SUFFIXES = {".key", ".p12", ".pfx", ".log", ".pyc"}
+_FORBIDDEN_SUFFIXES = {".bak", ".db", ".key", ".log", ".p12", ".pfx", ".pyc", ".sqlite", ".sqlite3"}
+_FORBIDDEN_FILENAMES = {".coverage", "id_dsa", "id_ecdsa", "id_ed25519", "id_rsa"}
 _APPROVED_SECURITY_TEST = "test_credential_non_disclosure.py"
 _PRIVATE_KEY_TYPES = (b"", b"RSA ", b"EC ", b"OPENSSH ")
 
@@ -50,6 +52,8 @@ def validate_member_name(raw_name: str) -> PurePosixPath:
     if any(part in _FORBIDDEN_COMPONENTS for part in lowered_parts):
         raise DistributionVerificationError(f"private or generated path in distribution: {raw_name!r}")
     filename = lowered_parts[-1]
+    if filename in _FORBIDDEN_FILENAMES:
+        raise DistributionVerificationError(f"prohibited private/generated file in distribution: {raw_name!r}")
     if filename.startswith(".env."):
         raise DistributionVerificationError(f"environment file in distribution: {raw_name!r}")
     if PurePosixPath(filename).suffix in _FORBIDDEN_SUFFIXES:
