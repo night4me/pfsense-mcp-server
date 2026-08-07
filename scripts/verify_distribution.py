@@ -31,7 +31,7 @@ _FORBIDDEN_COMPONENTS = {
     "reports-ai",
 }
 _FORBIDDEN_SUFFIXES = {".bak", ".db", ".key", ".log", ".p12", ".pfx", ".pyc", ".sqlite", ".sqlite3"}
-_FORBIDDEN_FILENAMES = {".coverage", "id_dsa", "id_ecdsa", "id_ed25519", "id_rsa"}
+_FORBIDDEN_FILENAMES = {".coverage", "agents.md", "id_dsa", "id_ecdsa", "id_ed25519", "id_rsa"}
 _APPROVED_SECURITY_TEST = "test_credential_non_disclosure.py"
 _PRIVATE_KEY_TYPES = (b"", b"RSA ", b"EC ", b"OPENSSH ")
 

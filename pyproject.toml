@@ -100,7 +100,6 @@ packages = ["src/pfsense_mcp"]
 [tool.hatch.build.targets.sdist]
 include = [
     "/src",
-    "/AGENTS.md",
     "/CHANGELOG.md",
     "/CODE_OF_CONDUCT.md",
     "/CONTRIBUTING.md",

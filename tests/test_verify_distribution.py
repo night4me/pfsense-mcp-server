@@ -25,6 +25,7 @@ from verify_distribution import (
         "project/token.key",
         "project/debug.log",
         "project/.coverage",
+        "project/AGENTS.md",
         "project/.ssh/config",
         "project/id_rsa",
         "project/state.sqlite3",
