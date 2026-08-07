@@ -243,6 +243,7 @@ separate process with separate configuration for another appliance.
 - [Security model](docs/SECURITY_MODEL.md)
 - [Vulnerability reporting](SECURITY.md)
 - [Public roadmap](docs/ROADMAP.md)
+- [Future Recovery Contract specification](docs/RECOVERY_CONTRACT_SPEC.md)
 - [Contribution guide](CONTRIBUTING.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [PyPI release procedure](docs/PYPI_RELEASE.md)

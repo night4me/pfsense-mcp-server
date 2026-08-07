@@ -4,6 +4,11 @@ Status: planning only
 Current production state: 41 READ tools, 0 WRITE tools  
 Activation authorized by this document: none
 
+The implementation-independent field, canonicalization, transition, fault,
+and reconciliation contract is specified in
+[RECOVERY_CONTRACT_SPEC.md](RECOVERY_CONTRACT_SPEC.md). Neither document
+authorizes Tier 1 implementation or capability selection.
+
 ## Objective
 
 Tier 1 may introduce the first narrowly scoped mutating capability only after

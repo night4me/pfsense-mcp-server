@@ -111,6 +111,7 @@ include = [
     "/docs/ACCEPTANCE_v0.2.2.md",
     "/docs/API.md",
     "/docs/PYPI_RELEASE.md",
+    "/docs/RECOVERY_CONTRACT_SPEC.md",
     "/docs/RELEASE_CHECKLIST.md",
     "/docs/SECURITY_MODEL.md",
     "/docs/TIER1_ROADMAP.md",
