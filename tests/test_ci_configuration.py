@@ -113,3 +113,4 @@ def test_pypi_publish_workflow_builds_verified_tagged_artifacts_before_publish()
     assert "twine check --strict dist/*" in text
     assert "needs: build" in text
     assert "packages-dir: dist/" in text
+    assert "attestations: true" in text
