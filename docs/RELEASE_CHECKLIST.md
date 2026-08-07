@@ -1,5 +1,10 @@
 # Release checklist
 
+For a final clean-tree offline candidate gate, run `make release-check`. It
+orchestrates the full validation, package build/install checks, strict Twine
+metadata validation, reproducibility comparison, and artifact manifest. It
+does not tag, push, publish, read credentials, or contact pfSense.
+
 This checklist separates public reproducible verification from private
 appliance acceptance. A public CI result never substitutes for live
 acceptance, and live access is never required to contribute.

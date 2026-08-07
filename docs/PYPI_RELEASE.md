@@ -54,6 +54,11 @@ This target derives `SOURCE_DATE_EPOCH` from `HEAD`, builds twice in temporary
 directories, compares artifact names and SHA-256 values, and removes its
 temporary files. It never uploads an artifact.
 
+`make artifact-manifest` emits the version, source commit, source-date epoch,
+Python requirement, filenames, sizes, and SHA-256 values for the local wheel
+and sdist. Save that output in the external release record after final approval;
+the command contains no host-specific paths or credentials.
+
 Inspect wheel and sdist member names without extracting them. Confirm the
 artifacts contain the package, entry point, README metadata, and license, and
 exclude reports, `.env` files, key/private-key files, caches, fixtures, local

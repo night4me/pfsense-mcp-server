@@ -5,7 +5,7 @@
         contract-check docs-check git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
-        coverage security-static package-check reproducible-build
+        coverage security-static package-check reproducible-build artifact-manifest release-check
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -198,6 +198,18 @@ package-check:
 
 reproducible-build:
 	@$(PYTHON) scripts/reproducible_build.py
+
+artifact-manifest:
+	@$(PYTHON) scripts/artifact_manifest.py dist
+
+release-check:
+	@$(PYTHON) scripts/release_state_check.py
+	@$(MAKE) --no-print-directory validate
+	@$(MAKE) --no-print-directory package-check
+	@$(PYTHON) -m twine check --strict dist/*
+	@$(MAKE) --no-print-directory reproducible-build
+	@$(MAKE) --no-print-directory artifact-manifest
+	@echo "RELEASE-CHECK: PASSED (offline; no tag, upload, credentials, or network appliance access)"
 
 # Fixture-capture workflow. Deliberately outside quick/validate — an
 # occasional, human-supervised workflow, not a CI gate.
