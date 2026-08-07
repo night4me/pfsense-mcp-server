@@ -2,12 +2,12 @@
 
 These tests parse the Makefile text directly (never invoke `make`) to
 confirm the constraints agreed for `make quick`: it must show its own
-9-stage progress labels (never validate's 16-stage labels), must not
+9-stage progress labels (never validate's 17-stage labels), must not
 generate a JUnit report, and must not call any of the validate-only
-tooling (fixture safety, bounded-parameter audit, JUnit
-post-processing, or the git report). `validate` must contain all 16
-stages (the original 13 plus the three write-infrastructure stages
-added alongside WRITE Tier 0).
+tooling (fixture safety, bounded-parameter audit, JUnit post-processing,
+documentation validation, or the git report). `validate` must contain all 17
+stages (the original 13, three WRITE-infrastructure stages, and documentation
+consistency validation).
 """
 
 from __future__ import annotations
@@ -51,12 +51,12 @@ def test_quick_has_exactly_nine_numbered_stage_labels():
     assert labels == [f"[{n}/9]" for n in range(1, 10)]
 
 
-def test_no_slash_16_labels_occur_inside_quick_recipe():
+def test_no_validate_stage_labels_occur_inside_quick_recipe():
     block = _target_block(_makefile_text(), "quick")
-    assert "/16]" not in block
+    assert "/17]" not in block
 
 
-def test_validate_still_contains_all_16_stages():
+def test_validate_contains_all_17_stages():
     text = _makefile_text()
     validate_block = _target_block(text, "validate")
     # validate's own summary line, plus each dependency's recipe carries
@@ -78,6 +78,7 @@ def test_validate_still_contains_all_16_stages():
         "write-infrastructure-check",
         "write-allow-list-check",
         "write-capability-check",
+        "docs-check",
         "git-report",
     ]
     for target in prereqs:
@@ -88,8 +89,8 @@ def test_validate_still_contains_all_16_stages():
     all_labels = set()
     for target in prereqs:
         block = _target_block(text, target)
-        all_labels.update(re.findall(r"\[\s*\d+/16\]", block))
-    assert len(all_labels) == 16, f"expected 16 distinct stage labels, found {sorted(all_labels)}"
+        all_labels.update(re.findall(r"\[\s*\d+/17\]", block))
+    assert len(all_labels) == 17, f"expected 17 distinct stage labels, found {sorted(all_labels)}"
 
 
 def test_ruff_and_mypy_commands_defined_only_in_internal_shared_targets():
@@ -128,6 +129,7 @@ def test_quick_does_not_call_validate_only_tooling():
         "validate_junit.py",
         "fixture_safety.py",
         "bounded_params_check.py",
+        "validate_docs.py",
         "git_report.py",
     ):
         assert forbidden not in block, f"quick's recipe unexpectedly calls {forbidden}"

@@ -2,7 +2,7 @@
         endpoint-registry-check profile-registration-check get-only-check \
         tools-write-check security-scan fixture-safety-check query-param-check \
         write-infrastructure-check write-allow-list-check write-capability-check \
-        git-report _ruff-format _ruff-check _mypy \
+        docs-check git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check
@@ -14,9 +14,9 @@ validate: syntax-check lint typecheck test live-skip-check \
           endpoint-registry-check profile-registration-check get-only-check \
           tools-write-check security-scan fixture-safety-check query-param-check \
           write-infrastructure-check write-allow-list-check write-capability-check \
-          git-report
+          docs-check git-report
 	@echo "--------------------------------------------------------"
-	@echo "VALIDATE: PASSED (16/16 stages)"
+	@echo "VALIDATE: PASSED (17/17 stages)"
 
 # Internal targets: hold the actual ruff/mypy command logic exactly once.
 # Not meant to be invoked directly — lint, typecheck, and quick all call
@@ -33,87 +33,92 @@ _mypy:
 	@$(PYTHON) -m mypy src/pfsense_mcp scripts
 
 syntax-check:
-	@echo "[ 1/16] Syntax/import validation ............."
+	@echo "[ 1/17] Syntax/import validation ............."
 	@$(PYTHON) -m compileall -q src scripts tests
 	@$(PYTHON) -c "import pfsense_mcp"
 	@echo "  OK"
 
 lint:
-	@echo "[ 2/16] Formatting & linting (ruff) .........."
+	@echo "[ 2/17] Formatting & linting (ruff) .........."
 	@$(MAKE) --no-print-directory _ruff-format
 	@$(MAKE) --no-print-directory _ruff-check
 	@echo "  OK"
 
 typecheck:
-	@echo "[ 3/16] Static type checking (mypy) ..........."
+	@echo "[ 3/17] Static type checking (mypy) ..........."
 	@$(MAKE) --no-print-directory _mypy
 	@echo "  OK"
 
 test:
-	@echo "[ 4/16] Full pytest suite ......................"
+	@echo "[ 4/17] Full pytest suite ......................"
 	@mkdir -p .validate
 	@$(PYTHON) -m pytest -q --junit-xml=$(REPORT)
 	@echo "  OK"
 
 live-skip-check: test
-	@echo "[ 5/16] Live-test skip confirmation ............"
+	@echo "[ 5/17] Live-test skip confirmation ............"
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage live-skip
 	@echo "  OK"
 
 endpoint-registry-check: test
-	@echo "[ 6/16] Endpoint-registry verification ........."
+	@echo "[ 6/17] Endpoint-registry verification ........."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage endpoint-registry
 	@echo "  OK"
 
 profile-registration-check: test
-	@echo "[ 7/16] Auditor-profile registration ..........."
+	@echo "[ 7/17] Auditor-profile registration ..........."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage profile-registration
 	@echo "  OK"
 
 get-only-check: test
-	@echo "[ 8/16] GET-only enforcement ...................."
+	@echo "[ 8/17] GET-only enforcement ...................."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage get-only
 	@$(PYTHON) scripts/get_only_check.py
 	@echo "  OK"
 
 tools-write-check:
-	@echo "[ 9/16] tools/write/ import absence ............"
+	@echo "[ 9/17] tools/write/ import absence ............"
 	@$(PYTHON) scripts/tools_write_check.py
 	@echo "  OK"
 
 security-scan:
-	@echo "[10/16] Secret / identifying-data scan ........."
+	@echo "[10/17] Secret / identifying-data scan ........."
 	@$(PYTHON) scripts/security_scan.py
 	@echo "  OK"
 
 fixture-safety-check:
-	@echo "[11/16] Fixture safety validation ..............."
+	@echo "[11/17] Fixture safety validation ..............."
 	@$(PYTHON) scripts/fixture_safety.py
 	@echo "  OK"
 
 query-param-check: test
-	@echo "[12/16] Query-parameter safety validation ......."
+	@echo "[12/17] Query-parameter safety validation ......."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage query-param
 	@$(PYTHON) scripts/bounded_params_check.py
 	@echo "  OK"
 
 write-infrastructure-check: test
-	@echo "[13/16] Write-infrastructure test verification ."
+	@echo "[13/17] Write-infrastructure test verification ."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage write-infrastructure
 	@echo "  OK"
 
 write-allow-list-check:
-	@echo "[14/16] Write allow-list emptiness .............."
+	@echo "[14/17] Write allow-list emptiness .............."
 	@$(PYTHON) scripts/write_allow_list_check.py
 	@echo "  OK"
 
 write-capability-check:
-	@echo "[15/16] Write-capability inactivity ............."
+	@echo "[15/17] Write-capability inactivity ............."
 	@$(PYTHON) scripts/write_capability_check.py
 	@echo "  OK"
 
+docs-check:
+	@echo "[16/17] Documentation consistency ..............."
+	@$(PYTHON) scripts/validate_docs.py
+	@echo "  OK"
+
 git-report:
-	@echo "[16/16] Git working-tree report (read-only) ....."
+	@echo "[17/17] Git working-tree report (read-only) ....."
 	@$(PYTHON) scripts/git_report.py
 
 # quick: fast developer-feedback loop. Deliberately NOT the authoritative
