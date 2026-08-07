@@ -19,9 +19,10 @@ Key properties:
 
 ## Status
 
-v0.2.1 is the current published release. The main branch is preparing v0.2.2
-project hardening; it is not yet published on PyPI. No mutating capability is
-active, and the accepted v0.2.0 WRITE infrastructure remains inert.
+v0.2.2 is the current release state. It completes project, packaging,
+documentation, and defense-in-depth hardening while preserving the 41-tool READ
+API. It is not yet published on PyPI. No mutating capability is active, and the
+accepted Tier 0 WRITE infrastructure remains inert.
 
 ## Scope (current phase)
 
@@ -246,7 +247,8 @@ separate process with separate configuration for another appliance.
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [PyPI release procedure](docs/PYPI_RELEASE.md)
 - [Dependency policy](docs/DEPENDENCY_POLICY.md)
-- [Accepted releases](docs/ACCEPTANCE_v0.2.1.md)
+- [v0.2.2 acceptance](docs/ACCEPTANCE_v0.2.2.md)
+- [v0.2.1 acceptance](docs/ACCEPTANCE_v0.2.1.md)
 
 ## Contributing
 

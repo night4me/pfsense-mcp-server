@@ -108,6 +108,7 @@ include = [
     "/README.md",
     "/SECURITY.md",
     "/docs/ACCEPTANCE_v0.2.1.md",
+    "/docs/ACCEPTANCE_v0.2.2.md",
     "/docs/API.md",
     "/docs/PYPI_RELEASE.md",
     "/docs/RELEASE_CHECKLIST.md",

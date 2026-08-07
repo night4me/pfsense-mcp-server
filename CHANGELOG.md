@@ -7,6 +7,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-07
+
 ### Added
 
 - Public CI across Python 3.11, 3.12, and 3.13.
@@ -76,7 +78,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.2
 [0.2.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.1
 [0.2.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.0
 [0.1.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.1.0

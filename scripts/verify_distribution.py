@@ -92,7 +92,14 @@ def verify_sdist(path: Path) -> None:
             names.add(info.name)
         _require_suffixes(
             names,
-            ("/LICENSE", "/pyproject.toml", "/README.md", "/docs/PYPI_RELEASE.md", "/src/pfsense_mcp/server.py"),
+            (
+                "/LICENSE",
+                "/pyproject.toml",
+                "/README.md",
+                "/docs/ACCEPTANCE_v0.2.2.md",
+                "/docs/PYPI_RELEASE.md",
+                "/src/pfsense_mcp/server.py",
+            ),
             path,
         )
 
