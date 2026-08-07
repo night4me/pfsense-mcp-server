@@ -34,6 +34,7 @@ _FORBIDDEN_SUFFIXES = {".bak", ".db", ".key", ".log", ".p12", ".pfx", ".pyc", ".
 _FORBIDDEN_FILENAMES = {".coverage", "agents.md", "id_dsa", "id_ecdsa", "id_ed25519", "id_rsa"}
 _APPROVED_SECURITY_TEST = "test_credential_non_disclosure.py"
 _PRIVATE_KEY_TYPES = (b"", b"RSA ", b"EC ", b"OPENSSH ")
+_LOCAL_HOME_MARKERS = (b"/home/", b"/Users/")
 
 
 def _validate_member_content(name: str, content: bytes) -> None:
@@ -41,6 +42,8 @@ def _validate_member_content(name: str, content: bytes) -> None:
         marker = b"-----BEGIN " + key_type + b"PRIVATE KEY-----"
         if marker in content:
             raise DistributionVerificationError(f"private-key material in distribution member: {name!r}")
+    if any(marker in content for marker in _LOCAL_HOME_MARKERS):
+        raise DistributionVerificationError(f"machine-specific home path in distribution member: {name!r}")
 
 
 def validate_member_name(raw_name: str) -> PurePosixPath:

@@ -32,7 +32,7 @@ logs/
 # Local tooling state — never part of the repository
 .claude/
 
-# External AI handoff reports — local symlink to ~/reports
+# External AI handoff reports — local symlink to an external reports directory
 reports-ai
 
 # Defensive only — no secret material should ever exist in this repo,

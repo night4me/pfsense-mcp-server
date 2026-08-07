@@ -7,6 +7,7 @@ import zipfile
 import pytest
 from verify_distribution import (
     DistributionVerificationError,
+    _validate_member_content,
     validate_member_name,
     verify_sdist,
     verify_wheel,
@@ -41,6 +42,12 @@ def test_member_policy_rejects_unsafe_or_private_paths(name):
 
 def test_member_policy_allows_security_regression_test_name():
     validate_member_name("project/tests/test_credential_non_disclosure.py")
+
+
+@pytest.mark.parametrize("path", [b"/home/operator/project", b"/Users/operator/project"])
+def test_member_content_rejects_machine_specific_home_paths(path):
+    with pytest.raises(DistributionVerificationError, match="machine-specific home path"):
+        _validate_member_content("project/metadata.txt", path)
 
 
 def test_valid_wheel_is_accepted(tmp_path):
