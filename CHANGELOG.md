@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Replaced certificate inventory fixtures prospectively with wholly synthetic
-  `.invalid` certificate identities. No private key is committed; historical
-  public certificate material remains in Git history and contained no secret.
-
 All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -42,6 +36,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   authoritative.
 - Bound API-key metadata validation and bounded reading to one non-following
   file descriptor, eliminating path replacement between check and use.
+- Replaced certificate inventory fixtures prospectively with wholly synthetic
+  `.invalid` certificate identities. No private key is committed; historical
+  public certificate material remains in Git history and contained no secret.
 
 ## [0.2.1] - 2026-08-06
 

@@ -49,6 +49,8 @@ headers, appliance responses, or identifying infrastructure details.
 
 ## Publication
 
+- Follow the detailed [PyPI release procedure](PYPI_RELEASE.md) for clean
+  builds, artifact inspection, trusted publishing, TestPyPI, and rollback.
 - Obtain explicit approval before commit, tag, push, or release creation.
 - Commit the accepted changes and create an annotated version tag.
 - Push the commit and tag without force.
