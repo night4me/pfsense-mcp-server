@@ -1,6 +1,6 @@
 import pytest
 
-from pfsense_mcp.capabilities import Capability
+from pfsense_mcp.capabilities import SUPPORTED_CAPABILITIES_THIS_BUILD, Capability
 from pfsense_mcp.errors import ConfigurationError
 from pfsense_mcp.profiles import AuditorProfile, EngineerProfile, get_profile
 
@@ -144,3 +144,8 @@ def test_auditor_profile_has_diagnostics_tables_read():
 
 def test_auditor_profile_has_auth_keys_read():
     assert Capability.AUTH_KEYS_READ in AuditorProfile.capabilities
+
+
+def test_auditor_profile_is_exactly_the_supported_read_surface():
+    assert AuditorProfile.capabilities is SUPPORTED_CAPABILITIES_THIS_BUILD
+    assert all(capability.name.endswith("_READ") for capability in AuditorProfile.capabilities)

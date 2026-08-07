@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .capabilities import Capability
+from .capabilities import SUPPORTED_CAPABILITIES_THIS_BUILD, Capability
 from .errors import ConfigurationError
 
 
@@ -21,44 +21,7 @@ class Profile:
 
 AuditorProfile = Profile(
     name="auditor",
-    capabilities=frozenset(
-        {
-            Capability.SYSTEM_READ,
-            Capability.INTERFACE_READ,
-            Capability.GATEWAY_READ,
-            Capability.FIREWALL_READ,
-            Capability.ALIAS_READ,
-            Capability.SERVICE_READ,
-            Capability.SYSTEM_INFO_READ,
-            Capability.INTERFACE_CONFIG_READ,
-            Capability.FIREWALL_NAT_READ,
-            Capability.USER_READ,
-            Capability.SYSTEM_CERTIFICATE_READ,
-            Capability.USER_GROUP_READ,
-            Capability.DHCP_LEASE_READ,
-            Capability.DHCP_STATIC_MAPPING_READ,
-            Capability.DHCP_SERVER_READ,
-            Capability.INTERFACE_VIRTUAL_READ,
-            Capability.STATUS_CARP_READ,
-            Capability.SYSTEM_RESTAPI_SETTINGS_READ,
-            Capability.SYSTEM_HA_SYNC_READ,
-            Capability.SERVICES_DNS_RESOLVER_READ,
-            Capability.DIAGNOSTICS_ARP_READ,
-            Capability.FIREWALL_TRAFFIC_SHAPER_READ,
-            Capability.FIREWALL_ADVANCED_SETTINGS_READ,
-            Capability.SYSTEM_PACKAGE_READ,
-            Capability.SYSTEM_TUNABLE_READ,
-            Capability.SYSTEM_NOTIFICATIONS_READ,
-            Capability.SERVICES_BIND_READ,
-            Capability.SERVICES_NTP_READ,
-            Capability.SERVICES_SSH_READ,
-            Capability.SERVICES_CRON_READ,
-            Capability.SERVICES_ACME_READ,
-            Capability.SERVICES_FREERADIUS_READ,
-            Capability.DIAGNOSTICS_TABLES_READ,
-            Capability.AUTH_KEYS_READ,
-        }
-    ),
+    capabilities=SUPPORTED_CAPABILITIES_THIS_BUILD,
 )
 
 EngineerProfile = Profile(
