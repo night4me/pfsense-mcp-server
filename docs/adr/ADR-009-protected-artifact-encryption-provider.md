@@ -104,4 +104,4 @@ cost.
 - [protected_artifact_encryption.md](../tier1/specs/protected_artifact_encryption.md)
 - [ADR-010](ADR-010-key-lifecycle-and-delivery.md)
 - [RECOVERY_CONTRACT_SPEC.md](../RECOVERY_CONTRACT_SPEC.md)
-- `reports-ai/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`
+- `reports-ai/reviews/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`

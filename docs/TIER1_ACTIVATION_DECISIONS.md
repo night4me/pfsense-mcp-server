@@ -6,7 +6,7 @@ an endpoint, adapter, tool, capability, credential, or mutation.
 **Resolution:** the open decisions below are recommended and specified in
 [ADR-009 through ADR-016](adr/README.md) and
 [docs/tier1/specs/](tier1/specs/), following an independent architecture
-review (`reports-ai/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`). This
+review (`reports-ai/reviews/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`). This
 document's options analysis remains valid background reading; treat the
 ADRs as the current recommendation and
 [`docs/tier1/IMPLEMENTATION_ROADMAP.md`](tier1/IMPLEMENTATION_ROADMAP.md)

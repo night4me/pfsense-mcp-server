@@ -2,7 +2,7 @@
 
 This directory contains the implementation-ready architecture produced in
 response to the independent Claude architecture review
-(`reports-ai/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`). It converts that
+(`reports-ai/reviews/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`). It converts that
 review's recommendations into specifications precise enough that a future
 implementation agent (Codex or Claude) can build Phases 1–3 of
 [`IMPLEMENTATION_ROADMAP.md`](IMPLEMENTATION_ROADMAP.md) without making a

@@ -26,7 +26,7 @@ phases assume earlier ones are complete, not merely started.
 
 **Produces:** two small, reviewed diffs to already-existing inert code,
 fixing the two findings from
-`reports-ai/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`'s "Required
+`reports-ai/reviews/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`'s "Required
 corrections" section. Both are implementation work, not architecture —
 the fix shape is already fully specified below; no further design
 decision is required for either.

@@ -27,7 +27,7 @@ New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
 
 ADRs 009–016 resolve the remaining Tier 1 activation blockers identified in
-`reports-ai/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`. Each pairs with an
+`reports-ai/reviews/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`. Each pairs with an
 implementation-ready specification under
 [`docs/tier1/specs/`](../tier1/specs/); see
 [`docs/tier1/IMPLEMENTATION_ROADMAP.md`](../tier1/IMPLEMENTATION_ROADMAP.md)

@@ -90,4 +90,4 @@ confirmation and is explicitly not final until it happens (see Status).
 
 - [whole_store_anti_rollback.md](../tier1/specs/whole_store_anti_rollback.md)
 - `tests/tier1/test_store.py::test_whole_store_rollback_remains_an_explicit_external_anchor_blocker`
-- `reports-ai/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`
+- `reports-ai/reviews/CLAUDE_TIER1_ARCHITECTURE_REVIEW_v0.3.0.md`

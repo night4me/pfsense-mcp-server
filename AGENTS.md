@@ -29,9 +29,15 @@ Before starting any new work session, read these files in order:
 
 Treat them as the authoritative project context. Do not base decisions only on
 Git history. `reports-ai` is a local, Git-ignored symbolic link to the
-authoritative external directory `~/reports/`.
-Read `reports-ai/CHANGELOG_AI.md` or files under `reports-ai/sessions/` only
-when additional historical context is required.
+authoritative external directory `~/reports/`. Its own
+`reports-ai/README.md` is the full entry point for that directory's structure,
+authority, and update responsibilities — read it once per session alongside
+the four files above; this section states only the minimum required order.
+Read `reports-ai/CHANGELOG_AI.md` or files under `reports-ai/handoff/` only
+when additional historical context is required. Durable architecture
+decisions and specifications live under versioned `docs/adr/` and
+`docs/tier1/specs/` in this Git repository, never under `reports-ai/` — see
+`reports-ai/README.md` for why that split is deliberate.
 
 For substantial tasks:
 
@@ -82,14 +88,14 @@ through `reports-ai/` (authoritative target: `~/reports/`):
 overwrite `latest.md` with a top-level Quick status section, append exactly one
 session entry to `CHANGELOG_AI.md`, update `NEXT_TASKS.md`, update
 `AI_CONTEXT.md` only when long-term project knowledge changes, and add one
-timestamped Markdown file under `sessions/` when appropriate. These AI reports
+timestamped Markdown file under `handoff/` when appropriate. These AI reports
 are shared operational context and must not be added to the Git repository.
 Keep them concise, technical, factual, free of reasoning transcripts, secrets,
 and identifying production details.
 
 When a release milestone is complete, also create or update
-`reports-ai/RELEASE_REPORT.md` with the milestone goal, implemented and
-security changes, compatibility impact, verified test results, known
+`reports-ai/releases/RELEASE_REPORT.md` with the milestone goal, implemented
+and security changes, compatibility impact, verified test results, known
 limitations, and recommended next phase. Do not create a release report before
 the milestone is actually complete.
 
