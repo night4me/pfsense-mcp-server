@@ -11,6 +11,14 @@ authorizes a production capability, endpoint, executor, tool, or mutation.
 The isolated `pfsense_mcp.tier1` package implements and tests only the domain
 controls described here and is not imported by production bootstrap.
 
+The concrete, implementation-ready specification for the milestones below —
+subsystem interfaces, sealed executor design, capability adapter contract,
+and the exact phase sequence with entry/exit gates — is
+[`docs/tier1/IMPLEMENTATION_ROADMAP.md`](tier1/IMPLEMENTATION_ROADMAP.md)
+and [`docs/tier1/specs/`](tier1/specs/). This document's milestones remain
+the acceptance-criteria source of truth; the blueprint sequences how to
+reach them.
+
 ## Objective
 
 Tier 1 may introduce the first narrowly scoped mutating capability only after
