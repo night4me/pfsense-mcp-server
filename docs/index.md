@@ -8,7 +8,7 @@ exposing raw shell access or a way to mutate the appliance by accident.
 is deliberate: this project treats mutation as a safety-engineering
 problem, not a feature flag — the maintainer's own reasoning is in the
 README's
-["A note from the maintainer"](https://github.com/night4me/pfsense-mcp-server#a-note-from-the-maintainer)
+["Why this project exists"](https://github.com/night4me/pfsense-mcp-server#why-this-project-exists)
 section. See [the Tier 1 overview](TIER1_ARCHITECTURE.md) below for the
 engineering detail behind it.
 

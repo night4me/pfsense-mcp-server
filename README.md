@@ -74,28 +74,33 @@ Each maps to one typed, capability-gated tool — see the
 
 ## Why this project exists
 
-Most pfSense automation options are one of two things: hand-rolled scripts
-against the REST/XML-RPC/SSH surface with no safety net, or an assistant
-integration that treats "add a mutation endpoint" and "safely activate a
-mutation endpoint" as the same problem. They aren't. A firewall is exactly
-the kind of system where a plausible-looking automated change can silently
-take a network offline — and where "the AI meant well" is not a recovery
-plan.
+I built this project because I wanted AI assistance for pfSense without
+giving an LLM the ability to accidentally disconnect my own network.
 
-This project's answer is to treat mutation as a safety-engineering problem,
-not a feature flag:
+A firewall is not just another application. It is the foundation
+everything else depends on. Any software capable of changing firewall
+rules, routing, interfaces, DNS, VPN configuration, or other
+network-critical settings also has the ability to make that network
+unreachable — and "the model probably won't make a bad change" is not a
+safety mechanism, it's a hope. A mistaken tool invocation, a
+misunderstood request, an implementation defect, or a weak authorization
+boundary is all it takes. I believe those operations deserve a higher
+safety standard than simply exposing WRITE tools to an AI model.
 
-- **The current production surface is READ-only by construction**, not by
-  convention — enforced by a static check over the transport layer, verified
-  on every CI run, not a runtime setting someone could accidentally flip.
-- **Writing the code for a future capability does not activate it.** The
-  v0.3.0 development tree already contains a substantial WRITE-safety
-  framework — and every part of it remains structurally unreachable from
-  the running server until a separate, explicit authorization is granted.
-- **When a first mutation capability is eventually activated**, it will
-  only be reachable through a pipeline designed so no single mistake — a
-  bad prompt, a race, a network timeout, a crash mid-request — can leave
-  the appliance in an unknown or unrecoverable state:
+**This project deliberately started as READ-only.** Not because WRITE is
+impossible. Not because WRITE is undesirable. Because I believe WRITE
+should be earned through architecture rather than enabled by
+implementation.
+
+That's the core idea: **adding mutation code does not automatically
+create production mutation capability.** The current production surface
+is READ-only by construction, not by convention — enforced by a static
+check over the transport layer, verified on every CI run, not a runtime
+setting someone could accidentally flip. The v0.3.0 development tree
+already contains a substantial WRITE-safety framework, and every part of
+it remains structurally unreachable from the running server. Every future
+WRITE operation must first pass explicit architectural safety gates
+before it can become reachable at all:
 
 ```mermaid
 flowchart LR
@@ -130,28 +135,14 @@ reachable today. See
 [the security model](docs/SECURITY_MODEL.md) for what's actually enforced,
 not just designed.
 
-### A note from the maintainer
-
-pfSense is critical infrastructure in my own network, and this project
-started because I wanted an AI assistant to be able to *look* at it, not
-because I was ready to let one *change* it. I'm not comfortable giving an
-AI agent unrestricted mutation access to the firewall a network depends
-on — and "the model probably won't make a bad change" isn't a safety
-mechanism to me, it's a hope.
-
-A mistaken tool invocation, a misunderstood request, an implementation
-defect, or a weak authorization boundary can alter firewall rules,
-routing, DNS, interface configuration, VPN state, or other
-connectivity-critical settings. Other MCP servers for pfSense expose
-mutation more directly, and that can be a perfectly reasonable choice for
-a different threat model and different priorities than mine — I'm not
-claiming they're unsafe, only that my own risk tolerance for this
-specific piece of infrastructure is lower. I'd rather ship a smaller,
-READ-only surface first and treat WRITE activation as a genuine
-engineering and safety problem — a recovery contract, an authenticated
-confirmation step, a sealed executor, disposable-lab evidence, all behind
-an explicit activation decision I make myself — than add mutating tools
-and hope nothing goes wrong.
+Other MCP servers for pfSense expose mutation more directly, and that can
+be a perfectly reasonable choice for a different threat model and
+different priorities than mine — I'm not claiming they're unsafe, only
+that my own risk tolerance for this specific piece of infrastructure is
+lower. I'd rather ship a smaller, READ-only surface first and treat WRITE
+activation as a genuine engineering and safety problem, behind an
+explicit activation decision I make myself, than add mutating tools and
+hope nothing goes wrong.
 
 An AI assistant should not be able to take down the network simply
 because it misunderstood a request. That's the specific failure this
