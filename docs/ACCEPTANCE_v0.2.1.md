@@ -18,7 +18,7 @@ Approved fixtures may not contain `ipsecpsk`, `password`, or `key`, including nu
 
 ## Production preflight
 
-Metadata-only inspection confirmed both private parent directories are 0700 and the configured key is a regular non-symlink file owned by the effective launching user, mode 0600, within the size bound. No credential contents were displayed.
+Metadata-only inspection confirmed both private parent directories are 0700 and the configured key is a regular non-symlink file owned by the effective launching user, mode 0600, within the size bound. No credential contents were displayed. (The specific username/UID recorded during that inspection has been redacted from this public record for maintainer-identity protection; the acceptance conclusion — correct ownership, correct mode — is unaffected.)
 
 ## Verification evidence
 

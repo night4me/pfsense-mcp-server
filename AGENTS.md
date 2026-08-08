@@ -28,8 +28,8 @@ Before starting any new work session, read these files in order:
 4. `reports-ai/NEXT_TASKS.md`
 
 Treat them as the authoritative project context. Do not base decisions only on
-Git history. `reports-ai` is a local, Git-ignored symbolic link to the
-authoritative external directory `~/reports/`. Its own
+Git history. `reports-ai` is a local, Git-ignored symbolic link to an
+external, maintainer-controlled directory outside this repository. Its own
 `reports-ai/README.md` is the full entry point for that directory's structure,
 authority, and update responsibilities — read it once per session alongside
 the four files above; this section states only the minimum required order.
@@ -84,7 +84,7 @@ verification, compatibility impact, remaining risks, and approval status in
 the conversation.
 
 After every substantial work session, maintain the external handoff documents
-through `reports-ai/` (authoritative target: `~/reports/`):
+through `reports-ai/` (its symlink target, described above):
 overwrite `latest.md` with a top-level Quick status section, append exactly one
 session entry to `CHANGELOG_AI.md`, update `NEXT_TASKS.md`, update
 `AI_CONTEXT.md` only when long-term project knowledge changes, and add one
