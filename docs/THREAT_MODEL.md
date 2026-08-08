@@ -237,3 +237,26 @@ or exploit ambiguous network outcomes.
 
 See [Tier 1 roadmap](TIER1_ROADMAP.md) for future WRITE requirements and
 [security model](SECURITY_MODEL.md) for normative data classification.
+
+## Tier 1 adversarial paths
+
+These paths apply to the inert v0.3.0 framework and any future executor. A
+framework mitigation does not authorize activation.
+
+| Attack or fault | Current inert mitigation | Residual activation requirement |
+|---|---|---|
+| Prompt injection claims approval | Confirmation digest is a separate contract fact, not an MCP boolean | Authenticate owner confirmation outside prompt text |
+| Malformed or oversized tool request | Canonical types and identifiers fail closed; no tool exists | Capability-specific typed models and evidence-based size limits |
+| Contract replay or duplicate invocation | Unique contract/operation/idempotency identities and state CAS | Durable anti-rollback anchor and upstream idempotency evidence |
+| Capability, endpoint, or method substitution | Exact immutable contract and policy tuple | Independently reviewed non-empty rule and endpoint declaration |
+| Endpoint confusion or malicious registration | Empty exact policy; no prefix/wildcard inference | Static manifest parity and owner-approved path/method/version |
+| Stale snapshot or concurrent target update | Fingerprint binding and one-target reservation | Immediate authoritative re-read and capability drift projection |
+| Unstable numeric ID targets wrong object | Natural identity is authoritative; IDs are locator hints only | Lab proof of uniqueness and duplicate/missing-target refusal |
+| Timeout, reset, or lost response after send | Fault model selects `RECONCILIATION`; retry is always false | Executor must record send boundary and implement semantic read-back |
+| Process crash during execution or rollback | Durable acquisition; restart moves interrupted records to reconciliation | Fault tests around every actual transport boundary |
+| Corrupt or foreign record | Record HMAC and denormalized-index cross-check | Key lifecycle, quarantine, and operator recovery runbook |
+| Whole-store rollback to an older valid copy | Explicitly recognized as undetectable locally | External monotonic anti-rollback evidence |
+| Conflicting or partial rollback | Closed rollback states; no automatic retry | Capability-specific inverse, unrelated-change detection, manual runbook |
+| Audit/log injection or value leakage | Strict metadata tokens/digests and value-free JSON model | Approved durable sink and retention/integrity policy |
+| Transport spoofing or malicious response | Production HTTPS/GET boundary remains unchanged and isolated | Exact mutation TLS/status/shape/read-back contract |
+| Capability escalation through bootstrap | Tier 1 imports absent; Engineer/profile/endpoints/policy are empty | Replace each zero-entry invariant only through explicit activation review |
