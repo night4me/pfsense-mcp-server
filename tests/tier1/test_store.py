@@ -11,6 +11,7 @@ import pytest
 from pfsense_mcp.tier1.errors import (
     ContractConflictError,
     ContractIntegrityError,
+    ContractNotFoundError,
     ContractValidationError,
     IllegalTransitionError,
 )
@@ -66,6 +67,21 @@ def test_store_rejects_symlink_and_unsafe_existing_file(tmp_path):
     os.chmod(target, 0o640)
     with pytest.raises(ContractValidationError, match="owner-only"):
         SqliteRecoveryContractStore(target, integrity_key=_KEY, store_id="synthetic-store")
+
+
+def test_store_rejects_unsafe_parent_and_missing_contract(tmp_path):
+    os.chmod(tmp_path, 0o755)
+    with pytest.raises(ContractValidationError, match="mode 0700"):
+        SqliteRecoveryContractStore(
+            tmp_path / "contracts.sqlite3",
+            integrity_key=_KEY,
+            store_id="synthetic-store",
+        )
+
+    os.chmod(tmp_path, 0o700)
+    store = _store(tmp_path)
+    with pytest.raises(ContractNotFoundError, match="not found"):
+        store.load("missing-contract")
 
 
 def test_wrong_integrity_key_or_store_identity_cannot_replay_database(tmp_path, contract_factory):

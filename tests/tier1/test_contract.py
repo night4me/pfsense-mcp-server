@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -63,3 +64,27 @@ def test_confirmation_actor_identifier_is_bounded_and_safe(contract_factory, act
     contract = contract_factory()
     with pytest.raises(ContractValidationError, match="actor identifier"):
         contract.with_confirmation(actor_id=actor_id, confirmed_at=contract.created_at)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"contract_id": "unsafe/id"},
+        {"capability": Capability.SYSTEM_READ},
+        {"http_method": "GET"},
+        {"intent_digest": "not-a-digest"},
+        {"created_at": datetime.now()},
+        {"expires_at": datetime.now(timezone.utc) - timedelta(minutes=1)},
+        {"state_version": -1},
+        {"confirmation_digest": "a" * 64},
+    ],
+)
+def test_invalid_contract_boundaries_fail_closed(contract_factory, changes):
+    with pytest.raises(ContractValidationError):
+        replace(contract_factory(), **changes)
+
+
+def test_confirmation_must_be_inside_contract_window(contract_factory):
+    contract = contract_factory()
+    with pytest.raises(ContractValidationError, match="validity window"):
+        contract.with_confirmation(actor_id="owner", confirmed_at=contract.expires_at)

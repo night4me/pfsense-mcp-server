@@ -58,3 +58,18 @@ def test_audit_refuses_unsafe_exception_class(unsafe):
 def test_untrusted_audit_metadata_cannot_inject_values(field, value):
     with pytest.raises(ValueError, match="unsafe token"):
         replace(_event(), **{field: value})
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"timestamp": datetime.now()},
+        {"capability": Capability.SYSTEM_READ},
+        {"http_method": "GET"},
+        {"target_identity_digest": "bad"},
+        {"intent_digest": "bad"},
+    ],
+)
+def test_invalid_audit_authority_metadata_is_refused(changes):
+    with pytest.raises(ValueError):
+        replace(_event(), **changes)
