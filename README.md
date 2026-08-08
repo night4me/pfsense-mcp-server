@@ -98,9 +98,25 @@ is READ-only by construction, not by convention — enforced by a static
 check over the transport layer, verified on every CI run, not a runtime
 setting someone could accidentally flip. The v0.3.0 development tree
 already contains a substantial WRITE-safety framework, and every part of
-it remains structurally unreachable from the running server. Every future
-WRITE operation must first pass explicit architectural safety gates
-before it can become reachable at all:
+it remains structurally unreachable from the running server.
+
+**What this means today:**
+
+Current production:
+
+- ✓ 41 READ tools
+- ✓ 0 WRITE tools
+
+Future WRITE requires, in order, before any of it can ever activate:
+
+- explicit capability authorization
+- Recovery Contracts
+- authenticated confirmation
+- sealed execution
+- reconciliation
+- anti-rollback
+- disposable-lab validation
+- explicit owner activation
 
 ```mermaid
 flowchart LR
@@ -135,18 +151,16 @@ reachable today. See
 [the security model](docs/SECURITY_MODEL.md) for what's actually enforced,
 not just designed.
 
-Other MCP servers for pfSense expose mutation more directly, and that can
-be a perfectly reasonable choice for a different threat model and
-different priorities than mine — I'm not claiming they're unsafe, only
-that my own risk tolerance for this specific piece of infrastructure is
-lower. I'd rather ship a smaller, READ-only surface first and treat WRITE
-activation as a genuine engineering and safety problem, behind an
-explicit activation decision I make myself, than add mutating tools and
-hope nothing goes wrong.
+**Different priorities.** Other pfSense MCP projects may prioritize
+convenience, automation, or rapid feature development. This project
+prioritizes minimizing the chance that an AI-assisted action could
+unintentionally disrupt critical network infrastructure. Those are
+different engineering priorities, not necessarily right or wrong ones.
 
-An AI assistant should not be able to take down the network simply
-because it misunderstood a request. That's the specific failure this
-project exists to prevent.
+I don't mind if an AI answers a question incorrectly. I do mind if an AI
+accidentally disconnects my house from the Internet. That single design
+principle explains almost every architectural decision in this
+repository.
 
 ## Security
 
