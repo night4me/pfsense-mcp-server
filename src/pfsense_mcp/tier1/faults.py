@@ -30,10 +30,14 @@ class FaultDecision:
 
 
 def classify_fault(boundary: MutationBoundary, knowledge: EffectKnowledge) -> FaultDecision:
+    if knowledge == EffectKnowledge.AMBIGUOUS:
+        return FaultDecision(RecoveryState.RECONCILIATION, manual_reconciliation=True)
+    if boundary == MutationBoundary.DURING_ROLLBACK:
+        if knowledge == EffectKnowledge.VERIFIED_SUCCESS:
+            return FaultDecision(RecoveryState.ROLLED_BACK)
+        return FaultDecision(RecoveryState.ROLLBACK_FAILED)
     if knowledge == EffectKnowledge.VERIFIED_SUCCESS:
         return FaultDecision(RecoveryState.VERIFIED)
     if knowledge in {EffectKnowledge.PROVEN_NONE, EffectKnowledge.VERIFIED_FAILURE}:
         return FaultDecision(RecoveryState.FAILED)
-    if boundary in {MutationBoundary.DURING_SEND, MutationBoundary.AFTER_SEND, MutationBoundary.DURING_ROLLBACK}:
-        return FaultDecision(RecoveryState.RECONCILIATION, manual_reconciliation=True)
-    return FaultDecision(RecoveryState.FAILED)
+    raise AssertionError("Unhandled Tier 1 fault classification.")

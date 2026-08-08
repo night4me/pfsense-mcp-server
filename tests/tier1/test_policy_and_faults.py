@@ -64,6 +64,10 @@ def test_policy_container_must_be_immutable():
         (MutationBoundary.AFTER_SEND, EffectKnowledge.AMBIGUOUS, RecoveryState.RECONCILIATION, True),
         (MutationBoundary.DURING_ROLLBACK, EffectKnowledge.AMBIGUOUS, RecoveryState.RECONCILIATION, True),
         (MutationBoundary.AFTER_SEND, EffectKnowledge.VERIFIED_SUCCESS, RecoveryState.VERIFIED, False),
+        (MutationBoundary.BEFORE_SEND, EffectKnowledge.AMBIGUOUS, RecoveryState.RECONCILIATION, True),
+        (MutationBoundary.DURING_ROLLBACK, EffectKnowledge.VERIFIED_SUCCESS, RecoveryState.ROLLED_BACK, False),
+        (MutationBoundary.DURING_ROLLBACK, EffectKnowledge.PROVEN_NONE, RecoveryState.ROLLBACK_FAILED, False),
+        (MutationBoundary.DURING_ROLLBACK, EffectKnowledge.VERIFIED_FAILURE, RecoveryState.ROLLBACK_FAILED, False),
     ],
 )
 def test_faults_never_retry_and_preserve_outcome_uncertainty(boundary, knowledge, state, manual):
@@ -71,3 +75,13 @@ def test_faults_never_retry_and_preserve_outcome_uncertainty(boundary, knowledge
     assert decision.target_state == state
     assert decision.manual_reconciliation is manual
     assert decision.automatic_retry is False
+
+
+def test_every_fault_boundary_and_knowledge_pair_has_a_no_retry_decision():
+    decisions = {
+        (boundary, knowledge): classify_fault(boundary, knowledge)
+        for boundary in MutationBoundary
+        for knowledge in EffectKnowledge
+    }
+    assert len(decisions) == len(MutationBoundary) * len(EffectKnowledge)
+    assert all(not decision.automatic_retry for decision in decisions.values())

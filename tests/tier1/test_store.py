@@ -439,6 +439,28 @@ def test_confirmation_verifier_failure_is_sanitized(tmp_path, contract_factory, 
     assert "synthetic proof details" not in str(captured.value)
 
 
+def test_confirmation_verifier_does_not_catch_base_exception(tmp_path, contract_factory):
+    class InterruptingVerifier:
+        def verify(self, evidence):
+            raise KeyboardInterrupt
+
+    store = _store(tmp_path, confirmation_verifier=InterruptingVerifier())
+    contract = contract_factory()
+    store.create(contract)
+    prepared = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+    with pytest.raises(KeyboardInterrupt):
+        store.confirm(
+            contract.contract_id,
+            evidence=_evidence(prepared),
+            expected_version=prepared.state_version,
+        )
+
+
 def test_corrupt_contract_fails_integrity_check(tmp_path, contract_factory):
     store = _store(tmp_path)
     contract = contract_factory()
