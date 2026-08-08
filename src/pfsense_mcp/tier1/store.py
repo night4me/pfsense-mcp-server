@@ -33,10 +33,11 @@ from .errors import (
     ContractNotFoundError,
     ContractValidationError,
 )
+from .rate_policy import RatePolicy, is_cooldown_state
 from .reconciliation import OUTCOME_TARGET_STATE, ReconciliationEvidence, ReconciliationVerifier
 from .state_machine import RecoveryState, require_transition
 
-_SCHEMA_VERSION = 3
+_SCHEMA_VERSION = 4
 _STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _RESERVATION_STATES = frozenset(
     {
@@ -190,6 +191,7 @@ class SqliteRecoveryContractStore:
         confirmation_verifier: ConfirmationVerifier | None = None,
         reconciliation_verifier: ReconciliationVerifier | None = None,
         anti_rollback_anchor: AntiRollbackAnchor | None = None,
+        rate_policy: RatePolicy | None = None,
     ) -> None:
         if not isinstance(integrity_key, bytes) or len(integrity_key) < 32:
             raise ContractValidationError("Recovery store integrity key must be at least 32 bytes.")
@@ -204,6 +206,12 @@ class SqliteRecoveryContractStore:
         self._clock = clock
         self._confirmation_verifier = confirmation_verifier
         self._reconciliation_verifier = reconciliation_verifier
+        # rate_policy is intentionally optional, like anti_rollback_anchor:
+        # it is damage containment, not authorization, and every numeric
+        # default is explicitly provisional pending disposable-lab
+        # evidence (ADR-015). When configured, every check below is fully
+        # enforced.
+        self._rate_policy = rate_policy
         # anti_rollback_anchor is intentionally optional: no concrete
         # AntiRollbackAnchor backend is selected yet (see ADR-011, pending
         # owner confirmation of production host hardware). When configured,
@@ -285,6 +293,10 @@ class SqliteRecoveryContractStore:
                 ("value", "TEXT", 1, 0),
                 ("mac", "TEXT", 1, 0),
             ),
+            "rate_cooldowns": (
+                ("target_identity_digest", "TEXT", 0, 1),
+                ("cooldown_until", "TEXT", 1, 0),
+            ),
         }
         actual_columns = {
             table: tuple((row[1], row[2], row[3], row[5]) for row in connection.execute(f"PRAGMA table_info({table})"))
@@ -298,6 +310,7 @@ class SqliteRecoveryContractStore:
             "target_reservations": {("target_identity_digest",), ("contract_id",)},
             "audit_events": {("contract_id", "state_version")},
             "anchor_state": {("key",)},
+            "rate_cooldowns": {("target_identity_digest",)},
         }
         for table, expected in expected_unique.items():
             actual = {
@@ -352,6 +365,16 @@ class SqliteRecoveryContractStore:
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL,
                     mac TEXT NOT NULL
+                );
+                -- rate_cooldowns is deliberately unauthenticated (no mac
+                -- column), unlike every other table here: it is damage
+                -- containment (rate_policy.py), not an authorization or
+                -- integrity boundary. A same-effective-user attacker who
+                -- could tamper with it already has file-level access this
+                -- store's threat model does not attempt to defend against.
+                CREATE TABLE IF NOT EXISTS rate_cooldowns (
+                    target_identity_digest TEXT PRIMARY KEY,
+                    cooldown_until TEXT NOT NULL
                 );
                 """
             )
@@ -498,6 +521,13 @@ class SqliteRecoveryContractStore:
             try:
                 self._invoke_fault("before_transaction")
                 connection.execute("BEGIN IMMEDIATE")
+                if self._rate_policy is not None:
+                    self._rate_policy.check_prepare_allowed(
+                        connection,
+                        target_identity_digest=contract.target_identity_digest,
+                        capability=contract.capability,
+                        now=now,
+                    )
                 connection.execute(
                     "INSERT INTO contracts VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     (
@@ -643,10 +673,13 @@ class SqliteRecoveryContractStore:
         if target_state == RecoveryState.EXECUTING:
             if not current.is_confirmed or current.is_expired(now=instant):
                 raise ContractConflictError("Recovery Contract is unconfirmed or expired.")
-            if self._anti_rollback_anchor is not None:
+            if self._anti_rollback_anchor is not None or self._rate_policy is not None:
                 with self._connect() as connection:
                     connection.execute("BEGIN IMMEDIATE")
-                    self._high_water_mark.before_executing_transition(self._anti_rollback_anchor, connection)
+                    if self._anti_rollback_anchor is not None:
+                        self._high_water_mark.before_executing_transition(self._anti_rollback_anchor, connection)
+                    if self._rate_policy is not None:
+                        self._rate_policy.check_execute_allowed(connection, now=instant)
                     connection.commit()
         updated = replace(current, state=target_state, state_version=current.state_version + 1)
         return self._replace(current, updated, event_type="state_transition")
@@ -688,6 +721,10 @@ class SqliteRecoveryContractStore:
                 if cursor.rowcount != 1:
                     raise ContractConflictError("Recovery Contract compare-and-set failed.")
                 self._insert_audit(connection, updated, event_type, previous_state=current.state)
+                if self._rate_policy is not None and is_cooldown_state(updated.state):
+                    self._rate_policy.record_terminal(
+                        connection, target_identity_digest=updated.target_identity_digest, now=self._now()
+                    )
                 self._invoke_fault("after_record_write")
                 self._invoke_fault("before_commit")
                 connection.commit()

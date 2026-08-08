@@ -186,24 +186,37 @@ refusal today leaves no contract row.
 
 - [ ] `ADR-015` accepted with numeric defaults validated by
       `disposable_lab_execution_model.md`'s lab evidence, not shipped as
-      permanent guesses.
-- [ ] `rate_policy.py` implemented and tested.
-- [ ] `store.py` schema extended (version bump) and wired at the two
-      checkpoints in I2.
+      permanent guesses. **The current implementation ships ADR-015's
+      provisional defaults as the only defaults offered** — no lab
+      evidence exists yet to revise them.
+- [x] `rate_policy.py` implemented and tested
+      (`tests/tier1/test_rate_policy.py`, 7 tests).
+- [x] `store.py` schema extended (version bump to 4) and wired at the two
+      checkpoints in I2, plus `record_terminal` wired into `_replace()`
+      (fires for every state change reaching a cooldown state, regardless
+      of which method drove it — `transition()`, `resolve_reconciliation()`,
+      etc.).
 - [ ] `executor.py` calls `check_execute_allowed` immediately before its
       own `EXECUTING` transition (see `sealed_executor.md`'s verification
       flow — this spec adds one more pre-transition check to that
-      sequence).
+      sequence). **Not yet applicable** — `executor.py` does not exist
+      until Phase 3; `store.transition()`'s own `EXECUTING` branch already
+      calls `check_execute_allowed` directly today, so the check is fully
+      enforced at the store layer independent of whether an executor
+      exists yet.
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/rate_policy.py`.
-- [ ] Add `RateLimitExceededError` to `errors.py`.
-- [ ] Extend `store.py` schema with a `rate_cooldowns` table (and bump
-      `_SCHEMA_VERSION`, following the exact discipline in
-      `whole_store_anti_rollback.md`'s schema-change guidance).
-- [ ] Wire `check_prepare_allowed`/`check_execute_allowed`/
-      `record_terminal` into `store.py`'s `create()`/`transition()`.
+- [x] Create `src/pfsense_mcp/tier1/rate_policy.py`.
+- [x] Add `RateLimitExceededError` to `errors.py`.
+- [x] Extend `store.py` schema with a `rate_cooldowns` table (schema
+      version bumped to 4, following the exact discipline established for
+      the anchor_state table's v3 bump). Deliberately unauthenticated (no
+      `mac` column) — containment, not an authorization/integrity
+      boundary; documented inline in the schema SQL.
+- [x] Wire `check_prepare_allowed`/`check_execute_allowed`/
+      `record_terminal` into `store.py`'s `create()`/`transition()`/
+      `_replace()`.
 
 ## Review checklist
 

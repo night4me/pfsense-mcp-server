@@ -14,6 +14,7 @@ from .contract import ProtectedArtifact, RecoveryContract, derive_idempotency_ke
 from .crypto import ArtifactAlgorithm, ArtifactRole, build_nonce, decrypt_artifact, encrypt_artifact
 from .key_lifecycle import KeyPurpose, KeyRecord, NonceCounter, RotationReport, load_key_material, rotate_key
 from .policy import INACTIVE_TIER1_POLICY, MutationPolicy, MutationRule
+from .rate_policy import RateLimits, RatePolicy, is_cooldown_state
 from .reconciliation import OUTCOME_TARGET_STATE, ReconciliationEvidence, ReconciliationOutcome, ReconciliationVerifier
 from .reconciliation_providers import Ed25519ReconciliationVerifier
 from .state_machine import RecoveryState
@@ -38,6 +39,8 @@ __all__ = [
     "OUTCOME_TARGET_STATE",
     "PinnedAuthority",
     "ProtectedArtifact",
+    "RateLimits",
+    "RatePolicy",
     "ReconciliationEvidence",
     "ReconciliationOutcome",
     "ReconciliationVerifier",
@@ -54,6 +57,7 @@ __all__ = [
     "encrypt_artifact",
     "frame_bytes",
     "frame_str",
+    "is_cooldown_state",
     "load_key_material",
     "rotate_key",
 ]

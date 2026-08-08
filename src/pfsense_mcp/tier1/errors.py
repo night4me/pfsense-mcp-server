@@ -63,3 +63,7 @@ class AnchorConflictError(Tier1Error):
 
 class WholeStoreRollbackDetected(Tier1Error):
     """The anti-rollback anchor is behind the store's recorded high-water mark."""
+
+
+class RateLimitExceededError(Tier1Error):
+    """A capability/target/global rate or blast-radius limit would be exceeded."""
