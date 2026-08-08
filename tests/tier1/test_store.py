@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -83,6 +84,26 @@ def test_create_load_and_restart_preserve_authoritative_contract(tmp_path, contr
 
     assert loaded == contract
     assert (tmp_path / "contracts.sqlite3").stat().st_mode & 0o777 == 0o600
+
+
+def test_whole_store_rollback_remains_an_explicit_external_anchor_blocker(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contract = contract_factory()
+    store.create(contract)
+    old_copy = tmp_path / "authenticated-old-copy.sqlite3"
+    shutil.copy2(tmp_path / "contracts.sqlite3", old_copy)
+
+    store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+    os.replace(old_copy, tmp_path / "contracts.sqlite3")
+
+    rolled_back = _store(tmp_path).load(contract.contract_id)
+    assert rolled_back.state == RecoveryState.PREPARING
+    assert rolled_back.state_version == 0
 
 
 def test_create_requires_unconfirmed_preparing_state(tmp_path, contract_factory):
