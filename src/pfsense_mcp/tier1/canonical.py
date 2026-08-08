@@ -29,6 +29,7 @@ class DigestPurpose(str, Enum):
     SNAPSHOT = "snapshot"
     CONFIRMATION = "confirmation"
     IDEMPOTENCY = "idempotency"
+    RECONCILIATION = "reconciliation"
 
 
 _DOMAIN_PREFIX = "pfSense-MCP/Tier1/v1"

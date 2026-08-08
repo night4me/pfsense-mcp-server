@@ -11,7 +11,7 @@ from pfsense_mcp.tier1.confirmation_providers import (
     PinnedAuthority,
     signing_payload,
 )
-from pfsense_mcp.tier1.errors import ConfirmationError
+from pfsense_mcp.tier1.errors import Tier1Error
 
 
 def _keypair():
@@ -129,13 +129,13 @@ def test_algorithm_downgrade_is_refused(contract_factory):
 
 
 def test_empty_authority_table_refuses_construction():
-    with pytest.raises(ConfirmationError):
+    with pytest.raises(Tier1Error):
         Ed25519ConfirmationVerifier(())
 
 
 def test_duplicate_authority_id_refuses_construction():
     _, public_bytes = _keypair()
-    with pytest.raises(ConfirmationError):
+    with pytest.raises(Tier1Error):
         Ed25519ConfirmationVerifier(
             (
                 PinnedAuthority(authority_id="dup", public_key=public_bytes),
@@ -145,5 +145,5 @@ def test_duplicate_authority_id_refuses_construction():
 
 
 def test_pinned_authority_rejects_wrong_key_length():
-    with pytest.raises(ConfirmationError):
+    with pytest.raises(Tier1Error):
         PinnedAuthority(authority_id="synthetic-owner", public_key=b"too-short")

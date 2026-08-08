@@ -14,6 +14,8 @@ from .contract import ProtectedArtifact, RecoveryContract, derive_idempotency_ke
 from .crypto import ArtifactAlgorithm, ArtifactRole, build_nonce, decrypt_artifact, encrypt_artifact
 from .key_lifecycle import KeyPurpose, KeyRecord, NonceCounter, RotationReport, load_key_material, rotate_key
 from .policy import INACTIVE_TIER1_POLICY, MutationPolicy, MutationRule
+from .reconciliation import OUTCOME_TARGET_STATE, ReconciliationEvidence, ReconciliationOutcome, ReconciliationVerifier
+from .reconciliation_providers import Ed25519ReconciliationVerifier
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
@@ -25,6 +27,7 @@ __all__ = [
     "ConfirmationEvidence",
     "ConfirmationVerifier",
     "Ed25519ConfirmationVerifier",
+    "Ed25519ReconciliationVerifier",
     "HighWaterMark",
     "INACTIVE_TIER1_POLICY",
     "KeyPurpose",
@@ -32,8 +35,12 @@ __all__ = [
     "MutationPolicy",
     "MutationRule",
     "NonceCounter",
+    "OUTCOME_TARGET_STATE",
     "PinnedAuthority",
     "ProtectedArtifact",
+    "ReconciliationEvidence",
+    "ReconciliationOutcome",
+    "ReconciliationVerifier",
     "RecoveryContract",
     "RecoveryState",
     "RotationReport",

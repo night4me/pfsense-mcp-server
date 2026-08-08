@@ -3,27 +3,18 @@ against a pinned, owner-configured public key set.
 
 Not constructed by production. Satisfies the `ConfirmationVerifier`
 Protocol already defined and enforced in `confirmation.py`/`store.py`.
-The private signing key never appears anywhere in this module or this
-package -- only public keys are ever loaded. See
-docs/tier1/specs/confirmation_authority.md and docs/adr/ADR-012 for the
-full specification and the signing-side workflow this verifier pairs
+See docs/tier1/specs/confirmation_authority.md and docs/adr/ADR-012 for
+the full specification and the signing-side workflow this verifier pairs
 with (built separately, outside `pfsense_mcp`, per that spec's Non-goals).
 """
 
 from __future__ import annotations
 
-import re
-from dataclasses import dataclass
-
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-
 from .canonical import canonical_json
 from .confirmation import ConfirmationEvidence
-from .errors import ConfirmationError
+from .ed25519_authority import PinnedAuthority, PinnedAuthoritySet
 
-_AUTHORITY_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
-_PUBLIC_KEY_BYTES = 32
+__all__ = ["ACCEPTED_ALGORITHM", "Ed25519ConfirmationVerifier", "PinnedAuthority", "signing_payload"]
 
 #: The only algorithm identifier this verifier accepts. A downgrade
 #: attempt (claiming a different/weaker algorithm) is refused, not
@@ -59,41 +50,19 @@ def signing_payload(evidence: ConfirmationEvidence) -> bytes:
     )
 
 
-@dataclass(frozen=True)
-class PinnedAuthority:
-    authority_id: str
-    public_key: bytes
-    active: bool = True
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.authority_id, str) or not _AUTHORITY_ID.fullmatch(self.authority_id):
-            raise ConfirmationError("Pinned authority identifier is invalid.")
-        if not isinstance(self.public_key, bytes) or len(self.public_key) != _PUBLIC_KEY_BYTES:
-            raise ConfirmationError("Pinned authority public key must be exactly 32 bytes.")
-
-
 class Ed25519ConfirmationVerifier:
     """Satisfies `pfsense_mcp.tier1.confirmation.ConfirmationVerifier`.
     Every failure path returns `False`; this method never raises for
     ordinary evidence (only construction-time misconfiguration raises)."""
 
     def __init__(self, authorities: tuple[PinnedAuthority, ...]) -> None:
-        if not isinstance(authorities, tuple) or not authorities:
-            raise ConfirmationError("At least one pinned confirmation authority is required.")
-        ids = [authority.authority_id for authority in authorities]
-        if len(ids) != len(set(ids)):
-            raise ConfirmationError("Pinned confirmation authorities must have unique identifiers.")
-        self._authorities = {authority.authority_id: authority for authority in authorities}
+        self._authorities = PinnedAuthoritySet(authorities)
 
     def verify(self, evidence: ConfirmationEvidence) -> bool:
         if evidence.algorithm != ACCEPTED_ALGORITHM:
             return False
-        authority = self._authorities.get(evidence.authority_id)
-        if authority is None or not authority.active:
-            return False
-        try:
-            public_key = Ed25519PublicKey.from_public_bytes(authority.public_key)
-            public_key.verify(evidence.proof, signing_payload(evidence))
-        except (InvalidSignature, ValueError):
-            return False
-        return True
+        return self._authorities.verify_signature(
+            authority_id=evidence.authority_id,
+            message=signing_payload(evidence),
+            signature=evidence.proof,
+        )

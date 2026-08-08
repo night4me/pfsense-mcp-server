@@ -33,6 +33,7 @@ from .errors import (
     ContractNotFoundError,
     ContractValidationError,
 )
+from .reconciliation import OUTCOME_TARGET_STATE, ReconciliationEvidence, ReconciliationVerifier
 from .state_machine import RecoveryState, require_transition
 
 _SCHEMA_VERSION = 3
@@ -187,6 +188,7 @@ class SqliteRecoveryContractStore:
         fault_hook: FaultHook | None = None,
         clock: Clock = _utc_now,
         confirmation_verifier: ConfirmationVerifier | None = None,
+        reconciliation_verifier: ReconciliationVerifier | None = None,
         anti_rollback_anchor: AntiRollbackAnchor | None = None,
     ) -> None:
         if not isinstance(integrity_key, bytes) or len(integrity_key) < 32:
@@ -201,6 +203,7 @@ class SqliteRecoveryContractStore:
         self._fault_hook = fault_hook
         self._clock = clock
         self._confirmation_verifier = confirmation_verifier
+        self._reconciliation_verifier = reconciliation_verifier
         # anti_rollback_anchor is intentionally optional: no concrete
         # AntiRollbackAnchor backend is selected yet (see ADR-011, pending
         # owner confirmation of production host hardware). When configured,
@@ -551,6 +554,37 @@ class SqliteRecoveryContractStore:
             confirmed_at=confirmed_at,
         )
         return self._replace(current, confirmed, event_type="contract_confirmed")
+
+    def resolve_reconciliation(self, contract_id: str, *, evidence: ReconciliationEvidence) -> RecoveryContract:
+        """The only caller of require_transition(..., manual=True) in
+        this codebase -- RECONCILIATION's declared exits are all
+        manual-only (state_machine.py) and this is the sole authenticated
+        path that uses that authority. A stale observed_state_version
+        (the contract moved since the operator observed it) is refused,
+        not silently applied to whatever the current state happens to
+        be."""
+
+        current = self.load(contract_id)
+        if current.state != RecoveryState.RECONCILIATION:
+            raise ContractConflictError("Recovery Contract is not in RECONCILIATION.")
+        evidence.verify_bindings(
+            contract_id=current.contract_id,
+            operation_id=current.operation_id,
+            state_version=current.state_version,
+        )
+        verifier = self._reconciliation_verifier
+        if verifier is None:
+            raise ConfirmationError("No reconciliation verifier is configured.")
+        try:
+            verified = verifier.verify(evidence)
+        except Exception:
+            raise ConfirmationError("Reconciliation verification failed.") from None
+        if not verified:
+            raise ConfirmationError("Reconciliation evidence was refused.")
+        target_state = OUTCOME_TARGET_STATE[evidence.outcome]
+        require_transition(current.state, target_state, manual=True)
+        updated = replace(current, state=target_state, state_version=current.state_version + 1)
+        return self._replace(current, updated, event_type="reconciliation_resolved")
 
     def rotate_artifacts(
         self,

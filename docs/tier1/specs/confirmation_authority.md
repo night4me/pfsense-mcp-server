@@ -230,7 +230,13 @@ below.
 - [x] Implement `Ed25519ConfirmationVerifier` exactly per Interfaces.
       One addition beyond the original interface sketch: a module-level
       `signing_payload(evidence)` function, made necessary by the
-      `evidence_digest` circularity fix (see Invariant I1).
+      `evidence_digest` circularity fix (see Invariant I1). A second
+      addition, made once `reconciliation_authority.md` needed the near-
+      identical mechanics: `PinnedAuthority`/the pinned-key verification
+      loop were extracted into a shared `ed25519_authority.py` module
+      after writing the same logic twice, not designed up front —
+      `confirmation_providers.py` now re-exports `PinnedAuthority` from
+      there for import-path compatibility.
 - [ ] Build the separate signing-side CLI as its own deliverable (outside
       `pfsense_mcp`, likely its own small script/repo) — track as a
       distinct implementation task, not a subtask of this module.

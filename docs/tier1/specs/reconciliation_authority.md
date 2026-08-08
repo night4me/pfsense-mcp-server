@@ -208,25 +208,35 @@ def resolve_reconciliation(
 
 ## Activation requirements
 
-- [ ] `ADR-013` accepted.
-- [ ] `reconciliation.py` implemented and tested.
-- [ ] `store.resolve_reconciliation()` implemented and tested.
+- [x] `ADR-013` accepted.
+- [x] `reconciliation.py` implemented and tested
+      (`tests/tier1/test_reconciliation.py`, 8 tests).
+- [x] `store.resolve_reconciliation()` implemented and tested
+      (`tests/tier1/test_store_reconciliation.py`, 11 tests).
 - [ ] Operator runbook exists describing exactly how to independently
       observe pfSense's actual state for each capability before signing
       a reconciliation decision — capability-specific, written alongside
       the first adapter (see `capability_adapter_contract.md`), not
-      generic.
-- [ ] Reuses the same signing tool built for
-      `confirmation_authority.md` (extended to support the
-      `RECONCILIATION` digest purpose), not a second, separately-built
-      tool.
+      generic. **Not written in this pass** — no capability/adapter
+      exists yet to write it against.
+- [x] Reuses the same signing mechanism built for
+      `confirmation_authority.md` — landed as a shared
+      `ed25519_authority.py` module (extracted from the two nearly-
+      identical implementations, not designed speculatively in advance)
+      rather than literally extending the confirmation module, with a
+      distinct accepted-algorithm string and signing-payload shape so a
+      confirmation signature can never verify as a reconciliation
+      signature. Proven by
+      `test_confirmation_signature_cannot_be_replayed_as_reconciliation`.
+      The separate signing-side CLI tool itself remains unbuilt, same
+      status as `confirmation_authority.md`'s equivalent item.
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/reconciliation.py`.
-- [ ] Add `DigestPurpose.RECONCILIATION` to `canonical.py`.
-- [ ] Add `store.resolve_reconciliation()`.
-- [ ] Add `reconciliation_resolved` as a recognized `event_type` alongside
+- [x] Create `src/pfsense_mcp/tier1/reconciliation.py`.
+- [x] Add `DigestPurpose.RECONCILIATION` to `canonical.py`.
+- [x] Add `store.resolve_reconciliation()`.
+- [x] Add `reconciliation_resolved` as a recognized `event_type` alongside
       `contract_created`/`contract_confirmed`/`state_transition` (extend,
       don't replace, the existing audit event-type vocabulary).
 
