@@ -54,15 +54,17 @@ without sending.
 
 Owner approval and the agent invocation are separate facts:
 
-1. The owner confirmation authority binds actor identity, contract ID,
-   operation ID, intent digest, and expiry into a confirmation digest.
+1. The owner confirmation authority binds its identity and algorithm, a nonce,
+   contract/operation IDs, target digest/fingerprint, intent digest, issuance,
+   and expiry into verified evidence and a confirmation digest.
 2. The execution request supplies only contract ID plus typed intent/target
    inputs. Authoritative state is loaded from the store.
 3. Capability, endpoint, method, target digest, and intent digest must match.
 
-Confirmation is single-use and valid only while PREPARED and unexpired. A future
-production confirmation provider must authenticate the owner outside prompt
-text; an LLM assertion is not confirmation.
+Confirmation is single-use and valid only while PREPARED and unexpired. The
+store has no permissive fallback: without a configured verifier it refuses.
+A future production provider must authenticate the owner outside prompt text;
+an LLM assertion is not confirmation.
 
 ## State and atomic persistence
 
@@ -78,8 +80,9 @@ PREPARING -> PREPARED -> EXECUTING -> VERIFIED
                                       +-----------------+
 ```
 
-Only declared transitions are legal. Exits from RECONCILIATION require explicit
-manual authority. SQLite transactions use `BEGIN IMMEDIATE`, compare state and
+Only declared transitions are legal. The generic store cannot exit
+RECONCILIATION; a future authenticated resolution service must implement the
+declared manual-only conclusions. SQLite transactions use `BEGIN IMMEDIATE`, compare state and
 version, update the HMAC-bound record, reserve/release the target, and append a
 value-free state event in one commit. Duplicate contract, operation, or
 idempotency identities fail. A unique target reservation prevents concurrent
@@ -126,7 +129,19 @@ Audit records may contain identifiers, capability, endpoint symbol, method,
 digests, states, sanitized failure/exception class, timestamps, and outcome.
 They never contain raw target identity, payload, intent, snapshot, response,
 credentials, exception messages, or tool arguments/results. State-transition
-metadata is committed atomically with contract state.
+metadata is committed atomically with contract state and is HMAC-authenticated
+as a contiguous state/version chain.
+
+## Future adapter containment
+
+A capability adapter must never receive a general REST client or raw transport.
+One future central executor must own policy authorization, durable acquisition,
+the authoritative re-read, one exact send, outcome classification, verification,
+and state/audit persistence. An adapter may provide only typed projections and
+pure comparisons for one approved rule. It cannot choose a path or method at
+runtime, send directly, widen the field projection, perform bulk operations, or
+claim verification. Until that sealed boundary exists and is reviewed, adapter
+implementation remains blocked.
 
 ## Remaining activation blockers
 
@@ -139,3 +154,6 @@ metadata is committed atomically with contract state.
 - capability-specific rollback and reconciliation runbook;
 - production wiring, tool registration, profile activation, and live acceptance,
   each requiring explicit approval.
+
+The decision options and candidate-specific abuse review are maintained in
+[TIER1_ACTIVATION_DECISIONS.md](TIER1_ACTIVATION_DECISIONS.md).

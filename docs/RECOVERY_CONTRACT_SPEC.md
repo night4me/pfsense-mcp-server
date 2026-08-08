@@ -42,7 +42,11 @@ contract object. The service loads the record by ID and validates all bindings.
 - Non-string object keys, unsupported objects, and normalization collisions are
   rejected.
 - Every digest uses `pfSense-MCP/Tier1/v1`, a purpose name, and exact contextual
-  capability/endpoint/method components separated by NUL bytes.
+  components framed by unsigned four-byte lengths. Length framing prevents
+  delimiter injection and context-boundary ambiguity.
+- Canonical inputs are bounded to 32 nested levels, 10,000 total nodes, 4,096
+  members per collection, 64 KiB per string, and 1 MiB encoded form. Integers
+  are signed 64-bit; booleans are not integers. Invalid Unicode scalars fail.
 - Target identity, target fingerprint, intent, snapshot, confirmation, and
   idempotency use separate domains.
 
@@ -56,11 +60,12 @@ match. Missing, duplicate, swapped, or drifted targets refuse before send.
 
 ## Confirmation contract
 
-The owner confirmation authority authenticates an actor and binds actor ID,
-contract ID, operation ID, intent digest, and expiry. Confirmation is accepted
-once while PREPARED and unexpired. Prompt text or an agent boolean is not owner
-authentication. The subsequent agent execution request must independently
-match capability, endpoint, method, target, and intent.
+The owner confirmation authority authenticates an actor and binds authority,
+algorithm, nonce, contract ID, operation ID, target digest and fingerprint,
+intent digest, issue time, and expiry. The store accepts confirmation only
+through a configured verifier; absence, refusal, or verifier failure is closed.
+Raw proof bytes are not persisted. Confirmation is accepted once while PREPARED
+and unexpired. Prompt text or an agent boolean is not owner authentication.
 
 ## State machine
 
@@ -82,6 +87,8 @@ match capability, endpoint, method, target, and intent.
 Every other transition is illegal. FAILED, ROLLED_BACK, ROLLBACK_FAILED, and
 EXPIRED do not reopen. State/version compare-and-set, idempotency uniqueness,
 and canonical-target reservation are atomic with value-free transition audit.
+The generic store refuses all manual-only edges; a separately reviewed resolver
+must authenticate evidence and record the conclusion before using one.
 
 ## Persistence and integrity
 
@@ -93,6 +100,11 @@ and canonical-target reservation are atomic with value-free transition audit.
 - Duplicated operation/idempotency identities and conflicting target
   reservations fail closed.
 - HMAC and denormalized index columns are cross-checked on every load/scan.
+- Startup verifies exact column types/nullability, primary and unique keys, and
+  cascading foreign keys; matching column names alone are insufficient.
+- Every state event has an HMAC and contiguous state/version chain. This detects
+  row-level deletion, insertion, modification, and reordering, but not rollback
+  of the entire database to an older internally consistent copy.
 - Startup scans all authenticated records; EXECUTING and ROLLING_BACK move to
   RECONCILIATION without resend.
 - Whole-database rollback is not locally detectable; production activation

@@ -217,8 +217,9 @@ or exploit ambiguous network outcomes.
 10. **Whole-store rollback:** record MACs detect modification, not restoration
     of an older valid database. Activation requires a durable monotonic
     anti-rollback anchor and reconciliation procedure.
-11. **Confirmation identity:** a digest proves exact contract confirmation but
-    not who approved it. Activation requires an owner/authentication decision.
+11. **Confirmation identity:** exact-bound evidence and a verifier interface
+    prevent self-asserted confirmation, but no production authority/key is
+    selected. Activation requires an owner/authentication decision.
 
 ## Future considerations
 
