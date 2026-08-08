@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml)
+[![PyPI](https://img.shields.io/pypi/v/pfsense-mcp-server.svg)](https://pypi.org/project/pfsense-mcp-server/)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -128,12 +129,34 @@ presentation and tool selection, not authorization. They do not relax
 capability profiles, the optional exact-name restriction, GET-only or endpoint
 enforcement, credential handling, auditing, or WRITE inactivity.
 
-## Installation from source
+## Installation
 
 Linux is the supported production platform because secure credential loading
 depends on descriptor-bound Unix file semantics. Python 3.11 or newer is
-required. Clone the repository, create an isolated environment, and install
-the project:
+required.
+
+`pfsense-mcp-server` is published on
+[PyPI](https://pypi.org/project/pfsense-mcp-server/) via a GitHub Actions
+Trusted Publisher, with [PEP 740](https://peps.python.org/pep-0740/) digital
+attestations verifiable back to this repository and the exact release commit
+— no long-lived upload token exists. Install the released version into an
+isolated environment:
+
+```console
+python -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.2.2'
+```
+
+Verify the package you installed against the project page before trusting it
+in any sensitive environment — do not use a similarly named package from a
+package index. See the [release procedure](docs/PYPI_RELEASE.md) for exactly
+how each release's provenance is produced and verified before publication.
+
+### Installing from source
+
+To build from a specific commit rather than the released tag, or for local
+development:
 
 ```console
 git clone https://github.com/night4me/pfsense-mcp-server.git
@@ -142,17 +165,6 @@ python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install .
 ```
-
-The project is not currently published on PyPI. Do not use a similarly named
-package from a package index. After the owner publishes the authenticated
-release, the exact-version installation command will be:
-
-```console
-python -m pip install 'pfsense-mcp-server==0.2.2'
-```
-
-Until the project page and release provenance are publicly verifiable, install
-from the reviewed source tree as shown above.
 
 ## Quick start
 
