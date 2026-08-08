@@ -56,6 +56,17 @@ Explicit approval is required before:
 - branch deletion, force push, history rewriting, or other destructive Git
   operation.
 
+For every production release, the permanent **Owner Approval Gate** is immediately
+before creation of the immutable version tag. Complete the full release
+preflight and present the exact commit, CI, CodeQL, release-check, artifact,
+OIDC configuration, MCP inventory, and WRITE-inactivity evidence. Then ask
+exactly: "Approve creation of immutable tag vX.Y.Z and production release?"
+Do not create or move the tag, push it, create the GitHub Release, or allow the
+PyPI workflow to execute until the owner explicitly approves. After approval,
+re-verify that local HEAD and `origin/main` still equal the approved SHA before
+the first irreversible action. The mandatory GitHub environment `pypi` remains
+part of the Trusted Publisher identity; it is not the human approval mechanism.
+
 Use `MockTransport` and approved fixtures whenever possible. Never expose
 credentials or identifying production data.
 

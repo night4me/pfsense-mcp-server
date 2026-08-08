@@ -59,6 +59,18 @@ headers, appliance responses, or identifying infrastructure details.
 - Follow the detailed [PyPI release procedure](PYPI_RELEASE.md) for clean
   builds, artifact inspection, trusted publishing, TestPyPI, and rollback.
 - Obtain explicit approval before commit, tag, push, or release creation.
+- Treat the **Owner Approval Gate** immediately before immutable tag creation as the
+  production release control point. GitHub environment reviewers are not used
+  for this private-repository plan; the `pypi` environment remains mandatory
+  as part of the OIDC Trusted Publisher identity.
+- Before requesting approval, report the exact release SHA, exact-SHA CI and
+  CodeQL results, release-check and artifact results, GitHub environment,
+  Trusted Publisher and enable-variable verification, MCP counts, and WRITE
+  inactivity. Ask exactly: "Approve creation of immutable tag vX.Y.Z and
+  production release?"
+- After approval, re-fetch and prove that local HEAD and `origin/main` still
+  equal the approved SHA before creating the tag. Any drift invalidates the
+  approval and stops the release.
 - Commit the accepted changes and create an annotated version tag.
 - Push the commit and tag without force.
 - Publish and verify the GitHub Release.

@@ -84,8 +84,10 @@ configure all of the following externally:
 1. In PyPI, create the `pfsense-mcp-server` project or a pending Trusted
    Publisher with owner `night4me`, repository `pfsense-mcp-server`, workflow
    filename `publish.yml`, and environment `pypi`.
-2. In GitHub, create the protected `pypi` environment and require appropriate
-   reviewer approval. Do not add a PyPI secret.
+2. In GitHub, create the `pypi` environment. It is mandatory because its exact
+   name is part of the PyPI Trusted Publisher identity. Do not add a PyPI
+   secret. Environment Required Reviewers are not available for this private
+   repository under the current plan and are not the release approval control.
 3. Only after PyPI and GitHub configuration is reviewed, create repository
    variable `PYPI_TRUSTED_PUBLISHING_ENABLED` with exact value `true`.
 
@@ -98,6 +100,23 @@ in-progress publication.
 Do not store a PyPI token in repository files, GitHub secrets, client
 configuration, logs, or AI reports. Trusted Publisher, environment protection,
 and the enabling repository variable remain explicit owner-controlled settings.
+
+## Owner Approval Gate
+
+The permanent human release gate is immediately before creation of the
+immutable version tag. Before reaching it, complete the full preflight and
+report the exact commit SHA, exact-SHA CI and CodeQL status, release-check,
+artifact verification and hashes, Trusted Publisher identity, `pypi`
+environment, exact enable-variable value, final MCP tool counts, and WRITE
+inactivity.
+
+Ask exactly: "Approve creation of immutable tag vX.Y.Z and production
+release?" Do not create or move the tag, push it, create the GitHub Release, or
+permit the publish workflow to execute without that explicit approval. The
+approval authorizes only the stated version on the reported SHA. Immediately
+after approval, fetch again and prove that local HEAD and `origin/main` still
+equal that SHA; any drift stops the release and requires a new preflight and
+approval.
 
 ## TestPyPI rehearsal
 
@@ -128,7 +147,7 @@ gh workflow run publish.yml --ref main \
 
 Do not dispatch manually when the release event is already running. The
 exact confirmation phrase prevents an accidental manual click from starting
-the build chain. The protected `pypi` environment must approve the publish job.
+the build chain. The publish job must retain the `pypi` environment identity.
 Verify the PyPI project page, hashes, metadata, and installation of the exact
 version in a clean environment. Record only public artifact URLs and hashes in
 the release report.
