@@ -51,3 +51,15 @@ class KeyExhaustedError(Tier1Error):
 
 class ArtifactDecryptionError(Tier1Error):
     """A protected artifact failed authenticated decryption."""
+
+
+class AnchorUnavailableError(Tier1Error):
+    """The configured anti-rollback anchor could not be reached."""
+
+
+class AnchorConflictError(Tier1Error):
+    """The anti-rollback anchor's actual value did not match the expected one."""
+
+
+class WholeStoreRollbackDetected(Tier1Error):
+    """The anti-rollback anchor is behind the store's recorded high-water mark."""

@@ -22,6 +22,7 @@ from pathlib import Path
 
 from pfsense_mcp.capabilities import Capability
 
+from .anti_rollback import AntiRollbackAnchor, HighWaterMark
 from .canonical import frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract
@@ -34,7 +35,7 @@ from .errors import (
 )
 from .state_machine import RecoveryState, require_transition
 
-_SCHEMA_VERSION = 2
+_SCHEMA_VERSION = 3
 _STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _RESERVATION_STATES = frozenset(
     {
@@ -186,6 +187,7 @@ class SqliteRecoveryContractStore:
         fault_hook: FaultHook | None = None,
         clock: Clock = _utc_now,
         confirmation_verifier: ConfirmationVerifier | None = None,
+        anti_rollback_anchor: AntiRollbackAnchor | None = None,
     ) -> None:
         if not isinstance(integrity_key, bytes) or len(integrity_key) < 32:
             raise ContractValidationError("Recovery store integrity key must be at least 32 bytes.")
@@ -199,6 +201,15 @@ class SqliteRecoveryContractStore:
         self._fault_hook = fault_hook
         self._clock = clock
         self._confirmation_verifier = confirmation_verifier
+        # anti_rollback_anchor is intentionally optional: no concrete
+        # AntiRollbackAnchor backend is selected yet (see ADR-011, pending
+        # owner confirmation of production host hardware). When configured,
+        # it is fully enforced before every EXECUTING transition. Refusing
+        # EXECUTING outright when unconfigured is the activation-time
+        # behavior described in whole_store_anti_rollback.md and is not yet
+        # switched on here -- see that spec's Activation requirements.
+        self._anti_rollback_anchor = anti_rollback_anchor
+        self._high_water_mark = HighWaterMark(integrity_key=self._integrity_key, store_id=store_id)
         self._prepare_path()
         self._initialize_schema()
 
@@ -266,6 +277,11 @@ class SqliteRecoveryContractStore:
                 ("recorded_at", "TEXT", 1, 0),
                 ("mac", "TEXT", 1, 0),
             ),
+            "anchor_state": (
+                ("key", "TEXT", 0, 1),
+                ("value", "TEXT", 1, 0),
+                ("mac", "TEXT", 1, 0),
+            ),
         }
         actual_columns = {
             table: tuple((row[1], row[2], row[3], row[5]) for row in connection.execute(f"PRAGMA table_info({table})"))
@@ -278,6 +294,7 @@ class SqliteRecoveryContractStore:
             "contracts": {("contract_id",), ("operation_id",), ("idempotency_key",)},
             "target_reservations": {("target_identity_digest",), ("contract_id",)},
             "audit_events": {("contract_id", "state_version")},
+            "anchor_state": {("key",)},
         }
         for table, expected in expected_unique.items():
             actual = {
@@ -327,6 +344,11 @@ class SqliteRecoveryContractStore:
                     recorded_at TEXT NOT NULL,
                     mac TEXT NOT NULL,
                     UNIQUE(contract_id, state_version)
+                );
+                CREATE TABLE IF NOT EXISTS anchor_state (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    mac TEXT NOT NULL
                 );
                 """
             )
@@ -587,6 +609,11 @@ class SqliteRecoveryContractStore:
         if target_state == RecoveryState.EXECUTING:
             if not current.is_confirmed or current.is_expired(now=instant):
                 raise ContractConflictError("Recovery Contract is unconfirmed or expired.")
+            if self._anti_rollback_anchor is not None:
+                with self._connect() as connection:
+                    connection.execute("BEGIN IMMEDIATE")
+                    self._high_water_mark.before_executing_transition(self._anti_rollback_anchor, connection)
+                    connection.commit()
         updated = replace(current, state=target_state, state_version=current.state_version + 1)
         return self._replace(current, updated, event_type="state_transition")
 

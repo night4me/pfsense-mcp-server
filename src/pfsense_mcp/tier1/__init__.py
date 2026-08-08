@@ -5,6 +5,7 @@ factory, tool registry, or READ client. It contains no endpoint, transport,
 tool registration, or mutation executor.
 """
 
+from .anti_rollback import AntiRollbackAnchor, HighWaterMark
 from .audit import Tier1AuditEvent
 from .canonical import DigestPurpose, canonical_json, digest_value, frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
@@ -16,11 +17,13 @@ from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
 __all__ = [
+    "AntiRollbackAnchor",
     "ArtifactAlgorithm",
     "ArtifactRole",
     "DigestPurpose",
     "ConfirmationEvidence",
     "ConfirmationVerifier",
+    "HighWaterMark",
     "INACTIVE_TIER1_POLICY",
     "KeyPurpose",
     "KeyRecord",

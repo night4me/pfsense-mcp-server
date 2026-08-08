@@ -43,13 +43,37 @@ attacker cannot roll back along with the database.
   contracts, or an equivalent strictly-increasing counter) that is
   reported to the anchor on every committed state transition.
 - I2: Before any transition into `EXECUTING` (the state that authorizes an
-  actual send), the anchor's currently-recorded value must be
-  greater-than-or-equal to the store's own last-known-reported value. If
-  the anchor reports a value **less than** what the store believes it
-  last reported, this is definitive proof of a whole-store rollback (the
-  store moved backward relative to an anchor that cannot itself move
-  backward) and every contract must be forced into `RECONCILIATION` — not
-  silently trusted.
+  actual send), the anchor's currently-recorded value must **exactly
+  equal** the store's own last-persisted high-water mark — not merely be
+  greater-than-or-equal. Under normal single-writer operation the two are
+  always equal immediately before a new attempt: the previous attempt
+  advanced the anchor by exactly one and persisted that same new value.
+  A restored older store file remembers a *smaller* mark than the
+  (untouched, externally durable) anchor now reports
+  (`anchor > persisted`); a tampered or reset anchor reports a *smaller*
+  value than the (unaffected) file remembers (`anchor < persisted`). Both
+  directions are real anomalies and both must refuse — only exact
+  equality proceeds. **Implementation note (corrected during Phase 2
+  implementation):** an earlier draft of this invariant specified
+  `anchor < persisted` as the sole detection condition. That check is
+  wrong for the primary threat this subsystem exists to address —
+  restoring an old file makes the file's mark *smaller*, not the
+  anchor's, so `anchor < persisted` never fires for a whole-store
+  rollback. `tests/tier1/test_anti_rollback.py::
+  test_whole_store_rollback_is_detected_when_anchor_configured` caught
+  this with a real DID-NOT-RAISE failure before the fix landed. The
+  corrected, implemented, and tested condition is exact inequality in
+  either direction (`current != persisted`), not one-sided comparison.
+  A store with no persisted mark yet defaults to comparing against `0`
+  — deliberately, not treated as "nothing to compare" — because a store
+  restored to a point *before* its first-ever `EXECUTING` attempt is
+  indistinguishable, from the file alone, from a genuinely fresh store
+  (see `whole_store_anti_rollback.py::HighWaterMark.read`'s docstring).
+  The configured anchor must therefore be dedicated to the store and
+  start at `0`, or be explicitly provisioned to the correct baseline as
+  part of the concrete backend's setup procedure — this is a provisioning
+  responsibility for `ADR-011`'s chosen backend, not something this
+  generic class can safely infer.
 - I3: The anchor update and the store's local transaction commit are not
   required to be a single atomic operation (that would require distributed
   transactions across two independent systems, which is disproportionate
@@ -103,16 +127,22 @@ class AntiRollbackAnchor(Protocol):
 
 class HighWaterMark:
     """Store-side bookkeeping: what value does the store believe the
-    anchor was last confirmed at. Persisted in the `metadata` table
-    (new key, e.g. "anchor_high_water_mark"), authenticated by the same
-    per-row HMAC discipline as every other store field."""
+    anchor was last confirmed at. Persisted in a dedicated, HMAC-
+    authenticated `anchor_state` table (schema v3), using the same
+    per-row integrity discipline as every other authenticated store
+    field. (Implementation note: landed as its own table, not a
+    `metadata` key as an earlier draft of this spec suggested — the
+    metadata table's existing rows are unauthenticated, and this value
+    specifically needs authentication.)"""
 
     def before_executing_transition(self, anchor: AntiRollbackAnchor, connection: sqlite3.Connection) -> None:
         """Raises WholeStoreRollbackDetected if the anchor's read() value
-        is less than the persisted high-water mark. Raises
-        AnchorUnavailableError (propagated) if the anchor cannot be
-        reached — caller must treat this identically to a detected
-        rollback for the purpose of refusing EXECUTING."""
+        does not *exactly equal* the persisted high-water mark (both
+        directions are anomalies — see Invariant I2). Raises
+        AnchorUnavailableError/AnchorConflictError (propagated) if the
+        anchor cannot be reached or advanced — caller must treat this
+        identically to a detected rollback for the purpose of refusing
+        EXECUTING."""
 ```
 
 `store.py`'s `transition()` gains one parameter,
@@ -183,14 +213,26 @@ an already-inert module.
 ## Activation requirements
 
 - [ ] `ADR-011` accepted, naming the concrete anchor backend for the
-      actual production deployment target.
-- [ ] `anti_rollback.py` implemented and tested.
+      actual production deployment target. **(Genuine owner/infrastructure
+      decision — blocked pending TPM availability confirmation on the
+      actual production host; not resolved by this implementation pass.)**
+- [x] `anti_rollback.py` implemented and tested (protocol + store-side
+      bookkeeping; concrete backend deliberately not implemented — see
+      above).
 - [ ] `store.py` modified to require a non-`None` anchor before any
       `EXECUTING` transition is permitted **once this spec activates** —
       i.e., the `anti_rollback_anchor=None` default must itself become a
-      refusal path at activation time, not a silent bypass. (Before
-      activation, `store.py` has no anchor parameter at all — this is a
-      forward-looking requirement for the PR that adds it.)
+      refusal path at activation time, not a silent bypass. **Deliberately
+      not done in this implementation pass**: `store.py`'s current
+      behavior preserves `anti_rollback_anchor=None` as "check skipped,"
+      not "refused," so the 223 pre-existing Tier 1 tests that drive
+      contracts through `EXECUTING` without configuring an anchor
+      continue to pass unchanged. Flipping this default is the correct
+      activation-time behavior but requires ADR-011's backend to be
+      selected first (there is no anchor to require yet) and, separately,
+      updating every existing test that exercises `EXECUTING` to inject a
+      test-double anchor — tracked as follow-up work for whoever performs
+      activation, not deferred silently.
 - [ ] Anchor backend concretely provisioned and reachable in the target
       deployment (TPM present and initialized, or remote witness endpoint
       configured) — verified as part of Milestone 8 (private test-
@@ -198,20 +240,26 @@ an already-inert module.
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/anti_rollback.py` with the
+- [x] Create `src/pfsense_mcp/tier1/anti_rollback.py` with the
       `AntiRollbackAnchor` protocol and `HighWaterMark`.
-- [ ] Add `WholeStoreRollbackDetected` and `AnchorUnavailableError` /
+- [x] Add `WholeStoreRollbackDetected` and `AnchorUnavailableError` /
       `AnchorConflictError` to `errors.py`.
-- [ ] Add the `anchor_high_water_mark` metadata key to `store.py`'s schema
-      (schema version bump, per the existing `_SCHEMA_VERSION` /
-      `_verify_schema` discipline — do not silently reuse version 2).
-- [ ] Wire the anchor check into `transition()` immediately before the
-      `PREPARED -> EXECUTING` `_replace()` call.
+- [x] Add the high-water-mark storage to `store.py`'s schema (schema
+      version bump to 3, per the existing `_SCHEMA_VERSION` /
+      `_verify_schema` discipline). Landed as a dedicated, HMAC-
+      authenticated `anchor_state` table rather than a `metadata` key, as
+      an earlier draft of this spec suggested — `metadata`'s existing
+      rows are unauthenticated, and this value specifically needs
+      authentication (see Invariant I2's implementation note).
+- [x] Wire the anchor check into `transition()` immediately before the
+      `PREPARED -> EXECUTING` `_replace()` call — opt-in via the
+      constructor's `anti_rollback_anchor` parameter (see Activation
+      requirements above for why the default stays permissive for now).
 - [ ] Implement the chosen concrete anchor backend per `ADR-011` as a
       separate module (e.g., `anti_rollback_tpm.py` or
       `anti_rollback_remote.py`) implementing the protocol — keep the
       protocol and the concrete backend in separate files so the protocol
-      stays swappable.
+      stays swappable. **Blocked on `ADR-011`.**
 
 ## Review checklist
 
