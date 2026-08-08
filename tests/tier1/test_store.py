@@ -156,6 +156,32 @@ def test_store_rejects_truncated_or_incompatible_database(tmp_path):
         SqliteRecoveryContractStore(malformed, integrity_key=_KEY, store_id="synthetic-store")
 
 
+def test_store_rejects_schema_without_required_constraints(tmp_path):
+    os.chmod(tmp_path, 0o700)
+    malformed = tmp_path / "unconstrained.sqlite3"
+    with sqlite3.connect(malformed) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE metadata (key TEXT, value TEXT NOT NULL);
+            CREATE TABLE contracts (
+                contract_id TEXT, operation_id TEXT NOT NULL, idempotency_key TEXT NOT NULL,
+                target_identity_digest TEXT NOT NULL, state TEXT NOT NULL,
+                state_version INTEGER NOT NULL, payload BLOB NOT NULL, mac TEXT NOT NULL
+            );
+            CREATE TABLE target_reservations (target_identity_digest TEXT, contract_id TEXT NOT NULL);
+            CREATE TABLE audit_events (
+                sequence INTEGER, contract_id TEXT NOT NULL, event_type TEXT NOT NULL,
+                previous_state TEXT, current_state TEXT NOT NULL, state_version INTEGER NOT NULL,
+                recorded_at TEXT NOT NULL, mac TEXT NOT NULL
+            );
+            """
+        )
+    os.chmod(malformed, 0o600)
+
+    with pytest.raises(ContractIntegrityError, match="schema"):
+        SqliteRecoveryContractStore(malformed, integrity_key=_KEY, store_id="synthetic-store")
+
+
 def test_wrong_integrity_key_or_store_identity_cannot_replay_database(tmp_path, contract_factory):
     store = _store(tmp_path)
     contract = contract_factory()

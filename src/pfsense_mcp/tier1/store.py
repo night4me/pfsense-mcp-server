@@ -243,39 +243,56 @@ class SqliteRecoveryContractStore:
     @staticmethod
     def _verify_schema(connection: sqlite3.Connection) -> None:
         expected_columns = {
-            "metadata": ("key", "value"),
+            "metadata": (("key", "TEXT", 0, 1), ("value", "TEXT", 1, 0)),
             "contracts": (
-                "contract_id",
-                "operation_id",
-                "idempotency_key",
-                "target_identity_digest",
-                "state",
-                "state_version",
-                "payload",
-                "mac",
+                ("contract_id", "TEXT", 0, 1),
+                ("operation_id", "TEXT", 1, 0),
+                ("idempotency_key", "TEXT", 1, 0),
+                ("target_identity_digest", "TEXT", 1, 0),
+                ("state", "TEXT", 1, 0),
+                ("state_version", "INTEGER", 1, 0),
+                ("payload", "BLOB", 1, 0),
+                ("mac", "TEXT", 1, 0),
             ),
-            "target_reservations": ("target_identity_digest", "contract_id"),
+            "target_reservations": (("target_identity_digest", "TEXT", 0, 1), ("contract_id", "TEXT", 1, 0)),
             "audit_events": (
-                "sequence",
-                "contract_id",
-                "event_type",
-                "previous_state",
-                "current_state",
-                "state_version",
-                "recorded_at",
-                "mac",
+                ("sequence", "INTEGER", 0, 1),
+                ("contract_id", "TEXT", 1, 0),
+                ("event_type", "TEXT", 1, 0),
+                ("previous_state", "TEXT", 0, 0),
+                ("current_state", "TEXT", 1, 0),
+                ("state_version", "INTEGER", 1, 0),
+                ("recorded_at", "TEXT", 1, 0),
+                ("mac", "TEXT", 1, 0),
             ),
         }
         actual_columns = {
-            "metadata": tuple(row[1] for row in connection.execute("PRAGMA table_info(metadata)")),
-            "contracts": tuple(row[1] for row in connection.execute("PRAGMA table_info(contracts)")),
-            "target_reservations": tuple(
-                row[1] for row in connection.execute("PRAGMA table_info(target_reservations)")
-            ),
-            "audit_events": tuple(row[1] for row in connection.execute("PRAGMA table_info(audit_events)")),
+            table: tuple((row[1], row[2], row[3], row[5]) for row in connection.execute(f"PRAGMA table_info({table})"))
+            for table in expected_columns
         }
         if actual_columns != expected_columns:
             raise ContractIntegrityError("Recovery store schema does not match the required version.")
+        expected_unique = {
+            "metadata": {("key",)},
+            "contracts": {("contract_id",), ("operation_id",), ("idempotency_key",)},
+            "target_reservations": {("target_identity_digest",), ("contract_id",)},
+            "audit_events": {("contract_id", "state_version")},
+        }
+        for table, expected in expected_unique.items():
+            actual = {
+                tuple(row[2] for row in connection.execute(f"PRAGMA index_info({index[1]})"))
+                for index in connection.execute(f"PRAGMA index_list({table})")
+                if index[2]
+            }
+            if actual != expected:
+                raise ContractIntegrityError("Recovery store schema uniqueness constraints are invalid.")
+        expected_foreign_key = (("contracts", "contract_id", "contract_id", "CASCADE"),)
+        for table in ("target_reservations", "audit_events"):
+            actual_foreign_keys = tuple(
+                (row[2], row[3], row[4], row[6]) for row in connection.execute(f"PRAGMA foreign_key_list({table})")
+            )
+            if actual_foreign_keys != expected_foreign_key:
+                raise ContractIntegrityError("Recovery store schema foreign keys are invalid.")
 
     def _initialize_schema(self) -> None:
         with self._connect() as connection:
