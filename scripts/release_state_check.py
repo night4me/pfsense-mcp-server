@@ -11,6 +11,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def release_checks(root: Path) -> dict[str, bool]:
+    metadata = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    version = metadata["version"]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    return {
+        f"docs/ACCEPTANCE_v{version}.md": (root / f"docs/ACCEPTANCE_v{version}.md").is_file(),
+        "released changelog heading": f"## [{version}] - " in (root / "CHANGELOG.md").read_text(encoding="utf-8"),
+        "README immutable production baseline": f"v{version} is the immutable production baseline" in readme,
+        "README PyPI publication status": "published on PyPI" in readme,
+        "MIT license metadata": metadata.get("license") == "MIT" and (root / "LICENSE").is_file(),
+    }
+
+
 def main() -> int:
     # Fixed read-only git argv.
     status = subprocess.check_output(  # nosec B603 B607
@@ -22,15 +35,7 @@ def main() -> int:
 
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     version = metadata["version"]
-    checks = {
-        f"docs/ACCEPTANCE_v{version}.md": (ROOT / f"docs/ACCEPTANCE_v{version}.md").is_file(),
-        "released changelog heading": f"## [{version}] - " in (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"),
-        "README current release state": f"v{version} is the current release state"
-        in (ROOT / "README.md").read_text(encoding="utf-8"),
-        "README publication disclaimer": "not yet published on PyPI"
-        in (ROOT / "README.md").read_text(encoding="utf-8"),
-        "MIT license metadata": metadata.get("license") == "MIT" and (ROOT / "LICENSE").is_file(),
-    }
+    checks = release_checks(ROOT)
     failures = [name for name, passed in checks.items() if not passed]
     if failures:
         print(f"release_state_check: inconsistent release state: {', '.join(failures)}")
