@@ -204,8 +204,9 @@ def rotate_key(
 
 ## Activation requirements
 
-- [ ] `ADR-010` accepted.
-- [ ] `key_lifecycle.py` implemented and tested per "Required tests".
+- [x] `ADR-010` accepted (owner accepted the ADR-009..016 batch).
+- [x] `key_lifecycle.py` implemented and tested per "Required tests"
+      (`tests/tier1/test_key_lifecycle.py`, 15 tests).
 - [ ] `protected_artifact_encryption.md` implemented and depends on this
       module's `NonceCounter`, not `os.urandom()` directly.
 - [ ] Operational runbook exists for: initial key generation, rotation
@@ -216,16 +217,32 @@ def rotate_key(
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/key_lifecycle.py`.
-- [ ] Factor `config.py`'s `_open_key_file`/`_validate_key_file_descriptor`
+- [x] Create `src/pfsense_mcp/tier1/key_lifecycle.py`.
+- [x] Factor `config.py`'s `_open_key_file`/`_validate_key_file_descriptor`
       logic into a shared helper both `config.py` and `key_lifecycle.py`
       call, rather than duplicating the O_NOFOLLOW/fstat logic a second
       time — this is a refactor of existing, already-tested production
       code and must preserve `config.py`'s current behavior and tests
       exactly (add tests first, refactor, confirm identical behavior).
-- [ ] Implement `NonceCounter` with fsync-before-return ordering.
-- [ ] Implement `rotate_key()` as a resumable per-contract loop.
-- [ ] Add `KeyExhaustedError` to `errors.py`.
+      Landed as `src/pfsense_mcp/secure_file.py`
+      (`open_nofollow`/`validate_descriptor`, parameterized by an
+      `on_error` factory so each caller keeps its own exception type);
+      `config.py`'s 53 existing tests pass unchanged against the
+      refactor.
+- [x] Implement `NonceCounter` with fsync-before-return ordering.
+- [x] Implement `rotate_key()` as a resumable per-contract loop. Uses new
+      `store.py` primitives `rotate_artifacts()` (same-state compare-and-
+      set artifact replacement, reusing `_replace()`) and
+      `all_contracts()` (verified full enumeration, rotation/tooling
+      only).
+- [x] Add `KeyExhaustedError` to `errors.py`. Also added `KeyMaterialError`
+      and `ArtifactDecryptionError` (the latter for
+      `protected_artifact_encryption.md`, implemented next).
+
+Key material file format (not fully pinned by this spec; decided during
+implementation): single-line JSON, `{"key_id", "epoch", "material_hex"}`
+— strict field set, hex-encoded 32-byte material, `key_id` validated
+against the same identifier pattern used elsewhere in this package.
 
 ## Review checklist
 

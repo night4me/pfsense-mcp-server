@@ -530,6 +530,44 @@ class SqliteRecoveryContractStore:
         )
         return self._replace(current, confirmed, event_type="contract_confirmed")
 
+    def rotate_artifacts(
+        self,
+        contract_id: str,
+        *,
+        expected_version: int,
+        protected_target_identity: ProtectedArtifact,
+        protected_intent: ProtectedArtifact,
+        protected_snapshot: ProtectedArtifact,
+    ) -> RecoveryContract:
+        """Atomically replace a contract's protected artifacts (e.g. after
+        key rotation) without changing its state. Compare-and-set against
+        expected_version; reservation is unaffected since the state does
+        not change. Used only by key_lifecycle.rotate_key()."""
+
+        current = self.load(contract_id)
+        if current.state_version != expected_version:
+            raise ContractConflictError("Recovery Contract version changed before artifact rotation.")
+        updated = replace(
+            current,
+            protected_target_identity=protected_target_identity,
+            protected_intent=protected_intent,
+            protected_snapshot=protected_snapshot,
+            state_version=current.state_version + 1,
+        )
+        return self._replace(current, updated, event_type="artifacts_rotated")
+
+    def all_contracts(self) -> tuple[RecoveryContract, ...]:
+        """Every authoritative contract, verified, in contract_id order.
+        Used only by key_lifecycle.rotate_key() and operator tooling —
+        never by ordinary execution/reconciliation paths."""
+
+        with self._connect() as connection:
+            rows = connection.execute(_SELECT_ALL_CONTRACTS).fetchall()
+            contracts = tuple(self._decode_row(row) for row in rows)
+            for contract in contracts:
+                self._verify_related_state(connection, contract)
+            return contracts
+
     def transition(
         self,
         contract_id: str,

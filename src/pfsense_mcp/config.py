@@ -8,17 +8,16 @@ Missing or invalid configuration fails closed via ConfigurationError.
 from __future__ import annotations
 
 import os
-import stat
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
-from errno import ELOOP
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from .api_version import ApiVersion
 from .errors import ConfigurationError
 from .profiles import Profile, get_profile
+from .secure_file import open_nofollow, validate_descriptor
 from .tls import TLSMode, validate_tls_ca_file, validate_tls_settings
 
 _REQUIRED_VARS = ("PFSENSE_API_URL", "PFSENSE_IDENTITY", "PFSENSE_API_KEY_FILE")
@@ -46,33 +45,11 @@ class PfSenseConfig:
 
 
 def _open_key_file(key_file: Path) -> int:
-    nofollow = getattr(os, "O_NOFOLLOW", None)
-    if nofollow is None:
-        raise ConfigurationError("Secure key-file loading is unsupported on this platform")
-
-    flags = os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0)
-    try:
-        return os.open(key_file, flags)
-    except OSError as exc:
-        if exc.errno == ELOOP:
-            raise ConfigurationError(f"Key file must not be a symbolic link: {key_file}") from None
-        raise ConfigurationError(f"Key file could not be opened: {key_file}") from None
+    return open_nofollow(key_file, on_error=ConfigurationError)
 
 
 def _validate_key_file_descriptor(key_file: Path, descriptor: int) -> None:
-    try:
-        metadata = os.fstat(descriptor)
-    except OSError:
-        raise ConfigurationError(f"Key file metadata could not be read: {key_file}") from None
-
-    if not stat.S_ISREG(metadata.st_mode):
-        raise ConfigurationError(f"Key file is not a regular file: {key_file}")
-    if metadata.st_uid != os.geteuid():
-        raise ConfigurationError(f"Key file must be owned by the current user: {key_file}")
-    if stat.S_IMODE(metadata.st_mode) & 0o077:
-        raise ConfigurationError(f"Key file must not grant permissions to group or other users: {key_file}")
-    if metadata.st_size > _KEY_FILE_MAX_BYTES:
-        raise ConfigurationError(f"Key file exceeds the maximum allowed size: {key_file}")
+    validate_descriptor(key_file, descriptor, max_bytes=_KEY_FILE_MAX_BYTES, on_error=ConfigurationError)
 
 
 def _contains_control_characters(value: str) -> bool:

@@ -39,3 +39,15 @@ class ContractBindingError(Tier1Error):
 
 class ConfirmationError(Tier1Error):
     """Owner confirmation evidence is missing, invalid, or unverified."""
+
+
+class KeyMaterialError(Tier1Error):
+    """Key material could not be loaded safely."""
+
+
+class KeyExhaustedError(Tier1Error):
+    """A key's nonce counter has reached its retirement threshold."""
+
+
+class ArtifactDecryptionError(Tier1Error):
+    """A protected artifact failed authenticated decryption."""
