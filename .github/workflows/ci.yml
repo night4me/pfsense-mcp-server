@@ -125,3 +125,22 @@ jobs:
           .venv/bin/python -m pip install -e ".[docs]"
       - name: Build documentation site (strict)
         run: .venv/bin/python -m mkdocs build --strict
+
+  dependency-review:
+    # Only meaningful on a pull request (compares base ref vs. head
+    # ref) -- fails the check if a newly introduced dependency has a
+    # known vulnerability or a license outside the allowed set. Uses
+    # this repository's default-enabled Dependency Graph; does not
+    # require GitHub Advanced Security / Code Scanning (unlike CodeQL's
+    # SARIF upload, which this private repository intentionally leaves
+    # disabled -- see codeql.yml).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, PSF-2.0
