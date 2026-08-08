@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pfsense_mcp.capabilities import Capability
 
@@ -43,8 +43,8 @@ class Tier1AuditEvent:
             self.outcome,
         )
         optional_tokens = tuple(value for value in (self.failure_class,) if value is not None)
-        if self.timestamp.tzinfo is None:
-            raise ValueError("Tier 1 audit timestamp must be timezone-aware.")
+        if self.timestamp.tzinfo is None or self.timestamp.utcoffset() != timezone.utc.utcoffset(self.timestamp):
+            raise ValueError("Tier 1 audit timestamp must be UTC.")
         if not all(_SAFE_TOKEN.fullmatch(value) for value in (*tokens, *optional_tokens)):
             raise ValueError("Tier 1 audit metadata contains an unsafe token.")
         if not self.capability.name.endswith("_WRITE") or self.http_method not in _MUTATING_METHODS:

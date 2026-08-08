@@ -17,6 +17,10 @@ _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 
+def _is_utc(value: datetime) -> bool:
+    return value.tzinfo is not None and value.utcoffset() == timezone.utc.utcoffset(value)
+
+
 @dataclass(frozen=True)
 class ProtectedArtifact:
     """Opaque protected data; encryption/decryption belongs to an external provider."""
@@ -74,8 +78,8 @@ class RecoveryContract:
             raise ContractValidationError("Recovery Contract digest is invalid.")
         if self.confirmation_digest is not None and not _HEX_64.fullmatch(self.confirmation_digest):
             raise ContractValidationError("Recovery Contract confirmation digest is invalid.")
-        if self.created_at.tzinfo is None or self.expires_at.tzinfo is None:
-            raise ContractValidationError("Recovery Contract timestamps must be timezone-aware.")
+        if not _is_utc(self.created_at) or not _is_utc(self.expires_at):
+            raise ContractValidationError("Recovery Contract timestamps must be UTC.")
         if self.expires_at <= self.created_at:
             raise ContractValidationError("Recovery Contract expiry must follow creation.")
         if self.state_version < 0:
@@ -83,7 +87,7 @@ class RecoveryContract:
         if (self.confirmation_digest is None) != (self.confirmed_at is None):
             raise ContractValidationError("Confirmation digest and timestamp must be set together.")
         if self.confirmed_at is not None:
-            if self.confirmed_at.tzinfo is None or not self.created_at <= self.confirmed_at < self.expires_at:
+            if not _is_utc(self.confirmed_at) or not self.created_at <= self.confirmed_at < self.expires_at:
                 raise ContractValidationError(
                     "Recovery Contract confirmation timestamp is outside its validity window."
                 )
@@ -94,6 +98,8 @@ class RecoveryContract:
 
     def is_expired(self, *, now: datetime | None = None) -> bool:
         current = now if now is not None else datetime.now(timezone.utc)
+        if not _is_utc(current):
+            raise ContractValidationError("Recovery Contract comparison time must be UTC.")
         return current >= self.expires_at
 
     def with_confirmation(self, *, actor_id: str, confirmed_at: datetime) -> "RecoveryContract":

@@ -88,3 +88,13 @@ def test_confirmation_must_be_inside_contract_window(contract_factory):
     contract = contract_factory()
     with pytest.raises(ContractValidationError, match="validity window"):
         contract.with_confirmation(actor_id="owner", confirmed_at=contract.expires_at)
+
+
+def test_contract_times_must_be_utc(contract_factory):
+    non_utc = timezone(timedelta(hours=1))
+    with pytest.raises(ContractValidationError, match="timestamps must be UTC"):
+        replace(contract_factory(), created_at=datetime.now(non_utc))
+
+    contract = contract_factory()
+    with pytest.raises(ContractValidationError, match="comparison time must be UTC"):
+        contract.is_expired(now=datetime.now(non_utc))

@@ -35,6 +35,24 @@ def test_policy_requires_exact_capability_endpoint_and_method():
 
 
 @pytest.mark.parametrize(
+    "rule",
+    [
+        lambda: MutationRule(Capability.SYSTEM_READ, "SYNTHETIC_ENDPOINT", "PATCH"),
+        lambda: MutationRule(Capability.ALIAS_WRITE, "unsafe/endpoint", "PATCH"),
+        lambda: MutationRule(Capability.ALIAS_WRITE, "SYNTHETIC_ENDPOINT", "GET"),
+    ],
+)
+def test_invalid_policy_rules_fail_at_construction(rule):
+    with pytest.raises(MutationPolicyError):
+        rule()
+
+
+def test_policy_container_must_be_immutable():
+    with pytest.raises(MutationPolicyError, match="immutable"):
+        MutationPolicy(set())  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
     ("boundary", "knowledge", "state", "manual"),
     [
         (MutationBoundary.BEFORE_SEND, EffectKnowledge.PROVEN_NONE, RecoveryState.FAILED, False),

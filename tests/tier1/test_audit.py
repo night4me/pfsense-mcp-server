@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -64,6 +64,7 @@ def test_untrusted_audit_metadata_cannot_inject_values(field, value):
     "changes",
     [
         {"timestamp": datetime.now()},
+        {"timestamp": datetime.now(timezone(timedelta(hours=1)))},
         {"capability": Capability.SYSTEM_READ},
         {"http_method": "GET"},
         {"target_identity_digest": "bad"},
