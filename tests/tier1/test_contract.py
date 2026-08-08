@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from pfsense_mcp.capabilities import Capability
+from pfsense_mcp.tier1.contract import ProtectedArtifact
 from pfsense_mcp.tier1.errors import ContractBindingError, ContractValidationError
 from pfsense_mcp.tier1.state_machine import RecoveryState
 
@@ -18,6 +19,10 @@ def test_exact_bindings_pass(contract_factory):
         endpoint_symbol="SYNTHETIC_ENDPOINT",
         http_method="PATCH",
         target_identity={"name": "synthetic-target.invalid"},
+        target_precondition={
+            "identity": {"name": "synthetic-target.invalid"},
+            "revision": "synthetic-1",
+        },
         normalized_intent={"enabled": True},
     )
 
@@ -29,6 +34,7 @@ def test_exact_bindings_pass(contract_factory):
         ("endpoint_symbol", "OTHER_ENDPOINT"),
         ("http_method", "DELETE"),
         ("target_identity", {"name": "other.invalid"}),
+        ("target_precondition", {"revision": "stale"}),
         ("normalized_intent", {"enabled": False}),
     ],
 )
@@ -39,6 +45,10 @@ def test_any_binding_drift_is_refused(contract_factory, field, value):
         "endpoint_symbol": "SYNTHETIC_ENDPOINT",
         "http_method": "PATCH",
         "target_identity": {"name": "synthetic-target.invalid"},
+        "target_precondition": {
+            "identity": {"name": "synthetic-target.invalid"},
+            "revision": "synthetic-1",
+        },
         "normalized_intent": {"enabled": True},
     }
     supplied[field] = value
@@ -48,7 +58,7 @@ def test_any_binding_drift_is_refused(contract_factory, field, value):
 
 
 def test_confirmation_is_digest_bound_and_single_use(contract_factory):
-    contract = contract_factory()
+    contract = contract_factory(state=RecoveryState.PREPARED)
     confirmed = contract.with_confirmation(actor_id="owner-approval", confirmed_at=datetime.now(timezone.utc))
 
     assert confirmed.is_confirmed
@@ -61,7 +71,7 @@ def test_confirmation_is_digest_bound_and_single_use(contract_factory):
 
 @pytest.mark.parametrize("actor_id", ["", "owner\nforged", "x" * 129])
 def test_confirmation_actor_identifier_is_bounded_and_safe(contract_factory, actor_id):
-    contract = contract_factory()
+    contract = contract_factory(state=RecoveryState.PREPARED)
     with pytest.raises(ContractValidationError, match="actor identifier"):
         contract.with_confirmation(actor_id=actor_id, confirmed_at=contract.created_at)
 
@@ -85,7 +95,7 @@ def test_invalid_contract_boundaries_fail_closed(contract_factory, changes):
 
 
 def test_confirmation_must_be_inside_contract_window(contract_factory):
-    contract = contract_factory()
+    contract = contract_factory(state=RecoveryState.PREPARED)
     with pytest.raises(ContractValidationError, match="validity window"):
         contract.with_confirmation(actor_id="owner", confirmed_at=contract.expires_at)
 
@@ -98,3 +108,31 @@ def test_contract_times_must_be_utc(contract_factory):
     contract = contract_factory()
     with pytest.raises(ContractValidationError, match="comparison time must be UTC"):
         contract.is_expired(now=datetime.now(non_utc))
+
+
+def test_idempotency_key_is_derived_from_all_mutation_bindings(contract_factory):
+    contract = contract_factory()
+    for field in (
+        "target_identity_digest",
+        "target_fingerprint",
+        "intent_digest",
+        "snapshot_digest",
+        "rollback_plan_version",
+    ):
+        changed = "f" * 64 if field.endswith("digest") or field == "target_fingerprint" else "other-v1"
+        with pytest.raises(ContractValidationError, match="idempotency binding"):
+            replace(contract, **{field: changed})
+
+
+@pytest.mark.parametrize(
+    "artifact",
+    [
+        lambda: ProtectedArtifact(key_id="key", algorithm="alg", ciphertext=b""),
+        lambda: ProtectedArtifact(key_id="key", algorithm="alg", ciphertext=b"x" * 1_048_577),
+        lambda: ProtectedArtifact(key_id="unsafe/key", algorithm="alg", ciphertext=b"x"),
+        lambda: ProtectedArtifact(key_id="key", algorithm="alg", ciphertext=bytearray(b"x")),
+    ],
+)
+def test_protected_artifact_rejects_unsafe_or_unbounded_values(artifact):
+    with pytest.raises(ContractValidationError):
+        artifact()

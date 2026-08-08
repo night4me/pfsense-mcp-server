@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 import threading
-from dataclasses import replace
 from datetime import datetime, timezone
 
 import pytest
@@ -21,24 +21,29 @@ from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 
 
-def _store(tmp_path, *, fault_hook=None):
+def _store(tmp_path, *, fault_hook=None, clock=None):
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(tmp_path, 0o700)
+    options = {"fault_hook": fault_hook}
+    if clock is not None:
+        options["clock"] = clock
     return SqliteRecoveryContractStore(
-        tmp_path / "contracts.sqlite3",
-        integrity_key=_KEY,
-        store_id="synthetic-store",
-        fault_hook=fault_hook,
+        tmp_path / "contracts.sqlite3", integrity_key=_KEY, store_id="synthetic-store", **options
     )
 
 
 def _confirmed(store, contract):
     store.create(contract)
+    prepared = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
     return store.confirm(
         contract.contract_id,
         actor_id="owner-approval",
-        confirmed_at=datetime.now(timezone.utc),
-        expected_version=0,
+        expected_version=prepared.state_version,
     )
 
 
@@ -54,7 +59,18 @@ def test_create_load_and_restart_preserve_authoritative_contract(tmp_path, contr
     assert (tmp_path / "contracts.sqlite3").stat().st_mode & 0o777 == 0o600
 
 
-def test_store_rejects_symlink_and_unsafe_existing_file(tmp_path):
+def test_create_requires_unconfirmed_preparing_state(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    with pytest.raises(ContractValidationError, match="PREPARING"):
+        store.create(contract_factory(state=RecoveryState.PREPARED))
+
+    prepared = contract_factory(state=RecoveryState.PREPARED)
+    forged = prepared.with_confirmation(actor_id="forged-owner", confirmed_at=prepared.created_at)
+    with pytest.raises(ContractValidationError, match="unconfirmed"):
+        store.create(forged)
+
+
+def test_store_rejects_symlink_and_unsafe_existing_file(tmp_path, monkeypatch):
     os.chmod(tmp_path, 0o700)
     target = tmp_path / "target.sqlite3"
     target.touch(mode=0o600)
@@ -66,6 +82,11 @@ def test_store_rejects_symlink_and_unsafe_existing_file(tmp_path):
 
     os.chmod(target, 0o640)
     with pytest.raises(ContractValidationError, match="owner-only"):
+        SqliteRecoveryContractStore(target, integrity_key=_KEY, store_id="synthetic-store")
+
+    monkeypatch.delattr(os, "O_NOFOLLOW")
+    os.chmod(target, 0o600)
+    with pytest.raises(ContractValidationError, match="Linux O_NOFOLLOW"):
         SqliteRecoveryContractStore(target, integrity_key=_KEY, store_id="synthetic-store")
 
 
@@ -82,6 +103,29 @@ def test_store_rejects_unsafe_parent_and_missing_contract(tmp_path):
     store = _store(tmp_path)
     with pytest.raises(ContractNotFoundError, match="not found"):
         store.load("missing-contract")
+
+
+@pytest.mark.parametrize("store_id", ["", "unsafe\nstore", "store/path", "x" * 129])
+def test_store_identifier_is_bounded_and_safe(tmp_path, store_id):
+    os.chmod(tmp_path, 0o700)
+    with pytest.raises(ContractValidationError, match="identifier"):
+        SqliteRecoveryContractStore(tmp_path / "store.sqlite3", integrity_key=_KEY, store_id=store_id)
+
+
+def test_store_rejects_truncated_or_incompatible_database(tmp_path):
+    os.chmod(tmp_path, 0o700)
+    truncated = tmp_path / "truncated.sqlite3"
+    truncated.write_bytes(b"not-a-sqlite-database")
+    os.chmod(truncated, 0o600)
+    with pytest.raises(ContractIntegrityError, match="opened safely"):
+        SqliteRecoveryContractStore(truncated, integrity_key=_KEY, store_id="synthetic-store")
+
+    malformed = tmp_path / "malformed.sqlite3"
+    with sqlite3.connect(malformed) as connection:
+        connection.execute("CREATE TABLE contracts(contract_id TEXT PRIMARY KEY)")
+    os.chmod(malformed, 0o600)
+    with pytest.raises(ContractIntegrityError, match="schema"):
+        SqliteRecoveryContractStore(malformed, integrity_key=_KEY, store_id="synthetic-store")
 
 
 def test_wrong_integrity_key_or_store_identity_cannot_replay_database(tmp_path, contract_factory):
@@ -141,8 +185,9 @@ def test_stale_version_and_duplicate_execution_are_refused(tmp_path, contract_fa
 def test_same_target_cannot_be_acquired_concurrently(tmp_path, contract_factory):
     store = _store(tmp_path)
     first = _confirmed(store, contract_factory())
-    second_contract = contract_factory(contract_id="contract-002", operation_id="operation-002")
-    second_contract = replace(second_contract, idempotency_key="f" * 64)
+    second_contract = contract_factory(
+        contract_id="contract-002", operation_id="operation-002", intent={"enabled": False}
+    )
     second = _confirmed(store, second_contract)
     store.transition(
         first.contract_id,
@@ -163,9 +208,8 @@ def test_same_target_cannot_be_acquired_concurrently(tmp_path, contract_factory)
 def test_atomic_target_reservation_allows_only_one_thread(tmp_path, contract_factory):
     store = _store(tmp_path)
     first = _confirmed(store, contract_factory())
-    second_contract = replace(
-        contract_factory(contract_id="contract-002", operation_id="operation-002"),
-        idempotency_key="f" * 64,
+    second_contract = contract_factory(
+        contract_id="contract-002", operation_id="operation-002", intent={"enabled": False}
     )
     second = _confirmed(store, second_contract)
     barrier = threading.Barrier(2)
@@ -198,25 +242,71 @@ def test_expired_or_unconfirmed_contract_cannot_execute(tmp_path, contract_facto
     store = _store(tmp_path)
     unconfirmed = contract_factory()
     store.create(unconfirmed)
+    unconfirmed = store.transition(
+        unconfirmed.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
     with pytest.raises(ContractConflictError):
         store.transition(
             unconfirmed.contract_id,
             expected_state=RecoveryState.PREPARED,
-            expected_version=0,
+            expected_version=unconfirmed.state_version,
             target_state=RecoveryState.EXECUTING,
         )
 
-    expired = contract_factory(contract_id="contract-002", operation_id="operation-002")
-    expired = replace(expired, idempotency_key="e" * 64)
-    confirmed = _confirmed(store, expired)
+    current = [datetime.now(timezone.utc)]
+    expiring_store = _store(tmp_path / "expiring", clock=lambda: current[0])
+    expired = contract_factory(contract_id="contract-002", operation_id="operation-002", now=current[0])
+    confirmed = _confirmed(expiring_store, expired)
+    current[0] = confirmed.expires_at
     with pytest.raises(ContractConflictError):
-        store.transition(
+        expiring_store.transition(
             confirmed.contract_id,
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
-            now=confirmed.expires_at,
         )
+
+
+def test_expired_preparation_can_only_be_marked_expired(tmp_path, contract_factory):
+    current = [datetime.now(timezone.utc)]
+    store = _store(tmp_path, clock=lambda: current[0])
+    contract = contract_factory(now=current[0])
+    store.create(contract)
+    current[0] = contract.expires_at
+
+    with pytest.raises(ContractConflictError, match="only transition"):
+        store.transition(
+            contract.contract_id,
+            expected_state=RecoveryState.PREPARING,
+            expected_version=0,
+            target_state=RecoveryState.PREPARED,
+        )
+    expired = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.EXPIRED,
+    )
+    assert expired.state == RecoveryState.EXPIRED
+
+
+def test_confirmation_uses_store_clock_and_refuses_expired_contract(tmp_path, contract_factory):
+    current = [datetime.now(timezone.utc)]
+    store = _store(tmp_path, clock=lambda: current[0])
+    contract = contract_factory(now=current[0])
+    store.create(contract)
+    prepared = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+    current[0] = contract.expires_at
+    with pytest.raises(ContractConflictError, match="expired before confirmation"):
+        store.confirm(contract.contract_id, actor_id="owner", expected_version=prepared.state_version)
 
 
 def test_corrupt_contract_fails_integrity_check(tmp_path, contract_factory):
@@ -228,6 +318,62 @@ def test_corrupt_contract_fails_integrity_check(tmp_path, contract_factory):
         connection.execute("UPDATE contracts SET payload = ? WHERE contract_id = ?", (b"{}", contract.contract_id))
 
     with pytest.raises(ContractIntegrityError, match="integrity"):
+        store.load(contract.contract_id)
+
+
+@pytest.mark.parametrize("tamper", ["delete", "change"])
+def test_audit_history_tampering_fails_closed(tmp_path, contract_factory, tamper):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+    path = tmp_path / "contracts.sqlite3"
+    with sqlite3.connect(path) as connection:
+        if tamper == "delete":
+            connection.execute(
+                "DELETE FROM audit_events WHERE contract_id = ? AND state_version = 1",
+                (confirmed.contract_id,),
+            )
+        else:
+            connection.execute(
+                "UPDATE audit_events SET current_state = ? WHERE contract_id = ? AND state_version = 1",
+                (RecoveryState.FAILED.value, confirmed.contract_id),
+            )
+
+    with pytest.raises(ContractIntegrityError, match="audit"):
+        store.load(confirmed.contract_id)
+
+
+def test_missing_store_metadata_is_not_silently_recreated(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    store.create(contract_factory())
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        connection.execute("DELETE FROM metadata")
+
+    with pytest.raises(ContractIntegrityError, match="metadata is missing"):
+        _store(tmp_path)
+
+
+@pytest.mark.parametrize("extra", [True, False])
+def test_unknown_or_duplicate_stored_fields_fail_closed(tmp_path, contract_factory, extra):
+    store = _store(tmp_path)
+    contract = contract_factory()
+    store.create(contract)
+    path = tmp_path / "contracts.sqlite3"
+    with sqlite3.connect(path) as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (contract.contract_id,)
+        ).fetchone()[0]
+        if extra:
+            value = json.loads(payload)
+            value["unknown"] = "field"
+            malformed = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        else:
+            malformed = payload[:-1] + b',"state":"preparing"}'
+        connection.execute(
+            "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
+            (malformed, store._mac(malformed), contract.contract_id),
+        )
+
+    with pytest.raises(ContractIntegrityError, match="field"):
         store.load(contract.contract_id)
 
 
@@ -270,7 +416,42 @@ def test_crash_before_commit_rolls_back_and_after_commit_is_recoverable(tmp_path
     after_store = _store(after_path, fault_hook=after)
     with pytest.raises(RuntimeError, match="synthetic crash"):
         after_store.create(contract_factory())
-    assert _store(after_path).load("contract-001").state == RecoveryState.PREPARED
+    assert _store(after_path).load("contract-001").state == RecoveryState.PREPARING
+
+
+@pytest.mark.parametrize("fault_point", ["before_transaction", "after_record_write", "before_commit"])
+def test_create_faults_before_commit_leave_no_partial_record(tmp_path, contract_factory, fault_point):
+    def fail(point):
+        if point == fault_point:
+            raise RuntimeError("synthetic fault")
+
+    store = _store(tmp_path, fault_hook=fail)
+    with pytest.raises(RuntimeError, match="synthetic fault"):
+        store.create(contract_factory())
+    with pytest.raises(ContractNotFoundError):
+        _store(tmp_path).load("contract-001")
+
+
+def test_transition_fault_rolls_back_record_audit_and_reservation(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+
+    def fail(point):
+        if point == "after_record_write":
+            raise RuntimeError("synthetic fault")
+
+    failing = _store(tmp_path, fault_hook=fail)
+    with pytest.raises(RuntimeError, match="synthetic fault"):
+        failing.transition(
+            confirmed.contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=confirmed.state_version,
+            target_state=RecoveryState.EXECUTING,
+        )
+
+    loaded = store.load(confirmed.contract_id)
+    assert loaded.state == RecoveryState.PREPARED
+    assert len(store.audit_events(confirmed.contract_id)) == confirmed.state_version + 1
 
 
 def test_restart_moves_interrupted_execution_to_reconciliation(tmp_path, contract_factory):
@@ -288,6 +469,33 @@ def test_restart_moves_interrupted_execution_to_reconciliation(tmp_path, contrac
 
     assert [item.state for item in reconciled] == [RecoveryState.RECONCILIATION]
     assert restarted.load(confirmed.contract_id).state == RecoveryState.RECONCILIATION
+
+    competing = _confirmed(
+        restarted,
+        contract_factory(contract_id="contract-002", operation_id="operation-002", intent={"enabled": False}),
+    )
+    with pytest.raises(ContractConflictError, match="reserved"):
+        restarted.transition(
+            competing.contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=competing.state_version,
+            target_state=RecoveryState.EXECUTING,
+        )
+
+
+def test_missing_or_stale_target_reservation_fails_integrity(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        connection.execute("DELETE FROM target_reservations WHERE contract_id = ?", (executing.contract_id,))
+    with pytest.raises(ContractIntegrityError, match="reservation"):
+        store.load(executing.contract_id)
 
 
 def test_reconciliation_exit_requires_explicit_manual_action(tmp_path, contract_factory):
@@ -328,7 +536,11 @@ def test_atomic_audit_contains_only_state_metadata(tmp_path, contract_factory):
     confirmed = _confirmed(store, contract_factory())
     events = store.audit_events(confirmed.contract_id)
 
-    assert [event["event_type"] for event in events] == ["contract_created", "contract_confirmed"]
+    assert [event["event_type"] for event in events] == [
+        "contract_created",
+        "state_transition",
+        "contract_confirmed",
+    ]
     serialized = repr(events)
     assert "opaque" not in serialized
     assert "synthetic-target" not in serialized

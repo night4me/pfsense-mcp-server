@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import sqlite3
 import stat
 from collections.abc import Callable
@@ -30,10 +31,19 @@ from .errors import (
 )
 from .state_machine import RecoveryState, require_transition
 
-_SCHEMA_VERSION = 1
-_ACQUISITION_STATES = frozenset({RecoveryState.EXECUTING, RecoveryState.ROLLING_BACK})
+_SCHEMA_VERSION = 2
+_STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
+_RESERVATION_STATES = frozenset(
+    {
+        RecoveryState.EXECUTING,
+        RecoveryState.RECONCILIATION,
+        RecoveryState.ROLLING_BACK,
+        RecoveryState.ROLLBACK_FAILED,
+    }
+)
 _INTERRUPTED_STATES = frozenset({RecoveryState.EXECUTING, RecoveryState.ROLLING_BACK})
 FaultHook = Callable[[str], None]
+Clock = Callable[[], datetime]
 _SELECT_CONTRACT_BY_ID = (
     "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
     "target_identity_digest, state, state_version FROM contracts WHERE contract_id = ?"
@@ -42,6 +52,43 @@ _SELECT_ALL_CONTRACTS = (
     "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
     "target_identity_digest, state, state_version FROM contracts ORDER BY contract_id"
 )
+_CONTRACT_FIELDS = frozenset(
+    {
+        "capability",
+        "confirmation_digest",
+        "confirmed_at",
+        "contract_id",
+        "created_at",
+        "endpoint_symbol",
+        "expires_at",
+        "http_method",
+        "idempotency_key",
+        "intent_digest",
+        "operation_id",
+        "protected_intent",
+        "protected_snapshot",
+        "protected_target_identity",
+        "rollback_plan_version",
+        "snapshot_digest",
+        "state",
+        "state_version",
+        "target_fingerprint",
+        "target_identity_digest",
+    }
+)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ContractIntegrityError("Stored Recovery Contract contains a duplicate field.")
+        result[key] = value
+    return result
 
 
 def _artifact_to_dict(artifact: ProtectedArtifact) -> dict[str, str]:
@@ -55,11 +102,13 @@ def _artifact_to_dict(artifact: ProtectedArtifact) -> dict[str, str]:
 def _artifact_from_dict(value: object) -> ProtectedArtifact:
     if not isinstance(value, dict) or set(value) != {"algorithm", "ciphertext", "key_id"}:
         raise ContractIntegrityError("Stored protected artifact is invalid.")
+    if not all(isinstance(value[field], str) for field in ("algorithm", "ciphertext", "key_id")):
+        raise ContractIntegrityError("Stored protected artifact is invalid.")
     try:
         return ProtectedArtifact(
-            algorithm=str(value["algorithm"]),
-            ciphertext=base64.b64decode(str(value["ciphertext"]), validate=True),
-            key_id=str(value["key_id"]),
+            algorithm=value["algorithm"],
+            ciphertext=base64.b64decode(value["ciphertext"], validate=True),
+            key_id=value["key_id"],
         )
     except (ValueError, ContractValidationError) as exc:
         raise ContractIntegrityError("Stored protected artifact is invalid.") from exc
@@ -93,7 +142,9 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
 
 def _contract_from_payload(payload: bytes) -> RecoveryContract:
     try:
-        value = json.loads(payload)
+        value = json.loads(payload, object_pairs_hook=_strict_object)
+        if not isinstance(value, dict) or set(value) != _CONTRACT_FIELDS:
+            raise ContractIntegrityError("Stored Recovery Contract fields are invalid.")
         return RecoveryContract(
             contract_id=value["contract_id"],
             operation_id=value["operation_id"],
@@ -116,7 +167,7 @@ def _contract_from_payload(payload: bytes) -> RecoveryContract:
             confirmation_digest=value["confirmation_digest"],
             confirmed_at=datetime.fromisoformat(value["confirmed_at"]) if value["confirmed_at"] else None,
         )
-    except (KeyError, TypeError, ValueError, ContractValidationError) as exc:
+    except (KeyError, TypeError, ValueError, UnicodeDecodeError, ContractValidationError) as exc:
         raise ContractIntegrityError("Stored Recovery Contract is invalid.") from exc
 
 
@@ -130,19 +181,25 @@ class SqliteRecoveryContractStore:
         integrity_key: bytes,
         store_id: str,
         fault_hook: FaultHook | None = None,
+        clock: Clock = _utc_now,
     ) -> None:
-        if len(integrity_key) < 32:
+        if not isinstance(integrity_key, bytes) or len(integrity_key) < 32:
             raise ContractValidationError("Recovery store integrity key must be at least 32 bytes.")
-        if not store_id or len(store_id) > 128:
+        if not isinstance(store_id, str) or not _STORE_ID.fullmatch(store_id):
             raise ContractValidationError("Recovery store identifier is invalid.")
+        if not callable(clock):
+            raise ContractValidationError("Recovery store clock is invalid.")
         self._path = path
         self._integrity_key = bytes(integrity_key)
         self._store_id = store_id
         self._fault_hook = fault_hook
+        self._clock = clock
         self._prepare_path()
         self._initialize_schema()
 
     def _prepare_path(self) -> None:
+        if not hasattr(os, "O_NOFOLLOW"):
+            raise ContractValidationError("Recovery store requires Linux O_NOFOLLOW support.")
         parent = self._path.parent
         parent_info = parent.lstat()
         if not stat.S_ISDIR(parent_info.st_mode) or stat.S_ISLNK(parent_info.st_mode):
@@ -156,18 +213,65 @@ class SqliteRecoveryContractStore:
             if info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) & 0o077:
                 raise ContractValidationError("Recovery store must be owner-only.")
             return
-        flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
+        flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW
         fd = os.open(self._path, flags, 0o600)
         os.close(fd)
 
+    def _now(self) -> datetime:
+        instant = self._clock()
+        if instant.tzinfo is None or instant.utcoffset() != timezone.utc.utcoffset(instant):
+            raise ContractValidationError("Recovery store clock must return UTC.")
+        return instant
+
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self._path, isolation_level=None, timeout=5.0)
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA journal_mode = DELETE")
-        connection.execute("PRAGMA synchronous = FULL")
-        return connection
+        connection: sqlite3.Connection | None = None
+        try:
+            connection = sqlite3.connect(self._path, isolation_level=None, timeout=5.0)
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA journal_mode = DELETE")
+            connection.execute("PRAGMA synchronous = FULL")
+            return connection
+        except sqlite3.DatabaseError:
+            if connection is not None:
+                connection.close()
+            raise ContractIntegrityError("Recovery store database could not be opened safely.") from None
+
+    @staticmethod
+    def _verify_schema(connection: sqlite3.Connection) -> None:
+        expected_columns = {
+            "metadata": ("key", "value"),
+            "contracts": (
+                "contract_id",
+                "operation_id",
+                "idempotency_key",
+                "target_identity_digest",
+                "state",
+                "state_version",
+                "payload",
+                "mac",
+            ),
+            "target_reservations": ("target_identity_digest", "contract_id"),
+            "audit_events": (
+                "sequence",
+                "contract_id",
+                "event_type",
+                "previous_state",
+                "current_state",
+                "state_version",
+                "recorded_at",
+                "mac",
+            ),
+        }
+        actual_columns = {
+            "metadata": tuple(row[1] for row in connection.execute("PRAGMA table_info(metadata)")),
+            "contracts": tuple(row[1] for row in connection.execute("PRAGMA table_info(contracts)")),
+            "target_reservations": tuple(
+                row[1] for row in connection.execute("PRAGMA table_info(target_reservations)")
+            ),
+            "audit_events": tuple(row[1] for row in connection.execute("PRAGMA table_info(audit_events)")),
+        }
+        if actual_columns != expected_columns:
+            raise ContractIntegrityError("Recovery store schema does not match the required version.")
 
     def _initialize_schema(self) -> None:
         with self._connect() as connection:
@@ -193,25 +297,57 @@ class SqliteRecoveryContractStore:
                 );
                 CREATE TABLE IF NOT EXISTS audit_events (
                     sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-                    contract_id TEXT NOT NULL,
+                    contract_id TEXT NOT NULL REFERENCES contracts(contract_id) ON DELETE CASCADE,
                     event_type TEXT NOT NULL,
                     previous_state TEXT,
                     current_state TEXT NOT NULL,
                     state_version INTEGER NOT NULL,
-                    recorded_at TEXT NOT NULL
+                    recorded_at TEXT NOT NULL,
+                    mac TEXT NOT NULL,
+                    UNIQUE(contract_id, state_version)
                 );
                 """
             )
+            self._verify_schema(connection)
             existing = dict(connection.execute("SELECT key, value FROM metadata"))
             expected = {"schema_version": str(_SCHEMA_VERSION), "store_id": self._store_id}
             if existing and existing != expected:
                 raise ContractIntegrityError("Recovery store metadata does not match this build or store identity.")
             if not existing:
+                has_state = connection.execute(
+                    "SELECT EXISTS(SELECT 1 FROM contracts) OR EXISTS(SELECT 1 FROM audit_events)"
+                ).fetchone()[0]
+                if has_state:
+                    raise ContractIntegrityError("Recovery store metadata is missing from a non-empty store.")
                 connection.executemany("INSERT INTO metadata(key, value) VALUES (?, ?)", expected.items())
         os.chmod(self._path, 0o600)
 
     def _mac(self, payload: bytes) -> str:
         return hmac.new(self._integrity_key, self._store_id.encode() + b"\0" + payload, hashlib.sha256).hexdigest()
+
+    def _audit_mac(
+        self,
+        *,
+        contract_id: str,
+        event_type: str,
+        previous_state: str | None,
+        current_state: str,
+        state_version: int,
+        recorded_at: str,
+    ) -> str:
+        payload = json.dumps(
+            {
+                "contract_id": contract_id,
+                "current_state": current_state,
+                "event_type": event_type,
+                "previous_state": previous_state,
+                "recorded_at": recorded_at,
+                "state_version": state_version,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return self._mac(b"audit-event\0" + payload)
 
     def _decode_row(self, row: sqlite3.Row | tuple[object, ...]) -> RecoveryContract:
         raw_payload = row[0]
@@ -235,16 +371,76 @@ class SqliteRecoveryContractStore:
             raise ContractIntegrityError("Stored Recovery Contract index does not match its protected record.")
         return contract
 
+    def _verify_reservation(self, connection: sqlite3.Connection, contract: RecoveryContract) -> None:
+        row = connection.execute(
+            "SELECT target_identity_digest FROM target_reservations WHERE contract_id = ?",
+            (contract.contract_id,),
+        ).fetchone()
+        expected = contract.target_identity_digest if contract.state in _RESERVATION_STATES else None
+        actual = str(row[0]) if row is not None else None
+        if actual != expected:
+            raise ContractIntegrityError("Recovery Contract target reservation is inconsistent.")
+
+    def _verified_audit_rows(
+        self, connection: sqlite3.Connection, contract: RecoveryContract
+    ) -> tuple[tuple[object, ...], ...]:
+        rows = connection.execute(
+            """SELECT contract_id, event_type, previous_state, current_state,
+                      state_version, recorded_at, mac
+               FROM audit_events WHERE contract_id = ? ORDER BY state_version""",
+            (contract.contract_id,),
+        ).fetchall()
+        if len(rows) != contract.state_version + 1:
+            raise ContractIntegrityError("Recovery Contract audit history is incomplete.")
+        previous_current: str | None = None
+        for expected_version, row in enumerate(rows):
+            contract_id, event_type, previous_state, current_state, state_version, recorded_at, supplied_mac = row
+            if contract_id != contract.contract_id or state_version != expected_version:
+                raise ContractIntegrityError("Recovery Contract audit history ordering is invalid.")
+            if expected_version == 0:
+                if event_type != "contract_created" or previous_state is not None:
+                    raise ContractIntegrityError("Recovery Contract audit origin is invalid.")
+            elif previous_state != previous_current:
+                raise ContractIntegrityError("Recovery Contract audit state chain is invalid.")
+            try:
+                recorded = datetime.fromisoformat(str(recorded_at))
+            except ValueError as exc:
+                raise ContractIntegrityError("Recovery Contract audit timestamp is invalid.") from exc
+            if recorded.tzinfo is None or recorded.utcoffset() != timezone.utc.utcoffset(recorded):
+                raise ContractIntegrityError("Recovery Contract audit timestamp is invalid.")
+            expected_mac = self._audit_mac(
+                contract_id=str(contract_id),
+                event_type=str(event_type),
+                previous_state=str(previous_state) if previous_state is not None else None,
+                current_state=str(current_state),
+                state_version=int(state_version),
+                recorded_at=str(recorded_at),
+            )
+            if not hmac.compare_digest(str(supplied_mac), expected_mac):
+                raise ContractIntegrityError("Recovery Contract audit event failed integrity verification.")
+            previous_current = str(current_state)
+        if previous_current != contract.state.value:
+            raise ContractIntegrityError("Recovery Contract audit state does not match the authoritative record.")
+        return tuple(rows)
+
+    def _verify_related_state(self, connection: sqlite3.Connection, contract: RecoveryContract) -> None:
+        self._verify_reservation(connection, contract)
+        self._verified_audit_rows(connection, contract)
+
     def _invoke_fault(self, point: str) -> None:
         if self._fault_hook is not None:
             self._fault_hook(point)
 
     def create(self, contract: RecoveryContract) -> None:
-        if contract.state not in {RecoveryState.PREPARING, RecoveryState.PREPARED} or contract.state_version != 0:
-            raise ContractValidationError("New Recovery Contract must start at version zero in a preparation state.")
+        if contract.state != RecoveryState.PREPARING or contract.state_version != 0 or contract.is_confirmed:
+            raise ContractValidationError("New Recovery Contract must start unconfirmed at PREPARING version zero.")
+        now = self._now()
+        if contract.created_at > now or contract.is_expired(now=now):
+            raise ContractValidationError("New Recovery Contract validity window does not include the store clock.")
         payload = _contract_payload(contract)
         with self._connect() as connection:
             try:
+                self._invoke_fault("before_transaction")
                 connection.execute("BEGIN IMMEDIATE")
                 connection.execute(
                     "INSERT INTO contracts VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -260,6 +456,7 @@ class SqliteRecoveryContractStore:
                     ),
                 )
                 self._insert_audit(connection, contract, "contract_created", previous_state=None)
+                self._invoke_fault("after_record_write")
                 self._invoke_fault("before_commit")
                 connection.commit()
             except sqlite3.IntegrityError as exc:
@@ -270,19 +467,21 @@ class SqliteRecoveryContractStore:
     def load(self, contract_id: str) -> RecoveryContract:
         with self._connect() as connection:
             row = connection.execute(_SELECT_CONTRACT_BY_ID, (contract_id,)).fetchone()
-        if row is None:
-            raise ContractNotFoundError("Authoritative Recovery Contract was not found.")
-        contract = self._decode_row(row)
-        if contract.contract_id != contract_id:
-            raise ContractIntegrityError("Stored Recovery Contract identity does not match its index.")
+            if row is None:
+                raise ContractNotFoundError("Authoritative Recovery Contract was not found.")
+            contract = self._decode_row(row)
+            if contract.contract_id != contract_id:
+                raise ContractIntegrityError("Stored Recovery Contract identity does not match its index.")
+            self._verify_related_state(connection, contract)
         return contract
 
-    def confirm(
-        self, contract_id: str, *, actor_id: str, confirmed_at: datetime, expected_version: int
-    ) -> RecoveryContract:
+    def confirm(self, contract_id: str, *, actor_id: str, expected_version: int) -> RecoveryContract:
         current = self.load(contract_id)
         if current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract version changed before confirmation.")
+        confirmed_at = self._now()
+        if current.is_expired(now=confirmed_at):
+            raise ContractConflictError("Recovery Contract expired before confirmation.")
         confirmed = current.with_confirmation(actor_id=actor_id, confirmed_at=confirmed_at)
         return self._replace(current, confirmed, event_type="contract_confirmed")
 
@@ -294,13 +493,15 @@ class SqliteRecoveryContractStore:
         expected_version: int,
         target_state: RecoveryState,
         manual: bool = False,
-        now: datetime | None = None,
     ) -> RecoveryContract:
         require_transition(expected_state, target_state, manual=manual)
         current = self.load(contract_id)
         if current.state != expected_state or current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract state changed before atomic transition.")
-        instant = now if now is not None else datetime.now(timezone.utc)
+        instant = self._now()
+        if current.state in {RecoveryState.PREPARING, RecoveryState.PREPARED} and current.is_expired(now=instant):
+            if target_state != RecoveryState.EXPIRED:
+                raise ContractConflictError("Expired Recovery Contract may only transition to EXPIRED.")
         if target_state == RecoveryState.EXECUTING:
             if not current.is_confirmed or current.is_expired(now=instant):
                 raise ContractConflictError("Recovery Contract is unconfirmed or expired.")
@@ -311,19 +512,21 @@ class SqliteRecoveryContractStore:
         payload = _contract_payload(updated)
         with self._connect() as connection:
             try:
+                self._invoke_fault("before_transaction")
                 connection.execute("BEGIN IMMEDIATE")
                 row = connection.execute(_SELECT_CONTRACT_BY_ID, (current.contract_id,)).fetchone()
                 if row is None:
                     raise ContractNotFoundError("Authoritative Recovery Contract was not found.")
                 authoritative = self._decode_row(row)
+                self._verify_related_state(connection, authoritative)
                 if authoritative.state != current.state or authoritative.state_version != current.state_version:
                     raise ContractConflictError("Recovery Contract compare-and-set failed.")
-                if updated.state in _ACQUISITION_STATES:
+                if updated.state in _RESERVATION_STATES and current.state not in _RESERVATION_STATES:
                     connection.execute(
                         "INSERT INTO target_reservations VALUES (?, ?)",
                         (updated.target_identity_digest, updated.contract_id),
                     )
-                else:
+                elif updated.state not in _RESERVATION_STATES and current.state in _RESERVATION_STATES:
                     connection.execute("DELETE FROM target_reservations WHERE contract_id = ?", (updated.contract_id,))
                 cursor = connection.execute(
                     """UPDATE contracts
@@ -342,6 +545,7 @@ class SqliteRecoveryContractStore:
                 if cursor.rowcount != 1:
                     raise ContractConflictError("Recovery Contract compare-and-set failed.")
                 self._insert_audit(connection, updated, event_type, previous_state=current.state)
+                self._invoke_fault("after_record_write")
                 self._invoke_fault("before_commit")
                 connection.commit()
             except sqlite3.IntegrityError as exc:
@@ -369,45 +573,59 @@ class SqliteRecoveryContractStore:
     def interrupted(self) -> tuple[RecoveryContract, ...]:
         with self._connect() as connection:
             rows = connection.execute(_SELECT_ALL_CONTRACTS).fetchall()
-        contracts = (self._decode_row(row) for row in rows)
-        return tuple(contract for contract in contracts if contract.state in _INTERRUPTED_STATES)
+            contracts = tuple(self._decode_row(row) for row in rows)
+            for contract in contracts:
+                self._verify_related_state(connection, contract)
+            return tuple(contract for contract in contracts if contract.state in _INTERRUPTED_STATES)
 
     def audit_events(self, contract_id: str) -> tuple[dict[str, object], ...]:
         with self._connect() as connection:
-            rows = connection.execute(
-                """SELECT event_type, previous_state, current_state, state_version, recorded_at
-                   FROM audit_events WHERE contract_id = ? ORDER BY sequence""",
-                (contract_id,),
-            ).fetchall()
+            row = connection.execute(_SELECT_CONTRACT_BY_ID, (contract_id,)).fetchone()
+            if row is None:
+                raise ContractNotFoundError("Authoritative Recovery Contract was not found.")
+            contract = self._decode_row(row)
+            self._verify_reservation(connection, contract)
+            rows = self._verified_audit_rows(connection, contract)
         return tuple(
             {
-                "event_type": row[0],
-                "previous_state": row[1],
-                "current_state": row[2],
-                "state_version": row[3],
-                "recorded_at": row[4],
+                "event_type": row[1],
+                "previous_state": row[2],
+                "current_state": row[3],
+                "state_version": row[4],
+                "recorded_at": row[5],
             }
             for row in rows
         )
 
-    @staticmethod
     def _insert_audit(
+        self,
         connection: sqlite3.Connection,
         contract: RecoveryContract,
         event_type: str,
         *,
         previous_state: RecoveryState | None,
     ) -> None:
+        recorded_at = self._now().isoformat()
+        previous = previous_state.value if previous_state else None
+        current = contract.state.value
         connection.execute(
             """INSERT INTO audit_events(
-                   contract_id, event_type, previous_state, current_state, state_version, recorded_at
-               ) VALUES (?, ?, ?, ?, ?, ?)""",
+                   contract_id, event_type, previous_state, current_state, state_version, recorded_at, mac
+               ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 contract.contract_id,
                 event_type,
-                previous_state.value if previous_state else None,
-                contract.state.value,
+                previous,
+                current,
                 contract.state_version,
-                datetime.now(timezone.utc).isoformat(),
+                recorded_at,
+                self._audit_mac(
+                    contract_id=contract.contract_id,
+                    event_type=event_type,
+                    previous_state=previous,
+                    current_state=current,
+                    state_version=contract.state_version,
+                    recorded_at=recorded_at,
+                ),
             ),
         )
