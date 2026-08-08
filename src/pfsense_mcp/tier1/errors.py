@@ -35,3 +35,7 @@ class MutationPolicyError(Tier1Error):
 
 class ContractBindingError(Tier1Error):
     """An execution request does not match the authoritative contract."""
+
+
+class ConfirmationError(Tier1Error):
+    """Owner confirmation evidence is missing, invalid, or unverified."""

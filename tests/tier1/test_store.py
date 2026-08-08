@@ -8,7 +8,9 @@ from datetime import datetime, timezone
 
 import pytest
 
+from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.errors import (
+    ConfirmationError,
     ContractConflictError,
     ContractIntegrityError,
     ContractNotFoundError,
@@ -21,10 +23,34 @@ from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 
 
-def _store(tmp_path, *, fault_hook=None, clock=None):
+class _AcceptingVerifier:
+    def verify(self, evidence):
+        return evidence.proof == b"synthetic-valid-proof"
+
+
+_VERIFIER = _AcceptingVerifier()
+
+
+def _evidence(contract):
+    return ConfirmationEvidence(
+        authority_id="synthetic-owner",
+        algorithm="test-verifier",
+        nonce="nonce-001",
+        contract_id=contract.contract_id,
+        operation_id=contract.operation_id,
+        target_identity_digest=contract.target_identity_digest,
+        target_fingerprint=contract.target_fingerprint,
+        intent_digest=contract.intent_digest,
+        expires_at=contract.expires_at,
+        issued_at=contract.created_at,
+        proof=b"synthetic-valid-proof",
+    )
+
+
+def _store(tmp_path, *, fault_hook=None, clock=None, confirmation_verifier=_VERIFIER):
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(tmp_path, 0o700)
-    options = {"fault_hook": fault_hook}
+    options = {"fault_hook": fault_hook, "confirmation_verifier": confirmation_verifier}
     if clock is not None:
         options["clock"] = clock
     return SqliteRecoveryContractStore(
@@ -42,7 +68,7 @@ def _confirmed(store, contract):
     )
     return store.confirm(
         contract.contract_id,
-        actor_id="owner-approval",
+        evidence=_evidence(prepared),
         expected_version=prepared.state_version,
     )
 
@@ -65,7 +91,9 @@ def test_create_requires_unconfirmed_preparing_state(tmp_path, contract_factory)
         store.create(contract_factory(state=RecoveryState.PREPARED))
 
     prepared = contract_factory(state=RecoveryState.PREPARED)
-    forged = prepared.with_confirmation(actor_id="forged-owner", confirmed_at=prepared.created_at)
+    forged = prepared.with_confirmation(
+        authority_id="forged-owner", evidence_digest="f" * 64, confirmed_at=prepared.created_at
+    )
     with pytest.raises(ContractValidationError, match="unconfirmed"):
         store.create(forged)
 
@@ -238,6 +266,64 @@ def test_atomic_target_reservation_allows_only_one_thread(tmp_path, contract_fac
     assert sorted(outcomes) == ["acquired", "refused"]
 
 
+def test_different_targets_can_be_acquired_without_false_conflict(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    first = _confirmed(store, contract_factory())
+    second = _confirmed(
+        store,
+        contract_factory(
+            contract_id="contract-002",
+            operation_id="operation-002",
+            target_identity={"name": "other-target.invalid"},
+        ),
+    )
+    barrier = threading.Barrier(2)
+    outcomes: list[str] = []
+
+    def acquire(contract):
+        barrier.wait()
+        store.transition(
+            contract.contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=contract.state_version,
+            target_state=RecoveryState.EXECUTING,
+        )
+        outcomes.append(contract.contract_id)
+
+    threads = [threading.Thread(target=acquire, args=(contract,)) for contract in (first, second)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sorted(outcomes) == ["contract-001", "contract-002"]
+
+
+def test_concurrent_duplicate_idempotency_allows_one_contract(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contracts = (
+        contract_factory(contract_id="contract-001", operation_id="operation-001"),
+        contract_factory(contract_id="contract-002", operation_id="operation-002"),
+    )
+    barrier = threading.Barrier(2)
+    outcomes: list[str] = []
+
+    def create(contract):
+        barrier.wait()
+        try:
+            store.create(contract)
+        except ContractConflictError:
+            outcomes.append("refused")
+        else:
+            outcomes.append("created")
+
+    threads = [threading.Thread(target=create, args=(contract,)) for contract in contracts]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sorted(outcomes) == ["created", "refused"]
+
+
 def test_expired_or_unconfirmed_contract_cannot_execute(tmp_path, contract_factory):
     store = _store(tmp_path)
     unconfirmed = contract_factory()
@@ -306,7 +392,51 @@ def test_confirmation_uses_store_clock_and_refuses_expired_contract(tmp_path, co
     )
     current[0] = contract.expires_at
     with pytest.raises(ContractConflictError, match="expired before confirmation"):
-        store.confirm(contract.contract_id, actor_id="owner", expected_version=prepared.state_version)
+        store.confirm(contract.contract_id, evidence=_evidence(prepared), expected_version=prepared.state_version)
+
+
+def test_confirmation_fails_closed_without_owner_verifier(tmp_path, contract_factory):
+    store = _store(tmp_path, confirmation_verifier=None)
+    contract = contract_factory()
+    store.create(contract)
+    prepared = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+    with pytest.raises(ConfirmationError, match="No owner confirmation verifier"):
+        store.confirm(
+            contract.contract_id,
+            evidence=_evidence(prepared),
+            expected_version=prepared.state_version,
+        )
+
+
+@pytest.mark.parametrize("behavior", ["refuse", "raise"])
+def test_confirmation_verifier_failure_is_sanitized(tmp_path, contract_factory, behavior):
+    class RejectingVerifier:
+        def verify(self, evidence):
+            if behavior == "raise":
+                raise RuntimeError("synthetic proof details")
+            return False
+
+    store = _store(tmp_path, confirmation_verifier=RejectingVerifier())
+    contract = contract_factory()
+    store.create(contract)
+    prepared = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+    with pytest.raises(ConfirmationError) as captured:
+        store.confirm(
+            contract.contract_id,
+            evidence=_evidence(prepared),
+            expected_version=prepared.state_version,
+        )
+    assert "synthetic proof details" not in str(captured.value)
 
 
 def test_corrupt_contract_fails_integrity_check(tmp_path, contract_factory):
@@ -498,7 +628,87 @@ def test_missing_or_stale_target_reservation_fails_integrity(tmp_path, contract_
         store.load(executing.contract_id)
 
 
-def test_reconciliation_exit_requires_explicit_manual_action(tmp_path, contract_factory):
+def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    verified = store.transition(
+        executing.contract_id,
+        expected_state=RecoveryState.EXECUTING,
+        expected_version=executing.state_version,
+        target_state=RecoveryState.VERIFIED,
+    )
+    rolling_back = store.transition(
+        verified.contract_id,
+        expected_state=RecoveryState.VERIFIED,
+        expected_version=verified.state_version,
+        target_state=RecoveryState.ROLLING_BACK,
+    )
+    reconciled = _store(tmp_path).reconcile_interrupted()[0]
+    assert reconciled.state == RecoveryState.RECONCILIATION
+
+    competing = _confirmed(
+        store,
+        contract_factory(contract_id="contract-002", operation_id="operation-002", intent={"enabled": False}),
+    )
+    with pytest.raises(ContractConflictError, match="reserved"):
+        store.transition(
+            competing.contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=competing.state_version,
+            target_state=RecoveryState.EXECUTING,
+        )
+    assert rolling_back.target_identity_digest == reconciled.target_identity_digest
+
+
+def test_failed_rollback_keeps_target_locked(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    verified = store.transition(
+        executing.contract_id,
+        expected_state=RecoveryState.EXECUTING,
+        expected_version=executing.state_version,
+        target_state=RecoveryState.VERIFIED,
+    )
+    rolling_back = store.transition(
+        verified.contract_id,
+        expected_state=RecoveryState.VERIFIED,
+        expected_version=verified.state_version,
+        target_state=RecoveryState.ROLLING_BACK,
+    )
+    failed = store.transition(
+        rolling_back.contract_id,
+        expected_state=RecoveryState.ROLLING_BACK,
+        expected_version=rolling_back.state_version,
+        target_state=RecoveryState.ROLLBACK_FAILED,
+    )
+    assert store.load(failed.contract_id).state == RecoveryState.ROLLBACK_FAILED
+
+    competing = _confirmed(
+        store,
+        contract_factory(contract_id="contract-002", operation_id="operation-002", intent={"enabled": False}),
+    )
+    with pytest.raises(ContractConflictError, match="reserved"):
+        store.transition(
+            competing.contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=competing.state_version,
+            target_state=RecoveryState.EXECUTING,
+        )
+
+
+def test_generic_store_transition_cannot_claim_manual_reconciliation(tmp_path, contract_factory):
     store = _store(tmp_path)
     confirmed = _confirmed(store, contract_factory())
     executing = store.transition(
@@ -521,14 +731,7 @@ def test_reconciliation_exit_requires_explicit_manual_action(tmp_path, contract_
             expected_version=reconciled.state_version,
             target_state=RecoveryState.FAILED,
         )
-    resolved = store.transition(
-        reconciled.contract_id,
-        expected_state=RecoveryState.RECONCILIATION,
-        expected_version=reconciled.state_version,
-        target_state=RecoveryState.FAILED,
-        manual=True,
-    )
-    assert resolved.state == RecoveryState.FAILED
+    assert store.load(reconciled.contract_id).state == RecoveryState.RECONCILIATION
 
 
 def test_atomic_audit_contains_only_state_metadata(tmp_path, contract_factory):

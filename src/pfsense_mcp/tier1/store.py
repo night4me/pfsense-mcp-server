@@ -22,8 +22,10 @@ from pathlib import Path
 
 from pfsense_mcp.capabilities import Capability
 
+from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract
 from .errors import (
+    ConfirmationError,
     ContractConflictError,
     ContractIntegrityError,
     ContractNotFoundError,
@@ -182,6 +184,7 @@ class SqliteRecoveryContractStore:
         store_id: str,
         fault_hook: FaultHook | None = None,
         clock: Clock = _utc_now,
+        confirmation_verifier: ConfirmationVerifier | None = None,
     ) -> None:
         if not isinstance(integrity_key, bytes) or len(integrity_key) < 32:
             raise ContractValidationError("Recovery store integrity key must be at least 32 bytes.")
@@ -194,6 +197,7 @@ class SqliteRecoveryContractStore:
         self._store_id = store_id
         self._fault_hook = fault_hook
         self._clock = clock
+        self._confirmation_verifier = confirmation_verifier
         self._prepare_path()
         self._initialize_schema()
 
@@ -475,14 +479,28 @@ class SqliteRecoveryContractStore:
             self._verify_related_state(connection, contract)
         return contract
 
-    def confirm(self, contract_id: str, *, actor_id: str, expected_version: int) -> RecoveryContract:
+    def confirm(self, contract_id: str, *, evidence: ConfirmationEvidence, expected_version: int) -> RecoveryContract:
         current = self.load(contract_id)
         if current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract version changed before confirmation.")
         confirmed_at = self._now()
         if current.is_expired(now=confirmed_at):
             raise ContractConflictError("Recovery Contract expired before confirmation.")
-        confirmed = current.with_confirmation(actor_id=actor_id, confirmed_at=confirmed_at)
+        evidence.verify_bindings(current)
+        verifier = self._confirmation_verifier
+        if verifier is None:
+            raise ConfirmationError("No owner confirmation verifier is configured.")
+        try:
+            verified = verifier.verify(evidence)
+        except Exception:
+            raise ConfirmationError("Owner confirmation verification failed.") from None
+        if not verified:
+            raise ConfirmationError("Owner confirmation evidence was refused.")
+        confirmed = current.with_confirmation(
+            authority_id=evidence.authority_id,
+            evidence_digest=evidence.evidence_digest,
+            confirmed_at=confirmed_at,
+        )
         return self._replace(current, confirmed, event_type="contract_confirmed")
 
     def transition(
@@ -492,9 +510,8 @@ class SqliteRecoveryContractStore:
         expected_state: RecoveryState,
         expected_version: int,
         target_state: RecoveryState,
-        manual: bool = False,
     ) -> RecoveryContract:
-        require_transition(expected_state, target_state, manual=manual)
+        require_transition(expected_state, target_state)
         current = self.load(contract_id)
         if current.state != expected_state or current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract state changed before atomic transition.")

@@ -47,12 +47,21 @@ class Tier1AuditEvent:
             raise ValueError("Tier 1 audit timestamp must be UTC.")
         if not all(_SAFE_TOKEN.fullmatch(value) for value in (*tokens, *optional_tokens)):
             raise ValueError("Tier 1 audit metadata contains an unsafe token.")
-        if not self.capability.name.endswith("_WRITE") or self.http_method not in _MUTATING_METHODS:
+        if (
+            not isinstance(self.capability, Capability)
+            or not self.capability.name.endswith("_WRITE")
+            or not isinstance(self.http_method, str)
+            or self.http_method not in _MUTATING_METHODS
+        ):
             raise ValueError("Tier 1 audit authority metadata is invalid.")
         if not _HEX_64.fullmatch(self.target_identity_digest) or not _HEX_64.fullmatch(self.intent_digest):
             raise ValueError("Tier 1 audit digest metadata is invalid.")
         if self.exception_class is not None and not _SAFE_CLASS.fullmatch(self.exception_class):
             raise ValueError("Exception class is not safe for audit serialization.")
+        if self.previous_state is not None and not isinstance(self.previous_state, RecoveryState):
+            raise ValueError("Tier 1 audit state metadata is invalid.")
+        if self.current_state is not None and not isinstance(self.current_state, RecoveryState):
+            raise ValueError("Tier 1 audit state metadata is invalid.")
 
     def to_json(self) -> str:
         payload = asdict(self)

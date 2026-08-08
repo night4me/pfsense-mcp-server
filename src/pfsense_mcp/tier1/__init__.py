@@ -7,6 +7,7 @@ tool registration, or mutation executor.
 
 from .audit import Tier1AuditEvent
 from .canonical import DigestPurpose, canonical_json, digest_value
+from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from .policy import INACTIVE_TIER1_POLICY, MutationPolicy, MutationRule
 from .state_machine import RecoveryState
@@ -14,6 +15,8 @@ from .store import SqliteRecoveryContractStore
 
 __all__ = [
     "DigestPurpose",
+    "ConfirmationEvidence",
+    "ConfirmationVerifier",
     "INACTIVE_TIER1_POLICY",
     "MutationPolicy",
     "MutationRule",

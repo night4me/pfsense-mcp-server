@@ -20,11 +20,11 @@ class MutationRule:
     http_method: str
 
     def __post_init__(self) -> None:
-        if not self.capability.name.endswith("_WRITE"):
+        if not isinstance(self.capability, Capability) or not self.capability.name.endswith("_WRITE"):
             raise MutationPolicyError("Tier 1 policy rule requires a WRITE capability.")
-        if not _ENDPOINT_SYMBOL.fullmatch(self.endpoint_symbol):
+        if not isinstance(self.endpoint_symbol, str) or not _ENDPOINT_SYMBOL.fullmatch(self.endpoint_symbol):
             raise MutationPolicyError("Tier 1 policy endpoint symbol is invalid.")
-        if self.http_method not in _MUTATING_METHODS:
+        if not isinstance(self.http_method, str) or self.http_method not in _MUTATING_METHODS:
             raise MutationPolicyError("Tier 1 policy HTTP method is not mutating.")
 
 

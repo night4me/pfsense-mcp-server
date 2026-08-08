@@ -51,8 +51,12 @@ def test_audit_refuses_unsafe_exception_class(unsafe):
     ("field", "value"),
     [
         ("outcome", "failed\nsecret"),
+        ("outcome", "failed\rforged"),
+        ("outcome", "failed\u2028forged"),
+        ("outcome", "failed\x1b[31m"),
         ("failure_class", "transport payload"),
         ("event_id", "event/value"),
+        ("event_id", "x" * 129),
     ],
 )
 def test_untrusted_audit_metadata_cannot_inject_values(field, value):
@@ -66,7 +70,9 @@ def test_untrusted_audit_metadata_cannot_inject_values(field, value):
         {"timestamp": datetime.now()},
         {"timestamp": datetime.now(timezone(timedelta(hours=1)))},
         {"capability": Capability.SYSTEM_READ},
+        {"capability": "ALIAS_WRITE"},
         {"http_method": "GET"},
+        {"current_state": "failed"},
         {"target_identity_digest": "bad"},
         {"intent_digest": "bad"},
     ],

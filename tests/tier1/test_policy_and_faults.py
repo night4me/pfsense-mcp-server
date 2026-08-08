@@ -39,7 +39,11 @@ def test_policy_requires_exact_capability_endpoint_and_method():
     [
         lambda: MutationRule(Capability.SYSTEM_READ, "SYNTHETIC_ENDPOINT", "PATCH"),
         lambda: MutationRule(Capability.ALIAS_WRITE, "unsafe/endpoint", "PATCH"),
+        lambda: MutationRule(Capability.ALIAS_WRITE, "SYNTHETIC%5FENDPOINT", "PATCH"),
+        lambda: MutationRule(Capability.ALIAS_WRITE, " synthetic_endpoint", "PATCH"),
         lambda: MutationRule(Capability.ALIAS_WRITE, "SYNTHETIC_ENDPOINT", "GET"),
+        lambda: MutationRule(Capability.ALIAS_WRITE, "SYNTHETIC_ENDPOINT", "patch"),
+        lambda: MutationRule("ALIAS_WRITE", "SYNTHETIC_ENDPOINT", "PATCH"),
     ],
 )
 def test_invalid_policy_rules_fail_at_construction(rule):

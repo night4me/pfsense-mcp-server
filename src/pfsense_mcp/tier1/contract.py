@@ -151,19 +151,26 @@ class RecoveryContract:
             raise ContractValidationError("Recovery Contract comparison time must be UTC.")
         return current >= self.expires_at
 
-    def with_confirmation(self, *, actor_id: str, confirmed_at: datetime) -> "RecoveryContract":
+    def with_confirmation(
+        self, *, authority_id: str, evidence_digest: str, confirmed_at: datetime
+    ) -> "RecoveryContract":
         if self.state != RecoveryState.PREPARED or self.is_confirmed:
             raise ContractBindingError("Recovery Contract cannot accept this confirmation.")
-        if not _IDENTIFIER.fullmatch(actor_id):
-            raise ContractValidationError("Confirmation actor identifier is invalid.")
+        if not isinstance(authority_id, str) or not _IDENTIFIER.fullmatch(authority_id):
+            raise ContractValidationError("Confirmation authority identifier is invalid.")
+        if not isinstance(evidence_digest, str) or not _HEX_64.fullmatch(evidence_digest):
+            raise ContractValidationError("Confirmation evidence digest is invalid.")
         digest = digest_value(
             DigestPurpose.CONFIRMATION,
             {
-                "actor_id": actor_id,
+                "authority_id": authority_id,
                 "contract_id": self.contract_id,
+                "evidence_digest": evidence_digest,
                 "expires_at": self.expires_at.isoformat(),
                 "intent_digest": self.intent_digest,
                 "operation_id": self.operation_id,
+                "target_fingerprint": self.target_fingerprint,
+                "target_identity_digest": self.target_identity_digest,
             },
         )
         return replace(

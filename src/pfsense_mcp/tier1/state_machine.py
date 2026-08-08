@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from types import MappingProxyType
+from typing import Mapping
 
 from .errors import IllegalTransitionError
 
@@ -26,36 +28,48 @@ class TransitionRule:
     manual_only: bool = False
 
 
-LEGAL_TRANSITIONS: dict[RecoveryState, dict[RecoveryState, TransitionRule]] = {
-    RecoveryState.PREPARING: {
-        RecoveryState.PREPARED: TransitionRule(),
-        RecoveryState.FAILED: TransitionRule(),
-        RecoveryState.EXPIRED: TransitionRule(),
-    },
-    RecoveryState.PREPARED: {
-        RecoveryState.EXECUTING: TransitionRule(),
-        RecoveryState.FAILED: TransitionRule(),
-        RecoveryState.EXPIRED: TransitionRule(),
-    },
-    RecoveryState.EXECUTING: {
-        RecoveryState.VERIFIED: TransitionRule(),
-        RecoveryState.FAILED: TransitionRule(),
-        RecoveryState.RECONCILIATION: TransitionRule(),
-    },
-    RecoveryState.VERIFIED: {RecoveryState.ROLLING_BACK: TransitionRule()},
-    RecoveryState.ROLLING_BACK: {
-        RecoveryState.ROLLED_BACK: TransitionRule(),
-        RecoveryState.ROLLBACK_FAILED: TransitionRule(),
-        RecoveryState.RECONCILIATION: TransitionRule(),
-    },
-    RecoveryState.RECONCILIATION: {
-        RecoveryState.VERIFIED: TransitionRule(manual_only=True),
-        RecoveryState.FAILED: TransitionRule(manual_only=True),
-        RecoveryState.ROLLING_BACK: TransitionRule(manual_only=True),
-        RecoveryState.ROLLED_BACK: TransitionRule(manual_only=True),
-        RecoveryState.ROLLBACK_FAILED: TransitionRule(manual_only=True),
-    },
-}
+LEGAL_TRANSITIONS: Mapping[RecoveryState, Mapping[RecoveryState, TransitionRule]] = MappingProxyType(
+    {
+        RecoveryState.PREPARING: MappingProxyType(
+            {
+                RecoveryState.PREPARED: TransitionRule(),
+                RecoveryState.FAILED: TransitionRule(),
+                RecoveryState.EXPIRED: TransitionRule(),
+            }
+        ),
+        RecoveryState.PREPARED: MappingProxyType(
+            {
+                RecoveryState.EXECUTING: TransitionRule(),
+                RecoveryState.FAILED: TransitionRule(),
+                RecoveryState.EXPIRED: TransitionRule(),
+            }
+        ),
+        RecoveryState.EXECUTING: MappingProxyType(
+            {
+                RecoveryState.VERIFIED: TransitionRule(),
+                RecoveryState.FAILED: TransitionRule(),
+                RecoveryState.RECONCILIATION: TransitionRule(),
+            }
+        ),
+        RecoveryState.VERIFIED: MappingProxyType({RecoveryState.ROLLING_BACK: TransitionRule()}),
+        RecoveryState.ROLLING_BACK: MappingProxyType(
+            {
+                RecoveryState.ROLLED_BACK: TransitionRule(),
+                RecoveryState.ROLLBACK_FAILED: TransitionRule(),
+                RecoveryState.RECONCILIATION: TransitionRule(),
+            }
+        ),
+        RecoveryState.RECONCILIATION: MappingProxyType(
+            {
+                RecoveryState.VERIFIED: TransitionRule(manual_only=True),
+                RecoveryState.FAILED: TransitionRule(manual_only=True),
+                RecoveryState.ROLLING_BACK: TransitionRule(manual_only=True),
+                RecoveryState.ROLLED_BACK: TransitionRule(manual_only=True),
+                RecoveryState.ROLLBACK_FAILED: TransitionRule(manual_only=True),
+            }
+        ),
+    }
+)
 
 
 def require_transition(current: RecoveryState, target: RecoveryState, *, manual: bool = False) -> None:

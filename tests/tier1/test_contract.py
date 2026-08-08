@@ -59,21 +59,29 @@ def test_any_binding_drift_is_refused(contract_factory, field, value):
 
 def test_confirmation_is_digest_bound_and_single_use(contract_factory):
     contract = contract_factory(state=RecoveryState.PREPARED)
-    confirmed = contract.with_confirmation(actor_id="owner-approval", confirmed_at=datetime.now(timezone.utc))
+    confirmed = contract.with_confirmation(
+        authority_id="owner-approval",
+        evidence_digest="e" * 64,
+        confirmed_at=datetime.now(timezone.utc),
+    )
 
     assert confirmed.is_confirmed
     assert confirmed.state == RecoveryState.PREPARED
     assert confirmed.state_version == 1
     assert len(confirmed.confirmation_digest) == 64
     with pytest.raises(ContractBindingError):
-        confirmed.with_confirmation(actor_id="replay", confirmed_at=datetime.now(timezone.utc))
+        confirmed.with_confirmation(
+            authority_id="replay", evidence_digest="e" * 64, confirmed_at=datetime.now(timezone.utc)
+        )
 
 
-@pytest.mark.parametrize("actor_id", ["", "owner\nforged", "x" * 129])
-def test_confirmation_actor_identifier_is_bounded_and_safe(contract_factory, actor_id):
+@pytest.mark.parametrize("authority_id", ["", "owner\nforged", "x" * 129])
+def test_confirmation_authority_identifier_is_bounded_and_safe(contract_factory, authority_id):
     contract = contract_factory(state=RecoveryState.PREPARED)
-    with pytest.raises(ContractValidationError, match="actor identifier"):
-        contract.with_confirmation(actor_id=actor_id, confirmed_at=contract.created_at)
+    with pytest.raises(ContractValidationError, match="authority identifier"):
+        contract.with_confirmation(
+            authority_id=authority_id, evidence_digest="e" * 64, confirmed_at=contract.created_at
+        )
 
 
 @pytest.mark.parametrize(
@@ -97,7 +105,7 @@ def test_invalid_contract_boundaries_fail_closed(contract_factory, changes):
 def test_confirmation_must_be_inside_contract_window(contract_factory):
     contract = contract_factory(state=RecoveryState.PREPARED)
     with pytest.raises(ContractValidationError, match="validity window"):
-        contract.with_confirmation(actor_id="owner", confirmed_at=contract.expires_at)
+        contract.with_confirmation(authority_id="owner", evidence_digest="e" * 64, confirmed_at=contract.expires_at)
 
 
 def test_contract_times_must_be_utc(contract_factory):
