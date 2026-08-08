@@ -12,6 +12,33 @@ without further architectural decisions. **It must not be implemented as
 part of this design phase** — the deliverable here is the design, reviewed
 and frozen, not code.
 
+**Implementation note (discovered during Phase 3 implementation):** this
+spec's "send exactly one bounded typed request" assumed the existing
+`WriteApiClient`/`Transport` stack could already carry a request body. It
+could not — `Transport.request(method, path)` had no body parameter at
+all (the whole stack was shaped for GET, which never needs one), matching
+`TIER1_ROADMAP.md` Milestone 4's explicit (and, until now, unscheduled
+relative to this spec) "implement explicit JSON/body transmission"
+requirement. Closed as a small, additive, fully-tested precondition
+before `executor.py` itself was written: `Transport.request()` gained an
+optional `body: bytes | None = None` parameter (`HttpTransport`/
+`MockTransport` updated to match, zero behavior change for any existing
+GET-only caller since the parameter defaults to `None`), and
+`WriteApiClient` gained a new public method, `send_for_tier1(*,
+endpoint_symbol, http_method, body) -> TransportResponse` — deliberately
+**not** a reuse of `execute()`, which is hard-coupled to Tier 0's own
+`RecoveryContract`/`ContractStatus` model (a different, incompatible
+contract shape from Tier 1's `PREPARING`/`PREPARED`/`EXECUTING` state
+machine) and to `write_types.MutationPlan`'s `payload: dict[str, Any]`
+field, which directly contradicts this spec's own G2 ("no raw dict
+payload"). `send_for_tier1()` performs the identical allow-list/verified/
+method/api-version checks as `execute()`, takes no Tier 0 contract
+parameter (Tier 1's caller has already done its own, more rigorous
+validation), and returns the raw `TransportResponse` for the executor to
+classify — it remains exactly as inert as `execute()` while
+`WriteEndpoints` stays empty. `execute()`'s existing behavior, signature,
+and tests are completely unchanged.
+
 ## Purpose
 
 There is currently no code anywhere in this repository that can send a

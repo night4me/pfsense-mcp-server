@@ -25,6 +25,41 @@ def test_request_sends_api_key_header_and_returns_response():
 
 
 @respx.mock
+def test_request_sends_body_and_content_type_when_provided():
+    route = respx.patch("https://pfsense.example.invalid/api/v2/firewall/alias").mock(
+        return_value=httpx.Response(200, text='{"status": "ok"}')
+    )
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        response = transport.request("PATCH", "/api/v2/firewall/alias", body=b'{"descr":"updated"}')
+    finally:
+        transport.close()
+
+    assert route.called
+    sent_request = route.calls.last.request
+    assert sent_request.headers["X-API-Key"] == "fake-key"
+    assert sent_request.headers["Content-Type"] == "application/json"
+    assert sent_request.content == b'{"descr":"updated"}'
+    assert response.status_code == 200
+
+
+@respx.mock
+def test_request_without_body_sends_no_content_type_and_no_content():
+    route = respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(
+        return_value=httpx.Response(200, text='{"status": "ok"}')
+    )
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+
+    sent_request = route.calls.last.request
+    assert "Content-Type" not in sent_request.headers
+    assert sent_request.content == b""
+
+
+@respx.mock
 def test_connect_error_raises_transport_connection_error():
     respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=httpx.ConnectError("boom"))
     transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)

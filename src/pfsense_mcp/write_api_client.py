@@ -95,11 +95,48 @@ class WriteApiClient:
             committed_at_utc=datetime.now(timezone.utc).isoformat(),
         )
 
-    def _request(self, method: str, path: str) -> TransportResponse:
-        # Unreachable in this build: execute() above always raises
+    def send_for_tier1(self, *, endpoint_symbol: str, http_method: str, body: bytes) -> TransportResponse:
+        """The sealed Tier 1 executor's only entry point into this
+        chokepoint (see docs/tier1/specs/sealed_executor.md). Unlike
+        execute() above, this takes no Tier 0 RecoveryContract: Tier 1's
+        caller has already performed its own, more rigorous contract
+        validation (PREPARED/confirmed/unexpired, atomic
+        PREPARED -> EXECUTING acquisition, target re-verification) before
+        ever reaching this call, so re-imposing Tier 0's simpler
+        status == OPEN check here would be redundant and would incorrectly
+        couple this chokepoint to a contract model Tier 1 does not use.
+
+        Performs the identical allow-list/verified/method/api-version
+        checks as execute() and is exactly as inert while WriteEndpoints
+        is empty -- every call refuses before any network call in this
+        build. Returns the raw TransportResponse; classifying it into
+        VERIFIED/FAILED/RECONCILIATION is the executor's responsibility,
+        not this chokepoint's -- this method's only job is to prove
+        exactly one bounded request reached exactly one allow-listed
+        endpoint."""
+
+        endpoint = _resolve_endpoint(endpoint_symbol)
+        if endpoint is None:
+            raise WriteNotAllowedError(f"{endpoint_symbol!r} is not in the write allow-list.")
+        if not endpoint.verified:
+            raise WriteNotAllowedError(f"WriteEndpoints.{endpoint_symbol} is not verified=True.")
+        if endpoint.http_method != http_method:
+            raise WriteNotAllowedError(
+                f"http_method {http_method!r} does not match the allow-listed method for {endpoint_symbol!r}."
+            )
+        if not version_at_least(self._api_version, endpoint.min_api_version):
+            raise WriteNotAllowedError(
+                f"Endpoint requires API version >= {endpoint.min_api_version.value}, "
+                f"client is configured for {self._api_version.value}."
+            )
+        path = f"/api/{self._api_version.value}{endpoint.path_suffix}"
+        return self._request(http_method, path, body=body)
+
+    def _request(self, method: str, path: str, *, body: bytes | None = None) -> TransportResponse:
+        # Unreachable in this build via execute(): it always raises
         # WriteNotAllowedError first, since WriteEndpoints is empty.
-        # This is the sole call site scripts/get_only_check.py permits
-        # for a non-GET request, mirroring RestApiClient._request's role
-        # for GET.
+        # Also unreachable via send_for_tier1() for the same reason. This
+        # is the sole call site scripts/get_only_check.py permits for a
+        # non-GET request, mirroring RestApiClient._request's role for GET.
         logger.warning("mutating_request identity=%s method=%s path=%s", self._identity, method, path)
-        return self._transport.request(method, path)
+        return self._transport.request(method, path, body=body)

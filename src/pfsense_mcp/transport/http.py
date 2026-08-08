@@ -16,9 +16,10 @@ class HttpTransport:
             timeout=httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=10.0),
         )
 
-    def request(self, method: str, path: str) -> TransportResponse:
+    def request(self, method: str, path: str, *, body: bytes | None = None) -> TransportResponse:
         try:
-            response = self._client.request(method, path)
+            headers = {"Content-Type": "application/json"} if body is not None else None
+            response = self._client.request(method, path, content=body, headers=headers)
         except httpx.ConnectError:
             raise TransportConnectionError(f"Could not connect for {method} {path}") from None
         except httpx.TimeoutException:

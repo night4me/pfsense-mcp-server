@@ -142,3 +142,84 @@ def test_execute_succeeds_for_an_allow_listed_endpoint_with_an_open_contract(mon
     assert result.contract_id == contract.contract_id
     assert result.status_code == 200
     assert transport.calls == [("POST", "/api/v2/example")]
+
+
+def test_send_for_tier1_refuses_unknown_endpoint_before_any_network_call():
+    client, transport = _client()
+
+    with pytest.raises(WriteNotAllowedError, match="not in the write allow-list"):
+        client.send_for_tier1(endpoint_symbol="NOT_ALLOW_LISTED", http_method="PATCH", body=b"{}")
+
+    assert transport.calls == []
+
+
+def test_send_for_tier1_requires_no_tier0_contract(monkeypatch):
+    """The one behavioral difference from execute(): no contract
+    parameter exists at all, since Tier 1's caller has already done its
+    own contract validation before ever calling this method."""
+
+    monkeypatch.setattr(
+        WriteEndpoints,
+        "TEST_ONLY_ENDPOINT",
+        WriteEndpointInfo(
+            path_suffix="/example",
+            http_method="PATCH",
+            verified=True,
+            min_api_version=ApiVersion.V2,
+            reversible=True,
+            dry_run_supported=True,
+        ),
+        raising=False,
+    )
+    client, transport = _client()
+    transport.register("PATCH", "/api/v2/example", status_code=200, text='{"ok": true}')
+
+    response = client.send_for_tier1(endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b'{"descr":"x"}')
+
+    assert response.status_code == 200
+    assert transport.calls == [("PATCH", "/api/v2/example")]
+    assert transport.request_bodies == [b'{"descr":"x"}']
+
+
+def test_send_for_tier1_refuses_unverified_endpoint(monkeypatch):
+    monkeypatch.setattr(
+        WriteEndpoints,
+        "TEST_ONLY_ENDPOINT",
+        WriteEndpointInfo(
+            path_suffix="/example",
+            http_method="PATCH",
+            verified=False,
+            min_api_version=ApiVersion.V2,
+            reversible=True,
+            dry_run_supported=True,
+        ),
+        raising=False,
+    )
+    client, transport = _client()
+
+    with pytest.raises(WriteNotAllowedError, match="not verified"):
+        client.send_for_tier1(endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}")
+
+    assert transport.calls == []
+
+
+def test_send_for_tier1_refuses_method_mismatch(monkeypatch):
+    monkeypatch.setattr(
+        WriteEndpoints,
+        "TEST_ONLY_ENDPOINT",
+        WriteEndpointInfo(
+            path_suffix="/example",
+            http_method="PATCH",
+            verified=True,
+            min_api_version=ApiVersion.V2,
+            reversible=True,
+            dry_run_supported=True,
+        ),
+        raising=False,
+    )
+    client, transport = _client()
+
+    with pytest.raises(WriteNotAllowedError, match="does not match the allow-listed method"):
+        client.send_for_tier1(endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="DELETE", body=b"{}")
+
+    assert transport.calls == []
