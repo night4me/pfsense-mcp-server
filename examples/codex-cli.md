@@ -5,7 +5,7 @@ with the ChatGPT desktop app and Codex IDE extension on the same host.
 
 ## Installation
 
-Install this project from source using the [main guide](../README.md#installation-from-source),
+Install this project from source using the [main guide](../README.md#installing-from-source),
 and install Codex CLI according to OpenAI's documentation. Absolute paths make
 the setup independent of Codex's working directory.
 

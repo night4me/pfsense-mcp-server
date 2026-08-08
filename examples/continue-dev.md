@@ -4,7 +4,7 @@ Continue supports local stdio MCP servers in Agent mode.
 
 ## Installation
 
-Install the project using the [README](../README.md#installation-from-source). Open the
+Install the project using the [README](../README.md#installation). Open the
 Continue configuration used by your IDE. The YAML format below can be included
 in the main `config.yaml` or adapted to a standalone block under
 `.continue/mcpServers/` with the metadata required by Continue.
