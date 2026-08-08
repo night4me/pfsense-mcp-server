@@ -46,12 +46,19 @@ capability or authorizes a production change.
 ### Committed
 
 - Keep the v0.2.2 public MCP contract and production READ behavior unchanged.
-- Specify and test the Recovery Contract, closed state machine, canonical
-  digests, authenticated persistence, policy bindings, and audit event model.
+- Specify, implement, and test the Recovery Contract, closed state machine,
+  canonical digests, authenticated persistence, policy bindings, audit event
+  model, protected-artifact encryption, key lifecycle, whole-store
+  anti-rollback protocol, confirmation/reconciliation authorities, rate/
+  blast-radius containment, and a sealed mutation executor composing all of
+  it behind one chokepoint — done; every subsystem is implemented and
+  tested, still entirely unreachable from production.
 - Keep the Tier 1 package outside production bootstrap with an empty mutation
-  policy, no WRITE endpoint, no executor, and no registered WRITE tool.
-- Produce a risk-ranked WRITE endpoint study and disposable-lab acceptance
-  design before asking the owner to select a first capability.
+  policy, no WRITE endpoint, no executor construction, and no registered
+  WRITE tool.
+- Produce a risk-ranked WRITE endpoint study and a disposable-lab acceptance
+  design and offline-tested harness before asking the owner to select a
+  first capability and run a live lab acceptance pass.
 
 ### Candidate
 

@@ -27,8 +27,16 @@ Three hostile review lenses reach the same conclusion:
   receives a raw transport. The future executor must exclusively own transport,
   policy, state transitions, send count, and verification orchestration.
 
-Framework readiness is **READY FOR WRITE DESIGN ONLY**. It is not ready for an
-adapter, disposable-lab mutation, or production activation.
+Framework readiness was **READY FOR WRITE DESIGN ONLY** at the time of this
+review. Design has since become implementation: every Phase 1–4 subsystem in
+[`docs/tier1/IMPLEMENTATION_ROADMAP.md`](tier1/IMPLEMENTATION_ROADMAP.md) is
+now implemented and tested, including the sealed executor and an
+offline-tested disposable-lab harness — see that document's phase-completion
+table for the authoritative current status. It is still not ready for a real
+adapter, a *live* disposable-lab mutation, or production activation: those
+each remain gated on a real candidate adapter, live lab evidence, and
+separate, explicit capability/endpoint authorization, none of which this
+review or its resolution grants.
 
 ## Protected-artifact confidentiality options
 

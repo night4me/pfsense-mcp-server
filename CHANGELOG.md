@@ -9,22 +9,51 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Inert v0.3.0 Tier 1 domain framework for canonical Recovery Contracts,
-  closed legal transitions, authenticated atomic persistence, exact mutation
+- Inert v0.3.0 Tier 1 domain framework: canonical Recovery Contracts, closed
+  legal state transitions, authenticated atomic persistence, exact mutation
   policy bindings, fault classification, and value-free audit events.
+- Full Tier 1 subsystem implementation, each independently reviewed, tested,
+  and still entirely unreachable from production: protected-artifact
+  encryption and key lifecycle, a whole-store anti-rollback protocol,
+  Ed25519 confirmation and reconciliation authorities, rate/blast-radius
+  containment, and a sealed mutation executor composing all of them behind
+  exactly one (still-empty) send chokepoint.
+- An offline-only disposable-lab fault-injection harness (`lab/`, not
+  packaged, not part of the default test run) for exercising Tier 1's fault
+  scenarios against `MockTransport` before any real capability adapter or
+  live lab VM exists.
 - Adversarial offline tests for replay, tampering, stale state, target
   concurrency, restart reconciliation, and injected persistence failures.
-- Implementation-ready Tier 1 architecture, disposable-lab plan, and a
-  conservative inventory of writable upstream endpoint classes.
+- Implementation-ready Tier 1 architecture, an accepted 6-phase
+  implementation roadmap, 16 Architecture Decision Records, 10 subsystem
+  specifications, a disposable-lab plan, and a conservative inventory of
+  writable upstream endpoint classes.
+- A build-only MkDocs documentation site organizing the full `docs/`
+  reference into a browsable nav (not yet publicly deployed).
+- CI hardening: a bandit static-security stage in both `make quick` and
+  `make validate` (previously CI-only), a documentation-site build check,
+  and a dependency-review check on pull requests.
+- Expanded `CONTRIBUTING.md` (local-setup troubleshooting, git/PR workflow,
+  a full documentation map) and `SECURITY.md` (explicit security
+  guarantees, non-goals, and vulnerability-report scope).
 
 ### Security
 
 - Production mutation remains unreachable: the Engineer profile is empty, the
-  WRITE endpoint allow-list is empty, no WRITE tool registers, and the new
-  Tier 1 package is absent from production bootstrap.
-- Stored Tier 1 records are integrity-authenticated and protected payloads are
-  opaque; production activation remains blocked on an external encryption/key
-  provider and an anti-rollback durability decision.
+  WRITE endpoint allow-list is empty, no WRITE tool registers, and the entire
+  Tier 1 package remains absent from production bootstrap — verified by
+  dedicated tests after every change, not only documented as intent.
+- Stored Tier 1 records are integrity-authenticated; protected payloads use
+  AES-256-GCM with domain-separated associated data. Two design flaws were
+  found and fixed by tests before any code shipped: an anti-rollback
+  comparison that checked the wrong direction for the primary rollback
+  threat, and a confirmation-signature scheme that was circular as
+  originally specified. Both are documented in their governing
+  specifications with the original design and the fix.
+- Production activation remains blocked on genuine owner/infrastructure
+  decisions (an anti-rollback hardware backend selection; a live
+  disposable-lab evidence run) and an explicit capability/endpoint
+  authorization — none of which this release grants.
 
 ## [0.2.2] - 2026-08-07
 

@@ -52,6 +52,10 @@ Repository = "https://github.com/night4me/pfsense-mcp-server"
 Issues = "https://github.com/night4me/pfsense-mcp-server/issues"
 Changelog = "https://github.com/night4me/pfsense-mcp-server/blob/main/CHANGELOG.md"
 Security = "https://github.com/night4me/pfsense-mcp-server/security/policy"
+# A dedicated docs site (mkdocs.yml) is built and CI-verified but not yet
+# publicly deployed (no GitHub Pages) -- this points at the same content's
+# source until then; update to the deployed site URL once Pages is enabled.
+Documentation = "https://github.com/night4me/pfsense-mcp-server/tree/main/docs"
 
 [tool.pytest.ini_options]
 pythonpath = ["scripts"]
