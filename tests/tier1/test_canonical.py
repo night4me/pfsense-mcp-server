@@ -33,3 +33,54 @@ def test_digest_is_stable_and_domain_separated():
     assert first == second
     assert first != target
     assert len(first) == 64
+
+
+def test_digest_context_uses_unambiguous_framing():
+    value = {"intent": "same"}
+    assert digest_value(DigestPurpose.INTENT, value, context=("A\0B", "C")) != digest_value(
+        DigestPurpose.INTENT, value, context=("A", "B\0C")
+    )
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        (True, 1),
+        (None, ""),
+        (["a", "b"], ["b", "a"]),
+        ({"present": None}, {}),
+        ("paypal", "pаypal"),  # second value contains Cyrillic 'a'
+        (" ", ""),
+    ],
+)
+def test_meaningfully_different_values_remain_distinct(left, right):
+    assert canonical_json(left) != canonical_json(right)
+
+
+def test_nested_object_order_is_deterministic():
+    assert canonical_json({"z": {"b": 2, "a": 1}, "a": [3, 2, 1]}) == canonical_json(
+        {"a": [3, 2, 1], "z": {"a": 1, "b": 2}}
+    )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        2**63,
+        -(2**63) - 1,
+        "\ud800",
+        "x" * 65_537,
+        [None] * 4_097,
+    ],
+)
+def test_resource_and_utf8_boundaries_fail_closed(value):
+    with pytest.raises(CanonicalizationError):
+        canonical_json(value)
+
+
+def test_excessive_nesting_fails_closed():
+    value: object = None
+    for _ in range(34):
+        value = [value]
+    with pytest.raises(CanonicalizationError, match="nesting"):
+        canonical_json(value)
