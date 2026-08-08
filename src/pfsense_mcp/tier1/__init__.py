@@ -9,6 +9,7 @@ from .anti_rollback import AntiRollbackAnchor, HighWaterMark
 from .audit import Tier1AuditEvent
 from .canonical import DigestPurpose, canonical_json, digest_value, frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
+from .confirmation_providers import Ed25519ConfirmationVerifier, PinnedAuthority
 from .contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from .crypto import ArtifactAlgorithm, ArtifactRole, build_nonce, decrypt_artifact, encrypt_artifact
 from .key_lifecycle import KeyPurpose, KeyRecord, NonceCounter, RotationReport, load_key_material, rotate_key
@@ -23,6 +24,7 @@ __all__ = [
     "DigestPurpose",
     "ConfirmationEvidence",
     "ConfirmationVerifier",
+    "Ed25519ConfirmationVerifier",
     "HighWaterMark",
     "INACTIVE_TIER1_POLICY",
     "KeyPurpose",
@@ -30,6 +32,7 @@ __all__ = [
     "MutationPolicy",
     "MutationRule",
     "NonceCounter",
+    "PinnedAuthority",
     "ProtectedArtifact",
     "RecoveryContract",
     "RecoveryState",

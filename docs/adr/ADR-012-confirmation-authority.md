@@ -22,8 +22,12 @@ A production mutation cannot be confirmed until a real verifier exists.
 
 ## Recommendation
 
-Detached Ed25519 signature over the `ConfirmationEvidence.evidence_digest`
-bytes, verified locally against a pinned public key set with explicit
+Detached Ed25519 signature over a canonical digest of every
+`ConfirmationEvidence` field except `proof` (implemented as
+`confirmation_providers.signing_payload()` — deliberately not
+`ConfirmationEvidence.evidence_digest`, which is circular as a signature
+pre-image; see the linked spec's Invariant I1 implementation note),
+verified locally against a pinned public key set with explicit
 `authority_id`-based rotation. Private key custody lives entirely outside
 the MCP server's host/process. Full specification:
 [confirmation_authority.md](../tier1/specs/confirmation_authority.md).

@@ -40,10 +40,23 @@ verifier does.
 
 ## Invariants
 
-- I1: The verifier checks a detached signature over the canonical
-  `ConfirmationEvidence.evidence_digest` bytes (already computed,
-  domain-separated via `DigestPurpose.CONFIRMATION`) against exactly one
-  pinned public key identified by `evidence.authority_id`.
+- I1: The verifier checks a detached signature over a canonical digest of
+  every `ConfirmationEvidence` field **except `proof`** — against exactly
+  one pinned public key identified by `evidence.authority_id`.
+  **Implementation note (corrected during Phase 2 implementation):** an
+  earlier draft of this invariant specified signing over
+  `ConfirmationEvidence.evidence_digest`. That property is circular as a
+  signature pre-image: its own construction includes `proof_digest`
+  (`sha256(evidence.proof)`), so the message to sign would depend on the
+  signature that becomes `proof` already existing.
+  `test_valid_signature_from_active_authority_is_accepted` caught this
+  with a real signature-verification failure before the fix landed. The
+  corrected, implemented design signs a dedicated
+  `confirmation_providers.signing_payload(evidence)` — a canonicalization
+  of every field except `proof` — and `evidence_digest` remains reserved
+  for its original, non-circular purpose: binding the *already-verified*
+  evidence (proof included) into `RecoveryContract.confirmation_digest`
+  for audit purposes, computed only after verification succeeds.
 - I2: `authority_id` must match a currently-active entry in the verifier's
   pinned-key table; an `authority_id` naming a retired or unknown key is
   refused, not matched against "the newest key" or any fallback.
@@ -108,7 +121,9 @@ class Ed25519ConfirmationVerifier:
         """Looks up evidence.authority_id among active authorities;
         returns False (never raises) for: unknown authority_id, inactive
         authority_id, malformed proof, or signature mismatch. Signature
-        is verified over evidence.evidence_digest.encode() using the
+        is verified over signing_payload(evidence) -- a canonicalization
+        of every field except proof (see Invariant I1's implementation
+        note for why evidence_digest is unsuitable here) -- using the
         pinned public key. algorithm field must equal a fixed accepted
         string (e.g. "ed25519-v1") or verification returns False."""
 ```
@@ -166,7 +181,7 @@ below.
   `True`.
 - Valid signature from a key not in the pinned table → `False`.
 - Valid signature from a retired (`active=False`) authority → `False`.
-- Signature over a *different* digest than `evidence.evidence_digest`
+- Signature over a *different* payload than `signing_payload(evidence)`
   (e.g., signed the raw contract_id instead) → `False`.
 - Malformed/truncated `proof` bytes → `False`, no unhandled exception.
 - Empty authority table at construction → refuses to construct.
@@ -181,31 +196,41 @@ below.
 
 ## Activation requirements
 
-- [ ] `ADR-012` accepted (algorithm, key custody model).
-- [ ] `confirmation_providers.py` implemented and tested.
+- [x] `ADR-012` accepted (algorithm, key custody model).
+- [x] `confirmation_providers.py` implemented and tested
+      (`tests/tier1/test_confirmation_providers.py`, 9 tests).
 - [ ] A separate, reviewed signing-side workflow/tool exists and is
       documented in an operator runbook — this is a hard gate: a verifier
       with no usable signing tool is unusable, and building the tool
       hastily under deployment pressure is how key-custody mistakes
-      happen.
+      happen. **Not built in this pass** — genuinely separate tooling
+      outside `pfsense_mcp`, per this spec's own Non-goals.
 - [ ] The operator-facing rendering step (G5 — showing the human what
       they're about to approve) is implemented somewhere in the
       confirmation workflow and reviewed for completeness (it must show
       capability, endpoint, target identity, and intent in
       human-readable form, not just digests) before this module is wired
-      into any executor.
-- [ ] `cryptography`'s Ed25519 support (already available once the
+      into any executor. **Deferred to the signing-tool deliverable above.**
+- [x] `cryptography`'s Ed25519 support (already available once the
       dependency is added for `protected_artifact_encryption.md`; no
       second library needed) confirmed sufficient — no new dependency
       required beyond what encryption already introduces.
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/confirmation_providers.py`.
+- [x] Create `src/pfsense_mcp/tier1/confirmation_providers.py`.
 - [ ] Add configuration loading for the pinned-authority table (fail
       closed on empty/malformed, no default, following `config.py`'s
       existing "missing required value fails closed" pattern).
-- [ ] Implement `Ed25519ConfirmationVerifier` exactly per Interfaces.
+      **Deferred to Phase 3** (`sealed_executor.md`): `PinnedAuthority`
+      construction from environment/config only makes sense once
+      something actually constructs the executor that consumes it —
+      building that wiring now, with no caller, would be exactly the
+      premature scaffolding this project's conventions warn against.
+- [x] Implement `Ed25519ConfirmationVerifier` exactly per Interfaces.
+      One addition beyond the original interface sketch: a module-level
+      `signing_payload(evidence)` function, made necessary by the
+      `evidence_digest` circularity fix (see Invariant I1).
 - [ ] Build the separate signing-side CLI as its own deliverable (outside
       `pfsense_mcp`, likely its own small script/repo) — track as a
       distinct implementation task, not a subtask of this module.
