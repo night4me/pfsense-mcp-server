@@ -7,6 +7,7 @@ CI = Path(__file__).parents[1] / ".github" / "workflows" / "ci.yml"
 CODEQL = Path(__file__).parents[1] / ".github" / "workflows" / "codeql.yml"
 PUBLISH = Path(__file__).parents[1] / ".github" / "workflows" / "publish.yml"
 FULL_SHA_ACTION = re.compile(r"uses:\s+[^@\s]+@[0-9a-f]{40}(?:\s+#.*)?$")
+PYPI_PUBLISH_V1_14_2_COMMIT = "dc37677b2e1c63e2034f94d8a5b11f265b73ba33"
 
 
 def _workflow_text(path: Path) -> str:
@@ -100,6 +101,12 @@ def test_pypi_publish_workflow_is_oidc_only_and_disabled_by_default():
     assert "user:" not in text
     assert "secrets." not in text
     assert "pypa/gh-action-pypi-publish@" in text
+
+
+def test_pypi_publish_action_uses_release_commit_not_annotated_tag_object():
+    text = _workflow_text(PUBLISH)
+
+    assert f"pypa/gh-action-pypi-publish@{PYPI_PUBLISH_V1_14_2_COMMIT}" in text
 
 
 def test_pypi_publish_workflow_builds_verified_tagged_artifacts_before_publish():
