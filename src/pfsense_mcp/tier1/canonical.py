@@ -90,7 +90,13 @@ def canonical_json(value: object) -> bytes:
     return encoded
 
 
-def _framed(value: str) -> bytes:
+def frame_str(value: str) -> bytes:
+    """Length-prefix a UTF-8 string component so it can be concatenated
+    with other framed components without delimiter ambiguity. Shared by
+    digest construction here and by MAC construction in store.py — do not
+    reintroduce a NUL or other ad hoc delimiter anywhere in this package;
+    use this (or frame_bytes) instead."""
+
     try:
         encoded = value.encode("utf-8")
     except UnicodeEncodeError as exc:
@@ -100,7 +106,9 @@ def _framed(value: str) -> bytes:
     return len(encoded).to_bytes(4, "big") + encoded
 
 
-def _framed_bytes(value: bytes) -> bytes:
+def frame_bytes(value: bytes) -> bytes:
+    """Length-prefix an arbitrary bytes component. See frame_str."""
+
     return len(value).to_bytes(4, "big") + value
 
 
@@ -113,6 +121,6 @@ def digest_value(purpose: DigestPurpose, value: object, *, context: tuple[str, .
     for part in (_DOMAIN_PREFIX, purpose.value, *context):
         if not isinstance(part, str):
             raise CanonicalizationError("Digest context components must be strings.")
-        hasher.update(_framed(part))
-    hasher.update(_framed_bytes(canonical_json(value)))
+        hasher.update(frame_str(part))
+    hasher.update(frame_bytes(canonical_json(value)))
     return hasher.hexdigest()

@@ -22,6 +22,7 @@ from pathlib import Path
 
 from pfsense_mcp.capabilities import Capability
 
+from .canonical import frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract
 from .errors import (
@@ -343,8 +344,17 @@ class SqliteRecoveryContractStore:
                 connection.executemany("INSERT INTO metadata(key, value) VALUES (?, ?)", expected.items())
         os.chmod(self._path, 0o600)
 
-    def _mac(self, payload: bytes) -> str:
-        return hmac.new(self._integrity_key, self._store_id.encode() + b"\0" + payload, hashlib.sha256).hexdigest()
+    def _mac(self, *components: bytes) -> str:
+        """Length-frame the store ID and every component before HMAC'ing,
+        so distinct component boundaries can never collide (the same
+        framing discipline canonical.py's digest_value() already applies
+        — see frame_str/frame_bytes). A NUL or other ad hoc delimiter must
+        never be reintroduced here."""
+
+        framed = frame_str(self._store_id)
+        for component in components:
+            framed += frame_bytes(component)
+        return hmac.new(self._integrity_key, framed, hashlib.sha256).hexdigest()
 
     def _audit_mac(
         self,
@@ -368,7 +378,7 @@ class SqliteRecoveryContractStore:
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")
-        return self._mac(b"audit-event\0" + payload)
+        return self._mac(b"audit-event", payload)
 
     def _decode_row(self, row: sqlite3.Row | tuple[object, ...]) -> RecoveryContract:
         raw_payload = row[0]

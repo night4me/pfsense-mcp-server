@@ -86,6 +86,13 @@ def test_create_load_and_restart_preserve_authoritative_contract(tmp_path, contr
     assert (tmp_path / "contracts.sqlite3").stat().st_mode & 0o777 == 0o600
 
 
+def test_mac_framing_is_unambiguous_across_component_boundaries(tmp_path):
+    store = _store(tmp_path)
+
+    assert store._mac(b"a", b"bc") != store._mac(b"ab", b"c")
+    assert store._mac(b"audit-event", b"{}") != store._mac(b"audit-even", b"t{}")
+
+
 def test_whole_store_rollback_remains_an_explicit_external_anchor_blocker(tmp_path, contract_factory):
     store = _store(tmp_path)
     contract = contract_factory()
@@ -733,6 +740,52 @@ def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
             target_state=RecoveryState.EXECUTING,
         )
     assert rolling_back.target_identity_digest == reconciled.target_identity_digest
+
+
+def test_verified_releases_target_and_later_rollback_refuses_on_conflict(tmp_path, contract_factory):
+    """VERIFIED is not a reservation state (see TIER1_ARCHITECTURE.md's
+    Rollback section): the target becomes claimable immediately after
+    verification, before any rollback decision is made. This is the
+    accepted, documented behavior — this test proves both halves of it:
+    (1) the released target really is claimable by unrelated work, and
+    (2) a later rollback attempt against the original contract correctly
+    refuses via conflict rather than silently succeeding or corrupting
+    state, once that target has been reclaimed."""
+
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    verified = store.transition(
+        executing.contract_id,
+        expected_state=RecoveryState.EXECUTING,
+        expected_version=executing.state_version,
+        target_state=RecoveryState.VERIFIED,
+    )
+
+    competing = _confirmed(
+        store,
+        contract_factory(contract_id="contract-002", operation_id="operation-002", intent={"enabled": False}),
+    )
+    competing_executing = store.transition(
+        competing.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=competing.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    assert competing_executing.target_identity_digest == verified.target_identity_digest
+
+    with pytest.raises(ContractConflictError, match="reserved"):
+        store.transition(
+            verified.contract_id,
+            expected_state=RecoveryState.VERIFIED,
+            expected_version=verified.state_version,
+            target_state=RecoveryState.ROLLING_BACK,
+        )
 
 
 def test_failed_rollback_keeps_target_locked(tmp_path, contract_factory):

@@ -212,8 +212,8 @@ today.
 
 | Phase | Depends on | Owner decisions required | Status |
 |---|---|---|---|
-| 1. Inert corrections | — | None (implementation-only) | Not started |
-| 2. Architecture implementation | Phase 1 | ADR-009, 010, 011, 012, 013, 015 accepted | Not started |
+| 1. Inert corrections | — | None (implementation-only) | **Complete** — MAC framing length-prefixed (`store.py::_mac`/`_audit_mac`, reusing `canonical.py::frame_str`/`frame_bytes`); `VERIFIED`-state reservation-release behavior documented in `TIER1_ARCHITECTURE.md` and tested (`test_verified_releases_target_and_later_rollback_refuses_on_conflict`). `make quick` 9/9, `make validate` 18/18. |
+| 2. Architecture implementation | Phase 1 | ADR-009, 010, 011, 012, 013, 015 accepted | Accepted by owner; implementation in progress per the dependency order above |
 | 3. Sealed executor | Phase 2 | ADR-014 accepted | Not started |
 | 4. Disposable-lab validation | Phase 3 | ADR-016 accepted; separate live-run approval | Not started |
 | 5. First adapter | Phase 4 | Milestone 0 capability/endpoint authorization | Not started |

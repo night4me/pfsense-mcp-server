@@ -6,7 +6,7 @@ tool registration, or mutation executor.
 """
 
 from .audit import Tier1AuditEvent
-from .canonical import DigestPurpose, canonical_json, digest_value
+from .canonical import DigestPurpose, canonical_json, digest_value, frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from .policy import INACTIVE_TIER1_POLICY, MutationPolicy, MutationRule
@@ -28,4 +28,6 @@ __all__ = [
     "canonical_json",
     "derive_idempotency_key",
     "digest_value",
+    "frame_bytes",
+    "frame_str",
 ]

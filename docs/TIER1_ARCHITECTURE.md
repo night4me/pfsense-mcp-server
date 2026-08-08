@@ -119,6 +119,21 @@ or RECONCILIATION. Appliance configuration history may be captured as a
 protected artifact, but capture failure blocks mutation and a global revision
 must never overwrite unrelated changes automatically.
 
+`VERIFIED` is not a reservation state: the canonical target reservation is
+released the instant a contract reaches `VERIFIED`, so an unrelated contract
+may acquire that same target before any rollback decision is made. This is a
+deliberate, accepted design, not an oversight — fingerprint-drift detection on
+the `VERIFIED -> ROLLING_BACK` re-acquisition is the safety net for this
+window, not an extended reservation. Two consequences follow directly: (1) if
+the target is unclaimed, `ROLLING_BACK` re-reserves it and proceeds normally;
+(2) if another contract has since claimed the same target, re-acquisition
+fails closed with a conflict refusal — never a corrupted or forced rollback —
+and the original contract's rollback must wait or escalate to reconciliation.
+A production capability with tight rollback-window requirements may need its
+own target-scoped cooldown (see the rate/blast-radius policy) to reduce how
+often this conflict is hit in practice; the underlying safety property does
+not depend on that cooldown existing.
+
 ## Policy and audit
 
 Policy is an immutable set of exact `(Capability, endpoint symbol, method)`
