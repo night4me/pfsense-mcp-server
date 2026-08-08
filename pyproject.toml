@@ -41,6 +41,10 @@ dev = [
     "bandit>=1.7,<2.0",
     "twine>=5.0,<7.0",
 ]
+docs = [
+    "mkdocs>=1.6,<2.0",
+    "mkdocs-material>=9.5,<10.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/night4me/pfsense-mcp-server"

@@ -5,7 +5,8 @@
         contract-check docs-check git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
-        coverage security-static package-check reproducible-build artifact-manifest release-check
+        coverage security-static package-check reproducible-build artifact-manifest release-check \
+        docs-build docs-serve
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -259,3 +260,18 @@ scaffold-capability:
 # those two output files.
 checkpoint:
 	@$(PYTHON) scripts/checkpoint.py
+
+# Documentation site (mkdocs, requires the optional `docs` extra:
+# pip install -e ".[docs]"). docs-build is the CI-equivalent check --
+# --strict turns any broken internal link or nav reference into a
+# build failure, catching exactly the class of regression a raw
+# heading/file rename can silently introduce. Builds to site/
+# (git-ignored, like dist/) -- never committed. This does not deploy
+# anything: enabling a public GitHub Pages deployment remains a
+# separate, explicit owner decision (see reports-ai's Push
+# authorization note), not something building the site locally implies.
+docs-build:
+	@$(PYTHON) -m mkdocs build --strict
+
+docs-serve:
+	@$(PYTHON) -m mkdocs serve

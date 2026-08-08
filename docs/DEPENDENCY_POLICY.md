@@ -39,4 +39,4 @@ approval. SBOM tooling is not a runtime dependency.
 Security advisories take priority over the normal update cadence. Dependency
 findings must be assessed for reachability in this local stdio, GET-only
 architecture; severity alone does not establish exploitability. Report
-vulnerabilities through [SECURITY.md](../SECURITY.md), not a public issue.
+vulnerabilities through [SECURITY.md](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md), not a public issue.

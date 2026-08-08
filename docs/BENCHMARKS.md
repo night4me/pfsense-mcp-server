@@ -51,7 +51,7 @@ removed from the child environment.
 The full offline suite completed with **1,125 passed, 42 skipped in 2.22
 seconds**. The slowest individual tests were two checkpoint-generation tests at
 approximately 0.32 and 0.31 seconds. See
-[`reports/performance.md`](../reports/performance.md) for the detailed profile
+[`reports/performance.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/reports/performance.md) for the detailed profile
 and largest-module inventory.
 
 ## Measurement procedure

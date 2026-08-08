@@ -1,0 +1,116 @@
+site_name: pfsense-mcp-server
+site_description: >-
+  A security-focused local MCP server exposing strongly typed READ tools
+  for pfSense, plus the design documentation for its inert v0.3.0 Tier 1
+  WRITE-safety framework.
+site_url: https://night4me.github.io/pfsense-mcp-server/
+repo_url: https://github.com/night4me/pfsense-mcp-server
+repo_name: night4me/pfsense-mcp-server
+edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+# Not a claim that GitHub Pages is enabled -- it is not (see
+# docs/tier1/README.md and reports-ai's Push authorization note): this
+# builds and locally previews the site only. Deploying it is a separate,
+# explicit owner decision, tracked as a future step, not part of this
+# configuration.
+nav:
+  - Home: index.md
+  - Architecture:
+      - Overview: TIER1_ARCHITECTURE.md
+      - Diagrams: ARCHITECTURE_DIAGRAMS.md
+      - Recovery Contract specification: RECOVERY_CONTRACT_SPEC.md
+      - WRITE Tier 0 (inert infrastructure): WRITE_TIER0_SPEC.md
+  - Security:
+      - Security model: SECURITY_MODEL.md
+      - Threat model: THREAT_MODEL.md
+      - Security test catalog: SECURITY_TEST_CATALOG.md
+      - Writable-endpoint risk matrix: WRITE_ENDPOINT_RISK_MATRIX.md
+  - API reference:
+      - MCP tool reference: API.md
+      - Future-major API review: API_REVIEW.md
+  - Roadmap and planning:
+      - Public roadmap: ROADMAP.md
+      - v0.3.0 milestone: V0.3.0_MILESTONE.md
+      - Tier 1 roadmap: TIER1_ROADMAP.md
+      - Tier 1 implementation roadmap: tier1/IMPLEMENTATION_ROADMAP.md
+      - Tier 1 overview: tier1/README.md
+      - Tier 1 activation decisions: TIER1_ACTIVATION_DECISIONS.md
+      - Disposable-lab plan: TIER1_LAB_PLAN.md
+      - READ backlog: READ_BACKLOG.md
+  - Architecture Decision Records:
+      - Index: adr/README.md
+      - ADR-001 READ-only production architecture: adr/ADR-001-read-only-production-architecture.md
+      - ADR-002 Strongly typed boundaries: adr/ADR-002-strongly-typed-boundaries.md
+      - ADR-003 GET-only transport: adr/ADR-003-get-only-transport.md
+      - ADR-004 Capability profiles: adr/ADR-004-capability-profiles.md
+      - ADR-005 Inert Tier 0 WRITE infrastructure: adr/ADR-005-inert-tier-0-write-infrastructure.md
+      - ADR-006 Recovery Contract philosophy: adr/ADR-006-recovery-contract-philosophy.md
+      - ADR-007 Security-first public schemas: adr/ADR-007-security-first-public-schemas.md
+      - ADR-008 Fail-closed configuration: adr/ADR-008-fail-closed-configuration.md
+      - ADR-009 Protected-artifact encryption provider: adr/ADR-009-protected-artifact-encryption-provider.md
+      - ADR-010 Key lifecycle and delivery: adr/ADR-010-key-lifecycle-and-delivery.md
+      - ADR-011 Whole-store anti-rollback anchor: adr/ADR-011-whole-store-anti-rollback-anchor.md
+      - ADR-012 Confirmation authority: adr/ADR-012-confirmation-authority.md
+      - ADR-013 Reconciliation authority: adr/ADR-013-reconciliation-authority.md
+      - ADR-014 Sealed executor interface: adr/ADR-014-sealed-executor-interface.md
+      - ADR-015 Rate and blast-radius defaults: adr/ADR-015-rate-and-blast-radius-defaults.md
+      - ADR-016 Alias-candidate lab authorization: adr/ADR-016-alias-candidate-lab-authorization.md
+  - Tier 1 subsystem specifications:
+      - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
+      - Key lifecycle: tier1/specs/key_lifecycle.md
+      - Whole-store anti-rollback: tier1/specs/whole_store_anti_rollback.md
+      - Confirmation authority: tier1/specs/confirmation_authority.md
+      - Reconciliation authority: tier1/specs/reconciliation_authority.md
+      - Rate and blast-radius policy: tier1/specs/rate_blast_radius_policy.md
+      - Sealed executor: tier1/specs/sealed_executor.md
+      - Capability adapter contract: tier1/specs/capability_adapter_contract.md
+      - Adapter restrictions: tier1/specs/adapter_restrictions.md
+      - Disposable-lab execution model: tier1/specs/disposable_lab_execution_model.md
+  - Release and operations:
+      - Release checklist: RELEASE_CHECKLIST.md
+      - PyPI release procedure: PYPI_RELEASE.md
+      - Dependency policy: DEPENDENCY_POLICY.md
+      - Benchmark methodology: BENCHMARKS.md
+  - Acceptance records:
+      - v0.1.0: ACCEPTANCE_v0.1.0.md
+      - v0.2.0: ACCEPTANCE_v0.2.0.md
+      - v0.2.1: ACCEPTANCE_v0.2.1.md
+      - v0.2.2: ACCEPTANCE_v0.2.2.md

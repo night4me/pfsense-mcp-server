@@ -13,6 +13,9 @@ build/
 coverage.xml
 htmlcov/
 
+# mkdocs build output — generated, never committed (like dist/)
+site/
+
 # make validate output (junit-xml report) — working output, not a repo artifact
 .validate/
 

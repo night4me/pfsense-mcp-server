@@ -33,7 +33,7 @@ documents — it resolves the open decisions they identified:
 |---|---|
 | [`../TIER1_ARCHITECTURE.md`](../TIER1_ARCHITECTURE.md) | Concrete interfaces for the components it describes narratively |
 | [`../RECOVERY_CONTRACT_SPEC.md`](../RECOVERY_CONTRACT_SPEC.md) | Unchanged — remains the normative contract/fault specification |
-| [`../TIER1_ACTIVATION_DECISIONS.md`](../TIER1_ACTIVATION_DECISIONS.md) | Resolved by [`../adr/`](../adr/) ADR-009 through ADR-016 |
+| [`../TIER1_ACTIVATION_DECISIONS.md`](../TIER1_ACTIVATION_DECISIONS.md) | Resolved by [`../adr/`](../adr/README.md) ADR-009 through ADR-016 |
 | [`../TIER1_ROADMAP.md`](../TIER1_ROADMAP.md) | Milestone sequence unchanged; `IMPLEMENTATION_ROADMAP.md` here gives the concrete phase-by-phase execution order within those milestones |
 | [`../WRITE_ENDPOINT_RISK_MATRIX.md`](../WRITE_ENDPOINT_RISK_MATRIX.md) | Unchanged — remains the source inventory for candidate selection |
 | [`../TIER1_LAB_PLAN.md`](../TIER1_LAB_PLAN.md) | Operationalized by [`specs/disposable_lab_execution_model.md`](specs/disposable_lab_execution_model.md) |
