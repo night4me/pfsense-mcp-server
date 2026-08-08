@@ -1,7 +1,12 @@
 # ADR-012: Confirmation authority
 
-- **Status:** Recommended — pending owner decision
+- **Status:** Accepted
 - **Date:** 2026-08-08
+- **Accepted:** 2026-08-08 — implemented as `confirmation_providers.py`
+  (Phase 2); status field corrected to match already-merged
+  implementation. The separate signing-side tool remains a genuinely
+  unbuilt, separate deliverable (this ADR's own Non-goals) and a hard
+  activation gate on its own, not reopened by this status correction.
 
 ## Context
 

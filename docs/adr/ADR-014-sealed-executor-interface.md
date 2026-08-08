@@ -1,7 +1,10 @@
 # ADR-014: Sealed executor interface
 
-- **Status:** Recommended — pending owner decision
+- **Status:** Accepted
 - **Date:** 2026-08-08
+- **Accepted:** 2026-08-08 — implemented as `src/pfsense_mcp/tier1/
+  executor.py` (Phase 3); status field corrected to match already-merged
+  implementation.
 
 ## Context
 

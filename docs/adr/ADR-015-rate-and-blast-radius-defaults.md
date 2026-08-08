@@ -1,7 +1,12 @@
 # ADR-015: Rate and blast-radius defaults
 
-- **Status:** Recommended — pending owner decision and lab validation
+- **Status:** Accepted (mechanism); numeric defaults remain provisional
+  pending disposable-lab evidence
 - **Date:** 2026-08-08
+- **Accepted:** 2026-08-08 — the atomic, store-backed containment
+  mechanism is implemented as `rate_policy.py` (Phase 2) and accepted;
+  the specific numeric defaults below remain explicitly provisional,
+  unchanged by this status correction, pending Phase 4 lab evidence.
 
 ## Context
 

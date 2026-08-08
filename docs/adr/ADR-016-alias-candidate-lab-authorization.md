@@ -1,8 +1,12 @@
 # ADR-016: Alias-candidate disposable-lab authorization
 
-- **Status:** Recommended — pending owner decision (research authorization
-  only; does not authorize any endpoint, adapter, tool, or capability)
+- **Status:** Accepted — research authorization only; does not authorize
+  any endpoint, adapter, tool, capability, or production activation
 - **Date:** 2026-08-08
+- **Accepted:** 2026-08-08 — owner authorized disposable-lab research
+  time on the firewall-alias description-only candidate specifically, as
+  recommended below. The system-tunable fallback remains unauthorized
+  unless the alias candidate's lab run surfaces a disqualifying problem.
 
 ## Context
 

@@ -14,14 +14,14 @@ silently rewrite earlier context.
 | [006](ADR-006-recovery-contract-philosophy.md) | Recovery Contract philosophy | Accepted, prerequisites incomplete |
 | [007](ADR-007-security-first-public-schemas.md) | Security-first public schemas | Accepted |
 | [008](ADR-008-fail-closed-configuration.md) | Fail-closed configuration validation | Accepted |
-| [009](ADR-009-protected-artifact-encryption-provider.md) | Protected-artifact encryption provider | Recommended — pending owner decision |
-| [010](ADR-010-key-lifecycle-and-delivery.md) | Key lifecycle and delivery | Recommended — pending owner decision |
+| [009](ADR-009-protected-artifact-encryption-provider.md) | Protected-artifact encryption provider | Accepted |
+| [010](ADR-010-key-lifecycle-and-delivery.md) | Key lifecycle and delivery | Accepted |
 | [011](ADR-011-whole-store-anti-rollback-anchor.md) | Whole-store anti-rollback anchor | Recommended — pending owner decision |
-| [012](ADR-012-confirmation-authority.md) | Confirmation authority | Recommended — pending owner decision |
-| [013](ADR-013-reconciliation-authority.md) | Reconciliation authority | Recommended — pending owner decision |
-| [014](ADR-014-sealed-executor-interface.md) | Sealed executor interface | Recommended — pending owner decision |
-| [015](ADR-015-rate-and-blast-radius-defaults.md) | Rate and blast-radius defaults | Recommended — pending owner decision and lab validation |
-| [016](ADR-016-alias-candidate-lab-authorization.md) | Alias-candidate disposable-lab authorization | Recommended — pending owner decision |
+| [012](ADR-012-confirmation-authority.md) | Confirmation authority | Accepted |
+| [013](ADR-013-reconciliation-authority.md) | Reconciliation authority | Accepted |
+| [014](ADR-014-sealed-executor-interface.md) | Sealed executor interface | Accepted |
+| [015](ADR-015-rate-and-blast-radius-defaults.md) | Rate and blast-radius defaults | Accepted (mechanism); numeric defaults provisional |
+| [016](ADR-016-alias-candidate-lab-authorization.md) | Alias-candidate disposable-lab authorization | Accepted |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.

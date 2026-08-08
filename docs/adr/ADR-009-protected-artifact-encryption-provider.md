@@ -1,7 +1,9 @@
 # ADR-009: Protected-artifact encryption provider
 
-- **Status:** Recommended — pending owner decision
+- **Status:** Accepted
 - **Date:** 2026-08-08
+- **Accepted:** 2026-08-08 — implemented as `crypto.py` (Phase 2); status
+  field corrected to match already-merged implementation.
 
 ## Context
 

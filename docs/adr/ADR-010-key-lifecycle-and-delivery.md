@@ -1,7 +1,13 @@
 # ADR-010: Key lifecycle and delivery
 
-- **Status:** Recommended — pending owner decision
+- **Status:** Accepted
 - **Date:** 2026-08-08
+- **Accepted:** 2026-08-08 — implemented as `key_lifecycle.py`/
+  `secure_file.py` (Phase 2); status field corrected to match
+  already-merged implementation. Whether a systemd-managed deployment
+  model changes the key-delivery recommendation remains open if the
+  actual production deployment differs from what this session observed
+  — an operational confirmation, not a reopening of this decision.
 
 ## Context
 
