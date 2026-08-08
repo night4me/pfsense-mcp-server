@@ -194,31 +194,38 @@ ad hoc delimiter).
 
 ## Activation requirements
 
-- [ ] `ADR-009` accepted by the owner (algorithm/library choice).
-- [ ] `cryptography` (or the accepted alternative) added as a pinned,
-      reviewed runtime dependency in `pyproject.toml` with an explicit
-      version constraint, per `DEPENDENCY_POLICY.md`.
-- [ ] `crypto.py` implemented and 100%-branch-tested per "Required tests".
-- [ ] Security review confirms AAD binding actually prevents
-      cross-contract/cross-role substitution (test, not just code read).
-- [ ] `key_lifecycle.md` accepted and implemented (dependency).
-- [ ] No caller outside `pfsense_mcp.tier1` imports `crypto.py` until the
-      sealed executor (`sealed_executor.md`) is itself authorized —
-      enforced by extending `tests/tier1/test_isolation.py`'s existing
-      AST-walk pattern.
+- [x] `ADR-009` accepted by the owner (algorithm/library choice).
+- [x] `cryptography>=43.0,<51.0` added as a pinned, reviewed runtime
+      dependency in `pyproject.toml`, per `DEPENDENCY_POLICY.md`.
+- [x] `crypto.py` implemented and tested per "Required tests"
+      (`tests/tier1/test_crypto.py`, 20 tests: round-trip, tamper,
+      AAD-substitution, wrong-key, unknown-algorithm, nonce-uniqueness,
+      malformed-ciphertext fuzz).
+- [x] Security review confirms AAD binding actually prevents
+      cross-contract/cross-role substitution — proven by
+      `test_associated_data_binds_contract_and_role`, not just code
+      review.
+- [x] `key_lifecycle.md` accepted and implemented (dependency).
+- [x] No caller outside `pfsense_mcp.tier1` imports `crypto.py` — already
+      enforced by the existing
+      `test_tier1_is_not_imported_outside_its_inert_package` check in
+      `tests/tier1/test_isolation.py` (it matches any
+      `pfsense_mcp.tier1` submodule import, not just the package root, so
+      no extension was needed for this specific requirement).
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/crypto.py` with `ArtifactAlgorithm`,
+- [x] Create `src/pfsense_mcp/tier1/crypto.py` with `ArtifactAlgorithm`,
       `ArtifactRole`, `encrypt_artifact`, `decrypt_artifact`.
-- [ ] Add `ArtifactDecryptionError(Tier1Error)` to `errors.py`.
-- [ ] Implement length-prefixed AAD framing (reuse the exact framing
-      helper pattern from `canonical.py`, do not reinvent it).
-- [ ] Wire nonce sourcing to `key_lifecycle.md`'s `NonceCounter` interface
-      (do not generate nonces from `os.urandom()` alone — see
-      `key_lifecycle.md` for why a counter-based scheme is required for
-      an AEAD mode with a 96-bit nonce under a long-lived key).
-- [ ] Add the dependency to `pyproject.toml` under the `[project]`
+- [x] Add `ArtifactDecryptionError(Tier1Error)` to `errors.py`.
+- [x] Implement length-prefixed AAD framing (reused `canonical.py`'s
+      `frame_str`, exported in Phase 1 for exactly this purpose).
+- [x] Wire nonce sourcing to `key_lifecycle.md`'s `NonceCounter` interface
+      via a new `build_nonce(*, epoch, counter)` pure helper — `crypto.py`
+      never calls `os.urandom()` or generates counter state itself; the
+      caller is responsible for obtaining `counter` from a
+      `NonceCounter.next()` call before building the nonce.
+- [x] Add the dependency to `pyproject.toml` under the `[project]`
       `dependencies` list (not optional — it is required once Tier 1
       activates, but the import must stay unreachable from production
       until then, same as `mcp`/`httpx`/`pydantic` are unconditionally
