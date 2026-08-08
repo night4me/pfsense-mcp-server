@@ -119,6 +119,7 @@ nav:
           - Disposable-lab execution model: tier1/specs/disposable_lab_execution_model.md
   - Release and contributing:
       - Release checklist: RELEASE_CHECKLIST.md
+      - Public launch checklist: PUBLIC_LAUNCH_CHECKLIST.md
       - PyPI release procedure: PYPI_RELEASE.md
       - Dependency policy: DEPENDENCY_POLICY.md
       - Benchmark methodology: BENCHMARKS.md
