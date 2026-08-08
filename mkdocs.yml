@@ -78,6 +78,7 @@ nav:
   - Architecture (current production):
       - Diagrams: ARCHITECTURE_DIAGRAMS.md
       - Recovery Contract specification: RECOVERY_CONTRACT_SPEC.md
+      - Official guidance layer (inert scaffolding, ADR-017): OFFICIAL_GUIDANCE_LAYER.md
   - Tier 1 — future WRITE safety framework (inert):
       - Overview: TIER1_ARCHITECTURE.md
       - WRITE Tier 0 (inert infrastructure): WRITE_TIER0_SPEC.md
@@ -106,6 +107,7 @@ nav:
           - ADR-014 Sealed executor interface: adr/ADR-014-sealed-executor-interface.md
           - ADR-015 Rate and blast-radius defaults: adr/ADR-015-rate-and-blast-radius-defaults.md
           - ADR-016 Alias-candidate lab authorization: adr/ADR-016-alias-candidate-lab-authorization.md
+          - ADR-017 Official guidance layer: adr/ADR-017-official-guidance-layer.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

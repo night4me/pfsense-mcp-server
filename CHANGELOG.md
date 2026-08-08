@@ -36,6 +36,16 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Expanded `CONTRIBUTING.md` (local-setup troubleshooting, git/PR workflow,
   a full documentation map) and `SECURITY.md` (explicit security
   guarantees, non-goals, and vulnerability-report scope).
+- ADR-017 and its companion spec (`docs/OFFICIAL_GUIDANCE_LAYER.md`):
+  architecture for an official pfSense/Netgate documentation guidance
+  layer — a deterministic, capability-keyed registry over a curated
+  bundled/offline snapshot corpus, returning structurally non-authorizing,
+  provenance-preserved references. Documentation is explicitly treated as
+  untrusted content even from a trusted source and can never become
+  authorization, enforced by isolation from every safety-authority code
+  path, not just by policy. Architecture and inert scaffolding only — no
+  READ tool output or Tier 1 PREPARE path consumes it yet; live retrieval
+  and semantic search are named and deferred, not built.
 
 ### Security
 

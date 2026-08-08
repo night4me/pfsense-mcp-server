@@ -22,6 +22,7 @@ silently rewrite earlier context.
 | [014](ADR-014-sealed-executor-interface.md) | Sealed executor interface | Accepted |
 | [015](ADR-015-rate-and-blast-radius-defaults.md) | Rate and blast-radius defaults | Accepted (mechanism); numeric defaults provisional |
 | [016](ADR-016-alias-candidate-lab-authorization.md) | Alias-candidate disposable-lab authorization | Accepted |
+| [017](ADR-017-official-guidance-layer.md) | Official pfSense/Netgate documentation guidance layer | Accepted — architecture and inert scaffolding only; no consumer wired |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
@@ -32,3 +33,8 @@ implementation-ready specification under
 [`docs/tier1/specs/`](../tier1/specs/); see
 [`docs/tier1/IMPLEMENTATION_ROADMAP.md`](../tier1/IMPLEMENTATION_ROADMAP.md)
 for the sequencing.
+
+ADR-017 is not a Tier 1 subsystem — it is orthogonal, applying eventually
+to both the active READ path and the still-inert future WRITE path. Its
+companion spec is [`docs/OFFICIAL_GUIDANCE_LAYER.md`](../OFFICIAL_GUIDANCE_LAYER.md),
+alongside `TIER1_ARCHITECTURE.md` rather than under `docs/tier1/specs/`.
