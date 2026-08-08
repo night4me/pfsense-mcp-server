@@ -30,11 +30,11 @@ _ruff-check:
 	@$(PYTHON) -m ruff check .
 
 _mypy:
-	@$(PYTHON) -m mypy src/pfsense_mcp scripts
+	@$(PYTHON) -m mypy src/pfsense_mcp scripts lab
 
 syntax-check:
 	@echo "[ 1/18] Syntax/import validation ............."
-	@$(PYTHON) -m compileall -q src scripts tests
+	@$(PYTHON) -m compileall -q src scripts tests lab
 	@$(PYTHON) -c "import pfsense_mcp"
 	@echo "  OK"
 

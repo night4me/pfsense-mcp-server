@@ -1,13 +1,39 @@
 # Tier 1 — Disposable-lab execution model
 
-Status: implementation-ready specification; implementation not authorized
-to run yet (requires separate command-level approval per
-`TIER1_ROADMAP.md` Milestone 8).
+Status: implemented offline (Phase 4); live execution against a real lab
+VM not authorized yet (requires separate command-level approval per
+`TIER1_ROADMAP.md` Milestone 8, in addition to `ADR-016`'s research
+authorization).
 Activation gate: Milestone 8; requires
-[ADR-016](../../adr/ADR-016-alias-candidate-lab-authorization.md).
+[ADR-016](../../adr/ADR-016-alias-candidate-lab-authorization.md)
+(**accepted 2026-08-08**).
 Related: [TIER1_LAB_PLAN.md](../../TIER1_LAB_PLAN.md) (existing plan; this
 document adds the concrete execution/harness detail the existing plan
 describes at a design level but does not fully operationalize).
+
+**Implementation note (Phase 4 offline build):** the `lab/` package
+(`lab/config.py`, `lab/fault_proxy.py`, `lab/harness.py`) implements this
+spec's `LabConfig`/`load_lab_config()`, `FaultProxy`, and
+`run_scenario()`/`run_full_acceptance()`, offline-tested with
+`MockTransport` and a synthetic test-only adapter (`lab/tests/`, 44
+tests) — never a real capability adapter. One concrete gap in the
+original pseudocode required resolution: no production "PREPARE a
+Recovery Contract" function exists anywhere in `pfsense_mcp.tier1` yet
+(Phase 3's `executor.py` only implements `execute()`/`rollback()`,
+assuming a contract is already `PREPARED`/`VERIFIED`; constructing one is
+naturally part of Phase 5's MCP tool wiring, which doesn't exist yet
+either). `lab/harness.py::prepare_contract()` is a lab-scoped equivalent
+— sufficient to drive disposable-lab scenarios against a fresh, throwaway
+store, but explicitly not a claim that this becomes the eventual
+production PREPARE implementation verbatim; that remains Phase 5's
+decision to make once a real adapter exists. Correspondingly,
+`run_scenario()`/`run_full_acceptance()` take explicit `store`/
+`executor`/`adapter`/`confirm` parameters beyond the original pseudocode's
+`LabConfig`-only signature, so they are fully testable now without a real
+adapter or a live lab VM — `LabConfig.candidate` remains a purely
+informational field until Phase 5 introduces a real
+`Capability -> CapabilityAdapter` mapping for the harness to resolve it
+against.
 
 ## Purpose
 
@@ -177,7 +203,8 @@ def run_full_acceptance(config: LabConfig) -> AcceptanceReport:
 
 (These test the harness itself, offline, before it is ever pointed at a
 real lab VM — using `MockTransport`, consistent with every other Tier 1
-test in this codebase.)
+test in this codebase.) Implemented in `lab/tests/` (44 tests) unless
+noted otherwise.
 
 - `load_lab_config()` refuses non-allow-listed hosts.
 - `load_lab_config()` has no code path reaching
@@ -192,15 +219,27 @@ test in this codebase.)
 - Exit-condition verification (I5) runs even when a scenario raises an
   unexpected exception mid-`run_full_acceptance()` (fault-injected into
   the harness's own control flow, not just the pfSense-facing calls).
+- Additionally covered, beyond the list above: `run_scenario()`'s full
+  prepare -> confirm -> execute cycle against a real (synthetic-adapter)
+  `MutationExecutor`/store for the clean-passthrough, connection-reset,
+  and timeout scenarios; `prepare_contract()`'s digest/binding
+  correctness; every `FaultScenario` member's presence proven against a
+  line-by-line transcription of `TIER1_LAB_PLAN.md`'s fault-scenario list
+  (Review checklist item, done as a test rather than a manual review
+  step).
 
 ## Activation requirements
 
-- [ ] `ADR-016` accepted (which candidate, and explicit authorization to
-      spend lab time on it — not production authorization).
-- [ ] `lab/` harness implemented and its own offline tests (above) pass.
-- [ ] `sealed_executor.md`, `capability_adapter_contract.md`, and the
-      specific candidate adapter are implemented (the harness needs a
-      real adapter to test against — it cannot run before one exists).
+- [x] `ADR-016` accepted (2026-08-08) — firewall-alias description-only
+      candidate; research authorization only, not production
+      authorization.
+- [x] `lab/` harness implemented and its own offline tests (above) pass.
+- [ ] `sealed_executor.md`, `capability_adapter_contract.md` are
+      implemented (Phase 3, complete); **the specific candidate adapter
+      is not** (Phase 5, not started) — the harness's own tests use a
+      synthetic test-only adapter instead, per this spec's own
+      Implementation note above; a *live* lab run still needs a real
+      adapter, per the next line.
 - [ ] Lab VM/network environment provisioned per
       `TIER1_LAB_PLAN.md`'s existing environment section.
 - [ ] Separate, explicit command-level approval to actually execute the
@@ -210,32 +249,45 @@ test in this codebase.)
 
 ## Implementation checklist
 
-- [ ] Create `lab/` directory (not packaged — verify via
-      `make package-check`'s existing artifact-member inspection that it
-      is excluded, extending that check's exclusion list if needed).
-- [ ] Implement `LabConfig`/`load_lab_config()` with the lab-only
-      allow-list and distinct env var names.
-- [ ] Implement `FaultProxy` covering every fault type in
-      `TIER1_LAB_PLAN.md`'s "Fault scenarios" list.
-- [ ] Implement `run_scenario`/`run_full_acceptance` with unconditional
-      exit-condition verification.
-- [ ] Confirm `lab/` is excluded from `pytest`'s default collection
-      (e.g., via `pyproject.toml` `[tool.pytest.ini_options]` `testpaths`
-      already scoping to `tests/`, or an explicit `--ignore`) so lab code
-      never runs as part of `make quick`/`make validate`.
+- [x] Create `lab/` directory (not packaged — confirmed via
+      `make package-check`: `lab/` is absent from both the built sdist
+      and wheel, since `pyproject.toml`'s `[tool.hatch.build.targets.*]`
+      sections already use explicit include lists that never name it —
+      no exclusion-list extension was needed).
+- [x] Implement `LabConfig`/`load_lab_config()` with the lab-only
+      allow-list and distinct env var names (`lab/config.py`).
+- [x] Implement `FaultProxy` covering every fault type in
+      `TIER1_LAB_PLAN.md`'s "Fault scenarios" list (`lab/fault_proxy.py`
+      — the 4 network-level scenarios are mechanically injected; the
+      remaining 8 are store/process-level or target/state-level, covered
+      via `store.py`'s existing `FaultHook` or constructed starting
+      state, per I3, not this proxy).
+- [x] Implement `run_scenario`/`run_full_acceptance` with unconditional
+      exit-condition verification (`lab/harness.py`).
+- [x] Confirm `lab/` is excluded from `pytest`'s default collection —
+      `pyproject.toml`'s `[tool.pytest.ini_options]` gained
+      `addopts = "--ignore=lab"` (no `testpaths` restriction existed
+      previously to rely on instead).
 
 ## Review checklist
 
-- [ ] Confirm the lab-only allow-list genuinely cannot match any
-      production-shaped host — review the exact regex/pattern, don't just
-      trust the variable name.
-- [ ] Confirm `load_lab_config()` really has zero references to
-      `pfsense_mcp.config.load_api_key`/`PFSENSE_API_KEY_FILE` — grep,
-      don't infer from the function name.
-- [ ] Confirm every scenario in `TIER1_LAB_PLAN.md`'s fault-scenario list
-      has a corresponding `FaultScenario` entry — line-by-line
-      cross-check against the existing plan document, so nothing on that
-      list is silently dropped when building the harness.
+- [x] Confirm the lab-only allow-list genuinely cannot match any
+      production-shaped host — reviewed the exact regex: an
+      `X.lab.invalid` hostname pattern (label-bounded, cannot match
+      `evil.lab.invalid.example.com`-style suffix tricks since
+      `fullmatch` is used) or one of the three RFC 5737 TEST-NET ranges,
+      both `https://`-only.
+- [x] Confirm `load_lab_config()` really has zero references to
+      `pfsense_mcp.config.load_api_key`/`PFSENSE_API_KEY_FILE` — proven
+      by an AST-based test (`lab/tests/test_config.py::
+      test_lab_config_never_references_production_names`), not just
+      inferred from the function name.
+- [x] Confirm every scenario in `TIER1_LAB_PLAN.md`'s fault-scenario list
+      has a corresponding `FaultScenario` entry — the 10 list items
+      expand to 12 `FaultScenario` members (two items each bundle two
+      sub-cases: "timeout during response and during read-back", and
+      "process restart in EXECUTING and ROLLING_BACK"), proven as a test
+      rather than only a manual review step.
 
 ## Security checklist
 
@@ -243,19 +295,27 @@ test in this codebase.)
       request/response bodies, credentials, or raw target data (I4) —
       run the existing repository security scan
       (`scripts/security_scan.py`) against any evidence files the harness
-      produces before they are retained anywhere.
-- [ ] Confirm `lab/` is covered by the same fixture/security scan
+      produces before they are retained anywhere. **Structurally true of
+      the current implementation** (both dataclasses carry only
+      `FaultScenario`/`bool`/`str`/state-name fields — no field capable of
+      holding a body or credential exists on either type) but not yet
+      exercised against real evidence output, since no live run has
+      happened.
+- [x] Confirm `lab/` is covered by the same fixture/security scan
       discipline as `tests/` even though it isn't part of the packaged
-      distribution — lab code is still first-party source and subject to
-      the same "no credentials, no real IPs" rules.
+      distribution — `scripts/security_scan.py` scans every tracked/
+      untracked non-ignored file with no whole-file exclusion mechanism,
+      so `lab/` was already covered without any script change; caught one
+      genuine violation during implementation (a non-RFC-5737 IPv4
+      literal in a test parametrize list), fixed before commit.
 
 ## Test checklist
 
-- [ ] Offline `load_lab_config()` allow-list and credential-isolation
+- [x] Offline `load_lab_config()` allow-list and credential-isolation
       tests.
-- [ ] Offline `FaultProxy` injection tests against `MockTransport`.
-- [ ] Offline `run_full_acceptance()` aggregation test.
-- [ ] Offline exit-condition-verification-under-crash test.
+- [x] Offline `FaultProxy` injection tests against `MockTransport`.
+- [x] Offline `run_full_acceptance()` aggregation test.
+- [x] Offline exit-condition-verification-under-crash test.
 - [ ] (Live, gated by separate approval per Activation requirements) full
       run against the provisioned lab VM producing a complete
       `AcceptanceReport` covering every `TIER1_LAB_PLAN.md` scenario.
