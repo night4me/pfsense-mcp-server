@@ -1,6 +1,6 @@
 # ADR-006: Recovery Contract philosophy
 
-- **Status:** Accepted philosophy; implementation prerequisites incomplete
+- **Status:** Accepted; inert domain implementation, activation prerequisites incomplete
 - **Date:** 2026-08-06
 
 ## Context
@@ -24,6 +24,15 @@ operator-reconciliation state and are never blindly replayed.
 
 No Tier 1 activation occurs until persistence and crash behavior are explicitly
 accepted.
+
+The v0.3.0 development framework implements the pure contract,
+canonicalization, closed transitions, authenticated atomic store, exact empty
+policy, fault classification, and value-free event model in an isolated
+package. This is an implementation of the safety philosophy, not activation:
+there is no executor, endpoint, capability, transport wiring, or MCP tool.
+Encryption/key management, whole-store anti-rollback, authenticated owner
+confirmation, and capability-specific outcome/rollback semantics remain
+explicit prerequisites.
 
 ## Consequences
 

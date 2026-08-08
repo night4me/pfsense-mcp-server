@@ -1,13 +1,15 @@
 # Tier 1 Recovery Contract roadmap
 
-Status: planning only  
+Status: inert framework implemented; capability activation blocked
 Current production state: 41 READ tools, 0 WRITE tools  
 Activation authorized by this document: none
 
 The implementation-independent field, canonicalization, transition, fault,
 and reconciliation contract is specified in
 [RECOVERY_CONTRACT_SPEC.md](RECOVERY_CONTRACT_SPEC.md). Neither document
-authorizes Tier 1 implementation or capability selection.
+authorizes a production capability, endpoint, executor, tool, or mutation.
+The isolated `pfsense_mcp.tier1` package implements and tests only the domain
+controls described here and is not imported by production bootstrap.
 
 ## Objective
 
@@ -19,6 +21,21 @@ authorize a live mutation.
 
 The first capability must be named and approved separately after milestones 1
 through 6 are accepted.
+
+## Current implementation boundary
+
+| Area | Inert framework status | Activation work still required |
+|---|---|---|
+| Contract and canonicalization | Implemented and unit-tested | Capability-specific typed target, intent, snapshot, and size policy |
+| State and concurrency | Closed transitions, CAS, idempotency identities, and target reservations implemented | Cross-process load evidence, target-scoped rate policy, executor boundary |
+| Persistence | Owner-only SQLite, durable transactions, record HMAC, restart reconciliation implemented | Encryption/key provider, whole-store anti-rollback anchor, retention/backup/deletion policy |
+| Policy and audit | Exact immutable empty policy and value-free event model implemented | Owner-authenticated confirmation, durable audit export/integrity decision |
+| Mutation outcome and rollback | Specification and fault classification only | All capability-specific transport, read-back, rollback, and reconciliation work |
+| MCP and production wiring | Intentionally absent | Separate owner approval after lab acceptance |
+
+The implementation is in `src/pfsense_mcp/tier1/` with offline tests under
+`tests/tier1/`. Legacy Tier 0 modules are retained for compatibility and are
+not silently upgraded into an executable path.
 
 ## Non-negotiable invariants
 
@@ -78,32 +95,32 @@ raw identity or snapshot values in audit data.
 
 ## State machine
 
-The current `OPEN`, `COMMITTED`, `ROLLED_BACK`, and `EXPIRED` states are not
-sufficient to describe crashes around an external side effect. Proposed states:
+The legacy Tier 0 `OPEN`, `COMMITTED`, `ROLLED_BACK`, and `EXPIRED` states are
+not sufficient to describe crashes around an external side effect. The inert
+Tier 1 framework uses:
 
 ```text
 PREPARING
     → PREPARED
-    → PREPARATION_FAILED
 PREPARED
     → EXECUTING
-        → COMMITTED
-        → EXECUTION_FAILED
-        → OUTCOME_UNKNOWN
-COMMITTED
+        → VERIFIED
+        → FAILED
+        → RECONCILIATION
+VERIFIED
     → ROLLING_BACK
         → ROLLED_BACK
         → ROLLBACK_FAILED
-        → OUTCOME_UNKNOWN
+        → RECONCILIATION
 PREPARED → EXPIRED
 ```
 
 Every transition is compare-and-set against `state_version`. Terminal states
 cannot reopen. `PREPARING` cannot authorize execution. Expiry applies only
 before execution begins and transitions `PREPARING` or `PREPARED` to `EXPIRED`.
-`OUTCOME_UNKNOWN` requires operator reconciliation and cannot be retried
-blindly. The complete event/state table must explicitly reject every transition
-not shown above.
+`RECONCILIATION` requires an operator decision and cannot be retried blindly.
+Only an explicit manual-reconciliation action may leave it. The complete
+event/state table rejects every transition not declared in the specification.
 
 ## Milestone 0 — capability and threat-model selection
 
@@ -197,7 +214,7 @@ the decision record, but no specific capability is implied or preferred here.
 - Expiry cannot race an acquired execution into an incorrect state.
 - Simultaneous operations for a conflicting canonical target cannot both
   acquire execution, regardless of process or worker concurrency.
-- Dry-run, refusal, execution failure, and `OUTCOME_UNKNOWN` have explicit rate
+- Dry-run, refusal, execution failure, and `RECONCILIATION` have explicit rate
   accounting and reservation-release behavior.
 
 ## Milestone 3 — persistence and crash contract
@@ -242,7 +259,7 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Store/snapshot permissions fail closed.
 - Corrupt, missing, replayed, or foreign store records cannot authorize a
   mutation.
-- Every `OUTCOME_UNKNOWN` path has a documented manual reconciliation action;
+- Every `RECONCILIATION` path has a documented manual reconciliation action;
   no uncertain operation is retried automatically.
 - Secrets/snapshots never enter reports, logs, exceptions, fixtures, or Git.
 
@@ -255,8 +272,8 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Define the exact accepted HTTP status and response shape for the selected
   endpoint; generic 2xx handling is prohibited.
 - Reject redirects and unexpected content/status.
-- Mark `COMMITTED` only after HTTP success plus required read-back validation.
-- Move to `OUTCOME_UNKNOWN` when transport outcome cannot be determined.
+- Mark `VERIFIED` only after HTTP success plus required read-back validation.
+- Move to `RECONCILIATION` when transport outcome cannot be determined.
 - Immediately after atomically acquiring `EXECUTING`, authoritatively re-read
   the target and compare natural identity, fingerprint, and transient locator
   before sending the mutation.
@@ -276,7 +293,7 @@ In-memory-only state must not be presented as crash-safe recovery.
 
 - Tests prove the exact approved payload reaches only the approved endpoint.
 - Non-2xx, unexpected 2xx, malformed response, redirect, timeout, disconnect,
-  and read-back mismatch never become `COMMITTED`.
+  and read-back mismatch never become `VERIFIED`.
 - Missing targets, duplicate identity matches, external drift, or numeric-ID
   mismatch produce a safe refusal and zero mutating transport calls.
 - Payload/request headers never appear in logs or errors.
@@ -363,7 +380,7 @@ In-memory-only state must not be presented as crash-safe recovery.
 - Config-history tests for capture failure, stale revision, unrelated changes,
   and global-restore refusal.
 - Compound-operation tests where the primary step, compensating action, or both
-  fail; unresolved compensation enters `OUTCOME_UNKNOWN` and requires manual
+  fail; unresolved compensation enters `RECONCILIATION` and requires manual
   reconciliation.
 - Negative schema/output/log/error/fixture scans using sentinel values.
 - Package/entry-point and Python-version CI matrix.
@@ -428,9 +445,9 @@ inactive, and zero WRITE tools register.
 | Wrong target | Canonical target identity shared by snapshot, mutation, and rollback |
 | Unstable numeric ID | Transient locator only; authoritative natural identity and fingerprint re-read after atomic acquisition |
 | Double execution | Atomic compare-and-set plus operation/idempotency identity |
-| False commit | Exact status/shape policy and semantic read-back before `COMMITTED` |
-| Timeout after side effect | `OUTCOME_UNKNOWN` plus reconciliation, never blind retry |
-| Compound compensation failure | `OUTCOME_UNKNOWN`, value-free audit, and explicit manual reconciliation |
+| False commit | Exact status/shape policy and semantic read-back before `VERIFIED` |
+| Timeout after side effect | `RECONCILIATION`, never blind retry |
+| Compound compensation failure | `RECONCILIATION`, value-free audit, and explicit manual action |
 | Process crash | Durable-before-mutate transitions and restart reconciliation |
 | Rollback drift | Conflict detection and operator escalation |
 | Config-history over-rollback | Capture must succeed; analyze and refuse restoration that could overwrite unrelated changes |

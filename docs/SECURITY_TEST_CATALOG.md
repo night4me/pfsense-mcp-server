@@ -1,8 +1,9 @@
 # Security abuse-case test catalog
 
 This catalog maps abuse cases to existing offline controls. It is a review aid,
-not an authorization mechanism. Tier 1 cases remain design requirements and
-must not be enabled by adding tests alone.
+not an authorization mechanism. Inert Tier 1 domain cases are now executable;
+mutation/executor cases remain design requirements and tests never authorize
+activation.
 
 ## Current READ and Tier 0 cases
 
@@ -27,7 +28,20 @@ Response-size and compressed-expansion limits are not currently enforced. They
 remain a documented transport-hardening question because a safe bound needs
 representative upstream size evidence; do not guess a production limit.
 
-## Future Tier 1 cases — not implemented
+## Inert Tier 1 domain cases
+
+| Abuse case | Expected result | Primary coverage |
+|---|---|---|
+| Forged, corrupt, or index-tampered stored contract | Authentication or invariant failure before state use | `tests/tier1/test_store.py` |
+| Replayed contract, idempotency key, or operation ID | Unique constraint or stale-state refusal | `tests/tier1/test_store.py` |
+| Capability, endpoint, method, target, or intent substitution | Exact binding verification fails | `tests/tier1/test_contract.py`, `tests/tier1/test_policy_and_faults.py` |
+| Illegal, duplicate, reordered, or stale transition | Closed state machine / compare-and-set refuses it | `tests/tier1/test_state_machine.py`, `tests/tier1/test_store.py` |
+| Concurrent execution of one canonical target | Atomic target reservation permits at most one | `tests/tier1/test_store.py` |
+| Crash before or after durable transition | No partial commit; persisted interrupted state requires reconciliation | `tests/tier1/test_store.py` |
+| Value or exception text enters Tier 1 audit | Event model accepts metadata and safe class names only | `tests/tier1/test_audit.py` |
+| Tier 1 domain code becomes production reachable | Bootstrap/import/profile/endpoint isolation test fails | `tests/tier1/test_isolation.py` |
+
+## Future Tier 1 executor and capability cases — not implemented
 
 The Tier 1 acceptance suite must cover forged or replayed Recovery Contracts,
 caller-supplied authoritative state, capability/endpoint/method/target
@@ -35,7 +49,7 @@ substitution, duplicate or missing natural identity, transient numeric-ID
 drift, payload or snapshot digest mismatch, expiry, concurrent execution,
 crash at every durable/mutation boundary, ambiguous upstream outcome,
 unrelated-change rollback, config-history capture failure, compensation
-failure, and manual reconciliation from `OUTCOME_UNKNOWN`.
+failure, and manual reconciliation from `RECONCILIATION`.
 
 The authoritative detail and legal state transitions are in
 [TIER1_ROADMAP.md](TIER1_ROADMAP.md). None of these future cases permits a

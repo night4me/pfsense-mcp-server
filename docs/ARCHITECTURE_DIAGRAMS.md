@@ -1,7 +1,8 @@
 # Architecture diagrams
 
-These diagrams describe the v0.2.2 release state. Solid paths are active in
-production; future/dormant paths are explicitly labeled.
+These diagrams describe the immutable v0.2.2 production baseline and inert
+v0.3.0 development framework. Solid paths are active in production;
+future/dormant paths are explicitly labeled.
 
 ## Overall architecture
 
@@ -83,13 +84,13 @@ flowchart TD
     URL --> Identity[Validate bounded identity]
     Identity --> TLS[Validate TLS mode and CA file]
     TLS --> Logs[Validate log bounds]
-    Logs --> KeyMeta[lstat key metadata]
-    KeyMeta --> KeyChecks{regular, non-symlink,\ncurrent owner, mode 0600-like,\nbounded, readable?}
+    Logs --> KeyOpen[Open key descriptor\nO_NOFOLLOW]
+    KeyOpen --> KeyChecks{fstat: regular, current owner,\nno group/other bits, bounded?}
     KeyChecks -->|no| Fail
-    KeyChecks -->|yes| Config[Immutable PfSenseConfig]
-    Config --> KeyRead[Read bounded first line]
+    KeyChecks -->|yes| KeyRead[Read bounded first line\nfrom same descriptor]
     KeyRead -->|empty/control/too long/read failure| Fail
-    KeyRead --> SecretFilter[Register key with log redaction]
+    KeyRead --> Config[Immutable PfSenseConfig]
+    Config --> SecretFilter[Register key with log redaction]
     SecretFilter --> Factory[Construct transport and READ client]
 ```
 
@@ -164,7 +165,7 @@ flowchart LR
     Private[Private live acceptance] -. separately approved .-> Appliance
 ```
 
-## Future Tier 1 architecture — not implemented
+## Inert Tier 1 framework and future execution path
 
 ```mermaid
 flowchart TD
@@ -181,22 +182,25 @@ flowchart TD
     Caller --> Confirm[Explicit execute confirmation + contract ID]
     Confirm --> Load[Load authoritative contract by ID]
     Load --> CAS[Atomic PREPARED → EXECUTING]
-    CAS --> Write[WriteApiClient\nonly non-GET chokepoint]
+    CAS -. executor not implemented .-> Write[Future WriteApiClient\nonly non-GET chokepoint]
     Write -->|approved HTTPS mutation| PfSense[Disposable/test pfSense first]
     PfSense --> ReadBack[Verified READ-back]
     ReadBack --> Commit{Expected semantic state?}
-    Commit -->|yes| Committed[COMMITTED]
-    Commit -->|no/ambiguous| Unknown[OUTCOME_UNKNOWN\noperator reconciliation]
+    Commit -->|yes| Verified[VERIFIED]
+    Commit -->|no/ambiguous| Unknown[RECONCILIATION\noperator decision required]
 
-    Committed --> Rollback[Target-bound rollback]
-    Rollback --> RollCAS[COMMITTED → ROLLING_BACK]
+    Verified --> Rollback[Target-bound rollback]
+    Rollback --> RollCAS[VERIFIED → ROLLING_BACK]
     RollCAS --> Restore[Approved restore request]
     Restore --> VerifyRestore[READ-back semantic equivalence]
     VerifyRestore --> RolledBack[ROLLED_BACK]
 
-    Warning[No Tier 1 component is active in v0.2.2] -.-> Write
+    Policy[Empty production mutation policy] -. blocks .-> Write
+    Warning[No executor, endpoint, capability, or tool is active] -.-> Write
 ```
 
-The future flow requires every milestone in
-[the Tier 1 roadmap](TIER1_ROADMAP.md) and separate capability-specific
-authorization before any WRITE endpoint or tool is added.
+The contract, state-machine, policy, audit, and authenticated-store boxes exist
+only as isolated domain infrastructure. The dotted execution path requires
+every remaining milestone in [the Tier 1 roadmap](TIER1_ROADMAP.md) and
+separate capability-specific authorization before any WRITE endpoint or tool
+is added.

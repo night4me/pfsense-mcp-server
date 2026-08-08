@@ -7,6 +7,25 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Inert v0.3.0 Tier 1 domain framework for canonical Recovery Contracts,
+  closed legal transitions, authenticated atomic persistence, exact mutation
+  policy bindings, fault classification, and value-free audit events.
+- Adversarial offline tests for replay, tampering, stale state, target
+  concurrency, restart reconciliation, and injected persistence failures.
+- Implementation-ready Tier 1 architecture, disposable-lab plan, and a
+  conservative inventory of writable upstream endpoint classes.
+
+### Security
+
+- Production mutation remains unreachable: the Engineer profile is empty, the
+  WRITE endpoint allow-list is empty, no WRITE tool registers, and the new
+  Tier 1 package is absent from production bootstrap.
+- Stored Tier 1 records are integrity-authenticated and protected payloads are
+  opaque; production activation remains blocked on an external encryption/key
+  provider and an anti-rollback durability decision.
+
 ## [0.2.2] - 2026-08-07
 
 ### Added

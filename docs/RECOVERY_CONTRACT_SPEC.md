@@ -1,152 +1,169 @@
-# Recovery Contract specification (future Tier 1)
+# Recovery Contract specification
 
-Status: design only; no mutation is authorized or activated.
+Status: inert v0.3.0 framework; no mutation endpoint, tool, capability, or
+production construction is authorized.
 
-This specification refines the [Tier 1 roadmap](TIER1_ROADMAP.md) into a
-reviewable contract and fault model. It is intentionally independent of a
-storage backend or first WRITE capability. Tier 0 types do not yet satisfy it.
+This is the normative contract/fault specification. The architectural layering
+and remaining activation blockers are in
+[TIER1_ARCHITECTURE.md](TIER1_ARCHITECTURE.md).
 
-## Contract fields
+## Authoritative fields
 
-| Field | Type | Trust source | Mutable | Sensitive | Digest-bound | Validation |
-|---|---|---|---:|---:|---:|---|
-| `contract_id` | opaque random identifier | contract service | no | no | domain context | every lookup |
-| `capability` | enum | accepted build registry | no | no | yes | prepare and execute |
-| `endpoint_symbol` | enum/reference | WRITE endpoint registry | no | no | yes | prepare and execute |
-| `http_method` | enum | endpoint registry | no | no | yes | prepare and execute |
-| `target_identity` | capability-specific canonical value | authoritative READ | no | yes | yes | prepare, pre-send, rollback |
-| `locator_hint` | optional upstream ID | authoritative READ | yes | yes | no | never authoritative |
-| `target_fingerprint` | SHA-256 digest | canonical target projection | no | no | yes | pre-send and rollback |
-| `normalized_intent` | typed canonical object | validated caller request | no | yes | yes | prepare and execute |
-| `intent_digest` | SHA-256 digest | canonical intent/payload | no | no | yes | execute |
-| `snapshot_digest` | SHA-256 digest | protected pre-state | no | no | yes | execute and rollback |
-| `rollback_plan_version` | version identifier | capability implementation | no | no | yes | prepare and rollback |
-| `created_at` / `expires_at` | UTC instants | trusted clock | no | no | yes | prepare and acquisition |
-| `confirmed_at` | UTC instant or null | confirmation service | once | no | yes | execution acquisition |
-| `status` | state enum | authoritative store | yes | no | event record | every transition |
-| `state_version` | monotonic integer | authoritative store | yes | no | event record | compare-and-set |
+| Field | Type | Source | Mutable | Sensitive | Digest-bound |
+|---|---|---|---:|---:|---:|
+| `contract_id` | opaque identifier | contract service | no | no | context |
+| `operation_id` | opaque identifier | contract service | no | no | yes |
+| `idempotency_key` | SHA-256 | canonical bindings | no | no | yes |
+| `capability` | `*_WRITE` enum | accepted build policy | no | no | yes |
+| `endpoint_symbol` | exact symbol | endpoint policy | no | no | yes |
+| `http_method` | POST/PUT/PATCH/DELETE | endpoint policy | no | no | yes |
+| protected target identity | ciphertext | authoritative READ | no | yes | yes |
+| `target_identity_digest` | SHA-256 | canonical natural identity | no | no | yes |
+| locator hint | optional protected upstream ID | authoritative READ | refreshable | yes | no |
+| `target_fingerprint` | SHA-256 | capability target projection | no | no | yes |
+| protected normalized intent | ciphertext | typed caller request | no | yes | yes |
+| `intent_digest` | SHA-256 | capability/endpoint/method/intent | no | no | yes |
+| protected snapshot | ciphertext | authoritative READ | no | yes | yes |
+| `snapshot_digest` | SHA-256 | snapshot projection | no | no | yes |
+| `rollback_plan_version` | identifier | capability implementation | no | no | yes |
+| `created_at` / `expires_at` | aware UTC instants | trusted clock | no | no | yes |
+| confirmation digest/time | SHA-256 + UTC | owner confirmation authority | once | no | yes |
+| `state` / `state_version` | enum + integer | authoritative store | yes | no | event-bound |
 
-Raw target identity, intent, payload, snapshot, credentials, and upstream
-responses must not enter MCP errors, audit logs, or public reports. The
-authoritative store may hold encrypted protected values needed for execution
-and rollback; audit records use identifiers and digests only.
+The caller supplies contract ID and matching typed request—not an authoritative
+contract object. The service loads the record by ID and validates all bindings.
 
-## Canonicalization
+## Canonicalization and digests
 
-All digests use UTF-8 encoded deterministic JSON with sorted object keys, no
-insignificant whitespace, explicit null handling, and capability-defined array
-ordering. Floating-point values are prohibited unless a capability defines an
-exact decimal representation. Unicode is normalized to NFC before uniqueness
-comparison and serialization. Domain separators prevent cross-purpose reuse:
+- UTF-8 JSON, NFC Unicode, sorted object keys, compact separators, explicit
+  null, stable array order.
+- Floats are rejected unless a future typed capability defines an exact decimal
+  representation.
+- Non-string object keys, unsupported objects, and normalization collisions are
+  rejected.
+- Every digest uses `pfSense-MCP/Tier1/v1`, a purpose name, and exact contextual
+  capability/endpoint/method components separated by NUL bytes.
+- Target identity, target fingerprint, intent, snapshot, confirmation, and
+  idempotency use separate domains.
 
-```text
-pfSense-MCP/v1/target-fingerprint\0<capability>\0<canonical-target>
-pfSense-MCP/v1/intent\0<capability>\0<endpoint>\0<method>\0<canonical-intent>
-pfSense-MCP/v1/snapshot\0<capability>\0<canonical-snapshot>
-```
+## Target contract
 
-Capability and endpoint are stable enum/symbol names from the accepted build.
-Method is the uppercase endpoint-registry method. Target identity is a
-capability-specific natural key or tuple; numeric pfSense IDs are locator hints
-only. Payload and snapshot canonicalization are defined by versioned typed
-models and reject unknown fields before hashing.
+Each capability defines one natural identity and one fingerprint projection.
+Preparation and execution require exactly one matching target. Numeric IDs are
+transient locator hints. Immediately after PREPARED -> EXECUTING commits, the
+target is re-read by natural identity and its refreshed ID and fingerprint must
+match. Missing, duplicate, swapped, or drifted targets refuse before send.
 
-## Verification algorithm
+## Confirmation contract
+
+The owner confirmation authority authenticates an actor and binds actor ID,
+contract ID, operation ID, intent digest, and expiry. Confirmation is accepted
+once while PREPARED and unexpired. Prompt text or an agent boolean is not owner
+authentication. The subsequent agent execution request must independently
+match capability, endpoint, method, target, and intent.
+
+## State machine
+
+| From | To | Meaning | Authority |
+|---|---|---|---|
+| PREPARING | PREPARED | protected snapshot/bindings persisted | automatic |
+| PREPARING | FAILED / EXPIRED | preparation refused or expired | automatic |
+| PREPARED | EXECUTING | confirmed atomic acquisition + target reservation | automatic |
+| PREPARED | FAILED / EXPIRED | proven refusal or expiry before acquisition | automatic |
+| EXECUTING | VERIFIED | exact response plus semantic read-back | automatic |
+| EXECUTING | FAILED | no effect or failure is proven | automatic |
+| EXECUTING | RECONCILIATION | outcome is not provable | automatic escalation |
+| VERIFIED | ROLLING_BACK | rollback acquires same target | automatic after request |
+| ROLLING_BACK | ROLLED_BACK | restoration read-back verified | automatic |
+| ROLLING_BACK | ROLLBACK_FAILED | failure/conflict proven | automatic escalation |
+| ROLLING_BACK | RECONCILIATION | rollback outcome ambiguous | automatic escalation |
+| RECONCILIATION | VERIFIED / FAILED / ROLLING_BACK / ROLLED_BACK / ROLLBACK_FAILED | recorded operator conclusion | manual only |
+
+Every other transition is illegal. FAILED, ROLLED_BACK, ROLLBACK_FAILED, and
+EXPIRED do not reopen. State/version compare-and-set, idempotency uniqueness,
+and canonical-target reservation are atomic with value-free transition audit.
+
+## Persistence and integrity
+
+- Persistent records contain protected artifacts, never plaintext target,
+  intent, payload, snapshot, credential, or response.
+- HMAC binds the complete canonical record to one store ID. The key is supplied
+  externally, is at least 256 bits, and is never stored in the database.
+- SQLite uses durable transactions and owner-only directory/file permissions.
+- Duplicated operation/idempotency identities and conflicting target
+  reservations fail closed.
+- HMAC and denormalized index columns are cross-checked on every load/scan.
+- Startup scans all authenticated records; EXECUTING and ROLLING_BACK move to
+  RECONCILIATION without resend.
+- Whole-database rollback is not locally detectable; production activation
+  requires an external monotonic anti-rollback anchor or equivalent evidence.
+- Encryption/key rotation, retention, backup, secure deletion, and quarantine
+  policy remain owner-approved activation prerequisites.
+
+## Execution algorithm
 
 ```text
 execute(contract_id, request):
-  contract = authoritative_store.load(contract_id)
-  require contract exists and state == PREPARED
-  require trusted_now < expires_at and confirmed_at is present
-  validate request capability, endpoint, method and normalized intent
-  require request intent digest == stored intent digest
-  atomically compare-and-set PREPARED -> EXECUTING using state_version
-  reserve capability/target concurrency and rate budget atomically
-  target_set = authoritative_read_by_natural_identity(target_identity)
-  require exactly one target
-  require refreshed locator matches any locator hint
-  require fingerprint(target_set[0]) == stored target_fingerprint
-  require protected snapshot digest and rollback plan remain valid
-  require optional config-history capture succeeds when policy requires it
-  durably record execution acquisition before transmission
-  send exactly one approved mutation; never retry an ambiguous send
-  validate exact status, response shape and authoritative read-after-write
-  transition to COMMITTED only after verification
-  otherwise transition to EXECUTION_FAILED or OUTCOME_UNKNOWN by fault class
+  contract = authoritative_store.load_and_authenticate(contract_id)
+  require PREPARED, confirmed, unexpired, expected state_version
+  require exact policy(capability, endpoint, method)
+  recompute target and intent bindings from typed request
+  atomically reserve target and transition PREPARED -> EXECUTING
+  authoritative_read_by_natural_identity()
+  require exactly one target, refreshed locator, matching fingerprint
+  require protected snapshot/rollback/config-history policy valid
+  send exactly one bounded typed request; never retry
+  require exact accepted status and response shape
+  authoritative_read_after_write()
+  if semantic intent verified: EXECUTING -> VERIFIED
+  elif no effect/failure proven: EXECUTING -> FAILED
+  else: EXECUTING -> RECONCILIATION
 ```
 
-Rollback repeats authoritative identity lookup, fingerprint/conflict checks,
-atomic acquisition, exact endpoint verification, and read-back verification.
-It must never restore a global appliance revision when unrelated changes could
-be overwritten.
+No generic execute tool is permitted. Every request/response rule is
+capability-specific.
 
-## State-transition contract
+## Fault decisions
 
-| From | Event | To | Automation allowed |
-|---|---|---|---|
-| `PREPARING` | durable preparation succeeds | `PREPARED` | yes |
-| `PREPARING` | validation/capture fails | `PREPARATION_FAILED` | yes |
-| `PREPARING` / `PREPARED` | unacquired contract expires | `EXPIRED` | yes |
-| `PREPARED` | confirmed atomic acquisition | `EXECUTING` | yes |
-| `EXECUTING` | exact success plus read-back | `COMMITTED` | yes |
-| `EXECUTING` | proven no side effect | `EXECUTION_FAILED` | yes |
-| `EXECUTING` | outcome cannot be proven | `OUTCOME_UNKNOWN` | reconciliation only |
-| `COMMITTED` | rollback atomically acquired | `ROLLING_BACK` | yes |
-| `ROLLING_BACK` | restoration verified | `ROLLED_BACK` | yes |
-| `ROLLING_BACK` | proven rollback failure | `ROLLBACK_FAILED` | policy/manual |
-| `ROLLING_BACK` | rollback outcome ambiguous | `OUTCOME_UNKNOWN` | reconciliation only |
-
-Every unlisted transition is illegal. Terminal states do not reopen. A stale
-`state_version`, duplicate invocation, or conflicting target reservation is a
-refusal with no transport call.
-
-## Fault model and reconciliation
-
-| Fault | Required state/result | Automatic retry |
+| Scenario | State | Automatic retry |
 |---|---|---:|
-| Rejected before transmission | `EXECUTION_FAILED` | no; new confirmation required |
-| Partial transmission / connection reset | `OUTCOME_UNKNOWN` | never |
-| Response lost after possible commit | `OUTCOME_UNKNOWN` | never |
-| Crash before durable `EXECUTING` | remains/refuses `PREPARED` by atomic record | no blind execution |
-| Crash after durable `EXECUTING` | startup reconciliation | never blind resend |
-| Target drift before send | safe refusal, zero mutation | no |
-| Missing or duplicate natural identity | safe refusal, zero mutation | no |
-| Numeric locator now identifies another target | safe refusal, zero mutation | no |
-| Concurrent operator change after mutation | conflict-aware reconciliation | no global restore |
-| Rollback conflict | `ROLLBACK_FAILED` or reconciliation state | never force |
-| Rollback response lost | `OUTCOME_UNKNOWN` | never |
-| Config-history capture unavailable | preparation/execution blocked | no |
-| Store corruption or foreign record | fail closed and quarantine | no |
-| Duplicate MCP invocation | compare-and-set refusal | no |
-| Compound compensation partly fails | `OUTCOME_UNKNOWN` | never |
+| Refused before durable acquisition | remains PREPARED or FAILED | no |
+| Crash before store commit | prior authenticated state | no |
+| Crash after EXECUTING commit, before send | RECONCILIATION on restart unless no-send is independently proven | no |
+| Partial transmission/reset/timeout after send | RECONCILIATION | never |
+| Response lost after pfSense commit | RECONCILIATION | never |
+| Verification interrupted or malformed | RECONCILIATION | never |
+| Missing/duplicate/drifted target before send | FAILED, zero send | no |
+| Concurrent duplicate invocation | CAS refusal, zero send | no |
+| Rollback conflict | ROLLBACK_FAILED | never force |
+| Partial/ambiguous rollback | RECONCILIATION | never |
+| Corrupt/foreign/replayed record | refuse/quarantine | no |
 
-Manual reconciliation must re-read by canonical identity, compare the intended,
-snapshot, and current semantic states, record an operator decision, and never
-infer success solely from an HTTP response or numeric ID.
+Manual reconciliation re-reads by natural identity, compares snapshot, intent,
+and current semantic state, records the operator conclusion, and never infers
+success from HTTP status or numeric ID alone.
 
-## First-capability selection rubric
+## Audit contract
 
-No candidate is authorized by this document. Owner review should score each
-candidate class from 0 (unsafe/unknown) to 3 (strong) for stable natural
-identity, narrow blast radius, deterministic rollback, reliable READ-back,
-OpenAPI clarity, conflict detection, and config-history isolation. Lockout,
-credential mutation, service interruption, global configuration impact, or an
-ambiguous rollback is a veto rather than a score deduction. The first
-capability requires an ADR with evidence and explicit approval.
+Permitted: event/contract/operation IDs, capability, endpoint symbol, method,
+target and intent digests, state/version, timing, outcome, sanitized failure and
+exception class. Prohibited: arguments, raw identity, payload, intent, snapshot,
+response, credentials, exception messages, rollback content, and result values.
 
-## Required test model before implementation
+## Required activation tests
 
-- Table-driven coverage of every legal and illegal state/event pair.
-- Two contenders cannot acquire the same contract or canonical target.
-- Property tests for canonicalization stability and domain separation.
-- Fault injection before and after every durable transition and network send.
-- Restart reconciliation vectors for `EXECUTING`, `ROLLING_BACK`, and corrupt
-  records.
-- Missing, duplicate, drifted, and locator-swapped target tests with zero
-  mutation calls.
-- Ambiguous outcome and compound compensation failures with no automatic retry.
-- Value-free audit, error, fixture, and report assertions.
+- exhaustive legal/illegal transition matrix;
+- canonicalization stability/domain separation/fuzz inputs;
+- stale version, duplicate invocation/contract/operation/idempotency;
+- concurrent same-target acquisition across store connections/processes;
+- corruption of payload, MAC, indexes, metadata, store identity, and key;
+- crash before/after every commit and send boundary;
+- restart reconciliation with no blind resend;
+- missing, duplicate, shifted-ID and fingerprint-drifted targets;
+- timeout/lost response/partial send and malformed response;
+- rollback conflicts and partial compound compensation;
+- value-free schema/log/error/fixture/report scans;
+- READ contract and WRITE-isolation regression.
 
-These vectors remain documentation until a separately approved Tier 1 design
-chooses storage, cryptography, and a first capability. They must not be wired
-to production bootstrap in the current READ release.
+Passing framework tests does not authorize a capability. Activation still
+requires the separate gates in [TIER1_ROADMAP.md](TIER1_ROADMAP.md).

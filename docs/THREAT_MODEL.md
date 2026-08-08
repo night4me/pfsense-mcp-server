@@ -1,7 +1,7 @@
 # Threat model
 
-Version: 0.2.2 release state
-Scope: current local stdio MCP server, 41 READ tools, inert Tier 0 WRITE infrastructure
+Version: v0.2.2 production baseline with inert v0.3.0 Tier 1 development framework
+Scope: current local stdio MCP server, 41 READ tools, and unreachable WRITE infrastructure
 
 ## Purpose and scope
 
@@ -11,8 +11,9 @@ pfSense REST API connection, typed response mapping, logs, fixtures, package
 artifacts, and dormant Tier 0 WRITE modules.
 
 It does not claim that a compromised operating-system account or compromised
-pfSense appliance can be made trustworthy. Tier 1 is discussed only as future
-design risk; no WRITE capability is active or authorized by this document.
+pfSense appliance can be made trustworthy. The isolated Tier 1 domain framework
+is included in this analysis, but no WRITE capability, endpoint, executor, or
+tool is active or authorized by this document.
 
 ## Assets
 
@@ -78,6 +79,14 @@ of current production safety. They are separated by construction: no production
 construction, no WRITE profile capability, no endpoint allow-list entry, no
 registered WRITE tool, and static tests for each boundary.
 
+### TB8 — inert Tier 1 records to future mutation execution
+
+The v0.3.0 framework accepts contract material only at creation, canonicalizes
+and authenticates stored records, enforces compare-and-set legal transitions,
+and reserves one canonical target during execution. Protected intent and
+snapshot artifacts are opaque ciphertext supplied by a future key provider.
+There is currently no executor consuming those records.
+
 ## Attacker models
 
 ### A1 — malicious or compromised MCP caller
@@ -123,12 +132,12 @@ or exploit ambiguous network outcomes.
 
 | Category | Threats | Current mitigations | Residual risk |
 |---|---|---|---|
-| Spoofing | Caller claims another identity; attacker impersonates pfSense; contract identity substitution | Local launcher is the caller boundary; `PFSENSE_IDENTITY` is explicitly upstream identity; HTTPS strict/default or explicit CA; redirects rejected; future contracts require store-loaded target binding | No per-message caller identity; `insecure` TLS permits upstream spoofing; Tier 1 binding not yet implemented |
+| Spoofing | Caller claims another identity; attacker impersonates pfSense; contract identity substitution | Local launcher is the caller boundary; `PFSENSE_IDENTITY` is explicitly upstream identity; HTTPS strict/default or explicit CA; redirects rejected; inert contracts are loaded authoritatively and exact-bound | No per-message caller identity; `insecure` TLS permits upstream spoofing; operator confirmation authentication is not selected |
 | Tampering | Modify capability/profile, endpoints, key/CA files, fixtures, artifacts, responses, logs | Explicit registries; static GET/WRITE checks; descriptor-bound `O_NOFOLLOW`/`fstat()` key loading; typed models; public-contract snapshot; fixture audit; pinned actions; artifact member/content checks; file permissions | Launch-account compromise defeats local integrity; logs are not cryptographically append-only |
-| Repudiation | Caller denies sensitive metadata request or tool use; future mutation lacks trace | Structured tool audit records tool, upstream identity, disclosure choice, outcome class, duration; future write audit designed separately | stdio caller has no individual identity; local log owner can alter files; current audit is operational, not non-repudiation evidence |
+| Repudiation | Caller denies sensitive metadata request or tool use; future mutation lacks trace | Structured READ audit plus inert value-free Tier 1 audit events and atomic store events | stdio caller has no individual identity; local log/store owner can alter or roll back files; audit is operational, not non-repudiation evidence |
 | Information disclosure | Credentials in schemas/output/errors/logs/fixtures/docs; topology leakage; exception/body leakage | Credential fields removed; upstream values ignored; optional metadata default-off; sanitized typed transport/API errors; no values/messages in audit; fixture and package hard refusal; security scan; private report policy | Ordinary READ data is still sensitive; public certificates identify infrastructure; trusted caller can request optional metadata; local launcher controls the credential |
 | Denial of service | Large limits, slow appliance, malformed responses, log exhaustion, repeated calls | Limits bounded 1–100; HTTP timeouts; response shape validation; rotating bounded logs; process-local stdio; fail-closed config | No per-caller rate limit; a channel controller can saturate process/upstream within timeout/limit bounds; upstream can remain slow or unavailable |
-| Elevation of privilege | Reach WRITE transport, register hidden tools, arbitrary endpoints/methods, profile confusion | GET-only `RestApiClient`; explicit `ToolRegistry`; accepted profile set; empty WRITE allow-list; inactive WRITE capabilities; no production write-client construction; static architecture checks | Launch-account/source compromise can alter code/config; Tier 1 must replace zero-entry assertions carefully rather than remove them |
+| Elevation of privilege | Reach WRITE transport, register hidden tools, arbitrary endpoints/methods, profile confusion | GET-only `RestApiClient`; explicit `ToolRegistry`; accepted profile set; empty WRITE allow-list; inactive WRITE capabilities; empty inert Tier 1 policy; no production write-client construction; static architecture checks | Launch-account/source compromise can alter code/config; activation must replace zero-entry assertions through explicit review rather than remove them |
 
 ## Security assumptions
 
@@ -202,6 +211,14 @@ or exploit ambiguous network outcomes.
    unreachable; tests and activation gates must remain mandatory.
 8. **No current rate limiting:** a trusted-channel attacker can cause bounded
    upstream load and local log activity.
+9. **Tier 1 key management:** the inert store authenticates records but does
+   not encrypt protected artifacts itself; activation requires an approved
+   external encryption/key provider.
+10. **Whole-store rollback:** record MACs detect modification, not restoration
+    of an older valid database. Activation requires a durable monotonic
+    anti-rollback anchor and reconciliation procedure.
+11. **Confirmation identity:** a digest proves exact contract confirmation but
+    not who approved it. Activation requires an owner/authentication decision.
 
 ## Future considerations
 
@@ -212,9 +229,11 @@ or exploit ambiguous network outcomes.
 - Add optional tamper-evident audit forwarding without including values.
 - Add resource/rate controls if observed workloads justify them.
 - Keep certificate fixtures wholly synthetic and reject private-key material.
-- For Tier 1, require authoritative target-bound contracts, atomic legal state
-  transitions, durable crash behavior, exact payload/HTTP/read-back validation,
-  replay protection, and operator reconciliation for unknown outcomes.
+- Tier 1 contracts, canonical binding, legal transitions, record
+  authentication, target reservations, and restart reconciliation now exist as
+  inert domain controls. Before activation, add the approved key provider,
+  anti-rollback anchor, authenticated confirmation, capability-specific
+  payload/target logic, exact HTTP/read-back validation, and lab evidence.
 
 See [Tier 1 roadmap](TIER1_ROADMAP.md) for future WRITE requirements and
 [security model](SECURITY_MODEL.md) for normative data classification.

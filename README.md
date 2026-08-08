@@ -19,10 +19,11 @@ Key properties:
 
 ## Status
 
-v0.2.2 is the current release state. It completes project, packaging,
-documentation, and defense-in-depth hardening while preserving the 41-tool READ
-API. It is not yet published on PyPI. No mutating capability is active, and the
-accepted Tier 0 WRITE infrastructure remains inert.
+v0.2.2 is the immutable production baseline and is published on PyPI. It
+completes project, packaging, documentation, and defense-in-depth hardening
+while preserving the 41-tool READ API. v0.3.0 is the active development
+milestone. Its Tier 1 safety framework remains inert: no mutating capability,
+endpoint, transport path, or MCP tool is active.
 
 ## Scope (current phase)
 
@@ -60,6 +61,12 @@ the engineer placeholder contains no capabilities. Endpoint registries
 independently enforce GET-only access and an empty WRITE allow-list.
 An optional exact-name restriction can further reduce the tools authorized by
 the selected profile; it can never add a tool or capability.
+
+The v0.3.0 source tree also contains an isolated `tier1` domain package for
+Recovery Contract, state-machine, persistence, policy, and audit design. It is
+not imported by `Application`, has an empty mutation policy, and has no
+production executor or transport. Its presence does not change the v0.2.2 MCP
+contract or authorize WRITE.
 
 ## Credentials
 
@@ -250,7 +257,11 @@ separate process with separate configuration for another appliance.
 - [Security model](docs/SECURITY_MODEL.md)
 - [Vulnerability reporting](SECURITY.md)
 - [Public roadmap](docs/ROADMAP.md)
-- [Future Recovery Contract specification](docs/RECOVERY_CONTRACT_SPEC.md)
+- [v0.3.0 milestone](docs/V0.3.0_MILESTONE.md)
+- [Tier 1 safety architecture](docs/TIER1_ARCHITECTURE.md)
+- [Recovery Contract specification](docs/RECOVERY_CONTRACT_SPEC.md)
+- [Writable endpoint risk study](docs/WRITE_ENDPOINT_RISK_MATRIX.md)
+- [Disposable Tier 1 lab plan](docs/TIER1_LAB_PLAN.md)
 - [Contribution guide](CONTRIBUTING.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [PyPI release procedure](docs/PYPI_RELEASE.md)

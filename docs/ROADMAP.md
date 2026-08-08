@@ -7,9 +7,10 @@ capability or authorizes a production change.
 
 ## Current baseline
 
-- Published release: v0.2.1 security hardening.
-- Prepared release state: v0.2.2 project, packaging, CI, and documentation
-  hardening; tag, GitHub Release, and PyPI publication remain owner actions.
+- Immutable published baseline: v0.2.2 project, packaging, CI, documentation,
+  and READ-platform hardening.
+- Active development milestone: v0.3.0 Tier 1 architecture and inert safety
+  framework. Production mutation remains separately blocked.
 - Production MCP surface: 41 READ tools, 0 WRITE tools.
 - Tier 0 WRITE infrastructure: present, tested, and inert.
 
@@ -40,7 +41,17 @@ capability or authorizes a production change.
 - Tier 1 activation.
 - Network transport beyond local stdio.
 
-## v0.3 — maintainability and compatibility discipline
+## v0.3.0 — inert Tier 1 foundation and compatibility discipline
+
+### Committed
+
+- Keep the v0.2.2 public MCP contract and production READ behavior unchanged.
+- Specify and test the Recovery Contract, closed state machine, canonical
+  digests, authenticated persistence, policy bindings, and audit event model.
+- Keep the Tier 1 package outside production bootstrap with an empty mutation
+  policy, no WRITE endpoint, no executor, and no registered WRITE tool.
+- Produce a risk-ranked WRITE endpoint study and disposable-lab acceptance
+  design before asking the owner to select a first capability.
 
 ### Candidate
 
@@ -62,9 +73,10 @@ capability or authorizes a production change.
 
 ## Tier 1 — first controlled mutation
 
-Tier 1 is a separately authorized security program, not automatically part of
-v0.3. The first capability and endpoint are intentionally unnamed until threat,
-reversibility, and upstream semantics are approved.
+Tier 1 activation is a separately authorized security program. v0.3.0 may
+contain inert framework code, but the first capability and endpoint remain
+unnamed until threat, reversibility, upstream semantics, encryption, durable
+anti-rollback, and operator-authentication decisions are approved.
 
 ### Required before commitment
 

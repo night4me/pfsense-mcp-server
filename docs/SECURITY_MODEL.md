@@ -98,8 +98,18 @@ responses, exception messages, credential values, or raw pfSense bodies.
 
 ## Recovery and WRITE status
 
-Tier 0 WRITE infrastructure is inert. It must not be activated until
-Recovery Contracts are bound to capability/endpoint/target, authoritative
-store state and legal transitions are enforced, payload transmission and
-HTTP outcome validation are implemented, and crash-safe persistence is
-resolved and accepted separately.
+Tier 0 WRITE infrastructure remains inert. The v0.3.0 development tree adds a
+separate `pfsense_mcp.tier1` domain package for immutable Recovery Contracts,
+canonical digests, a closed state machine, authenticated atomic persistence,
+an empty exact-match mutation policy, fault classification, and value-free
+audit events. Production bootstrap imports none of it; it contains no executor
+or pfSense transport and cannot register a tool.
+
+The local store authenticates individual records but deliberately treats
+payload and snapshot artifacts as already encrypted opaque bytes. It does not
+provide encryption at rest, key management, or protection against rollback of
+the entire database. Production activation therefore remains blocked on an
+external encryption/key provider, a durable monotonic anti-rollback strategy,
+operator-confirmation authentication, capability-specific target semantics,
+payload transmission, exact HTTP outcome validation, and accepted crash and
+reconciliation procedures.
