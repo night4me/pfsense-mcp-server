@@ -2,7 +2,7 @@
 
 These guides configure supported MCP clients to launch the local
 `pfsense-mcp-server` process over stdio. Start with the project's
-[installation and credential instructions](../README.md#installation).
+[installation and credential instructions](../README.md#quick-start).
 
 | Client | Local stdio support | Guide |
 |---|---:|---|

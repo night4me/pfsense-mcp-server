@@ -8,7 +8,7 @@ point directly.
 ## Installation
 
 Install the project in a virtual environment as described in the
-[README](../README.md#installation). In Claude Desktop, ensure local developer
+[README](../README.md#quick-start). In Claude Desktop, ensure local developer
 MCP servers are permitted by your account or organization policy.
 
 ## Configuration

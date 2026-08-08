@@ -9,7 +9,9 @@ MCP service, which this project does not provide.
 
 ## Installation
 
-Install this project from source using the [main guide](../README.md#installing-from-source).
+Install this project (from PyPI or from source) using the
+[README's quick start](../README.md#quick-start), or
+[build from source](../CONTRIBUTING.md#local-setup) for development.
 The executable and key file must be accessible to the local desktop process.
 
 ## Configuration

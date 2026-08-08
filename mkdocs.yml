@@ -51,22 +51,36 @@ markdown_extensions:
 # builds and locally previews the site only. Deploying it is a separate,
 # explicit owner decision, tracked as a future step, not part of this
 # configuration.
+#
+# Nav hierarchy is deliberate: Getting Started and Security come before
+# Architecture, so a new visitor reaches "how do I run this" and "why
+# should I trust it" before anything else. Every current-production-vs-
+# future-inert-framework distinction gets its own clearly labeled section
+# ("Architecture" is what's active today; "Tier 1" is explicitly future
+# and inert) rather than being interleaved, per this project's own
+# public-positioning discipline (see README.md's "Why this project
+# exists").
 nav:
   - Home: index.md
-  - Architecture:
-      - Overview: TIER1_ARCHITECTURE.md
-      - Diagrams: ARCHITECTURE_DIAGRAMS.md
-      - Recovery Contract specification: RECOVERY_CONTRACT_SPEC.md
-      - WRITE Tier 0 (inert infrastructure): WRITE_TIER0_SPEC.md
+  - Getting Started:
+      - Install & quick start (GitHub README): https://github.com/night4me/pfsense-mcp-server#quick-start
+      - Configuration reference: CONFIGURATION.md
+      - Client setup examples (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md
   - Security:
       - Security model: SECURITY_MODEL.md
       - Threat model: THREAT_MODEL.md
       - Security test catalog: SECURITY_TEST_CATALOG.md
       - Writable-endpoint risk matrix: WRITE_ENDPOINT_RISK_MATRIX.md
+      - Vulnerability reporting (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md
   - API reference:
       - MCP tool reference: API.md
       - Future-major API review: API_REVIEW.md
-  - Roadmap and planning:
+  - Architecture (current production):
+      - Diagrams: ARCHITECTURE_DIAGRAMS.md
+      - Recovery Contract specification: RECOVERY_CONTRACT_SPEC.md
+  - Tier 1 — future WRITE safety framework (inert):
+      - Overview: TIER1_ARCHITECTURE.md
+      - WRITE Tier 0 (inert infrastructure): WRITE_TIER0_SPEC.md
       - Public roadmap: ROADMAP.md
       - v0.3.0 milestone: V0.3.0_MILESTONE.md
       - Tier 1 roadmap: TIER1_ROADMAP.md
@@ -74,41 +88,43 @@ nav:
       - Tier 1 overview: tier1/README.md
       - Tier 1 activation decisions: TIER1_ACTIVATION_DECISIONS.md
       - Disposable-lab plan: TIER1_LAB_PLAN.md
-      - READ backlog: READ_BACKLOG.md
-  - Architecture Decision Records:
-      - Index: adr/README.md
-      - ADR-001 READ-only production architecture: adr/ADR-001-read-only-production-architecture.md
-      - ADR-002 Strongly typed boundaries: adr/ADR-002-strongly-typed-boundaries.md
-      - ADR-003 GET-only transport: adr/ADR-003-get-only-transport.md
-      - ADR-004 Capability profiles: adr/ADR-004-capability-profiles.md
-      - ADR-005 Inert Tier 0 WRITE infrastructure: adr/ADR-005-inert-tier-0-write-infrastructure.md
-      - ADR-006 Recovery Contract philosophy: adr/ADR-006-recovery-contract-philosophy.md
-      - ADR-007 Security-first public schemas: adr/ADR-007-security-first-public-schemas.md
-      - ADR-008 Fail-closed configuration: adr/ADR-008-fail-closed-configuration.md
-      - ADR-009 Protected-artifact encryption provider: adr/ADR-009-protected-artifact-encryption-provider.md
-      - ADR-010 Key lifecycle and delivery: adr/ADR-010-key-lifecycle-and-delivery.md
-      - ADR-011 Whole-store anti-rollback anchor: adr/ADR-011-whole-store-anti-rollback-anchor.md
-      - ADR-012 Confirmation authority: adr/ADR-012-confirmation-authority.md
-      - ADR-013 Reconciliation authority: adr/ADR-013-reconciliation-authority.md
-      - ADR-014 Sealed executor interface: adr/ADR-014-sealed-executor-interface.md
-      - ADR-015 Rate and blast-radius defaults: adr/ADR-015-rate-and-blast-radius-defaults.md
-      - ADR-016 Alias-candidate lab authorization: adr/ADR-016-alias-candidate-lab-authorization.md
-  - Tier 1 subsystem specifications:
-      - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
-      - Key lifecycle: tier1/specs/key_lifecycle.md
-      - Whole-store anti-rollback: tier1/specs/whole_store_anti_rollback.md
-      - Confirmation authority: tier1/specs/confirmation_authority.md
-      - Reconciliation authority: tier1/specs/reconciliation_authority.md
-      - Rate and blast-radius policy: tier1/specs/rate_blast_radius_policy.md
-      - Sealed executor: tier1/specs/sealed_executor.md
-      - Capability adapter contract: tier1/specs/capability_adapter_contract.md
-      - Adapter restrictions: tier1/specs/adapter_restrictions.md
-      - Disposable-lab execution model: tier1/specs/disposable_lab_execution_model.md
-  - Release and operations:
+      - Architecture Decision Records:
+          - Index: adr/README.md
+          - ADR-001 READ-only production architecture: adr/ADR-001-read-only-production-architecture.md
+          - ADR-002 Strongly typed boundaries: adr/ADR-002-strongly-typed-boundaries.md
+          - ADR-003 GET-only transport: adr/ADR-003-get-only-transport.md
+          - ADR-004 Capability profiles: adr/ADR-004-capability-profiles.md
+          - ADR-005 Inert Tier 0 WRITE infrastructure: adr/ADR-005-inert-tier-0-write-infrastructure.md
+          - ADR-006 Recovery Contract philosophy: adr/ADR-006-recovery-contract-philosophy.md
+          - ADR-007 Security-first public schemas: adr/ADR-007-security-first-public-schemas.md
+          - ADR-008 Fail-closed configuration: adr/ADR-008-fail-closed-configuration.md
+          - ADR-009 Protected-artifact encryption provider: adr/ADR-009-protected-artifact-encryption-provider.md
+          - ADR-010 Key lifecycle and delivery: adr/ADR-010-key-lifecycle-and-delivery.md
+          - ADR-011 Whole-store anti-rollback anchor: adr/ADR-011-whole-store-anti-rollback-anchor.md
+          - ADR-012 Confirmation authority: adr/ADR-012-confirmation-authority.md
+          - ADR-013 Reconciliation authority: adr/ADR-013-reconciliation-authority.md
+          - ADR-014 Sealed executor interface: adr/ADR-014-sealed-executor-interface.md
+          - ADR-015 Rate and blast-radius defaults: adr/ADR-015-rate-and-blast-radius-defaults.md
+          - ADR-016 Alias-candidate lab authorization: adr/ADR-016-alias-candidate-lab-authorization.md
+      - Subsystem specifications:
+          - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
+          - Key lifecycle: tier1/specs/key_lifecycle.md
+          - Whole-store anti-rollback: tier1/specs/whole_store_anti_rollback.md
+          - Confirmation authority: tier1/specs/confirmation_authority.md
+          - Reconciliation authority: tier1/specs/reconciliation_authority.md
+          - Rate and blast-radius policy: tier1/specs/rate_blast_radius_policy.md
+          - Sealed executor: tier1/specs/sealed_executor.md
+          - Capability adapter contract: tier1/specs/capability_adapter_contract.md
+          - Adapter restrictions: tier1/specs/adapter_restrictions.md
+          - Disposable-lab execution model: tier1/specs/disposable_lab_execution_model.md
+  - Release and contributing:
       - Release checklist: RELEASE_CHECKLIST.md
       - PyPI release procedure: PYPI_RELEASE.md
       - Dependency policy: DEPENDENCY_POLICY.md
       - Benchmark methodology: BENCHMARKS.md
+      - Contributing (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md
+      - Support (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md
+      - READ backlog (historical): READ_BACKLOG.md
   - Acceptance records:
       - v0.1.0: ACCEPTANCE_v0.1.0.md
       - v0.2.0: ACCEPTANCE_v0.2.0.md

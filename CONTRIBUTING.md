@@ -7,7 +7,7 @@ of it exists because a specific mistake is easy to make otherwise.
 
 ## Before you begin
 
-- Read [AGENTS.md](AGENTS.md), [the architecture overview](README.md#architecture),
+- Read [AGENTS.md](AGENTS.md), [the architecture diagrams](docs/ARCHITECTURE_DIAGRAMS.md),
   and [the security model](docs/SECURITY_MODEL.md). See "Where to find things"
   below for the rest of the documentation map.
 - Search existing issues and discussions before proposing substantial work —

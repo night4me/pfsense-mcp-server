@@ -5,7 +5,7 @@ configuration.
 
 ## Installation
 
-Install the project using the [README](../README.md#installation). Use user-level
+Install the project using the [README](../README.md#quick-start). Use user-level
 configuration for private appliance settings, or keep a placeholder-only
 `.vscode/mcp.json` in a workspace.
 

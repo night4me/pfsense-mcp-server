@@ -1,42 +1,65 @@
 # pfsense-mcp-server
 
-A security-focused local MCP server exposing strongly typed READ tools for
-pfSense, plus the design documentation for its inert v0.3.0 Tier 1
-WRITE-safety framework — the architecture, threat model, and specifications
-that must exist and be reviewed *before* any mutating capability is ever
-authorized.
+**A security-first MCP server for pfSense.** It gives an MCP client
+strongly typed, read-only visibility into one pfSense appliance — without
+exposing raw shell access or a way to mutate the appliance by accident.
+
+**Current production contract: 41 READ tools. 0 WRITE tools.** That split
+is deliberate: this project treats mutation as a safety-engineering
+problem, not a feature flag. See
+[the Tier 1 overview](TIER1_ARCHITECTURE.md) below for what that means in
+practice, and the repository README's "Why this project exists" section
+for the short version.
 
 This site is a browsable, organized view of the technical documentation
-under `docs/`. It does not repeat the project's practical getting-started
-material — that lives in the repository's own README, which stays
-authoritative for installation, configuration, and quick-start instructions:
+under `docs/`. It does not repeat the project's practical
+getting-started material — that stays authoritative in the repository
+itself:
 
-- [README — installation, configuration, quick start](https://github.com/night4me/pfsense-mcp-server#readme)
-- [CONTRIBUTING — how to propose a change](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md)
-- [SECURITY — how to report a vulnerability](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md)
+- [README — install, quick start, example prompts](https://github.com/night4me/pfsense-mcp-server#readme)
 - [Client setup examples](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md)
+- [CONTRIBUTING — development workflow](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md)
+- [SECURITY — how to report a vulnerability](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md)
+
+## Find your way in
+
+| If you want to... | Go to |
+|---|---|
+| Install and run the server | [Getting Started](CONFIGURATION.md) |
+| Know exactly what security properties are enforced (and which aren't) | [Security](SECURITY_MODEL.md) |
+| See every MCP tool this server registers | [API reference](API.md) |
+| Understand how the current READ path is built | [Architecture](ARCHITECTURE_DIAGRAMS.md) |
+| Understand the future WRITE-safety framework — and why it isn't active yet | [Tier 1](TIER1_ARCHITECTURE.md) |
+| Build, review, or release a change | [Release and contributing](RELEASE_CHECKLIST.md) |
 
 ## What is on this site
 
-- **Architecture** — how the production READ path is built, the Tier 1
-  Recovery Contract safety model, and the (still entirely inert) WRITE
-  Tier 0 infrastructure.
+- **Getting Started** — the full configuration reference and
+  troubleshooting guide; installation itself lives in the README (linked
+  above), since that's what a new visitor sees first on GitHub or PyPI.
 - **Security** — the threat model, security model, abuse-case catalog, and
   the risk study behind every writable pfSense endpoint class this project
-  has inventoried and *not yet* authorized.
+  has inventoried and *not yet* authorized. Start here if you're deciding
+  whether to trust this project with appliance credentials.
 - **API reference** — the full MCP tool catalog this server currently
   registers (41 READ tools, zero WRITE tools).
-- **Roadmap and planning** — the public roadmap and the detailed,
-  phase-gated v0.3.0 Tier 1 implementation plan, including every
-  Architecture Decision Record that gates a piece of it.
-- **Tier 1 subsystem specifications** — implementation-ready designs for
-  the encryption, key lifecycle, anti-rollback, confirmation,
-  reconciliation, rate-limiting, and sealed-executor subsystems that make
-  up the Recovery Contract safety framework.
-- **Release and operations** — how a release actually gets built, checked,
-  and published, and this project's dependency/supply-chain policy.
-- **Acceptance records** — the point-in-time verification evidence recorded
-  at each past release.
+- **Architecture (current production)** — how the active READ path is
+  built: transport, typed response mapping, capability gating, tool
+  registration.
+- **Tier 1 — future WRITE safety framework (inert)** — everything about
+  the WRITE-safety design that does *not* run in production yet: the
+  Recovery Contract model, the phase-gated implementation roadmap, every
+  Architecture Decision Record that gates a piece of it, and the
+  implementation-ready specification for each subsystem (encryption, key
+  lifecycle, anti-rollback, confirmation, reconciliation, rate-limiting,
+  sealed executor, disposable-lab validation). Every page in this section
+  describes code that exists and is tested — none of it is reachable from
+  the running server.
+- **Release and contributing** — how a release actually gets built,
+  checked, and published; this project's dependency/supply-chain policy;
+  and where to go to propose a change.
+- **Acceptance records** — the point-in-time verification evidence
+  recorded at each past release.
 
 ## Project status
 
