@@ -268,6 +268,7 @@ separate process with separate configuration for another appliance.
 - [Security abuse-case catalog](docs/SECURITY_TEST_CATALOG.md)
 - [Security model](docs/SECURITY_MODEL.md)
 - [Vulnerability reporting](SECURITY.md)
+- [Support and getting help](SUPPORT.md)
 - [Public roadmap](docs/ROADMAP.md)
 - [v0.3.0 milestone](docs/V0.3.0_MILESTONE.md)
 - [Tier 1 safety architecture](docs/TIER1_ARCHITECTURE.md)

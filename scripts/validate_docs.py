@@ -17,6 +17,7 @@ ROOT_DOCUMENTS = (
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
+    "SUPPORT.md",
 )
 LINK_PATTERN = re.compile(r"!?\[[^]]*\]\((?P<target>[^)]+)\)")
 REFERENCE_PATTERN = re.compile(r"(?m)^\[[^]]+\]:\s*(?P<target>\S+)")
