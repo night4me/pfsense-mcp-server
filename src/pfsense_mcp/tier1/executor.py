@@ -27,7 +27,7 @@ from .anti_rollback import AntiRollbackAnchor
 from .canonical import CanonicalValue, DigestPurpose, digest_value
 from .contract import ProtectedArtifact, RecoveryContract
 from .crypto import ArtifactRole, decrypt_artifact
-from .errors import ContractConflictError
+from .errors import ContractConflictError, ContractValidationError
 from .faults import EffectKnowledge, MutationBoundary, classify_fault
 from .policy import MutationPolicy
 from .state_machine import RecoveryState
@@ -295,7 +295,12 @@ class MutationExecutor:
         return digest_value(DigestPurpose.TARGET_FINGERPRINT, raw_fingerprint, context=context)
 
     def _decrypt(self, contract: RecoveryContract, artifact: object, role: ArtifactRole) -> CanonicalValue:
-        assert isinstance(artifact, ProtectedArtifact)
+        # Not an `assert`: assertions are stripped under -O, and this
+        # guards a real invariant (RecoveryContract's protected_* fields
+        # are typed ProtectedArtifact but not runtime-validated as such
+        # by __post_init__), not just narrowing an already-proven type.
+        if not isinstance(artifact, ProtectedArtifact):
+            raise ContractValidationError("Recovery Contract protected artifact has an unexpected type.")
         plaintext_bytes = decrypt_artifact(
             key=self._encryption_key, artifact=artifact, contract_id=contract.contract_id, role=role
         )

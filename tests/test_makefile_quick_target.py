@@ -2,12 +2,13 @@
 
 These tests parse the Makefile text directly (never invoke `make`) to
 confirm the constraints agreed for `make quick`: it must show its own
-9-stage progress labels (never validate's 18-stage labels), must not
+10-stage progress labels (never validate's 19-stage labels), must not
 generate a JUnit report, and must not call any of the validate-only
 tooling (fixture safety, bounded-parameter audit, JUnit post-processing,
 public-contract/documentation validation, or the git report). `validate` must
-contain all 18 stages (the original 13, three WRITE-infrastructure stages, the
-public contract snapshot, and documentation consistency validation).
+contain all 19 stages (the original 13, three WRITE-infrastructure stages, the
+public contract snapshot, documentation consistency validation, and the
+bandit static security analysis stage).
 """
 
 from __future__ import annotations
@@ -45,22 +46,22 @@ def test_quick_target_exists():
     assert re.search(r"^quick:", text, re.MULTILINE) is not None
 
 
-def test_quick_has_exactly_nine_numbered_stage_labels():
+def test_quick_has_exactly_ten_numbered_stage_labels():
     block = _target_block(_makefile_text(), "quick")
-    labels = re.findall(r"\[\d/9\]", block)
-    assert labels == [f"[{n}/9]" for n in range(1, 10)]
+    labels = re.findall(r"\[\d+/10\]", block)
+    assert labels == [f"[{n}/10]" for n in range(1, 11)]
 
 
 def test_no_validate_stage_labels_occur_inside_quick_recipe():
     block = _target_block(_makefile_text(), "quick")
-    assert "/18]" not in block
+    assert "/19]" not in block
 
 
-def test_validate_contains_all_18_stages():
+def test_validate_contains_all_19_stages():
     text = _makefile_text()
     validate_block = _target_block(text, "validate")
     # validate's own summary line, plus each dependency's recipe carries
-    # its own [N/16] label — collect labels from validate's prerequisite
+    # its own [N/19] label — collect labels from validate's prerequisite
     # targets, not just validate's own (mostly prerequisite-only) block.
     prereqs = [
         "syntax-check",
@@ -73,6 +74,7 @@ def test_validate_contains_all_18_stages():
         "get-only-check",
         "tools-write-check",
         "security-scan",
+        "security-static-check",
         "fixture-safety-check",
         "query-param-check",
         "write-infrastructure-check",
@@ -90,8 +92,8 @@ def test_validate_contains_all_18_stages():
     all_labels = set()
     for target in prereqs:
         block = _target_block(text, target)
-        all_labels.update(re.findall(r"\[\s*\d+/18\]", block))
-    assert len(all_labels) == 18, f"expected 18 distinct stage labels, found {sorted(all_labels)}"
+        all_labels.update(re.findall(r"\[\s*\d+/19\]", block))
+    assert len(all_labels) == 19, f"expected 19 distinct stage labels, found {sorted(all_labels)}"
 
 
 def test_ruff_and_mypy_commands_defined_only_in_internal_shared_targets():
@@ -148,6 +150,24 @@ def test_quick_does_call_the_expected_scripts():
     ):
         assert expected in block, f"quick's recipe is missing the expected call to {expected}"
     assert re.search(r"pytest\s+-q\s*$", block, re.MULTILINE), "quick's recipe is missing a bare `pytest -q` run"
+
+
+def test_bandit_command_defined_only_in_shared_security_static_target():
+    text = _makefile_text()
+    bandit_cmd = "bandit -c pyproject.toml -r src/pfsense_mcp scripts"
+
+    owner_block = _target_block(text, "security-static")
+    assert bandit_cmd in owner_block, "bandit command not found in security-static's recipe"
+
+    # quick and security-static-check (validate's wrapper) must both call
+    # the shared security-static target via $(MAKE), never duplicate the
+    # bandit command directly -- the same pattern already enforced above
+    # for ruff/mypy, so a CI-only bandit failure like the one this stage
+    # closes a gap for can never silently diverge between quick/validate.
+    for target in ("quick", "security-static-check"):
+        block = _target_block(text, target)
+        assert bandit_cmd not in block, f"{target} duplicates the bandit command directly"
+        assert "security-static" in block, f"{target} does not call the shared security-static target"
 
 
 def test_quick_pytest_invocation_has_no_junit_flag_on_the_same_line():
