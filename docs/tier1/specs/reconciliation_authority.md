@@ -2,7 +2,7 @@
 
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 6; requires
-[ADR-013](../adr/ADR-013-reconciliation-authority.md).
+[ADR-013](../../adr/ADR-013-reconciliation-authority.md).
 Related: [confirmation_authority.md](confirmation_authority.md) (this spec
 reuses its signature mechanism), `state_machine.py`'s
 `RECONCILIATION -> {VERIFIED, FAILED, ROLLING_BACK, ROLLED_BACK,
@@ -91,11 +91,13 @@ sets the contract's final, trusted, audited state.
 ```python
 # src/pfsense_mcp/tier1/reconciliation.py (new; not created yet)
 
+
 class ReconciliationOutcome(str, Enum):
     CONFIRMED_APPLIED = "confirmed_applied"
     CONFIRMED_NOT_APPLIED = "confirmed_not_applied"
     CONFIRMED_ROLLBACK_APPLIED = "confirmed_rollback_applied"
     CONFIRMED_ROLLBACK_NOT_APPLIED = "confirmed_rollback_not_applied"
+
 
 _OUTCOME_TARGET_STATE = {
     ReconciliationOutcome.CONFIRMED_APPLIED: RecoveryState.VERIFIED,
@@ -103,6 +105,7 @@ _OUTCOME_TARGET_STATE = {
     ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED: RecoveryState.ROLLED_BACK,
     ReconciliationOutcome.CONFIRMED_ROLLBACK_NOT_APPLIED: RecoveryState.ROLLBACK_FAILED,
 }
+
 
 @dataclass(frozen=True)
 class ReconciliationEvidence:
@@ -122,8 +125,10 @@ class ReconciliationEvidence:
         """digest_value(DigestPurpose.RECONCILIATION, {...}) — same
         construction discipline as ConfirmationEvidence.evidence_digest."""
 
+
 class ReconciliationVerifier(Protocol):
     def verify(self, evidence: ReconciliationEvidence) -> bool: ...
+
 
 # store.py addition:
 def resolve_reconciliation(

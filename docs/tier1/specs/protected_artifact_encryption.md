@@ -3,7 +3,7 @@
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 3 (persistence and crash contract) in
 [TIER1_ROADMAP.md](../../TIER1_ROADMAP.md); requires
-[ADR-009](../adr/ADR-009-protected-artifact-encryption-provider.md).
+[ADR-009](../../adr/ADR-009-protected-artifact-encryption-provider.md).
 Related: [key_lifecycle.md](key_lifecycle.md),
 [RECOVERY_CONTRACT_SPEC.md](../../RECOVERY_CONTRACT_SPEC.md).
 
@@ -80,22 +80,26 @@ adapter can construct a real one.
 ```python
 # src/pfsense_mcp/tier1/crypto.py (new; not created yet)
 
+
 class ArtifactAlgorithm(str, Enum):
     AES_256_GCM_V1 = "aes-256-gcm-v1"
+
 
 class ArtifactRole(str, Enum):
     TARGET_IDENTITY = "target-identity"
     INTENT = "intent"
     SNAPSHOT = "snapshot"
 
+
 def encrypt_artifact(
     *,
-    key: bytes,              # exactly 32 bytes; caller-owned, never logged
-    key_id: str,              # matches KeyRecord.key_id from key_lifecycle.md
+    key: bytes,  # exactly 32 bytes; caller-owned, never logged
+    key_id: str,  # matches KeyRecord.key_id from key_lifecycle.md
     contract_id: str,
     role: ArtifactRole,
-    plaintext: bytes,         # canonical_json() output; caller's responsibility
+    plaintext: bytes,  # canonical_json() output; caller's responsibility
 ) -> ProtectedArtifact: ...
+
 
 def decrypt_artifact(
     *,

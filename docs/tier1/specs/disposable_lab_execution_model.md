@@ -4,7 +4,7 @@ Status: implementation-ready specification; implementation not authorized
 to run yet (requires separate command-level approval per
 `TIER1_ROADMAP.md` Milestone 8).
 Activation gate: Milestone 8; requires
-[ADR-016](../adr/ADR-016-alias-candidate-lab-authorization.md).
+[ADR-016](../../adr/ADR-016-alias-candidate-lab-authorization.md).
 Related: [TIER1_LAB_PLAN.md](../../TIER1_LAB_PLAN.md) (existing plan; this
 document adds the concrete execution/harness detail the existing plan
 describes at a design level but does not fully operationalize).
@@ -96,29 +96,35 @@ who runs it that day.
 # lab/harness.py (new; not created yet; not packaged; not collected by
 # the default pytest run — invoked explicitly, e.g. `python -m lab.harness`)
 
+
 @dataclass(frozen=True)
 class LabConfig:
-    base_url: str          # must match the lab host allow-list (I1)
+    base_url: str  # must match the lab host allow-list (I1)
     identity: str
-    key_file: Path          # lab-scoped env var, distinct from PFSENSE_API_KEY_FILE
-    candidate: str           # e.g. "firewall_alias_description" — names the adapter under test
+    key_file: Path  # lab-scoped env var, distinct from PFSENSE_API_KEY_FILE
+    candidate: str  # e.g. "firewall_alias_description" — names the adapter under test
+
 
 def load_lab_config() -> LabConfig:
     """Refuses to load if base_url doesn't match the lab allow-list, or
     if the production env vars (PFSENSE_API_URL etc.) are the only ones
     set — the lab requires its own distinctly-named variables."""
 
+
 class FaultProxy:
     """Sits between HttpTransport and the lab VM. Can inject: connection
     reset mid-upload, response-drop after upstream commit (simulated via
     a controllable delay + kill), timeout, and clean passthrough."""
+
     def install(self, scenario: FaultScenario) -> None: ...
+
 
 def run_scenario(config: LabConfig, scenario: FaultScenario) -> ScenarioReport:
     """Runs one full prepare -> confirm -> execute (-> rollback) cycle
     under the given fault scenario, using a fresh throwaway store, and
     returns a value-free ScenarioReport (state transitions, timing,
     outcome — never payloads)."""
+
 
 def run_full_acceptance(config: LabConfig) -> AcceptanceReport:
     """Runs every scenario in TIER1_LAB_PLAN.md's "Fault scenarios"

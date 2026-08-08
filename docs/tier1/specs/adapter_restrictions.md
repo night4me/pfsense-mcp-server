@@ -81,8 +81,16 @@ ADAPTER_FORBIDDEN_IMPORT_ROOTS = {
     "pfsense_mcp.tier1.reconciliation",
 }
 ADAPTER_FORBIDDEN_CALLS = {
-    "delete", "patch", "post", "put", "request", "tool", "send", "get",
+    "delete",
+    "patch",
+    "post",
+    "put",
+    "request",
+    "tool",
+    "send",
+    "get",
 }
+
 
 def test_no_adapter_imports_forbidden_modules(): ...
 def test_no_adapter_calls_forbidden_names(): ...

@@ -92,16 +92,19 @@ candidates):
 ```python
 # Illustrative shape only — not a real adapter.
 
+
 class _ExampleIntent(BaseModel):
     model_config = ConfigDict(extra="forbid")
     natural_key: str
     projected_field: str = Field(max_length=255)
+
 
 class _ExampleWriteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     projected_field: str = Field(max_length=255)
     # No other field. Adding one requires touching this model directly,
     # which is a reviewable diff — not a silent runtime behavior change.
+
 
 class _ExampleAdapter:
     endpoint_symbol: str = "EXAMPLE_ENDPOINT"
@@ -126,9 +129,7 @@ class _ExampleAdapter:
         return _ExampleWriteRequest(projected_field=intent.projected_field)
 
     @staticmethod
-    def is_semantically_verified(
-        pre: RawReadModel, post: RawReadModel, intent: _ExampleIntent
-    ) -> bool:
+    def is_semantically_verified(pre: RawReadModel, post: RawReadModel, intent: _ExampleIntent) -> bool:
         return (
             post.projected_field == intent.projected_field
             and post.forbidden_field_a == pre.forbidden_field_a

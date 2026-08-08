@@ -2,7 +2,7 @@
 
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 6/7 in [TIER1_ROADMAP.md](../../TIER1_ROADMAP.md);
-requires [ADR-014](../adr/ADR-014-sealed-executor-interface.md).
+requires [ADR-014](../../adr/ADR-014-sealed-executor-interface.md).
 Related: all other `docs/tier1/specs/*.md` — the executor is the one
 component that composes every other subsystem into an actual mutation
 path, so this is the longest and most load-bearing spec in this set.
@@ -115,6 +115,7 @@ it.
 ```python
 # src/pfsense_mcp/tier1/executor.py (new; not created yet)
 
+
 class CapabilityAdapter(Protocol):
     """See capability_adapter_contract.md for the full contract this
     Protocol must satisfy. Summarized here for executor-flow context."""
@@ -127,9 +128,7 @@ class CapabilityAdapter(Protocol):
     def fingerprint(self, raw_target: object) -> CanonicalValue: ...
     def build_request(self, intent: object) -> TypedWriteRequest: ...
     def parse_response(self, raw_response: object) -> TypedWriteOutcome: ...
-    def is_semantically_verified(
-        self, pre: object, post: object, intent: object
-    ) -> bool: ...
+    def is_semantically_verified(self, pre: object, post: object, intent: object) -> bool: ...
     def build_rollback_request(self, pre: object) -> TypedWriteRequest: ...
     def is_rollback_verified(self, pre: object, post_rollback: object) -> bool: ...
 
@@ -146,15 +145,11 @@ class MutationExecutor:
         encryption_key: bytes,
     ) -> None: ...
 
-    def execute(
-        self, contract_id: str, *, adapter: CapabilityAdapter, intent: object
-    ) -> ExecutionResult:
+    def execute(self, contract_id: str, *, adapter: CapabilityAdapter, intent: object) -> ExecutionResult:
         """The only method that can cause a mutating network call.
         See "Verification flow" below for the exact step sequence."""
 
-    def rollback(
-        self, contract_id: str, *, adapter: CapabilityAdapter
-    ) -> RollbackResult:
+    def rollback(self, contract_id: str, *, adapter: CapabilityAdapter) -> RollbackResult:
         """See "Rollback flow" below."""
 ```
 

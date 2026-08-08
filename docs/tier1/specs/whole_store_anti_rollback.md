@@ -2,7 +2,7 @@
 
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 3; requires
-[ADR-011](../adr/ADR-011-whole-store-anti-rollback-anchor.md).
+[ADR-011](../../adr/ADR-011-whole-store-anti-rollback-anchor.md).
 Related: `tests/tier1/test_store.py::test_whole_store_rollback_remains_
 an_explicit_external_anchor_blocker` (existing, executable proof of the
 gap this spec closes).
@@ -87,6 +87,7 @@ attacker cannot roll back along with the database.
 ```python
 # src/pfsense_mcp/tier1/anti_rollback.py (new; not created yet)
 
+
 class AntiRollbackAnchor(Protocol):
     def read(self) -> int:
         """Return the anchor's current monotonic value. Raises
@@ -99,14 +100,14 @@ class AntiRollbackAnchor(Protocol):
         advanced it, or it moved backward — both are refusals, never
         auto-resolved). Raises AnchorUnavailableError if unreachable."""
 
+
 class HighWaterMark:
     """Store-side bookkeeping: what value does the store believe the
     anchor was last confirmed at. Persisted in the `metadata` table
     (new key, e.g. "anchor_high_water_mark"), authenticated by the same
     per-row HMAC discipline as every other store field."""
-    def before_executing_transition(
-        self, anchor: AntiRollbackAnchor, connection: sqlite3.Connection
-    ) -> None:
+
+    def before_executing_transition(self, anchor: AntiRollbackAnchor, connection: sqlite3.Connection) -> None:
         """Raises WholeStoreRollbackDetected if the anchor's read() value
         is less than the persisted high-water mark. Raises
         AnchorUnavailableError (propagated) if the anchor cannot be

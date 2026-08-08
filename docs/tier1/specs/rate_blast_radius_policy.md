@@ -3,7 +3,7 @@
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 2 (concurrency) / Milestone 9 (numeric defaults
 require lab evidence); requires
-[ADR-015](../adr/ADR-015-rate-and-blast-radius-defaults.md).
+[ADR-015](../../adr/ADR-015-rate-and-blast-radius-defaults.md).
 Related: [sealed_executor.md](sealed_executor.md),
 [disposable_lab_execution_model.md](disposable_lab_execution_model.md).
 
@@ -87,6 +87,7 @@ mutation of that capability."
 ```python
 # src/pfsense_mcp/tier1/rate_policy.py (new; not created yet)
 
+
 @dataclass(frozen=True)
 class RateLimits:
     max_outstanding_prepared_per_target: int
@@ -94,12 +95,17 @@ class RateLimits:
     target_cooldown_seconds: int
     reconciliation_lockout_threshold: int
 
+
 class RatePolicy:
     def __init__(self, limits: RateLimits) -> None: ...
 
     def check_prepare_allowed(
-        self, connection: sqlite3.Connection, *, target_identity_digest: str,
-        capability: Capability, now: datetime,
+        self,
+        connection: sqlite3.Connection,
+        *,
+        target_identity_digest: str,
+        capability: Capability,
+        now: datetime,
     ) -> None:
         """Raises RateLimitExceededError if outstanding-PREPARED, cooldown,
         or reconciliation-lockout limits would be violated. Must run
@@ -107,16 +113,12 @@ class RatePolicy:
         it gates — i.e. this is called from within store.py, not before
         a separate connection is opened."""
 
-    def check_execute_allowed(
-        self, connection: sqlite3.Connection, *, now: datetime
-    ) -> None:
+    def check_execute_allowed(self, connection: sqlite3.Connection, *, now: datetime) -> None:
         """Raises RateLimitExceededError if max_global_in_flight would be
         exceeded. Called from within the same transaction as the
         PREPARED -> EXECUTING _replace() call."""
 
-    def record_terminal(
-        self, connection: sqlite3.Connection, *, target_identity_digest: str, now: datetime
-    ) -> None:
+    def record_terminal(self, connection: sqlite3.Connection, *, target_identity_digest: str, now: datetime) -> None:
         """Records the cooldown start for a target reaching any terminal
         state (VERIFIED, FAILED, ROLLED_BACK, ROLLBACK_FAILED)."""
 ```

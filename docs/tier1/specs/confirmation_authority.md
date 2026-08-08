@@ -2,7 +2,7 @@
 
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 6 in [TIER1_ROADMAP.md](../../TIER1_ROADMAP.md);
-requires [ADR-012](../adr/ADR-012-confirmation-authority.md).
+requires [ADR-012](../../adr/ADR-012-confirmation-authority.md).
 Related: `src/pfsense_mcp/tier1/confirmation.py` (existing, unchanged by
 this spec — this spec defines the `ConfirmationVerifier` implementation,
 not the already-built evidence/protocol shape).
@@ -87,11 +87,13 @@ verifier does.
 ```python
 # src/pfsense_mcp/tier1/confirmation_providers.py (new; not created yet)
 
+
 @dataclass(frozen=True)
 class PinnedAuthority:
     authority_id: str
-    public_key: bytes   # 32 bytes, Ed25519 raw public key
+    public_key: bytes  # 32 bytes, Ed25519 raw public key
     active: bool
+
 
 class Ed25519ConfirmationVerifier:
     """Concrete ConfirmationVerifier (satisfies the Protocol in

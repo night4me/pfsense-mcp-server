@@ -2,7 +2,7 @@
 
 Status: implementation-ready specification; implementation not authorized.
 Activation gate: Milestone 3 in [TIER1_ROADMAP.md](../../TIER1_ROADMAP.md);
-requires [ADR-010](../adr/ADR-010-key-lifecycle-and-delivery.md).
+requires [ADR-010](../../adr/ADR-010-key-lifecycle-and-delivery.md).
 Related: [protected_artifact_encryption.md](protected_artifact_encryption.md).
 
 ## Purpose
@@ -91,30 +91,36 @@ pattern already implemented and tested for the pfSense API key in
 ```python
 # src/pfsense_mcp/tier1/key_lifecycle.py (new; not created yet)
 
+
 @dataclass(frozen=True)
 class KeyRecord:
-    key_id: str        # e.g. "enc-2026-08-08-0001"; matches ArtifactAlgorithm key_id
-    epoch: int          # monotonically increasing per key purpose
-    material: bytes      # 32 bytes for AES-256-GCM / HMAC-SHA256
-    purpose: KeyPurpose   # ENCRYPTION | INTEGRITY
+    key_id: str  # e.g. "enc-2026-08-08-0001"; matches ArtifactAlgorithm key_id
+    epoch: int  # monotonically increasing per key purpose
+    material: bytes  # 32 bytes for AES-256-GCM / HMAC-SHA256
+    purpose: KeyPurpose  # ENCRYPTION | INTEGRITY
     retired: bool
+
 
 class KeyPurpose(str, Enum):
     ENCRYPTION = "encryption"
     INTEGRITY = "integrity"
+
 
 def load_key_material(path: Path, *, purpose: KeyPurpose) -> KeyRecord:
     """O_NOFOLLOW + fstat-validated load, mirroring
     config.py::_open_key_file / _validate_key_file_descriptor exactly.
     Raises Tier1Error subclass on any validation failure."""
 
+
 class NonceCounter:
     """Durable, fsync-before-return monotonic counter scoped to one
     KeyRecord. One instance per active encryption key."""
+
     def __init__(self, path: Path, *, key_id: str) -> None: ...
     def next(self) -> int:
         """Increments and fsyncs before returning. Raises
         KeyExhaustedError once the retirement threshold (I4) is reached."""
+
 
 def rotate_key(
     *,
