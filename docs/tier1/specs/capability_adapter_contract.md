@@ -9,6 +9,22 @@ Related: [sealed_executor.md](sealed_executor.md) (defines the
 safely), [adapter_restrictions.md](adapter_restrictions.md) (defines how
 violations of this contract are mechanically enforced).
 
+**Implementation note (executor build, Phase 3):** `sealed_executor.md`
+gained a `read_target(self, read_client: PfSenseClient, natural_identity:
+CanonicalValue) -> object` Protocol method during executor implementation
+— the one sanctioned adapter I/O, performing the capability-specific GET
+through the executor-supplied `read_client`, parameterized by the
+executor's already-verified `natural_identity` (adapters are stateless,
+possibly module-level singletons, so this is the only way one knows which
+target a given call concerns). It must raise on zero or multiple matches;
+the executor treats any exception here as a pre-send/pre-rollback refusal.
+This is the one Protocol method I2 below does not apply to: it is
+necessarily impure (it performs I/O), and is exempted from the
+"@staticmethod or free function" guidance for that reason alone — every
+other Protocol method remains pure. See `sealed_executor.md`'s
+Implementation note for why this shape was chosen over the original
+pseudocode's executor-side dispatch.
+
 ## Purpose
 
 `sealed_executor.md` defines *what* a `CapabilityAdapter` must implement.
@@ -42,7 +58,12 @@ that adapter.
 - I2: `natural_identity()` and `fingerprint()` are declared as
   `@staticmethod` or free functions wherever the language allows it, to
   make "this cannot read `self` state" structurally visible in the
-  signature, not just true by convention.
+  signature, not just true by convention. `read_target()` is the sole
+  Protocol method this invariant does not apply to (see the
+  Implementation note above) — it takes the executor-supplied
+  `read_client` as an explicit argument rather than reading one from
+  `self`, which keeps "the adapter cannot construct or hold its own
+  client" true even though the method itself performs I/O.
 - I3: The full set of fields an adapter's `fingerprint()` reads from the
   raw target must be a documented, explicit list in the adapter's module
   docstring — including every field that must **not** change
@@ -110,6 +131,18 @@ class _ExampleAdapter:
     endpoint_symbol: str = "EXAMPLE_ENDPOINT"
     http_method: str = "PATCH"
     capability: Capability = Capability.EXAMPLE_WRITE  # not a real enum member
+
+    @staticmethod
+    def read_target(read_client: PfSenseClient, natural_identity: CanonicalValue) -> RawReadModel:
+        # The one sanctioned I/O method (I2) -- capability-specific GET
+        # through the executor-supplied client, filtered by the
+        # already-verified natural_identity. Must raise on zero or
+        # multiple matches; the executor treats any exception here as a
+        # pre-send/pre-rollback refusal.
+        matches = [item for item in read_client.list_examples() if item.natural_key == natural_identity["natural_key"]]
+        if len(matches) != 1:
+            raise ValueError("Expected exactly one matching target.")
+        return matches[0]
 
     @staticmethod
     def natural_identity(raw_target: RawReadModel) -> CanonicalValue:

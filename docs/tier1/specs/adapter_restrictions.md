@@ -7,6 +7,24 @@ Related: [sealed_executor.md](sealed_executor.md),
 [capability_adapter_contract.md](capability_adapter_contract.md),
 `tests/tier1/test_isolation.py` (existing pattern this spec extends).
 
+**Implementation note (executor build, Phase 3):** I3 below originally
+read "adapters have no legitimate reason to call anything shaped like a
+transport verb at all, including GET (the executor performs all reads on
+the adapter's behalf)." That sentence is superseded —
+`sealed_executor.md`'s Implementation note records why the executor
+cannot itself dispatch a capability-specific GET without a registry this
+architecture's Non-goals rule out: `CapabilityAdapter` gained a
+`read_target(read_client, natural_identity)` method, which **is** the
+adapter's read implementation, called through the executor-supplied
+`read_client`, by design. I3's forbidden-call-name set is unaffected by
+this: it still forbids a call literally named `.get(...)`, and remains
+correct as a guard forcing an adapter to call `read_client`'s actual,
+specifically-named capability method (e.g. `get_firewall_aliases()`)
+rather than something generically named — an AST exact-name check was
+never going to catch every unsafe read pattern; only that one generic
+escape hatch. See `capability_adapter_contract.md`'s Implementation note
+for the same correction applied to I2 there.
+
 ## Purpose
 
 `sealed_executor.md` and `capability_adapter_contract.md` describe what an
@@ -42,9 +60,14 @@ shouldn't do X" is a CI-enforced fact, not a code-review hope.
 - I3: The forbidden-call-name set for adapters is the existing
   `{"delete", "patch", "post", "put", "request", "tool"}` plus `"send"`
   and `"get"` — the existing set omits `get`/`send` because production
-  READ code legitimately calls GET; adapters have no legitimate reason to
-  call anything shaped like a transport verb at all, including GET (the
-  executor performs all reads on the adapter's behalf).
+  READ code legitimately calls GET. Adapters are the one place in
+  `tier1/` that does legitimately call a GET-shaped method (via
+  `read_target()`, see this document's Implementation note above), but
+  never one literally named `.get(...)`: the executor-supplied
+  `read_client` is `PfSenseClient`, whose methods are named per
+  capability (e.g. `get_firewall_aliases()`), so `"get"` stays in the
+  forbidden set as a guard against an adapter calling something
+  suspiciously generic instead of its own capability's named method.
 - I4: Every adapter's public callable surface (the `CapabilityAdapter`
   Protocol methods) must be individually reachable and testable without
   constructing an executor, a store, or a transport — checked by a

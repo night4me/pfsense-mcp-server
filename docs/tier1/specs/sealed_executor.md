@@ -39,6 +39,69 @@ classify — it remains exactly as inert as `execute()` while
 `WriteEndpoints` stays empty. `execute()`'s existing behavior, signature,
 and tests are completely unchanged.
 
+**Implementation note (executor build, Phase 3):** three details below
+were left underspecified by this document's original pseudocode and were
+resolved during implementation, tested, and are recorded here rather than
+left implicit in code:
+
+1. **`read_target()` was added to `CapabilityAdapter`, and it takes a
+   `natural_identity` parameter.** The original pseudocode wrote
+   `pre = read_client.<capability-specific GET>(natural_identity)` as if
+   the executor itself dispatched to a capability-specific `PfSenseClient`
+   method by name. That would require the executor to hold a
+   capability -> method mapping outside this module, which this spec's
+   Non-goals explicitly rule out ("does not implement generic 'plugin'
+   loading, dynamic adapter discovery, or a registry beyond a simple,
+   explicit, reviewed mapping"). Instead, the adapter itself performs the
+   one sanctioned read, through the executor-supplied `read_client`:
+   `read_target(self, read_client: PfSenseClient, natural_identity:
+   CanonicalValue) -> object`. `natural_identity` must be a parameter (not
+   baked into adapter construction) because adapters are stateless,
+   possibly module-level singletons (Lifecycle step 2) reused across many
+   different targets of the same capability — an adapter instance cannot
+   know, on its own, which target a given call concerns. The executor
+   passes the same already-verified `natural_identity` value on both the
+   pre-send and post-send reads. This is recorded as an addition to
+   `capability_adapter_contract.md` as well.
+2. **`execute()`'s `intent` argument is a plain canonical dict, and its
+   `raw_target_hint` entry is accessed as `intent["raw_target_hint"]`, not
+   `intent.raw_target_hint`.** The full `intent` object is digested
+   whole (`normalized_intent=intent` in `contract.verify_bindings`), and
+   `canonical.py`'s digesting only accepts `None`/`bool`/`int`/`str`/
+   `list`/`dict` — never an arbitrary Python object — so `intent` cannot
+   be a dataclass or other attribute-bearing type. Concretely,
+   `execute()`'s signature is `intent: dict[str, CanonicalValue]`, and
+   `adapter.natural_identity(intent["raw_target_hint"])` /
+   `adapter.fingerprint(intent["raw_target_hint"])` recompute the identity/
+   fingerprint bindings from that entry before the `PREPARED -> EXECUTING`
+   transition; the actual mutation payload passed to
+   `adapter.build_request()` always comes from the contract's own
+   decrypted `protected_intent` artifact, never from this argument, so a
+   caller who tampers with `intent` can only ever cause a pre-transition
+   `ContractBindingError` refusal, never a mismatched send.
+3. **Send-outcome classification treats 4xx and 5xx/3xx differently.** A
+   4xx response is pfSense confidently rejecting the request before
+   processing it (`EffectKnowledge.VERIFIED_FAILURE`, zero effect,
+   proven). A 5xx (or unexpected 3xx) response does not carry that same
+   guarantee — the server may have partially processed the request before
+   failing — so it classifies as `EffectKnowledge.AMBIGUOUS`, matching how
+   `TransportTimeoutError` is treated, and drives the contract to
+   `RECONCILIATION` rather than `FAILED`. `TransportConnectionError` (never
+   reached the server) and `WriteNotAllowedError` (refused before any
+   network call) both classify as `EffectKnowledge.PROVEN_NONE`. Because
+   `executor.py` is forbidden from importing `pfsense_mcp.transport`
+   directly (see I1's isolation-test enforcement, unchanged by this
+   addition), `WriteApiClient` re-exports `TransportConnectionError`/
+   `TransportTimeoutError` for the executor to import from it instead —
+   the executor still never holds a `Transport` reference itself, only the
+   exception types it needs to classify what `send_for_tier1()` raises.
+
+See `tests/tier1/test_executor.py` for the full behavioral test suite
+(happy path, policy refusal, binding mismatch, fingerprint drift, every
+`EffectKnowledge` outcome for both `execute()` and `rollback()`, and an
+audit-trail-completeness assertion), and `tests/tier1/test_isolation.py`'s
+`executor_only_import_roots` exception for the enforced boundary.
+
 ## Purpose
 
 There is currently no code anywhere in this repository that can send a
@@ -140,7 +203,9 @@ it.
 ## Interfaces
 
 ```python
-# src/pfsense_mcp/tier1/executor.py (new; not created yet)
+# src/pfsense_mcp/tier1/executor.py (implemented — see the Implementation
+# note above this file's intro for why the shape below differs slightly
+# from this spec's original pseudocode)
 
 
 class CapabilityAdapter(Protocol):
@@ -151,6 +216,7 @@ class CapabilityAdapter(Protocol):
     http_method: str
     capability: Capability
 
+    def read_target(self, read_client: PfSenseClient, natural_identity: CanonicalValue) -> object: ...
     def natural_identity(self, raw_target: object) -> CanonicalValue: ...
     def fingerprint(self, raw_target: object) -> CanonicalValue: ...
     def build_request(self, intent: object) -> TypedWriteRequest: ...
@@ -168,15 +234,18 @@ class MutationExecutor:
         write_client: WriteApiClient,
         read_client: PfSenseClient,
         policy: MutationPolicy,
-        anti_rollback_anchor: AntiRollbackAnchor,
+        # None until ADR-011 selects a backend; see whole_store_anti_rollback.md
+        anti_rollback_anchor: AntiRollbackAnchor | None,
         encryption_key: bytes,
     ) -> None: ...
 
-    def execute(self, contract_id: str, *, adapter: CapabilityAdapter, intent: object) -> ExecutionResult:
+    def execute(
+        self, contract_id: str, *, adapter: CapabilityAdapter, intent: dict[str, CanonicalValue]
+    ) -> ExecutionOutcome:
         """The only method that can cause a mutating network call.
         See "Verification flow" below for the exact step sequence."""
 
-    def rollback(self, contract_id: str, *, adapter: CapabilityAdapter) -> RollbackResult:
+    def rollback(self, contract_id: str, *, adapter: CapabilityAdapter) -> RollbackOutcome:
         """See "Rollback flow" below."""
 ```
 
@@ -354,22 +423,22 @@ execute(contract_id, adapter, intent):
   contract = store.load(contract_id)
   require contract.state == PREPARED, confirmed, not expired
   policy.authorize(adapter.capability, adapter.endpoint_symbol, adapter.http_method)
-  target_identity = adapter.natural_identity(intent.raw_target_hint)
-  target_fingerprint = adapter.fingerprint(intent.raw_target_hint)
+  target_identity = adapter.natural_identity(intent["raw_target_hint"])
+  target_fingerprint = adapter.fingerprint(intent["raw_target_hint"])
   contract.verify_bindings(capability=..., endpoint_symbol=..., http_method=...,
                             target_identity=target_identity,
                             target_precondition=target_fingerprint,
                             normalized_intent=intent)
-  anti_rollback_anchor.before_executing_transition(...)
+  anti_rollback_anchor.before_executing_transition(...)  # only if configured; see whole_store_anti_rollback.md
   executing = store.transition(contract_id, PREPARED -> EXECUTING)   # atomic acquire
-  pre = read_client.<capability-specific GET>(natural_identity)
-  require exactly one match; require pre.fingerprint == executing.target_fingerprint
+  pre = adapter.read_target(read_client, target_identity)
+  require exactly one match (adapter.read_target raises on 0 or multiple); require pre.fingerprint == executing.target_fingerprint
   plaintext_intent = crypto.decrypt_artifact(key, executing.protected_intent, ...)
   request = adapter.build_request(plaintext_intent)
   outcome = write_client.send(executing.endpoint_symbol, executing.http_method, request)  # the one send
   classify boundary/knowledge from what actually happened during send()
   if knowledge == AMBIGUOUS: store.transition(... -> RECONCILIATION); return
-  post = read_client.<capability-specific GET>(natural_identity)
+  post = adapter.read_target(read_client, target_identity)
   if adapter.is_semantically_verified(pre, post, plaintext_intent) and knowledge == VERIFIED_SUCCESS:
       store.transition(... -> VERIFIED)
   elif knowledge in {PROVEN_NONE, VERIFIED_FAILURE}:
@@ -389,13 +458,14 @@ rollback(contract_id, adapter):
   contract = store.load(contract_id)
   require contract.state == VERIFIED
   rolling_back = store.transition(contract_id, VERIFIED -> ROLLING_BACK)  # re-acquires target reservation; may raise ContractConflictError if the target was claimed by unrelated work in the interim (see whole_store_anti_rollback.md / state-machine ADR for the accepted decision on this window)
-  pre = read_client.<capability-specific GET>(natural_identity)
+  target_identity = crypto.decrypt_artifact(key, contract.protected_target_identity, ...)  # rollback() takes no intent argument, so this is the only source
+  pre = adapter.read_target(read_client, target_identity)
   require exactly one match; detect unrelated changes via adapter.fingerprint(pre) vs. contract.target_fingerprint at VERIFIED time — conflict is a refusal (ROLLBACK_FAILED), never a forced overwrite
   plaintext_snapshot = crypto.decrypt_artifact(key, contract.protected_snapshot, ...)
   rollback_request = adapter.build_rollback_request(plaintext_snapshot)
   outcome = write_client.send(...)   # the one rollback send
   classify boundary/knowledge (MutationBoundary.DURING_ROLLBACK)
-  post = read_client.<capability-specific GET>(natural_identity)
+  post = adapter.read_target(read_client, target_identity)
   if adapter.is_rollback_verified(plaintext_snapshot, post) and knowledge == VERIFIED_SUCCESS:
       store.transition(... -> ROLLED_BACK)
   else:
@@ -434,6 +504,9 @@ why).
 
 ## Required tests
 
+Implemented in `tests/tier1/test_executor.py` (19 tests) unless noted
+otherwise below.
+
 - Full `execute()` happy path against `MockTransport` with a synthetic
   test-only adapter (never a real capability adapter in these tests,
   mirroring `test_write_integration_dry_run.py`'s existing convention of
@@ -444,17 +517,30 @@ why).
 - Binding mismatch: `intent` that produces a different target/fingerprint
   than the contract → refused before any send.
 - Anchor refusal: anti-rollback anchor unavailable/rollback-detected →
-  refused before `EXECUTING` acquisition.
+  refused before `EXECUTING` acquisition. **Not yet exercised**: every
+  test in this file constructs `MutationExecutor` with
+  `anti_rollback_anchor=None` (the same "unconfigured" state
+  `whole_store_anti_rollback.md` describes as pending ADR-011's backend
+  selection); `tests/tier1/test_store.py` already covers
+  `HighWaterMark`'s refusal behavior directly. Add an executor-level test
+  once a concrete `AntiRollbackAnchor` backend exists to construct one
+  against in a test.
 - Fingerprint drift: authoritative re-read after acquisition shows a
   different fingerprint than expected → `FAILED`, zero sends past that
   point.
 - Ambiguous outcome (simulated timeout/reset during send) →
-  `RECONCILIATION`, never a second send, never `VERIFIED`.
+  `RECONCILIATION`, never a second send, never `VERIFIED`. Also covers the
+  `AMBIGUOUS`-classified 5xx-response and generic-exception cases (see
+  this file's Implementation note, point 3).
 - Full `rollback()` happy path, conflict path (target claimed by other
   work), and ambiguous path.
 - Forbidden-behavior tests: a deliberately misbehaving test-only adapter
   that tries to import forbidden modules or call forbidden names is
   caught by the AST isolation test, not merely by runtime behavior.
+  Covered by `tests/tier1/test_isolation.py`'s
+  `executor_only_import_roots` exception, which still forbids every other
+  `tier1/*.py` module (and, once it exists, `tier1/adapters/*.py`) from
+  importing `pfsense_mcp.write_api_client`/`pfsense_mcp.pfsense_client`.
 - Audit-completeness test: every refusal path after reservation
   acquisition still results in a queryable, chained audit event — no
   silent dead-end state.
@@ -478,16 +564,19 @@ why).
 
 ## Implementation checklist
 
-- [ ] Create `src/pfsense_mcp/tier1/executor.py` with `MutationExecutor`
+- [x] Create `src/pfsense_mcp/tier1/executor.py` with `MutationExecutor`
       and `CapabilityAdapter`.
-- [ ] Implement `execute()` per the Verification flow exactly.
-- [ ] Implement `rollback()` per the Rollback flow exactly.
-- [ ] Wire construction-time `store.reconcile_interrupted()` +
-      anchor-check into the executor's `__init__` (or an explicit
-      `startup()` method called once before first use).
-- [ ] Do not implement any concrete `CapabilityAdapter` in this module —
-      that is Milestone-9-gated, separate work per
-      `capability_adapter_contract.md`.
+- [x] Implement `execute()` per the Verification flow (with the three
+      documented adjustments in this file's Implementation note).
+- [x] Implement `rollback()` per the Rollback flow (same adjustments).
+- [x] Wire construction-time `store.reconcile_interrupted()` into the
+      executor's `__init__`. Anchor-check wiring is `store.transition()`'s
+      existing responsibility (see `store.py`'s `_anti_rollback_anchor`
+      handling), not duplicated here; it activates automatically once a
+      concrete anchor is passed in.
+- [x] Do not implement any concrete `CapabilityAdapter` in this module —
+      `tests/tier1/test_executor.py`'s `_SyntheticAdapter` is test-only
+      and lives outside `src/`.
 
 ## Review checklist
 
@@ -519,13 +608,25 @@ why).
 
 ## Test checklist
 
-- [ ] Happy-path execute/rollback tests.
-- [ ] Policy, binding, anchor, fingerprint-drift refusal tests.
-- [ ] Ambiguous-outcome (`RECONCILIATION`) tests for both execute and
+- [x] Happy-path execute/rollback tests.
+- [x] Policy, binding, fingerprint-drift refusal tests. Anchor refusal
+      deferred — see Required tests above.
+- [x] Ambiguous-outcome (`RECONCILIATION`) tests for both execute and
       rollback.
-- [ ] Forbidden-adapter-behavior AST tests.
-- [ ] Audit-completeness test across every refusal path.
-- [ ] Concurrency test: two `execute()` calls for the same target cannot
-      both acquire `EXECUTING` (relies on existing store CAS, but must be
-      exercised through the executor's public interface, not just
-      `store.py` directly).
+- [x] Forbidden-adapter-behavior AST tests (`test_isolation.py`).
+- [x] Audit-completeness test across every refusal path.
+- [~] Concurrency test: two `execute()` calls for the same target cannot
+      both acquire `EXECUTING`. Exercised through the executor's public
+      interface only for the sequential case
+      (`test_execute_requires_prepared_state`: a second `execute()` call
+      against an already-transitioned-away-from-`PREPARED` contract
+      refuses before touching the store's CAS path at all). The
+      lower-level atomic-CAS race itself — two genuinely *concurrent*
+      threads racing the same target through `store.transition()` — is a
+      `store.py` invariant, already covered with real `threading.Thread`
+      races by
+      `tests/tier1/test_store.py::test_same_target_cannot_be_acquired_concurrently`
+      (and the sequential stale-version case by
+      `test_stale_version_and_duplicate_execution_are_refused`); not
+      duplicated here since the executor adds no additional concurrency
+      behavior on top of `store.transition()`'s existing CAS.

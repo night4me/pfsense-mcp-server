@@ -21,9 +21,15 @@ from typing import Any
 from .api_version import ApiVersion, version_at_least
 from .errors import WriteNotAllowedError
 from .recovery import RecoveryContract
-from .transport.base import Transport, TransportResponse
+from .transport.base import Transport, TransportConnectionError, TransportResponse, TransportTimeoutError
 from .write_endpoints import WriteEndpointInfo, WriteEndpoints
 from .write_types import ContractStatus, DryRunResult, ExecutionResult, MutationPlan
+
+# Re-exported so tier1/executor.py -- forbidden from importing
+# pfsense_mcp.transport directly (tests/tier1/test_isolation.py) -- can
+# classify send_for_tier1() failures without ever holding a Transport
+# reference itself.
+__all__ = ["TransportConnectionError", "TransportTimeoutError", "WriteApiClient"]
 
 logger = logging.getLogger("pfsense_mcp.write_api_client")
 

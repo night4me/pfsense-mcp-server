@@ -34,27 +34,39 @@ def test_tier1_is_not_imported_outside_its_inert_package():
 
 
 def test_tier1_domain_has_no_transport_or_tool_registration_dependency():
-    forbidden_import_roots = {
+    # rest_api_client/transport/tools remain forbidden for every tier1
+    # module, including executor.py: the executor reaches pfSense only
+    # through WriteApiClient.send_for_tier1()/PfSenseClient's own typed
+    # methods, never raw Transport.request() or the READ tool registry.
+    universally_forbidden_import_roots = {
         "pfsense_mcp.rest_api_client",
         "pfsense_mcp.transport",
         "pfsense_mcp.tools",
-        "pfsense_mcp.write_api_client",
     }
+    # executor.py is the one sealed exception (sealed_executor.md
+    # Invariant I1): it is the only tier1 module authorized to hold a
+    # WriteApiClient/PfSenseClient reference. Every other tier1 module,
+    # including any future tier1/adapters/*.py, remains forbidden from
+    # importing either.
+    executor_only_import_roots = {"pfsense_mcp.write_api_client", "pfsense_mcp.pfsense_client"}
     forbidden_calls = {"delete", "patch", "post", "put", "request", "tool"}
     for path in (ROOT / "src/pfsense_mcp/tier1").glob("*.py"):
+        forbidden_import_roots = universally_forbidden_import_roots | (
+            set() if path.name == "executor.py" else executor_only_import_roots
+        )
         tree = _tree(path)
         imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names} | {
             node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
         }
         assert not any(
             module == root or module.startswith(f"{root}.") for module in imported for root in forbidden_import_roots
-        )
+        ), f"{path.name} imports a forbidden module"
         called_attributes = {
             node.func.attr
             for node in ast.walk(tree)
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
         }
-        assert called_attributes.isdisjoint(forbidden_calls)
+        assert called_attributes.isdisjoint(forbidden_calls), f"{path.name} calls a forbidden attribute name"
 
 
 def test_all_production_write_surfaces_remain_inactive():
