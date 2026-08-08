@@ -130,6 +130,33 @@ reachable today. See
 [the security model](docs/SECURITY_MODEL.md) for what's actually enforced,
 not just designed.
 
+### A note from the maintainer
+
+pfSense is critical infrastructure in my own network, and this project
+started because I wanted an AI assistant to be able to *look* at it, not
+because I was ready to let one *change* it. I'm not comfortable giving an
+AI agent unrestricted mutation access to the firewall a network depends
+on — and "the model probably won't make a bad change" isn't a safety
+mechanism to me, it's a hope.
+
+A mistaken tool invocation, a misunderstood request, an implementation
+defect, or a weak authorization boundary can alter firewall rules,
+routing, DNS, interface configuration, VPN state, or other
+connectivity-critical settings. Other MCP servers for pfSense expose
+mutation more directly, and that can be a perfectly reasonable choice for
+a different threat model and different priorities than mine — I'm not
+claiming they're unsafe, only that my own risk tolerance for this
+specific piece of infrastructure is lower. I'd rather ship a smaller,
+READ-only surface first and treat WRITE activation as a genuine
+engineering and safety problem — a recovery contract, an authenticated
+confirmation step, a sealed executor, disposable-lab evidence, all behind
+an explicit activation decision I make myself — than add mutating tools
+and hope nothing goes wrong.
+
+An AI assistant should not be able to take down the network simply
+because it misunderstood a request. That's the specific failure this
+project exists to prevent.
+
 ## Security
 
 - Credential fields (API keys, passwords, private keys) never appear in a

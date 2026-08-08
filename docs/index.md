@@ -6,10 +6,11 @@ exposing raw shell access or a way to mutate the appliance by accident.
 
 **Current production contract: 41 READ tools. 0 WRITE tools.** That split
 is deliberate: this project treats mutation as a safety-engineering
-problem, not a feature flag. See
-[the Tier 1 overview](TIER1_ARCHITECTURE.md) below for what that means in
-practice, and the repository README's "Why this project exists" section
-for the short version.
+problem, not a feature flag — the maintainer's own reasoning is in the
+README's
+["A note from the maintainer"](https://github.com/night4me/pfsense-mcp-server#a-note-from-the-maintainer)
+section. See [the Tier 1 overview](TIER1_ARCHITECTURE.md) below for the
+engineering detail behind it.
 
 This site is a browsable, organized view of the technical documentation
 under `docs/`. It does not repeat the project's practical
