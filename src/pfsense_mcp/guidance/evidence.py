@@ -1,16 +1,27 @@
 """Version-aware Official Guidance evidence model (ADR-018, Accepted --
 architecture and trust boundaries only; step 2 of its implementation:
-the offline evidence model, still entirely inert, no consumer wired).
+the offline evidence model, still entirely inert, no runtime consumer
+wired).
 
-Deliberately does not modify `models.GuidanceReference` or
-`registry.lookup_guidance()` -- extending those is its own,
-separately-gated "exclude vs. exclude-with-state" policy change
-(`VERSION_AWARE_GUIDANCE.md`'s own explicit note: "requires its own
-explicit approval before this signature ships"), not granted by
-ADR-018's acceptance or by this step. `EvidenceReference` here is a new,
-additive type -- structurally similar to what `VERSION_AWARE_GUIDANCE.md`
-described as an amended `GuidanceReference`, under a distinct name so
-nothing about the already-shipped v0.3.0 guidance registry is touched.
+`EvidenceReference` is an additive type, not a modification of
+`models.GuidanceReference` -- structurally similar to what
+`VERSION_AWARE_GUIDANCE.md` described as an amended `GuidanceReference`,
+under a distinct name so `EvidenceReference`'s own shape stays stable
+regardless of what `GuidanceReference` needs for its own reasons.
+`registry.lookup_guidance()`'s "exclude vs. exclude-with-state" policy
+change and `GuidanceReference`'s corresponding field extension
+(`applicability`/`evidence_level`/`applicable_overlay_chain`/
+`observed_edition_used`/`observed_version_used`/`retrieval_mode`,
+replacing `version_mismatch`) were **not** granted by ADR-018's
+acceptance or by this step -- they were implemented in a later,
+separately owner-authorized step (`models.py`,
+`registry.py`; see `bridge.py` for the resulting
+`GuidanceReference` -> `EvidenceReference` bridge). `EvidenceLevel`/
+`ApplicabilityState`/`APPLICABILITY_STATE_ORDER` were originally defined
+in this module; that same later step moved their definitions into
+`models.py` to avoid a circular import once `GuidanceReference` needed
+them too -- re-imported here unchanged, so every existing import of
+these three names from this module continues to work identically.
 
 Reuses `Edition`, `RetrievalMode`, and the shared field-bound/allow-list
 validators from `.models` -- the same single-source-of-truth discipline
@@ -29,79 +40,30 @@ performs, or is capable of performing, network I/O).
 from __future__ import annotations
 
 import re
-from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .appliance_identity import ObservedEdition
 from .models import (
+    APPLICABILITY_STATE_ORDER,
     MAX_EXCERPT_LENGTH,
     MAX_TITLE_LENGTH,
     SOURCE_ID_PATTERN,
+    ApplicabilityState,
     Edition,
+    EvidenceLevel,
     RetrievalMode,
     _validate_canonical_url,
 )
 
-
-class EvidenceLevel(str, Enum):
-    """How the registry curator came to know a document's version
-    scope -- orthogonal to `ApplicabilityState` (ADR-018 Finding 5).
-
-    `EXPLICIT_VERSION_SCOPED`: the source explicitly states which
-    version(s) this applies to.
-    `EXPLICIT_UNVERSIONED`: the source explicitly states it applies
-    regardless of version -- a real, affirmative claim, not silence.
-    `INFERRED_FROM_CURRENT_DOCS`: an undated/`/latest/`-only page with
-    no stated version scope at all -- the honest default for most
-    real-world entries; must never be treated as equivalent to
-    `EXPLICIT_UNVERSIONED`.
-    `UNKNOWN`: evidence strength itself could not be established.
-    """
-
-    EXPLICIT_VERSION_SCOPED = "explicit_version_scoped"
-    EXPLICIT_UNVERSIONED = "explicit_unversioned"
-    INFERRED_FROM_CURRENT_DOCS = "inferred_from_current_docs"
-    UNKNOWN = "unknown"
-
-
-class ApplicabilityState(str, Enum):
-    """Closed, fail-safe applicability classification (ADR-018 S2).
-
-    Exactly the six members ADR-018's accepted text defines.
-    `CONFLICTING_GUIDANCE` is deliberately **not** a member here --
-    ADR-018's own accepted design treats a registry-authoring conflict
-    as a load-time integrity defect (see `applicability.py`'s
-    `find_duplicate_scope_conflicts()`/`find_supersession_chain_defects()`),
-    not a per-lookup runtime state, because the registry is Git-tracked
-    and PR-reviewed (TB-G1): a conflict is caught before any lookup ever
-    runs, not represented as an answer a lookup can return. This is
-    implemented exactly per the accepted ADR text; see the accompanying
-    implementation report for the discrepancy this creates against a
-    later informal restatement that listed CONFLICTING_GUIDANCE as an
-    ApplicabilityState member, flagged rather than silently resolved
-    either way.
-    """
-
-    APPLICABLE = "applicable"
-    PARTIALLY_APPLICABLE = "partially_applicable"
-    VERSION_UNCONFIRMED = "version_unconfirmed"
-    EDITION_MISMATCH = "edition_mismatch"
-    STALE = "stale"
-    NO_OFFICIAL_GUIDANCE_FOUND = "no_official_guidance_found"
-
-
-#: Most-favorable to least-favorable, used by
-#: `applicability.compute_overall_state()`. Fixed, reviewable, never a
-#: runtime heuristic (ADR-018 S5).
-APPLICABILITY_STATE_ORDER: tuple[ApplicabilityState, ...] = (
-    ApplicabilityState.APPLICABLE,
-    ApplicabilityState.PARTIALLY_APPLICABLE,
-    ApplicabilityState.VERSION_UNCONFIRMED,
-    ApplicabilityState.STALE,
-    ApplicabilityState.EDITION_MISMATCH,
-    ApplicabilityState.NO_OFFICIAL_GUIDANCE_FOUND,
-)
+__all__ = [
+    "APPLICABILITY_STATE_ORDER",
+    "ApplicabilityState",
+    "EvidenceLevel",
+    "EvidenceReference",
+    "GuidanceEvidence",
+    "ReleaseOverlay",
+]
 
 
 class ReleaseOverlay(BaseModel):

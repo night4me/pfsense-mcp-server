@@ -8,13 +8,16 @@ module exercises each field on its own rather than only a happy path.
 import pytest
 from pydantic import ValidationError
 
+from pfsense_mcp.guidance.appliance_identity import ObservedEdition
 from pfsense_mcp.guidance.models import (
     MAX_EXCERPT_LENGTH,
     MAX_LICENSE_NOTE_LENGTH,
     MAX_TITLE_LENGTH,
     UNVERSIONED,
+    ApplicabilityState,
     DocumentSource,
     Edition,
+    EvidenceLevel,
     GuidanceReference,
     RetrievalMode,
     excerpt_hash,
@@ -31,6 +34,7 @@ def _valid_source_kwargs(**overrides: object) -> dict[str, object]:
         "canonical_url": _VALID_URL,
         "pfsense_edition": Edition.BOTH,
         "version_applicability": UNVERSIONED,
+        "evidence_level": EvidenceLevel.EXPLICIT_UNVERSIONED,
         "retrieval_mode": RetrievalMode.BUNDLED_SNAPSHOT,
         "content_excerpt": _VALID_EXCERPT,
         "content_hash": excerpt_hash(_VALID_EXCERPT),
@@ -95,6 +99,16 @@ def test_document_source_is_frozen():
         source.title = "Changed"  # type: ignore[misc]
 
 
+def test_document_source_evidence_level_is_required_with_no_default():
+    field = DocumentSource.model_fields["evidence_level"]
+    assert field.is_required()
+
+
+def test_document_source_accepts_every_evidence_level_value():
+    for level in EvidenceLevel:
+        DocumentSource(**_valid_source_kwargs(evidence_level=level))
+
+
 def _valid_reference_kwargs(**overrides: object) -> dict[str, object]:
     kwargs: dict[str, object] = {
         "capability": "ALIAS_READ",
@@ -105,7 +119,12 @@ def _valid_reference_kwargs(**overrides: object) -> dict[str, object]:
         "content_hash": excerpt_hash(_VALID_EXCERPT),
         "pfsense_edition": Edition.BOTH,
         "trust_label": "pinned-snapshot",
-        "version_mismatch": False,
+        "applicability": ApplicabilityState.APPLICABLE,
+        "evidence_level": EvidenceLevel.EXPLICIT_UNVERSIONED,
+        "applicable_overlay_chain": (),
+        "observed_edition_used": ObservedEdition.KNOWN_PLUS,
+        "observed_version_used": "26.03.1",
+        "retrieval_mode": RetrievalMode.BUNDLED_SNAPSHOT,
         "snapshot_version": "guidance-registry-2026-08-08",
     }
     kwargs.update(overrides)
@@ -121,6 +140,20 @@ def test_guidance_reference_rejects_extra_field():
         GuidanceReference(**_valid_reference_kwargs(), unexpected="value")  # type: ignore[arg-type]
 
 
+def test_guidance_reference_applicable_overlay_chain_defaults_to_empty_tuple():
+    kwargs = _valid_reference_kwargs()
+    del kwargs["applicable_overlay_chain"]
+    reference = GuidanceReference(**kwargs)
+    assert reference.applicable_overlay_chain == ()
+
+
+def test_guidance_reference_preserves_ordered_overlay_chain_not_a_set():
+    ordered = ("release_note_one", "errata_one")
+    reference = GuidanceReference(**_valid_reference_kwargs(applicable_overlay_chain=ordered))
+    assert reference.applicable_overlay_chain == ordered
+    assert isinstance(reference.applicable_overlay_chain, tuple)
+
+
 def test_guidance_reference_has_no_capability_selection_field():
     # G1: the only fields present are the closed set below -- an addition
     # needs its own reviewed diff, not a silent extension.
@@ -133,7 +166,12 @@ def test_guidance_reference_has_no_capability_selection_field():
         "content_hash",
         "pfsense_edition",
         "trust_label",
-        "version_mismatch",
+        "applicability",
+        "evidence_level",
+        "applicable_overlay_chain",
+        "observed_edition_used",
+        "observed_version_used",
+        "retrieval_mode",
         "snapshot_version",
     }
     forbidden_names = {"endpoint", "method", "http_method", "confirmation_token", "confirmation", "signature"}

@@ -820,12 +820,18 @@ here as historical design intent, not a current TODO list. The
 `lookup_guidance()` items remain genuinely unbuilt; see the next section
 for the precise, bounded next slice.
 
-## Next implementation slice: the `GuidanceReference` → `EvidenceReference` bridge (specified, not implemented)
+## Next implementation slice: the `GuidanceReference` → `EvidenceReference` bridge (implemented, 2026-08-09)
 
-**Not authorized by this design pass** — this section exists so a future,
-separately-authorized implementation session has an exact, bounded scope
-to build against, matching the same level of precision Step 1/2/3's own
-STOP-gate reports gave their respective next steps.
+**Owner-authorized and built.** This section was written as a bounded
+scope for a future implementation session; that session happened the
+same day this design was accepted. Kept below as the accurate record of
+what was specified and, per each numbered item, a note on what actually
+shipped — not rewritten to erase the sequencing.
+
+Still entirely offline and unwired: no MCP tool, no READ-tool schema
+change, no PREPARE/Tier 1 consumer, nothing calls
+`compose_guidance_evidence()`. Wiring it into a real consumer remains its
+own separate, explicit, not-yet-granted decision.
 
 ### Exact scope
 
@@ -897,6 +903,33 @@ STOP-gate reports gave their respective next steps.
   `state_machine.py`/every confirmation-digest module still imports
   nothing from `guidance` (TB-G4, re-run, not merely re-asserted);
   public 42-tool contract unchanged; WRITE state unchanged.
+
+**Implementation note (2026-08-09)**: every item in "Exact scope" and
+every test in "Required tests" above shipped as specified. `bridge_
+guidance_reference()` lives in the anticipated `guidance/bridge.py`.
+`EvidenceLevel`/`ApplicabilityState`/`APPLICABILITY_STATE_ORDER` moved
+from `evidence.py` into `models.py` during implementation — not part of
+the original scope above, but a necessary consequence of it: once
+`GuidanceReference` (in `models.py`) needed these types too, defining
+them in `evidence.py` (which already imports from `models.py`) would
+have created a circular import. `evidence.py` re-imports and re-exports
+all three unchanged, so every existing import of them from `evidence.py`
+continues to work identically. `DocumentSource` also gained a required
+`evidence_level: EvidenceLevel` field (implied by, but not explicitly
+listed in, item 1 above — the decision procedure needs every registry
+entry's own evidence level as an input, and `DocumentSource` had none
+before this slice); the real seed `_ALIAS_DOC` entry was classified
+`INFERRED_FROM_CURRENT_DOCS` (an honest read of what it actually is — an
+undated `/latest/` page, not an explicit version-independence claim),
+with the real, deliberate consequence that it can now only ever reach
+`VERSION_UNCONFIRMED`, never `APPLICABLE`, until a curator re-authors it
+with a genuine `EXPLICIT_UNVERSIONED` citation. `bridge_guidance_
+reference()` also gained one defensive runtime check beyond the original
+specification: it raises if a `BUNDLED_SNAPSHOT` reference's
+`trust_label` ever diverges from the documented `"pinned-snapshot"`
+constant, so a future retrieval-mode addition that breaks that
+assumption fails loudly at the point of bridging rather than silently
+continuing to drop provenance.
 
 ### Invariants this slice must preserve (carried forward from this design pass, not new)
 

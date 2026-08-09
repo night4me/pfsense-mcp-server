@@ -1,25 +1,30 @@
 """Deterministic, offline applicability/registry-integrity primitives
-(ADR-018, step 2). Pure functions only -- no I/O, no state, no clock
-reads except where a caller-supplied timestamp is compared (none of
-that exists yet; TB-G3/caching remain unactivated).
+(ADR-018, steps 2-3 of its implementation). Pure functions only -- no
+I/O, no state, no clock reads except where a caller-supplied timestamp
+is compared (none of that exists yet; TB-G3/caching remain
+unactivated).
 
-Implements only the decision rules ADR-018's accepted text already
-specifies precisely (the EvidenceLevel cap, the fixed overall-state
-ordering, the two-part registry-integrity check, the monotonic
-guidance-veto formula). Does **not** implement the deferred
-STALE/PARTIALLY_APPLICABLE/APPLICABLE decision procedure for a single
-entry given its overlay chain -- ADR-018's acceptance record explicitly
-preserves that as an open, non-blocking implementation question; this
-module represents that boundary explicitly (see
-`applicability_state_for_entry_is_not_implemented_here` below) rather
-than inventing a policy for it.
+`compute_entry_applicability()` implements the single-entry
+`APPLICABLE`/`PARTIALLY_APPLICABLE`/`STALE`/`VERSION_UNCONFIRMED`/
+`EDITION_MISMATCH` decision procedure specified in
+`docs/VERSION_AWARE_GUIDANCE.md`'s "Single-entry applicability decision
+procedure" section (design-and-red-team pass,
+`reports-ai/reviews/ADR_018_APPLICABILITY_DECISION_PROCEDURE_RED_TEAM.md`,
+verdict ACCEPT WITH CHANGES) and its owner-confirmed edition-`UNKNOWN`
+resolution (routes to `VERSION_UNCONFIRMED`) -- this was previously the
+deferred question `applicability_state_for_entry_is_not_implemented_here()`
+represented; that marker is removed, replaced by the real implementation
+below, per explicit owner authorization.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from enum import Enum
 
-from .evidence import APPLICABILITY_STATE_ORDER, ApplicabilityState, EvidenceLevel, ReleaseOverlay
+from .appliance_identity import ObservedEdition
+from .evidence import ReleaseOverlay
+from .models import APPLICABILITY_STATE_ORDER, UNVERSIONED, ApplicabilityState, Edition, EvidenceLevel
 
 #: NEVER instantiate ApplicabilityState.APPLICABLE or
 #: .PARTIALLY_APPLICABLE from an entry whose evidence_level is this --
@@ -58,21 +63,198 @@ def compute_overall_state(states: Sequence[ApplicabilityState]) -> Applicability
     return max(states, key=APPLICABILITY_STATE_ORDER.index)
 
 
-def applicability_state_for_entry_is_not_implemented_here() -> None:
-    """Marker function, never called -- documents, in code a future
-    implementer will actually encounter, that this module deliberately
-    does not decide how a single EvidenceReference's own `applicability`
-    field is chosen among APPLICABLE/PARTIALLY_APPLICABLE/STALE for a
-    matching-edition, matching-version entry with an overlay chain.
-    ADR-018's acceptance record preserves this as an explicitly deferred,
-    owner-accepted-as-non-blocking implementation question. Whichever
-    session eventually builds `lookup_guidance()`'s extended behavior
-    must resolve this deliberately, not by copying this module's
-    presence as if it already had.
+class _EditionStatus(str, Enum):
+    """Step 1 of the accepted decision procedure -- internal, not part
+    of the public `ApplicabilityState` vocabulary."""
+
+    MATCH = "match"
+    MISMATCH = "mismatch"
+    UNCONFIRMED = "unconfirmed"
+
+
+class _VersionStatus(str, Enum):
+    """Step 2 -- exact-match-or-`UNVERSIONED` only, no ranges (the
+    accepted schema has no range grammar to evaluate)."""
+
+    MATCH = "match"
+    UNCONFIRMED = "unconfirmed"
+
+
+class _SupersessionStatus(str, Enum):
+    """Step 3 -- an entry's relationship to the candidate overlays for
+    its capability/observed version/edition."""
+
+    SUPERSEDED = "superseded"
+    CAVEATED = "caveated"
+    NONE = "none"
+
+
+def _entry_edition_status(entry_edition: Edition, observed_edition: ObservedEdition) -> _EditionStatus:
+    if entry_edition is Edition.BOTH:
+        return _EditionStatus.MATCH
+    if observed_edition is ObservedEdition.UNKNOWN:
+        return _EditionStatus.UNCONFIRMED
+    expected = ObservedEdition.KNOWN_CE if entry_edition is Edition.CE else ObservedEdition.KNOWN_PLUS
+    return _EditionStatus.MATCH if observed_edition is expected else _EditionStatus.MISMATCH
+
+
+def _entry_version_status(entry_version_applicability: str, observed_version: str | None) -> _VersionStatus:
+    if entry_version_applicability == UNVERSIONED:
+        return _VersionStatus.MATCH
+    if observed_version is not None and observed_version == entry_version_applicability:
+        return _VersionStatus.MATCH
+    return _VersionStatus.UNCONFIRMED
+
+
+def _overlay_is_edition_candidate(overlay_edition: Edition, observed_edition: ObservedEdition) -> bool:
+    """Whether an overlay's edition scope is confirmed compatible with
+    the observed appliance -- conservative by design: an edition-specific
+    overlay is excluded from candidacy (not merely "uncertain") when
+    `observed_edition` is `UNKNOWN`, so uncertain overlay evidence can
+    never inject STALE/PARTIALLY_APPLICABLE onto an entry whose own
+    edition status is independently confirmed."""
+    if overlay_edition is Edition.BOTH:
+        return True
+    if observed_edition is ObservedEdition.UNKNOWN:
+        return False
+    expected = ObservedEdition.KNOWN_CE if overlay_edition is Edition.CE else ObservedEdition.KNOWN_PLUS
+    return observed_edition is expected
+
+
+def _chain_reaches(start: str | None, target_id: str, overlays_by_id: dict[str, ReleaseOverlay]) -> bool:
+    """Walk a `supersedes_id` chain starting at `start`, looking for
+    `target_id` -- which may be a `DocumentSource.source_id` (not itself
+    a key in `overlays_by_id`) as the final hop, or another overlay_id
+    anywhere along the way. Bounded by a visited-set cycle guard; a real
+    cycle is a load-time registry-integrity defect
+    (`find_supersession_chain_defects()`), not something this function
+    is responsible for detecting."""
+    current = start
+    visited: set[str] = set()
+    while current is not None:
+        if current == target_id:
+            return True
+        if current in visited:
+            return False
+        visited.add(current)
+        next_overlay = overlays_by_id.get(current)
+        current = next_overlay.supersedes_id if next_overlay is not None else None
+    return False
+
+
+def _entry_supersession_status(
+    entry_id: str,
+    entry_capability: str,
+    observed_edition: ObservedEdition,
+    observed_version: str | None,
+    all_overlays: Sequence[ReleaseOverlay],
+) -> tuple[_SupersessionStatus, tuple[str, ...]]:
+    """Step 3: classify `entry_id`'s relationship to `all_overlays`.
+    Candidate overlays are those matching the entry's capability, with a
+    confirmed-compatible edition (see `_overlay_is_edition_candidate`),
+    and an exact-or-UNVERSIONED version match against `observed_version`
+    -- the same match rules Step 2 applies to the entry itself, applied
+    here to overlays."""
+    candidates = [
+        overlay
+        for overlay in all_overlays
+        if overlay.capability == entry_capability
+        and _overlay_is_edition_candidate(overlay.applies_to_edition, observed_edition)
+        and (overlay.applies_to_version == UNVERSIONED or overlay.applies_to_version == observed_version)
+    ]
+    if not candidates:
+        return _SupersessionStatus.NONE, ()
+
+    overlays_by_id = {overlay.overlay_id: overlay for overlay in all_overlays}
+    superseding = [c for c in candidates if _chain_reaches(c.supersedes_id, entry_id, overlays_by_id)]
+    if superseding:
+        chain_ids = tuple(sorted({c.overlay_id for c in superseding}))
+        return _SupersessionStatus.SUPERSEDED, order_overlay_chain(chain_ids, overlays_by_id)
+
+    caveat_ids = tuple(sorted(c.overlay_id for c in candidates))
+    return _SupersessionStatus.CAVEATED, caveat_ids
+
+
+def compute_entry_applicability(
+    *,
+    entry_id: str,
+    entry_capability: str,
+    entry_edition: Edition,
+    entry_version_applicability: str,
+    entry_evidence_level: EvidenceLevel,
+    observed_edition: ObservedEdition,
+    observed_version: str | None,
+    all_overlays: Sequence[ReleaseOverlay] = (),
+) -> tuple[ApplicabilityState, tuple[str, ...]]:
+    """The accepted single-entry decision procedure
+    (`docs/VERSION_AWARE_GUIDANCE.md`'s "Single-entry applicability
+    decision procedure" section; owner-authorized implementation,
+    replacing the removed `applicability_state_for_entry_is_not_implemented_here()`
+    marker). Returns `(state, applicable_overlay_chain)`.
+
+    Priority order, first match wins -- every branch grounded in the
+    accepted ADR text, not invented:
+
+    1. Edition MISMATCH -> EDITION_MISMATCH (most definitive "wrong
+       document" signal; nothing else evaluated).
+    2. SUPERSEDED (a curator-registered overlay's chain reaches this
+       entry) -> STALE, ahead of the ordinary match/caveat branches --
+       an authoritative, reviewed currency fact, stronger than an
+       unresolved version/edition question or a mere caveat.
+    3. Either edition or version status is UNCONFIRMED -> VERSION_UNCONFIRMED
+       -- edition-UNCONFIRMED (entry is edition-specific, observed
+       edition is UNKNOWN) is routed here too, per the owner-confirmed
+       resolution of a real gap found while writing this procedure: the
+       accepted ADR text's EDITION_MISMATCH/VERSION_UNCONFIRMED
+       definitions, read literally, leave edition-UNKNOWN unclassifiable
+       by either; VERSION_UNCONFIRMED's evident purpose --
+       "insufficient identity information, no affirmative evidence of
+       mismatch" -- covers it correctly.
+    4. Edition and version both MATCH, and a CAVEATED (non-superseding)
+       overlay exists -> PARTIALLY_APPLICABLE -- and only this: overlay-
+       caveat existence is the one precise meaning this state carries,
+       never partial semantic relevance, partial version overlap, or
+       incomplete identity evidence (those are VERSION_UNCONFIRMED's
+       job).
+    5. Otherwise (edition and version both MATCH, no overlay at all)
+       -> APPLICABLE.
+
+    Then, independently, `cap_applicability_by_evidence_level()` is
+    applied to every branch's result -- a second, structurally
+    independent fail-safe layer: even a hypothetical bug in the
+    priority ordering above cannot produce APPLICABLE/PARTIALLY_APPLICABLE
+    for an entry whose own `evidence_level` is INFERRED_FROM_CURRENT_DOCS/
+    UNKNOWN.
+
+    `applicable_overlay_chain` is reported only for STALE (the
+    superseding chain) and post-cap PARTIALLY_APPLICABLE (the caveating
+    overlay ids) -- empty for every other final state, including a
+    PARTIALLY_APPLICABLE candidate that the evidence-level cap demoted
+    to VERSION_UNCONFIRMED (an unconfirmed entry's overlay evidence is
+    not meaningfully "applicable" either).
     """
-    raise NotImplementedError(
-        "Deferred by ADR-018's acceptance record -- do not implement without a separate decision."
+    edition_status = _entry_edition_status(entry_edition, observed_edition)
+    version_status = _entry_version_status(entry_version_applicability, observed_version)
+    supersession_status, candidate_chain = _entry_supersession_status(
+        entry_id, entry_capability, observed_edition, observed_version, all_overlays
     )
+
+    base_state: ApplicabilityState
+    chain: tuple[str, ...]
+    if edition_status is _EditionStatus.MISMATCH:
+        base_state, chain = ApplicabilityState.EDITION_MISMATCH, ()
+    elif supersession_status is _SupersessionStatus.SUPERSEDED:
+        base_state, chain = ApplicabilityState.STALE, candidate_chain
+    elif edition_status is _EditionStatus.UNCONFIRMED or version_status is _VersionStatus.UNCONFIRMED:
+        base_state, chain = ApplicabilityState.VERSION_UNCONFIRMED, ()
+    elif supersession_status is _SupersessionStatus.CAVEATED:
+        base_state, chain = ApplicabilityState.PARTIALLY_APPLICABLE, candidate_chain
+    else:
+        base_state, chain = ApplicabilityState.APPLICABLE, ()
+
+    final_state = cap_applicability_by_evidence_level(entry_evidence_level, base_state)
+    final_chain = chain if final_state in (ApplicabilityState.STALE, ApplicabilityState.PARTIALLY_APPLICABLE) else ()
+    return final_state, final_chain
 
 
 def find_duplicate_scope_conflicts(overlays: Sequence[ReleaseOverlay]) -> list[tuple[str, str]]:

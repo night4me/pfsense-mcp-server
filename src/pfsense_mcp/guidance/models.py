@@ -22,6 +22,8 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .appliance_identity import ObservedEdition
+
 #: I3: registry-authoring identifiers are slugs, not free text.
 SOURCE_ID_PATTERN = r"^[a-z0-9][a-z0-9_-]{2,63}$"
 
@@ -53,6 +55,76 @@ class RetrievalMode(str, Enum):
     BUNDLED_SNAPSHOT = "bundled_snapshot"
     # LIVE_FETCH is deliberately not a member: TB-G3 (live retrieval) is
     # specified but not authorized to build -- see OFFICIAL_GUIDANCE_LAYER.md.
+
+
+class EvidenceLevel(str, Enum):
+    """How the registry curator came to know a document's version
+    scope -- orthogonal to `ApplicabilityState` (ADR-018 Finding 5).
+
+    `EXPLICIT_VERSION_SCOPED`: the source explicitly states which
+    version(s) this applies to.
+    `EXPLICIT_UNVERSIONED`: the source explicitly states it applies
+    regardless of version -- a real, affirmative claim, not silence.
+    `INFERRED_FROM_CURRENT_DOCS`: an undated/`/latest/`-only page with
+    no stated version scope at all -- the honest default for most
+    real-world entries; must never be treated as equivalent to
+    `EXPLICIT_UNVERSIONED`.
+    `UNKNOWN`: evidence strength itself could not be established.
+
+    Lives in `models.py`, not `evidence.py` (where ADR-018 Step 2
+    originally defined it) -- moved here by the ADR-018 guidance-bridge
+    implementation slice so `GuidanceReference` (this module) can use it
+    without creating a circular import with `evidence.py` (which already
+    depends on `models.py` for `Edition`/`RetrievalMode`/bounded-field
+    validators). `evidence.py` re-imports this name unchanged, so every
+    existing `from pfsense_mcp.guidance.evidence import EvidenceLevel`
+    import continues to work identically -- same class, same identity,
+    only its defining module moved.
+    """
+
+    EXPLICIT_VERSION_SCOPED = "explicit_version_scoped"
+    EXPLICIT_UNVERSIONED = "explicit_unversioned"
+    INFERRED_FROM_CURRENT_DOCS = "inferred_from_current_docs"
+    UNKNOWN = "unknown"
+
+
+class ApplicabilityState(str, Enum):
+    """Closed, fail-safe applicability classification (ADR-018 S2).
+
+    Exactly the six members ADR-018's accepted text defines.
+    `CONFLICTING_GUIDANCE` is deliberately **not** a member here --
+    ADR-018's own accepted design treats a registry-authoring conflict
+    as a load-time integrity defect (see `applicability.py`'s
+    `find_duplicate_scope_conflicts()`/`find_supersession_chain_defects()`),
+    not a per-lookup runtime state, because the registry is Git-tracked
+    and PR-reviewed (TB-G1): a conflict is caught before any lookup ever
+    runs, not represented as an answer a lookup can return.
+
+    Moved here from `evidence.py` for the same circular-import reason as
+    `EvidenceLevel` above -- `evidence.py` re-imports this name
+    unchanged.
+    """
+
+    APPLICABLE = "applicable"
+    PARTIALLY_APPLICABLE = "partially_applicable"
+    VERSION_UNCONFIRMED = "version_unconfirmed"
+    EDITION_MISMATCH = "edition_mismatch"
+    STALE = "stale"
+    NO_OFFICIAL_GUIDANCE_FOUND = "no_official_guidance_found"
+
+
+#: Most-favorable to least-favorable, used by
+#: `applicability.compute_overall_state()`. Fixed, reviewable, never a
+#: runtime heuristic (ADR-018 S5). Moved here from `evidence.py` for the
+#: same reason as `ApplicabilityState` above.
+APPLICABILITY_STATE_ORDER: tuple[ApplicabilityState, ...] = (
+    ApplicabilityState.APPLICABLE,
+    ApplicabilityState.PARTIALLY_APPLICABLE,
+    ApplicabilityState.VERSION_UNCONFIRMED,
+    ApplicabilityState.STALE,
+    ApplicabilityState.EDITION_MISMATCH,
+    ApplicabilityState.NO_OFFICIAL_GUIDANCE_FOUND,
+)
 
 
 def excerpt_hash(text: str) -> str:
@@ -87,6 +159,7 @@ class DocumentSource(BaseModel):
     canonical_url: str
     pfsense_edition: Edition
     version_applicability: str
+    evidence_level: EvidenceLevel
     retrieval_mode: RetrievalMode
     content_excerpt: str = Field(max_length=MAX_EXCERPT_LENGTH)
     content_hash: str
@@ -109,7 +182,19 @@ class GuidanceReference(BaseModel):
     """The only shape `lookup_guidance()` ever returns (G1). No field here
     is a capability, endpoint, HTTP method, or confirmation token -- there
     is nothing in this closed schema an authorization decision could be
-    read out of."""
+    read out of.
+
+    Extended by the ADR-018 guidance-bridge implementation slice
+    (2026-08-09): `version_mismatch: bool` (always `False` in the
+    original, exclude-only design) is replaced by the five new fields
+    below, computed by `applicability.compute_entry_applicability()` and
+    assembled by `registry.lookup_guidance()` -- the real behavior
+    change ADR-018 S2 and its own "Acceptance record" already named as
+    needing separate explicit approval before this signature shipped.
+    `trust_label` is unchanged, still present here (only the separate
+    `EvidenceReference` type, produced by `bridge.bridge_guidance_reference()`,
+    omits it -- see that module for why).
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -127,7 +212,17 @@ class GuidanceReference(BaseModel):
     content_hash: str
     pfsense_edition: Edition
     trust_label: str
-    version_mismatch: bool
+    applicability: ApplicabilityState
+    evidence_level: EvidenceLevel
+    applicable_overlay_chain: tuple[str, ...] = Field(
+        default=(),
+        description="ReleaseOverlay.overlay_id values applicable to this entry, ORDERED "
+        "most-superseded first, current-truth last -- never flattened into an unordered set "
+        "(ADR-018 Finding 6, at the per-entry level).",
+    )
+    observed_edition_used: ObservedEdition
+    observed_version_used: str | None
+    retrieval_mode: RetrievalMode
     snapshot_version: str
 
     @field_validator("canonical_url")

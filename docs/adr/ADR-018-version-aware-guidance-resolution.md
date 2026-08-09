@@ -538,15 +538,23 @@ same pass). The owner accepted that verdict.
   a dedicated design-and-red-team pass
   (`reports-ai/reviews/ADR_018_APPLICABILITY_DECISION_PROCEDURE_RED_TEAM.md`):
   1. **The exact `APPLICABLE`/`PARTIALLY_APPLICABLE`/`STALE` decision
-     procedure for a `GuidanceReference` given its overlay chain — now
-     precisely specified, still not implemented.** Full deterministic
-     algorithm: `docs/VERSION_AWARE_GUIDANCE.md`'s "Single-entry
-     applicability decision procedure" section. Specifying it is not
-     implementing it — `applicability_state_for_entry_is_not_implemented_here()`
-     still raises, `lookup_guidance()` still returns the unmodified
-     v0.3.0 shape, and the `GuidanceReference`→`EvidenceReference` bridge
-     the procedure would feed remains unbuilt. Building either requires
-     its own separate, explicit approval, unchanged by this update.
+     procedure for a `GuidanceReference` given its overlay chain —
+     specified, then owner-authorized and implemented (2026-08-09).**
+     `applicability.compute_entry_applicability()` implements the
+     five-step algorithm `docs/VERSION_AWARE_GUIDANCE.md`'s "Single-entry
+     applicability decision procedure" section specifies, replacing the
+     removed `applicability_state_for_entry_is_not_implemented_here()`
+     marker; `registry.lookup_guidance()` now returns the extended,
+     inclusion-with-state `GuidanceReference` shape (the "exclude vs.
+     exclude-with-state" policy change this ADR's §2 and this same
+     Acceptance record both flagged as needing separate explicit
+     approval — now granted); `bridge.bridge_guidance_reference()`
+     implements the `GuidanceReference`→`EvidenceReference` bridge.
+     Still entirely offline and unwired: no MCP tool, no READ-tool
+     schema change, no PREPARE/Tier 1 consumer — nothing calls
+     `compose_guidance_evidence()` yet, and wiring it into a real
+     consumer remains its own separate, explicit, not-yet-granted
+     decision.
   2. **`NO_OFFICIAL_GUIDANCE_FOUND`'s exact runtime representation —
      formally confirmed CLOSED, not merely assumed.** It is an empty
      `EvidenceReference` tuple passed to the already-shipped
