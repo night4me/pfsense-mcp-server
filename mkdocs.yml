@@ -46,11 +46,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
 
-# Not a claim that GitHub Pages is enabled -- it is not (see
-# docs/tier1/README.md and reports-ai's Push authorization note): this
-# builds and locally previews the site only. Deploying it is a separate,
-# explicit owner decision, tracked as a future step, not part of this
-# configuration.
+# GitHub Pages is enabled and live (site_url above), deployed via
+# `mkdocs gh-deploy` to the `gh-pages` branch -- re-run that command to
+# redeploy after a docs change; nothing currently does this
+# automatically. `make docs-build`/CI's `docs` job remain the
+# build-quality gate only (mkdocs build --strict); neither one deploys.
 #
 # Nav hierarchy is deliberate: Getting Started and Security come before
 # Architecture, so a new visitor reaches "how do I run this" and "why

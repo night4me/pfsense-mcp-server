@@ -28,8 +28,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   implementation roadmap, 16 Architecture Decision Records, 10 subsystem
   specifications, a disposable-lab plan, and a conservative inventory of
   writable upstream endpoint classes.
-- A build-only MkDocs documentation site organizing the full `docs/`
-  reference into a browsable nav (not yet publicly deployed).
+- An MkDocs documentation site organizing the full `docs/` reference into
+  a browsable nav, published at
+  [night4me.github.io/pfsense-mcp-server](https://night4me.github.io/pfsense-mcp-server/).
 - CI hardening: a bandit static-security stage in both `make quick` and
   `make validate` (previously CI-only), a documentation-site build check,
   and a dependency-review check on pull requests.

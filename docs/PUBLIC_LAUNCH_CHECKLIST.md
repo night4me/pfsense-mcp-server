@@ -1,13 +1,17 @@
 # Public launch checklist
 
-This records exact, ready-to-apply values and a completion checklist for
-the repository-local and platform-level steps involved in eventually
-making this repository public. Nothing on this page has been applied —
-every platform-level action here (repository visibility, GitHub Pages,
-GitHub About/topics) requires explicit owner action, taken deliberately
-and separately from this document existing. Repository-local content is
-already done; this page exists so applying the remaining platform steps
-is a copy-paste operation, not a re-derivation.
+**Status: complete (2026-08-09).** The repository is public, GitHub
+Pages is live, and the About description/topics below are applied
+exactly as recorded. This page is kept as a historical record of the
+exact values used and the reasoning behind them, not as a forward-looking
+plan — the checkboxes below reflect what was actually done, not what
+remains to do. For current live state, see `reports-ai/latest.md`, not
+this page.
+
+This originally recorded exact, ready-to-apply values and a completion
+checklist for the repository-local and platform-level steps involved in
+making this repository public, so that applying the platform steps would
+be a copy-paste operation, not a re-derivation.
 
 ## Repository-local — already done
 
@@ -29,7 +33,7 @@ is a copy-paste operation, not a re-derivation.
       already reflects everything above once the next version publishes;
       no separate PyPI-specific content needed.
 
-## Platform-level — recorded, not applied
+## Platform-level — applied
 
 ### GitHub About description
 
@@ -78,38 +82,37 @@ for a Pages deployment from this repository with no custom domain:
 https://night4me.github.io/pfsense-mcp-server/
 ```
 
-Once Pages is enabled (a separate, explicit owner decision — see
-`reports-ai`'s "Push authorization" note, which explicitly reserves
-this), no `mkdocs.yml` change is needed; the existing `site_url` is
-already correct. At that point:
+Pages was enabled 2026-08-09; no `mkdocs.yml` change was needed, since
+the `site_url` above was already correct at the time. Deployment
+mechanism actually used: `mkdocs gh-deploy` (builds and pushes a
+`gh-pages` branch — GitHub auto-enabled Pages on detecting that branch
+on the now-public repo). Redeployment after a docs change is still
+manual; nothing currently automates re-running `mkdocs gh-deploy`.
 
-- [ ] Enable GitHub Pages (owner decision, not covered here).
-- [ ] Update `pyproject.toml`'s `Documentation` URL from the current
-      `docs/` source-tree link to the deployed site URL above.
-- [ ] Update the README's "Documentation" section note ("A browsable
-      version... is built (not yet publicly deployed)") to drop the
-      "not yet" qualifier and link the live site directly.
-- [ ] Update `docs/index.md`'s equivalent note.
-- [ ] Set the repository's "Website" field (GitHub repo settings) to
-      the deployed site URL, so it appears alongside the About
-      description.
+- [x] Enable GitHub Pages.
+- [x] Update `pyproject.toml`'s `Documentation` URL from the `docs/`
+      source-tree link to the deployed site URL above.
+- [x] Update the README's "Documentation" section to drop the "not yet"
+      qualifier and link the live site directly.
+- [x] `docs/index.md` checked — it had no equivalent stale note, so no
+      change was needed there.
+- [x] Set the repository's "Website" field (GitHub repo settings) to
+      the deployed site URL.
 
 ### Making the repository public
 
-Not evaluated here beyond noting it is explicitly reserved to the owner
-(see `AGENTS.md`'s approval boundaries and `reports-ai`'s standing push-
-authorization note, which lists "making the repository public" as
-explicitly not delegated). When it happens:
+Done 2026-08-09, under explicit owner authorization (see
+`AGENTS.md`'s approval boundaries — this was never standing-delegated,
+and still is not for any future visibility change).
 
-- [ ] Re-run `make validate`/`security_scan.py` immediately before
-      flipping visibility, as a final confirmation no private data has
-      landed since the last check (routine — every commit already passes
-      this, but a launch moment is worth one more explicit confirmation).
-- [ ] Apply the About description and topics above.
-- [ ] Consider whether `dependabot.yml`'s `open-pull-requests-limit: 5`
-      and weekly schedule are still the right cadence for a now-public,
-      possibly higher-traffic repository (not evaluated here — a
-      judgment call at the time, not a correctness issue today).
+- [x] Re-ran `make validate`/`security_scan.py` immediately before
+      flipping visibility, as a final confirmation no private data had
+      landed since the last check.
+- [x] Applied the About description and topics above.
+- [ ] Whether `dependabot.yml`'s `open-pull-requests-limit: 5` and
+      weekly schedule are still the right cadence for a now-public,
+      real-traffic repository remains a genuinely open, unresolved
+      judgment call — not evaluated as part of the launch itself.
 
 ## Non-goals of this document
 
