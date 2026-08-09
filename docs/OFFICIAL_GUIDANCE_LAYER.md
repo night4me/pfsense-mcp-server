@@ -124,13 +124,39 @@ context*, never for the system to *act on as permission*.
   deterministic and reproducible in a test, matching
   `capability_adapter_contract.md`'s I3 determinism discipline for a
   different function family.
-- **I6.** On any of: no registry entry for the capability, edition unknown
-  and no `both`-applicable entry exists, or the observed version does not
+- **I6 (original text, accepted scope through v0.3.1).** On any of: no
+  registry entry for the capability, edition unknown and no
+  `both`-applicable entry exists, or the observed version does not
   exactly equal a non-`"unversioned"` `version_applicability` value — the
   lookup returns an empty result. It never raises past the guidance
   layer's own boundary into whatever called it (a guidance-layer failure
   must never fail an otherwise-healthy READ call), and it never returns a
   lower-confidence guess instead of nothing.
+
+  **I6 revision note (2026-08-09, ADR-018 bridge implementation slice
+  `3628ce3`).** The exclude-on-ambiguity half of I6 above has been
+  superseded by an owner-authorized policy change — the "exclude vs.
+  exclude-with-state" question ADR-018 Step 2's Acceptance record already
+  flagged as needing its own separate approval, which this slice records
+  as granted. Current, accurate behavior: no registry entry for the
+  capability at all still returns an empty result
+  (`NO_OFFICIAL_GUIDANCE_FOUND`), unchanged. For a capability *with* a
+  registered entry, every registered entry is now returned — none is
+  silently dropped for a version/edition mismatch — each carrying its own
+  deterministically-computed `ApplicabilityState`
+  (`APPLICABLE`/`PARTIALLY_APPLICABLE`/`VERSION_UNCONFIRMED`/
+  `EDITION_MISMATCH`/`STALE`) via `applicability.compute_entry_applicability()`,
+  independently re-capped by the entry's own `EvidenceLevel`
+  (`cap_applicability_by_evidence_level()`) so a favorable state can never
+  be reached by inference or omission alone. The still-true half of the
+  original guarantee is unchanged: it never raises past the guidance
+  layer's own boundary, and `APPLICABLE`/`PARTIALLY_APPLICABLE` are only
+  ever reached through explicit, matching evidence — never returned as a
+  guess. See `src/pfsense_mcp/guidance/registry.py`'s own module and
+  `lookup_guidance()` docstrings for the authoritative current behavior;
+  this note summarizes it for the spec record. Still entirely unwired —
+  no MCP tool, no READ tool, no Tier 1 PREPARE consumer calls
+  `lookup_guidance()` in production.
 
 ## Trust boundaries
 
