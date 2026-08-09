@@ -182,8 +182,9 @@ public issue.
 
 ## Documentation
 
-A browsable version of the full documentation set below is built (not yet
-publicly deployed) via `make docs-serve`; see
+A browsable version of the full documentation set below is published at
+[night4me.github.io/pfsense-mcp-server](https://night4me.github.io/pfsense-mcp-server/)
+(built with `make docs-serve` for a local preview); see
 [`docs/index.md`](docs/index.md) for the same map.
 
 - [MCP tool reference](docs/API.md)
