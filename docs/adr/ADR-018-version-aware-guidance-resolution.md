@@ -6,6 +6,16 @@ line of code is written, per ADR-017's own "Live retrieval (TB-G3)"
 Activation requirement, which named exactly this document as a
 prerequisite.
 
+**Revised after independent adversarial review**
+(`reports-ai/reviews/ADR_018_RED_TEAM.md`): 2 BLOCKING and 5 MATERIAL
+findings, all fixed in this text and in `docs/VERSION_AWARE_GUIDANCE.md`.
+The two BLOCKING findings were real defects in the first draft, not
+review pedantry — reusing `Edition` for observed-appliance state was a
+genuine type-safety gap (§1 below), and the original TB-G3 text
+overclaimed what substring-presence verification actually proves (§3
+below). Read the red-team report for full failure scenarios; this text
+reflects the fixed design, not the original one.
+
 ## Context
 
 ADR-017 accepted a deterministic, capability-keyed, bundled-snapshot-only
@@ -67,16 +77,42 @@ returns.
 
 This is not a fragile heuristic — it is Netgate's own documented,
 intentional design, confirmed independently at both the documentation
-level and the API-field level. A CE major version below 10 and a Plus
-"year" component of 21 or higher cannot collide under the current scheme
-(pfSense Plus's year-based numbering began in 2021 per the same
-documentation's release-cadence notes). A value outside both ranges
-(never observed to date) resolves to edition **unknown**, not a guess —
-matching ADR-017's existing fail-closed default.
+level and the API-field level, and re-confirmed a second time
+independently during red-team review (first Plus version is exactly
+`21.02`, February 2021; CE's major component has been exclusively `1`
+or `2` across its entire documented history, `1.2.x` through the current
+`2.9.x`). A CE major version below 10 and a Plus "year" component of 21
+or higher cannot collide under the current scheme. A value outside both
+ranges (never observed to date) resolves to edition **unknown**, not a
+guess — matching ADR-017's existing fail-closed default.
 
 **No new network call.** `SystemVersion.base` is already fetched by the
 existing `pfsense_get_system_version` READ tool. The inference function
 operates purely on that already-available string.
+
+**Fixed after red-team review (Finding 1, BLOCKING)**: the first draft
+represented "observed appliance edition" using ADR-017's existing
+`Edition` enum (`CE`/`PLUS`/`BOTH`) with `None` standing for "unknown."
+That enum's `BOTH` member is meaningful for *document applicability* (a
+document can genuinely apply to both editions) but is never meaningful
+for an *observed appliance* — a real appliance is always exactly one
+edition or unknown, never both. Nothing prevented a future caller from
+passing `Edition.BOTH` as an observed value, which means nothing for a
+real appliance. Fixed: a new, separate, closed `ObservedEdition` enum —
+`KNOWN_CE` / `KNOWN_PLUS` / `UNKNOWN` — is used exclusively for observed
+appliance state; `Edition` continues to be used exclusively for
+`DocumentSource`/`ReleaseOverlay` applicability, where `BOTH` remains
+meaningful. `infer_edition_from_version_base()` returns `ObservedEdition`,
+never `Edition | None`. Full shape in `docs/VERSION_AWARE_GUIDANCE.md`.
+
+**Fixed after red-team review (Finding 9, MINOR)**: the numeric bounds
+(`_CE_MAX_MAJOR = 9`, `_PLUS_MIN_YEAR = 21`) are correct against the
+primary source (re-verified twice, independently) but are bare constants
+a future one-line diff could widen without re-checking that source. The
+implementing session must cite the specific primary-source page/date
+re-verified against in the same commit that ever changes either bound —
+specified as an explicit requirement in `docs/VERSION_AWARE_GUIDANCE.md`,
+not left to reviewer diligence alone.
 
 **Config revision**: no reliable, generally-available config-revision
 field exists in the currently wrapped pfSense REST API surface (checked
@@ -122,13 +158,24 @@ Git-tracked and PR-reviewed (TB-G1), and ADR-017's own curation guidance
 already caps entries at "no more than ~3 per capability." The correct
 place to catch contradictory entries is the existing load-time
 `_check_registry_integrity()` check, extended to flag same-capability,
-same-edition, overlapping-version entries whose excerpts materially
-disagree (a manual-review flag, not an automated content-diff — text
-comparison for "disagreement" is not a tractable, deterministic check;
-a mechanical duplicate-scope check is). This is a refinement of the
-seven-state proposal, made because a cleaner closed model puts this
-concern where ADR-017 already puts every other registry-integrity
-concern, not because the state doesn't matter.
+overlapping-scope entries. This is a refinement of the seven-state
+proposal, made because a cleaner closed model puts this concern where
+ADR-017 already puts every other registry-integrity concern, not
+because the state doesn't matter.
+
+**Fixed after red-team review (Finding 8, MATERIAL)**: the first draft
+described this check only as "a mechanical duplicate-scope check"
+without defining what "duplicate scope" means mechanically — not
+actually implementable as described. Fixed, concretely: the check flags
+any two entries (`DocumentSource` or `ReleaseOverlay`, in any
+combination) that share the same `capability` **and**
+edition-compatible scope (same edition, or either is `BOTH`) **and**
+overlapping version scope (both `UNVERSIONED`-equivalent, or identical
+version strings, or connected by an incomplete `supersedes_id` chain —
+see §3) with **no** supersession relationship actually connecting them.
+This is a structural/identity check on matching conditions, not a
+content-similarity check — deliberately, since text-diffing for
+"disagreement" was never claimed to be tractable.
 
 **Policy change this represents**: `lookup_guidance()` currently
 *excludes* non-matching entries entirely (I6's accepted fail-closed
@@ -145,6 +192,23 @@ shape, not computed at lookup time). **This is a real behavior change to
 already-shipped v0.3.0 code and needs its own explicit approval — it is
 not silently implied as decided by this ADR's Proposed status.**
 
+**Fixed after red-team review (Finding 5, MATERIAL)**: `UNVERSIONED`
+(ADR-017's existing sentinel, unchanged) is a reasonable read for
+genuinely evergreen content — but nothing distinguished "the source
+explicitly states this applies regardless of version" from "this is
+just the undated `/latest/` page and we don't actually know how far
+back it applies," and silently treating the second as the first is
+exactly the kind of unstated-scope inference the owner's review
+instructions warned against, just inverted (inferring *unbounded*
+applicability from *absent* version information). Fixed: a new,
+orthogonal `EvidenceLevel` enum — `EXPLICIT_VERSION_SCOPED` /
+`EXPLICIT_UNVERSIONED` / `INFERRED_FROM_CURRENT_DOCS` / `UNKNOWN` — is
+now required on every `DocumentSource`/`ReleaseOverlay` entry.
+`INFERRED_FROM_CURRENT_DOCS` (the honest default for most real-world
+entries) can only ever contribute `VERSION_UNCONFIRMED`, never
+`APPLICABLE`, even on an edition match — only an `EXPLICIT_*` entry can
+reach `APPLICABLE`. Full shape in `docs/VERSION_AWARE_GUIDANCE.md`.
+
 ### 3. `ReleaseOverlay`: the missing piece for STALE/PARTIALLY_APPLICABLE
 
 A new registry concept, same trust model as `DocumentSource` (Git-tracked,
@@ -157,8 +221,9 @@ ReleaseOverlay:
   applies_to_version: str    # exact SystemVersion.base value, or a small
                               # closed set — no ranges, no operators (I3)
   applies_to_edition: Edition
-  supersedes_source_id: str | None   # the DocumentSource this overlay
-                                      # updates/caveats, if any
+  evidence_level: EvidenceLevel      # Finding 5 — required, no default
+  supersedes_id: str | None   # a DocumentSource.source_id OR another
+                               # ReleaseOverlay.overlay_id — see Finding 6
   caveat_excerpt: str         # bounded, same I4 discipline
   canonical_url: str          # release notes / errata page, same allowlist
   content_hash: str
@@ -166,6 +231,23 @@ ReleaseOverlay:
 
 Curated exactly like `DocumentSource` — Git-tracked, one entry per known
 behavior change worth surfacing, not a scrape of every release note.
+
+**Fixed after red-team review (Finding 6, MATERIAL)**: the owner's own
+example — base doc says X, a release note modifies X, a later errata
+corrects the release note — requires an overlay to supersede *another
+overlay*, not only a `DocumentSource`. The first draft's
+`supersedes_source_id` field's type and name both restricted it to
+referencing a `DocumentSource` only, with no way to express an
+errata-corrects-a-release-note chain. Separately, the composition model
+(§5 below) originally flattened all applicable overlays into an
+unordered set, losing exactly the supersession order the owner's
+example depends on being preserved. Fixed: renamed to `supersedes_id`,
+documented as referencing either ID space (both already use the same
+slug pattern); `GuidanceEvidence` now carries an ordered `overlay_chain`
+(most-superseded first, current-truth last) instead of an unordered set
+— see §5. A supersession cycle (A supersedes B supersedes A) is now an
+explicit load-time registry-integrity failure (Finding 8's extended
+check).
 
 ### 4. Live retrieval (TB-G3): resolved design, **not activated**
 
@@ -175,17 +257,34 @@ for an unchanged, honest source. **Resolution**: replace hash-equality
 with **substring presence** — at fetch time, verify the *exact* pinned
 `content_excerpt` text (the same text a human reviewer read and approved
 into the registry) is still present, verbatim, somewhere in the fetched
-page's extracted text. This is simpler than defining a full-page
-normalization/hashing scheme, directly answers the only question that
-matters ("is the specific text we reviewed and are relying on still
-there, unchanged"), and degrades safely: if the exact excerpt is no
-longer found, the fetch is treated as **drifted** — never served as
-`APPLICABLE` guidance, always falls back to the bundled snapshot (if one
-exists for that entry) with `trust_label` reflecting the fallback, or to
-`NO_OFFICIAL_GUIDANCE_FOUND` if none does. A drifted fetch is exactly the
-kind of event (unexpected upstream change, redirect, tampering,
-prompt-injection attempt) TB-G3 needs to fail closed against, and this
-gives it a concrete, checkable trigger instead of leaving it undefined.
+page's extracted text.
+
+**Fixed after red-team review (Finding 2, BLOCKING)**: the first draft
+described a successful presence check as confirming the reviewed text is
+"still there, unchanged," and treated that as the basis for continuing
+to serve the content as before. **This overclaims.** Substring presence
+proves only that the exact string occurs *somewhere* in the fetched
+page — it proves nothing about surrounding context (the same sentence
+could now sit under a different heading with a different practical
+meaning), and cannot distinguish "the original passage, intact" from
+"the same string duplicated elsewhere while the original was altered or
+removed." The design's actual safety property, correctly identified only
+after this review: because **only the pre-approved, bounded excerpt
+itself is ever returned to a consumer — never the live page's
+surrounding text, regardless of presence-check outcome** — the
+context-duplication and misleading-surrounding-content attack classes
+are foreclosed by *never reading page context into anything
+consumer-facing* at all, not by the presence check "verifying" them.
+Restated precisely: the presence check's actual job is deciding whether
+to serve the pinned excerpt (present → serve exactly the text a human
+already reviewed) or fall back (absent → the reviewed claim may no
+longer hold at that URL, don't serve it as current). A failed check —
+now named **drifted**, not "tampered" or "unchanged" — never serves
+`APPLICABLE` guidance; falls back to the bundled snapshot if one exists
+for that entry, `trust_label` reflecting the fallback, or to
+`NO_OFFICIAL_GUIDANCE_FOUND` if none does. Comparison is NFC-normalized
+Unicode, case-sensitive, with no confusable/homoglyph folding — specified
+explicitly rather than left to an implementer's discretion.
 
 **Full design, still not activated in this ADR:**
 
@@ -194,14 +293,33 @@ gives it a concrete, checkable trigger instead of leaving it undefined.
   derived or guessed URL. The "approved documentation family" is the
   existing Git-tracked registry itself; nothing new is introduced that
   could fetch an unreviewed URL.
-- HTTPS-only, strict TLS validation, `ALLOWED_DOCUMENT_HOSTS` re-checked
-  against the *final* URL after following any redirect (never trust the
-  first hop) — redirects to a non-allow-listed host abort the fetch
-  entirely rather than following it, matching this project's existing
-  "redirects fail closed" transport-layer precedent (`THREAT_MODEL.md`).
-- A hard response-size bound (proposed: 2 MB, generous for a
-  documentation page, small enough to bound worst-case memory/parse
-  cost) and a hard fetch timeout.
+- HTTPS-only, strict TLS validation. **Fixed after red-team review
+  (Finding 3, MATERIAL — four concrete gaps, not one):** (1) the *final*
+  URL after following any redirect must equal the registered
+  `canonical_url` **exactly**, not merely share an allow-listed host —
+  the first draft's host-only check would have accepted a same-host
+  redirect to an entirely different, unreviewed page; max 3 redirect
+  hops. (2) the response-size bound (2 MB) must be enforced on the
+  **decompressed** byte stream, checked incrementally as it streams,
+  never solely against a pre-decompression `Content-Length` header —
+  the first draft's "check size before parse" wording did not actually
+  bound a decompression-bomb response. (3) `Content-Type` must indicate
+  HTML or plain text before any parse is attempted; anything else aborts
+  the fetch. (4) DNS rebinding: resolve the hostname once, validate the
+  resolved address is public (not private/loopback/link-local) *before*
+  connecting — a hostname-string allow-list alone does not bind the IP
+  actually connected to. Any of the four failing aborts the fetch,
+  same fallback chain as a drift result.
+- A hard fetch timeout, in addition to the above.
+- **Fixed after red-team review (Finding 4, MATERIAL):** live retrieval
+  **must** use an HTTP transport instance entirely separate from
+  `pfsense_client.py`'s pfSense-facing transport — no shared client,
+  session, connection pool, cookie jar, or default-header configuration
+  — and must never attach the pfSense API key or any `PFSENSE_*`
+  credential to a documentation-host request under any circumstance.
+  The first draft never stated this explicitly; a future implementer
+  reusing an existing configured client for convenience was a real,
+  foreseeable path to a credential leak toward `docs.netgate.com`.
 - Extracted text is scanned only for the pinned excerpt's presence — the
   fetched page's *other* content is never stored, never summarized, never
   passed to a model. Only the already-reviewed excerpt (verified present)
@@ -235,11 +353,12 @@ evidence appears.
 ```
 GuidanceEvidence:
   capability: Capability
-  observed_edition: Edition | None
+  observed_edition: ObservedEdition   # Finding 1 — KNOWN_CE | KNOWN_PLUS | UNKNOWN, never Edition
   observed_version: str | None
   appliance_identity_source: str   # e.g. "SystemVersion.base (pfsense_get_system_version)"
   guidance: tuple[GuidanceReference, ...]   # each carrying its own ApplicabilityState
-  overlays_considered: tuple[ReleaseOverlay, ...]
+  overlay_chain: tuple[str, ...]     # Finding 6 — ordered most-superseded-first,
+                                       # current-truth last; overlay_id values
   overall_state: ApplicabilityState  # the least-favorable state among
                                        # guidance/overlays actually applicable,
                                        # or NO_OFFICIAL_GUIDANCE_FOUND
@@ -289,11 +408,43 @@ this ADR adds:
   sealed executor's own gates. There is no code path from "guidance says
   APPLICABLE" to "mutation proceeds" that does not pass through every
   existing Tier 1 gate unchanged.
+- **Fixed after red-team review (Finding 7, MATERIAL)**: the preceding
+  bullet stated this as a policy intent in the first draft, without
+  pinning down *where in the call graph* it holds — a future
+  implementer could plausibly (and in good faith) wire
+  `GuidanceEvidence.overall_state` into the state machine's own
+  transition-rule table alongside the existing PREPARED→EXECUTING gates,
+  which would make "guidance says APPLICABLE" one of several jointly
+  sufficient conditions — a real, if subtle, violation of the intended
+  asymmetry. Fixed with a structural, checkable rule, not only a
+  restated intention: guidance evidence may be consulted **only as a
+  boolean AND-veto applied before contract creation** — `may_prepare =
+  existing_authorization AND (guidance_not_required_for_capability OR
+  guidance_check_passes)`, never as an OR, never as an independent
+  alternative path — and **`GuidanceEvidence`/`ApplicabilityState` must
+  never appear as a field the state machine's own transition-rule table
+  (`state_machine.py`) reads, and must never enter
+  `confirmation_authority.md`'s digest computation**, both exactly as
+  ADR-017's TB-G4 already established, unchanged. A future reviewer can
+  check this concretely: "is `GuidanceEvidence` read anywhere inside
+  `state_machine.py` or the confirmation digest computation? If yes,
+  that's wrong" — not only "does this feel consistent with the stated
+  intent."
 - Live retrieval (TB-G3), if ever activated, still cannot expand which
   capability, endpoint, or document any request touches — it only changes
   *when* the exact, pre-approved excerpt is fetched, never *what* URL is
   reachable. The registry (Git-tracked, PR-reviewed) remains the only
   thing that decides which URLs exist to fetch, unchanged from TB-G1.
+- **Guidance→recommendation separation** (re-examined in red-team
+  review, no change needed): `GuidanceEvidence`'s fields
+  (`observed_edition`/`observed_version`/`guidance`/`overall_state`) are
+  structurally separate typed fields, never concatenated into one
+  string — that is this layer's actual, honest guarantee. Whether a
+  future *consumer* (a prompt template, a tool description) preserves
+  that separation when presenting to a human or model is a
+  consumption-boundary concern, the same class of residual risk
+  ADR-017's TB-G2 already names for excerpt content generally — named
+  here explicitly rather than left implicit.
 
 ## Future WRITE / PREPARE integration (design only, not implemented)
 
@@ -334,24 +485,32 @@ wire this into.
   TB-G3's unresolved hash question) are now resolved at the design
   level — nothing about ADR-017's *accepted, shipped* scope changes
   until this ADR is itself accepted and its pieces separately activated.
-- `pfsense_mcp_info` (v0.3.1, already implemented under separate
-  authorization) requires **no change**. See "Self-challenge:
-  pfsense_mcp_info" below.
+- `pfsense_mcp_info` (v0.3.1, pushed to `origin/main` as `459262e`)
+  requires **no change**. See "Self-challenge: pfsense_mcp_info" below.
 - If accepted, the concrete near-term deliverable is design/spec-only:
-  `ApplicabilityState`, `ReleaseOverlay`, and the appliance-identity
-  inference function, as new, tested, but **unwired** code — the same
-  "implemented, inert, isolated" pattern ADR-017 and Tier 1 already use.
-  Live retrieval (TB-G3 activation), the include-vs-exclude policy
-  change to `lookup_guidance()`, and any READ-tool or PREPARE wiring
-  each remain their own, later, separately-gated decisions.
+  `ApplicabilityState`, `EvidenceLevel`, `ReleaseOverlay`,
+  `ObservedEdition`, `ApplianceIdentity`, and one canonical
+  `resolve_appliance_identity()` assembly function (Finding 10 — the
+  single call point every future consumer must share, not merely a
+  single inference sub-function), as new, tested, but **unwired** code —
+  the same "implemented, inert, isolated" pattern ADR-017 and Tier 1
+  already use. Live retrieval (TB-G3 activation), the include-vs-exclude
+  policy change to `lookup_guidance()`, and any READ-tool or PREPARE
+  wiring each remain their own, later, separately-gated decisions.
+- This revision followed an independent adversarial review
+  (`reports-ai/reviews/ADR_018_RED_TEAM.md`, 10 findings — 2 BLOCKING, 6
+  MATERIAL, 1 MINOR, 1 confirmed no-issue) required by the owner before
+  requesting acceptance. Every "Fixed after red-team review" note above
+  marks a real change from the first draft, not a rubber stamp.
 
 ## Self-challenges
 
 ### Self-challenge: pfsense_mcp_info
 
-Does the already-implemented, already-validated `pfsense_mcp_info`
-(committed locally, not yet pushed) need to change now that appliance
-identity resolution exists?
+Does the already-implemented, already-validated, already-pushed
+`pfsense_mcp_info` need to change now that appliance identity resolution
+exists? Re-asked and re-confirmed independently during red-team review,
+not merely carried over from the design pass.
 
 **No.** `pfsense_mcp_info`'s entire design invariant is "local process
 facts only, zero pfSense API calls" (explicitly required by its own
@@ -430,5 +589,10 @@ influence.
   the competitive-review findings that fed this design (appliance
   compatibility model, observability vocabulary, `dry_run` as a future
   PREPARE input).
+- `reports-ai/reviews/ADR_018_RED_TEAM.md` — the independent adversarial
+  review of this ADR's first draft: 2 BLOCKING and 5 MATERIAL findings,
+  all fixed in this text. Read it for full failure scenarios behind each
+  "Fixed after red-team review" note above.
 - `docs.netgate.com/pfsense/en/latest/releases/versions.html` — the
-  primary source for the CE/Plus version-numbering-scheme distinction.
+  primary source for the CE/Plus version-numbering-scheme distinction,
+  independently re-verified twice (design pass and red-team pass).
