@@ -23,6 +23,7 @@ silently rewrite earlier context.
 | [015](ADR-015-rate-and-blast-radius-defaults.md) | Rate and blast-radius defaults | Accepted (mechanism); numeric defaults provisional |
 | [016](ADR-016-alias-candidate-lab-authorization.md) | Alias-candidate disposable-lab authorization | Accepted |
 | [017](ADR-017-official-guidance-layer.md) | Official pfSense/Netgate documentation guidance layer | Accepted — architecture and inert scaffolding only; no consumer wired |
+| [018](ADR-018-version-aware-guidance-resolution.md) | Version-aware Official Guidance resolution | Proposed — design and red-team only; nothing implemented |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.

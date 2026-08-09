@@ -1,0 +1,434 @@
+# ADR-018: Version-aware Official Guidance resolution
+
+Status: **Proposed** — architecture and design only. Nothing in this ADR
+is implemented. It requires its own explicit owner approval before any
+line of code is written, per ADR-017's own "Live retrieval (TB-G3)"
+Activation requirement, which named exactly this document as a
+prerequisite.
+
+## Context
+
+ADR-017 accepted a deterministic, capability-keyed, bundled-snapshot-only
+guidance registry. Its own "Self-challenge: pfSense CE vs. Plus, and
+version drift" section left one investigation explicitly open: whether an
+edition (CE vs. Plus) discriminator can be derived from existing upstream
+data, or whether "edition unknown" must remain the permanent default. Its
+TB-G3 trust-boundary section specified live retrieval only "for
+forward-compatibility," left one design question explicitly unresolved
+(`content_hash` pins an excerpt, not a live page — comparing the two is
+not meaningful as originally worded), and required its own ADR before any
+implementation.
+
+The owner has now set a durable objective for this project: an AI client
+should never give pfSense-specific operational advice — and especially
+should never prepare a future WRITE — based on generic or `/latest/`
+documentation alone, when the actual appliance's edition and version may
+make that documentation inapplicable, partially applicable, or actively
+wrong. This ADR is that resolution: it extends ADR-017's registry model
+with edition/version applicability *reasoning* (not just filtering),
+evaluates live retrieval as TB-G3 requires, and resolves the hash-pinning
+question TB-G3 left open. It does not implement any of it.
+
+## Decision
+
+Extend ADR-017's model in four parts, each independently gated:
+
+1. **Appliance identity resolution** — a pure function, not a new READ
+   tool or network call, deriving `(edition, version)` from
+   `SystemVersion.base`, the same field an existing READ tool
+   (`pfsense_get_system_version`) already returns.
+2. **A closed `ApplicabilityState` enum** replacing the reserved-but-inert
+   `version_mismatch: bool` field, plus a new `ReleaseOverlay` registry
+   concept for version-specific errata/caveats.
+3. **A resolved live-retrieval design (TB-G3)**, answering the question
+   ADR-017 explicitly left open, but **not activated** — activation
+   remains its own future decision exactly as ADR-017 already required.
+4. **A `GuidanceEvidence` composition model** describing how an AI client
+   (or, later, a Tier 1 PREPARE phase) combines observed appliance state
+   with resolved guidance — conceptual only, wired into nothing.
+
+Full technical detail: `docs/VERSION_AWARE_GUIDANCE.md` (this ADR's
+companion spec, mirroring `OFFICIAL_GUIDANCE_LAYER.md`'s relationship to
+ADR-017).
+
+### 1. Appliance identity: resolving ADR-017's open self-challenge
+
+**Research finding, not assumption**: Netgate's own documentation
+(`docs.netgate.com/pfsense/en/latest/releases/versions.html`) states the
+two editions deliberately use different version-numbering *schemes*
+"to make it easier to distinguish between them" — pfSense CE uses
+`<major>.<minor>.<patch>` (major has always been `1` or `2`, e.g.
+`2.7.2`, `2.8.1`); pfSense Plus uses `<year>.<month>.<patch>` (e.g.
+`24.11`, `25.07`, `26.03`). The pfSense REST API package's own
+`SystemVersion.base` field docstring independently confirms this exact
+distinction for the `base` field specifically — the same field
+`pfsense_get_system_version` (this project's existing tool) already
+returns.
+
+This is not a fragile heuristic — it is Netgate's own documented,
+intentional design, confirmed independently at both the documentation
+level and the API-field level. A CE major version below 10 and a Plus
+"year" component of 21 or higher cannot collide under the current scheme
+(pfSense Plus's year-based numbering began in 2021 per the same
+documentation's release-cadence notes). A value outside both ranges
+(never observed to date) resolves to edition **unknown**, not a guess —
+matching ADR-017's existing fail-closed default.
+
+**No new network call.** `SystemVersion.base` is already fetched by the
+existing `pfsense_get_system_version` READ tool. The inference function
+operates purely on that already-available string.
+
+**Config revision**: no reliable, generally-available config-revision
+field exists in the currently wrapped pfSense REST API surface (checked
+directly — `pfsense_client.py`'s full endpoint set has no
+`config_history`/`revision` method, and pfSense's own native
+Configuration History feature is GUI-only with no confirmed API
+exposure, the same finding the OPNsense competitive review already
+recorded independently). Not pursued further in this ADR; noted as a
+possible future READ addition if pfSense's API surface ever exposes one,
+out of scope here.
+
+### 2. `ApplicabilityState`: fulfilling ADR-017's own reserved field
+
+ADR-017's `GuidanceReference.version_mismatch: bool` was explicitly
+documented as "always False in this accepted scope... reserved for a
+possible future policy that includes-with-caveat instead of excludes."
+This ADR is that future policy.
+
+```
+APPLICABLE            — edition matches (or BOTH), version exactly
+                         matches (or UNVERSIONED), no overlay contradicts it
+PARTIALLY_APPLICABLE  — edition and base doc apply, but a registered
+                         ReleaseOverlay for the observed version carries
+                         a caveat (behavior differs in some documented way)
+VERSION_UNCONFIRMED    — edition matches; observed_version is None, or
+                         does not exactly match a version-specific entry,
+                         and nothing indicates the guidance is actually
+                         wrong for this version — merely unconfirmed
+EDITION_MISMATCH       — entry is edition-specific and does not match
+                         observed_edition (edition IS known and differs)
+STALE                  — a newer ReleaseOverlay or a newer registry entry
+                         for the same capability supersedes this one for
+                         the observed version; this entry is known-outdated,
+                         not merely unconfirmed
+NO_OFFICIAL_GUIDANCE_FOUND — no registry entry exists for the capability
+                         (today's empty-tuple case, now named explicitly)
+```
+
+**`CONFLICTING_GUIDANCE` is deliberately not a per-lookup runtime
+state.** Two registry entries for the same capability disagreeing is a
+registry-*authoring* defect, not a runtime condition — the registry is
+Git-tracked and PR-reviewed (TB-G1), and ADR-017's own curation guidance
+already caps entries at "no more than ~3 per capability." The correct
+place to catch contradictory entries is the existing load-time
+`_check_registry_integrity()` check, extended to flag same-capability,
+same-edition, overlapping-version entries whose excerpts materially
+disagree (a manual-review flag, not an automated content-diff — text
+comparison for "disagreement" is not a tractable, deterministic check;
+a mechanical duplicate-scope check is). This is a refinement of the
+seven-state proposal, made because a cleaner closed model puts this
+concern where ADR-017 already puts every other registry-integrity
+concern, not because the state doesn't matter.
+
+**Policy change this represents**: `lookup_guidance()` currently
+*excludes* non-matching entries entirely (I6's accepted fail-closed
+choice). This ADR proposes *including* them with an explicit
+`ApplicabilityState` instead, for every state except
+`NO_OFFICIAL_GUIDANCE_FOUND` (nothing to include) and a version/edition
+mismatch so severe the entry is simply the wrong document (still
+excluded — an EDITION_MISMATCH entry for an entirely different feature's
+documentation is not useful "with a caveat"; the exclude/include line is
+drawn per-entry by whether the underlying content is still about the
+right feature, which the registry curator decides at authoring time via
+which state values are legal for that entry's `version_applicability`
+shape, not computed at lookup time). **This is a real behavior change to
+already-shipped v0.3.0 code and needs its own explicit approval — it is
+not silently implied as decided by this ADR's Proposed status.**
+
+### 3. `ReleaseOverlay`: the missing piece for STALE/PARTIALLY_APPLICABLE
+
+A new registry concept, same trust model as `DocumentSource` (Git-tracked,
+PR-reviewed, `ALLOWED_DOCUMENT_HOSTS`-constrained, bounded free text):
+
+```
+ReleaseOverlay:
+  overlay_id: str            # slug, same pattern as source_id
+  capability: Capability
+  applies_to_version: str    # exact SystemVersion.base value, or a small
+                              # closed set — no ranges, no operators (I3)
+  applies_to_edition: Edition
+  supersedes_source_id: str | None   # the DocumentSource this overlay
+                                      # updates/caveats, if any
+  caveat_excerpt: str         # bounded, same I4 discipline
+  canonical_url: str          # release notes / errata page, same allowlist
+  content_hash: str
+```
+
+Curated exactly like `DocumentSource` — Git-tracked, one entry per known
+behavior change worth surfacing, not a scrape of every release note.
+
+### 4. Live retrieval (TB-G3): resolved design, **not activated**
+
+TB-G3 flagged its own hash-pinning approach as unresolved: a hash of a
+short curated excerpt can never equal a hash of a full fetched page, even
+for an unchanged, honest source. **Resolution**: replace hash-equality
+with **substring presence** — at fetch time, verify the *exact* pinned
+`content_excerpt` text (the same text a human reviewer read and approved
+into the registry) is still present, verbatim, somewhere in the fetched
+page's extracted text. This is simpler than defining a full-page
+normalization/hashing scheme, directly answers the only question that
+matters ("is the specific text we reviewed and are relying on still
+there, unchanged"), and degrades safely: if the exact excerpt is no
+longer found, the fetch is treated as **drifted** — never served as
+`APPLICABLE` guidance, always falls back to the bundled snapshot (if one
+exists for that entry) with `trust_label` reflecting the fallback, or to
+`NO_OFFICIAL_GUIDANCE_FOUND` if none does. A drifted fetch is exactly the
+kind of event (unexpected upstream change, redirect, tampering,
+prompt-injection attempt) TB-G3 needs to fail closed against, and this
+gives it a concrete, checkable trigger instead of leaving it undefined.
+
+**Full design, still not activated in this ADR:**
+
+- Retrieval fetches **only** the exact `canonical_url` already in the
+  registry for that capability/entry — never a search query, never a
+  derived or guessed URL. The "approved documentation family" is the
+  existing Git-tracked registry itself; nothing new is introduced that
+  could fetch an unreviewed URL.
+- HTTPS-only, strict TLS validation, `ALLOWED_DOCUMENT_HOSTS` re-checked
+  against the *final* URL after following any redirect (never trust the
+  first hop) — redirects to a non-allow-listed host abort the fetch
+  entirely rather than following it, matching this project's existing
+  "redirects fail closed" transport-layer precedent (`THREAT_MODEL.md`).
+- A hard response-size bound (proposed: 2 MB, generous for a
+  documentation page, small enough to bound worst-case memory/parse
+  cost) and a hard fetch timeout.
+- Extracted text is scanned only for the pinned excerpt's presence — the
+  fetched page's *other* content is never stored, never summarized, never
+  passed to a model. Only the already-reviewed excerpt (verified present)
+  or a drift signal is ever returned; the live page's full text is
+  discarded after the presence check.
+- Cache: TTL-based, proposed default 24 hours (documentation pages change
+  rarely; this bounds request volume without serving indefinitely stale
+  content). `GuidanceReference` gains `retrieval_mode:
+  bundled_snapshot | live_fetch_cached`, `cached_at: datetime | None`,
+  and `freshness_state: fresh | stale_cache | drift_detected`. Cache is
+  process-lifetime, in-memory only — no disk persistence, matching the
+  guidance layer's existing "owns no mutable state" invariant as closely
+  as a cache can (the cache itself is the one new piece of mutable
+  state this would introduce, and is explicitly scoped: keyed only by
+  `source_id`, cleared on process restart, never written to disk).
+- Offline behavior: if a live fetch fails for any reason (network,
+  timeout, non-2xx, TLS failure, disallowed redirect, drift), fall back
+  to the bundled snapshot for that entry if one exists; otherwise return
+  `NO_OFFICIAL_GUIDANCE_FOUND` for that entry. Never raise past this
+  boundary, never block on retry — same I6 discipline ADR-017 already
+  established.
+
+**Still not recommended**: a vector database or embeddings. Every
+capability's curated corpus remains small (ADR-017's own ~3-entries-per-
+capability guidance); there is no concrete evidence deterministic,
+per-capability URL retrieval is insufficient. Revisit only if that
+evidence appears.
+
+### 5. `GuidanceEvidence`: the read-recommendation composition model
+
+```
+GuidanceEvidence:
+  capability: Capability
+  observed_edition: Edition | None
+  observed_version: str | None
+  appliance_identity_source: str   # e.g. "SystemVersion.base (pfsense_get_system_version)"
+  guidance: tuple[GuidanceReference, ...]   # each carrying its own ApplicabilityState
+  overlays_considered: tuple[ReleaseOverlay, ...]
+  overall_state: ApplicabilityState  # the least-favorable state among
+                                       # guidance/overlays actually applicable,
+                                       # or NO_OFFICIAL_GUIDANCE_FOUND
+```
+
+Composition (conceptual — an orchestration function, not a new tool):
+
+```
+observed appliance (edition, version)
+  -> capability/use case
+  -> lookup_guidance() [extended: returns entries + ApplicabilityState]
+  -> applicable ReleaseOverlays
+  -> GuidanceEvidence
+```
+
+This is explicitly **not** wired into any READ tool's output in this ADR
+— "Do not wire this into every READ tool yet" is followed literally.
+**Smallest future integration point, if ever authorized**: a single new
+orchestration function (not a new MCP tool, not a change to any of the
+42 existing tools) that a future consumer — the eventual Tier 1 PREPARE
+phase, most plausibly — could call directly. No READ tool's schema needs
+to change for this to exist; `GuidanceEvidence` never needs to reach an
+AI client through a *tool result* to be useful to PREPARE, which is
+server-internal. If a future decision *does* want an AI client to see
+this directly (e.g., an explicit "get guidance for capability X" tool),
+that is its own separate, later, explicitly-approved public-API decision
+— not a byproduct of accepting this ADR.
+
+## Trust boundary: guidance remains evidence, never authorization
+
+Restating and extending ADR-017's TB-G4, explicitly against every item
+this ADR adds:
+
+- `ApplicabilityState`, `ReleaseOverlay`, and `GuidanceEvidence` are all
+  read-only, advisory classifications of *documentation content* — none
+  has a field of type capability, endpoint, HTTP method, or confirmation
+  token (the same closed-schema constraint ADR-017's G1 already enforces,
+  extended to every new type this ADR introduces).
+- Appliance identity resolution (edition/version inference) **observes**
+  state; it cannot select a capability, endpoint, or WRITE action, and
+  has no import path to `WriteEndpoints`, `pfsense_mcp.tier1`, or any
+  WRITE-capable transport — same TB-G4 boundary, same enforcement
+  mechanism (AST isolation tests), extended to cover the new module(s).
+- `overall_state` can only ever make a future PREPARE phase's evidence
+  *weaker* by triggering fail-closed behavior (see below) — it can never
+  strengthen or substitute for a Recovery Contract, confirmation, or the
+  sealed executor's own gates. There is no code path from "guidance says
+  APPLICABLE" to "mutation proceeds" that does not pass through every
+  existing Tier 1 gate unchanged.
+- Live retrieval (TB-G3), if ever activated, still cannot expand which
+  capability, endpoint, or document any request touches — it only changes
+  *when* the exact, pre-approved excerpt is fetched, never *what* URL is
+  reachable. The registry (Git-tracked, PR-reviewed) remains the only
+  thing that decides which URLs exist to fetch, unchanged from TB-G1.
+
+## Future WRITE / PREPARE integration (design only, not implemented)
+
+```
+OBSERVED STATE
++ APPLIANCE VERSION (this ADR's identity resolution)
++ OFFICIAL GUIDANCE (lookup_guidance(), extended)
++ VERSION/EDITION APPLICABILITY (ApplicabilityState)
++ RELEASE-SPECIFIC CAVEATS (ReleaseOverlay)
++ DRY_RUN/VALIDATION EVIDENCE where available (a future capability
+  adapter's own PREPARE-phase check — see the OPNsense competitive
+  review's §6/§7 findings on the community pfSense REST API's `dry_run`
+  parameter, a separate, already-tracked future input)
++ RECOVERY CONTRACT
++ AUTHORIZATION
+= a PREPARE phase whose evidence is honest about what it does and does
+  not know, not merely "structurally present."
+```
+
+**Open policy question, not resolved here**: should a capability whose
+safety policy is designed to *require* official guidance fail PREPARE
+closed when guidance is `NO_OFFICIAL_GUIDANCE_FOUND`,
+`VERSION_UNCONFIRMED`, or `EDITION_MISMATCH`? This ADR's position:
+**yes, for any capability whose adapter contract explicitly opts into
+requiring it** — but *not* as a blanket rule for every future capability,
+since some capabilities may be safe enough by construction (rate/blast-
+radius limits, reversibility, confirmation) that documentation-derived
+evidence adds little. This is a per-capability-adapter-contract decision
+for Phase 5, not decided here, and explicitly deferred to whichever
+future ADR designs that first real adapter.
+
+**This ADR does not begin Phase 5.** No capability adapter exists to
+wire this into.
+
+## Consequences
+
+- ADR-017's own explicitly-flagged open items (edition self-challenge,
+  TB-G3's unresolved hash question) are now resolved at the design
+  level — nothing about ADR-017's *accepted, shipped* scope changes
+  until this ADR is itself accepted and its pieces separately activated.
+- `pfsense_mcp_info` (v0.3.1, already implemented under separate
+  authorization) requires **no change**. See "Self-challenge:
+  pfsense_mcp_info" below.
+- If accepted, the concrete near-term deliverable is design/spec-only:
+  `ApplicabilityState`, `ReleaseOverlay`, and the appliance-identity
+  inference function, as new, tested, but **unwired** code — the same
+  "implemented, inert, isolated" pattern ADR-017 and Tier 1 already use.
+  Live retrieval (TB-G3 activation), the include-vs-exclude policy
+  change to `lookup_guidance()`, and any READ-tool or PREPARE wiring
+  each remain their own, later, separately-gated decisions.
+
+## Self-challenges
+
+### Self-challenge: pfsense_mcp_info
+
+Does the already-implemented, already-validated `pfsense_mcp_info`
+(committed locally, not yet pushed) need to change now that appliance
+identity resolution exists?
+
+**No.** `pfsense_mcp_info`'s entire design invariant is "local process
+facts only, zero pfSense API calls" (explicitly required by its own
+authorizing instructions and enforced by `openWorldHint=false`).
+Appliance edition/version fundamentally requires an already-existing
+pfSense API call (`pfsense_get_system_version`) — folding that in would
+break the one invariant that makes `pfsense_mcp_info` cheap, safe, and
+side-effect-free to call. The existing `pfsense_get_system_version` tool
+already exposes the raw fact (`base`); a future edition-inference
+utility function (this ADR) is the shared place that interprets it —
+shared by any future consumer, not duplicated, and not owned by
+`pfsense_mcp_info`. **Recommendation confirmed: no change to
+`pfsense_mcp_info`'s already-validated design.**
+
+### Self-challenge: is the CE/Plus version-scheme discriminator itself gameable or fragile?
+
+An appliance could theoretically report a spoofed or corrupted
+`/etc/version` file. This is not a new risk this ADR introduces — every
+existing READ tool already trusts pfSense's own reported state as
+ground truth (this project has no independent way to verify pfSense
+itself is honest, and treating it as untrusted would make every READ
+tool's output equally suspect, which is out of scope for this ADR to
+solve). The discriminator's actual fragility is scheme-drift risk (what
+if Netgate changes the numbering scheme again) — mitigated by the
+explicit "outside both known ranges → unknown, never guess" fallback,
+which fails closed exactly the way ADR-017's edition-unknown default
+already does today.
+
+### Self-challenge: does including near-miss guidance (PARTIALLY_APPLICABLE, VERSION_UNCONFIRMED) instead of excluding it increase prompt-injection surface?
+
+No new surface: the same TB-G2 boundary applies unchanged — excerpt text
+still only ever flows into a bounded, typed field, never into anything
+instruction-bearing, regardless of which `ApplicabilityState` it carries.
+Including *more* results with an honest state label is strictly more
+information than silently excluding them was, and G1's closed schema
+means a state label cannot itself be read as authorization no matter how
+it's set — the risk this question is really probing (could a malicious
+document manufacture an `APPLICABLE` label for itself) is foreclosed by
+`ApplicabilityState` being computed entirely from registry metadata
+(`pfsense_edition`, `version_applicability`, overlay entries) that TB-G1
+already establishes is Git-tracked, PR-reviewed, and never derived from
+the fetched content itself — the *state* is data about the document
+elected by a human reviewer, not something the document's own text can
+influence.
+
+## Alternatives considered
+
+- **Do nothing; keep `version_mismatch: bool` as a permanent False** —
+  rejected: leaves the owner's stated objective (version-aware guidance)
+  entirely unaddressed and leaves ADR-017's own explicitly-reserved field
+  permanently unused.
+- **Free-text edition/version matching via regex against arbitrary
+  version strings, not scheme-based** — rejected: exactly the "fragile
+  heuristic" the owner's instruction warned against; the scheme-based
+  approach is grounded in Netgate's own documented, intentional design
+  choice, not pattern-matching happenstance.
+- **Vector database / embeddings for retrieval** — rejected per the
+  owner's explicit instruction and ADR-017's own existing "Future
+  migration path" reasoning: no evidence the small, curated,
+  per-capability corpus needs it.
+- **Full-page hashing for TB-G3 instead of substring presence** —
+  rejected: requires defining a page-normalization scheme (whitespace,
+  markup, ads/nav-chrome changes) that would false-positive on every
+  cosmetic site update; substring presence directly answers the only
+  question that matters and degrades safely.
+
+## References
+
+- `docs/adr/ADR-017-official-guidance-layer.md` — the accepted base this
+  ADR extends.
+- `docs/OFFICIAL_GUIDANCE_LAYER.md` — ADR-017's companion spec; TB-G3 and
+  the edition self-challenge are the two sections this ADR resolves.
+- `docs/VERSION_AWARE_GUIDANCE.md` — this ADR's own companion spec
+  (implementation-ready detail, still not implemented).
+- `reports-ai/reviews/OPNSENSE_MCP_COMPETITIVE_REVIEW.md` — §2/§3/§6/§7,
+  the competitive-review findings that fed this design (appliance
+  compatibility model, observability vocabulary, `dry_run` as a future
+  PREPARE input).
+- `docs.netgate.com/pfsense/en/latest/releases/versions.html` — the
+  primary source for the CE/Plus version-numbering-scheme distinction.
