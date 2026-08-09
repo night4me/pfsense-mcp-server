@@ -3026,7 +3026,7 @@ approval are complete, publish the GitHub Release. Its <code>published</code> ev
 the OIDC workflow. A manual dispatch is a recovery mechanism and requires an
 existing tag name; it rebuilds from that tag and refuses a tag/version mismatch.</p>
 <div class="highlight"><pre><span></span><code><span class="go">gh workflow run publish.yml --ref main \</span>
-<span class="go">  -f tag=v0.2.2 \</span>
+<span class="go">  -f tag=v0.3.0 \</span>
 <span class="go">  -f confirm=publish-pfsense-mcp-server</span>
 </code></pre></div>
 <p>Do not dispatch manually when the release event is already running. The

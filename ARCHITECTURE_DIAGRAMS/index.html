@@ -2893,9 +2893,10 @@
 
 
 <h1 id="architecture-diagrams">Architecture diagrams<a class="headerlink" href="#architecture-diagrams" title="Permanent link">&para;</a></h1>
-<p>These diagrams describe the immutable v0.2.2 production baseline and inert
-v0.3.0 development framework. Solid paths are active in production;
-future/dormant paths are explicitly labeled.</p>
+<p>These diagrams describe the immutable v0.3.0 production baseline (same
+active READ path as v0.2.2) and the inert Tier 1 development framework it
+ships. Solid paths are active in production; future/dormant paths are
+explicitly labeled.</p>
 <h2 id="overall-architecture">Overall architecture<a class="headerlink" href="#overall-architecture" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR
     Caller[Trusted local MCP client] --&gt;|stdio| App[Application / FastMCP]
