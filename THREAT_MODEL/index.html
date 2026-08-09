@@ -1171,6 +1171,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1282,6 +1286,62 @@
     
   
     Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
   
 
     
@@ -1619,6 +1679,10 @@
       
         
           
+        
+      
+        
+      
         
       
         
@@ -2167,6 +2231,62 @@
     
   
     ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
   
 
     
@@ -3861,8 +3981,8 @@ any resulting revisions.</p>
 </tr>
 <tr>
 <td>Wrong pfSense edition/version guidance</td>
-<td>Edition/version fail-closed to empty result on any ambiguity (I6); no guess-and-serve path exists</td>
-<td>An edition-discriminator READ field does not currently exist (<code>SystemVersion</code> has none) — flagged, not resolved, this session</td>
+<td>Edition/version ambiguity is never guessed: a registered entry whose edition/version cannot be confirmed is returned labeled <code>VERSION_UNCONFIRMED</code>/<code>EDITION_MISMATCH</code>/<code>STALE</code> (I6, revised 2026-08-09 — see <code>OFFICIAL_GUIDANCE_LAYER.md</code>), computed by <code>applicability.compute_entry_applicability()</code> and independently re-capped by <code>EvidenceLevel</code>; a favorable (<code>APPLICABLE</code>) state is only ever reached through explicit, matching evidence</td>
+<td>The edition inference (<code>resolve_appliance_identity</code>) and the five-step decision procedure are now <strong>implemented</strong> (ADR-018, <code>3628ce3</code>) but remain entirely unwired — no MCP tool, no READ tool, no Tier 1 PREPARE consumer calls <code>lookup_guidance()</code> in production; activation is a separate, future, unauthorized decision per ADR-018's own "Activation requirements"</td>
 </tr>
 <tr>
 <td>Guidance/observed-state disagreement</td>
@@ -3886,13 +4006,13 @@ any resulting revisions.</p>
 </tr>
 <tr>
 <td>Missing guidance for a valid capability</td>
-<td>Explicit empty-result path (I6), never fabricated</td>
+<td>Explicit empty-result path when the capability has no registry entry at all (I6, <code>NO_OFFICIAL_GUIDANCE_FOUND</code>), never fabricated</td>
 <td>None — this is accepted, by-design behavior, not a gap to close</td>
 </tr>
 <tr>
 <td>Ambiguous guidance (ambiguous version/edition match)</td>
-<td>Fails closed to empty result rather than returning a low-confidence guess</td>
-<td>None beyond what I6 already requires</td>
+<td>A <em>registered</em> entry is returned labeled with its true <code>ApplicabilityState</code> (<code>VERSION_UNCONFIRMED</code>/<code>EDITION_MISMATCH</code>/<code>STALE</code>) rather than silently omitted (I6, revised 2026-08-09 — inclusion-with-state, an owner-authorized policy change from the original exclude-only design) — still never a low-confidence guess presented as <code>APPLICABLE</code></td>
+<td>None beyond what the revised I6 already requires</td>
 </tr>
 <tr>
 <td>Citation/provenance loss</td>

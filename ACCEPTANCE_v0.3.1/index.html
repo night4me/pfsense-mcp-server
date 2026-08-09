@@ -10,31 +10,27 @@
       
       
       
-        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-005-inert-tier-0-write-infrastructure/">
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.3.1/">
       
       
-        <link rel="prev" href="../ADR-004-capability-profiles/">
-      
-      
-        <link rel="next" href="../ADR-006-recovery-contract-philosophy/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>ADR-005 Inert Tier 0 WRITE infrastructure - pfsense-mcp-server</title>
+        <title>Acceptance — v0.3.1 - pfsense-mcp-server</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +49,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#adr-005-inert-tier-0-write-infrastructure" class="md-skip">
+        <a href="#acceptance-v031" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -114,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ADR-005 Inert Tier 0 WRITE infrastructure
+              Acceptance — v0.3.1
             
           </span>
         </div>
@@ -230,7 +226,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -260,7 +256,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -370,7 +366,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CONFIGURATION/" class="md-nav__link">
+      <a href="../CONFIGURATION/" class="md-nav__link">
         
   
   
@@ -492,7 +488,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
         
   
   
@@ -520,7 +516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../THREAT_MODEL/" class="md-nav__link">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
         
   
   
@@ -548,7 +544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
         
   
   
@@ -576,7 +572,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
         
   
   
@@ -692,7 +688,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/" class="md-nav__link">
+      <a href="../API/" class="md-nav__link">
         
   
   
@@ -720,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API_REVIEW/" class="md-nav__link">
+      <a href="../API_REVIEW/" class="md-nav__link">
         
   
   
@@ -814,7 +810,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
         
   
   
@@ -842,7 +838,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
         
   
   
@@ -870,7 +866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
         
   
   
@@ -898,7 +894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
         
   
   
@@ -926,7 +922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -958,8 +954,6 @@
       
   
   
-    
-  
   
   
     
@@ -993,15 +987,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../tier1/" class="md-nav__link ">
+            <a href="../tier1/" class="md-nav__link ">
               
   
   
@@ -1025,7 +1019,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1043,7 +1037,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1071,7 +1065,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
         
   
   
@@ -1099,7 +1093,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ROADMAP/" class="md-nav__link">
+      <a href="../ROADMAP/" class="md-nav__link">
         
   
   
@@ -1127,7 +1121,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
         
   
   
@@ -1155,7 +1149,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1183,7 +1177,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1213,7 +1207,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
         
   
   
@@ -1241,7 +1235,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
         
   
   
@@ -1266,8 +1260,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1319,15 +1311,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../adr/" class="md-nav__link ">
               
   
   
@@ -1351,7 +1343,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_10">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1371,7 +1363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
         
   
   
@@ -1399,7 +1391,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
         
   
   
@@ -1427,7 +1419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
         
   
   
@@ -1455,7 +1447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
         
   
   
@@ -1480,37 +1472,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-005 Inert Tier 0 WRITE infrastructure
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
         
   
   
@@ -1526,109 +1491,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Context
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decision" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Decision
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alternatives-considered" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alternatives considered
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1641,7 +1503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
         
   
   
@@ -1669,7 +1531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
         
   
   
@@ -1697,7 +1559,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
         
   
   
@@ -1725,7 +1587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
         
   
   
@@ -1753,7 +1615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
         
   
   
@@ -1781,7 +1643,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
         
   
   
@@ -1809,7 +1671,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
         
   
   
@@ -1837,7 +1699,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
         
   
   
@@ -1865,7 +1727,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
         
   
   
@@ -1893,7 +1755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
         
   
   
@@ -1921,7 +1783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
         
   
   
@@ -1949,7 +1811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
         
   
   
@@ -1977,7 +1839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
         
   
   
@@ -2005,7 +1867,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
         
   
   
@@ -2110,7 +1972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
         
   
   
@@ -2138,7 +2000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
         
   
   
@@ -2166,7 +2028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
         
   
   
@@ -2194,7 +2056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
         
   
   
@@ -2222,7 +2084,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
         
   
   
@@ -2250,7 +2112,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
         
   
   
@@ -2278,7 +2140,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
         
   
   
@@ -2306,7 +2168,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
         
   
   
@@ -2334,7 +2196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
         
   
   
@@ -2362,7 +2224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
         
   
   
@@ -2470,7 +2332,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -2498,7 +2360,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -2526,7 +2388,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
         
   
   
@@ -2554,7 +2416,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
         
   
   
@@ -2582,7 +2444,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../BENCHMARKS/" class="md-nav__link">
+      <a href="../BENCHMARKS/" class="md-nav__link">
         
   
   
@@ -2666,7 +2528,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../READ_BACKLOG/" class="md-nav__link">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
         
   
   
@@ -2758,7 +2620,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
         
   
   
@@ -2786,7 +2648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
         
   
   
@@ -2814,7 +2676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
         
   
   
@@ -2842,7 +2704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
         
   
   
@@ -2897,10 +2759,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
+  <a href="#release-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Context
+        Release scope
       
     </span>
   </a>
@@ -2908,10 +2770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#decision" class="md-nav__link">
+  <a href="#accepted-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Decision
+        Accepted changes
       
     </span>
   </a>
@@ -2919,49 +2781,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
+  <a href="#ci-evidence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alternatives-considered" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alternatives considered
+        CI evidence
       
     </span>
   </a>
@@ -2969,10 +2792,65 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
+  <a href="#package-verification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        References
+        Package verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security invariants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance boundary
       
     </span>
   </a>
@@ -2996,7 +2874,7 @@
 
 
   
-    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-005-inert-tier-0-write-infrastructure.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/ACCEPTANCE_v0.3.1.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -3004,57 +2882,198 @@
   
 
 
-<h1 id="adr-005-inert-tier-0-write-infrastructure">ADR-005: Inert Tier 0 WRITE infrastructure<a class="headerlink" href="#adr-005-inert-tier-0-write-infrastructure" title="Permanent link">&para;</a></h1>
+<h1 id="acceptance-v031">Acceptance — v0.3.1<a class="headerlink" href="#acceptance-v031" title="Permanent link">&para;</a></h1>
+<h2 id="release-scope">Release scope<a class="headerlink" href="#release-scope" title="Permanent link">&para;</a></h2>
+<p>v0.3.1 is a single-tool, backward-compatible READ-surface addition built
+on the accepted v0.3.0 baseline. <strong>The only functional change is one new
+READ tool: <code>pfsense_mcp_info</code>.</strong> All 41 tools shipped in v0.3.0 are
+unchanged — same names, inputs, outputs, schemas, and semantics. No
+WRITE endpoint, no active mutation path, and no capability expansion
+beyond the one new READ capability gating the new tool.</p>
+<p><code>pfsense_mcp_info</code> reports this server's own version, active capability
+profile, registered tool counts, active WRITE capabilities/endpoints
+(always empty in this build), and Tier 1/ADR-017 presence — deterministic
+local process facts only, derived from the same objects (<code>self._capabilities</code>,
+<code>WriteEndpoints</code>, <code>importlib.metadata</code>, <code>sys.modules</code>) that already drive
+registration and are already independently checked elsewhere. It makes no
+pfSense API call, and unlike every other tool advertises
+<code>openWorldHint=false</code> for that reason. It cannot itself grant or change
+any capability — it only reports already-enforced state.</p>
+<p>This addition was informed by a competitive architecture review of a
+comparable OPNsense MCP server (<code>reports-ai/reviews/
+OPNSENSE_MCP_COMPETITIVE_REVIEW.md</code>), which identified server/capability
+introspection as a design idea worth adopting on its own merits — not
+copied from that project's implementation, and explicitly not paired with
+any of that project's WRITE-safety simplifications (global switch,
+endpoint blocklist), which were separately and permanently rejected for
+this project's trust model.</p>
+<h2 id="accepted-changes">Accepted changes<a class="headerlink" href="#accepted-changes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Status:</strong> Accepted</li>
-<li><strong>Date:</strong> 2026-08-06</li>
+<li>New <code>Capability.SERVER_INFO_READ</code>, added to <code>SUPPORTED_CAPABILITIES_THIS_BUILD</code>
+  and gating <code>pfsense_mcp_info</code> through the same per-capability
+  <code>register_all()</code> dispatch pattern every other tool already uses — an
+  empty capability set (Engineer profile) still registers nothing.</li>
+<li>New <code>ServerIntrospection</code> pydantic model
+  (<code>src/pfsense_mcp/models/server_introspection.py</code>) and tool module
+  (<code>src/pfsense_mcp/tools/read/mcp_info.py</code>), following the existing
+  <code>build(dependency) -&gt; Callable</code> tool pattern, with a snapshot-provider
+  callback in place of a <code>PfSenseClient</code> (this tool has none).</li>
+<li><code>ToolRegistry</code> now tracks actually-registered tool names (post
+  capability- and <code>PFSENSE_ALLOWED_TOOLS</code>-filtering) so
+  <code>pfsense_mcp_info</code>'s tool-count fields can never drift from what was
+  really registered on the live MCP instance, and gained an optional
+  <code>profile_name</code> constructor parameter (defaults to <code>"unknown"</code> for
+  existing call sites that don't need it) so the tool can report the
+  active profile by name.</li>
+<li><code>WriteEndpoints.active_entries()</code>: a new classmethod moving the
+  allow-list entry scan that <code>scripts/write_allow_list_check.py</code> already
+  performed into the production package itself, so the CI check and
+  <code>pfsense_mcp_info</code>'s <code>active_write_endpoint_count</code> field read the exact
+  same function rather than each keeping an independent copy of the same
+  <code>vars()</code> scan.</li>
+<li><code>scripts/public_contract.py</code> updated to support a tool with no
+  <code>PfSenseClient</code> dependency (<code>LOCAL_ONLY_TOOL_NAMES</code>): its contract
+  entry carries <code>client_method: null</code> and <code>endpoint: null</code> instead of a
+  GET endpoint reference. The public contract snapshot was renamed
+  <code>mcp_public_contract_v0.3.0.json</code> → <code>mcp_public_contract_v0.3.1.json</code>
+  (41 unchanged tool entries plus the one new entry).</li>
+<li><code>docs/API.md</code> gained a "Server introspection" section documenting the
+  new tool, and its blanket "every tool advertises <code>openWorldHint=true</code>"
+  statement was corrected to name the one exception.</li>
 </ul>
-<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
-<p>Future mutation requires recovery, rollback, audit, and allow-list primitives
-that are difficult to design safely at the same moment as the first production
-side effect. Those primitives needed tests without expanding the current MCP or
-network surface.</p>
-<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
-<p>Tier 0 WRITE infrastructure exists as tested library code but is inert by
-construction:</p>
+<h2 id="ci-evidence">CI evidence<a class="headerlink" href="#ci-evidence" title="Permanent link">&para;</a></h2>
+<p>GitHub Actions completed successfully on the release-candidate base
+commit <code>a273d3b4de651f196ea311f0f7a015051320189c</code> (the most recent commit
+before this release-state documentation commit):</p>
 <ul>
-<li>production bootstrap does not construct a write client/store/audit path;</li>
-<li><code>WriteEndpoints</code> has zero entries;</li>
-<li>no WRITE capability is active in any profile;</li>
-<li>no WRITE MCP tool registers;</li>
-<li><code>tools/write</code> is never imported by production code;</li>
-<li>static checks independently enforce these properties.</li>
+<li><a href="https://github.com/night4me/pfsense-mcp-server/actions/runs/31309462883">CI run 31309462883</a>:
+  Python 3.11/3.12/3.13, package, coverage, docs, and Bandit jobs passed.</li>
+<li><a href="https://github.com/night4me/pfsense-mcp-server/actions/runs/31309462882">CodeQL run 31309462882</a>:
+  Python analysis completed successfully.</li>
 </ul>
-<p>The READ architecture and <code>RestApiClient</code> remain unchanged.</p>
-<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
-<h3 id="positive">Positive<a class="headerlink" href="#positive" title="Permanent link">&para;</a></h3>
+<p>The final release-state documentation commit (this one) must receive the
+same successful CI and CodeQL results before tagging.</p>
+<h2 id="package-verification">Package verification<a class="headerlink" href="#package-verification" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Recovery concepts can be tested before activation.</li>
-<li>Current production risk remains READ-only.</li>
-<li>Multiple independent gates must change intentionally for Tier 1.</li>
+<li>Version metadata: <code>0.3.1</code>; Python 3.11+; supported production platform
+  Linux; MIT <code>License-Expression</code>; Markdown README; typed-package marker.</li>
+<li>Hatchling builds one wheel and one sdist with the expected console
+  entry point.</li>
+<li>Distribution verification requires the license, README, PyPI
+  procedure, v0.3.1 acceptance document, package source, metadata, and
+  entry point.</li>
+<li>Clean wheel installation/import and configuration-absent fail-closed
+  startup pass through <code>make package-check</code>.</li>
+<li>Strict Twine checks pass for both artifact types.</li>
+<li>Artifacts exclude credentials, key/private-key files, <code>.env</code>, AI
+  reports (<code>reports-ai/</code>), local configuration, caches, fixtures, and
+  temporary state — confirmed by direct member-listing inspection of
+  both the wheel and sdist, not only by the automated check.</li>
 </ul>
-<h3 id="negative">Negative<a class="headerlink" href="#negative" title="Permanent link">&para;</a></h3>
+<h2 id="security-invariants">Security invariants<a class="headerlink" href="#security-invariants" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Dormant code can be mistaken for production-ready functionality.</li>
-<li>Tests may give false confidence if Tier 1 prerequisites are not tracked.</li>
-<li>Future activation must replace zero-entry assertions with precise manifests,
-  not simply delete safety checks.</li>
+<li>Credential values and prohibited credential fields remain absent from
+  MCP schemas, outputs, logs, errors, fixtures, documentation, and
+  distributions.</li>
+<li>Production READ transport remains GET-only and independently
+  endpoint-gated; <code>pfsense_mcp_info</code> makes no transport call at all.</li>
+<li>Capability profiles remain authoritative; annotations and tool
+  restrictions cannot grant access.</li>
+<li>The Auditor profile contains 35 READ capabilities and registers
+  exactly 42 READ tools without restriction. <strong>Engineer contains zero
+  capabilities and registers zero tools, including <code>pfsense_mcp_info</code></strong>
+  — verified directly, not merely by construction: the new capability
+  follows the exact same <code>if Capability.X in self._capabilities</code> gate as
+  every existing capability, with no unconditional-registration
+  exception.</li>
+<li><strong>The WRITE endpoint allow-list is empty, all WRITE capabilities are
+  inactive, no WRITE module enters production bootstrap, and zero WRITE
+  tools register</strong> — independently confirmed this release by direct
+  inspection (<code>EngineerProfile.capabilities == frozenset()</code>,
+  <code>WriteEndpoints.active_entries() == []</code>) in addition to the existing
+  automated checks. <code>pfsense_mcp_info</code>'s own
+  <code>active_write_capabilities</code>/<code>active_write_endpoint_count</code>/
+  <code>registered_write_tool_count</code> fields report this same state live, at
+  runtime, from the same source objects — not a second, potentially
+  divergent count.</li>
+<li><strong>Tier 1 is implemented, tested architecture — not planning-only — but
+  remains completely unreachable from production</strong>: absent from
+  <code>Application</code>/<code>factory</code>/<code>server</code>/<code>ToolRegistry</code> imports, verified by
+  dedicated AST isolation tests every commit. <code>pfsense_mcp_info</code>'s
+  <code>tier1_package_present</code>/<code>tier1_imported_this_process</code> fields make this
+  observable at runtime as well, explicitly documented (in the model's
+  own field descriptions) as supporting evidence, not a substitute for
+  the CI-enforced structural guarantee.</li>
+<li><strong>ADR-017's guidance layer is inert with no production consumer</strong>:
+  same isolation-test discipline; same runtime-observable fields
+  (<code>guidance_package_present</code>/<code>guidance_imported_this_process</code>) with the
+  same non-overclaiming documentation.</li>
+<li>Public CI uses no production configuration, credential, or live
+  pfSense call.</li>
 </ul>
-<h2 id="alternatives-considered">Alternatives considered<a class="headerlink" href="#alternatives-considered" title="Permanent link">&para;</a></h2>
+<h2 id="verification-evidence">Verification evidence<a class="headerlink" href="#verification-evidence" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implement first WRITE tool immediately:</strong> rejected because recovery/crash
-  behavior was unresolved.</li>
-<li><strong>Keep all WRITE design only in prose:</strong> rejected because primitives and
-  architectural chokepoints benefit from executable tests.</li>
-<li><strong>Wire the client but hide tools:</strong> rejected because construction would make
-  dormant code unnecessarily reachable.</li>
+<li>Full offline pytest (1583 passed, 42 live-skipped), branch coverage,
+  Ruff, mypy, <code>make quick</code> (11 stages), <code>make validate</code> (20 stages), and
+  <code>make package-check</code> pass on the release-state tree.</li>
+<li>Bandit, fixture safety, repository security, GET-only, WRITE
+  import-absence, empty WRITE allow-list, WRITE-capability inactivity,
+  and git-identity-leak checks pass.</li>
+<li>Fresh offline MCP enumeration confirms 42 READ tools (41 unchanged +
+  <code>pfsense_mcp_info</code>), zero Engineer/WRITE tools, annotation parity
+  (<code>readOnlyHint=true</code> on all 42; <code>openWorldHint=true</code> on 41,
+  <code>openWorldHint=false</code> on <code>pfsense_mcp_info</code> specifically), and zero
+  prohibited credential schema properties.</li>
+<li>Tier 1 and ADR-017 guidance isolation tests confirm both packages are
+  unimported by any production module.</li>
+<li><code>pfsense_mcp_info</code> was directly invoked in tests against both profiles:
+  reports <code>registered_tool_count=42</code> for Auditor (including itself), and
+  is entirely absent — not merely empty-valued — for Engineer, since
+  Engineer's empty capability set means it never registers at all.</li>
+<li>No live pfSense call, production credential access, or mutation was
+  performed while preparing this release state.</li>
 </ul>
-<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<h2 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">&para;</a></h2>
+<p>All 41 tool names, inputs, outputs, schemas, and semantics from v0.3.0
+are <strong>unchanged</strong>. This is a strictly additive, backward-compatible
+change: one new tool, one new capability, no removal, no behavior change
+to any existing tool. The public contract snapshot
+(<code>tests/contracts/mcp_public_contract_v0.3.1.json</code>, renamed from the
+v0.3.0-era file, all 41 pre-existing entries byte-identical, one new
+entry added) continues to gate any future drift via <code>make validate</code>.</p>
+<h2 id="known-limitations">Known limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h2>
+<p>Unchanged from v0.3.0 (see <code>docs/ACCEPTANCE_v0.3.0.md</code> for full detail),
+carried forward without re-verification of items this release did not
+touch: the supported trust boundary remains a local stdio MCP process
+controlled by a trusted launcher; Linux remains the supported production
+platform for descriptor-bound credential loading; CodeQL SARIF upload
+remains an open, undecided option; Tier 1's Phase 5 (first capability
+adapter) and Phase 6 (production activation) remain not started, each
+gated by its own explicit owner/infrastructure decision — none of which
+this release grants; <code>ADR-011</code>'s anti-rollback anchor backend selection
+remains the one open Architecture Decision Record; GitHub Pages
+redeployment remains a manual step; <code>dependabot.yml</code>'s cadence remains a
+deferred judgment call.</p>
+<p>New to this release, not yet acted on:</p>
 <ul>
-<li><a href="../../WRITE_TIER0_SPEC/">Tier 0 specification</a></li>
-<li><a href="../../TIER1_ROADMAP/">Tier 1 roadmap</a></li>
-<li><a href="../ADR-006-recovery-contract-philosophy/">ADR-006</a></li>
+<li>The competitive review that motivated <code>pfsense_mcp_info</code> identified
+  several further ADAPT-classified design ideas (session-scoped inventory
+  caching with explicit freshness signaling; an observability/limitations
+  vocabulary for a future Tier 1 PREPARE phase; the community pfSense
+  REST API package's <code>dry_run</code> parameter as a future PREPARE-phase input;
+  a config-test-before-apply discipline) — none implemented in this
+  release, each requiring its own future design/authorization.</li>
+<li>A stale-wording finding from the v0.3.0 evidence packet (<code>README.md</code>'s
+  "development tree" phrasing) has since been corrected in a separate,
+  already-shipped commit; this release's own documentation sweep found
+  no comparable new staleness.</li>
 </ul>
+<h2 id="acceptance-boundary">Acceptance boundary<a class="headerlink" href="#acceptance-boundary" title="Permanent link">&para;</a></h2>
+<p>This document accepts the v0.3.1 release state after its exact commit
+passes the required local and remote gates. It does not authorize a tag,
+push, GitHub Release, TestPyPI/PyPI upload, live pfSense access,
+credential use, WRITE activation, or Phase 5 work. Each external
+operation requires separate approval.</p>
 
 
 
@@ -3110,10 +3129,10 @@ construction:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

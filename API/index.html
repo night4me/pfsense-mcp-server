@@ -1335,6 +1335,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#server-introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server introspection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Server introspection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_mcp_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_mcp_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1397,6 +1425,10 @@
   
     
     
+      
+        
+      
+        
       
         
       
@@ -1515,6 +1547,62 @@
     
   
     Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
   
 
     
@@ -1852,6 +1940,10 @@
       
         
           
+        
+      
+        
+      
         
       
         
@@ -2400,6 +2492,62 @@
     
   
     ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
   
 
     
@@ -3865,6 +4013,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#server-introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server introspection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Server introspection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_mcp_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_mcp_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-reminders" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3901,11 +4077,11 @@
 
 
 <h1 id="mcp-tool-reference">MCP tool reference<a class="headerlink" href="#mcp-tool-reference" title="Permanent link">&para;</a></h1>
-<p>Version: 0.3.0 release state
+<p>Version: 0.3.1 release state
 Profile: <code>auditor</code><br />
-Registered tools: 41 READ, 0 WRITE</p>
+Registered tools: 42 READ, 0 WRITE</p>
 <p>The normalized public contract is checked into
-<code>tests/contracts/mcp_public_contract_v0.3.0.json</code>. It records tool names,
+<code>tests/contracts/mcp_public_contract_v0.3.1.json</code>. It records tool names,
 descriptions, input/output schemas, annotations, capability ownership, client
 methods, and verified GET endpoint ownership. <code>make validate</code> fails on drift.
 After explicit approval of an intentional public API change, regenerate it with
@@ -3921,11 +4097,14 @@ objects below are the public contract.</p>
 connection, authentication, upstream API, validation, and response-shape
 failures are returned as typed, sanitized errors. Raw upstream bodies,
 credentials, request headers, and exception messages are never returned.</p>
-<p>Every tool advertises MCP <code>readOnlyHint=true</code> and <code>openWorldHint=true</code>.
-<code>destructiveHint</code> and <code>idempotentHint</code> are omitted because those hints are
-defined for tools that modify their environment. Annotations are untrusted
-client metadata only. They do not authorize a call or weaken capability,
-endpoint, GET-only, credential, audit, or WRITE-inactivity controls.</p>
+<p>Every tool advertises MCP <code>readOnlyHint=true</code>. Every tool except
+<code>pfsense_mcp_info</code> also advertises <code>openWorldHint=true</code>; <code>pfsense_mcp_info</code>
+is <code>openWorldHint=false</code> because it makes no pfSense API call and reports
+only this server process's own local state. <code>destructiveHint</code> and
+<code>idempotentHint</code> are omitted because those hints are defined for tools that
+modify their environment. Annotations are untrusted client metadata only.
+They do not authorize a call or weaken capability, endpoint, GET-only,
+credential, audit, or WRITE-inactivity controls.</p>
 <p><code>PFSENSE_ALLOWED_TOOLS</code> may restrict registration to comma-separated exact
 names from this reference. It is intersected with the selected capability
 profile: absent preserves the profile, an empty value registers zero tools,
@@ -4336,6 +4515,24 @@ security behavior.</p>
 <li><strong>Security:</strong> Table members disclose live policy/topology data and may include
   blocklists or internal networks.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_diagnostics_tables","arguments":{"limit":20}}</code></li>
+</ul>
+<h2 id="server-introspection">Server introspection<a class="headerlink" href="#server-introspection" title="Permanent link">&para;</a></h2>
+<h3 id="pfsense_mcp_info"><code>pfsense_mcp_info</code><a class="headerlink" href="#pfsense_mcp_info" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Report this MCP server's own version, active capability
+  profile, registered tool counts, WRITE-inactivity facts, and Tier 1/ADR-017
+  presence — so a client can determine actual capability and safety state
+  without inference.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>ServerIntrospection</code>.</li>
+<li><strong>Security:</strong> Local process facts only — makes no pfSense API call. Every
+  field is already independently, redundantly enforced elsewhere (capability
+  gating, the empty <code>WriteEndpoints</code> allow-list, CI-enforced Tier 1/ADR-017
+  isolation tests); this tool only reports already-enforced state and cannot
+  itself grant or change any capability. Presence of the <code>pfsense_mcp.tier1</code>
+  or <code>pfsense_mcp.guidance</code> packages is a packaging fact, not a capability —
+  neither field means either package is reachable or active.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_mcp_info","arguments":{}}</code></li>
 </ul>
 <h2 id="security-reminders">Security reminders<a class="headerlink" href="#security-reminders" title="Permanent link">&para;</a></h2>
 <ul>

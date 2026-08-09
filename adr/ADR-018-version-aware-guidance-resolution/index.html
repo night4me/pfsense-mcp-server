@@ -1,0 +1,3942 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-018-version-aware-guidance-resolution/">
+      
+      
+        <link rel="prev" href="../ADR-017-official-guidance-layer/">
+      
+      
+        <link rel="next" href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ADR-018 Version-aware Official Guidance resolution - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adr-018-version-aware-official-guidance-resolution" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ADR-018 Version-aware Official Guidance resolution
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-appliance-identity-resolving-adr-017s-open-self-challenge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Appliance identity: resolving ADR-017's open self-challenge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-applicabilitystate-fulfilling-adr-017s-own-reserved-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. ApplicabilityState: fulfilling ADR-017's own reserved field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-releaseoverlay-the-missing-piece-for-stalepartially_applicable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. ReleaseOverlay: the missing piece for STALE/PARTIALLY_APPLICABLE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-live-retrieval-tb-g3-resolved-design-not-activated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Live retrieval (TB-G3): resolved design, not activated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-guidanceevidence-the-read-recommendation-composition-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. GuidanceEvidence: the read-recommendation composition model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundary-guidance-remains-evidence-never-authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundary: guidance remains evidence, never authorization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-write-prepare-integration-design-only-not-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future WRITE / PREPARE integration (design only, not implemented)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-record-2026-08-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance record (2026-08-09)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenges
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Self-challenges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-pfsense_mcp_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: pfsense_mcp_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-is-the-ceplus-version-scheme-discriminator-itself-gameable-or-fragile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: is the CE/Plus version-scheme discriminator itself gameable or fragile?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-including-near-miss-guidance-partially_applicable-version_unconfirmed-instead-of-excluding-it-increase-prompt-injection-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does including near-miss guidance (PARTIALLY_APPLICABLE, VERSION_UNCONFIRMED) instead of excluding it increase prompt-injection surface?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-appliance-identity-resolving-adr-017s-open-self-challenge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Appliance identity: resolving ADR-017's open self-challenge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-applicabilitystate-fulfilling-adr-017s-own-reserved-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. ApplicabilityState: fulfilling ADR-017's own reserved field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-releaseoverlay-the-missing-piece-for-stalepartially_applicable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. ReleaseOverlay: the missing piece for STALE/PARTIALLY_APPLICABLE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-live-retrieval-tb-g3-resolved-design-not-activated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Live retrieval (TB-G3): resolved design, not activated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-guidanceevidence-the-read-recommendation-composition-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. GuidanceEvidence: the read-recommendation composition model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundary-guidance-remains-evidence-never-authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundary: guidance remains evidence, never authorization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-write-prepare-integration-design-only-not-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future WRITE / PREPARE integration (design only, not implemented)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-record-2026-08-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance record (2026-08-09)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenges
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Self-challenges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-pfsense_mcp_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: pfsense_mcp_info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-is-the-ceplus-version-scheme-discriminator-itself-gameable-or-fragile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: is the CE/Plus version-scheme discriminator itself gameable or fragile?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-including-near-miss-guidance-partially_applicable-version_unconfirmed-instead-of-excluding-it-increase-prompt-injection-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does including near-miss guidance (PARTIALLY_APPLICABLE, VERSION_UNCONFIRMED) instead of excluding it increase prompt-injection surface?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-018-version-aware-guidance-resolution.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="adr-018-version-aware-official-guidance-resolution">ADR-018: Version-aware Official Guidance resolution<a class="headerlink" href="#adr-018-version-aware-official-guidance-resolution" title="Permanent link">&para;</a></h1>
+<p>Status: <strong>Accepted</strong> (2026-08-09) — architecture and trust boundaries
+only. See "Acceptance record" below for exactly what acceptance grants
+and what it explicitly does not. Nothing in this ADR is implemented yet;
+each piece still requires its own separate, explicit future approval
+before any line of code is written, per ADR-017's own "Live retrieval
+(TB-G3)" Activation requirement, which named exactly this document as a
+prerequisite.</p>
+<p><strong>Revised after independent adversarial review</strong>
+(<code>reports-ai/reviews/ADR_018_RED_TEAM.md</code>): 2 BLOCKING and 6 MATERIAL
+findings, all fixed in this text and in <code>docs/VERSION_AWARE_GUIDANCE.md</code>.
+The two BLOCKING findings were real defects in the first draft, not
+review pedantry — reusing <code>Edition</code> for observed-appliance state was a
+genuine type-safety gap (§1 below), and the original TB-G3 text
+overclaimed what substring-presence verification actually proves (§3
+below). Read the red-team report for full failure scenarios; this text
+reflects the fixed design, not the original one.</p>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>ADR-017 accepted a deterministic, capability-keyed, bundled-snapshot-only
+guidance registry. Its own "Self-challenge: pfSense CE vs. Plus, and
+version drift" section left one investigation explicitly open: whether an
+edition (CE vs. Plus) discriminator can be derived from existing upstream
+data, or whether "edition unknown" must remain the permanent default. Its
+TB-G3 trust-boundary section specified live retrieval only "for
+forward-compatibility," left one design question explicitly unresolved
+(<code>content_hash</code> pins an excerpt, not a live page — comparing the two is
+not meaningful as originally worded), and required its own ADR before any
+implementation.</p>
+<p>The owner has now set a durable objective for this project: an AI client
+should never give pfSense-specific operational advice — and especially
+should never prepare a future WRITE — based on generic or <code>/latest/</code>
+documentation alone, when the actual appliance's edition and version may
+make that documentation inapplicable, partially applicable, or actively
+wrong. This ADR is that resolution: it extends ADR-017's registry model
+with edition/version applicability <em>reasoning</em> (not just filtering),
+evaluates live retrieval as TB-G3 requires, and resolves the hash-pinning
+question TB-G3 left open. It does not implement any of it.</p>
+<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
+<p>Extend ADR-017's model in four parts, each independently gated:</p>
+<ol>
+<li><strong>Appliance identity resolution</strong> — a pure function, not a new READ
+   tool or network call, deriving <code>(edition, version)</code> from
+   <code>SystemVersion.base</code>, the same field an existing READ tool
+   (<code>pfsense_get_system_version</code>) already returns.</li>
+<li><strong>A closed <code>ApplicabilityState</code> enum</strong> replacing the reserved-but-inert
+   <code>version_mismatch: bool</code> field, plus a new <code>ReleaseOverlay</code> registry
+   concept for version-specific errata/caveats.</li>
+<li><strong>A resolved live-retrieval design (TB-G3)</strong>, answering the question
+   ADR-017 explicitly left open, but <strong>not activated</strong> — activation
+   remains its own future decision exactly as ADR-017 already required.</li>
+<li><strong>A <code>GuidanceEvidence</code> composition model</strong> describing how an AI client
+   (or, later, a Tier 1 PREPARE phase) combines observed appliance state
+   with resolved guidance — conceptual only, wired into nothing.</li>
+</ol>
+<p>Full technical detail: <code>docs/VERSION_AWARE_GUIDANCE.md</code> (this ADR's
+companion spec, mirroring <code>OFFICIAL_GUIDANCE_LAYER.md</code>'s relationship to
+ADR-017).</p>
+<h3 id="1-appliance-identity-resolving-adr-017s-open-self-challenge">1. Appliance identity: resolving ADR-017's open self-challenge<a class="headerlink" href="#1-appliance-identity-resolving-adr-017s-open-self-challenge" title="Permanent link">&para;</a></h3>
+<p><strong>Research finding, not assumption</strong>: Netgate's own documentation
+(<code>docs.netgate.com/pfsense/en/latest/releases/versions.html</code>) states the
+two editions deliberately use different version-numbering <em>schemes</em>
+"to make it easier to distinguish between them" — pfSense CE uses
+<code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;</code> (major has always been <code>1</code> or <code>2</code>, e.g.
+<code>2.7.2</code>, <code>2.8.1</code>); pfSense Plus uses <code>&lt;year&gt;.&lt;month&gt;.&lt;patch&gt;</code> (e.g.
+<code>24.11</code>, <code>25.07</code>, <code>26.03</code>). The pfSense REST API package's own
+<code>SystemVersion.base</code> field docstring independently confirms this exact
+distinction for the <code>base</code> field specifically — the same field
+<code>pfsense_get_system_version</code> (this project's existing tool) already
+returns.</p>
+<p>This is not a fragile heuristic — it is Netgate's own documented,
+intentional design, confirmed independently at both the documentation
+level and the API-field level, and re-confirmed a second time
+independently during red-team review (first Plus version is exactly
+<code>21.02</code>, February 2021; CE's major component has been exclusively <code>1</code>
+or <code>2</code> across its entire documented history, <code>1.2.x</code> through the current
+<code>2.9.x</code>). A CE major version below 10 and a Plus "year" component of 21
+or higher cannot collide under the current scheme. A value outside both
+ranges (never observed to date) resolves to edition <strong>unknown</strong>, not a
+guess — matching ADR-017's existing fail-closed default.</p>
+<p><strong>No new network call.</strong> <code>SystemVersion.base</code> is already fetched by the
+existing <code>pfsense_get_system_version</code> READ tool. The inference function
+operates purely on that already-available string.</p>
+<p><strong>Fixed after red-team review (Finding 1, BLOCKING)</strong>: the first draft
+represented "observed appliance edition" using ADR-017's existing
+<code>Edition</code> enum (<code>CE</code>/<code>PLUS</code>/<code>BOTH</code>) with <code>None</code> standing for "unknown."
+That enum's <code>BOTH</code> member is meaningful for <em>document applicability</em> (a
+document can genuinely apply to both editions) but is never meaningful
+for an <em>observed appliance</em> — a real appliance is always exactly one
+edition or unknown, never both. Nothing prevented a future caller from
+passing <code>Edition.BOTH</code> as an observed value, which means nothing for a
+real appliance. Fixed: a new, separate, closed <code>ObservedEdition</code> enum —
+<code>KNOWN_CE</code> / <code>KNOWN_PLUS</code> / <code>UNKNOWN</code> — is used exclusively for observed
+appliance state; <code>Edition</code> continues to be used exclusively for
+<code>DocumentSource</code>/<code>ReleaseOverlay</code> applicability, where <code>BOTH</code> remains
+meaningful. <code>infer_edition_from_version_base()</code> returns <code>ObservedEdition</code>,
+never <code>Edition | None</code>. Full shape in <code>docs/VERSION_AWARE_GUIDANCE.md</code>.</p>
+<p><strong>Fixed after red-team review (Finding 9, MINOR)</strong>: the numeric bounds
+(<code>_CE_MAX_MAJOR = 9</code>, <code>_PLUS_MIN_YEAR = 21</code>) are correct against the
+primary source (re-verified twice, independently) but are bare constants
+a future one-line diff could widen without re-checking that source. The
+implementing session must cite the specific primary-source page/date
+re-verified against in the same commit that ever changes either bound —
+specified as an explicit requirement in <code>docs/VERSION_AWARE_GUIDANCE.md</code>,
+not left to reviewer diligence alone.</p>
+<p><strong>Config revision</strong>: no reliable, generally-available config-revision
+field exists in the currently wrapped pfSense REST API surface (checked
+directly — <code>pfsense_client.py</code>'s full endpoint set has no
+<code>config_history</code>/<code>revision</code> method, and pfSense's own native
+Configuration History feature is GUI-only with no confirmed API
+exposure, the same finding the OPNsense competitive review already
+recorded independently). Not pursued further in this ADR; noted as a
+possible future READ addition if pfSense's API surface ever exposes one,
+out of scope here.</p>
+<h3 id="2-applicabilitystate-fulfilling-adr-017s-own-reserved-field">2. <code>ApplicabilityState</code>: fulfilling ADR-017's own reserved field<a class="headerlink" href="#2-applicabilitystate-fulfilling-adr-017s-own-reserved-field" title="Permanent link">&para;</a></h3>
+<p>ADR-017's <code>GuidanceReference.version_mismatch: bool</code> was explicitly
+documented as "always False in this accepted scope... reserved for a
+possible future policy that includes-with-caveat instead of excludes."
+This ADR is that future policy.</p>
+<div class="highlight"><pre><span></span><code>APPLICABLE            — edition matches (or BOTH), version exactly
+                         matches (or UNVERSIONED), no overlay contradicts it
+PARTIALLY_APPLICABLE  — edition and base doc apply, but a registered
+                         ReleaseOverlay for the observed version carries
+                         a caveat (behavior differs in some documented way)
+VERSION_UNCONFIRMED    — edition matches; observed_version is None, or
+                         does not exactly match a version-specific entry,
+                         and nothing indicates the guidance is actually
+                         wrong for this version — merely unconfirmed
+EDITION_MISMATCH       — entry is edition-specific and does not match
+                         observed_edition (edition IS known and differs)
+STALE                  — a newer ReleaseOverlay or a newer registry entry
+                         for the same capability supersedes this one for
+                         the observed version; this entry is known-outdated,
+                         not merely unconfirmed
+NO_OFFICIAL_GUIDANCE_FOUND — no registry entry exists for the capability
+                         (today&#39;s empty-tuple case, now named explicitly)
+</code></pre></div>
+<p><strong><code>CONFLICTING_GUIDANCE</code> is deliberately not a per-lookup runtime
+state.</strong> Two registry entries for the same capability disagreeing is a
+registry-<em>authoring</em> defect, not a runtime condition — the registry is
+Git-tracked and PR-reviewed (TB-G1), and ADR-017's own curation guidance
+already caps entries at "no more than ~3 per capability." The correct
+place to catch contradictory entries is the existing load-time
+<code>_check_registry_integrity()</code> check, extended to flag same-capability,
+overlapping-scope entries. This is a refinement of the seven-state
+proposal, made because a cleaner closed model puts this concern where
+ADR-017 already puts every other registry-integrity concern, not
+because the state doesn't matter.</p>
+<p><strong>Fixed after red-team review (Finding 8, MATERIAL)</strong>: the first draft
+described this check only as "a mechanical duplicate-scope check"
+without defining what "duplicate scope" means mechanically — not
+actually implementable as described. Fixed, concretely, as <strong>two
+separate, independent load-time checks</strong> (the first draft's revision
+conflated them into one ambiguous sentence — corrected here during
+final acceptance review, since the original wording read as
+self-contradictory: it listed "connected by a <code>supersedes_id</code> chain" as
+a form of <em>overlap</em>, then simultaneously required <em>no</em> connecting
+relationship, which cannot both be true of the same pair):</p>
+<ol>
+<li><strong>Duplicate-scope check</strong>: flags any two entries (<code>DocumentSource</code> or
+   <code>ReleaseOverlay</code>, in any combination) that share the same
+   <code>capability</code> <strong>and</strong> edition-compatible scope (same edition, or
+   either is <code>BOTH</code>) <strong>and</strong> overlapping version scope (both
+   <code>UNVERSIONED</code>-equivalent, or identical version strings) <strong>and</strong> are
+   <strong>not</strong> connected by any <code>supersedes_id</code> relationship (direct or
+   transitive) between them. This is a structural/identity check on
+   matching conditions, not a content-similarity check — deliberately,
+   since text-diffing for "disagreement" was never claimed to be
+   tractable.</li>
+<li><strong>Chain-integrity check</strong>, independent of (1): a <code>supersedes_id</code>
+   value that does not resolve to any known <code>source_id</code>/<code>overlay_id</code> is
+   a dangling reference; a chain that revisits an entry already in its
+   own ancestry (A supersedes B supersedes A) is a cycle. Both fail the
+   load-time check, regardless of whether (1) would also have flagged
+   the pair — a valid, connected <code>supersedes_id</code> chain is exactly what
+   <em>exempts</em> two overlapping-scope entries from check (1), so check (2)
+   is what confirms the chain used for that exemption is actually
+   real and finite.</li>
+</ol>
+<p><strong>Policy change this represents</strong>: <code>lookup_guidance()</code> currently
+<em>excludes</em> non-matching entries entirely (I6's accepted fail-closed
+choice). This ADR proposes <em>including</em> them with an explicit
+<code>ApplicabilityState</code> instead, for every state except
+<code>NO_OFFICIAL_GUIDANCE_FOUND</code> (nothing to include) and a version/edition
+mismatch so severe the entry is simply the wrong document (still
+excluded — an EDITION_MISMATCH entry for an entirely different feature's
+documentation is not useful "with a caveat"; the exclude/include line is
+drawn per-entry by whether the underlying content is still about the
+right feature, which the registry curator decides at authoring time via
+which state values are legal for that entry's <code>version_applicability</code>
+shape, not computed at lookup time). <strong>This is a real behavior change to
+already-shipped v0.3.0 code and needs its own explicit approval — it is
+not silently implied as decided by this ADR's Proposed status.</strong></p>
+<p><strong>Fixed after red-team review (Finding 5, MATERIAL)</strong>: <code>UNVERSIONED</code>
+(ADR-017's existing sentinel, unchanged) is a reasonable read for
+genuinely evergreen content — but nothing distinguished "the source
+explicitly states this applies regardless of version" from "this is
+just the undated <code>/latest/</code> page and we don't actually know how far
+back it applies," and silently treating the second as the first is
+exactly the kind of unstated-scope inference the owner's review
+instructions warned against, just inverted (inferring <em>unbounded</em>
+applicability from <em>absent</em> version information). Fixed: a new,
+orthogonal <code>EvidenceLevel</code> enum — <code>EXPLICIT_VERSION_SCOPED</code> /
+<code>EXPLICIT_UNVERSIONED</code> / <code>INFERRED_FROM_CURRENT_DOCS</code> / <code>UNKNOWN</code> — is
+now required on every <code>DocumentSource</code>/<code>ReleaseOverlay</code> entry.
+<code>INFERRED_FROM_CURRENT_DOCS</code> (the honest default for most real-world
+entries) can only ever contribute <code>VERSION_UNCONFIRMED</code>, never
+<code>APPLICABLE</code>, even on an edition match — only an <code>EXPLICIT_*</code> entry can
+reach <code>APPLICABLE</code>. Full shape in <code>docs/VERSION_AWARE_GUIDANCE.md</code>.</p>
+<h3 id="3-releaseoverlay-the-missing-piece-for-stalepartially_applicable">3. <code>ReleaseOverlay</code>: the missing piece for STALE/PARTIALLY_APPLICABLE<a class="headerlink" href="#3-releaseoverlay-the-missing-piece-for-stalepartially_applicable" title="Permanent link">&para;</a></h3>
+<p>A new registry concept, same trust model as <code>DocumentSource</code> (Git-tracked,
+PR-reviewed, <code>ALLOWED_DOCUMENT_HOSTS</code>-constrained, bounded free text):</p>
+<div class="highlight"><pre><span></span><code>ReleaseOverlay:
+  overlay_id: str            # slug, same pattern as source_id
+  capability: Capability
+  applies_to_version: str    # exact SystemVersion.base value, or a small
+                              # closed set — no ranges, no operators (I3)
+  applies_to_edition: Edition
+  evidence_level: EvidenceLevel      # Finding 5 — required, no default
+  supersedes_id: str | None   # a DocumentSource.source_id OR another
+                               # ReleaseOverlay.overlay_id — see Finding 6
+  caveat_excerpt: str         # bounded, same I4 discipline
+  canonical_url: str          # release notes / errata page, same allowlist
+  content_hash: str
+</code></pre></div>
+<p>Curated exactly like <code>DocumentSource</code> — Git-tracked, one entry per known
+behavior change worth surfacing, not a scrape of every release note.</p>
+<p><strong>Fixed after red-team review (Finding 6, MATERIAL)</strong>: the owner's own
+example — base doc says X, a release note modifies X, a later errata
+corrects the release note — requires an overlay to supersede <em>another
+overlay</em>, not only a <code>DocumentSource</code>. The first draft's
+<code>supersedes_source_id</code> field's type and name both restricted it to
+referencing a <code>DocumentSource</code> only, with no way to express an
+errata-corrects-a-release-note chain. Separately, the composition model
+(§5 below) originally flattened all applicable overlays into an
+unordered set, losing exactly the supersession order the owner's
+example depends on being preserved. Fixed: renamed to <code>supersedes_id</code>,
+documented as referencing either ID space (both already use the same
+slug pattern); <code>GuidanceEvidence</code> now carries an ordered <code>overlay_chain</code>
+(most-superseded first, current-truth last) instead of an unordered set
+— see §5. A supersession cycle (A supersedes B supersedes A) is now an
+explicit load-time registry-integrity failure (Finding 8's extended
+check).</p>
+<h3 id="4-live-retrieval-tb-g3-resolved-design-not-activated">4. Live retrieval (TB-G3): resolved design, <strong>not activated</strong><a class="headerlink" href="#4-live-retrieval-tb-g3-resolved-design-not-activated" title="Permanent link">&para;</a></h3>
+<p>TB-G3 flagged its own hash-pinning approach as unresolved: a hash of a
+short curated excerpt can never equal a hash of a full fetched page, even
+for an unchanged, honest source. <strong>Resolution</strong>: replace hash-equality
+with <strong>substring presence</strong> — at fetch time, verify the <em>exact</em> pinned
+<code>content_excerpt</code> text (the same text a human reviewer read and approved
+into the registry) is still present, verbatim, somewhere in the fetched
+page's extracted text.</p>
+<p><strong>Fixed after red-team review (Finding 2, BLOCKING)</strong>: the first draft
+described a successful presence check as confirming the reviewed text is
+"still there, unchanged," and treated that as the basis for continuing
+to serve the content as before. <strong>This overclaims.</strong> Substring presence
+proves only that the exact string occurs <em>somewhere</em> in the fetched
+page — it proves nothing about surrounding context (the same sentence
+could now sit under a different heading with a different practical
+meaning), and cannot distinguish "the original passage, intact" from
+"the same string duplicated elsewhere while the original was altered or
+removed." The design's actual safety property, correctly identified only
+after this review: because <strong>only the pre-approved, bounded excerpt
+itself is ever returned to a consumer — never the live page's
+surrounding text, regardless of presence-check outcome</strong> — the
+context-duplication and misleading-surrounding-content attack classes
+are foreclosed by <em>never reading page context into anything
+consumer-facing</em> at all, not by the presence check "verifying" them.
+Restated precisely: the presence check's actual job is deciding whether
+to serve the pinned excerpt (present → serve exactly the text a human
+already reviewed) or fall back (absent → the reviewed claim may no
+longer hold at that URL, don't serve it as current). A failed check —
+now named <strong>drifted</strong>, not "tampered" or "unchanged" — never serves
+<code>APPLICABLE</code> guidance; falls back to the bundled snapshot if one exists
+for that entry, <code>trust_label</code> reflecting the fallback, or to
+<code>NO_OFFICIAL_GUIDANCE_FOUND</code> if none does. Comparison is NFC-normalized
+Unicode, case-sensitive, with no confusable/homoglyph folding — specified
+explicitly rather than left to an implementer's discretion.</p>
+<p><strong>Full design, still not activated in this ADR:</strong></p>
+<ul>
+<li>Retrieval fetches <strong>only</strong> the exact <code>canonical_url</code> already in the
+  registry for that capability/entry — never a search query, never a
+  derived or guessed URL. The "approved documentation family" is the
+  existing Git-tracked registry itself; nothing new is introduced that
+  could fetch an unreviewed URL.</li>
+<li>HTTPS-only, strict TLS validation. <strong>Fixed after red-team review
+  (Finding 3, MATERIAL — four concrete gaps, not one):</strong> (1) the <em>final</em>
+  URL after following any redirect must equal the registered
+  <code>canonical_url</code> <strong>exactly</strong>, not merely share an allow-listed host —
+  the first draft's host-only check would have accepted a same-host
+  redirect to an entirely different, unreviewed page; max 3 redirect
+  hops. (2) the response-size bound (2 MB) must be enforced on the
+  <strong>decompressed</strong> byte stream, checked incrementally as it streams,
+  never solely against a pre-decompression <code>Content-Length</code> header —
+  the first draft's "check size before parse" wording did not actually
+  bound a decompression-bomb response. (3) <code>Content-Type</code> must indicate
+  HTML or plain text before any parse is attempted; anything else aborts
+  the fetch. (4) DNS rebinding: resolve the hostname once, validate the
+  resolved address is public (not private/loopback/link-local) <em>before</em>
+  connecting — a hostname-string allow-list alone does not bind the IP
+  actually connected to. Any of the four failing aborts the fetch,
+  same fallback chain as a drift result.</li>
+<li>A hard fetch timeout, in addition to the above.</li>
+<li><strong>Fixed after red-team review (Finding 4, MATERIAL):</strong> live retrieval
+  <strong>must</strong> use an HTTP transport instance entirely separate from
+  <code>pfsense_client.py</code>'s pfSense-facing transport — no shared client,
+  session, connection pool, cookie jar, or default-header configuration
+  — and must never attach the pfSense API key or any <code>PFSENSE_*</code>
+  credential to a documentation-host request under any circumstance.
+  The first draft never stated this explicitly; a future implementer
+  reusing an existing configured client for convenience was a real,
+  foreseeable path to a credential leak toward <code>docs.netgate.com</code>.</li>
+<li>Extracted text is scanned only for the pinned excerpt's presence — the
+  fetched page's <em>other</em> content is never stored, never summarized, never
+  passed to a model. Only the already-reviewed excerpt (verified present)
+  or a drift signal is ever returned; the live page's full text is
+  discarded after the presence check.</li>
+<li>Cache: TTL-based, proposed default 24 hours (documentation pages change
+  rarely; this bounds request volume without serving indefinitely stale
+  content). <code>GuidanceReference</code> gains <code>retrieval_mode:
+  bundled_snapshot | live_fetch_cached</code>, <code>cached_at: datetime | None</code>,
+  and <code>freshness_state: fresh | stale_cache | drift_detected</code>. Cache is
+  process-lifetime, in-memory only — no disk persistence, matching the
+  guidance layer's existing "owns no mutable state" invariant as closely
+  as a cache can (the cache itself is the one new piece of mutable
+  state this would introduce, and is explicitly scoped: keyed only by
+  <code>source_id</code>, cleared on process restart, never written to disk).</li>
+<li>Offline behavior: if a live fetch fails for any reason (network,
+  timeout, non-2xx, TLS failure, disallowed redirect, drift), fall back
+  to the bundled snapshot for that entry if one exists; otherwise return
+  <code>NO_OFFICIAL_GUIDANCE_FOUND</code> for that entry. Never raise past this
+  boundary, never block on retry — same I6 discipline ADR-017 already
+  established.</li>
+</ul>
+<p><strong>Still not recommended</strong>: a vector database or embeddings. Every
+capability's curated corpus remains small (ADR-017's own ~3-entries-per-
+capability guidance); there is no concrete evidence deterministic,
+per-capability URL retrieval is insufficient. Revisit only if that
+evidence appears.</p>
+<h3 id="5-guidanceevidence-the-read-recommendation-composition-model">5. <code>GuidanceEvidence</code>: the read-recommendation composition model<a class="headerlink" href="#5-guidanceevidence-the-read-recommendation-composition-model" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>GuidanceEvidence:
+  capability: Capability
+  observed_edition: ObservedEdition   # Finding 1 — KNOWN_CE | KNOWN_PLUS | UNKNOWN, never Edition
+  observed_version: str | None
+  appliance_identity_source: str   # e.g. &quot;SystemVersion.base (pfsense_get_system_version)&quot;
+  guidance: tuple[GuidanceReference, ...]   # each carrying its own ApplicabilityState
+  overlay_chain: tuple[str, ...]     # Finding 6 — ordered most-superseded-first,
+                                       # current-truth last; overlay_id values
+  overall_state: ApplicabilityState  # the least-favorable state among
+                                       # guidance/overlays actually applicable,
+                                       # or NO_OFFICIAL_GUIDANCE_FOUND
+</code></pre></div>
+<p>Composition (conceptual — an orchestration function, not a new tool):</p>
+<div class="highlight"><pre><span></span><code>observed appliance (edition, version)
+  -&gt; capability/use case
+  -&gt; lookup_guidance() [extended: returns entries + ApplicabilityState]
+  -&gt; applicable ReleaseOverlays
+  -&gt; GuidanceEvidence
+</code></pre></div>
+<p>This is explicitly <strong>not</strong> wired into any READ tool's output in this ADR
+— "Do not wire this into every READ tool yet" is followed literally.
+<strong>Smallest future integration point, if ever authorized</strong>: a single new
+orchestration function (not a new MCP tool, not a change to any of the
+42 existing tools) that a future consumer — the eventual Tier 1 PREPARE
+phase, most plausibly — could call directly. No READ tool's schema needs
+to change for this to exist; <code>GuidanceEvidence</code> never needs to reach an
+AI client through a <em>tool result</em> to be useful to PREPARE, which is
+server-internal. If a future decision <em>does</em> want an AI client to see
+this directly (e.g., an explicit "get guidance for capability X" tool),
+that is its own separate, later, explicitly-approved public-API decision
+— not a byproduct of accepting this ADR.</p>
+<h2 id="trust-boundary-guidance-remains-evidence-never-authorization">Trust boundary: guidance remains evidence, never authorization<a class="headerlink" href="#trust-boundary-guidance-remains-evidence-never-authorization" title="Permanent link">&para;</a></h2>
+<p>Restating and extending ADR-017's TB-G4, explicitly against every item
+this ADR adds:</p>
+<ul>
+<li><code>ApplicabilityState</code>, <code>ReleaseOverlay</code>, and <code>GuidanceEvidence</code> are all
+  read-only, advisory classifications of <em>documentation content</em> — none
+  has a field of type capability, endpoint, HTTP method, or confirmation
+  token (the same closed-schema constraint ADR-017's G1 already enforces,
+  extended to every new type this ADR introduces).</li>
+<li>Appliance identity resolution (edition/version inference) <strong>observes</strong>
+  state; it cannot select a capability, endpoint, or WRITE action, and
+  has no import path to <code>WriteEndpoints</code>, <code>pfsense_mcp.tier1</code>, or any
+  WRITE-capable transport — same TB-G4 boundary, same enforcement
+  mechanism (AST isolation tests), extended to cover the new module(s).</li>
+<li><code>overall_state</code> can only ever make a future PREPARE phase's evidence
+  <em>weaker</em> by triggering fail-closed behavior (see below) — it can never
+  strengthen or substitute for a Recovery Contract, confirmation, or the
+  sealed executor's own gates. There is no code path from "guidance says
+  APPLICABLE" to "mutation proceeds" that does not pass through every
+  existing Tier 1 gate unchanged.</li>
+<li><strong>Fixed after red-team review (Finding 7, MATERIAL)</strong>: the preceding
+  bullet stated this as a policy intent in the first draft, without
+  pinning down <em>where in the call graph</em> it holds — a future
+  implementer could plausibly (and in good faith) wire
+  <code>GuidanceEvidence.overall_state</code> into the state machine's own
+  transition-rule table alongside the existing PREPARED→EXECUTING gates,
+  which would make "guidance says APPLICABLE" one of several jointly
+  sufficient conditions — a real, if subtle, violation of the intended
+  asymmetry. Fixed with a structural, checkable rule, not only a
+  restated intention: guidance evidence may be consulted <strong>only as a
+  boolean AND-veto applied before contract creation</strong> — <code>may_prepare =
+  existing_authorization AND (guidance_not_required_for_capability OR
+  guidance_check_passes)</code>, never as an OR, never as an independent
+  alternative path — and <strong><code>GuidanceEvidence</code>/<code>ApplicabilityState</code> must
+  never appear as a field the state machine's own transition-rule table
+  (<code>state_machine.py</code>) reads, and must never enter
+  <code>confirmation_authority.md</code>'s digest computation</strong>, both exactly as
+  ADR-017's TB-G4 already established, unchanged. A future reviewer can
+  check this concretely: "is <code>GuidanceEvidence</code> read anywhere inside
+  <code>state_machine.py</code> or the confirmation digest computation? If yes,
+  that's wrong" — not only "does this feel consistent with the stated
+  intent."</li>
+<li>Live retrieval (TB-G3), if ever activated, still cannot expand which
+  capability, endpoint, or document any request touches — it only changes
+  <em>when</em> the exact, pre-approved excerpt is fetched, never <em>what</em> URL is
+  reachable. The registry (Git-tracked, PR-reviewed) remains the only
+  thing that decides which URLs exist to fetch, unchanged from TB-G1.</li>
+<li><strong>Guidance→recommendation separation</strong> (re-examined in red-team
+  review, no change needed): <code>GuidanceEvidence</code>'s fields
+  (<code>observed_edition</code>/<code>observed_version</code>/<code>guidance</code>/<code>overall_state</code>) are
+  structurally separate typed fields, never concatenated into one
+  string — that is this layer's actual, honest guarantee. Whether a
+  future <em>consumer</em> (a prompt template, a tool description) preserves
+  that separation when presenting to a human or model is a
+  consumption-boundary concern, the same class of residual risk
+  ADR-017's TB-G2 already names for excerpt content generally — named
+  here explicitly rather than left implicit.</li>
+</ul>
+<h2 id="future-write-prepare-integration-design-only-not-implemented">Future WRITE / PREPARE integration (design only, not implemented)<a class="headerlink" href="#future-write-prepare-integration-design-only-not-implemented" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>OBSERVED STATE
++ APPLIANCE VERSION (this ADR&#39;s identity resolution)
++ OFFICIAL GUIDANCE (lookup_guidance(), extended)
++ VERSION/EDITION APPLICABILITY (ApplicabilityState)
++ RELEASE-SPECIFIC CAVEATS (ReleaseOverlay)
++ DRY_RUN/VALIDATION EVIDENCE where available (a future capability
+  adapter&#39;s own PREPARE-phase check — see the OPNsense competitive
+  review&#39;s §6/§7 findings on the community pfSense REST API&#39;s `dry_run`
+  parameter, a separate, already-tracked future input)
++ RECOVERY CONTRACT
++ AUTHORIZATION
+= a PREPARE phase whose evidence is honest about what it does and does
+  not know, not merely &quot;structurally present.&quot;
+</code></pre></div>
+<p><strong>Open policy question, not resolved here</strong>: should a capability whose
+safety policy is designed to <em>require</em> official guidance fail PREPARE
+closed when guidance is <code>NO_OFFICIAL_GUIDANCE_FOUND</code>,
+<code>VERSION_UNCONFIRMED</code>, or <code>EDITION_MISMATCH</code>? This ADR's position:
+<strong>yes, for any capability whose adapter contract explicitly opts into
+requiring it</strong> — but <em>not</em> as a blanket rule for every future capability,
+since some capabilities may be safe enough by construction (rate/blast-
+radius limits, reversibility, confirmation) that documentation-derived
+evidence adds little. This is a per-capability-adapter-contract decision
+for Phase 5, not decided here, and explicitly deferred to whichever
+future ADR designs that first real adapter.</p>
+<p><strong>This ADR does not begin Phase 5.</strong> No capability adapter exists to
+wire this into.</p>
+<h2 id="acceptance-record-2026-08-09">Acceptance record (2026-08-09)<a class="headerlink" href="#acceptance-record-2026-08-09" title="Permanent link">&para;</a></h2>
+<p>Accepted following an independent adversarial red-team review
+(<code>reports-ai/reviews/ADR_018_RED_TEAM.md</code>, 10 findings, all fixed) and a
+subsequent independent final acceptance review
+(<code>reports-ai/reviews/ADR_018_ACCEPTANCE_REVIEW.md</code>, verdict RECOMMEND
+ADR-018 ACCEPTANCE, two further coherence gaps found and fixed in that
+same pass). The owner accepted that verdict.</p>
+<p><strong>Acceptance of this ADR:</strong></p>
+<ul>
+<li>Accepts the architecture and trust boundaries described above —
+  <code>ObservedEdition</code>, the appliance-identity assembly point,
+  <code>ApplicabilityState</code>, <code>EvidenceLevel</code>, <code>ReleaseOverlay</code>, the resolved
+  (not activated) TB-G3 live-retrieval design, the <code>GuidanceEvidence</code>
+  composition model, and the guidance-can-only-remove-never-create-
+  permission structural rule — as the authoritative design for future
+  version-aware Official Guidance work.</li>
+<li>Does <strong>NOT</strong> activate live documentation retrieval (TB-G3) — remains
+  its own future, separately-gated decision per this ADR's own
+  "Activation requirements."</li>
+<li>Does <strong>NOT</strong> expose guidance through the public MCP API — no READ
+  tool schema changes, no new guidance-facing tool.</li>
+<li>Does <strong>NOT</strong> activate Tier 1 — the guidance package and any future
+  appliance-identity/guidance code remain unimported by production
+  bootstrap, unchanged.</li>
+<li>Does <strong>NOT</strong> authorize WRITE in any form.</li>
+<li>Does <strong>NOT</strong> resolve future per-capability guidance requirements —
+  whether a given capability's adapter contract opts into <em>requiring</em>
+  guidance evidence for PREPARE remains an explicit Phase-5,
+  per-capability decision (see "Future WRITE / PREPARE integration"
+  above), not decided by this acceptance.</li>
+<li>Does <strong>NOT</strong> authorize Phase 5 — no capability adapter exists, and
+  none is authorized by this acceptance.</li>
+<li><strong>Preserved three explicitly deferred implementation questions</strong>
+  (owner-accepted as non-blocking, not to be silently resolved in a way
+  that changes the properties above). Status as of 2026-08-09, updated by
+  a dedicated design-and-red-team pass
+  (<code>reports-ai/reviews/ADR_018_APPLICABILITY_DECISION_PROCEDURE_RED_TEAM.md</code>):</li>
+<li><strong>The exact <code>APPLICABLE</code>/<code>PARTIALLY_APPLICABLE</code>/<code>STALE</code> decision
+     procedure for a <code>GuidanceReference</code> given its overlay chain —
+     specified, then owner-authorized and implemented (2026-08-09).</strong>
+     <code>applicability.compute_entry_applicability()</code> implements the
+     five-step algorithm <code>docs/VERSION_AWARE_GUIDANCE.md</code>'s "Single-entry
+     applicability decision procedure" section specifies, replacing the
+     removed <code>applicability_state_for_entry_is_not_implemented_here()</code>
+     marker; <code>registry.lookup_guidance()</code> now returns the extended,
+     inclusion-with-state <code>GuidanceReference</code> shape (the "exclude vs.
+     exclude-with-state" policy change this ADR's §2 and this same
+     Acceptance record both flagged as needing separate explicit
+     approval — now granted); <code>bridge.bridge_guidance_reference()</code>
+     implements the <code>GuidanceReference</code>→<code>EvidenceReference</code> bridge.
+     Still entirely offline and unwired: no MCP tool, no READ-tool
+     schema change, no PREPARE/Tier 1 consumer — nothing calls
+     <code>compose_guidance_evidence()</code> yet, and wiring it into a real
+     consumer remains its own separate, explicit, not-yet-granted
+     decision.</li>
+<li><strong><code>NO_OFFICIAL_GUIDANCE_FOUND</code>'s exact runtime representation —
+     formally confirmed CLOSED, not merely assumed.</strong> It is an empty
+     <code>EvidenceReference</code> tuple passed to the already-shipped
+     <code>compose_guidance_evidence()</code> (Step 3), which already computes
+     <code>overall_state = NO_OFFICIAL_GUIDANCE_FOUND</code> via
+     <code>applicability.compute_overall_state(())</code> — not a synthetic
+     sentinel object. No runtime behavior changed by closing this
+     question; it was already true of the shipped Step 2/3 code, only
+     now stated as resolved rather than left listed as open.</li>
+<li><strong>Per-capability guidance-requirement opt-in</strong> — a future Phase-5
+     decision, not this ADR's to make. Unchanged, still open.</li>
+</ul>
+<p>Each piece of the accepted architecture (appliance identity,
+<code>EvidenceLevel</code>/<code>ApplicabilityState</code>/<code>ReleaseOverlay</code>,
+<code>lookup_guidance()</code>'s exclude→include policy change, live retrieval,
+any READ-tool or PREPARE wiring) remains independently gated behind its
+own future, separate, explicit approval exactly as this ADR's
+"Activation requirements" section already specifies — acceptance of the
+architecture is not activation of any of its parts.</p>
+<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
+<ul>
+<li>ADR-017's own explicitly-flagged open items (edition self-challenge,
+  TB-G3's unresolved hash question) are now resolved at the design
+  level — nothing about ADR-017's <em>accepted, shipped</em> scope changes;
+  this ADR's own pieces still require their own separate activation
+  (see "Acceptance record" above).</li>
+<li><code>pfsense_mcp_info</code> (v0.3.1, pushed to <code>origin/main</code> as <code>459262e</code>)
+  requires <strong>no change</strong>. See "Self-challenge: pfsense_mcp_info" below.</li>
+<li>The concrete near-term deliverable, now that this ADR is accepted, is
+  design/spec-only until further, separate implementation approval:
+  <code>ApplicabilityState</code>, <code>EvidenceLevel</code>, <code>ReleaseOverlay</code>,
+  <code>ObservedEdition</code>, <code>ApplianceIdentity</code>, and one canonical
+  <code>resolve_appliance_identity()</code> assembly function (Finding 10 — the
+  single call point every future consumer must share, not merely a
+  single inference sub-function), as new, tested, but <strong>unwired</strong> code —
+  the same "implemented, inert, isolated" pattern ADR-017 and Tier 1
+  already use. Live retrieval (TB-G3 activation), the include-vs-exclude
+  policy change to <code>lookup_guidance()</code>, and any READ-tool or PREPARE
+  wiring each remain their own, later, separately-gated decisions.</li>
+<li>This revision followed an independent adversarial review
+  (<code>reports-ai/reviews/ADR_018_RED_TEAM.md</code>, 10 findings — 2 BLOCKING, 6
+  MATERIAL, 1 MINOR, 1 confirmed no-issue) required by the owner before
+  requesting acceptance. Every "Fixed after red-team review" note above
+  marks a real change from the first draft, not a rubber stamp.</li>
+</ul>
+<h2 id="self-challenges">Self-challenges<a class="headerlink" href="#self-challenges" title="Permanent link">&para;</a></h2>
+<h3 id="self-challenge-pfsense_mcp_info">Self-challenge: pfsense_mcp_info<a class="headerlink" href="#self-challenge-pfsense_mcp_info" title="Permanent link">&para;</a></h3>
+<p>Does the already-implemented, already-validated, already-pushed
+<code>pfsense_mcp_info</code> need to change now that appliance identity resolution
+exists? Re-asked and re-confirmed independently during red-team review,
+not merely carried over from the design pass.</p>
+<p><strong>No.</strong> <code>pfsense_mcp_info</code>'s entire design invariant is "local process
+facts only, zero pfSense API calls" (explicitly required by its own
+authorizing instructions and enforced by <code>openWorldHint=false</code>).
+Appliance edition/version fundamentally requires an already-existing
+pfSense API call (<code>pfsense_get_system_version</code>) — folding that in would
+break the one invariant that makes <code>pfsense_mcp_info</code> cheap, safe, and
+side-effect-free to call. The existing <code>pfsense_get_system_version</code> tool
+already exposes the raw fact (<code>base</code>); a future edition-inference
+utility function (this ADR) is the shared place that interprets it —
+shared by any future consumer, not duplicated, and not owned by
+<code>pfsense_mcp_info</code>. <strong>Recommendation confirmed: no change to
+<code>pfsense_mcp_info</code>'s already-validated design.</strong></p>
+<h3 id="self-challenge-is-the-ceplus-version-scheme-discriminator-itself-gameable-or-fragile">Self-challenge: is the CE/Plus version-scheme discriminator itself gameable or fragile?<a class="headerlink" href="#self-challenge-is-the-ceplus-version-scheme-discriminator-itself-gameable-or-fragile" title="Permanent link">&para;</a></h3>
+<p>An appliance could theoretically report a spoofed or corrupted
+<code>/etc/version</code> file. This is not a new risk this ADR introduces — every
+existing READ tool already trusts pfSense's own reported state as
+ground truth (this project has no independent way to verify pfSense
+itself is honest, and treating it as untrusted would make every READ
+tool's output equally suspect, which is out of scope for this ADR to
+solve). The discriminator's actual fragility is scheme-drift risk (what
+if Netgate changes the numbering scheme again) — mitigated by the
+explicit "outside both known ranges → unknown, never guess" fallback,
+which fails closed exactly the way ADR-017's edition-unknown default
+already does today.</p>
+<h3 id="self-challenge-does-including-near-miss-guidance-partially_applicable-version_unconfirmed-instead-of-excluding-it-increase-prompt-injection-surface">Self-challenge: does including near-miss guidance (PARTIALLY_APPLICABLE, VERSION_UNCONFIRMED) instead of excluding it increase prompt-injection surface?<a class="headerlink" href="#self-challenge-does-including-near-miss-guidance-partially_applicable-version_unconfirmed-instead-of-excluding-it-increase-prompt-injection-surface" title="Permanent link">&para;</a></h3>
+<p>No new surface: the same TB-G2 boundary applies unchanged — excerpt text
+still only ever flows into a bounded, typed field, never into anything
+instruction-bearing, regardless of which <code>ApplicabilityState</code> it carries.
+Including <em>more</em> results with an honest state label is strictly more
+information than silently excluding them was, and G1's closed schema
+means a state label cannot itself be read as authorization no matter how
+it's set — the risk this question is really probing (could a malicious
+document manufacture an <code>APPLICABLE</code> label for itself) is foreclosed by
+<code>ApplicabilityState</code> being computed entirely from registry metadata
+(<code>pfsense_edition</code>, <code>version_applicability</code>, overlay entries) that TB-G1
+already establishes is Git-tracked, PR-reviewed, and never derived from
+the fetched content itself — the <em>state</em> is data about the document
+elected by a human reviewer, not something the document's own text can
+influence.</p>
+<h2 id="alternatives-considered">Alternatives considered<a class="headerlink" href="#alternatives-considered" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Do nothing; keep <code>version_mismatch: bool</code> as a permanent False</strong> —
+  rejected: leaves the owner's stated objective (version-aware guidance)
+  entirely unaddressed and leaves ADR-017's own explicitly-reserved field
+  permanently unused.</li>
+<li><strong>Free-text edition/version matching via regex against arbitrary
+  version strings, not scheme-based</strong> — rejected: exactly the "fragile
+  heuristic" the owner's instruction warned against; the scheme-based
+  approach is grounded in Netgate's own documented, intentional design
+  choice, not pattern-matching happenstance.</li>
+<li><strong>Vector database / embeddings for retrieval</strong> — rejected per the
+  owner's explicit instruction and ADR-017's own existing "Future
+  migration path" reasoning: no evidence the small, curated,
+  per-capability corpus needs it.</li>
+<li><strong>Full-page hashing for TB-G3 instead of substring presence</strong> —
+  rejected: requires defining a page-normalization scheme (whitespace,
+  markup, ads/nav-chrome changes) that would false-positive on every
+  cosmetic site update; substring presence directly answers the only
+  question that matters and degrades safely.</li>
+</ul>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>docs/adr/ADR-017-official-guidance-layer.md</code> — the accepted base this
+  ADR extends.</li>
+<li><code>docs/OFFICIAL_GUIDANCE_LAYER.md</code> — ADR-017's companion spec; TB-G3 and
+  the edition self-challenge are the two sections this ADR resolves.</li>
+<li><code>docs/VERSION_AWARE_GUIDANCE.md</code> — this ADR's own companion spec
+  (implementation-ready detail, still not implemented).</li>
+<li><code>reports-ai/reviews/OPNSENSE_MCP_COMPETITIVE_REVIEW.md</code> — §2/§3/§6/§7,
+  the competitive-review findings that fed this design (appliance
+  compatibility model, observability vocabulary, <code>dry_run</code> as a future
+  PREPARE input).</li>
+<li><code>reports-ai/reviews/ADR_018_RED_TEAM.md</code> — the independent adversarial
+  review of this ADR's first draft: 2 BLOCKING and 6 MATERIAL findings,
+  all fixed in this text. Read it for full failure scenarios behind each
+  "Fixed after red-team review" note above.</li>
+<li><code>docs.netgate.com/pfsense/en/latest/releases/versions.html</code> — the
+  primary source for the CE/Plus version-numbering-scheme distinction,
+  independently re-verified twice (design pass and red-team pass).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

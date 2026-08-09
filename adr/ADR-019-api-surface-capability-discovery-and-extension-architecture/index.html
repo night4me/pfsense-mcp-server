@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-005-inert-tier-0-write-infrastructure/">
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/">
       
       
-        <link rel="prev" href="../ADR-004-capability-profiles/">
+        <link rel="prev" href="../ADR-018-version-aware-guidance-resolution/">
       
       
-        <link rel="next" href="../ADR-006-recovery-contract-philosophy/">
+        <link rel="next" href="../../tier1/specs/protected_artifact_encryption/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>ADR-005 Inert Tier 0 WRITE infrastructure - pfsense-mcp-server</title>
+        <title>ADR-019 API surface, capability discovery and extension architecture - pfsense-mcp-server</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#adr-005-inert-tier-0-write-infrastructure" class="md-skip">
+        <a href="#adr-019-api-surface-capability-discovery-and-extension-architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ADR-005 Inert Tier 0 WRITE infrastructure
+              ADR-019 API surface, capability discovery and extension architecture
             
           </span>
         </div>
@@ -1480,37 +1480,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-005 Inert Tier 0 WRITE infrastructure
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
         
   
   
@@ -1526,109 +1499,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Context
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decision" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Decision
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alternatives-considered" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alternatives considered
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2002,10 +1872,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2021,6 +1918,164 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundary-understanding-is-not-exposure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundary: understanding is not exposure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-record-2026-08-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance record (2026-08-09)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenges
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Self-challenges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-formalizing-a-catalogue-create-the-very-allow-list-confusion-risk-it-warns-against" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does formalizing a catalogue create the very allow-list-confusion risk it warns against?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-is-no-generic-dispatch-actually-a-new-decision-or-already-true" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: is "no generic dispatch" actually a new decision, or already true?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-no-methodpath-parameter-actually-close-the-dispatch-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does "no method=/path= parameter" actually close the dispatch risk?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-the-featurecapabilitystate-model-duplicate-applicabilitystate-adr-018" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does the FeatureCapabilityState model duplicate ApplicabilityState (ADR-018)?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2919,6 +2974,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#trust-boundary-understanding-is-not-exposure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundary: understanding is not exposure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-record-2026-08-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance record (2026-08-09)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#consequences" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2927,14 +3004,25 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Consequences">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenges
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Self-challenges">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
+  <a href="#self-challenge-does-formalizing-a-catalogue-create-the-very-allow-list-confusion-risk-it-warns-against" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Positive
+        Self-challenge: does formalizing a catalogue create the very allow-list-confusion risk it warns against?
       
     </span>
   </a>
@@ -2942,10 +3030,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
+  <a href="#self-challenge-is-no-generic-dispatch-actually-a-new-decision-or-already-true" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Negative
+        Self-challenge: is "no generic dispatch" actually a new decision, or already true?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-no-methodpath-parameter-actually-close-the-dispatch-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does "no method=/path= parameter" actually close the dispatch risk?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#self-challenge-does-the-featurecapabilitystate-model-duplicate-applicabilitystate-adr-018" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-challenge: does the FeatureCapabilityState model duplicate ApplicabilityState (ADR-018)?
       
     </span>
   </a>
@@ -2996,7 +3106,7 @@
 
 
   
-    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-005-inert-tier-0-write-infrastructure.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-019-api-surface-capability-discovery-and-extension-architecture.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -3004,56 +3114,289 @@
   
 
 
-<h1 id="adr-005-inert-tier-0-write-infrastructure">ADR-005: Inert Tier 0 WRITE infrastructure<a class="headerlink" href="#adr-005-inert-tier-0-write-infrastructure" title="Permanent link">&para;</a></h1>
-<ul>
-<li><strong>Status:</strong> Accepted</li>
-<li><strong>Date:</strong> 2026-08-06</li>
-</ul>
+<h1 id="adr-019-api-surface-capability-discovery-and-extension-architecture">ADR-019: API Surface, Capability Discovery, and Extension Architecture<a class="headerlink" href="#adr-019-api-surface-capability-discovery-and-extension-architecture" title="Permanent link">&para;</a></h1>
+<p>Status: <strong>Accepted</strong> (2026-08-09) — architecture and vocabulary only. See
+"Acceptance record" below for exactly what acceptance grants and what it
+explicitly does not. Nothing in this ADR is implemented yet; every
+mechanism it describes still requires its own separate, explicit future
+approval before any line of code is written. This ADR does not change the
+public MCP contract (still 42 READ / 0 WRITE), does not begin Phase 5,
+does not activate WRITE, and does not modify <code>pfsense_mcp_info</code> or
+ADR-018.</p>
+<p><strong>Independently red-teamed, then independently acceptance-reviewed,
+before acceptance</strong> — <code>reports-ai/reviews/ADR_019_RED_TEAM.md</code> (0
+BLOCKING, 5 MATERIAL, 3 MINOR, all fixed) and
+<code>reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md</code> (a separate,
+independent acceptance-track pass, 0 BLOCKING, 4 further MATERIAL
+findings, all fixed — verdict ACCEPT WITH CHANGES). Findings and their
+resolution are summarized in "Self-challenges" below; read both reports
+for full failure scenarios.</p>
 <h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
-<p>Future mutation requires recovery, rollback, audit, and allow-list primitives
-that are difficult to design safely at the same moment as the first production
-side effect. Those primitives needed tests without expanding the current MCP or
-network surface.</p>
+<p>This project currently exposes 42 individually typed, individually
+reviewed READ tools against a pfSense REST API surface that is, in
+reality, far larger — hundreds of documented operations across dozens of
+domains, plus whatever a given appliance's installed packages add. As
+this project's coverage grows — and eventually as a WRITE track begins —
+the risk is not "too few tools." It is that convenience pressure to cover
+more of that surface faster eventually produces the pattern a competitive
+review performed for this ADR found in a real, shipped competitor
+(<code>Pixelworlds/opnsense-mcp-server</code>,
+<code>reports-ai/reviews/PIXELWORLDS_OPNSENSE_MCP_COMPETITIVE_REVIEW.md</code>):
+reflection-generated tool schemas with no human curation gate, producing
+a tool (<code>core_manage</code>) whose <code>method</code> parameter includes <code>systemReboot</code>
+and <code>systemHalt</code> in the exact same schema, same trust tier, as a status
+read.</p>
+<p>The owner asked for an architecture investigation — not implementation —
+into how this project can <em>understand</em> a much larger API/package/plugin
+surface than it exposes today, without that understanding automatically
+becoming exposure or authorization. The primary design invariant given:</p>
+<div class="highlight"><pre><span></span><code>DISCOVERED != SUPPORTED != AVAILABLE != AUTHORIZED != EXPOSED
+</code></pre></div>
 <h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
-<p>Tier 0 WRITE infrastructure exists as tested library code but is inert by
-construction:</p>
+<p>Adopt a <strong>vocabulary and evaluation</strong>, not a build plan. Full technical
+detail: <code>docs/API_SURFACE_ARCHITECTURE.md</code> (this ADR's companion spec,
+mirroring <code>OFFICIAL_GUIDANCE_LAYER.md</code>'s relationship to ADR-017 and
+<code>VERSION_AWARE_GUIDANCE.md</code>'s relationship to ADR-018). Summary of each
+part:</p>
+<ol>
+<li><strong>Endpoint Catalogue vocabulary</strong> (companion spec Part 1): a
+   seven-state sequence — <code>DISCOVERED</code> → <code>CATALOGUED</code> → <code>TYPED</code> →
+   <code>IMPLEMENTED</code> → <code>CAPABILITY-MAPPED</code> → <code>AUTHORIZED</code> → <code>MCP_EXPOSED</code> —
+   formalizing the pipeline this project already practices informally via
+   <code>scripts/discover_endpoints.py</code>/<code>scripts/lib/openapi.py</code>, which
+   already fetch pfSense's own live OpenAPI 3.0 schema
+   (<code>GET /api/v2/schema/openapi</code>, primary-source confirmed) for
+   inspection-only discovery. <code>CAPABILITY-MAPPED</code> and <code>AUTHORIZED</code> are
+   two distinct states, not one — split during the acceptance-track
+   review (<code>reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md</code>) because
+   they are the same event for READ (<code>SUPPORTED_CAPABILITIES_THIS_BUILD</code>
+   is READ's only gate) but two independently enforced chokepoints for a
+   mutation (<code>SUPPORTED_CAPABILITIES_THIS_BUILD</code> gates registration;
+   <code>WriteEndpoints</code> separately gates the executor's send path).</li>
+<li><strong>No generic API escape hatch</strong> (companion spec Part 3): a
+   <strong>permanent</strong> invariant — no <code>pfsense_api_call(method, path, body)</code>
+   or equivalent dynamic dispatch, ever. Concretely evidenced, not
+   theoretical: the companion competitive review's <code>core_manage</code> finding.</li>
+<li><strong>Feature/Package Capability vocabulary</strong> (companion spec Part 2): a
+   second, deliberately separate five-state sequence for
+   <em>installed-package</em> awareness — <code>DISCOVERED</code> → <code>AVAILABLE</code> →
+   <code>SUPPORTED</code> → <code>AUTHORIZED</code> → <code>EXPOSED</code> — with the invariant that
+   <code>AVAILABLE</code> (observed installed, e.g. via the already-shipped
+   <code>pfsense_get_system_packages</code> tool) must never, by itself, cause any
+   transition toward <code>SUPPORTED</code>, <code>AUTHORIZED</code>, or <code>EXPOSED</code>.</li>
+<li><strong>Relationship to ADR-018's <code>ApplianceIdentity</code></strong> (companion spec
+   Part 4): a future <code>InstalledFeatures</code> model is a sibling, never a
+   duplicate — <code>resolve_appliance_identity()</code> remains the one canonical
+   identity assembly point.</li>
+<li><strong>Relationship to Version-aware Official Guidance</strong> (companion spec
+   Part 5): endpoint/package information may become additional
+   <em>evidence</em> alongside <code>GuidanceEvidence</code>, strictly additive, never
+   authority — ADR-018's already-accepted trust boundary is unchanged.</li>
+<li><strong>Progressive capability discovery</strong> (companion spec Part 6):
+   evaluated four options; current preference (many explicit typed
+   tools) confirmed with no reason found to change at current or
+   near-term scale. Dynamic/progressive discovery mechanisms rejected for
+   the foreseeable future — they would reintroduce a runtime-decided
+   reachable surface one layer up from where Part 3 already rejects it.</li>
+<li><strong>Retry semantics</strong> (companion spec Part 7): READ retry, if ever
+   implemented, bounded to transport-level failures only, never a
+   received response; WRITE retry never automatic by default — this
+   restates, rather than changes, the existing accepted Tier 1 sealed
+   executor's 4xx-<code>VERIFIED_FAILURE</code>-vs-5xx/3xx-<code>AMBIGUOUS</code>-to-
+   reconciliation classification. No retry logic exists anywhere in this
+   project today (confirmed by direct inspection) — a clean slate.</li>
+<li><strong>TLS trust</strong> (companion spec Part 8): evaluated and judged
+   <strong>already sufficient</strong> — <code>src/pfsense_mcp/tls.py</code>'s existing
+   <code>STRICT</code>/<code>AUTO</code>/<code>INSECURE</code> model already matches pfSense's own
+   documented self-signed/internal-CA pattern, with <code>INSECURE</code> requiring
+   explicit configuration and documented as temporary. <strong>No dedicated
+   TLS Trust Bootstrap ADR is warranted at this time.</strong></li>
+<li><strong>Generated typed client</strong> (companion spec Part 9): if ever built, a
+   generator may only produce <code>DISCOVERED</code>/<code>CATALOGUED</code>-layer artifacts
+   or draft response-model candidates for human review-and-commit —
+   never an auto-registered MCP tool, <code>Capability</code> mapping, or
+   <code>WriteEndpoints</code> entry. Deferred — no current bottleneck identified.</li>
+<li><strong>Machine-readable coverage report</strong> (companion spec Part 10):
+    concept adopted as a natural extension of the existing discovery
+    script; implementation deferred; explicitly never authorization.</li>
+<li><strong>Permanently forbidden operations</strong> (companion spec Part 11):
+    evaluated and <strong>rejected as a new enforcement mechanism</strong> — the
+    existing allow-list model (<code>SUPPORTED_CAPABILITIES_THIS_BUILD</code>,
+    <code>WriteEndpoints</code>) already makes absence equivalent to prohibition. A
+    documentation-only "never" list is recommended as a future,
+    separately-authorized addition to <code>docs/SECURITY_MODEL.md</code>.</li>
+</ol>
+<h2 id="trust-boundary-understanding-is-not-exposure">Trust boundary: understanding is not exposure<a class="headerlink" href="#trust-boundary-understanding-is-not-exposure" title="Permanent link">&para;</a></h2>
+<p>Every part above shares one invariant, restated once here because it is
+the single property this whole ADR exists to protect: <strong>a fact this
+project's tooling learns about the pfSense API surface, or about a
+connected appliance's installed packages, must never by itself change
+what any MCP client can call.</strong> The only things that ever change what is
+reachable are the same two mechanisms that already govern it today —
+<code>SUPPORTED_CAPABILITIES_THIS_BUILD</code> and <code>WriteEndpoints</code> — both closed,
+both requiring a human-authored code change and the existing review/CI
+gates, neither ever mutated at runtime by a discovery result, a package
+observation, or a generated artifact.</p>
+<h2 id="acceptance-record-2026-08-09">Acceptance record (2026-08-09)<a class="headerlink" href="#acceptance-record-2026-08-09" title="Permanent link">&para;</a></h2>
+<p>Accepted following an independent adversarial red-team review
+(<code>reports-ai/reviews/ADR_019_RED_TEAM.md</code>, 13 owner-named attack
+scenarios, 0 BLOCKING, 5 MATERIAL and 3 MINOR findings all fixed) and a
+subsequent, separate, independent acceptance-track review
+(<code>reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md</code>, seven owner-named
+scrutiny areas, 0 BLOCKING, 4 further MATERIAL findings all fixed in the
+same pass — verdict <strong>ACCEPT WITH CHANGES</strong>). The owner accepted that
+verdict. This acceptance record preserves both reviews' findings and
+rationale in place (see "Self-challenges" below and the two linked
+reports) rather than restating or reopening them.</p>
+<p><strong>Acceptance of this ADR:</strong></p>
 <ul>
-<li>production bootstrap does not construct a write client/store/audit path;</li>
-<li><code>WriteEndpoints</code> has zero entries;</li>
-<li>no WRITE capability is active in any profile;</li>
-<li>no WRITE MCP tool registers;</li>
-<li><code>tools/write</code> is never imported by production code;</li>
-<li>static checks independently enforce these properties.</li>
+<li>Accepts the vocabulary and evaluation described above — the seven-state
+  Endpoint Catalogue sequence (<code>DISCOVERED</code> → <code>CATALOGUED</code> → <code>TYPED</code> →
+  <code>IMPLEMENTED</code> → <code>CAPABILITY-MAPPED</code> → <code>AUTHORIZED</code> → <code>MCP_EXPOSED</code>, with
+  <code>CAPABILITY-MAPPED</code>/<code>AUTHORIZED</code> explicitly split per the acceptance
+  review), the five-state Feature/Package Capability sequence
+  (<code>DISCOVERED</code> → <code>AVAILABLE</code> → <code>SUPPORTED</code> → <code>AUTHORIZED</code> → <code>EXPOSED</code>),
+  the permanent no-generic-dispatch invariant (including its
+  acceptance-review-strengthened form — no <code>getattr</code>/<code>setattr</code>/<code>hasattr</code>
+  dispatch on the client object, not merely no schema-visible <code>method=</code>/
+  <code>path=</code> parameter), and every Part 4–11 evaluation — as the
+  authoritative design for future API-surface, capability-discovery, and
+  extension work.</li>
+<li>Does <strong>NOT</strong> authorize implementation of any mechanism this ADR
+  describes — the <code>CATALOGUED</code>-layer artifact, <code>FeatureCapabilityState</code>,
+  generated-client tooling, the coverage report, or any retry code —
+  each remains its own future, separately-gated decision. (The first such
+  decision — the Endpoint Catalogue implementation slice — is recorded
+  separately; see "Current architecture" in <code>AI_CONTEXT.md</code> and
+  <code>reports-ai/latest.md</code> for whether and when it was authorized and
+  built, since that is a later, distinct event from this acceptance.)</li>
+<li>Does <strong>NOT</strong> change the public MCP contract — still 42 READ / 0 WRITE,
+  byte-identical.</li>
+<li>Does <strong>NOT</strong> authorize <code>FeatureCapabilityState</code>, package/plugin
+  discovery, or any package-aware tool.</li>
+<li>Does <strong>NOT</strong> authorize progressive/dynamic MCP-level tool discovery —
+  Part 6 rejects it for the foreseeable future.</li>
+<li>Does <strong>NOT</strong> authorize certificate/fingerprint pinning, READ retry
+  behavior, or any TLS-behavior change — Part 7/8 evaluate and defer or
+  confirm-sufficient, they do not activate anything.</li>
+<li>Does <strong>NOT</strong> authorize Phase 5 or WRITE in any form.</li>
+<li>Does <strong>NOT</strong> modify ADR-018 or <code>pfsense_mcp_info</code>.</li>
+<li><strong>Preserves, unresolved, the future questions this ADR itself names as
+  deliberately not resolved</strong> (see "Consequences" below): which specific
+  pfSense packages (if any) are worth building <code>SUPPORTED</code> capabilities
+  for; whether a future <code>CATALOGUED</code> artifact should be a checked-in file
+  or generated on demand; the exact wording of a future "permanently
+  forbidden operations" documentation addition to
+  <code>docs/SECURITY_MODEL.md</code>.</li>
 </ul>
-<p>The READ architecture and <code>RestApiClient</code> remain unchanged.</p>
+<p>Each mechanism this ADR describes remains independently gated behind its
+own future, separate, explicit approval — acceptance of the architecture
+is not activation of any of its parts.</p>
 <h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
-<h3 id="positive">Positive<a class="headerlink" href="#positive" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Recovery concepts can be tested before activation.</li>
-<li>Current production risk remains READ-only.</li>
-<li>Multiple independent gates must change intentionally for Tier 1.</li>
-</ul>
-<h3 id="negative">Negative<a class="headerlink" href="#negative" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Dormant code can be mistaken for production-ready functionality.</li>
-<li>Tests may give false confidence if Tier 1 prerequisites are not tracked.</li>
-<li>Future activation must replace zero-entry assertions with precise manifests,
-  not simply delete safety checks.</li>
-</ul>
+<p><strong>Positive</strong>: this project gains a durable vocabulary for reasoning about
+its own future growth (endpoint coverage, package-awareness, eventual
+WRITE track) without that vocabulary itself becoming a new attack
+surface. The existing <code>scripts/discover_endpoints.py</code> tool is confirmed,
+not replaced, as the correct shape for <code>DISCOVERED</code>-layer tooling. The
+existing TLS design is confirmed sufficient without new work. The
+existing zero-retry baseline is confirmed as the right starting point for
+a READ/WRITE-differentiated policy, decided before any retry code exists
+rather than retrofitted after.</p>
+<p><strong>Negative / cost</strong>: this ADR adds conceptual surface (two new closed
+vocabularies) that must be kept coherent with the existing <code>EndpointInfo.
+verified</code>/<code>Capability</code>/<code>WriteEndpoints</code> model as both evolve — a future
+implementer must read this ADR's companion spec's explicit note that
+<code>VERIFIED</code> is not redefined, only contextualized, or risk two documents
+disagreeing about what the word means.</p>
+<p><strong>Deliberately not resolved by this ADR</strong>: whether any specific pfSense
+package (pfBlockerNG, FRR, HAProxy, ACME, Suricata, or others) actually
+exposes REST API surface worth building <code>SUPPORTED</code> capabilities for;
+whether a durable <code>CATALOGUED</code> artifact should be a checked-in file or
+generated on demand; the exact wording of any future "permanently
+forbidden" documentation list. Each is named as a real future question,
+not silently decided here.</p>
+<h2 id="self-challenges">Self-challenges<a class="headerlink" href="#self-challenges" title="Permanent link">&para;</a></h2>
+<p>Full adversarial pass: <code>reports-ai/reviews/ADR_019_RED_TEAM.md</code>. Findings
+summarized here, folded into the Decision/Trust-boundary sections above
+rather than left only in the review document:</p>
+<h3 id="self-challenge-does-formalizing-a-catalogue-create-the-very-allow-list-confusion-risk-it-warns-against">Self-challenge: does formalizing a catalogue create the very allow-list-confusion risk it warns against?<a class="headerlink" href="#self-challenge-does-formalizing-a-catalogue-create-the-very-allow-list-confusion-risk-it-warns-against" title="Permanent link">&para;</a></h3>
+<p>A checked-in <code>CATALOGUED</code> artifact, if ever built, would sit in the same
+repository as <code>Endpoints</code>/<code>WriteEndpoints</code>. A future contributor
+skimming the repo could plausibly mistake "this endpoint is in the
+catalogue" for "this endpoint is authorized." The first draft of this
+ADR mitigated this with prose alone ("a catalogue entry has no runtime
+effect"); the red-team pass found that insufficient given this project's
+own established pattern of backing every isolation claim with a test, not
+just a docstring (<code>reports-ai/reviews/ADR_019_RED_TEAM.md</code>, Finding 1).
+Fixed: companion spec Part 1 now requires any future catalogue to be
+stored as non-executable data and covered by an AST-based isolation test
+proving no import relationship with <code>Endpoints</code>/<code>WriteEndpoints</code>/
+<code>Capability</code>/<code>ToolRegistry</code>, in the same style as the existing <code>tier1</code>/
+<code>guidance</code> isolation tests. The same pattern was applied to package
+discovery (companion spec Part 2, Finding 2).</p>
+<h3 id="self-challenge-is-no-generic-dispatch-actually-a-new-decision-or-already-true">Self-challenge: is "no generic dispatch" actually a new decision, or already true?<a class="headerlink" href="#self-challenge-is-no-generic-dispatch-actually-a-new-decision-or-already-true" title="Permanent link">&para;</a></h3>
+<p>Already true today — no dynamic-dispatch tool exists in this project's
+current 42-tool surface. This ADR's contribution is making that fact a
+<strong>named, permanent, evidenced invariant</strong> rather than an unexamined
+accident of how the project happened to grow so far, specifically so a
+future contributor proposing "just one flexible tool to cover the long
+tail faster" has a documented decision to weigh against, with a concrete
+failure example (<code>core_manage</code>) rather than an abstract objection.</p>
+<h3 id="self-challenge-does-no-methodpath-parameter-actually-close-the-dispatch-risk">Self-challenge: does "no <code>method=</code>/<code>path=</code> parameter" actually close the dispatch risk?<a class="headerlink" href="#self-challenge-does-no-methodpath-parameter-actually-close-the-dispatch-risk" title="Permanent link">&para;</a></h3>
+<p>No — the first draft only forbade dispatch <em>visible in the public
+schema</em>. The red-team pass (Finding 3, MATERIAL) identified the subtler
+failure the companion competitive review's own evidence actually
+demonstrates: Pixelworlds' <code>core_manage</code> tool has a <em>closed-looking</em>
+enum parameter, not an open string — the danger is not the parameter's
+schema shape, it is that one tool's implementation internally selects
+among multiple distinct underlying operations at call time. Fixed:
+companion spec Part 3 now states the invariant as a rule about
+<em>implementation</em>, not schema shape — one tool, one <code>Capability</code>, exactly
+one fixed underlying client method call, with a recommended future
+mechanical (AST-based) check, not a schema-level check alone.</p>
+<h3 id="self-challenge-does-the-featurecapabilitystate-model-duplicate-applicabilitystate-adr-018">Self-challenge: does the <code>FeatureCapabilityState</code> model duplicate <code>ApplicabilityState</code> (ADR-018)?<a class="headerlink" href="#self-challenge-does-the-featurecapabilitystate-model-duplicate-applicabilitystate-adr-018" title="Permanent link">&para;</a></h3>
+<p>No — <code>ApplicabilityState</code> (ADR-018) answers "is this <em>guidance document</em>
+applicable to the observed appliance." <code>FeatureCapabilityState</code> (this
+ADR) answers "is this <em>package</em> installed, and has this project decided
+to build anything for it." Different subjects, different questions,
+deliberately not unified into one enum — see companion spec Part 2's
+explicit reasoning for keeping the two vocabularies (Part 1 and Part 2)
+separate for the same reason.</p>
 <h2 id="alternatives-considered">Alternatives considered<a class="headerlink" href="#alternatives-considered" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Implement first WRITE tool immediately:</strong> rejected because recovery/crash
-  behavior was unresolved.</li>
-<li><strong>Keep all WRITE design only in prose:</strong> rejected because primitives and
-  architectural chokepoints benefit from executable tests.</li>
-<li><strong>Wire the client but hide tools:</strong> rejected because construction would make
-  dormant code unnecessarily reachable.</li>
+<li><strong>One unified <code>SurfaceState</code> enum</strong> covering both endpoints and
+  packages. Rejected — companion spec Part 2 explains why: an endpoint's
+  existence is a property of the API surface itself, discoverable once;
+  a package's installation is a property of one specific appliance,
+  observed live. Conflating them would eventually force one of the two
+  concepts to stretch its meaning to cover the other.</li>
+<li><strong>Adopting Pixelworlds/opnsense-mcp-server's reflection-generation
+  pattern directly</strong>, reasoning that "generate now, curate later" is
+  faster. Rejected — the companion competitive review demonstrates
+  concretely what "curate later" actually produces when there is no
+  structural gate forcing the curation step to happen before shipping.</li>
+<li><strong>A parallel "permanently forbidden" registry</strong> (companion spec Part
+  11). Rejected as redundant enforcement over an already-closed
+  allow-list; a documentation-only convention recommended instead.</li>
 </ul>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../WRITE_TIER0_SPEC/">Tier 0 specification</a></li>
-<li><a href="../../TIER1_ROADMAP/">Tier 1 roadmap</a></li>
-<li><a href="../ADR-006-recovery-contract-philosophy/">ADR-006</a></li>
+<li><code>docs/API_SURFACE_ARCHITECTURE.md</code> — full technical detail for every
+  part of this Decision.</li>
+<li><code>reports-ai/reviews/PIXELWORLDS_OPNSENSE_MCP_COMPETITIVE_REVIEW.md</code> —
+  primary evidentiary source.</li>
+<li><code>reports-ai/reviews/ADR_019_RED_TEAM.md</code> — independent adversarial
+  review of this ADR's first draft.</li>
+<li><code>docs/adr/ADR-004-capability-profiles.md</code>,
+  <code>docs/adr/ADR-007-security-first-public-schemas.md</code> — the existing
+  capability/schema controls this ADR's invariants are grounded in.</li>
+<li><code>docs/adr/ADR-018-version-aware-guidance-resolution.md</code>,
+  <code>src/pfsense_mcp/guidance/appliance_identity.py</code> — integration points
+  (companion spec Parts 4–5).</li>
+<li><code>src/pfsense_mcp/endpoints.py</code>, <code>src/pfsense_mcp/write_endpoints.py</code>,
+  <code>src/pfsense_mcp/capabilities.py</code>, <code>src/pfsense_mcp/tls.py</code>,
+  <code>scripts/discover_endpoints.py</code>, <code>scripts/lib/openapi.py</code> — existing
+  code this ADR's vocabulary extends conceptually without modifying.</li>
 </ul>
 
 
