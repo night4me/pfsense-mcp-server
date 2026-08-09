@@ -36,6 +36,15 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Expanded `CONTRIBUTING.md` (local-setup troubleshooting, git/PR workflow,
   a full documentation map) and `SECURITY.md` (explicit security
   guarantees, non-goals, and vulnerability-report scope).
+- `make sbom`: generates a CycloneDX JSON Software Bill of Materials from
+  a clean, isolated install of a freshly built wheel (never the developer
+  host), using a pinned `cyclonedx-bom` version in a separate throwaway
+  venv, then verifies the result offline (`scripts/verify_sbom.py`)
+  before writing it to the git-ignored `dist/sbom/`. Deliberately outside
+  `quick`/`validate`/`release-check` (requires network access to install
+  the pinned generator tool); generating the SBOM is not the same as
+  publishing it — attaching it to a release remains a separate, explicit
+  owner decision (`docs/DEPENDENCY_POLICY.md`).
 - ADR-017 and its companion spec (`docs/OFFICIAL_GUIDANCE_LAYER.md`):
   architecture for an official pfSense/Netgate documentation guidance
   layer — a deterministic, capability-keyed registry over a curated

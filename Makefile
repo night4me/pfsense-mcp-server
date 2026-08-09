@@ -6,7 +6,7 @@
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
-        docs-build docs-serve
+        docs-build docs-serve sbom
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -275,3 +275,41 @@ docs-build:
 
 docs-serve:
 	@$(PYTHON) -m mkdocs serve
+
+# Software Bill of Materials (SBOM) generation. Deliberately outside
+# quick/validate/release-check -- an occasional, explicit, network-
+# requiring workflow (installs a pinned third-party tool from PyPI into a
+# throwaway venv), not a CI gate, matching
+# docs/DEPENDENCY_POLICY.md's "SBOM tooling is not a runtime dependency."
+#
+# Builds a fresh wheel, installs it into one clean, isolated venv (same
+# pattern as package-check -- never the developer host, per
+# DEPENDENCY_POLICY.md's "should describe the built distribution
+# environment, not the developer host"), generates a CycloneDX JSON SBOM
+# from that venv using a second, separate throwaway venv holding only the
+# pinned generator tool (kept apart so the tool's own dependencies never
+# appear in the target SBOM), then verifies the result offline via
+# verify_sbom.py before printing its location.
+#
+# Output is a local artifact only (dist/sbom/, git-ignored, same as
+# dist/): attaching it to an actual GitHub Release remains a separate,
+# explicit owner action after manual review, per DEPENDENCY_POLICY.md --
+# this target does not touch Git, tags, or any release/publish workflow.
+CYCLONEDX_BOM_VERSION := 7.3.1
+SBOM_OUTPUT := dist/sbom/pfsense-mcp-server-sbom.json
+
+sbom:
+	@command -v uv >/dev/null || { echo "sbom: requires uv (https://docs.astral.sh/uv/) to install a pinned generator tool" >&2; exit 1; }
+	@$(PYTHON) -m build --no-isolation --sdist --wheel
+	@mkdir -p dist/sbom
+	@tmp_dir=$$(mktemp -d); \
+	  trap 'rm -rf "$$tmp_dir"' EXIT; \
+	  uv venv --quiet --python $(PYTHON) --clear "$$tmp_dir/target-venv"; \
+	  uv pip install --quiet --python "$$tmp_dir/target-venv/bin/python" dist/*.whl; \
+	  uv venv --quiet --python $(PYTHON) --clear "$$tmp_dir/tool-venv"; \
+	  uv pip install --quiet --python "$$tmp_dir/tool-venv/bin/python" "cyclonedx-bom==$(CYCLONEDX_BOM_VERSION)"; \
+	  "$$tmp_dir/tool-venv/bin/cyclonedx-py" environment "$$tmp_dir/target-venv/bin/python" \
+	    --pyproject pyproject.toml --mc-type application --sv 1.6 --output-reproducible \
+	    -o $(SBOM_OUTPUT)
+	@$(PYTHON) scripts/verify_sbom.py $(SBOM_OUTPUT)
+	@echo "sbom: generated $(SBOM_OUTPUT) (local artifact only -- not attached to any release)"

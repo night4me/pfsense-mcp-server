@@ -33,6 +33,10 @@ acceptance, and live access is never required to contribute.
   record genuine gaps.
 - Run `make security-static` and classify every finding.
 - Run `make package-check` and inspect the artifact member report.
+- Optionally run `make sbom` and review the generated CycloneDX SBOM
+  (`dist/sbom/`) before deciding whether to attach it to the GitHub
+  Release — generation is not itself publication; see
+  [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md).
 - Run fixture safety and repository security scans.
 - Confirm GET-only enforcement, empty WRITE allow-list, inactive WRITE
   capabilities, and zero registered WRITE tools.
