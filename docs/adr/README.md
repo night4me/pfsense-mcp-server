@@ -24,7 +24,7 @@ silently rewrite earlier context.
 | [016](ADR-016-alias-candidate-lab-authorization.md) | Alias-candidate disposable-lab authorization | Accepted |
 | [017](ADR-017-official-guidance-layer.md) | Official pfSense/Netgate documentation guidance layer | Accepted — architecture and inert scaffolding only; no consumer wired |
 | [018](ADR-018-version-aware-guidance-resolution.md) | Version-aware Official Guidance resolution | Accepted — architecture and trust boundaries only; live retrieval, guidance exposure, Tier 1/WRITE/Phase 5 activation not authorized by acceptance; nothing implemented yet |
-| [019](ADR-019-api-surface-capability-discovery-and-extension-architecture.md) | API Surface, Capability Discovery, and Extension Architecture | Proposed — vocabulary and evaluation only; nothing implemented, public contract unchanged |
+| [019](ADR-019-api-surface-capability-discovery-and-extension-architecture.md) | API Surface, Capability Discovery, and Extension Architecture | Accepted — vocabulary and evaluation only; individual mechanisms remain separately gated, public contract unchanged |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.

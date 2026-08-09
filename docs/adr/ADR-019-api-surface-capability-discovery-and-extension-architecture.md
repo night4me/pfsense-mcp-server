@@ -1,16 +1,22 @@
 # ADR-019: API Surface, Capability Discovery, and Extension Architecture
 
-Status: **Proposed**. Architecture and vocabulary only. Nothing in this
-ADR is implemented; every mechanism it describes requires its own
-separate, explicit future approval before any line of code is written.
-This ADR does not change the public MCP contract (still 42 READ / 0
-WRITE), does not begin Phase 5, does not activate WRITE, and does not
-modify `pfsense_mcp_info` or ADR-018.
+Status: **Accepted** (2026-08-09) — architecture and vocabulary only. See
+"Acceptance record" below for exactly what acceptance grants and what it
+explicitly does not. Nothing in this ADR is implemented yet; every
+mechanism it describes still requires its own separate, explicit future
+approval before any line of code is written. This ADR does not change the
+public MCP contract (still 42 READ / 0 WRITE), does not begin Phase 5,
+does not activate WRITE, and does not modify `pfsense_mcp_info` or
+ADR-018.
 
-**Independently red-teamed before this Proposed text was finalized**
-(`reports-ai/reviews/ADR_019_RED_TEAM.md`) — findings and their
-resolution are summarized in "Self-challenges" below; read the red-team
-report for full failure scenarios.
+**Independently red-teamed, then independently acceptance-reviewed,
+before acceptance** — `reports-ai/reviews/ADR_019_RED_TEAM.md` (0
+BLOCKING, 5 MATERIAL, 3 MINOR, all fixed) and
+`reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md` (a separate,
+independent acceptance-track pass, 0 BLOCKING, 4 further MATERIAL
+findings, all fixed — verdict ACCEPT WITH CHANGES). Findings and their
+resolution are summarized in "Self-challenges" below; read both reports
+for full failure scenarios.
 
 ## Context
 
@@ -123,6 +129,64 @@ reachable are the same two mechanisms that already govern it today —
 both requiring a human-authored code change and the existing review/CI
 gates, neither ever mutated at runtime by a discovery result, a package
 observation, or a generated artifact.
+
+## Acceptance record (2026-08-09)
+
+Accepted following an independent adversarial red-team review
+(`reports-ai/reviews/ADR_019_RED_TEAM.md`, 13 owner-named attack
+scenarios, 0 BLOCKING, 5 MATERIAL and 3 MINOR findings all fixed) and a
+subsequent, separate, independent acceptance-track review
+(`reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md`, seven owner-named
+scrutiny areas, 0 BLOCKING, 4 further MATERIAL findings all fixed in the
+same pass — verdict **ACCEPT WITH CHANGES**). The owner accepted that
+verdict. This acceptance record preserves both reviews' findings and
+rationale in place (see "Self-challenges" below and the two linked
+reports) rather than restating or reopening them.
+
+**Acceptance of this ADR:**
+
+- Accepts the vocabulary and evaluation described above — the seven-state
+  Endpoint Catalogue sequence (`DISCOVERED` → `CATALOGUED` → `TYPED` →
+  `IMPLEMENTED` → `CAPABILITY-MAPPED` → `AUTHORIZED` → `MCP_EXPOSED`, with
+  `CAPABILITY-MAPPED`/`AUTHORIZED` explicitly split per the acceptance
+  review), the five-state Feature/Package Capability sequence
+  (`DISCOVERED` → `AVAILABLE` → `SUPPORTED` → `AUTHORIZED` → `EXPOSED`),
+  the permanent no-generic-dispatch invariant (including its
+  acceptance-review-strengthened form — no `getattr`/`setattr`/`hasattr`
+  dispatch on the client object, not merely no schema-visible `method=`/
+  `path=` parameter), and every Part 4–11 evaluation — as the
+  authoritative design for future API-surface, capability-discovery, and
+  extension work.
+- Does **NOT** authorize implementation of any mechanism this ADR
+  describes — the `CATALOGUED`-layer artifact, `FeatureCapabilityState`,
+  generated-client tooling, the coverage report, or any retry code —
+  each remains its own future, separately-gated decision. (The first such
+  decision — the Endpoint Catalogue implementation slice — is recorded
+  separately; see "Current architecture" in `AI_CONTEXT.md` and
+  `reports-ai/latest.md` for whether and when it was authorized and
+  built, since that is a later, distinct event from this acceptance.)
+- Does **NOT** change the public MCP contract — still 42 READ / 0 WRITE,
+  byte-identical.
+- Does **NOT** authorize `FeatureCapabilityState`, package/plugin
+  discovery, or any package-aware tool.
+- Does **NOT** authorize progressive/dynamic MCP-level tool discovery —
+  Part 6 rejects it for the foreseeable future.
+- Does **NOT** authorize certificate/fingerprint pinning, READ retry
+  behavior, or any TLS-behavior change — Part 7/8 evaluate and defer or
+  confirm-sufficient, they do not activate anything.
+- Does **NOT** authorize Phase 5 or WRITE in any form.
+- Does **NOT** modify ADR-018 or `pfsense_mcp_info`.
+- **Preserves, unresolved, the future questions this ADR itself names as
+  deliberately not resolved** (see "Consequences" below): which specific
+  pfSense packages (if any) are worth building `SUPPORTED` capabilities
+  for; whether a future `CATALOGUED` artifact should be a checked-in file
+  or generated on demand; the exact wording of a future "permanently
+  forbidden operations" documentation addition to
+  `docs/SECURITY_MODEL.md`.
+
+Each mechanism this ADR describes remains independently gated behind its
+own future, separate, explicit approval — acceptance of the architecture
+is not activation of any of its parts.
 
 ## Consequences
 
