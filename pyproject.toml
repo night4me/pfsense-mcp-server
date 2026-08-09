@@ -20,7 +20,20 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "mcp>=1.0.0,<2.0.0",
+    # The floor is a real, tested minimum, not an aspirational one -- see
+    # scripts/verify_min_dependencies.py and the CI `min-deps` job.
+    # Verified 2026-08-09: every mcp release from 1.0.0 through 1.21.0
+    # either fails to import (mcp.server.fastmcp/mcp.types.ToolAnnotations
+    # do not exist yet) or crashes on tool registration
+    # (`TypeError: issubclass() arg 1 must be a class` inside mcp's own
+    # `fastmcp/tools/base.py` when inspecting this project's parameter
+    # annotations) -- 1.21.1 is the first version confirmed to actually
+    # work end to end. mcp>=1.21.1 itself already declares
+    # pydantic>=2.11.0/httpx>=0.27.1 as its own transitive floor, which is
+    # why those two are left as originally declared below rather than
+    # duplicated here -- any resolver satisfying mcp's own requirement
+    # already satisfies them.
+    "mcp>=1.21.1,<2.0.0",
     "httpx>=0.27,<1.0",
     "pydantic>=2.0,<3.0",
     "cryptography>=43.0,<51.0",

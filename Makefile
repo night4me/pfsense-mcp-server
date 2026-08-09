@@ -6,7 +6,7 @@
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
-        docs-build docs-serve sbom
+        docs-build docs-serve sbom min-deps-check
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -217,6 +217,12 @@ package-check:
 reproducible-build:
 	@$(PYTHON) scripts/reproducible_build.py
 
+# Network-dependent (resolves and installs real package versions from
+# PyPI) and slower than quick/validate -- same scoping rationale as
+# reproducible-build above, not a quick/validate stage.
+min-deps-check:
+	@$(PYTHON) scripts/verify_min_dependencies.py
+
 artifact-manifest:
 	@$(PYTHON) scripts/artifact_manifest.py dist
 
@@ -226,6 +232,7 @@ release-check:
 	@$(MAKE) --no-print-directory package-check
 	@$(PYTHON) -m twine check --strict dist/*
 	@$(MAKE) --no-print-directory reproducible-build
+	@$(MAKE) --no-print-directory min-deps-check
 	@$(MAKE) --no-print-directory artifact-manifest
 	@echo "RELEASE-CHECK: PASSED (offline; no tag, upload, credentials, or network appliance access)"
 

@@ -7,6 +7,21 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The declared `mcp>=1.0.0` minimum dependency version was false: every
+  `mcp` SDK release from `1.0.0` through `1.21.0` either fails to import
+  (`mcp.server.fastmcp`/`mcp.types.ToolAnnotations` did not exist yet in
+  earlier releases) or crashes during tool registration
+  (`TypeError: issubclass() arg 1 must be a class`, inside `mcp`'s own
+  code). `mcp>=1.21.1` is the first release confirmed, by installing at
+  exactly that floor and running the full test suite, to actually work.
+  The floor is now `mcp>=1.21.1,<2.0.0`. A new CI job and
+  `make min-deps-check` (wired into `make release-check`) install at
+  `--resolution=lowest-direct` going forward so a regression of this kind
+  fails CI instead of only surfacing for someone who happens to pin an
+  old `mcp` release.
+
 ## [0.3.1] - 2026-08-09
 
 ### Added

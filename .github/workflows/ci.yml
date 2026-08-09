@@ -106,6 +106,30 @@ jobs:
       - name: Python static security analysis
         run: make security-static
 
+  min-deps:
+    # Verifies the dependency floors declared in pyproject.toml are real,
+    # not aspirational: installs at `--resolution=lowest-direct` and runs
+    # the full offline test suite against that install. Added 2026-08-09
+    # after the previously-declared `mcp>=1.0.0` floor was found to be
+    # false -- every mcp release from 1.0.0 through 1.21.0 either fails to
+    # import or crashes on tool registration; see
+    # scripts/verify_min_dependencies.py for the full history and
+    # scripts/verify_min_dependencies.py's own docstring for exactly how
+    # this was discovered.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install uv
+        run: python -m pip install --upgrade pip 'uv>=0.4,<1.0'
+      - name: Verify minimum dependency versions
+        run: python scripts/verify_min_dependencies.py
+
   docs:
     # Builds the documentation site to prove it stays buildable --
     # never deploys anything. Enabling a public GitHub Pages deployment
