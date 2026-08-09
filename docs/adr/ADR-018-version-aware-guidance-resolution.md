@@ -555,6 +555,22 @@ same pass). The owner accepted that verdict.
      `compose_guidance_evidence()` yet, and wiring it into a real
      consumer remains its own separate, explicit, not-yet-granted
      decision.
+
+     **Re-investigated 2026-08-09, now that the bridge above exists**
+     (full record:
+     `reports-ai/reviews/ADR_018_CONSUMER_INTEGRATION_INVESTIGATION_2026-08-09.md`):
+     confirmed, directly from this ADR's own §5 text above, that no
+     legitimate real consumer currently exists without crossing an
+     explicitly-gated boundary — either a public MCP schema/tool change
+     (its own separate product decision) or Tier 1 PREPARE construction
+     (Phase 5). A non-MCP developer/reviewer CLI tool was considered and
+     explicitly rejected as a fabricated consumer with no documented need
+     (checked directly against `OFFICIAL_GUIDANCE_LAYER.md`'s Review
+     checklist, which names no such tool), not a legitimate integration
+     point this ADR's own text ever identified. No code written; nothing
+     wired. This question is closed for any future session re-reading
+     this record — re-investigate only if the bridge's own shape changes
+     or a new consumer candidate genuinely did not exist at this writing.
   2. **`NO_OFFICIAL_GUIDANCE_FOUND`'s exact runtime representation —
      formally confirmed CLOSED, not merely assumed.** It is an empty
      `EvidenceReference` tuple passed to the already-shipped
