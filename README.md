@@ -96,9 +96,9 @@ That's the core idea: **adding mutation code does not automatically
 create production mutation capability.** The current production surface
 is READ-only by construction, not by convention — enforced by a static
 check over the transport layer, verified on every CI run, not a runtime
-setting someone could accidentally flip. The v0.3.0 development tree
-already contains a substantial WRITE-safety framework, and every part of
-it remains structurally unreachable from the running server.
+setting someone could accidentally flip. The v0.3.0 release already
+ships a substantial WRITE-safety framework, and every part of it remains
+structurally unreachable from the running server.
 
 **What this means today:**
 
