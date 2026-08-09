@@ -98,7 +98,7 @@ responses, exception messages, credential values, or raw pfSense bodies.
 
 ## Recovery and WRITE status
 
-Tier 0 WRITE infrastructure remains inert. The v0.3.0 development tree adds a
+Tier 0 WRITE infrastructure remains inert. The v0.3.0 release adds a
 separate `pfsense_mcp.tier1` domain package for immutable Recovery Contracts,
 canonical digests, a closed state machine, authenticated atomic persistence,
 an empty exact-match mutation policy, fault classification, and value-free
