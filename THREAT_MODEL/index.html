@@ -1,0 +1,3991 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/THREAT_MODEL/">
+      
+      
+        <link rel="prev" href="../SECURITY_MODEL/">
+      
+      
+        <link rel="next" href="../SECURITY_TEST_CATALOG/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Threat model - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#threat-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Threat model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose-and-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose and scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundaries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Trust boundaries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tb1-mcp-caller-to-local-server-over-stdio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB1 — MCP caller to local server over stdio
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb2-process-to-local-filesystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB2 — process to local filesystem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb3-server-to-pfsense-over-https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB3 — server to pfSense over HTTPS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb4-untrusted-upstream-json-to-typed-public-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB4 — untrusted upstream JSON to typed public models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb5-runtime-data-to-logserrors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB5 — runtime data to logs/errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb6-developmentprivate-evidence-to-repository-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB6 — development/private evidence to repository artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb7-dormant-write-code-to-production-bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB7 — dormant WRITE code to production bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb8-inert-tier-1-records-to-future-mutation-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB8 — inert Tier 1 records to future mutation execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb9-official-documentation-content-to-guidance-output-inert-adr-017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB9 — official documentation content to guidance output (inert, ADR-017)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attacker-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attacker models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attacker models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1-malicious-or-compromised-mcp-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A1 — malicious or compromised MCP caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2-untrusted-upstream-applianceapi-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2 — untrusted upstream appliance/API response
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3-local-unprivileged-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A3 — local unprivileged user
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4-compromised-launching-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A4 — compromised launching account
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a5-malicious-contributor-or-dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A5 — malicious contributor or dependency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a6-future-authorized-write-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A6 — future authorized WRITE caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a7-compromised-or-spoofed-official-documentation-source-inert-adr-017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A7 — compromised or spoofed official-documentation source (inert, ADR-017)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stride-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STRIDE analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security assumptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#existing-mitigations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Existing mitigations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Existing mitigations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#credential-and-data-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credential and data controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#request-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#development-and-supply-chain-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development and supply-chain controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#write-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WRITE isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#residual-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Residual risks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future considerations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-1-adversarial-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 adversarial paths
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guidance-layer-adversarial-paths-inert-adr-017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance-layer adversarial paths (inert, ADR-017)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose-and-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose and scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundaries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Trust boundaries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tb1-mcp-caller-to-local-server-over-stdio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB1 — MCP caller to local server over stdio
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb2-process-to-local-filesystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB2 — process to local filesystem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb3-server-to-pfsense-over-https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB3 — server to pfSense over HTTPS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb4-untrusted-upstream-json-to-typed-public-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB4 — untrusted upstream JSON to typed public models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb5-runtime-data-to-logserrors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB5 — runtime data to logs/errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb6-developmentprivate-evidence-to-repository-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB6 — development/private evidence to repository artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb7-dormant-write-code-to-production-bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB7 — dormant WRITE code to production bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb8-inert-tier-1-records-to-future-mutation-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB8 — inert Tier 1 records to future mutation execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tb9-official-documentation-content-to-guidance-output-inert-adr-017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TB9 — official documentation content to guidance output (inert, ADR-017)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attacker-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attacker models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attacker models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1-malicious-or-compromised-mcp-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A1 — malicious or compromised MCP caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2-untrusted-upstream-applianceapi-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2 — untrusted upstream appliance/API response
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3-local-unprivileged-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A3 — local unprivileged user
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4-compromised-launching-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A4 — compromised launching account
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a5-malicious-contributor-or-dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A5 — malicious contributor or dependency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a6-future-authorized-write-caller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A6 — future authorized WRITE caller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a7-compromised-or-spoofed-official-documentation-source-inert-adr-017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A7 — compromised or spoofed official-documentation source (inert, ADR-017)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stride-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STRIDE analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security assumptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#existing-mitigations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Existing mitigations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Existing mitigations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#credential-and-data-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credential and data controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#request-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#development-and-supply-chain-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development and supply-chain controls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#write-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WRITE isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#residual-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Residual risks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future considerations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-1-adversarial-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 adversarial paths
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guidance-layer-adversarial-paths-inert-adr-017" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance-layer adversarial paths (inert, ADR-017)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/THREAT_MODEL.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="threat-model">Threat model<a class="headerlink" href="#threat-model" title="Permanent link">&para;</a></h1>
+<p>Version: v0.2.2 production baseline with inert v0.3.0 Tier 1 development framework and inert ADR-017 guidance-layer scaffolding
+Scope: current local stdio MCP server, 41 READ tools, unreachable WRITE infrastructure, and the unreachable official-documentation guidance layer</p>
+<h2 id="purpose-and-scope">Purpose and scope<a class="headerlink" href="#purpose-and-scope" title="Permanent link">&para;</a></h2>
+<p>This document models threats to the current production architecture. It covers
+the local MCP process, its configuration and credential file, stdio caller,
+pfSense REST API connection, typed response mapping, logs, fixtures, package
+artifacts, and dormant Tier 0 WRITE modules.</p>
+<p>It does not claim that a compromised operating-system account or compromised
+pfSense appliance can be made trustworthy. The isolated Tier 1 domain framework
+is included in this analysis, but no WRITE capability, endpoint, executor, or
+tool is active or authorized by this document. The isolated official-
+documentation guidance layer (<code>ADR-017</code>) is included in this analysis on the
+same terms: it is inert scaffolding with no consumer, and this document does
+not authorize wiring it into any READ tool output or any Tier 1 PREPARE path.</p>
+<h2 id="assets">Assets<a class="headerlink" href="#assets" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Asset</th>
+<th>Security objective</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pfSense API key</td>
+<td>Confidentiality; use only in the upstream API-key header</td>
+</tr>
+<tr>
+<td>pfSense configuration and operational data</td>
+<td>Confidentiality and integrity</td>
+</tr>
+<tr>
+<td>Appliance identity and topology</td>
+<td>Confidentiality; optional disclosure only where modeled</td>
+</tr>
+<tr>
+<td>MCP tool schemas and outputs</td>
+<td>Integrity, predictable typing, credential non-disclosure</td>
+</tr>
+<tr>
+<td>Capability/profile configuration</td>
+<td>Integrity; no unauthorized tool registration</td>
+</tr>
+<tr>
+<td>Endpoint registries</td>
+<td>Integrity; production READ path remains GET-only</td>
+</tr>
+<tr>
+<td>Audit and operational logs</td>
+<td>Integrity, availability, and absence of values/secrets</td>
+</tr>
+<tr>
+<td>Approved fixtures</td>
+<td>Synthetic/sanitized integrity; no production identifiers or credentials</td>
+</tr>
+<tr>
+<td>Package artifacts and source</td>
+<td>Integrity and absence of private/local files</td>
+</tr>
+<tr>
+<td>Recovery Contract state (future)</td>
+<td>Integrity, confidentiality, freshness, target binding, durability</td>
+</tr>
+<tr>
+<td>Official-guidance registry/content (inert, <code>ADR-017</code>)</td>
+<td>Integrity of the capability→document mapping; content provenance; never a source of authorization</td>
+</tr>
+</tbody>
+</table>
+<h2 id="trust-boundaries">Trust boundaries<a class="headerlink" href="#trust-boundaries" title="Permanent link">&para;</a></h2>
+<h3 id="tb1-mcp-caller-to-local-server-over-stdio">TB1 — MCP caller to local server over stdio<a class="headerlink" href="#tb1-mcp-caller-to-local-server-over-stdio" title="Permanent link">&para;</a></h3>
+<p>The process that launches and controls stdio is the caller-authentication
+boundary. The server does not authenticate individual MCP messages or
+differentiate users sharing the same channel. A caller with channel control can
+invoke every tool in the selected profile.</p>
+<h3 id="tb2-process-to-local-filesystem">TB2 — process to local filesystem<a class="headerlink" href="#tb2-process-to-local-filesystem" title="Permanent link">&para;</a></h3>
+<p>Configuration arrives through environment variables. The API key and optional
+CA bundle are local files. On the supported Linux production platform, the key
+is opened with <code>O_NOFOLLOW</code>; ownership, type, permissions, and size are checked
+with <code>fstat()</code>, and the same descriptor is read and reliably closed. Logs and
+local stores depend on operating-system directory permissions.</p>
+<h3 id="tb3-server-to-pfsense-over-https">TB3 — server to pfSense over HTTPS<a class="headerlink" href="#tb3-server-to-pfsense-over-https" title="Permanent link">&para;</a></h3>
+<p>The server sends GET requests with one upstream API identity. TLS validation is
+strict by default; an explicit CA bundle is supported. <code>insecure</code> is a
+deliberate operator override that removes server authentication.</p>
+<h3 id="tb4-untrusted-upstream-json-to-typed-public-models">TB4 — untrusted upstream JSON to typed public models<a class="headerlink" href="#tb4-untrusted-upstream-json-to-typed-public-models" title="Permanent link">&para;</a></h3>
+<p>pfSense responses are untrusted input. Shape checks and Pydantic factories
+translate them to public models. Prohibited credential fields are absent from
+those models and ignored if upstream returns them.</p>
+<h3 id="tb5-runtime-data-to-logserrors">TB5 — runtime data to logs/errors<a class="headerlink" href="#tb5-runtime-data-to-logserrors" title="Permanent link">&para;</a></h3>
+<p>Audit and transport logging cross from runtime state into persistent local
+records. Policies permit tool/endpoint identity, duration, status classes, and
+disclosure choices—but not arguments, payloads, responses, credential values,
+or exception messages.</p>
+<h3 id="tb6-developmentprivate-evidence-to-repository-artifacts">TB6 — development/private evidence to repository artifacts<a class="headerlink" href="#tb6-developmentprivate-evidence-to-repository-artifacts" title="Permanent link">&para;</a></h3>
+<p>Fixtures, reports, distribution archives, CI artifacts, and documentation must
+not contain credentials or identifying appliance data. Capture uses proposal,
+sanitization, audit, and explicit approval stages.</p>
+<h3 id="tb7-dormant-write-code-to-production-bootstrap">TB7 — dormant WRITE code to production bootstrap<a class="headerlink" href="#tb7-dormant-write-code-to-production-bootstrap" title="Permanent link">&para;</a></h3>
+<p>Tier 0 WRITE modules are untrusted future infrastructure from the perspective
+of current production safety. They are separated by construction: no production
+construction, no WRITE profile capability, no endpoint allow-list entry, no
+registered WRITE tool, and static tests for each boundary.</p>
+<h3 id="tb8-inert-tier-1-records-to-future-mutation-execution">TB8 — inert Tier 1 records to future mutation execution<a class="headerlink" href="#tb8-inert-tier-1-records-to-future-mutation-execution" title="Permanent link">&para;</a></h3>
+<p>The v0.3.0 framework accepts contract material only at creation, canonicalizes
+and authenticates stored records, enforces compare-and-set legal transitions,
+and reserves one canonical target during execution. Protected intent and
+snapshot artifacts are opaque ciphertext supplied by a future key provider.
+There is currently no executor consuming those records.</p>
+<h3 id="tb9-official-documentation-content-to-guidance-output-inert-adr-017">TB9 — official documentation content to guidance output (inert, <code>ADR-017</code>)<a class="headerlink" href="#tb9-official-documentation-content-to-guidance-output-inert-adr-017" title="Permanent link">&para;</a></h3>
+<p>The guidance layer's registry is Git-tracked, PR-reviewed, load-once data;
+bundled excerpt content is treated as untrusted <strong>content</strong> even though its
+<strong>source</strong> (official pfSense/Netgate documentation) is comparatively trusted —
+this distinction is load-bearing, not cosmetic (see <code>OFFICIAL_GUIDANCE_LAYER.md</code>
+TB-G2). <code>GuidanceReference</code> output has no field of type capability, endpoint,
+method, or confirmation token, verified by an isolation test rather than by
+convention alone. Live retrieval and any registry-writable path are explicitly
+out of scope for the accepted architecture; there is currently no consumer of
+this layer's output.</p>
+<h2 id="attacker-models">Attacker models<a class="headerlink" href="#attacker-models" title="Permanent link">&para;</a></h2>
+<h3 id="a1-malicious-or-compromised-mcp-caller">A1 — malicious or compromised MCP caller<a class="headerlink" href="#a1-malicious-or-compromised-mcp-caller" title="Permanent link">&para;</a></h3>
+<p>Has full access to the local stdio MCP protocol but no shell access, no direct
+credential-file access, and no pfSense credentials beyond what the server can
+exercise. Goals include data discovery, credential extraction, tool abuse,
+resource exhaustion, error/log injection, and reaching dormant WRITE paths.</p>
+<h3 id="a2-untrusted-upstream-applianceapi-response">A2 — untrusted upstream appliance/API response<a class="headerlink" href="#a2-untrusted-upstream-applianceapi-response" title="Permanent link">&para;</a></h3>
+<p>Can return malformed, oversized, adversarial, credential-bearing, or confusing
+JSON and HTTP status codes. May attempt to induce value leakage through model
+validation errors, logs, or exception messages.</p>
+<h3 id="a3-local-unprivileged-user">A3 — local unprivileged user<a class="headerlink" href="#a3-local-unprivileged-user" title="Permanent link">&para;</a></h3>
+<p>Can inspect generally accessible process/filesystem state but cannot write the
+mode-0700 private parent directories or control the server account. May try to
+read logs, replace configuration files, inject environment values through a
+launcher, or race file validation.</p>
+<h3 id="a4-compromised-launching-account">A4 — compromised launching account<a class="headerlink" href="#a4-compromised-launching-account" title="Permanent link">&para;</a></h3>
+<p>Can control environment, stdio, key files, local logs, and executable code.
+This actor is largely outside the security boundary: the local deployment model
+trusts the launching account. Defense-in-depth can reduce accidental exposure
+but cannot preserve upstream credential secrecy from this actor.</p>
+<h3 id="a5-malicious-contributor-or-dependency">A5 — malicious contributor or dependency<a class="headerlink" href="#a5-malicious-contributor-or-dependency" title="Permanent link">&para;</a></h3>
+<p>Can propose source/workflow/documentation changes or compromise a package/action
+dependency. Goals include secret collection, CI exfiltration, capability
+activation, artifact tampering, and bypassing checks.</p>
+<h3 id="a6-future-authorized-write-caller">A6 — future authorized WRITE caller<a class="headerlink" href="#a6-future-authorized-write-caller" title="Permanent link">&para;</a></h3>
+<p>Not relevant to current reachability, but critical to Tier 1. May replay or
+substitute contracts, targets, intents, and rollback actions; race transitions;
+or exploit ambiguous network outcomes.</p>
+<h3 id="a7-compromised-or-spoofed-official-documentation-source-inert-adr-017">A7 — compromised or spoofed official-documentation source (inert, <code>ADR-017</code>)<a class="headerlink" href="#a7-compromised-or-spoofed-official-documentation-source-inert-adr-017" title="Permanent link">&para;</a></h3>
+<p>Not relevant to current reachability (no consumer exists), but modeled ahead
+of activation. Could attempt to have malicious or misleading content bundled
+into the registry (via A5's contributor path), or — only if the deferred
+live-retrieval extension is ever built — serve altered content from an
+otherwise-allow-listed domain. Goals include prompt injection against a
+future model consumer, steering a human toward an unsafe manual action, and
+(the specifically-designed-against outcome) attempting to have guidance
+content mistaken for authorization. See <code>OFFICIAL_GUIDANCE_LAYER.md</code> TB-G2/
+TB-G3 and the guidance-layer adversarial-paths table below.</p>
+<h2 id="stride-analysis">STRIDE analysis<a class="headerlink" href="#stride-analysis" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Threats</th>
+<th>Current mitigations</th>
+<th>Residual risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spoofing</td>
+<td>Caller claims another identity; attacker impersonates pfSense; contract identity substitution</td>
+<td>Local launcher is the caller boundary; <code>PFSENSE_IDENTITY</code> is explicitly upstream identity; HTTPS strict/default or explicit CA; redirects rejected; inert contracts are loaded authoritatively and exact-bound</td>
+<td>No per-message caller identity; <code>insecure</code> TLS permits upstream spoofing; operator confirmation authentication is not selected</td>
+</tr>
+<tr>
+<td>Tampering</td>
+<td>Modify capability/profile, endpoints, key/CA files, fixtures, artifacts, responses, logs; modify or spoof guidance-registry content</td>
+<td>Explicit registries; static GET/WRITE checks; descriptor-bound <code>O_NOFOLLOW</code>/<code>fstat()</code> key loading; typed models; public-contract snapshot; fixture audit; pinned actions; artifact member/content checks; file permissions; guidance registry is Git-tracked/PR-reviewed only, load-time content-hash self-check (<code>ADR-017</code> I2/I3)</td>
+<td>Launch-account compromise defeats local integrity; logs are not cryptographically append-only; a merged malicious registry entry is only caught by review, not by any runtime check (same residual class as any other reviewed-content risk)</td>
+</tr>
+<tr>
+<td>Repudiation</td>
+<td>Caller denies sensitive metadata request or tool use; future mutation lacks trace</td>
+<td>Structured READ audit plus inert value-free Tier 1 audit events and atomic store events</td>
+<td>stdio caller has no individual identity; local log/store owner can alter or roll back files; audit is operational, not non-repudiation evidence</td>
+</tr>
+<tr>
+<td>Information disclosure</td>
+<td>Credentials in schemas/output/errors/logs/fixtures/docs; topology leakage; exception/body leakage</td>
+<td>Credential fields removed; upstream values ignored; optional metadata default-off; sanitized typed transport/API errors; no values/messages in audit; fixture and package hard refusal; security scan; private report policy</td>
+<td>Ordinary READ data is still sensitive; public certificates identify infrastructure; trusted caller can request optional metadata; local launcher controls the credential</td>
+</tr>
+<tr>
+<td>Denial of service</td>
+<td>Large limits, slow appliance, malformed responses, log exhaustion, repeated calls</td>
+<td>Limits bounded 1–100; HTTP timeouts; response shape validation; rotating bounded logs; process-local stdio; fail-closed config</td>
+<td>No per-caller rate limit; a channel controller can saturate process/upstream within timeout/limit bounds; upstream can remain slow or unavailable</td>
+</tr>
+<tr>
+<td>Elevation of privilege</td>
+<td>Reach WRITE transport, register hidden tools, arbitrary endpoints/methods, profile confusion; guidance content mistaken for or manipulated into authorization</td>
+<td>GET-only <code>RestApiClient</code>; explicit <code>ToolRegistry</code>; accepted profile set; empty WRITE allow-list; inactive WRITE capabilities; empty inert Tier 1 policy; no production write-client construction; static architecture checks; <code>GuidanceReference</code> has no capability/endpoint/method/confirmation-token field, isolation-tested against every safety-authority import (<code>ADR-017</code> G1/G4)</td>
+<td>Launch-account/source compromise can alter code/config; activation must replace zero-entry assertions through explicit review rather than remove them; a reviewer who merges a malicious registry entry is still the same A5 risk this table already names elsewhere</td>
+</tr>
+</tbody>
+</table>
+<h2 id="security-assumptions">Security assumptions<a class="headerlink" href="#security-assumptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The launching operating-system account and its executable environment are
+  trusted.</li>
+<li>Parent directories holding the API key are not writable by another user.</li>
+<li>The configured upstream API key is least-privilege and pfSense REST API is
+  configured <code>read_only=true</code> for current production use.</li>
+<li>MCP stdio is not bridged to untrusted network clients without an external
+  authentication/authorization layer.</li>
+<li>The operating system, Python runtime, certificate store, and installed
+  dependencies are maintained and not malicious.</li>
+<li><code>MockTransport</code> and approved fixtures—not production appliances—are used in
+  public development and CI.</li>
+<li>Operators understand that <code>include_identifying_metadata=true</code> is an explicit
+  sensitive-data disclosure and that <code>PFSENSE_TLS_MODE=insecure</code> disables
+  upstream authentication.</li>
+</ul>
+<h2 id="existing-mitigations">Existing mitigations<a class="headerlink" href="#existing-mitigations" title="Permanent link">&para;</a></h2>
+<h3 id="credential-and-data-controls">Credential and data controls<a class="headerlink" href="#credential-and-data-controls" title="Permanent link">&para;</a></h3>
+<ul>
+<li>API key opened without following symlinks, validated by descriptor, read from
+  the same inode within strict bounds, and closed on every path.</li>
+<li>Password, PSK, private-key, plaintext API-key, and stored-hash fields excluded
+  from public models and schemas.</li>
+<li>Optional sensitive metadata omitted by default and disclosure choice audited.</li>
+<li>Public certificate material classified separately from private keys.</li>
+<li>No raw bodies, arguments, responses, or exception messages in logs.</li>
+</ul>
+<h3 id="request-controls">Request controls<a class="headerlink" href="#request-controls" title="Permanent link">&para;</a></h3>
+<ul>
+<li>One configured HTTPS origin, no URL user info/path/query/fragment.</li>
+<li>Production <code>RestApiClient</code> accepts GET only.</li>
+<li>Endpoint, API-version, capability, and bounded-parameter validation.</li>
+<li>Typed connection/auth/API/shape errors with sanitized messages.</li>
+</ul>
+<h3 id="development-and-supply-chain-controls">Development and supply-chain controls<a class="headerlink" href="#development-and-supply-chain-controls" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Offline tests; live tests require explicit opt-in and private configuration.</li>
+<li>Credential-field fixture rejection and repository security scans.</li>
+<li>Ruff, mypy, Bandit, CodeQL workflow, pinned GitHub Actions, and branch coverage.</li>
+<li>Sdist/wheel member inspection and clean entry-point installation.</li>
+<li>Explicit approval boundaries for live calls, Git publication, and releases.</li>
+</ul>
+<h3 id="write-isolation">WRITE isolation<a class="headerlink" href="#write-isolation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Zero registered WRITE tools and zero allow-listed WRITE endpoints.</li>
+<li>Zero active WRITE capabilities.</li>
+<li>No write client/store/audit construction in production bootstrap.</li>
+<li>Separate transport chokepoint and regression checks for import absence,
+  allow-list emptiness, and capability inactivity.</li>
+</ul>
+<h2 id="residual-risks">Residual risks<a class="headerlink" href="#residual-risks" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Trusted-channel breadth:</strong> an MCP caller controls the complete auditor
+   capability set; there is no per-tool caller authorization.</li>
+<li><strong>Sensitive operational output:</strong> read-only does not mean non-sensitive.
+   DHCP, ARP, DNS, policy, package, service, and certificate data can materially
+   aid an attacker.</li>
+<li><strong>Explicit insecure TLS:</strong> operator-selected <code>insecure</code> mode permits a
+   man-in-the-middle to observe the API key and forge responses.</li>
+<li><strong>Log integrity:</strong> rotating local logs are value-minimized but not
+   cryptographically tamper-evident.</li>
+<li><strong>Dependency compromise:</strong> pinned actions reduce workflow drift, but Python
+   dependencies use bounded ranges rather than hashes/lock constraints.</li>
+<li><strong>Historical certificate identity:</strong> current certificate fixtures are wholly
+   synthetic, but earlier public fixture material remains in Git history. It
+   contained public certificate data, not a private key or credential.</li>
+<li><strong>Dormant-code drift:</strong> Tier 0 modules can accumulate defects despite being
+   unreachable; tests and activation gates must remain mandatory.</li>
+<li><strong>No current rate limiting:</strong> a trusted-channel attacker can cause bounded
+   upstream load and local log activity.</li>
+<li><strong>Tier 1 key management:</strong> the inert store authenticates records but does
+   not encrypt protected artifacts itself; activation requires an approved
+   external encryption/key provider.</li>
+<li><strong>Whole-store rollback:</strong> record MACs detect modification, not restoration
+    of an older valid database. Activation requires a durable monotonic
+    anti-rollback anchor and reconciliation procedure.</li>
+<li><strong>Confirmation identity:</strong> exact-bound evidence and a verifier interface
+    prevent self-asserted confirmation, but no production authority/key is
+    selected. Activation requires an owner/authentication decision.</li>
+</ol>
+<h2 id="future-considerations">Future considerations<a class="headerlink" href="#future-considerations" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Evaluate dependency constraints, provenance/attestation, and advisory scanning
+  after CI baseline stability.</li>
+<li>Consider per-caller authorization only if transport expands beyond trusted
+  local stdio; do not bolt network exposure onto the current model.</li>
+<li>Add optional tamper-evident audit forwarding without including values.</li>
+<li>Add resource/rate controls if observed workloads justify them.</li>
+<li>Keep certificate fixtures wholly synthetic and reject private-key material.</li>
+<li>Tier 1 contracts, canonical binding, legal transitions, record
+  authentication, target reservations, and restart reconciliation now exist as
+  inert domain controls. Before activation, add the approved key provider,
+  anti-rollback anchor, authenticated confirmation, capability-specific
+  payload/target logic, exact HTTP/read-back validation, and lab evidence.</li>
+</ul>
+<p>See <a href="../TIER1_ROADMAP/">Tier 1 roadmap</a> for future WRITE requirements and
+<a href="../SECURITY_MODEL/">security model</a> for normative data classification.</p>
+<h2 id="tier-1-adversarial-paths">Tier 1 adversarial paths<a class="headerlink" href="#tier-1-adversarial-paths" title="Permanent link">&para;</a></h2>
+<p>These paths apply to the inert v0.3.0 framework and any future executor. A
+framework mitigation does not authorize activation.</p>
+<table>
+<thead>
+<tr>
+<th>Attack or fault</th>
+<th>Current inert mitigation</th>
+<th>Residual activation requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt injection claims approval</td>
+<td>Confirmation digest is a separate contract fact, not an MCP boolean</td>
+<td>Authenticate owner confirmation outside prompt text</td>
+</tr>
+<tr>
+<td>Malformed or oversized tool request</td>
+<td>Canonical types and identifiers fail closed; no tool exists</td>
+<td>Capability-specific typed models and evidence-based size limits</td>
+</tr>
+<tr>
+<td>Contract replay or duplicate invocation</td>
+<td>Unique contract/operation/idempotency identities and state CAS</td>
+<td>Durable anti-rollback anchor and upstream idempotency evidence</td>
+</tr>
+<tr>
+<td>Capability, endpoint, or method substitution</td>
+<td>Exact immutable contract and policy tuple</td>
+<td>Independently reviewed non-empty rule and endpoint declaration</td>
+</tr>
+<tr>
+<td>Endpoint confusion or malicious registration</td>
+<td>Empty exact policy; no prefix/wildcard inference</td>
+<td>Static manifest parity and owner-approved path/method/version</td>
+</tr>
+<tr>
+<td>Stale snapshot or concurrent target update</td>
+<td>Fingerprint binding and one-target reservation</td>
+<td>Immediate authoritative re-read and capability drift projection</td>
+</tr>
+<tr>
+<td>Unstable numeric ID targets wrong object</td>
+<td>Natural identity is authoritative; IDs are locator hints only</td>
+<td>Lab proof of uniqueness and duplicate/missing-target refusal</td>
+</tr>
+<tr>
+<td>Timeout, reset, or lost response after send</td>
+<td>Fault model selects <code>RECONCILIATION</code>; retry is always false</td>
+<td>Executor must record send boundary and implement semantic read-back</td>
+</tr>
+<tr>
+<td>Process crash during execution or rollback</td>
+<td>Durable acquisition; restart moves interrupted records to reconciliation</td>
+<td>Fault tests around every actual transport boundary</td>
+</tr>
+<tr>
+<td>Corrupt or foreign record</td>
+<td>Record HMAC and denormalized-index cross-check</td>
+<td>Key lifecycle, quarantine, and operator recovery runbook</td>
+</tr>
+<tr>
+<td>Whole-store rollback to an older valid copy</td>
+<td>Explicitly recognized as undetectable locally</td>
+<td>External monotonic anti-rollback evidence</td>
+</tr>
+<tr>
+<td>Conflicting or partial rollback</td>
+<td>Closed rollback states; no automatic retry</td>
+<td>Capability-specific inverse, unrelated-change detection, manual runbook</td>
+</tr>
+<tr>
+<td>Audit/log injection or value leakage</td>
+<td>Strict metadata tokens/digests and value-free JSON model</td>
+<td>Approved durable sink and retention/integrity policy</td>
+</tr>
+<tr>
+<td>Transport spoofing or malicious response</td>
+<td>Production HTTPS/GET boundary remains unchanged and isolated</td>
+<td>Exact mutation TLS/status/shape/read-back contract</td>
+</tr>
+<tr>
+<td>Capability escalation through bootstrap</td>
+<td>Tier 1 imports absent; Engineer/profile/endpoints/policy are empty</td>
+<td>Replace each zero-entry invariant only through explicit activation review</td>
+</tr>
+</tbody>
+</table>
+<h2 id="guidance-layer-adversarial-paths-inert-adr-017">Guidance-layer adversarial paths (inert, <code>ADR-017</code>)<a class="headerlink" href="#guidance-layer-adversarial-paths-inert-adr-017" title="Permanent link">&para;</a></h2>
+<p>These paths apply to the inert <code>ADR-017</code> scaffolding and any future
+consumer (READ-tool output, Tier 1 PREPARE evidence). No consumer is
+authorized by this document or by <code>ADR-017</code>'s acceptance. This table is
+the record of <code>reports-ai/reviews/ADR_017_RED_TEAM.md</code>'s attack list and
+this design's response to each; see that review for full reasoning and
+any resulting revisions.</p>
+<table>
+<thead>
+<tr>
+<th>Attack or fault</th>
+<th>Current inert mitigation</th>
+<th>Residual activation requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source spoofing (fake "official" domain)</td>
+<td>Registry <code>canonical_url</code> is Git-reviewed, not runtime-discovered; no live fetch exists yet to spoof</td>
+<td>Live retrieval (TB-G3) must enforce an exact hostname allow-list with no wildcard/redirect-following before it may exist</td>
+</tr>
+<tr>
+<td>Compromised or malicious documentation content</td>
+<td>Bundled excerpts are PR-reviewed before merge; load-time content-hash self-check detects any post-review tamper of the shipped file</td>
+<td>Live retrieval must independently hash-verify or trust-label unpinned content (TB-G3); no runtime check catches a malicious <em>reviewed</em> entry — residual A5 risk, same class already named elsewhere in this document</td>
+</tr>
+<tr>
+<td>Stale documentation presented as current</td>
+<td><code>version_applicability</code>/<code>snapshot_version</code> are explicit fields, never inferred</td>
+<td>Consumer-side presentation must visibly label snapshot age; not resolved by this layer alone</td>
+</tr>
+<tr>
+<td>Wrong pfSense edition/version guidance</td>
+<td>Edition/version fail-closed to empty result on any ambiguity (I6); no guess-and-serve path exists</td>
+<td>An edition-discriminator READ field does not currently exist (<code>SystemVersion</code> has none) — flagged, not resolved, this session</td>
+</tr>
+<tr>
+<td>Guidance/observed-state disagreement</td>
+<td>Guidance is a structurally separate field from observed state in every design output (never merged into one narrative)</td>
+<td>A future consumer's presentation layer must preserve this separation; not enforceable by the guidance layer alone once content leaves it</td>
+</tr>
+<tr>
+<td>Prompt injection via document content</td>
+<td>No instruction-bearing channel exists for excerpt text to reach (bounded, typed data field only); no WRITE capability exists for an injected instruction to escalate into</td>
+<td>Even post-Phase-5, confirmation evidence binds to the contract's own digest, which never includes guidance content — injected text still cannot forge confirmation</td>
+</tr>
+<tr>
+<td>Poisoned cache/index</td>
+<td>No cache or index exists in the accepted scope — the registry itself is the only lookup structure and is Git-tracked, not runtime-built</td>
+<td>A future semantic-retrieval extension must define its own integrity story before it may exist</td>
+</tr>
+<tr>
+<td>Retrieval outside the approved corpus</td>
+<td><code>lookup_guidance()</code> takes no free-text query parameter in this scope — only <code>(Capability, version, edition)</code></td>
+<td>A future semantic-retrieval extension must be scoped to search <em>within</em> an already-capability-selected document set only, never a general query</td>
+</tr>
+<tr>
+<td>Missing guidance for a valid capability</td>
+<td>Explicit empty-result path (I6), never fabricated</td>
+<td>None — this is accepted, by-design behavior, not a gap to close</td>
+</tr>
+<tr>
+<td>Ambiguous guidance (ambiguous version/edition match)</td>
+<td>Fails closed to empty result rather than returning a low-confidence guess</td>
+<td>None beyond what I6 already requires</td>
+</tr>
+<tr>
+<td>Citation/provenance loss</td>
+<td><code>GuidanceReference</code> always carries <code>source_id</code>/<code>title</code>/<code>canonical_url</code>/<code>content_hash</code>/<code>snapshot_version</code> together as one object — no code path returns excerpt text without its provenance fields</td>
+<td>A future consumer must render provenance alongside content, not strip it for brevity</td>
+</tr>
+<tr>
+<td>Semantic-search false match</td>
+<td>Not applicable — no semantic search exists in the accepted scope</td>
+<td>Must be addressed by the semantic-retrieval extension's own design before it may exist</td>
+</tr>
+<tr>
+<td>Capability/document mapping error</td>
+<td>Registry is keyed on the existing reviewed <code>Capability</code> enum, not a parallel taxonomy that could drift from it</td>
+<td>Registry review must confirm each entry's <code>Capability</code> key against <code>capabilities.py</code>, not assume it</td>
+</tr>
+<tr>
+<td>Using guidance as authorization</td>
+<td><code>GuidanceReference</code> has no capability/endpoint/method/confirmation-token field (G1); isolation-tested against every safety-authority import (G4)</td>
+<td>None — structurally absent, not policy-only</td>
+</tr>
+<tr>
+<td>Indirect escalation into WRITE via guidance</td>
+<td>No import path from the guidance package to <code>pfsense_mcp.tier1</code>/<code>WriteEndpoints</code>/any WRITE transport (G4, isolation-tested)</td>
+<td>Any future Tier 1 PREPARE wiring must remain additive-evidence-only per <code>OFFICIAL_GUIDANCE_LAYER.md</code>'s Activation requirements</td>
+</tr>
+<tr>
+<td>Failure recovery (guidance layer itself fails)</td>
+<td>Every failure mode resolves to "no guidance," never a raised exception past the layer's own boundary, never a blocked underlying READ result (I6)</td>
+<td>None beyond what I6 already requires</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3752 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/WRITE_TIER0_SPEC/">
+      
+      
+        <link rel="prev" href="../TIER1_ARCHITECTURE/">
+      
+      
+        <link rel="next" href="../ROADMAP/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>WRITE Tier 0 (inert infrastructure) - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#write-tier-0-infrastructure-only-implementation-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              WRITE Tier 0 (inert infrastructure)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles-why-the-shape-below-not-another-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principles (why the shape below, not another one)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-final-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Final architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-module-responsibilities-summary-full-per-module-spec-in-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Module responsibilities (summary — full per-module spec in §12)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-recovery-contract-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Recovery Contract implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-write-allow-list-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Write allow-list enforcement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-dry-run-execution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Dry-run execution flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-rollback-framework" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Rollback framework
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-capability-registration-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Capability registration model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-logging-and-audit-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Logging and audit model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Testing strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-live-verification-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Live verification strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-release-plan-from-v020-onward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Release plan from v0.2.0 onward
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-complete-file-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Complete file manifest
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Complete file manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#explicitly-unchanged-stated-for-the-record-per-design-principles-1-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicitly unchanged (stated for the record, per Design Principles 1 &amp; 4)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-test-files-full-list-for-9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New test files (full list, for §9)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-once-implementation-is-authorized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification (once implementation is authorized)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles-why-the-shape-below-not-another-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principles (why the shape below, not another one)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-final-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Final architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-module-responsibilities-summary-full-per-module-spec-in-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Module responsibilities (summary — full per-module spec in §12)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-recovery-contract-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Recovery Contract implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-write-allow-list-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Write allow-list enforcement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-dry-run-execution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Dry-run execution flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-rollback-framework" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Rollback framework
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-capability-registration-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Capability registration model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-logging-and-audit-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Logging and audit model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Testing strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-live-verification-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Live verification strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-release-plan-from-v020-onward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Release plan from v0.2.0 onward
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-complete-file-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Complete file manifest
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Complete file manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#explicitly-unchanged-stated-for-the-record-per-design-principles-1-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicitly unchanged (stated for the record, per Design Principles 1 &amp; 4)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-test-files-full-list-for-9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New test files (full list, for §9)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-once-implementation-is-authorized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification (once implementation is authorized)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/WRITE_TIER0_SPEC.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="write-tier-0-infrastructure-only-implementation-specification">WRITE Tier 0 — Infrastructure-Only Implementation Specification<a class="headerlink" href="#write-tier-0-infrastructure-only-implementation-specification" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Historical design specification.</strong> Tier 0 has since been implemented and
+accepted as inert infrastructure. Counts and file-state descriptions below
+describe the v0.1.0 design baseline, not the current production build. The
+current build registers 41 READ tools and zero WRITE tools. Any future Tier 1
+work must follow <a href="../TIER1_ROADMAP/">TIER1_ROADMAP.md</a>, the current
+<a href="../SECURITY_MODEL/">security model</a>, and fresh explicit approval.</p>
+</blockquote>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>v0.1.0 (READ-only) is accepted and frozen (<code>docs/ACCEPTANCE_v0.1.0.md</code>, commit
+<code>51e86a2</code>, tag <code>v0.1.0</code>). The user has authorized planning — but explicitly
+<strong>not yet implementing</strong> — the first step toward mutating capability: "Tier
+0," which must be infrastructure only. No real mutating pfSense capability
+(no <code>create_firewall_alias</code>, no <code>set_dhcp_static_mapping</code>, nothing) is built
+in Tier 0. The deliverable is the load-bearing machinery — allow-listing,
+dry-run, snapshot/rollback, audit — fully built and tested, but provably
+inert in the running server. Tier 1 (the first real capability) begins only
+after a separate, explicit authorization naming that capability.</p>
+<p>This spec was derived from direct reading of the current v0.1.0 codebase
+(not summarized secondhand), specifically: <code>capabilities.py</code>, <code>profiles.py</code>,
+<code>tools/registry.py</code>, <code>tools/write/__init__.py</code>, <code>errors.py</code>,
+<code>rest_api_client.py</code>, <code>endpoints.py</code>, <code>application.py</code>, <code>factory.py</code>,
+<code>config.py</code>, <code>transport/{base,mock}.py</code>, <code>logging_setup.py</code>, <code>tools/audit.py</code>,
+<code>Makefile</code>, <code>pyproject.toml</code>, and the static checkers
+<code>get_only_check.py</code>/<code>tools_write_check.py</code>/<code>bounded_params_check.py</code>/
+<code>scaffold_capability.py</code>. Every design decision below extends an existing,
+observed pattern rather than inventing a new one.</p>
+<h2 id="design-principles-why-the-shape-below-not-another-one">Design principles (why the shape below, not another one)<a class="headerlink" href="#design-principles-why-the-shape-below-not-another-one" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Inert by construction, not by convention.</strong> The production bootstrap
+   path (<code>application.py</code> → <code>factory.py</code> → <code>ToolRegistry</code>) is <strong>not touched</strong>
+   in Tier 0. <code>WriteApiClient</code>/<code>PfSenseWriteClient</code> are never instantiated
+   during real server startup — they exist only as tested library code. A
+   bug in Tier 0 code cannot reach the live pfSense box because nothing in
+   the running process ever constructs an object capable of a non-GET call.</li>
+<li><strong>Two named chokepoints, not one relaxed one.</strong> <code>RestApiClient</code> stays
+   exactly as it is today — unconditionally GET-only, unmodified. A second,
+   separate <code>WriteApiClient</code> is the <em>only other</em> place permitted to call
+   <code>Transport.request()</code> with a non-GET method. <code>get_only_check.py</code>'s
+   allow-list grows from one name to two, explicitly — the check's job
+   shifts from "GET-only" to "only these two audited files touch the wire,"
+   stated plainly in its own docstring.</li>
+<li><strong>Allow-list before capability.</strong> Mirroring <code>Endpoints</code>/
+   <code>SUPPORTED_CAPABILITIES_THIS_BUILD</code>'s existing "explicit list, not
+   inference" philosophy: a mutation is refused unless its endpoint is a
+   <code>WriteEndpoints</code> entry. That registry ships <strong>empty</strong> in Tier 0 — so even
+   if every other gate had a bug, every mutation attempt still refuses at
+   the allow-list check. Static checker (<code>write_allow_list_check.py</code>) proves
+   the registry is empty.</li>
+<li><strong>Capability gate stays empty too, independently.</strong> <code>Capability.
+   FIREWALL_WRITE/ALIAS_WRITE/SERVICE_WRITE</code> already exist (unused
+   placeholders) but are excluded from <code>SUPPORTED_CAPABILITIES_THIS_BUILD</code>
+   and both <code>Profile</code>s today. Tier 0 changes <strong>none</strong> of <code>capabilities.py</code>
+   or <code>profiles.py</code> — a second static checker
+   (<code>write_capability_check.py</code>) proves this stays true, as an independent,
+   redundant guard alongside principle 3.</li>
+<li><strong>Snapshot-before-mutate, using the existing READ path.</strong> A live mutation
+   is refused without a fresh <code>RecoveryContract</code>, and a contract can only be
+   created by capturing current state through the <em>existing</em>, already-
+   verified <code>PfSenseClient</code> GET path — Tier 0 adds no new way to read
+   pfSense, it reuses the one that's already accepted and frozen.</li>
+<li><strong>Dry-run never touches the wire.</strong> <code>WriteApiClient.dry_run()</code> performs
+   zero non-GET network calls, by construction — it only reads current state
+   (via the same GET path as principle 5) and computes a predicted diff
+   in-process.</li>
+</ol>
+<h2 id="1-final-architecture">1. Final architecture<a class="headerlink" href="#1-final-architecture" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>Transport (HttpTransport / MockTransport)          — UNCHANGED
+    ↓                              ↓
+RestApiClient (GET-only, unchanged)   WriteApiClient (NEW — 2nd chokepoint)
+    ↓                              ↓
+PfSenseClient (unchanged)          PfSenseWriteClient (NEW)
+    ↓                              ↓            ↑ uses PfSenseClient for
+ToolRegistry.register_all()  ToolRegistry.register_all_write()   snapshots
+    (34 READ tools, unchanged)  (NEW extension point — registers
+                                  nothing; no *_WRITE capability is
+                                  ever active in this build)
+
+Supporting, cross-cutting NEW modules (used only by the write path):
+  write_endpoints.py   — WriteEndpoints allow-list (empty in Tier 0)
+  write_types.py        — MutationPlan / DryRunResult / ExecutionResult /
+                           RollbackResult / ContractStatus
+  recovery.py            — RecoveryContract + RecoveryContractStore
+  rollback.py             — RollbackPlan protocol + RollbackExecutor
+  write_audit.py           — separate, structured write-audit log
+</code></pre></div>
+<p><code>Application</code>/<code>factory.py</code>/<code>config.py</code> are <strong>not modified</strong> — see Design
+Principle 1. <code>WriteApiClient</code> and <code>PfSenseWriteClient</code> are fully built and
+unit-tested via <code>MockTransport</code>, but nothing in the real server process ever
+constructs one in Tier 0.</p>
+<h2 id="2-module-responsibilities-summary-full-per-module-spec-in-12">2. Module responsibilities (summary — full per-module spec in §12)<a class="headerlink" href="#2-module-responsibilities-summary-full-per-module-spec-in-12" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Allow-list</td>
+<td><code>write_endpoints.py</code></td>
+<td>Single source of truth for which (path, HTTP method) pairs may ever be mutated. Empty in Tier 0.</td>
+</tr>
+<tr>
+<td>Shared types</td>
+<td><code>write_types.py</code></td>
+<td><code>MutationPlan</code>, <code>DryRunResult</code>, <code>ExecutionResult</code>, <code>RollbackResult</code>, <code>ContractStatus</code> — no behavior.</td>
+</tr>
+<tr>
+<td>Chokepoint</td>
+<td><code>write_api_client.py</code></td>
+<td>The only module besides <code>rest_api_client.py</code> calling <code>Transport.request()</code>. Owns dry-run (zero network), execute (allow-list + contract checks, then the one real call), and its own request-level audit logging.</td>
+</tr>
+<tr>
+<td>Recovery</td>
+<td><code>recovery.py</code></td>
+<td><code>RecoveryContract</code> (immutable snapshot + rollback plan + TTL) and <code>RecoveryContractStore</code> (in-memory, expiring).</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td><code>rollback.py</code></td>
+<td><code>RollbackPlan</code> protocol; <code>RollbackExecutor</code> replays a contract's rollback plan and updates contract status.</td>
+</tr>
+<tr>
+<td>Domain</td>
+<td><code>pfsense_write_client.py</code></td>
+<td>Semantic write layer mirroring <code>PfSenseClient</code>'s shape. Zero domain mutating methods in Tier 0 — only the generic <code>dry_run</code>/<code>prepare_recovery_contract</code>/<code>execute</code>/<code>rollback</code> plumbing.</td>
+</tr>
+<tr>
+<td>Audit</td>
+<td><code>write_audit.py</code></td>
+<td>Separate structured (JSON-lines) audit log, distinct file from the existing plain-text server log, for every dry-run/execute/rollback event.</td>
+</tr>
+<tr>
+<td>Registration</td>
+<td><code>tools/registry.py</code> (modified)</td>
+<td>Adds <code>register_all_write()</code> — a documented, empty extension point called from <code>register_all()</code>.</td>
+</tr>
+<tr>
+<td>Enforcement</td>
+<td><code>errors.py</code> (modified)</td>
+<td>Adds <code>WriteNotAllowedError</code>.</td>
+</tr>
+<tr>
+<td>Enforcement</td>
+<td><code>get_only_check.py</code> (modified)</td>
+<td>Allow-list grows from <code>("rest_api_client.py",)</code> to <code>("rest_api_client.py", "write_api_client.py")</code>.</td>
+</tr>
+<tr>
+<td>Enforcement</td>
+<td><code>write_allow_list_check.py</code> (new)</td>
+<td>Proves <code>WriteEndpoints</code> has zero entries.</td>
+</tr>
+<tr>
+<td>Enforcement</td>
+<td><code>write_capability_check.py</code> (new)</td>
+<td>Proves no <code>*_WRITE</code> capability is in <code>SUPPORTED_CAPABILITIES_THIS_BUILD</code> or either <code>Profile</code>.</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td><code>logging_setup.py</code> / <code>application.py</code> (modified)</td>
+<td><code>LOG_DIR</code> constant moves from <code>application.py</code> into <code>logging_setup.py</code> as <code>DEFAULT_LOG_DIR</code>, so <code>write_audit.py</code> can share it without a reverse import. Purely mechanical; no behavior change.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-recovery-contract-implementation">3. Recovery Contract implementation<a class="headerlink" href="#3-recovery-contract-implementation" title="Permanent link">&para;</a></h2>
+<p><code>recovery.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecoveryContract</span><span class="p">:</span>
+    <span class="n">contract_id</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># uuid4 hex</span>
+    <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span>
+    <span class="n">endpoint_symbol</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># a WriteEndpoints attribute name</span>
+    <span class="n">created_at_utc</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">expires_at_utc</span><span class="p">:</span> <span class="n">datetime</span>  <span class="c1"># short TTL, e.g. 5 minutes</span>
+    <span class="n">pre_state_snapshot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>  <span class="c1"># raw GET body, in-memory only</span>
+    <span class="n">rollback_plan</span><span class="p">:</span> <span class="n">RollbackPlan</span>
+    <span class="n">status</span><span class="p">:</span> <span class="n">ContractStatus</span>  <span class="c1"># OPEN / COMMITTED / ROLLED_BACK / EXPIRED</span>
+</code></pre></div>
+<p><code>RecoveryContractStore</code> (in-memory dict, no persistence — a snapshot is live
+pfSense config data and must never be written to disk or logged in full,
+consistent with <code>errors.py</code>'s existing "no raw response body" rule):
+<code>create(capability, endpoint_symbol, snapshot, rollback_plan, ttl) -&gt;
+RecoveryContract</code>, <code>get(contract_id) -&gt; RecoveryContract | None</code> (<code>None</code> if
+missing/expired — expiry checked against <code>datetime.now(UTC)</code>, not a
+background thread), <code>mark_committed(contract_id)</code>,
+<code>mark_rolled_back(contract_id)</code>.</p>
+<p><code>PfSenseWriteClient.prepare_recovery_contract(plan)</code> is the only place a
+contract is created: it calls straight into the existing <code>PfSenseClient</code> GET
+method for the relevant resource to capture <code>pre_state_snapshot</code> — reusing
+the already-accepted READ path rather than adding a second way to read
+pfSense.</p>
+<h2 id="4-write-allow-list-enforcement">4. Write allow-list enforcement<a class="headerlink" href="#4-write-allow-list-enforcement" title="Permanent link">&para;</a></h2>
+<p><code>write_endpoints.py</code> mirrors <code>endpoints.py</code>'s <code>EndpointInfo</code>/<code>Endpoints</code>
+shape exactly, with two additions relevant to mutation:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WriteEndpointInfo</span><span class="p">:</span>
+    <span class="n">path_suffix</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">http_method</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># &quot;POST&quot; | &quot;PUT&quot; | &quot;PATCH&quot; | &quot;DELETE&quot;</span>
+    <span class="n">verified</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># same meaning as Endpoints.verified</span>
+    <span class="n">min_api_version</span><span class="p">:</span> <span class="n">ApiVersion</span>
+    <span class="n">reversible</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># can RollbackExecutor act on this?</span>
+    <span class="n">dry_run_supported</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># must be True to ever be registered</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WriteEndpoints</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Empty in this build. Every future entry requires: independent</span>
+<span class="sd">    live verification (verified=True, same bar as Endpoints), an</span>
+<span class="sd">    explicit RollbackPlan if reversible=True, and dry_run_supported=True.</span>
+<span class="sd">    scripts/write_allow_list_check.py enforces zero entries until Tier 1.&quot;&quot;&quot;</span>
+</code></pre></div>
+<p><code>WriteApiClient.execute()</code> looks up <code>plan.endpoint_symbol</code> in
+<code>WriteEndpoints</code>; if absent, raises <code>WriteNotAllowedError</code> before any
+network call. <code>scripts/write_allow_list_check.py</code> (new, static, no network,
+mirrors <code>get_only_check.py</code>'s style) parses <code>write_endpoints.py</code> via <code>ast</code>
+and fails the build if any <code>WriteEndpointInfo(...)</code> instantiation exists
+inside the <code>WriteEndpoints</code> class body — Tier 0's version of this script
+asserts strictly zero.</p>
+<h2 id="5-dry-run-execution-flow">5. Dry-run execution flow<a class="headerlink" href="#5-dry-run-execution-flow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>caller → PfSenseWriteClient.dry_run(plan: MutationPlan) -&gt; DryRunResult
+           ↓
+         WriteApiClient.dry_run(plan)
+           1. plan.endpoint_symbol in WriteEndpoints?  (no → refused, done)
+           2. plan.http_method matches the allow-listed entry&#39;s method?
+           3. fetch current state via the injected PfSenseClient (a GET —
+              never a mutating call)
+           4. compute predicted_diff = current vs plan.payload (pure,
+              in-process comparison)
+           5. return DryRunResult(allowed, reasons, predicted_diff)
+</code></pre></div>
+<p>No step above ever calls <code>Transport.request()</code> with a non-GET method — dry
+run is provably network-mutation-free by construction, not by convention.
+<code>DryRunResult.allowed is False</code> for every plan in Tier 0, since step 1 always
+fails (empty allow-list) — exercised directly by unit tests.</p>
+<h2 id="6-rollback-framework">6. Rollback framework<a class="headerlink" href="#6-rollback-framework" title="Permanent link">&para;</a></h2>
+<p><code>rollback.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RollbackPlan</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">write_client</span><span class="p">:</span> <span class="s2">&quot;WriteApiClient&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RollbackResult</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RollbackExecutor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rollback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contract</span><span class="p">:</span> <span class="n">RecoveryContract</span><span class="p">,</span> <span class="n">write_client</span><span class="p">:</span> <span class="n">WriteApiClient</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RollbackResult</span><span class="p">:</span>
+        <span class="c1"># refuses unless contract.status == ContractStatus.COMMITTED</span>
+        <span class="c1"># invokes contract.rollback_plan.execute(write_client)</span>
+        <span class="c1"># updates the contract&#39;s status via RecoveryContractStore</span>
+</code></pre></div>
+<p>Concrete <code>RollbackPlan</code> implementations are capability-specific and are
+<strong>not written in Tier 0</strong> — each real write capability (Tier 1+) supplies
+its own alongside its <code>WriteEndpoints</code> entry. Tier 0 tests this framework
+exclusively against a synthetic, test-only <code>RollbackPlan</code> double defined in
+<code>tests/test_rollback.py</code> — never a real pfSense-facing implementation.</p>
+<h2 id="7-capability-registration-model">7. Capability registration model<a class="headerlink" href="#7-capability-registration-model" title="Permanent link">&para;</a></h2>
+<p>No changes to <code>capabilities.py</code> or <code>profiles.py</code> (Design Principle 4). One
+small, additive change to <code>tools/registry.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">register_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># 34 existing read checks, byte-for-byte unchanged</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">register_all_write</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">register_all_write</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write-capability registration dispatch point. Empty in this</span>
+<span class="sd">    build — no *_WRITE capability is ever present in self._capabilities</span>
+<span class="sd">    (independently enforced by scripts/write_capability_check.py).</span>
+<span class="sd">    Each future write capability adds one</span>
+<span class="sd">    `if Capability.X_WRITE in self._capabilities: self._register_x_write()`</span>
+<span class="sd">    branch here, mirroring register_all()&#39;s existing per-capability</span>
+<span class="sd">    dispatch pattern, under a separately authorized tier.&quot;&quot;&quot;</span>
+</code></pre></div>
+<p><code>ToolRegistry.__init__</code> is unchanged (still takes only the read <code>client</code>) —
+Tier 0 does not thread a write client through it, since nothing constructs
+one in production (Design Principle 1). Tier 1 is what adds a <code>write_client</code>
+parameter here, alongside the first real capability.</p>
+<h2 id="8-logging-and-audit-model">8. Logging and audit model<a class="headerlink" href="#8-logging-and-audit-model" title="Permanent link">&para;</a></h2>
+<p>Two logs, kept structurally separate so write activity is trivially
+greppable/alertable on independent of ordinary read traffic:</p>
+<ul>
+<li><strong>Existing</strong> <code>pfsense-mcp-server.log</code> (<code>tools/audit.py</code>'s <code>audit_logged</code>,
+  unchanged) — continues covering the 34 read tools exactly as today.</li>
+<li><strong>New</strong> <code>pfsense-mcp-server-write-audit.log</code> (<code>write_audit.py</code>) — one JSON
+  line per event: <code>write_dry_run_requested</code>, <code>write_dry_run_completed</code>,
+  <code>write_recovery_contract_created</code>, <code>write_execution_requested</code>,
+  <code>write_execution_committed</code>, <code>write_execution_failed</code>,
+  <code>write_rollback_requested</code>, <code>write_rollback_completed</code>. Fields: <code>identity</code>,
+  <code>capability</code>, <code>endpoint_symbol</code>, <code>contract_id</code>, <code>dry_run: bool</code>,
+  <code>duration_ms</code>, <code>outcome</code>. <strong>Never</strong> includes <code>pre_state_snapshot</code> content or
+  <code>payload</code> values — only the fact and shape of the event, consistent with
+  <code>errors.py</code>'s existing "no raw response body" rule. Reuses the existing
+  <code>SecretRedactionFilter</code> class (imported, not modified) on its own handler.
+  <code>configure_write_audit_logging(log_dir, ...)</code> lives in <code>write_audit.py</code>
+  itself (not <code>logging_setup.py</code>) so it stays unreachable/unused unless a
+  future tier explicitly wires it into <code>Application._bootstrap()</code>.</li>
+</ul>
+<h2 id="9-testing-strategy">9. Testing strategy<a class="headerlink" href="#9-testing-strategy" title="Permanent link">&para;</a></h2>
+<p>Follows existing conventions exactly: <code>MockTransport</code>-backed unit tests, no
+new mocking library, JUnit-driven meta-checks via <code>validate_junit.py</code>,
+static AST/regex checks for architectural invariants, opt-in live tests
+gated by <code>PFSENSE_RUN_LIVE_TESTS</code>.</p>
+<ul>
+<li><strong>New <code>validate_junit.py</code> stage</strong>: <code>write-infrastructure</code> — every testcase
+  whose classname matches <code>test_write_*</code>/<code>test_recovery_contract</code>/
+  <code>test_rollback</code> must be <code>passed</code> (mirrors the existing
+  <code>endpoint-registry</code>/<code>profile-registration</code> stage pattern exactly).</li>
+<li><strong><code>Makefile</code></strong>: <code>validate</code> grows from 13 → 16 stages (adds
+  <code>write-infrastructure-check</code> [JUnit], <code>write-allow-list-check</code> [static],
+  <code>write-capability-check</code> [static]); <code>quick</code> grows from 7 → 9 stages (adds
+  the two static ones only, matching why <code>quick</code> already skips every
+  JUnit-dependent stage today). All existing stage numbers/labels are
+  renumbered mechanically; no existing stage's logic changes.</li>
+<li>Full per-module unit/integration test list is in §12.</li>
+</ul>
+<h2 id="10-live-verification-strategy">10. Live verification strategy<a class="headerlink" href="#10-live-verification-strategy" title="Permanent link">&para;</a></h2>
+<p>Tier 0 adds <strong>no</strong> live-network write test that could ever mutate pfSense —
+that would contradict "infrastructure only." Two things happen live:</p>
+<ol>
+<li><strong>One new, genuinely safe live pytest</strong>:
+   <code>tests/test_live_write_allow_list_empty.py</code> (<code>pytest.mark.live</code>, same
+   <code>PFSENSE_RUN_LIVE_TESTS</code> gate as every existing live test) — calls the
+   <em>already-accepted</em> <code>pfsense_get_system_restapi_settings</code> READ tool and
+   asserts pfSense's own API config still reports <code>read_only: true</code>. This
+   directly reuses this session's own acceptance finding as an ongoing
+   regression guard: even a bug in Tier 0's client-side gates would still be
+   caught by pfSense refusing writes at its own API layer.</li>
+<li><strong>A repeatable acceptance procedure</strong>, structurally identical to the
+   v0.1.0 acceptance just completed (fresh Claude Code process, fresh MCP
+   subprocess started after it, enumerate <code>mcp__pfsense__*</code> tools): confirm
+   the live tool count is still exactly <strong>41</strong> (unchanged) under the default
+   <code>auditor</code> profile, confirm it is <strong>0</strong> under <code>engineer</code> profile (proving
+   <code>EngineerProfile.capabilities</code> really is still empty end-to-end, not just
+   in a unit test), and confirm every one of the 3 new static checks passes.
+   This produces <code>docs/ACCEPTANCE_v0.2.0.md</code>, written the same way
+   <code>ACCEPTANCE_v0.1.0.md</code> was — only after this passes does v0.2.0 get
+   tagged.</li>
+</ol>
+<h2 id="11-release-plan-from-v020-onward">11. Release plan from v0.2.0 onward<a class="headerlink" href="#11-release-plan-from-v020-onward" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>v0.2.0</strong> = Tier 0 exactly as specified here: infrastructure present,
+  fully tested, zero live-reachable mutating capability. Tagged only after
+  the §10 acceptance procedure passes, mirroring the v0.1.0 rhythm from this
+  session (implement → live-verify → checkpoint/acceptance doc → commit →
+  tag → stop for approval before anything further).</li>
+<li><strong>v0.2.x</strong> = patches to Tier-0 infrastructure only (bug fixes, no new
+  capability surface, no new <code>WriteEndpoints</code> entry).</li>
+<li><strong>v0.3.0 (Tier 1)</strong> = exactly <strong>one</strong> real write capability, named and
+  explicitly authorized separately from this spec — requires a
+  <code>WriteEndpoints</code> entry (<code>verified=True</code> only after independent live
+  testing, same bar as <code>Endpoints</code>), a real <code>RollbackPlan</code>, a real
+  <code>dry_run</code>/<code>execute</code> path wired into <code>ToolRegistry</code>/<code>factory.py</code>/
+  <code>Application</code>, and its own acceptance record before tagging.</li>
+<li><strong>v0.4.0+</strong> = one additional write capability per minor version, each
+  independently authorized and accepted before tag — no two capabilities
+  land in the same release without separate re-authorization for each,
+  matching how READ capabilities were added one at a time in v0.1.0's
+  history.</li>
+</ul>
+<h2 id="12-complete-file-manifest">12. Complete file manifest<a class="headerlink" href="#12-complete-file-manifest" title="Permanent link">&para;</a></h2>
+<h3 id="new-files">New files<a class="headerlink" href="#new-files" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Public API</th>
+<th>Dependencies</th>
+<th>Unit tests</th>
+<th>Integration tests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/pfsense_mcp/write_types.py</code></td>
+<td>Shared write-domain dataclasses/enums, no behavior</td>
+<td><code>MutationPlan</code>, <code>DryRunResult</code>, <code>ExecutionResult</code>, <code>RollbackResult</code>, <code>ContractStatus(Enum)</code></td>
+<td><code>capabilities.Capability</code></td>
+<td><code>tests/test_write_types.py</code> — construction/equality/immutability</td>
+<td>— (pure data)</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/write_endpoints.py</code></td>
+<td>Mutation allow-list; empty in Tier 0</td>
+<td><code>WriteEndpointInfo</code> (frozen dataclass), <code>WriteEndpoints</code> (empty container class)</td>
+<td><code>api_version.ApiVersion</code></td>
+<td><code>tests/test_write_endpoints.py</code> — asserts <code>WriteEndpoints</code> has zero attributes of type <code>WriteEndpointInfo</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/recovery.py</code></td>
+<td>Recovery Contract + in-memory expiring store</td>
+<td><code>RecoveryContract</code> (frozen dataclass), <code>RecoveryContractStore.{create,get,mark_committed,mark_rolled_back}</code></td>
+<td><code>write_types</code>, <code>capabilities.Capability</code>, <code>rollback.RollbackPlan</code></td>
+<td><code>tests/test_recovery_contract.py</code> — create/get/expiry/status transitions, snapshot never logged</td>
+<td><code>tests/test_write_integration_dry_run.py</code> (contract lifecycle inside a full dry-run→refuse flow)</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/rollback.py</code></td>
+<td>Rollback protocol + executor</td>
+<td><code>RollbackPlan(Protocol)</code>, <code>RollbackExecutor.rollback(contract, write_client)</code></td>
+<td><code>write_types</code>, <code>recovery.RecoveryContract</code></td>
+<td><code>tests/test_rollback.py</code> — refuses non-COMMITTED contracts, invokes a synthetic test-double plan, updates status</td>
+<td><code>tests/test_write_integration_dry_run.py</code></td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/write_api_client.py</code></td>
+<td>2nd transport chokepoint: dry-run (network-free) + execute (allow-list + contract gated)</td>
+<td><code>WriteApiClient.__init__(transport, *, identity, api_version)</code>, <code>.dry_run(plan) -&gt; DryRunResult</code>, <code>.execute(plan, contract) -&gt; ExecutionResult</code></td>
+<td><code>transport.base.Transport</code>, <code>write_endpoints.WriteEndpoints</code>, <code>write_types</code>, <code>recovery.RecoveryContract</code>, <code>errors.WriteNotAllowedError</code>, <code>api_version</code></td>
+<td><code>tests/test_write_api_client.py</code> — refuses unknown endpoint (allow-list empty), refuses missing/expired/non-OPEN contract, dry-run never calls <code>transport.request</code> (assert on <code>MockTransport.calls</code>), method-mismatch refusal</td>
+<td><code>tests/test_write_integration_dry_run.py</code></td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/pfsense_write_client.py</code></td>
+<td>Domain-semantic write layer; zero domain mutating methods in Tier 0</td>
+<td><code>PfSenseWriteClient.__init__(write_rest_client, read_client)</code>, <code>.dry_run(plan)</code>, <code>.prepare_recovery_contract(plan) -&gt; RecoveryContract</code>, <code>.execute(plan, contract, *, confirm: bool)</code>, <code>.rollback(contract)</code></td>
+<td><code>write_api_client.WriteApiClient</code>, <code>pfsense_client.PfSenseClient</code>, <code>recovery</code>, <code>rollback</code></td>
+<td><code>tests/test_pfsense_write_client.py</code> — <code>confirm=False</code> always refuses, contract snapshot sourced from injected <code>PfSenseClient</code></td>
+<td><code>tests/test_write_integration_dry_run.py</code></td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/write_audit.py</code></td>
+<td>Separate structured (JSON-lines) write-audit log</td>
+<td><code>configure_write_audit_logging(log_dir, *, max_bytes, backup_count) -&gt; SecretRedactionFilter</code>, <code>write_audit_logged(event_name, identity) -&gt; decorator</code></td>
+<td><code>logging_setup.SecretRedactionFilter</code>, <code>logging_setup.DEFAULT_LOG_DIR</code></td>
+<td><code>tests/test_write_audit.py</code> — JSON-line shape, snapshot/payload never present in a logged line, redaction filter applied</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>scripts/write_allow_list_check.py</code></td>
+<td>Static: <code>WriteEndpoints</code> has zero entries</td>
+<td><code>find_write_endpoint_entries() -&gt; list[str]</code>, <code>main() -&gt; int</code></td>
+<td><code>ast</code> (stdlib)</td>
+<td><code>tests/test_write_allow_list_check.py</code> (mirrors <code>test_get_only_check.py</code>'s structure)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>scripts/write_capability_check.py</code></td>
+<td>Static: no <code>*_WRITE</code> capability active anywhere</td>
+<td><code>find_active_write_capabilities() -&gt; list[str]</code>, <code>main() -&gt; int</code></td>
+<td><code>pfsense_mcp.capabilities</code>, <code>pfsense_mcp.profiles</code></td>
+<td><code>tests/test_write_capability_check.py</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>docs/WRITE_TIER0_SPEC.md</code></td>
+<td>Committed copy of this approved spec, for repo-native reference</td>
+<td>— (doc)</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="modified-files">Modified files<a class="headerlink" href="#modified-files" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/pfsense_mcp/errors.py</code></td>
+<td>Add <code>WriteNotAllowedError(PfSenseMCPError)</code></td>
+<td>Refusal reason for allow-list/contract failures in <code>WriteApiClient</code></td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tools/registry.py</code></td>
+<td>Add empty <code>register_all_write()</code>, call it from <code>register_all()</code></td>
+<td>Documented, tested, currently-inert extension point (§7)</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/logging_setup.py</code></td>
+<td>Add <code>DEFAULT_LOG_DIR</code> constant (the same path <code>application.py</code> already computes)</td>
+<td>Lets <code>write_audit.py</code> share the log-directory convention without importing <code>application.py</code></td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/application.py</code></td>
+<td>Replace local <code>LOG_DIR = Path.home() / ...</code> literal with <code>from .logging_setup import DEFAULT_LOG_DIR as LOG_DIR</code></td>
+<td>Mechanical; value and behavior unchanged, existing tests unaffected</td>
+</tr>
+<tr>
+<td><code>scripts/get_only_check.py</code></td>
+<td><code>_ALLOWED_CALLER: str</code> → <code>_ALLOWED_CALLERS: tuple[str, ...] = ("rest_api_client.py", "write_api_client.py")</code>; docstring updated to state the invariant is now "only these two named, audited files call <code>Transport.request()</code>"</td>
+<td>The one deliberate relaxation Tier 0 requires (Design Principle 2) — everything else about the check (regex, "exactly these callers, no others, and each must appear at least once") stays the same</td>
+</tr>
+<tr>
+<td><code>Makefile</code></td>
+<td>Insert <code>write-infrastructure-check</code>, <code>write-allow-list-check</code>, <code>write-capability-check</code> into <code>validate</code> (13→16 stages) and the latter two into <code>quick</code> (7→9 stages); renumber existing stage labels; update <code>.PHONY</code></td>
+<td>New enforcement needs a place in the existing gate structure</td>
+</tr>
+<tr>
+<td><code>scripts/validate_junit.py</code></td>
+<td>Add <code>--stage write-infrastructure</code> branch (same pattern as <code>endpoint-registry</code>/<code>profile-registration</code>)</td>
+<td>Proves the new unit tests actually ran and passed, not just that the scripts exist</td>
+</tr>
+<tr>
+<td><code>tests/test_get_only_check.py</code></td>
+<td>Extend existing assertions for the new two-caller allow-list</td>
+<td>Keeps the existing meta-test honest about the changed invariant</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td><code>## Status</code> line updated once v0.2.0 is accepted (not before)</td>
+<td>Same pattern as the v0.1.0 closeout — status pointer only, no duplicated detail</td>
+</tr>
+</tbody>
+</table>
+<h3 id="explicitly-unchanged-stated-for-the-record-per-design-principles-1-4">Explicitly unchanged (stated for the record, per Design Principles 1 &amp; 4)<a class="headerlink" href="#explicitly-unchanged-stated-for-the-record-per-design-principles-1-4" title="Permanent link">&para;</a></h3>
+<p><code>capabilities.py</code>, <code>profiles.py</code>, <code>factory.py</code>, <code>config.py</code>,
+<code>rest_api_client.py</code>, <code>pfsense_client.py</code>, <code>endpoints.py</code>, <code>tools/audit.py</code>,
+<code>transport/*.py</code>, <code>tools/write/__init__.py</code>, <code>tools_write_check.py</code>,
+<code>bounded_params_check.py</code>, <code>docs/READ_BACKLOG.md</code>.</p>
+<h3 id="new-test-files-full-list-for-9">New test files (full list, for §9)<a class="headerlink" href="#new-test-files-full-list-for-9" title="Permanent link">&para;</a></h3>
+<p><code>tests/test_write_types.py</code>, <code>tests/test_write_endpoints.py</code>,
+<code>tests/test_recovery_contract.py</code>, <code>tests/test_rollback.py</code>,
+<code>tests/test_write_api_client.py</code>, <code>tests/test_pfsense_write_client.py</code>,
+<code>tests/test_write_audit.py</code>, <code>tests/test_tool_registry_write.py</code> (asserts
+<code>register_all_write()</code> registers nothing, for both <code>AuditorProfile</code> and
+<code>EngineerProfile</code>, reusing the existing fake-MCP test double already present
+in <code>tests/test_tool_registry.py</code>), <code>tests/test_write_allow_list_check.py</code>,
+<code>tests/test_write_capability_check.py</code>,
+<code>tests/test_write_integration_dry_run.py</code> (integration: full
+<code>PfSenseWriteClient</code> → <code>WriteApiClient</code> → <code>RecoveryContractStore</code> →
+<code>RollbackExecutor</code> flow against <code>MockTransport</code>, using one synthetic
+test-only <code>MutationPlan</code>/<code>RollbackPlan</code> pair defined in the test file itself
+— never a real endpoint), <code>tests/test_live_write_allow_list_empty.py</code>
+(live, §10).</p>
+<h2 id="verification-once-implementation-is-authorized">Verification (once implementation is authorized)<a class="headerlink" href="#verification-once-implementation-is-authorized" title="Permanent link">&para;</a></h2>
+<ol>
+<li><code>make validate</code> passes 16/16 stages (including all 3 new ones).</li>
+<li><code>make quick</code> passes 9/9 stages.</li>
+<li><code>PFSENSE_RUN_LIVE_TESTS=true pytest -m live</code> passes, including the new
+   <code>test_live_write_allow_list_empty.py</code>.</li>
+<li>Fresh-process acceptance procedure per §10: exactly 41 tools under
+   <code>auditor</code>, exactly 0 under <code>engineer</code>, both confirmed live.</li>
+<li><code>docs/ACCEPTANCE_v0.2.0.md</code> written and reviewed before tagging <code>v0.2.0</code>.</li>
+<li>Manual read-through confirms zero references to a real pfSense mutating
+   endpoint exist anywhere in the diff (i.e. <code>WriteEndpoints</code> is still
+   empty, <code>tools/write/</code> is still empty and unimported).</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

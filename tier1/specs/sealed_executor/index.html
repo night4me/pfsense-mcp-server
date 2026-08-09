@@ -1,0 +1,3895 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/tier1/specs/sealed_executor/">
+      
+      
+        <link rel="prev" href="../rate_blast_radius_policy/">
+      
+      
+        <link rel="next" href="../capability_adapter_contract/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Sealed executor - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tier-1-sealed-executor-complete-design-not-implemented" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Sealed executor
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interfaces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#object-ownership-and-dependency-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Object ownership and dependency direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authority-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authority boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapter-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adapter responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executor-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executor responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forbidden-adapter-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forbidden adapter behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollback-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audit-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#activation-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activation requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trust-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trust boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interfaces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#object-ownership-and-dependency-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Object ownership and dependency direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authority-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authority boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapter-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adapter responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executor-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executor responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forbidden-adapter-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forbidden adapter behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollback-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audit-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#activation-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activation requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/tier1/specs/sealed_executor.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tier-1-sealed-executor-complete-design-not-implemented">Tier 1 — Sealed executor (complete design, not implemented)<a class="headerlink" href="#tier-1-sealed-executor-complete-design-not-implemented" title="Permanent link">&para;</a></h1>
+<p>Status: implementation-ready specification; implementation not authorized.
+Activation gate: Milestone 6/7 in <a href="../../../TIER1_ROADMAP/">TIER1_ROADMAP.md</a>;
+requires <a href="../../../adr/ADR-014-sealed-executor-interface/">ADR-014</a>.
+Related: all other <code>docs/tier1/specs/*.md</code> — the executor is the one
+component that composes every other subsystem into an actual mutation
+path, so this is the longest and most load-bearing spec in this set.</p>
+<p>This document specifies the executor completely enough to implement
+without further architectural decisions. <strong>It must not be implemented as
+part of this design phase</strong> — the deliverable here is the design, reviewed
+and frozen, not code.</p>
+<p><strong>Implementation note (discovered during Phase 3 implementation):</strong> this
+spec's "send exactly one bounded typed request" assumed the existing
+<code>WriteApiClient</code>/<code>Transport</code> stack could already carry a request body. It
+could not — <code>Transport.request(method, path)</code> had no body parameter at
+all (the whole stack was shaped for GET, which never needs one), matching
+<code>TIER1_ROADMAP.md</code> Milestone 4's explicit (and, until now, unscheduled
+relative to this spec) "implement explicit JSON/body transmission"
+requirement. Closed as a small, additive, fully-tested precondition
+before <code>executor.py</code> itself was written: <code>Transport.request()</code> gained an
+optional <code>body: bytes | None = None</code> parameter (<code>HttpTransport</code>/
+<code>MockTransport</code> updated to match, zero behavior change for any existing
+GET-only caller since the parameter defaults to <code>None</code>), and
+<code>WriteApiClient</code> gained a new public method, <code>send_for_tier1(*,
+endpoint_symbol, http_method, body) -&gt; TransportResponse</code> — deliberately
+<strong>not</strong> a reuse of <code>execute()</code>, which is hard-coupled to Tier 0's own
+<code>RecoveryContract</code>/<code>ContractStatus</code> model (a different, incompatible
+contract shape from Tier 1's <code>PREPARING</code>/<code>PREPARED</code>/<code>EXECUTING</code> state
+machine) and to <code>write_types.MutationPlan</code>'s <code>payload: dict[str, Any]</code>
+field, which directly contradicts this spec's own G2 ("no raw dict
+payload"). <code>send_for_tier1()</code> performs the identical allow-list/verified/
+method/api-version checks as <code>execute()</code>, takes no Tier 0 contract
+parameter (Tier 1's caller has already done its own, more rigorous
+validation), and returns the raw <code>TransportResponse</code> for the executor to
+classify — it remains exactly as inert as <code>execute()</code> while
+<code>WriteEndpoints</code> stays empty. <code>execute()</code>'s existing behavior, signature,
+and tests are completely unchanged.</p>
+<p><strong>Implementation note (executor build, Phase 3):</strong> three details below
+were left underspecified by this document's original pseudocode and were
+resolved during implementation, tested, and are recorded here rather than
+left implicit in code:</p>
+<ol>
+<li><strong><code>read_target()</code> was added to <code>CapabilityAdapter</code>, and it takes a
+   <code>natural_identity</code> parameter.</strong> The original pseudocode wrote
+   <code>pre = read_client.&lt;capability-specific GET&gt;(natural_identity)</code> as if
+   the executor itself dispatched to a capability-specific <code>PfSenseClient</code>
+   method by name. That would require the executor to hold a
+   capability -&gt; method mapping outside this module, which this spec's
+   Non-goals explicitly rule out ("does not implement generic 'plugin'
+   loading, dynamic adapter discovery, or a registry beyond a simple,
+   explicit, reviewed mapping"). Instead, the adapter itself performs the
+   one sanctioned read, through the executor-supplied <code>read_client</code>:
+   <code>read_target(self, read_client: PfSenseClient, natural_identity:
+   CanonicalValue) -&gt; object</code>. <code>natural_identity</code> must be a parameter (not
+   baked into adapter construction) because adapters are stateless,
+   possibly module-level singletons (Lifecycle step 2) reused across many
+   different targets of the same capability — an adapter instance cannot
+   know, on its own, which target a given call concerns. The executor
+   passes the same already-verified <code>natural_identity</code> value on both the
+   pre-send and post-send reads. This is recorded as an addition to
+   <code>capability_adapter_contract.md</code> as well.</li>
+<li><strong><code>execute()</code>'s <code>intent</code> argument is a plain canonical dict, and its
+   <code>raw_target_hint</code> entry is accessed as <code>intent["raw_target_hint"]</code>, not
+   <code>intent.raw_target_hint</code>.</strong> The full <code>intent</code> object is digested
+   whole (<code>normalized_intent=intent</code> in <code>contract.verify_bindings</code>), and
+   <code>canonical.py</code>'s digesting only accepts <code>None</code>/<code>bool</code>/<code>int</code>/<code>str</code>/
+   <code>list</code>/<code>dict</code> — never an arbitrary Python object — so <code>intent</code> cannot
+   be a dataclass or other attribute-bearing type. Concretely,
+   <code>execute()</code>'s signature is <code>intent: dict[str, CanonicalValue]</code>, and
+   <code>adapter.natural_identity(intent["raw_target_hint"])</code> /
+   <code>adapter.fingerprint(intent["raw_target_hint"])</code> recompute the identity/
+   fingerprint bindings from that entry before the <code>PREPARED -&gt; EXECUTING</code>
+   transition; the actual mutation payload passed to
+   <code>adapter.build_request()</code> always comes from the contract's own
+   decrypted <code>protected_intent</code> artifact, never from this argument, so a
+   caller who tampers with <code>intent</code> can only ever cause a pre-transition
+   <code>ContractBindingError</code> refusal, never a mismatched send.</li>
+<li><strong>Send-outcome classification treats 4xx and 5xx/3xx differently.</strong> A
+   4xx response is pfSense confidently rejecting the request before
+   processing it (<code>EffectKnowledge.VERIFIED_FAILURE</code>, zero effect,
+   proven). A 5xx (or unexpected 3xx) response does not carry that same
+   guarantee — the server may have partially processed the request before
+   failing — so it classifies as <code>EffectKnowledge.AMBIGUOUS</code>, matching how
+   <code>TransportTimeoutError</code> is treated, and drives the contract to
+   <code>RECONCILIATION</code> rather than <code>FAILED</code>. <code>TransportConnectionError</code> (never
+   reached the server) and <code>WriteNotAllowedError</code> (refused before any
+   network call) both classify as <code>EffectKnowledge.PROVEN_NONE</code>. Because
+   <code>executor.py</code> is forbidden from importing <code>pfsense_mcp.transport</code>
+   directly (see I1's isolation-test enforcement, unchanged by this
+   addition), <code>WriteApiClient</code> re-exports <code>TransportConnectionError</code>/
+   <code>TransportTimeoutError</code> for the executor to import from it instead —
+   the executor still never holds a <code>Transport</code> reference itself, only the
+   exception types it needs to classify what <code>send_for_tier1()</code> raises.</li>
+</ol>
+<p>See <code>tests/tier1/test_executor.py</code> for the full behavioral test suite
+(happy path, policy refusal, binding mismatch, fingerprint drift, every
+<code>EffectKnowledge</code> outcome for both <code>execute()</code> and <code>rollback()</code>, and an
+audit-trail-completeness assertion), and <code>tests/tier1/test_isolation.py</code>'s
+<code>executor_only_import_roots</code> exception for the enforced boundary.</p>
+<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>There is currently no code anywhere in this repository that can send a
+non-GET request based on a Recovery Contract. <code>WriteApiClient</code>
+(Tier 0, <code>src/pfsense_mcp/write_api_client.py</code>) is the only chokepoint
+capable of a non-GET call, and it is never constructed by production, has
+an empty allow-list, and is not connected to <code>pfsense_mcp.tier1</code> in any
+way. The sealed executor is the <strong>one</strong> future component authorized to
+bridge Tier 1's authorization/state machinery to that chokepoint. Its
+entire purpose is to make it structurally difficult for a correctly-
+reviewed capability adapter to accidentally or maliciously perform an
+unauthorized, unverified, or duplicate mutation — by owning every
+security-relevant decision itself and giving the adapter no path around
+it.</p>
+<h2 id="security-goals">Security goals<a class="headerlink" href="#security-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>G1: A capability adapter cannot cause a network call except through
+  exactly one executor-owned send, gated by policy, contract state, and
+  target re-verification that the adapter does not control.</li>
+<li>G2: A capability adapter cannot choose an HTTP method, path, or "raw"
+  payload dict — only a typed request object the executor's policy layer
+  has already matched against the allow-listed
+  <code>(capability, endpoint_symbol, http_method)</code> tuple.</li>
+<li>G3: A capability adapter cannot claim verification — only the executor,
+  after an authoritative read-back it performs itself, transitions a
+  contract to <code>VERIFIED</code>.</li>
+<li>G4: A capability adapter cannot perform more than one mutating
+  operation per <code>execute()</code> call — no adapter-driven loops, no bulk
+  operations, structurally.</li>
+<li>G5: Every execution attempt — success, failure, or ambiguous — produces
+  exactly the audit trail <code>store.py</code> already knows how to write,
+  attributable to one <code>contract_id</code>, with no adapter-controlled bypass of
+  audit writing.</li>
+</ul>
+<h2 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h2>
+<ul>
+<li>I1: <code>MutationExecutor</code> is the only class in <code>pfsense_mcp.tier1</code> (once
+  this spec is implemented) that holds a reference to a <code>WriteApiClient</code>-
+  shaped sender. No <code>CapabilityAdapter</code> implementation may hold, import,
+  or construct one — enforced by extending <code>tests/tier1/test_isolation.py</code>
+  to a new <code>tier1/adapters/</code> package (see <code>adapter_restrictions.md</code>).</li>
+<li>I2: The executor performs exactly the eight steps in
+  <code>RECOVERY_CONTRACT_SPEC.md</code>'s "Execution algorithm" section, in that
+  order, with no step skippable by adapter behavior.</li>
+<li>I3: The executor never accepts a caller-supplied <code>RecoveryContract</code>
+  object — only a <code>contract_id</code> string, loaded authoritatively from the
+  store, matching the existing "store, not an MCP-supplied contract
+  object, is authoritative" principle already stated in
+  <code>TIER1_ROADMAP.md</code>.</li>
+<li>I4: The executor performs the post-acquisition authoritative re-read
+  (natural identity + fingerprint match) using the <strong>existing</strong>,
+  already-accepted <code>PfSenseClient</code> GET path — the executor does not gain
+  a second way to read pfSense.</li>
+<li>I5: Exactly one non-GET network call happens per successful <code>execute()</code>
+  invocation, and zero on any refusal path — this must be true even under
+  adapter misbehavior, not just adapter cooperation (see Forbidden adapter
+  behavior).</li>
+<li>I6: The executor's rollback path (<code>rollback()</code>) has the same shape as
+  <code>execute()</code> — one send, authoritative re-read, no adapter-controlled
+  send count — and requires the same policy/contract-state checks,
+  scoped to <code>VERIFIED -&gt; ROLLING_BACK</code>.</li>
+</ul>
+<h2 id="trust-boundaries">Trust boundaries<a class="headerlink" href="#trust-boundaries" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Boundary</th>
+<th>Trusted side</th>
+<th>Untrusted side</th>
+<th>Enforcement point</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Executor vs. capability adapter</td>
+<td><code>MutationExecutor</code> (owns transport, policy, state, audit)</td>
+<td><code>CapabilityAdapter</code> implementation (pure projections only)</td>
+<td>Adapter Protocol has no transport-capable method (see Adapter responsibilities); AST isolation test</td>
+</tr>
+<tr>
+<td>Executor vs. MCP tool layer</td>
+<td><code>MutationExecutor.execute(contract_id, ...)</code></td>
+<td>MCP caller / agent-constructed arguments</td>
+<td><code>contract_id</code>-only interface (I3); typed intent input validated against the contract's <code>intent_digest</code> before any send</td>
+</tr>
+<tr>
+<td>Executor vs. <code>WriteApiClient</code></td>
+<td>Executor's one internal client reference</td>
+<td>Any other code that might try to reach <code>WriteApiClient</code></td>
+<td><code>WriteApiClient</code> remains the sole non-GET chokepoint (Tier 0 invariant, unchanged); executor is the only Tier 1 caller once wired</td>
+</tr>
+</tbody>
+</table>
+<h2 id="state-ownership">State ownership<a class="headerlink" href="#state-ownership" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>src/pfsense_mcp/tier1/executor.py</code> (new module) owns <code>MutationExecutor</code>
+  and the <code>CapabilityAdapter</code> Protocol (the Protocol definition lives here
+  because it is defined by what the executor requires, not by what any
+  one adapter wants to provide — see <code>capability_adapter_contract.md</code> for
+  the adapter-facing documentation of the same Protocol).</li>
+<li>The executor owns, by composition (constructor injection, not global
+  state):</li>
+<li>one <code>SqliteRecoveryContractStore</code></li>
+<li>one <code>WriteApiClient</code>-shaped sender (Tier 0's existing type, reused)</li>
+<li>one <code>PfSenseClient</code> (existing, GET-only, reused for re-reads)</li>
+<li>one <code>MutationPolicy</code> (existing <code>policy.py</code>, still built from a
+    non-empty rule set only once a capability is activated)</li>
+<li>one <code>AntiRollbackAnchor</code> (per <code>whole_store_anti_rollback.md</code>)</li>
+<li>the encryption key and HMAC key (per <code>key_lifecycle.md</code>) — passed
+    through to the store and to <code>crypto.py</code> calls the executor makes when
+    it needs to decrypt a snapshot/intent for building a request</li>
+<li>The executor does <strong>not</strong> own confirmation/reconciliation verifiers
+  directly — those are owned by the store (<code>store.confirm()</code>,
+  <code>store.resolve_reconciliation()</code>), consistent with the existing
+  <code>SqliteRecoveryContractStore.__init__(confirmation_verifier=...)</code>
+  pattern.</li>
+<li>A <code>CapabilityAdapter</code> implementation owns <strong>nothing stateful</strong> — it is
+  effectively a namespace of pure functions plus, at most, static
+  configuration (e.g., the exact endpoint symbol it targets).</li>
+</ul>
+<h2 id="interfaces">Interfaces<a class="headerlink" href="#interfaces" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># src/pfsense_mcp/tier1/executor.py (implemented — see the Implementation</span>
+<span class="c1"># note above this file&#39;s intro for why the shape below differs slightly</span>
+<span class="c1"># from this spec&#39;s original pseudocode)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CapabilityAdapter</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See capability_adapter_contract.md for the full contract this</span>
+<span class="sd">    Protocol must satisfy. Summarized here for executor-flow context.&quot;&quot;&quot;</span>
+
+    <span class="n">endpoint_symbol</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">http_method</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">capability</span><span class="p">:</span> <span class="n">Capability</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">read_client</span><span class="p">:</span> <span class="n">PfSenseClient</span><span class="p">,</span> <span class="n">natural_identity</span><span class="p">:</span> <span class="n">CanonicalValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">natural_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_target</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CanonicalValue</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_target</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CanonicalValue</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intent</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedWriteRequest</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_response</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedWriteOutcome</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_semantically_verified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">post</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">intent</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_rollback_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedWriteRequest</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_rollback_verified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pre</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">post_rollback</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MutationExecutor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">store</span><span class="p">:</span> <span class="n">SqliteRecoveryContractStore</span><span class="p">,</span>
+        <span class="n">write_client</span><span class="p">:</span> <span class="n">WriteApiClient</span><span class="p">,</span>
+        <span class="n">read_client</span><span class="p">:</span> <span class="n">PfSenseClient</span><span class="p">,</span>
+        <span class="n">policy</span><span class="p">:</span> <span class="n">MutationPolicy</span><span class="p">,</span>
+        <span class="c1"># None until ADR-011 selects a backend; see whole_store_anti_rollback.md</span>
+        <span class="n">anti_rollback_anchor</span><span class="p">:</span> <span class="n">AntiRollbackAnchor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">encryption_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">contract_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">adapter</span><span class="p">:</span> <span class="n">CapabilityAdapter</span><span class="p">,</span> <span class="n">intent</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CanonicalValue</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExecutionOutcome</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The only method that can cause a mutating network call.</span>
+<span class="sd">        See &quot;Verification flow&quot; below for the exact step sequence.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">rollback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contract_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">adapter</span><span class="p">:</span> <span class="n">CapabilityAdapter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RollbackOutcome</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;See &quot;Rollback flow&quot; below.&quot;&quot;&quot;</span>
+</code></pre></div>
+<p><code>TypedWriteRequest</code>/<code>TypedWriteOutcome</code> are capability-specific Pydantic
+(or equivalent) models defined by each adapter's own module, never a
+generic <code>dict[str, Any]</code> — see <code>capability_adapter_contract.md</code>.</p>
+<h2 id="object-ownership-and-dependency-direction">Object ownership and dependency direction<a class="headerlink" href="#object-ownership-and-dependency-direction" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>Application (production, future — only after activation)
+    |
+    v  constructs, at startup, only if the capability is activated
+MutationExecutor
+    |-- owns --&gt; SqliteRecoveryContractStore
+    |-- owns --&gt; WriteApiClient          (Tier 0, existing, reused)
+    |-- owns --&gt; PfSenseClient           (existing, GET-only, reused)
+    |-- owns --&gt; MutationPolicy          (existing policy.py)
+    |-- owns --&gt; AntiRollbackAnchor
+    |-- uses (per call) --&gt; CapabilityAdapter   (stateless, swappable)
+    |-- uses (per call) --&gt; crypto.{encrypt,decrypt}_artifact
+
+CapabilityAdapter
+    (no outward edges to transport, store, or executor internals —
+     pure function namespace only)
+</code></pre></div>
+<p>Dependency direction is strictly one-way: <code>MutationExecutor</code> depends on
+<code>CapabilityAdapter</code> (via the Protocol), never the reverse. An adapter
+module must not import <code>executor.py</code>, <code>store.py</code>, <code>write_api_client.py</code>,
+or <code>transport/*</code> — see <code>adapter_restrictions.md</code> for the enforced list.</p>
+<h2 id="lifecycle">Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Construction</strong> (process/application startup, only once a capability
+   is activated per Milestone 9): <code>Application</code>-equivalent code
+   constructs one <code>MutationExecutor</code>, exactly as it constructs one
+   <code>PfSenseClient</code> today. The executor is long-lived for the process
+   lifetime, matching how <code>SqliteRecoveryContractStore</code> is already
+   designed to be held across many operations.</li>
+<li><strong>Per-call</strong>: each MCP tool invocation that reaches a WRITE capability
+   calls exactly one of <code>execute()</code>/<code>rollback()</code> on the single shared
+   executor instance, passing a <code>contract_id</code> and the specific adapter
+   instance for that capability (adapters are stateless and can be
+   module-level singletons).</li>
+<li><strong>Shutdown</strong>: the executor holds no resources beyond what its
+   composed objects already manage (<code>store</code>'s SQLite connection is opened
+   per-operation already, per the existing <code>_connect()</code> pattern — the
+   executor does not change this); shutdown is a no-op beyond what
+   <code>Application.shutdown()</code> already does for the transport.</li>
+<li><strong>Restart</strong>: on process restart, <code>store.reconcile_interrupted()</code> (and,
+   once <code>whole_store_anti_rollback.md</code> is implemented, the anchor check)
+   run before the executor accepts any new <code>execute()</code>/<code>rollback()</code> call
+   — the executor's constructor is the natural place to trigger this, so
+   a newly-constructed executor never serves a call against an
+   unreconciled store.</li>
+</ol>
+<h2 id="authority-boundaries">Authority boundaries<a class="headerlink" href="#authority-boundaries" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The executor is the <strong>only</strong> component authorized to hold a
+  <code>WriteApiClient</code> reference once Tier 1 activates. This does not change
+  Tier 0's existing invariant that <code>WriteApiClient</code> is never constructed
+  by production — it changes <em>who</em> is allowed to construct it once a
+  capability is separately activated (the executor, at the same
+  activation-gated construction point, never earlier).</li>
+<li>The executor is the only component authorized to transition a contract
+  to <code>EXECUTING</code>, <code>VERIFIED</code>, or (on the rollback side) <code>ROLLING_BACK</code>/
+  <code>ROLLED_BACK</code> via the ordinary automatic-transition paths in
+  <code>store.transition()</code>. It never calls
+  <code>store.confirm()</code> or <code>store.resolve_reconciliation()</code> itself — those
+  remain separately authorized entry points reachable only through the
+  confirmation/reconciliation workflows, keeping "an agent asked for
+  execution" and "an owner approved it" as distinct authorities that the
+  executor cannot merge.</li>
+<li>A <code>CapabilityAdapter</code> has <strong>no</strong> authority beyond pure computation. It
+  cannot authorize anything; it can only compute projections the executor
+  chooses to trust for exactly one call.</li>
+</ul>
+<h2 id="adapter-responsibilities">Adapter responsibilities<a class="headerlink" href="#adapter-responsibilities" title="Permanent link">&para;</a></h2>
+<p>An adapter implementation (one per approved capability, e.g. a future
+<code>tier1/adapters/firewall_alias_description.py</code>) is responsible only for:</p>
+<ol>
+<li>Defining <code>natural_identity()</code>/<code>fingerprint()</code> as pure functions over a
+   raw READ response (the shape <code>PfSenseClient</code> already returns) — no I/O.</li>
+<li>Defining <code>build_request()</code> to produce a fully-typed, capability-
+   specific request model from a typed intent object — never passing
+   through an arbitrary dict, never accepting fields outside the approved
+   projection (e.g., for the alias candidate: only <code>descr</code>).</li>
+<li>Defining <code>parse_response()</code> to produce a typed outcome from the raw
+   HTTP response body the executor hands it — the adapter does not fetch
+   this itself.</li>
+<li>Defining <code>is_semantically_verified()</code>/<code>is_rollback_verified()</code> as pure
+   comparison functions over two already-fetched snapshots (<code>pre</code>/<code>post</code>)
+   — never issuing a read itself.</li>
+<li>Naming its own <code>endpoint_symbol</code>/<code>http_method</code>/<code>capability</code> as static
+   attributes, matched against <code>WriteEndpoints</code>/policy by the executor,
+   not self-asserted as authorization.</li>
+</ol>
+<h2 id="executor-responsibilities">Executor responsibilities<a class="headerlink" href="#executor-responsibilities" title="Permanent link">&para;</a></h2>
+<p>The executor performs every I/O operation and every security-relevant
+decision:</p>
+<ol>
+<li>Load the authoritative contract by ID (<code>store.load()</code>).</li>
+<li>Require <code>PREPARED</code>, confirmed, unexpired, expected <code>state_version</code>
+   (existing store semantics).</li>
+<li><code>policy.authorize(capability=adapter.capability,
+   endpoint_symbol=adapter.endpoint_symbol, http_method=adapter.
+   http_method)</code> — refuses before any further step if not allow-listed.</li>
+<li>Recompute target/intent bindings from the typed <code>intent</code> argument using
+   the adapter's pure functions, and call
+   <code>contract.verify_bindings(...)</code> (existing) to confirm they match the
+   contract exactly.</li>
+<li>Consult the anti-rollback anchor (<code>whole_store_anti_rollback.md</code>)
+   before allowing the <code>PREPARED -&gt; EXECUTING</code> transition.</li>
+<li>Atomically acquire <code>EXECUTING</code> via <code>store.transition()</code> (existing CAS
+   semantics; this also acquires the target reservation).</li>
+<li>Perform the authoritative re-read via <code>PfSenseClient</code> (existing GET
+   path), require exactly one natural-identity match, compare the
+   adapter's <code>fingerprint()</code> output to <code>contract.target_fingerprint</code> —
+   refuse (transition to <code>FAILED</code>, zero sends) on any mismatch.</li>
+<li>Decrypt the protected intent/snapshot via <code>crypto.decrypt_artifact()</code>
+   using the executor's held key — the adapter never sees ciphertext or
+   the key.</li>
+<li>Build the request via <code>adapter.build_request(intent)</code>, send <strong>exactly
+   one</strong> call through <code>WriteApiClient</code> to the exact allow-listed
+   <code>(endpoint_symbol, http_method)</code> — the executor, not the adapter,
+   invokes the client.</li>
+<li>Classify the outcome via the existing <code>faults.classify_fault()</code> using
+    <code>MutationBoundary</code>/<code>EffectKnowledge</code> derived from what actually
+    happened (timeout, response received, connection reset, etc.) — the
+    executor determines the boundary/knowledge pair; the adapter only
+    tells it, via <code>parse_response()</code>, whether a <em>received</em> response looks
+    like a semantic success, not whether the network step itself
+    succeeded.</li>
+<li>On any received response, re-read authoritatively and call
+    <code>adapter.is_semantically_verified(pre, post, intent)</code> — only a <code>True</code>
+    here, combined with a successfully classified <code>EffectKnowledge.
+    VERIFIED_SUCCESS</code>, drives the transition to <code>VERIFIED</code>.</li>
+<li>Write the audit event via the store's existing <code>_insert_audit</code> path
+    (already wired into every <code>transition()</code>/<code>_replace()</code> call — no
+    separate step needed, but the executor must ensure it always reaches
+    a <code>store.transition()</code> call on every path, including refusals that
+    have already reserved the target, so nothing is left un-audited).</li>
+</ol>
+<h2 id="forbidden-adapter-behavior">Forbidden adapter behavior<a class="headerlink" href="#forbidden-adapter-behavior" title="Permanent link">&para;</a></h2>
+<p>Enforced by the Protocol shape plus the AST isolation test extension in
+<code>adapter_restrictions.md</code> — not by convention:</p>
+<ul>
+<li>An adapter must not import <code>httpx</code>, <code>pfsense_mcp.transport</code>,
+  <code>pfsense_mcp.write_api_client</code>, <code>pfsense_mcp.rest_api_client</code>, or
+  <code>pfsense_mcp.tier1.executor</code> (the last one prevents an adapter from
+  reaching back into the executor to call its internals directly).</li>
+<li>An adapter must not define or call anything named <code>send</code>, <code>request</code>,
+  <code>post</code>, <code>put</code>, <code>patch</code>, <code>delete</code>, or <code>get</code> as an HTTP-shaped operation
+  (same forbidden-call-name discipline as <code>test_isolation.py</code> already
+  applies to <code>tier1/*.py</code>, extended to <code>tier1/adapters/*.py</code>).</li>
+<li>An adapter must not accept a <code>dict[str, Any]</code> as its <code>build_request()</code>
+  return type — the return type must be a concrete Pydantic/dataclass
+  model with a closed field set, so an adapter cannot smuggle an
+  unapproved field through as "just more dict keys."</li>
+<li>An adapter must not perform a loop over multiple targets inside any
+  Protocol method — every method signature takes one target/one intent,
+  structurally preventing bulk operations (G4).</li>
+<li>An adapter must not claim verification (there is no
+  <code>mark_verified()</code>-shaped method on the Protocol at all — only
+  comparison functions that the executor interprets).</li>
+</ul>
+<h2 id="verification-flow">Verification flow<a class="headerlink" href="#verification-flow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>execute(contract_id, adapter, intent):
+  contract = store.load(contract_id)
+  require contract.state == PREPARED, confirmed, not expired
+  policy.authorize(adapter.capability, adapter.endpoint_symbol, adapter.http_method)
+  target_identity = adapter.natural_identity(intent[&quot;raw_target_hint&quot;])
+  target_fingerprint = adapter.fingerprint(intent[&quot;raw_target_hint&quot;])
+  contract.verify_bindings(capability=..., endpoint_symbol=..., http_method=...,
+                            target_identity=target_identity,
+                            target_precondition=target_fingerprint,
+                            normalized_intent=intent)
+  anti_rollback_anchor.before_executing_transition(...)  # only if configured; see whole_store_anti_rollback.md
+  executing = store.transition(contract_id, PREPARED -&gt; EXECUTING)   # atomic acquire
+  pre = adapter.read_target(read_client, target_identity)
+  require exactly one match (adapter.read_target raises on 0 or multiple); require pre.fingerprint == executing.target_fingerprint
+  plaintext_intent = crypto.decrypt_artifact(key, executing.protected_intent, ...)
+  request = adapter.build_request(plaintext_intent)
+  outcome = write_client.send(executing.endpoint_symbol, executing.http_method, request)  # the one send
+  classify boundary/knowledge from what actually happened during send()
+  if knowledge == AMBIGUOUS: store.transition(... -&gt; RECONCILIATION); return
+  post = adapter.read_target(read_client, target_identity)
+  if adapter.is_semantically_verified(pre, post, plaintext_intent) and knowledge == VERIFIED_SUCCESS:
+      store.transition(... -&gt; VERIFIED)
+  elif knowledge in {PROVEN_NONE, VERIFIED_FAILURE}:
+      store.transition(... -&gt; FAILED)
+  else:
+      store.transition(... -&gt; RECONCILIATION)
+</code></pre></div>
+<p>This is a direct, concrete realization of <code>RECOVERY_CONTRACT_SPEC.md</code>'s
+existing "Execution algorithm" pseudocode — this spec adds the object
+boundaries (who calls what) that the pseudocode left implicit.</p>
+<h2 id="rollback-flow">Rollback flow<a class="headerlink" href="#rollback-flow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>rollback(contract_id, adapter):
+  contract = store.load(contract_id)
+  require contract.state == VERIFIED
+  rolling_back = store.transition(contract_id, VERIFIED -&gt; ROLLING_BACK)  # re-acquires target reservation; may raise ContractConflictError if the target was claimed by unrelated work in the interim (see whole_store_anti_rollback.md / state-machine ADR for the accepted decision on this window)
+  target_identity = crypto.decrypt_artifact(key, contract.protected_target_identity, ...)  # rollback() takes no intent argument, so this is the only source
+  pre = adapter.read_target(read_client, target_identity)
+  require exactly one match; detect unrelated changes via adapter.fingerprint(pre) vs. contract.target_fingerprint at VERIFIED time — conflict is a refusal (ROLLBACK_FAILED), never a forced overwrite
+  plaintext_snapshot = crypto.decrypt_artifact(key, contract.protected_snapshot, ...)
+  rollback_request = adapter.build_rollback_request(plaintext_snapshot)
+  outcome = write_client.send(...)   # the one rollback send
+  classify boundary/knowledge (MutationBoundary.DURING_ROLLBACK)
+  post = adapter.read_target(read_client, target_identity)
+  if adapter.is_rollback_verified(plaintext_snapshot, post) and knowledge == VERIFIED_SUCCESS:
+      store.transition(... -&gt; ROLLED_BACK)
+  else:
+      store.transition(... -&gt; ROLLBACK_FAILED)  # or RECONCILIATION if ambiguous
+</code></pre></div>
+<h2 id="audit-flow">Audit flow<a class="headerlink" href="#audit-flow" title="Permanent link">&para;</a></h2>
+<p>The executor does not write audit events directly — every state
+transition it drives goes through <code>store.transition()</code>/<code>_replace()</code>,
+which already writes an HMAC-chained audit row atomically with the state
+change (existing behavior, unchanged). The executor's only audit-related
+responsibility is to <strong>guarantee it always reaches a transition call</strong>,
+including on refusal paths after a reservation has been acquired (step 7
+of the verification flow refusing must still call
+<code>store.transition(... -&gt; FAILED)</code>, not just raise an exception and leave
+the contract stuck in <code>EXECUTING</code> with no further audit trail explaining
+why).</p>
+<h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>This spec does not implement generic "plugin" loading, dynamic adapter
+  discovery, or a registry beyond a simple, explicit, reviewed mapping
+  from <code>Capability</code> to one <code>CapabilityAdapter</code> instance, wired by hand at
+  <code>Application</code> construction time (mirroring how <code>ToolRegistry</code> already
+  dispatches on explicit <code>if Capability.X in capabilities</code> checks, not
+  reflection).</li>
+<li>This spec does not implement concurrent multi-executor operation —
+  exactly one <code>MutationExecutor</code> instance per process, matching the
+  single-process, single-writer deployment model already assumed
+  throughout <code>store.py</code>.</li>
+<li>This spec does not implement batching, queuing, or asynchronous
+  execution — <code>execute()</code>/<code>rollback()</code> are synchronous, single-operation
+  calls, matching the local-stdio, single-caller trust model in
+  <code>THREAT_MODEL.md</code>.</li>
+</ul>
+<h2 id="required-tests">Required tests<a class="headerlink" href="#required-tests" title="Permanent link">&para;</a></h2>
+<p>Implemented in <code>tests/tier1/test_executor.py</code> (19 tests) unless noted
+otherwise below.</p>
+<ul>
+<li>Full <code>execute()</code> happy path against <code>MockTransport</code> with a synthetic
+  test-only adapter (never a real capability adapter in these tests,
+  mirroring <code>test_write_integration_dry_run.py</code>'s existing convention of
+  using a synthetic <code>MutationPlan</code>/<code>RollbackPlan</code> pair).</li>
+<li>Policy refusal: adapter/endpoint/method combination not in
+  <code>MutationPolicy</code> → refused before any send (assert zero calls on the
+  mock transport).</li>
+<li>Binding mismatch: <code>intent</code> that produces a different target/fingerprint
+  than the contract → refused before any send.</li>
+<li>Anchor refusal: anti-rollback anchor unavailable/rollback-detected →
+  refused before <code>EXECUTING</code> acquisition. <strong>Not yet exercised</strong>: every
+  test in this file constructs <code>MutationExecutor</code> with
+  <code>anti_rollback_anchor=None</code> (the same "unconfigured" state
+  <code>whole_store_anti_rollback.md</code> describes as pending ADR-011's backend
+  selection); <code>tests/tier1/test_store.py</code> already covers
+  <code>HighWaterMark</code>'s refusal behavior directly. Add an executor-level test
+  once a concrete <code>AntiRollbackAnchor</code> backend exists to construct one
+  against in a test.</li>
+<li>Fingerprint drift: authoritative re-read after acquisition shows a
+  different fingerprint than expected → <code>FAILED</code>, zero sends past that
+  point.</li>
+<li>Ambiguous outcome (simulated timeout/reset during send) →
+  <code>RECONCILIATION</code>, never a second send, never <code>VERIFIED</code>. Also covers the
+  <code>AMBIGUOUS</code>-classified 5xx-response and generic-exception cases (see
+  this file's Implementation note, point 3).</li>
+<li>Full <code>rollback()</code> happy path, conflict path (target claimed by other
+  work), and ambiguous path.</li>
+<li>Forbidden-behavior tests: a deliberately misbehaving test-only adapter
+  that tries to import forbidden modules or call forbidden names is
+  caught by the AST isolation test, not merely by runtime behavior.
+  Covered by <code>tests/tier1/test_isolation.py</code>'s
+  <code>executor_only_import_roots</code> exception, which still forbids every other
+  <code>tier1/*.py</code> module (and, once it exists, <code>tier1/adapters/*.py</code>) from
+  importing <code>pfsense_mcp.write_api_client</code>/<code>pfsense_mcp.pfsense_client</code>.</li>
+<li>Audit-completeness test: every refusal path after reservation
+  acquisition still results in a queryable, chained audit event — no
+  silent dead-end state.</li>
+</ul>
+<h2 id="activation-requirements">Activation requirements<a class="headerlink" href="#activation-requirements" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] <code>ADR-014</code> accepted.</li>
+<li>[ ] <code>protected_artifact_encryption.md</code>, <code>key_lifecycle.md</code>,
+      <code>whole_store_anti_rollback.md</code>, <code>confirmation_authority.md</code>,
+      <code>reconciliation_authority.md</code> all implemented (the executor
+      composes all of them).</li>
+<li>[ ] <code>executor.py</code> implemented and tested per "Required tests".</li>
+<li>[ ] <code>capability_adapter_contract.md</code> and <code>adapter_restrictions.md</code>
+      accepted (the executor's Protocol is defined jointly with those
+      documents — do not let <code>executor.py</code>'s Protocol drift from what
+      those specs promise adapter authors).</li>
+<li>[ ] <code>executor.py</code> remains unimported by <code>Application</code>/<code>factory.py</code>/
+      <code>ToolRegistry</code> until Milestone 9's explicit activation decision —
+      verified by the same AST isolation test family used throughout
+      Tier 1.</li>
+</ul>
+<h2 id="implementation-checklist">Implementation checklist<a class="headerlink" href="#implementation-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[x] Create <code>src/pfsense_mcp/tier1/executor.py</code> with <code>MutationExecutor</code>
+      and <code>CapabilityAdapter</code>.</li>
+<li>[x] Implement <code>execute()</code> per the Verification flow (with the three
+      documented adjustments in this file's Implementation note).</li>
+<li>[x] Implement <code>rollback()</code> per the Rollback flow (same adjustments).</li>
+<li>[x] Wire construction-time <code>store.reconcile_interrupted()</code> into the
+      executor's <code>__init__</code>. Anchor-check wiring is <code>store.transition()</code>'s
+      existing responsibility (see <code>store.py</code>'s <code>_anti_rollback_anchor</code>
+      handling), not duplicated here; it activates automatically once a
+      concrete anchor is passed in.</li>
+<li>[x] Do not implement any concrete <code>CapabilityAdapter</code> in this module —
+      <code>tests/tier1/test_executor.py</code>'s <code>_SyntheticAdapter</code> is test-only
+      and lives outside <code>src/</code>.</li>
+</ul>
+<h2 id="review-checklist">Review checklist<a class="headerlink" href="#review-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] Confirm the executor is the only place <code>WriteApiClient.execute()</code>/
+      <code>.dry_run()</code> is called anywhere in <code>pfsense_mcp.tier1</code>.</li>
+<li>[ ] Confirm every early-return/refusal path after target-reservation
+      acquisition ends in a <code>store.transition()</code> call (audit
+      completeness).</li>
+<li>[ ] Confirm <code>CapabilityAdapter</code> Protocol methods are all synchronous,
+      pure (no <code>self.</code> state beyond static config), and individually
+      unit-testable without a store or transport fixture.</li>
+<li>[ ] Confirm the executor never constructs a <code>WriteApiClient</code> itself
+      inline — it must be injected, so tests can supply a
+      <code>MockTransport</code>-backed one, matching every other Tier 0/Tier 1
+      testing convention in this codebase.</li>
+</ul>
+<h2 id="security-checklist">Security checklist<a class="headerlink" href="#security-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] Confirm G4 (no adapter-driven loops) by inspecting every Protocol
+      method signature takes a single target/intent, not a collection.</li>
+<li>[ ] Confirm G2 (no raw dict payload) by inspecting <code>build_request()</code>'s
+      return type is a concrete model in every adapter, enforced by mypy
+      strict mode plus a runtime <code>isinstance</code> check in the executor
+      before sending.</li>
+<li>[ ] Confirm the executor's decrypted plaintext (intent/snapshot) is
+      never passed to anything outside the single <code>execute()</code>/
+      <code>rollback()</code> call frame — no caching, no attribute storage on
+      <code>self</code>.</li>
+</ul>
+<h2 id="test-checklist">Test checklist<a class="headerlink" href="#test-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[x] Happy-path execute/rollback tests.</li>
+<li>[x] Policy, binding, fingerprint-drift refusal tests. Anchor refusal
+      deferred — see Required tests above.</li>
+<li>[x] Ambiguous-outcome (<code>RECONCILIATION</code>) tests for both execute and
+      rollback.</li>
+<li>[x] Forbidden-adapter-behavior AST tests (<code>test_isolation.py</code>).</li>
+<li>[x] Audit-completeness test across every refusal path.</li>
+<li>[~] Concurrency test: two <code>execute()</code> calls for the same target cannot
+      both acquire <code>EXECUTING</code>. Exercised through the executor's public
+      interface only for the sequential case
+      (<code>test_execute_requires_prepared_state</code>: a second <code>execute()</code> call
+      against an already-transitioned-away-from-<code>PREPARED</code> contract
+      refuses before touching the store's CAS path at all). The
+      lower-level atomic-CAS race itself — two genuinely <em>concurrent</em>
+      threads racing the same target through <code>store.transition()</code> — is a
+      <code>store.py</code> invariant, already covered with real <code>threading.Thread</code>
+      races by
+      <code>tests/tier1/test_store.py::test_same_target_cannot_be_acquired_concurrently</code>
+      (and the sequential stale-version case by
+      <code>test_stale_version_and_duplicate_execution_are_refused</code>); not
+      duplicated here since the executor adds no additional concurrency
+      behavior on top of <code>store.transition()</code>'s existing CAS.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
