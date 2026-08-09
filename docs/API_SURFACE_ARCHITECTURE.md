@@ -28,7 +28,7 @@ together.
 
 ## Part 1 — Endpoint Catalogue vocabulary
 
-Five closed states an internal record of a pfSense API operation can be
+Seven closed states an internal record of a pfSense API operation can be
 in, listed in dependency order. Nothing later in this sequence is implied
 by anything earlier in it. **`VERIFIED` is not a state in this
 sequence — it is `pfsense_mcp.endpoints.EndpointInfo`'s own existing
@@ -56,12 +56,35 @@ field, reused, not redefined; see the note after the sequence.**
 4. **`IMPLEMENTED`** — a typed client method exists (`PfSenseClient` for
    READ, a future capability-specific path for WRITE) that calls it.
 5. **`CAPABILITY-MAPPED`** — a `Capability` enum member has been assigned
-   to it (existing `pfsense_mcp.capabilities.Capability`, not a new
-   enum), and, for a mutation, the endpoint has additionally been added
-   to `WriteEndpoints` with `verified=True`, an explicit `RollbackPlan`,
-   and `dry_run_supported=True` — i.e. **`AUTHORIZED`**, reusing
-   `WriteEndpoints`'s own already-existing bar exactly, not a new one.
-6. **`MCP_EXPOSED`** — a tool is registered under `ToolRegistry`,
+   to it (existing `pfsense_mcp.capabilities.Capability`, not a new enum)
+   and is present in `SUPPORTED_CAPABILITIES_THIS_BUILD`.
+6. **`AUTHORIZED`** — **split from `CAPABILITY-MAPPED` during the
+   ADR-019 acceptance-track review** (`reports-ai/reviews/
+   ADR_019_ACCEPTANCE_REVIEW.md`), because the two states are not the
+   same depth of gate for both operation kinds. For a **READ** operation,
+   `CAPABILITY-MAPPED` and `AUTHORIZED` are the same event —
+   `SUPPORTED_CAPABILITIES_THIS_BUILD` is READ's one and only runtime
+   authorization gate, and no separate `AUTHORIZED` state exists for
+   READ beyond it. For a **mutation**, they are two independently
+   enforced chokepoints in different code paths: `CAPABILITY-MAPPED`
+   only gates tool *registration*; `AUTHORIZED` additionally requires the
+   endpoint be present in `WriteEndpoints` with `verified=True`, an
+   explicit `RollbackPlan`, and `dry_run_supported=True` — the bar the
+   sealed executor's send chokepoint (`WriteApiClient.send_for_tier1()`)
+   actually checks at mutation time, reusing `WriteEndpoints`'s own
+   already-existing bar exactly, not a new one. Collapsing these into one
+   combined state in the first draft understated that a mutation
+   candidate can be truthfully `CAPABILITY-MAPPED` (a capability exists
+   and is supported) while still **not** `AUTHORIZED` (its specific
+   endpoint is not yet allow-listed) — a real, meaningful, and currently
+   real-world-relevant intermediate state: today, `Capability.
+   FIREWALL_WRITE`/`ALIAS_WRITE`/`SERVICE_WRITE` already exist as enum
+   members (`src/pfsense_mcp/capabilities.py`) but none is in
+   `SUPPORTED_CAPABILITIES_THIS_BUILD`, and `WriteEndpoints` is
+   separately, independently empty (`WriteEndpoints.active_entries() ==
+   []`) — two facts a reader must be able to check independently, which a
+   single combined state name would obscure.
+7. **`MCP_EXPOSED`** — a tool is registered under `ToolRegistry`,
    reachable by at least one profile.
 
 **On `VERIFIED`**: `pfsense_mcp.endpoints.EndpointInfo.verified` already
@@ -105,6 +128,27 @@ test_evidence_isolation.py`, proving the catalogue is not imported by
 `Endpoints`/`WriteEndpoints` do not import it either. This is a
 requirement on the *future* implementation, not something this document
 builds — no such artifact or test exists yet.
+
+**Catalogue regeneration must not bypass human review either (found
+during the acceptance-track review, MATERIAL,
+`reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md`)**: Part 9 below
+already requires that any future *generated code* be checked in only
+after a human reads the diff, never auto-committed by a build or CI
+step. That requirement, as first drafted, did not explicitly extend to
+the `CATALOGUED`-layer artifact itself, which is *data*, not code — the
+isolation-test requirement above only proves the data has no runtime
+effect, it says nothing about how the data gets updated. A CI job that
+nightly re-fetches the live schema and auto-commits catalogue changes
+would satisfy every requirement stated so far while still being a real
+supply-chain integrity gap: a compromised or MITM'd schema fetch (already
+mitigated at the TLS layer, but defense-in-depth matters here) could
+silently inject a misleading entry — for example, a plausible-looking but
+false `intended_use` marker — that a human reviewer later trusts at face
+value specifically because "the catalogue already says this." Any future
+catalogue regeneration must therefore land via an ordinary, human-
+reviewed pull request, exactly like code, never auto-committed by CI —
+the same discipline Part 9 already requires for generated code, now
+stated for catalogue data explicitly rather than left as an inference.
 
 **Version-drift visibility (red-team Finding 4, MINOR)**: `VERIFIED` is a
 point-in-time claim, not a permanent one — pfSense upgrades can change an
@@ -194,6 +238,30 @@ package (e.g. a dedicated `Capability` per package's status/config
 surface), never a single tool accepting an arbitrary package identifier
 that changes which underlying operation runs.
 
+**Package-contributed endpoints are not an exception to either vocabulary
+(found during the acceptance-track review, MATERIAL,
+`reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md`)**: this Part opens by
+noting some pfSense packages may extend the REST API's own schema with
+new endpoints. The first draft described Part 1 (Endpoint Catalogue) and
+this Part as fully independent, orthogonal vocabularies answering
+different questions — true in general, but it left one real dependency
+unaddressed: for an endpoint a *package* contributes, its actual runtime
+callability genuinely depends on that package's `AVAILABLE` state, even
+though the endpoint's `DISCOVERED`/`CATALOGUED`/`TYPED`/`IMPLEMENTED`/
+`CAPABILITY-MAPPED`/`AUTHORIZED` progress (Part 1) is otherwise identical
+to any core endpoint's. Left unstated, this is exactly the seam where a
+future implementer could be tempted to reason "well, this endpoint
+literally doesn't exist unless the package is installed, so it's fine to
+let `AVAILABLE` gate its promotion" — precisely the invariant this
+document exists to forbid, entering through the one case not explicitly
+covered. **Resolution**: a package-contributed endpoint must still be
+promoted through the full Endpoint Catalogue pipeline (Part 1)
+independently of its package's `FeatureCapabilityState`, and `AVAILABLE`
+must never gate its `CAPABILITY-MAPPED`/`AUTHORIZED`/`MCP_EXPOSED`
+promotion, exactly as Part 1 already requires for any endpoint — this
+note exists only to make explicit that package-contributed endpoints are
+not a special case, not to grant a new exception.
+
 **Explicitly unverified claims, not to be treated as established fact by
 a future reader**: this document does not confirm that pfBlockerNG, FRR,
 HAProxy, ACME, or Suricata specifically expose any REST API surface at
@@ -272,15 +340,36 @@ tool must map to exactly one `Capability` and its implementation must
 call exactly one fixed underlying client method — never select among
 several based on a request parameter, regardless of whether that
 parameter is schema-typed as an open string or a closed enum.** This is
-already true, incidentally, of every one of the 42 existing tools (each
-`tools/read/*.py` file wraps exactly one client method) — this document's
-contribution is making it a **named, checkable invariant** rather than an
-unexamined fact about how the project happened to grow. A future
-mechanical check (an AST-based test in the style of
-`tests/test_endpoints_verified.py`, asserting each tool's implementation
-function contains exactly one call site into `PfSenseClient`) is the
+already true, incidentally, of every one of the 42 existing tools —
+**independently re-verified during the ADR-019 acceptance-track review**
+(`reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md`) by an AST scan of
+every file under `src/pfsense_mcp/tools/read/`: exactly 42 tool files
+exist, exactly one (`mcp_info.py`, the local-only introspection tool,
+expected) calls zero client methods, and zero files call more than one
+distinct client method — this document's contribution is making it a
+**named, checkable invariant** rather than an unexamined fact about how
+the project happened to grow. A future mechanical check is the
 recommended enforcement mechanism whenever this invariant is formalized —
 not built by this document.
+
+**The check's own description must not itself be a loophole (found
+during the acceptance-track review, MATERIAL)**: a check phrased only as
+"exactly one call site into `PfSenseClient`" could be satisfied by a tool
+that never writes a literal `client.<method>(...)` attribute access at
+all, and instead calls `getattr(client, method_name)(...)` with a
+runtime-chosen `method_name` — the same acceptance review's AST scan
+confirmed this pattern does not exist anywhere in
+`src/pfsense_mcp/tools/`/`src/pfsense_mcp/pfsense_client.py` today, but a
+check that only *counts* literal attribute call sites would not
+necessarily flag it if it were ever introduced, since a `getattr`-based
+dispatcher can show zero literal attribute calls while still being a
+dispatcher. The recommended future mechanical check must therefore be
+two rules, not one: (a) at most one literal `client.<method>(...)`
+attribute-access call site per tool implementation function, **and**
+(b) zero uses of `getattr`/`setattr`/`hasattr` (or any other dynamic
+attribute-name construct) where the target object is the client — not a
+single "count call sites" check that a dynamic-dispatch pattern could
+satisfy by having an artificially low literal count.
 
 **Recommendation, not executed by this document**: this invariant belongs
 recorded durably in `docs/SECURITY_MODEL.md` and `docs/THREAT_MODEL.md`

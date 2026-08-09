@@ -44,14 +44,20 @@ mirroring `OFFICIAL_GUIDANCE_LAYER.md`'s relationship to ADR-017 and
 `VERSION_AWARE_GUIDANCE.md`'s relationship to ADR-018). Summary of each
 part:
 
-1. **Endpoint Catalogue vocabulary** (companion spec Part 1): a six-state
-   sequence — `DISCOVERED` → `CATALOGUED` → `TYPED` → `IMPLEMENTED` →
-   `CAPABILITY-MAPPED`/`AUTHORIZED` → `MCP_EXPOSED` — formalizing the
-   pipeline this project already practices informally via
+1. **Endpoint Catalogue vocabulary** (companion spec Part 1): a
+   seven-state sequence — `DISCOVERED` → `CATALOGUED` → `TYPED` →
+   `IMPLEMENTED` → `CAPABILITY-MAPPED` → `AUTHORIZED` → `MCP_EXPOSED` —
+   formalizing the pipeline this project already practices informally via
    `scripts/discover_endpoints.py`/`scripts/lib/openapi.py`, which
    already fetch pfSense's own live OpenAPI 3.0 schema
    (`GET /api/v2/schema/openapi`, primary-source confirmed) for
-   inspection-only discovery.
+   inspection-only discovery. `CAPABILITY-MAPPED` and `AUTHORIZED` are
+   two distinct states, not one — split during the acceptance-track
+   review (`reports-ai/reviews/ADR_019_ACCEPTANCE_REVIEW.md`) because
+   they are the same event for READ (`SUPPORTED_CAPABILITIES_THIS_BUILD`
+   is READ's only gate) but two independently enforced chokepoints for a
+   mutation (`SUPPORTED_CAPABILITIES_THIS_BUILD` gates registration;
+   `WriteEndpoints` separately gates the executor's send path).
 2. **No generic API escape hatch** (companion spec Part 3): a
    **permanent** invariant — no `pfsense_api_call(method, path, body)`
    or equivalent dynamic dispatch, ever. Concretely evidenced, not
