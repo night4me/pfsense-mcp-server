@@ -194,6 +194,20 @@ reason, an existing narrow `[tool.bandit]` skip pattern in `pyproject.toml`
 shows the expected style: scoped to the exact file/check, with a comment
 explaining why.
 
+**`make quick`/`make validate` fails with "git identity leak check".**
+`scripts/git_identity_check.py` checks your configured `git config
+user.name`/`user.email` and the most recent commits reachable from `HEAD`
+against a small blocklist of known-leaked identity values (stored as
+salted-free SHA-256 hashes, never plaintext, in the script itself). This
+exists because a real personal email briefly reappeared in this
+repository's history after an earlier remediation, undetected by any
+other check, because nothing inspected commit *metadata* specifically.
+If this fires on your own commit, it means your local `git config
+user.name`/`user.email` matches one of those known-leaked values —
+correct your local Git identity before committing; this is not a check
+on your identity in general, only on the specific values already known
+to have leaked from this project once.
+
 ## Where to find things
 
 - [`README.md`](README.md) — project overview, installation, configuration,

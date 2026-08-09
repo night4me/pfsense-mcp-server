@@ -1,6 +1,6 @@
 .PHONY: validate quick syntax-check lint typecheck test live-skip-check \
         endpoint-registry-check profile-registration-check get-only-check \
-        tools-write-check security-scan security-static-check fixture-safety-check query-param-check \
+        tools-write-check security-scan git-identity-check security-static-check fixture-safety-check query-param-check \
         write-infrastructure-check write-allow-list-check write-capability-check \
         contract-check docs-check git-report _ruff-format _ruff-check _mypy \
         capture-fixture audit-fixture approve-fixture \
@@ -13,11 +13,11 @@ REPORT := .validate/report.xml
 
 validate: syntax-check lint typecheck test live-skip-check \
           endpoint-registry-check profile-registration-check get-only-check \
-          tools-write-check security-scan security-static-check fixture-safety-check query-param-check \
+          tools-write-check security-scan git-identity-check security-static-check fixture-safety-check query-param-check \
           write-infrastructure-check write-allow-list-check write-capability-check \
           contract-check docs-check git-report
 	@echo "--------------------------------------------------------"
-	@echo "VALIDATE: PASSED (19/19 stages)"
+	@echo "VALIDATE: PASSED (20/20 stages)"
 
 # Internal targets: hold the actual ruff/mypy command logic exactly once.
 # Not meant to be invoked directly — lint, typecheck, and quick all call
@@ -34,110 +34,116 @@ _mypy:
 	@$(PYTHON) -m mypy src/pfsense_mcp scripts lab
 
 syntax-check:
-	@echo "[ 1/19] Syntax/import validation ............."
+	@echo "[ 1/20] Syntax/import validation ............."
 	@$(PYTHON) -m compileall -q src scripts tests lab
 	@$(PYTHON) -c "import pfsense_mcp"
 	@echo "  OK"
 
 lint:
-	@echo "[ 2/19] Formatting & linting (ruff) .........."
+	@echo "[ 2/20] Formatting & linting (ruff) .........."
 	@$(MAKE) --no-print-directory _ruff-format
 	@$(MAKE) --no-print-directory _ruff-check
 	@echo "  OK"
 
 typecheck:
-	@echo "[ 3/19] Static type checking (mypy) ..........."
+	@echo "[ 3/20] Static type checking (mypy) ..........."
 	@$(MAKE) --no-print-directory _mypy
 	@echo "  OK"
 
 test:
-	@echo "[ 4/19] Full pytest suite ......................"
+	@echo "[ 4/20] Full pytest suite ......................"
 	@mkdir -p .validate
 	@$(PYTHON) -m pytest -q --junit-xml=$(REPORT)
 	@echo "  OK"
 
 live-skip-check: test
-	@echo "[ 5/19] Live-test skip confirmation ............"
+	@echo "[ 5/20] Live-test skip confirmation ............"
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage live-skip
 	@echo "  OK"
 
 endpoint-registry-check: test
-	@echo "[ 6/19] Endpoint-registry verification ........."
+	@echo "[ 6/20] Endpoint-registry verification ........."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage endpoint-registry
 	@echo "  OK"
 
 profile-registration-check: test
-	@echo "[ 7/19] Auditor-profile registration ..........."
+	@echo "[ 7/20] Auditor-profile registration ..........."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage profile-registration
 	@echo "  OK"
 
 get-only-check: test
-	@echo "[ 8/19] GET-only enforcement ...................."
+	@echo "[ 8/20] GET-only enforcement ...................."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage get-only
 	@$(PYTHON) scripts/get_only_check.py
 	@echo "  OK"
 
 tools-write-check:
-	@echo "[ 9/19] tools/write/ import absence ............"
+	@echo "[ 9/20] tools/write/ import absence ............"
 	@$(PYTHON) scripts/tools_write_check.py
 	@echo "  OK"
 
 security-scan:
-	@echo "[10/19] Secret / identifying-data scan ........."
+	@echo "[10/20] Secret / identifying-data scan ........."
 	@$(PYTHON) scripts/security_scan.py
 	@echo "  OK"
 
+git-identity-check:
+	@echo "[11/20] Git identity leak check .................."
+	@$(PYTHON) scripts/git_identity_check.py
+	@echo "  OK"
+
 security-static-check:
-	@echo "[11/19] Static security analysis (bandit) ......"
+	@echo "[12/20] Static security analysis (bandit) ......"
 	@$(MAKE) --no-print-directory security-static
 	@echo "  OK"
 
 fixture-safety-check:
-	@echo "[12/19] Fixture safety validation ..............."
+	@echo "[13/20] Fixture safety validation ..............."
 	@$(PYTHON) scripts/fixture_safety.py
 	@echo "  OK"
 
 query-param-check: test
-	@echo "[13/19] Query-parameter safety validation ......."
+	@echo "[14/20] Query-parameter safety validation ......."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage query-param
 	@$(PYTHON) scripts/bounded_params_check.py
 	@echo "  OK"
 
 write-infrastructure-check: test
-	@echo "[14/19] Write-infrastructure test verification ."
+	@echo "[15/20] Write-infrastructure test verification ."
 	@$(PYTHON) scripts/validate_junit.py $(REPORT) --stage write-infrastructure
 	@echo "  OK"
 
 write-allow-list-check:
-	@echo "[15/19] Write allow-list emptiness .............."
+	@echo "[16/20] Write allow-list emptiness .............."
 	@$(PYTHON) scripts/write_allow_list_check.py
 	@echo "  OK"
 
 write-capability-check:
-	@echo "[16/19] Write-capability inactivity ............."
+	@echo "[17/20] Write-capability inactivity ............."
 	@$(PYTHON) scripts/write_capability_check.py
 	@echo "  OK"
 
 contract-check:
-	@echo "[17/19] Public MCP contract snapshot ............"
+	@echo "[18/20] Public MCP contract snapshot ............"
 	@$(PYTHON) scripts/public_contract.py
 	@echo "  OK"
 
 docs-check:
-	@echo "[18/19] Documentation consistency ..............."
+	@echo "[19/20] Documentation consistency ..............."
 	@$(PYTHON) scripts/validate_docs.py
 	@echo "  OK"
 
 git-report:
-	@echo "[19/19] Git working-tree report (read-only) ....."
+	@echo "[20/20] Git working-tree report (read-only) ....."
 	@$(PYTHON) scripts/git_report.py
 
 # quick: fast developer-feedback loop. Deliberately NOT the authoritative
 # pre-commit gate — validate remains that. quick reuses the same
 # ruff/mypy command logic (via the _ruff-format/_ruff-check/_mypy
 # internal targets) and the same get_only_check.py/tools_write_check.py/
-# security_scan.py scripts as validate, but skips JUnit report
-# generation, fixture-safety, bounded-parameter, and git-report checks.
+# security_scan.py/git_identity_check.py scripts as validate, but skips
+# JUnit report generation, fixture-safety, bounded-parameter, and
+# git-report checks.
 #
 # Deferred optimization: selective (changed-file-only) test execution
 # was deliberately NOT implemented here. Reconsider only when one or
@@ -148,38 +154,41 @@ git-report:
 #     becomes materially expensive.
 # Until then, running the complete suite is simpler and more reliable.
 quick:
-	@echo "[1/10] Ruff formatting check .................................."
+	@echo "[1/11] Ruff formatting check .................................."
 	@$(MAKE) --no-print-directory _ruff-format
 	@echo "  OK"
-	@echo "[2/10] Ruff lint check ........................................"
+	@echo "[2/11] Ruff lint check ........................................"
 	@$(MAKE) --no-print-directory _ruff-check
 	@echo "  OK"
-	@echo "[3/10] Incremental mypy ......................................."
+	@echo "[3/11] Incremental mypy ......................................."
 	@$(MAKE) --no-print-directory _mypy
 	@echo "  OK"
-	@echo "[4/10] Complete default pytest suite .........................."
+	@echo "[4/11] Complete default pytest suite .........................."
 	@$(PYTHON) -m pytest -q
 	@echo "  OK"
-	@echo "[5/10] GET-only static enforcement ............................"
+	@echo "[5/11] GET-only static enforcement ............................"
 	@$(PYTHON) scripts/get_only_check.py
 	@echo "  OK"
-	@echo "[6/10] tools/write/ import absence ............................"
+	@echo "[6/11] tools/write/ import absence ............................"
 	@$(PYTHON) scripts/tools_write_check.py
 	@echo "  OK"
-	@echo "[7/10] Full repository security scan .........................."
+	@echo "[7/11] Full repository security scan .........................."
 	@$(PYTHON) scripts/security_scan.py
 	@echo "  OK"
-	@echo "[8/10] Static security analysis (bandit) ......................"
+	@echo "[8/11] Git identity leak check ................................."
+	@$(PYTHON) scripts/git_identity_check.py
+	@echo "  OK"
+	@echo "[9/11] Static security analysis (bandit) ......................"
 	@$(MAKE) --no-print-directory security-static
 	@echo "  OK"
-	@echo "[9/10] Write allow-list emptiness .............................."
+	@echo "[10/11] Write allow-list emptiness .............................."
 	@$(PYTHON) scripts/write_allow_list_check.py
 	@echo "  OK"
-	@echo "[10/10] Write-capability inactivity ............................"
+	@echo "[11/11] Write-capability inactivity ............................"
 	@$(PYTHON) scripts/write_capability_check.py
 	@echo "  OK"
 	@echo "--------------------------------------------------------"
-	@echo "QUICK: PASSED (10/10 stages)"
+	@echo "QUICK: PASSED (11/11 stages)"
 
 coverage:
 	@$(PYTHON) -m pytest --cov=pfsense_mcp --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml

@@ -92,6 +92,7 @@ exclude_dirs = [
     # Reviewed local-only tooling: subprocess calls use fixed argv with
     # shell=False; validate_junit parses only pytest's local report.
     "scripts/checkpoint.py",
+    "scripts/git_identity_check.py",
     "scripts/git_report.py",
     "scripts/scaffold_capability.py",
     "scripts/security_scan.py",

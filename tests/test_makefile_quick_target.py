@@ -2,13 +2,13 @@
 
 These tests parse the Makefile text directly (never invoke `make`) to
 confirm the constraints agreed for `make quick`: it must show its own
-10-stage progress labels (never validate's 19-stage labels), must not
+11-stage progress labels (never validate's 20-stage labels), must not
 generate a JUnit report, and must not call any of the validate-only
 tooling (fixture safety, bounded-parameter audit, JUnit post-processing,
 public-contract/documentation validation, or the git report). `validate` must
-contain all 19 stages (the original 13, three WRITE-infrastructure stages, the
-public contract snapshot, documentation consistency validation, and the
-bandit static security analysis stage).
+contain all 20 stages (the original 13, three WRITE-infrastructure stages, the
+public contract snapshot, documentation consistency validation, the bandit
+static security analysis stage, and the git-identity leak check).
 """
 
 from __future__ import annotations
@@ -46,22 +46,22 @@ def test_quick_target_exists():
     assert re.search(r"^quick:", text, re.MULTILINE) is not None
 
 
-def test_quick_has_exactly_ten_numbered_stage_labels():
+def test_quick_has_exactly_eleven_numbered_stage_labels():
     block = _target_block(_makefile_text(), "quick")
-    labels = re.findall(r"\[\d+/10\]", block)
-    assert labels == [f"[{n}/10]" for n in range(1, 11)]
+    labels = re.findall(r"\[\d+/11\]", block)
+    assert labels == [f"[{n}/11]" for n in range(1, 12)]
 
 
 def test_no_validate_stage_labels_occur_inside_quick_recipe():
     block = _target_block(_makefile_text(), "quick")
-    assert "/19]" not in block
+    assert "/20]" not in block
 
 
-def test_validate_contains_all_19_stages():
+def test_validate_contains_all_20_stages():
     text = _makefile_text()
     validate_block = _target_block(text, "validate")
     # validate's own summary line, plus each dependency's recipe carries
-    # its own [N/19] label — collect labels from validate's prerequisite
+    # its own [N/20] label — collect labels from validate's prerequisite
     # targets, not just validate's own (mostly prerequisite-only) block.
     prereqs = [
         "syntax-check",
@@ -74,6 +74,7 @@ def test_validate_contains_all_19_stages():
         "get-only-check",
         "tools-write-check",
         "security-scan",
+        "git-identity-check",
         "security-static-check",
         "fixture-safety-check",
         "query-param-check",
@@ -92,8 +93,8 @@ def test_validate_contains_all_19_stages():
     all_labels = set()
     for target in prereqs:
         block = _target_block(text, target)
-        all_labels.update(re.findall(r"\[\s*\d+/19\]", block))
-    assert len(all_labels) == 19, f"expected 19 distinct stage labels, found {sorted(all_labels)}"
+        all_labels.update(re.findall(r"\[\s*\d+/20\]", block))
+    assert len(all_labels) == 20, f"expected 20 distinct stage labels, found {sorted(all_labels)}"
 
 
 def test_ruff_and_mypy_commands_defined_only_in_internal_shared_targets():
@@ -145,6 +146,7 @@ def test_quick_does_call_the_expected_scripts():
         "get_only_check.py",
         "tools_write_check.py",
         "security_scan.py",
+        "git_identity_check.py",
         "write_allow_list_check.py",
         "write_capability_check.py",
     ):

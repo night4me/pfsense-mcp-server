@@ -73,6 +73,12 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   decisions (an anti-rollback hardware backend selection; a live
   disposable-lab evidence run) and an explicit capability/endpoint
   authorization — none of which this release grants.
+- New `make quick`/`make validate` stage (`scripts/git_identity_check.py`):
+  checks configured Git identity and recent commit metadata against a
+  small blocklist of known-leaked identity values, stored as SHA-256
+  hashes rather than plaintext. Added after a real personal email
+  briefly reappeared in two commits following an earlier remediation,
+  undetected by any existing check (none inspect commit metadata).
 
 ## [0.2.2] - 2026-08-07
 
