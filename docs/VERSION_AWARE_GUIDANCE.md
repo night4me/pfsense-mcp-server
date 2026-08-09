@@ -280,6 +280,192 @@ has to reason about overlay entries in the same review pass:
 _OVERLAY_REGISTRY: dict[Capability, tuple[ReleaseOverlay, ...]] = {}
 ```
 
+## Single-entry applicability decision procedure
+
+**Added by a dedicated design-and-red-team pass** (2026-08-09,
+`reports-ai/reviews/ADR_018_APPLICABILITY_DECISION_PROCEDURE_RED_TEAM.md`),
+resolving ADR-018's Acceptance record deferred question #1. Not
+implemented by this pass — this section specifies the algorithm the
+future extended `lookup_guidance()` (below) must run for each registry
+entry; building it remains its own separate, explicit approval.
+
+### Scope: exact-match only, by the already-accepted schema
+
+`DocumentSource.version_applicability` and `ReleaseOverlay.
+applies_to_version` are both plain `str` fields with no range/operator
+grammar (I3: "no ranges, no operators, no grammar to parse", restated
+consistently across ADR-017 and ADR-018). This procedure is defined
+**only** in terms of exact-string-equality-or-`UNVERSIONED`, matching
+that accepted schema exactly. It does **not** define behavior for
+bounded ranges, minimum-version, or maximum-version scoping, because
+`DocumentSource`/`ReleaseOverlay` cannot represent them today — adding
+that expressiveness is its own future, separately-authorized schema
+extension, not something this procedure may assume into existence. This
+is not merely an omission: staying exact-match-only avoids an entire bug
+class (two independently-written version-range comparators disagreeing)
+that a richer grammar would introduce — see the red-team report's
+finding on this point.
+
+### Inputs
+
+For one registry entry `E` (a `DocumentSource`, or equivalently a
+`ReleaseOverlay` being evaluated as a caveat/supersession source) and
+one already-resolved `(observed_edition: ObservedEdition, observed_version:
+str | None)` pair (from `ApplianceIdentity` — never re-derived here):
+
+- `E.pfsense_edition: Edition` (`CE` / `Plus` / `BOTH`)
+- `E.version_applicability: str` (`UNVERSIONED` or an exact version string)
+- `E.evidence_level: EvidenceLevel`
+- The full `_OVERLAY_REGISTRY[E's capability]` — needed to determine
+  supersession/caveat relationships, not merely `E` in isolation.
+
+### Step 1 — classify edition status
+
+```
+edition_status =
+    MATCH        if E.pfsense_edition == Edition.BOTH
+    MATCH        if E.pfsense_edition maps to observed_edition
+                    (Edition.CE ~ ObservedEdition.KNOWN_CE,
+                     Edition.PLUS ~ ObservedEdition.KNOWN_PLUS)
+    MISMATCH     if E.pfsense_edition != BOTH and observed_edition is
+                    KNOWN_CE or KNOWN_PLUS and does not map to E.pfsense_edition
+    UNCONFIRMED  if E.pfsense_edition != BOTH and observed_edition is UNKNOWN
+```
+
+**Resolves a real gap found while writing this procedure, not merely
+transcribed from the ADR's prose**: ADR-018 §2's own definitions of
+`EDITION_MISMATCH` ("edition IS known and differs") and
+`VERSION_UNCONFIRMED` ("edition matches; ...") leave `edition_status ==
+UNCONFIRMED` unclassifiable by either state's literal wording — an
+edition-specific entry when `observed_edition == UNKNOWN` fits neither
+"edition is known and differs" nor "edition matches." **Resolution**:
+`edition_status == UNCONFIRMED` routes into `VERSION_UNCONFIRMED` (Step
+4 below), generalizing that state's evident purpose — "insufficient
+identity information to confirm applicability, with no affirmative
+evidence of mismatch" — to cover edition uncertainty as well as version
+uncertainty, since `ApplicabilityState` has no separate
+`EDITION_UNCONFIRMED` member and adding one would itself be a schema
+change beyond this procedure's scope. **Flagged for owner confirmation,
+not silently assumed correct** — the same discipline this project
+applied to the `CONFLICTING_GUIDANCE` discrepancy in ADR-018 Step 2.
+
+### Step 2 — classify version status (exact-match only)
+
+```
+version_status =
+    MATCH        if E.version_applicability == UNVERSIONED
+    MATCH        if E.version_applicability == observed_version
+                    (both non-None, exact string equality)
+    UNCONFIRMED  otherwise (observed_version is None, or differs from
+                    a version-specific E.version_applicability)
+```
+
+There is no `MISMATCH` version status — ADR-018 §2's own
+`VERSION_UNCONFIRMED` definition already folds "does not exactly match a
+version-specific entry" into itself ("...or does not exactly match a
+version-specific entry, and nothing indicates the guidance is actually
+wrong for this version"). A version-specific entry whose observed
+version merely differs is not treated as "the wrong document" (that is
+`EDITION_MISMATCH`'s job) — it is treated as unconfirmed, unless a
+curator has separately registered it as outdated (Step 3).
+
+### Step 3 — classify overlay relationship (supersession vs. caveat)
+
+Collect **candidate overlays**: every `ReleaseOverlay` in
+`_OVERLAY_REGISTRY[E's capability]` where `applies_to_edition` is
+edition-compatible with `observed_edition` (same rule as Step 1, applied
+to the overlay) **and** `applies_to_version` is `UNVERSIONED` or exactly
+equals `observed_version`.
+
+**Symmetry clarification, not a schema change**: the accepted
+`ReleaseOverlay.applies_to_version` field has no validator restricting it
+away from `UNVERSIONED` (confirmed by direct inspection of `evidence.py`
+— no pattern, no enum constraint exists today). This procedure extends
+`DocumentSource`'s existing `UNVERSIONED` convention to overlays for
+symmetry (a general, version-independent caveat is a real, useful
+registry-authoring pattern) — compatible with, not a change to, the
+already-shipped `ReleaseOverlay` type.
+
+For each candidate overlay `O`, follow `O.supersedes_id`'s chain (reusing
+`applicability.find_supersession_chain_defects()`'s already-accepted
+ancestor-walk, not a new traversal algorithm):
+
+```
+supersession_status =
+    SUPERSEDED   if E's source_id/overlay_id appears anywhere in any
+                    candidate overlay's supersedes_id ancestry
+    CAVEATED     if not SUPERSEDED, and at least one candidate overlay
+                    exists (regardless of its own supersedes_id target)
+    NONE         if no candidate overlay exists at all
+```
+
+### Step 4 — final per-entry state (priority order, first match wins)
+
+```
+1. edition_status == MISMATCH          -> EDITION_MISMATCH
+2. supersession_status == SUPERSEDED   -> STALE
+3. edition_status in {MATCH, UNCONFIRMED}
+   and version_status == UNCONFIRMED   -> VERSION_UNCONFIRMED
+4. edition_status == MATCH
+   and version_status == MATCH
+   and supersession_status == CAVEATED -> PARTIALLY_APPLICABLE
+5. edition_status == MATCH
+   and version_status == MATCH
+   and supersession_status == NONE     -> APPLICABLE
+```
+
+**Priority rationale, each grounded in the ADR text, not invented**:
+`EDITION_MISMATCH` first — a confirmed wrong-edition document is the
+single most definitive "not this document" signal, and nothing else
+about it (version, overlays) is worth evaluating once that is known.
+`STALE` second, ahead of the ordinary match/caveat branches — a
+curator-registered supersession is an authoritative, reviewed fact about
+currency, stronger than an unresolved version/edition question and
+stronger than a mere caveat (an entry that is both matching and
+known-superseded must never present as current). `VERSION_UNCONFIRMED`
+is checked before `PARTIALLY_APPLICABLE`/`APPLICABLE` specifically so
+that edition-uncertainty (Step 1's resolved gap) and version-uncertainty
+both fail safe ahead of any favorable classification, regardless of
+overlay state — an unconfirmed entry with a caveat is still fundamentally
+unconfirmed, not "partially applicable with extra uncertainty." Every
+combination of the three status values maps to exactly one branch above
+— the table is total, not merely covering the cases the ADR's prose
+happened to name.
+
+### Step 5 — evidence-level cap (already-accepted, reused unchanged)
+
+Apply `applicability.cap_applicability_by_evidence_level()` (Step 2,
+already shipped) to the Step 4 result: `INFERRED_FROM_CURRENT_DOCS`/
+`UNKNOWN` evidence levels cap `APPLICABLE`/`PARTIALLY_APPLICABLE` down to
+`VERSION_UNCONFIRMED`; every other state passes through unchanged. This
+is a **second, independent** fail-safe layer beneath Steps 1–4 — even a
+hypothetical bug in the priority ordering above that reached `APPLICABLE`
+incorrectly still cannot survive this cap unless the entry's own
+`evidence_level` is genuinely `EXPLICIT_*`.
+
+### `PARTIALLY_APPLICABLE`'s one precise meaning
+
+**Overlay-caveat existence, and only that** — "the base document is
+confirmed applicable (edition and version both match), but a
+curator-registered `ReleaseOverlay` for this exact observed version/
+edition documents that behavior differs in some way." Explicitly **not**:
+partial semantic relevance (this schema has no notion of a document being
+"part relevant" to a capability — a `DocumentSource` either is or isn't
+registered for a capability), partial version-range overlap (no ranges
+exist to partially overlap), or incomplete identity evidence (that is
+`VERSION_UNCONFIRMED`'s job, entirely). Rejecting the other readings
+explicitly, per the design task's own instruction not to leave this
+state's meaning overloaded.
+
+### `applicable_overlay_chain` for a single entry
+
+When `supersession_status == SUPERSEDED`: the ordered chain from `E`
+(most-superseded) through to the current-truth overlay, via
+`applicability.order_overlay_chain()` (already accepted, unchanged).
+When `CAVEATED`: the candidate overlay id(s) that produced the caveat,
+in registry order (no supersession chain to order, since none supersedes
+`E`). When `NONE`: `()`.
+
 ## Extended `lookup_guidance()`
 
 ```python
@@ -347,6 +533,92 @@ class GuidanceEvidence(BaseModel):
 `APPLICABLE` > `PARTIALLY_APPLICABLE` > `VERSION_UNCONFIRMED` >
 `STALE` > `EDITION_MISMATCH` > `NO_OFFICIAL_GUIDANCE_FOUND`. Deterministic,
 no ambiguity — a fixed, reviewable ordering, not a runtime heuristic.
+
+**Note on the pseudocode above vs. what actually shipped**: this
+illustrative sketch (written before implementation) shows
+`GuidanceEvidence.guidance: tuple[GuidanceReference, ...]`. The actual
+Step 2 implementation (`src/pfsense_mcp/guidance/evidence.py`) uses a
+new, additive `EvidenceReference` type instead, deliberately not
+modifying the shipped `GuidanceReference` (see `evidence.py`'s own module
+docstring). `compose_guidance_evidence()` (Step 3,
+`src/pfsense_mcp/guidance/composition.py`) is already built and consumes
+`EvidenceReference`, not `GuidanceReference`. The
+`GuidanceReference`→`EvidenceReference` bridge specified below is exactly
+what reconciles this pseudocode's original vision with what actually
+shipped.
+
+## `GuidanceReference` → `EvidenceReference` bridge (specified, not implemented)
+
+**This section is design only** — part of the same dedicated design pass
+that produced the single-entry decision procedure above
+(2026-08-09, `reports-ai/reviews/
+ADR_018_APPLICABILITY_DECISION_PROCEDURE_RED_TEAM.md`). No code in this
+section exists yet; building it is its own future, separately-authorized
+implementation slice (see "Next implementation slice" below).
+
+### Where the decision procedure actually runs
+
+The single-entry decision procedure above is **not** part of this
+bridge — it runs *inside* the future extended `lookup_guidance()`
+(below), the one already-accepted assembly point for guidance lookup.
+`lookup_guidance()` would return `GuidanceReference` objects that
+**already carry** a computed `applicability: ApplicabilityState` (Steps
+1–5 above already applied, replacing the current always-`False`
+`version_mismatch: bool`). By the time a `GuidanceReference` reaches this
+bridge, its classification is already final — the bridge performs **no
+inference of its own**, only field reshaping. This keeps exactly one
+inference path in the whole system (inside `lookup_guidance()`), not two
+— directly closing the red-team's "second guidance inference path"
+attack angle (see the red-team report).
+
+### Field mapping — almost entirely mechanical, by construction
+
+Comparing the extended `GuidanceReference` shape (this document's own
+"`ApplicabilityState`" section, above) against the already-shipped
+`EvidenceReference` (`evidence.py`) field-by-field: **13 of 14 fields
+correspond exactly, 1:1, same name and type** — `capability`,
+`source_id`, `title`, `canonical_url`, `content_excerpt`, `content_hash`,
+`pfsense_edition`, `evidence_level`, `applicability`,
+`applicable_overlay_chain`, `observed_edition_used`,
+`observed_version_used`, `retrieval_mode`, `snapshot_version`. The
+extended `GuidanceReference`'s `trust_label: str` field has no
+`EvidenceReference` equivalent — **confirmed safe to drop, not silently
+dropped**: `trust_label` is currently always the constant
+`"pinned-snapshot"` for the only `retrieval_mode` that exists
+(`BUNDLED_SNAPSHOT`), making it fully redundant with `retrieval_mode` in
+the current accepted scope; if TB-G3 live retrieval is ever activated,
+trust nuance would be expressed through `retrieval_mode`/`freshness_state`,
+not a separate field, so no future information is lost by omitting it
+now.
+
+### Bridge properties (specified, for whoever implements it)
+
+- **Pure function**, no I/O, no network, no clock read:
+  `bridge_guidance_reference(ref: GuidanceReference) -> EvidenceReference`.
+- **Cardinality: exactly one `EvidenceReference` per `GuidanceReference`
+  — never zero, never multiple.** The bridge does not filter by
+  `applicability` (e.g. it must not silently drop `EDITION_MISMATCH`
+  entries) — filtering, if a future consumer ever wants it, is that
+  consumer's own policy choice, applied *after* the bridge, never inside
+  it. A bridge that filters is a bridge that makes a policy decision it
+  has no business making.
+- **What must never be invented**: the bridge must never default, guess,
+  or widen any field — in particular, it must never recompute
+  `applicability`/`evidence_level` independently of what
+  `lookup_guidance()` already determined (no second inference path), and
+  must never synthesize `content_excerpt`/`canonical_url`/`content_hash`
+  from anything but the source `GuidanceReference`'s own already-reviewed
+  values.
+- Applied to an empty `tuple[GuidanceReference, ...]` (the
+  `NO_OFFICIAL_GUIDANCE_FOUND` case — no registry entry for the
+  capability), the bridge naturally produces an empty
+  `tuple[EvidenceReference, ...]` — **no special-case branch needed**;
+  `compose_guidance_evidence()` (already shipped, Step 3) already computes
+  `overall_state = NO_OFFICIAL_GUIDANCE_FOUND` from `compute_overall_state(())`
+  when handed an empty `guidance` tuple. This is exactly ADR-018's
+  Acceptance-record deferred question #2, confirmed formally closed by
+  this design pass — see ADR-018's own "Acceptance record" section,
+  updated to reflect this.
 
 ## TB-G3 live retrieval — resolved design (not activated)
 
@@ -537,6 +809,109 @@ Proposed status. Each is its own future decision, exactly mirroring
       test; disallowed-Content-Type test; DNS-rebinding-simulation test;
       transport-separation test (assert no shared client/session/headers
       with `pfsense_client.py`'s transport).
+
+**Status of the items above, as of 2026-08-09**: `appliance_identity.py`
+(ADR-018 Step 1), `EvidenceLevel`/`ApplicabilityState`/`ReleaseOverlay`/
+`EvidenceReference` and the deterministic primitives (ADR-018 Step 2),
+and `compose_guidance_evidence()` (ADR-018 Step 3) are all implemented,
+tested, and pushed — this checklist predates that work and is retained
+here as historical design intent, not a current TODO list. The
+`_OVERLAY_REGISTRY`/extended-`_check_registry_integrity()`/extended-
+`lookup_guidance()` items remain genuinely unbuilt; see the next section
+for the precise, bounded next slice.
+
+## Next implementation slice: the `GuidanceReference` → `EvidenceReference` bridge (specified, not implemented)
+
+**Not authorized by this design pass** — this section exists so a future,
+separately-authorized implementation session has an exact, bounded scope
+to build against, matching the same level of precision Step 1/2/3's own
+STOP-gate reports gave their respective next steps.
+
+### Exact scope
+
+1. Extend `guidance/models.py`'s `GuidanceReference`: replace
+   `version_mismatch: bool` with `applicability: ApplicabilityState`
+   (imported from `evidence.py`); add `evidence_level: EvidenceLevel`,
+   `applicable_overlay_chain: tuple[str, ...]`,
+   `observed_edition_used: ObservedEdition`,
+   `observed_version_used: str | None`. **This is the "real behavior
+   change to already-shipped v0.3.0 code" ADR-018 §2 already flags as
+   needing its own explicit approval separate from ADR-018's own
+   acceptance** — building this requires that approval, not implied by
+   accepting this design document.
+2. Add `_OVERLAY_REGISTRY: dict[Capability, tuple[ReleaseOverlay, ...]]`
+   to `registry.py`, empty by default (same starting state as
+   `_REGISTRY` and `WriteEndpoints` before their first real entry).
+3. Implement the single-entry decision procedure specified above (Steps
+   1–5) as pure functions in `applicability.py`, reusing
+   `cap_applicability_by_evidence_level()`/`find_supersession_chain_defects()`/
+   `order_overlay_chain()` unchanged — replacing
+   `applicability_state_for_entry_is_not_implemented_here()`'s marker
+   with the real implementation.
+4. Extend `_check_registry_integrity()` per ADR-018 Finding 8's two
+   independent checks, now covering `_OVERLAY_REGISTRY` too (this was
+   already specified in this document's "Implementation checklist"
+   above, unchanged by this design pass).
+5. Extend `lookup_guidance()` itself to call the Step-3 procedure per
+   entry and stop excluding non-matching entries (the "exclude→include"
+   policy change) — this is the same already-flagged behavior change as
+   item 1, requiring its own explicit approval.
+6. Build `bridge_guidance_reference()` (new function, exact location TBD
+   by whoever implements it — a natural candidate is a new
+   `guidance/bridge.py`, mirroring `composition.py`'s one-function-one-
+   file pattern) per the bridge specification above — pure, no I/O,
+   1:1 cardinality, no independent inference.
+
+### Required tests (specified, not written)
+
+- Every branch of Steps 1–4's decision table exercised individually
+  (all 5 terminal states, plus every intermediate `edition_status`/
+  `version_status`/`supersession_status` combination that maps to each) —
+  table-driven, matching `test_applicability.py`'s existing style for
+  `may_prepare()`'s exhaustive truth table.
+- The Step 1 edition-UNCONFIRMED resolution specifically: an
+  edition-specific entry with `observed_edition = UNKNOWN` produces
+  `VERSION_UNCONFIRMED`, not an exception and not any other state.
+- `PARTIALLY_APPLICABLE` vs. `STALE` priority: an entry with both a
+  superseding overlay and a merely-caveating overlay (from two different
+  `ReleaseOverlay` entries) produces `STALE`, never
+  `PARTIALLY_APPLICABLE`.
+- The evidence-level cap (Step 5) still holds after the new procedure
+  feeds it — regression test against Step 2's existing
+  `cap_applicability_by_evidence_level()` test suite, unchanged.
+- `bridge_guidance_reference()`: 1:1 cardinality (never zero, never
+  multiple, for a single input); every field except `trust_label`
+  copied exactly, byte-for-byte equal on the output; applied to an
+  extended `GuidanceReference` whose `applicability` is
+  `EDITION_MISMATCH` still produces exactly one `EvidenceReference`
+  (proves the bridge does not filter).
+- Applying the bridge to the extended `lookup_guidance()`'s empty-tuple
+  result (`NO_OFFICIAL_GUIDANCE_FOUND` case) produces an empty
+  `EvidenceReference` tuple, and `compose_guidance_evidence()` given that
+  empty tuple still produces `overall_state ==
+  NO_OFFICIAL_GUIDANCE_FOUND` — an explicit end-to-end regression test
+  tying Steps 2/3's already-shipped behavior to this new slice.
+- Isolation tests, same discipline as every prior step: the new/extended
+  modules import nothing from `tier1`/`write_endpoints`/
+  `rest_api_client`/`pfsense_client`/`transport`/`api_surface`/`tools`;
+  `state_machine.py`/every confirmation-digest module still imports
+  nothing from `guidance` (TB-G4, re-run, not merely re-asserted);
+  public 42-tool contract unchanged; WRITE state unchanged.
+
+### Invariants this slice must preserve (carried forward from this design pass, not new)
+
+`ApplianceIdentity` and `resolve_appliance_identity()` remain the one
+identity assembly point — the decision procedure and the bridge both
+only ever *consume* an already-resolved identity, never re-derive one.
+`GuidanceEvidence`/`compose_guidance_evidence()` are unmodified by this
+slice — the bridge produces `EvidenceReference` values that flow into the
+*already-shipped, unchanged* composition function. Guidance remains
+evidence, never authorization — no new state, field, or function this
+slice adds may be read by `may_prepare()`, `state_machine.py`, or any
+confirmation-digest computation. No new runtime dispatch — the decision
+procedure is a fixed sequence of guard checks over closed-enum values,
+never a `method=`/`getattr`-style branch. Exact-match-only version
+semantics preserved — no range/min/max grammar introduced.
 
 ## References
 

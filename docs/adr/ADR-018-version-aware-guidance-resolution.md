@@ -532,15 +532,32 @@ same pass). The owner accepted that verdict.
   above), not decided by this acceptance.
 - Does **NOT** authorize Phase 5 — no capability adapter exists, and
   none is authorized by this acceptance.
-- **Preserves, unresolved, exactly three explicitly deferred
-  implementation questions** (owner-accepted as non-blocking, not to be
-  silently resolved in a way that changes the properties above):
-  1. The exact `APPLICABLE`/`PARTIALLY_APPLICABLE`/`STALE` decision
-     procedure for a `GuidanceReference` given its overlay chain.
-  2. `NO_OFFICIAL_GUIDANCE_FOUND`'s exact runtime representation
-     (synthetic sentinel vs. empty tuple).
-  3. Per-capability guidance-requirement opt-in — a future Phase-5
-     decision, not this ADR's to make.
+- **Preserved three explicitly deferred implementation questions**
+  (owner-accepted as non-blocking, not to be silently resolved in a way
+  that changes the properties above). Status as of 2026-08-09, updated by
+  a dedicated design-and-red-team pass
+  (`reports-ai/reviews/ADR_018_APPLICABILITY_DECISION_PROCEDURE_RED_TEAM.md`):
+  1. **The exact `APPLICABLE`/`PARTIALLY_APPLICABLE`/`STALE` decision
+     procedure for a `GuidanceReference` given its overlay chain — now
+     precisely specified, still not implemented.** Full deterministic
+     algorithm: `docs/VERSION_AWARE_GUIDANCE.md`'s "Single-entry
+     applicability decision procedure" section. Specifying it is not
+     implementing it — `applicability_state_for_entry_is_not_implemented_here()`
+     still raises, `lookup_guidance()` still returns the unmodified
+     v0.3.0 shape, and the `GuidanceReference`→`EvidenceReference` bridge
+     the procedure would feed remains unbuilt. Building either requires
+     its own separate, explicit approval, unchanged by this update.
+  2. **`NO_OFFICIAL_GUIDANCE_FOUND`'s exact runtime representation —
+     formally confirmed CLOSED, not merely assumed.** It is an empty
+     `EvidenceReference` tuple passed to the already-shipped
+     `compose_guidance_evidence()` (Step 3), which already computes
+     `overall_state = NO_OFFICIAL_GUIDANCE_FOUND` via
+     `applicability.compute_overall_state(())` — not a synthetic
+     sentinel object. No runtime behavior changed by closing this
+     question; it was already true of the shipped Step 2/3 code, only
+     now stated as resolved rather than left listed as open.
+  3. **Per-capability guidance-requirement opt-in** — a future Phase-5
+     decision, not this ADR's to make. Unchanged, still open.
 
 Each piece of the accepted architecture (appliance identity,
 `EvidenceLevel`/`ApplicabilityState`/`ReleaseOverlay`,
