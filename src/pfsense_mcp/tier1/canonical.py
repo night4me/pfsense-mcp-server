@@ -10,7 +10,7 @@ from typing import TypeAlias
 
 from .errors import CanonicalizationError
 
-CanonicalScalar: TypeAlias = None | bool | int | str
+CanonicalScalar: TypeAlias = bool | int | str | None
 CanonicalValue: TypeAlias = CanonicalScalar | list["CanonicalValue"] | dict[str, "CanonicalValue"]
 
 MAX_CANONICAL_DEPTH = 32
@@ -89,6 +89,20 @@ def canonical_json(value: object) -> bytes:
     if len(encoded) > MAX_CANONICAL_BYTES:
         raise CanonicalizationError("Canonical representation exceeds the byte limit.")
     return encoded
+
+
+def validate_canonical_value(value: object) -> CanonicalValue:
+    """Public entry point for `_normalize()` (added 2026-08-09, mypy
+    --strict finding): callers that already have a Python object of
+    unknown shape (typically from `json.loads()`, which is typed `Any`)
+    and need it as a genuine, size/depth-bounded `CanonicalValue` --
+    never an unvalidated `Any` reinterpreted as one -- should call this
+    rather than trusting the object's shape. `executor.py`'s `_decrypt()`
+    is the first caller: a decrypted protected artifact must be a real
+    `CanonicalValue`, not merely whatever `json.loads()` happened to
+    return, before it re-enters any digest/fingerprint computation."""
+
+    return _normalize(value, depth=0, nodes=[0])
 
 
 def frame_str(value: str) -> bytes:

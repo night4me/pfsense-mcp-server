@@ -9,6 +9,7 @@ import sys
 from dataclasses import dataclass
 from typing import Callable
 
+from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from ..capabilities import Capability
@@ -129,7 +130,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
 class ToolRegistry:
     def __init__(
         self,
-        mcp,
+        mcp: FastMCP,
         client: PfSenseClient,
         identity: str,
         capabilities: frozenset[Capability],

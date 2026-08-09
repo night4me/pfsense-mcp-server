@@ -45,21 +45,23 @@ def _build(output: Path, epoch: str) -> None:
 
 def main() -> int:
     epoch = _source_date_epoch()
-    with tempfile.TemporaryDirectory(prefix="pfsense-build-a-") as first_dir:
-        with tempfile.TemporaryDirectory(prefix="pfsense-build-b-") as second_dir:
-            first = Path(first_dir)
-            second = Path(second_dir)
-            _build(first, epoch)
-            _build(second, epoch)
-            first_names = {path.name for path in first.iterdir()}
-            second_names = {path.name for path in second.iterdir()}
-            if first_names != second_names:
-                print("reproducible_build: artifact filename sets differ")
-                return 1
-            mismatches = [name for name in sorted(first_names) if _sha256(first / name) != _sha256(second / name)]
-            if mismatches:
-                print(f"reproducible_build: byte mismatch: {', '.join(mismatches)}")
-                return 1
+    with (
+        tempfile.TemporaryDirectory(prefix="pfsense-build-a-") as first_dir,
+        tempfile.TemporaryDirectory(prefix="pfsense-build-b-") as second_dir,
+    ):
+        first = Path(first_dir)
+        second = Path(second_dir)
+        _build(first, epoch)
+        _build(second, epoch)
+        first_names = {path.name for path in first.iterdir()}
+        second_names = {path.name for path in second.iterdir()}
+        if first_names != second_names:
+            print("reproducible_build: artifact filename sets differ")
+            return 1
+        mismatches = [name for name in sorted(first_names) if _sha256(first / name) != _sha256(second / name)]
+        if mismatches:
+            print(f"reproducible_build: byte mismatch: {', '.join(mismatches)}")
+            return 1
     print(f"reproducible_build: OK ({len(first_names)} artifacts, SOURCE_DATE_EPOCH={epoch})")
     return 0
 

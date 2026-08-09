@@ -19,13 +19,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.security_patterns import (  # noqa: E402
+from lib.security_patterns import (
     find_ipv4_literals,
     find_mac_literals,
     is_locally_administered_mac,
     is_safe_ipv4,
 )
-from lib.security_policy import find_prohibited_credential_fields  # noqa: E402
+from lib.security_policy import find_prohibited_credential_fields
 
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 

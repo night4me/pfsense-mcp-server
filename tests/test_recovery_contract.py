@@ -23,7 +23,7 @@ def _make_store_and_contract(ttl=timedelta(minutes=5)):
 
 
 def test_create_returns_open_contract():
-    store, contract = _make_store_and_contract()
+    _store, contract = _make_store_and_contract()
     assert contract.status == ContractStatus.OPEN
     assert contract.capability == Capability.FIREWALL_WRITE
     assert contract.endpoint_symbol == "EXAMPLE"
@@ -71,7 +71,7 @@ def test_mark_committed_on_unknown_id_returns_none():
 
 
 def test_is_expired_uses_supplied_now():
-    store, contract = _make_store_and_contract(ttl=timedelta(minutes=5))
+    _store, contract = _make_store_and_contract(ttl=timedelta(minutes=5))
     far_future = datetime.now(timezone.utc) + timedelta(hours=1)
     assert contract.is_expired(now=far_future) is True
     assert contract.is_expired(now=datetime.now(timezone.utc)) is False

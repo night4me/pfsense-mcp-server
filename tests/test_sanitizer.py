@@ -23,7 +23,7 @@ from lib.sanitizer import (
 
 
 def _policy(**overrides) -> CapturePolicy:
-    defaults = dict(endpoint_attr="FIREWALL_STATES", result_shape="list")
+    defaults = {"endpoint_attr": "FIREWALL_STATES", "result_shape": "list"}
     defaults.update(overrides)
     return CapturePolicy(**defaults)
 

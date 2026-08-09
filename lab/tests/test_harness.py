@@ -237,7 +237,7 @@ def test_run_scenario_timeout_reaches_reconciliation(tmp_path, monkeypatch):
 
 def test_run_scenario_captures_unexpected_exception_without_raising(tmp_path, monkeypatch):
     store = _store(tmp_path)
-    write_client, transport, proxy = _write_client(monkeypatch)
+    write_client, _transport, proxy = _write_client(monkeypatch)
     executor = _executor(store, write_client)
 
     def failing_confirm(contract):

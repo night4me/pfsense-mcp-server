@@ -526,7 +526,7 @@ def test_execute_audit_trail_covers_every_transition(tmp_path, monkeypatch):
 
 def test_rollback_requires_verified_state(tmp_path, monkeypatch):
     store = _store(tmp_path)
-    contract, intent = _build_contract()
+    contract, _intent = _build_contract()
     _confirm(store, contract)
     write_client, _transport = _write_client(monkeypatch)
     executor = _executor(store, write_client)

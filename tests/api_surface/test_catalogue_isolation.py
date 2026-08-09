@@ -157,7 +157,7 @@ def test_production_bootstrap_never_imports_api_surface() -> None:
         if name.startswith("pfsense_mcp.api_surface"):
             del sys.modules[name]
 
-    import pfsense_mcp.application  # noqa: F401
+    import pfsense_mcp.application  # noqa: F401 -- imported for its sys.modules side effect, not used directly
 
     offenders = [m for m in sys.modules if m.startswith("pfsense_mcp.api_surface")]
     assert offenders == []

@@ -2,8 +2,22 @@ from __future__ import annotations
 
 import pytest
 
-from pfsense_mcp.tier1.canonical import DigestPurpose, canonical_json, digest_value
+from pfsense_mcp.tier1.canonical import DigestPurpose, canonical_json, digest_value, validate_canonical_value
 from pfsense_mcp.tier1.errors import CanonicalizationError
+
+
+def test_validate_canonical_value_accepts_already_canonical_shapes():
+    value = {"a": 1, "b": [True, None, "x"]}
+    assert validate_canonical_value(value) == value
+
+
+@pytest.mark.parametrize("value", [1.5, b"bytes", {1: "not-a-string-key"}, {"x": object()}])
+def test_validate_canonical_value_rejects_ambiguous_or_unsupported_values(value):
+    """The public entry point executor.py's _decrypt() now uses (added
+    2026-08-09, mypy --strict finding): a decrypted artifact must be a
+    real CanonicalValue, not an unvalidated `Any` from json.loads()."""
+    with pytest.raises(CanonicalizationError):
+        validate_canonical_value(value)
 
 
 def test_canonical_json_is_key_order_independent_and_unicode_normalized():
@@ -49,7 +63,7 @@ def test_digest_context_uses_unambiguous_framing():
         (None, ""),
         (["a", "b"], ["b", "a"]),
         ({"present": None}, {}),
-        ("paypal", "pаypal"),  # second value contains Cyrillic 'a'
+        ("paypal", "pаypal"),  # noqa: RUF001 -- second value deliberately contains Cyrillic 'a'
         (" ", ""),
     ],
 )

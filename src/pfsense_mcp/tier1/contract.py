@@ -123,11 +123,10 @@ class RecoveryContract:
             raise ContractValidationError("Recovery Contract state version is invalid.")
         if (self.confirmation_digest is None) != (self.confirmed_at is None):
             raise ContractValidationError("Confirmation digest and timestamp must be set together.")
-        if self.confirmed_at is not None:
-            if not _is_utc(self.confirmed_at) or not self.created_at <= self.confirmed_at < self.expires_at:
-                raise ContractValidationError(
-                    "Recovery Contract confirmation timestamp is outside its validity window."
-                )
+        if self.confirmed_at is not None and (
+            not _is_utc(self.confirmed_at) or not self.created_at <= self.confirmed_at < self.expires_at
+        ):
+            raise ContractValidationError("Recovery Contract confirmation timestamp is outside its validity window.")
         expected_idempotency_key = derive_idempotency_key(
             capability=self.capability,
             endpoint_symbol=self.endpoint_symbol,

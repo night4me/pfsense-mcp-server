@@ -50,7 +50,7 @@ def test_run_audit_passes_a_clean_proposal(tmp_path):
 
 
 def test_run_audit_detects_sha256_mismatch_when_proposal_tampered(tmp_path):
-    proposal_path, manifest_path = _write_proposal(tmp_path)
+    proposal_path, _manifest_path = _write_proposal(tmp_path)
     # Tamper with the proposal after the manifest was written.
     proposal_path.write_text(proposal_path.read_text() + "\n// tampered\n")
     problems = audit_fixture.run_audit(proposal_path)

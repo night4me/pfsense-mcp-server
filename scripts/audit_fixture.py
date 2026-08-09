@@ -42,10 +42,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import fixture_safety  # noqa: E402
-import security_scan  # noqa: E402
-from lib.capture_policies import CAPTURE_POLICIES  # noqa: E402
-from lib.sanitizer import audit_sanitized_data  # noqa: E402
+import fixture_safety
+import security_scan
+from lib.capture_policies import CAPTURE_POLICIES
+from lib.sanitizer import audit_sanitized_data
 
 MANIFEST_SCHEMA_VERSION = 1
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures"

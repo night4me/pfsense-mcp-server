@@ -26,10 +26,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.openapi import EndpointMatch, find_endpoints, load_schema  # noqa: E402
+from lib.openapi import EndpointMatch, find_endpoints, load_schema
 
-from pfsense_mcp.config import load_api_key, load_config  # noqa: E402
-from pfsense_mcp.errors import PfSenseMCPError  # noqa: E402
+from pfsense_mcp.config import load_api_key, load_config
+from pfsense_mcp.errors import PfSenseMCPError
 
 SCHEMA_VERSION = 1
 

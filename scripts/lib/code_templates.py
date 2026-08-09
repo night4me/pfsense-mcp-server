@@ -585,7 +585,7 @@ def insert_read_import(source: str, module_name: str) -> str:
     existing = [line.strip().rstrip(",") for line in match.group("body").splitlines() if line.strip()]
     if module_name in existing:
         raise AnchorError("already-imported", f"{module_name!r} is already imported in registry.py")
-    names = sorted(existing + [module_name])
+    names = sorted([*existing, module_name])
     new_body = "\n".join(f"    {n}," for n in names)
     replacement = f"from .read import (\n{new_body}\n)"
     return source[: match.start()] + replacement + source[match.end() :]

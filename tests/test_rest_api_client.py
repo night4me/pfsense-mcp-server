@@ -83,6 +83,19 @@ def test_get_non_json_response_raises_api_error():
         client.get(Endpoints.SYSTEM_STATUS)
 
 
+def test_get_json_array_response_raises_api_error():
+    """A 200 response that is valid JSON but not a JSON object (e.g. a
+    bare array) must fail closed with a typed error, not be silently
+    returned as if it were the declared dict[str, Any] shape (found by
+    mypy --strict's no-any-return check, 2026-08-09 -- this closes the
+    gap, not merely satisfies the type checker)."""
+    transport = MockTransport()
+    transport.register("GET", "/api/v2/status/system", status_code=200, text=json.dumps(["unexpected", "array"]))
+    client = _client(transport)
+    with pytest.raises(PfSenseAPIError):
+        client.get(Endpoints.SYSTEM_STATUS)
+
+
 def test_unregistered_call_surfaces_as_connection_error():
     transport = MockTransport()
     client = _client(transport)

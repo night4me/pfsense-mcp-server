@@ -38,11 +38,11 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import fixture_safety  # noqa: E402
-import security_scan  # noqa: E402
-from lib.capability_manifest import CapabilityManifest, ManifestError, load_manifest  # noqa: E402
-from lib.capture_policies import CAPTURE_POLICIES  # noqa: E402
-from lib.code_templates import (  # noqa: E402
+import fixture_safety
+import security_scan
+from lib.capability_manifest import CapabilityManifest, ManifestError, load_manifest
+from lib.capture_policies import CAPTURE_POLICIES
+from lib.code_templates import (
     AnchorError,
     GeneratedField,
     append_at_end_of_file,

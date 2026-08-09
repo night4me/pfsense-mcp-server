@@ -120,11 +120,11 @@ def test_no_file_path_is_wholly_exempt_from_scanning():
 
 
 def test_approved_marker_files_allow_list_matches_expected_set():
-    assert _APPROVED_MARKER_FILES == {
+    assert {
         "tests/test_security_patterns.py",
         "tests/test_security_scan.py",
         "tests/test_fixture_safety.py",
-    }
+    } == _APPROVED_MARKER_FILES
 
 
 def test_scan_line_suppression_marker_constant_is_the_expected_string():

@@ -40,15 +40,15 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.capture_policies import CAPTURE_POLICIES, CapturePolicy  # noqa: E402
-from lib.sanitizer import SanitizationRefusal, Sanitizer  # noqa: E402
+from lib.capture_policies import CAPTURE_POLICIES, CapturePolicy
+from lib.sanitizer import SanitizationRefusal, Sanitizer
 
-from pfsense_mcp.config import PfSenseConfig, load_api_key, load_config  # noqa: E402
-from pfsense_mcp.endpoints import EndpointInfo, Endpoints  # noqa: E402
-from pfsense_mcp.errors import PfSenseMCPError  # noqa: E402
-from pfsense_mcp.rest_api_client import RestApiClient  # noqa: E402
-from pfsense_mcp.tls import resolve_verify  # noqa: E402
-from pfsense_mcp.transport.http import HttpTransport  # noqa: E402
+from pfsense_mcp.config import PfSenseConfig, load_api_key, load_config
+from pfsense_mcp.endpoints import EndpointInfo, Endpoints
+from pfsense_mcp.errors import PfSenseMCPError
+from pfsense_mcp.rest_api_client import RestApiClient
+from pfsense_mcp.tls import resolve_verify
+from pfsense_mcp.transport.http import HttpTransport
 
 MANIFEST_SCHEMA_VERSION = 1
 PROPOSALS_DIR = Path(__file__).resolve().parent.parent / ".fixture_proposals"

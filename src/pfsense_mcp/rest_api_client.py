@@ -97,4 +97,6 @@ class RestApiClient:
 
         if body is None:
             raise PfSenseAPIError(response.status_code, "Response was not valid JSON.")
+        if not isinstance(body, dict):
+            raise PfSenseAPIError(response.status_code, "Response was not a JSON object.")
         return body

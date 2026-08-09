@@ -36,12 +36,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.openapi import iter_get_operations, load_schema  # noqa: E402
+from lib.openapi import iter_get_operations, load_schema
 
-from pfsense_mcp.api_surface.catalogue import CatalogueEntry, EndpointCatalogue  # noqa: E402
-from pfsense_mcp.api_surface.store import DEFAULT_CATALOGUE_PATH, load_catalogue, save_catalogue  # noqa: E402
-from pfsense_mcp.config import load_api_key, load_config  # noqa: E402
-from pfsense_mcp.errors import PfSenseMCPError  # noqa: E402
+from pfsense_mcp.api_surface.catalogue import CatalogueEntry, EndpointCatalogue
+from pfsense_mcp.api_surface.store import DEFAULT_CATALOGUE_PATH, load_catalogue, save_catalogue
+from pfsense_mcp.config import load_api_key, load_config
+from pfsense_mcp.errors import PfSenseMCPError
 
 SCHEMA_VERSION = 1
 

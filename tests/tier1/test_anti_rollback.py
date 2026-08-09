@@ -267,6 +267,8 @@ def test_high_water_mark_rejects_tampered_value(tmp_path, contract_factory):
         connection.execute("UPDATE anchor_state SET value = '0' WHERE key = 'high_water_mark'")
         connection.commit()
 
-    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
-        with pytest.raises(ContractIntegrityError, match="integrity verification"):
-            store._high_water_mark.read(connection)
+    with (
+        sqlite3.connect(tmp_path / "contracts.sqlite3") as connection,
+        pytest.raises(ContractIntegrityError, match="integrity verification"),
+    ):
+        store._high_water_mark.read(connection)

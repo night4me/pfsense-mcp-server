@@ -86,7 +86,19 @@ line-length = 120
 # default arguments, overly broad `except`/`pytest.raises(Exception)`),
 # not merely style -- added 2026-08-09 after an evidence-backed pass
 # found and fixed 4 real instances (all in tests/), 0 false positives.
-select = ["E", "F", "I", "B"]
+# SIM/RUF/C4 added 2026-08-09 after a second evidence-first pass: the
+# broader UP (pyupgrade) rules were evaluated too (~132 findings across
+# UP017/UP035/UP037) and deliberately NOT adopted -- purely cosmetic
+# modernization at a scale that would be mass churn, not a coherent
+# fix; see NEXT_TASKS.md for the exact reproduction command if ever
+# revisited. SIM/RUF/C4 combined: 47 findings, every one individually
+# reviewed (including two in Tier 1 safety-critical code, verified
+# logically equivalent before combining), 0 introduced false positives
+# except one deliberate homoglyph test fixture (tests/tier1/
+# test_canonical.py), suppressed inline with a comment explaining why,
+# not blanket-ignored -- RUF001 stays enabled to catch a real future
+# accidental homoglyph anywhere else.
+select = ["E", "F", "I", "B", "SIM", "RUF", "C4"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -103,6 +115,47 @@ files = ["src/pfsense_mcp", "scripts", "lab"]
 # files, almost entirely missing annotations in lab/tests/) was not
 # adopted this pass -- see NEXT_TASKS.md.
 no_implicit_reexport = true
+# Global-only per mypy's own runtime warning ("Per-module sections should
+# only specify per-module flags") -- confirmed to add 0 findings anywhere
+# in the configured scope before being adopted.
+warn_redundant_casts = true
+
+# Incremental strictness ratchet (2026-08-09): the production package is
+# now clean under full --strict (143 files, verified after fixing the 3
+# real findings --strict surfaced: an unvalidated `Any`-as-dict return in
+# rest_api_client.py, an unvalidated `Any`-as-CanonicalValue return in
+# tier1/executor.py, and one missing parameter annotation in
+# tools/registry.py -- all genuine typing defects, not merely annotation
+# gaps). Scoped to pfsense_mcp.* only, not scripts/lab, which still have
+# ~92 findings (almost entirely missing test-function annotations in
+# lab/tests/) -- a real, sized, deliberately deferred future candidate,
+# not silently dropped; see NEXT_TASKS.md for the exact count and
+# reproduction command.
+#
+# Deliberately spelled out as individual flags, NOT `strict = true`:
+# confirmed empirically that setting the `strict` meta-flag inside a
+# per-module override section silently leaked `disallow_untyped_defs`/
+# `disallow_untyped_calls`-shaped checks into `lab/tests/` -- files that
+# do not match `pfsense_mcp.*` at all -- adding ~89 unrelated errors
+# there and breaking `make quick`'s mypy stage. Root cause confirmed via
+# mypy's own runtime warning: `warn_redundant_casts` (one of `strict`'s
+# constituent flags) is global-only and cannot be meaningfully
+# per-module-scoped, and using the `strict` shorthand did not surface
+# that warning the way spelling out the flags individually did. Do not
+# collapse this back to `strict = true` without re-verifying the exact
+# `mypy src/pfsense_mcp scripts lab` command stays clean.
+[[tool.mypy.overrides]]
+module = "pfsense_mcp.*"
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_unused_ignores = true
+warn_return_any = true
+strict_equality = true
 
 [tool.coverage.run]
 branch = true

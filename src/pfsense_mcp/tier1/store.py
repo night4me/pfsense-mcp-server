@@ -667,9 +667,12 @@ class SqliteRecoveryContractStore:
         if current.state != expected_state or current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract state changed before atomic transition.")
         instant = self._now()
-        if current.state in {RecoveryState.PREPARING, RecoveryState.PREPARED} and current.is_expired(now=instant):
-            if target_state != RecoveryState.EXPIRED:
-                raise ContractConflictError("Expired Recovery Contract may only transition to EXPIRED.")
+        if (
+            current.state in {RecoveryState.PREPARING, RecoveryState.PREPARED}
+            and current.is_expired(now=instant)
+            and target_state != RecoveryState.EXPIRED
+        ):
+            raise ContractConflictError("Expired Recovery Contract may only transition to EXPIRED.")
         if target_state == RecoveryState.EXECUTING:
             if not current.is_confirmed or current.is_expired(now=instant):
                 raise ContractConflictError("Recovery Contract is unconfirmed or expired.")

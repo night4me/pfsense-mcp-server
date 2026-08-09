@@ -56,7 +56,7 @@ def test_verify_signature_never_raises_on_malformed_signature():
 
 def test_two_distinct_authorities_are_independently_addressable():
     private_a, public_a = _keypair()
-    private_b, public_b = _keypair()
+    _private_b, public_b = _keypair()
     authorities = PinnedAuthoritySet(
         (
             PinnedAuthority(authority_id="owner-a", public_key=public_a),

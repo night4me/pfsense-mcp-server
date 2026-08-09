@@ -83,9 +83,7 @@ def _is_suspicious_by_name_and_value(field_name: str, value: str) -> bool:
     lname = field_name.lower()
     if any(s in lname for s in _HARD_SUSPICIOUS_NAME_SUBSTRINGS):
         return True
-    if any(s in lname for s in _SOFT_SUSPICIOUS_NAME_SUBSTRINGS) and is_high_entropy(value):
-        return True
-    return False
+    return any(s in lname for s in _SOFT_SUSPICIOUS_NAME_SUBSTRINGS) and is_high_entropy(value)
 
 
 # Deliberately specific to private-key material only. A bare

@@ -24,7 +24,7 @@ from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.write_api_client import TransportConnectionError, TransportTimeoutError, WriteApiClient
 
 from .anti_rollback import AntiRollbackAnchor
-from .canonical import CanonicalValue, DigestPurpose, digest_value
+from .canonical import CanonicalValue, DigestPurpose, digest_value, validate_canonical_value
 from .contract import ProtectedArtifact, RecoveryContract
 from .crypto import ArtifactRole, decrypt_artifact
 from .errors import ContractConflictError, ContractValidationError
@@ -250,7 +250,15 @@ class MutationExecutor:
                 rolling_back, RecoveryState.ROLLBACK_FAILED, "adapter did not return a typed rollback request"
             )
 
-        boundary, knowledge, raw_response = self._send(rolling_back, request)
+        # _send()'s own boundary (BEFORE_SEND/AFTER_SEND) is intentionally
+        # discarded here: a rollback attempt is definitionally
+        # DURING_ROLLBACK regardless of which side of the network call a
+        # fault occurred on, so that fixed, more specific boundary is what
+        # classify_fault() needs, not the generic one _send() returns.
+        # raw_response is unused here (unlike execute()'s equivalent call)
+        # because rollback verification re-reads the target and compares
+        # snapshots (below); it does not parse the mutation response body.
+        _boundary, knowledge, _raw_response = self._send(rolling_back, request)
 
         if knowledge != EffectKnowledge.VERIFIED_SUCCESS:
             decision = classify_fault(MutationBoundary.DURING_ROLLBACK, knowledge)
@@ -304,7 +312,7 @@ class MutationExecutor:
         plaintext_bytes = decrypt_artifact(
             key=self._encryption_key, artifact=artifact, contract_id=contract.contract_id, role=role
         )
-        return json.loads(plaintext_bytes)
+        return validate_canonical_value(json.loads(plaintext_bytes))
 
     def _send(
         self, contract: RecoveryContract, request: BaseModel
