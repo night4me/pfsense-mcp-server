@@ -25,7 +25,14 @@ class _AcceptingReconciliationVerifier:
         return evidence.proof == _VALID_RECONCILIATION_PROOF
 
 
-def _store(tmp_path, *, reconciliation_verifier=_AcceptingReconciliationVerifier()):
+# Stateless -- a single shared instance is safe and avoids constructing a
+# fresh (identical) object in the function signature's default expression,
+# which ruff's B008 correctly flags as evaluated once at import time
+# regardless of intent.
+_DEFAULT_RECONCILIATION_VERIFIER = _AcceptingReconciliationVerifier()
+
+
+def _store(tmp_path, *, reconciliation_verifier=_DEFAULT_RECONCILIATION_VERIFIER):
     tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(tmp_path, 0o700)
     return SqliteRecoveryContractStore(

@@ -82,11 +82,27 @@ target-version = "py311"
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+# B (flake8-bugbear): catches real bug-prone patterns (mutable/call
+# default arguments, overly broad `except`/`pytest.raises(Exception)`),
+# not merely style -- added 2026-08-09 after an evidence-backed pass
+# found and fixed 4 real instances (all in tests/), 0 false positives.
+select = ["E", "F", "I", "B"]
 
 [tool.mypy]
 python_version = "3.11"
 files = ["src/pfsense_mcp", "scripts", "lab"]
+# Requires a module to declare intent (via __all__ or an explicit `as`
+# re-import) before another module may import a name through it rather
+# than its actual defining module -- added 2026-08-09 after an
+# evidence-backed check found and fixed exactly one real instance
+# (application.py importing ConfigurationError through config.py, which
+# only re-exported it as a side effect of its own internal `from .errors
+# import ConfigurationError`, not a declared public re-export) across all
+# 183 configured source files, 0 false positives. A dedicated,
+# order-of-magnitude larger evaluation of full `--strict` (93 errors, 11
+# files, almost entirely missing annotations in lab/tests/) was not
+# adopted this pass -- see NEXT_TASKS.md.
+no_implicit_reexport = true
 
 [tool.coverage.run]
 branch = true

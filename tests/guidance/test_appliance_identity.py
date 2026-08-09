@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 
+import pydantic
 import pytest
 
 from pfsense_mcp.api_version import ApiVersion
@@ -182,10 +183,10 @@ def test_appliance_identity_is_frozen_and_rejects_extra_fields() -> None:
         identity_source="SystemVersion.base (pfsense_get_system_version)",
         resolved_at="2026-08-09T00:00:00+00:00",
     )
-    with pytest.raises(Exception):
+    with pytest.raises(pydantic.ValidationError):
         identity.observed_version = "changed"  # type: ignore[misc]
 
-    with pytest.raises(Exception):
+    with pytest.raises(pydantic.ValidationError):
         ApplianceIdentity(
             observed_edition=ObservedEdition.UNKNOWN,
             observed_version=None,

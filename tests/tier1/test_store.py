@@ -610,7 +610,7 @@ def test_crash_before_commit_rolls_back_and_after_commit_is_recoverable(tmp_path
     before_store = _store(tmp_path / "before", fault_hook=before)
     with pytest.raises(RuntimeError, match="synthetic crash"):
         before_store.create(contract_factory())
-    with pytest.raises(Exception):
+    with pytest.raises(ContractNotFoundError):
         before_store.load("contract-001")
 
     def after(point):
