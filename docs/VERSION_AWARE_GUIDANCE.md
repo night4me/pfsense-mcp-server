@@ -7,9 +7,13 @@ and the self-challenges. This document is the implementation-ready shape
 for whichever future session builds the parts ADR-018 authorizes as inert
 scaffolding (not the parts it explicitly leaves deferred/unactivated).
 
-**Nothing in this document is implemented.** Like `OFFICIAL_GUIDANCE_LAYER.md`
-before ADR-017's acceptance, this specifies enough to remove ambiguity at
-build time without asserting any of it is built yet.
+**Nothing in this document is implemented.** ADR-018 is now **Accepted**
+(2026-08-09) — architecture and trust boundaries only; see its
+"Acceptance record" section for exactly what that does and does not
+grant. Like `OFFICIAL_GUIDANCE_LAYER.md` after ADR-017's acceptance,
+this specifies enough to remove ambiguity at build time without
+asserting any of it is built yet — each piece still requires its own
+separate, future implementation approval.
 
 **Revised after independent adversarial review**
 (`reports-ai/reviews/ADR_018_RED_TEAM.md`) — every section below reflects

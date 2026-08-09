@@ -1,9 +1,11 @@
 # ADR-018: Version-aware Official Guidance resolution
 
-Status: **Proposed** — architecture and design only. Nothing in this ADR
-is implemented. It requires its own explicit owner approval before any
-line of code is written, per ADR-017's own "Live retrieval (TB-G3)"
-Activation requirement, which named exactly this document as a
+Status: **Accepted** (2026-08-09) — architecture and trust boundaries
+only. See "Acceptance record" below for exactly what acceptance grants
+and what it explicitly does not. Nothing in this ADR is implemented yet;
+each piece still requires its own separate, explicit future approval
+before any line of code is written, per ADR-017's own "Live retrieval
+(TB-G3)" Activation requirement, which named exactly this document as a
 prerequisite.
 
 **Revised after independent adversarial review**
@@ -496,15 +498,69 @@ future ADR designs that first real adapter.
 **This ADR does not begin Phase 5.** No capability adapter exists to
 wire this into.
 
+## Acceptance record (2026-08-09)
+
+Accepted following an independent adversarial red-team review
+(`reports-ai/reviews/ADR_018_RED_TEAM.md`, 10 findings, all fixed) and a
+subsequent independent final acceptance review
+(`reports-ai/reviews/ADR_018_ACCEPTANCE_REVIEW.md`, verdict RECOMMEND
+ADR-018 ACCEPTANCE, two further coherence gaps found and fixed in that
+same pass). The owner accepted that verdict.
+
+**Acceptance of this ADR:**
+
+- Accepts the architecture and trust boundaries described above —
+  `ObservedEdition`, the appliance-identity assembly point,
+  `ApplicabilityState`, `EvidenceLevel`, `ReleaseOverlay`, the resolved
+  (not activated) TB-G3 live-retrieval design, the `GuidanceEvidence`
+  composition model, and the guidance-can-only-remove-never-create-
+  permission structural rule — as the authoritative design for future
+  version-aware Official Guidance work.
+- Does **NOT** activate live documentation retrieval (TB-G3) — remains
+  its own future, separately-gated decision per this ADR's own
+  "Activation requirements."
+- Does **NOT** expose guidance through the public MCP API — no READ
+  tool schema changes, no new guidance-facing tool.
+- Does **NOT** activate Tier 1 — the guidance package and any future
+  appliance-identity/guidance code remain unimported by production
+  bootstrap, unchanged.
+- Does **NOT** authorize WRITE in any form.
+- Does **NOT** resolve future per-capability guidance requirements —
+  whether a given capability's adapter contract opts into *requiring*
+  guidance evidence for PREPARE remains an explicit Phase-5,
+  per-capability decision (see "Future WRITE / PREPARE integration"
+  above), not decided by this acceptance.
+- Does **NOT** authorize Phase 5 — no capability adapter exists, and
+  none is authorized by this acceptance.
+- **Preserves, unresolved, exactly three explicitly deferred
+  implementation questions** (owner-accepted as non-blocking, not to be
+  silently resolved in a way that changes the properties above):
+  1. The exact `APPLICABLE`/`PARTIALLY_APPLICABLE`/`STALE` decision
+     procedure for a `GuidanceReference` given its overlay chain.
+  2. `NO_OFFICIAL_GUIDANCE_FOUND`'s exact runtime representation
+     (synthetic sentinel vs. empty tuple).
+  3. Per-capability guidance-requirement opt-in — a future Phase-5
+     decision, not this ADR's to make.
+
+Each piece of the accepted architecture (appliance identity,
+`EvidenceLevel`/`ApplicabilityState`/`ReleaseOverlay`,
+`lookup_guidance()`'s exclude→include policy change, live retrieval,
+any READ-tool or PREPARE wiring) remains independently gated behind its
+own future, separate, explicit approval exactly as this ADR's
+"Activation requirements" section already specifies — acceptance of the
+architecture is not activation of any of its parts.
+
 ## Consequences
 
 - ADR-017's own explicitly-flagged open items (edition self-challenge,
   TB-G3's unresolved hash question) are now resolved at the design
-  level — nothing about ADR-017's *accepted, shipped* scope changes
-  until this ADR is itself accepted and its pieces separately activated.
+  level — nothing about ADR-017's *accepted, shipped* scope changes;
+  this ADR's own pieces still require their own separate activation
+  (see "Acceptance record" above).
 - `pfsense_mcp_info` (v0.3.1, pushed to `origin/main` as `459262e`)
   requires **no change**. See "Self-challenge: pfsense_mcp_info" below.
-- If accepted, the concrete near-term deliverable is design/spec-only:
+- The concrete near-term deliverable, now that this ADR is accepted, is
+  design/spec-only until further, separate implementation approval:
   `ApplicabilityState`, `EvidenceLevel`, `ReleaseOverlay`,
   `ObservedEdition`, `ApplianceIdentity`, and one canonical
   `resolve_appliance_identity()` assembly function (Finding 10 — the
