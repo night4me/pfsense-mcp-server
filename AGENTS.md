@@ -58,9 +58,51 @@ Explicit approval is required before:
 
 - any live pfSense call or production mutation;
 - use of production credentials;
-- commit, tag, push, release creation or modification;
+- tag, release creation or modification;
 - branch deletion, force push, history rewriting, or other destructive Git
-  operation.
+  operation;
+- repository visibility changes, or enabling/disabling GitHub Pages.
+
+Ordinary commits and pushes to `main` operate under the standing delegation
+terms recorded in `reports-ai/AI_CONTEXT.md`'s "Push authorization" section
+(current validation/safety preconditions) together with the publication-
+awareness gate below — not a blanket per-push approval requirement.
+
+### Publication-awareness gate (owner-adopted 2026-08-09)
+
+The repository is public. Ordinary technical development pushes to `main`
+remain delegated under the existing validation and safety rules (clean tree,
+`make quick`/`make validate` green, no credentials/`reports-ai/` content,
+WRITE stays inactive — see `reports-ai/AI_CONTEXT.md`).
+
+**Changes whose primary effect is public-facing communication require a
+brief owner visibility check before push.** This includes, at minimum:
+
+- `README.md`;
+- public docs prose under `docs/`;
+- `CHANGELOG.md`;
+- release notes;
+- GitHub-visible repository metadata (About description, topics, Pages
+  presentation/content);
+- any other change whose main purpose is how the project is presented
+  publicly.
+
+This is **not** a full implementation-approval gate — it is a
+publication-awareness gate: the owner sees what is about to ship before it
+does, not a request to re-approve the underlying engineering work.
+
+Technical changes that incidentally require small documentation updates may
+still be pushed under standing engineering delegation when the
+documentation is strictly necessary to keep code and docs synchronized,
+provided the change does not materially alter public positioning, claims,
+promises, or security messaging.
+
+**This gate does not authorize, and must never be reinterpreted as
+authorizing**: releases, tags, PyPI publication, repository visibility
+changes, GitHub Pages enable/disable actions, force-push/history rewriting,
+WRITE activation, live pfSense calls, or production credential use. All of
+those remain separately owner-controlled, exactly as stated elsewhere in
+this section.
 
 For every production release, the permanent **Owner Approval Gate** is immediately
 before creation of the immutable version tag. Complete the full release
