@@ -218,7 +218,16 @@ class GuidanceReference(BaseModel):
     # ... existing fields unchanged ...
     applicability: ApplicabilityState  # replaces version_mismatch
     evidence_level: EvidenceLevel  # echoes the registry entry's own field
-    applicable_overlays: tuple[str, ...]  # ReleaseOverlay.overlay_id values, () if none
+    applicable_overlay_chain: tuple[str, ...]  # ReleaseOverlay.overlay_id values,
+    # ORDERED most-superseded first, current-truth last -- () if none.
+    # Finding 6's fix applies at this per-entry level too, not only at
+    # GuidanceEvidence's aggregate level: a single DocumentSource can
+    # itself have its own release-note-then-errata chain, and flattening
+    # it here would reintroduce exactly the supersession-order loss
+    # Finding 6 fixed one level up. Caught during final acceptance
+    # review as a real, if narrow, gap in Finding 6's original fix --
+    # the text was added at the aggregate level but the same problem at
+    # the per-reference level was missed on the first revision pass.
     observed_edition_used: ObservedEdition  # Finding 1 -- ObservedEdition, never Edition
     observed_version_used: str | None  # echoes the input, for auditability
     retrieval_mode: RetrievalMode  # promoted from registry-entry-only to every reference
@@ -440,8 +449,9 @@ activated):
 | Live fetch response is compressed and decompresses past the size bound | Incremental decompressed-stream size check | Fetch aborted mid-stream; same fallback chain (Finding 3(2)) |
 | Live fetch `Content-Type` is not HTML/text | Header check before parse | Fetch aborted; same fallback chain (Finding 3(3)) |
 | Hostname resolves to a private/loopback/link-local address | Pre-connect resolved-address check | Fetch aborted; same fallback chain (Finding 3(4)) |
-| Two registry entries (`DocumentSource` and/or `ReleaseOverlay`, any combination) share capability, edition-compatible scope, and overlapping version scope with no supersession relationship connecting them | Extended `_check_registry_integrity()` (Finding 8) | Import fails loudly — a registry-authoring defect, never served |
-| A `supersedes_id` chain cycles | Extended `_check_registry_integrity()` (Finding 6/8) | Import fails loudly |
+| Two registry entries (`DocumentSource` and/or `ReleaseOverlay`, any combination) share capability, edition-compatible scope, and overlapping version scope, and are not connected by any `supersedes_id` relationship | Extended `_check_registry_integrity()`, duplicate-scope check (Finding 8) | Import fails loudly — a registry-authoring defect, never served |
+| A `supersedes_id` value does not resolve to any known `source_id`/`overlay_id` (dangling reference) | Extended `_check_registry_integrity()`, chain-integrity check (Finding 6/8) | Import fails loudly |
+| A `supersedes_id` chain cycles (A supersedes B supersedes A) | Extended `_check_registry_integrity()`, chain-integrity check (Finding 6/8) | Import fails loudly |
 | `ReleaseOverlay.applies_to_version` does not exactly match observed version | Explicit closed-set comparison, same I3 discipline as `DocumentSource` | Overlay excluded from `overlay_chain`, not fabricated as approximately-relevant |
 | An entry's `evidence_level` is `INFERRED_FROM_CURRENT_DOCS` | Explicit check in `ApplicabilityState` computation | Capped at `VERSION_UNCONFIRMED`, never `APPLICABLE` (Finding 5) |
 
@@ -494,10 +504,12 @@ Proposed status. Each is its own future decision, exactly mirroring
 - [ ] `_OVERLAY_REGISTRY` as a new, separate, empty-by-default dict —
       empty is the correct starting state, same as `_REGISTRY` and
       `WriteEndpoints` before their first real entry.
-- [ ] `_check_registry_integrity()` extended per Finding 8's concrete
-      definition: same-capability, edition-compatible, overlapping-
-      version entries with no connecting supersession relationship;
-      `supersedes_id` cycle detection.
+- [ ] `_check_registry_integrity()` extended per Finding 8's concrete,
+      two-part definition: (1) duplicate-scope check — same-capability,
+      edition-compatible, overlapping-version entries with no
+      `supersedes_id` relationship connecting them; (2) chain-integrity
+      check, independent of (1) — dangling `supersedes_id` references
+      and cycle detection.
 - [ ] Isolation test extended: the new module(s) still import none of
       `pfsense_mcp.tier1`, `write_endpoints`, `rest_api_client`,
       `write_api_client`, `transport`; still imported by nothing outside

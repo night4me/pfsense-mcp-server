@@ -7,7 +7,7 @@ Activation requirement, which named exactly this document as a
 prerequisite.
 
 **Revised after independent adversarial review**
-(`reports-ai/reviews/ADR_018_RED_TEAM.md`): 2 BLOCKING and 5 MATERIAL
+(`reports-ai/reviews/ADR_018_RED_TEAM.md`): 2 BLOCKING and 6 MATERIAL
 findings, all fixed in this text and in `docs/VERSION_AWARE_GUIDANCE.md`.
 The two BLOCKING findings were real defects in the first draft, not
 review pedantry — reusing `Edition` for observed-appliance state was a
@@ -166,16 +166,33 @@ because the state doesn't matter.
 **Fixed after red-team review (Finding 8, MATERIAL)**: the first draft
 described this check only as "a mechanical duplicate-scope check"
 without defining what "duplicate scope" means mechanically — not
-actually implementable as described. Fixed, concretely: the check flags
-any two entries (`DocumentSource` or `ReleaseOverlay`, in any
-combination) that share the same `capability` **and**
-edition-compatible scope (same edition, or either is `BOTH`) **and**
-overlapping version scope (both `UNVERSIONED`-equivalent, or identical
-version strings, or connected by an incomplete `supersedes_id` chain —
-see §3) with **no** supersession relationship actually connecting them.
-This is a structural/identity check on matching conditions, not a
-content-similarity check — deliberately, since text-diffing for
-"disagreement" was never claimed to be tractable.
+actually implementable as described. Fixed, concretely, as **two
+separate, independent load-time checks** (the first draft's revision
+conflated them into one ambiguous sentence — corrected here during
+final acceptance review, since the original wording read as
+self-contradictory: it listed "connected by a `supersedes_id` chain" as
+a form of *overlap*, then simultaneously required *no* connecting
+relationship, which cannot both be true of the same pair):
+
+1. **Duplicate-scope check**: flags any two entries (`DocumentSource` or
+   `ReleaseOverlay`, in any combination) that share the same
+   `capability` **and** edition-compatible scope (same edition, or
+   either is `BOTH`) **and** overlapping version scope (both
+   `UNVERSIONED`-equivalent, or identical version strings) **and** are
+   **not** connected by any `supersedes_id` relationship (direct or
+   transitive) between them. This is a structural/identity check on
+   matching conditions, not a content-similarity check — deliberately,
+   since text-diffing for "disagreement" was never claimed to be
+   tractable.
+2. **Chain-integrity check**, independent of (1): a `supersedes_id`
+   value that does not resolve to any known `source_id`/`overlay_id` is
+   a dangling reference; a chain that revisits an entry already in its
+   own ancestry (A supersedes B supersedes A) is a cycle. Both fail the
+   load-time check, regardless of whether (1) would also have flagged
+   the pair — a valid, connected `supersedes_id` chain is exactly what
+   *exempts* two overlapping-scope entries from check (1), so check (2)
+   is what confirms the chain used for that exemption is actually
+   real and finite.
 
 **Policy change this represents**: `lookup_guidance()` currently
 *excludes* non-matching entries entirely (I6's accepted fail-closed
@@ -590,7 +607,7 @@ influence.
   compatibility model, observability vocabulary, `dry_run` as a future
   PREPARE input).
 - `reports-ai/reviews/ADR_018_RED_TEAM.md` — the independent adversarial
-  review of this ADR's first draft: 2 BLOCKING and 5 MATERIAL findings,
+  review of this ADR's first draft: 2 BLOCKING and 6 MATERIAL findings,
   all fixed in this text. Read it for full failure scenarios behind each
   "Fixed after red-team review" note above.
 - `docs.netgate.com/pfsense/en/latest/releases/versions.html` — the
