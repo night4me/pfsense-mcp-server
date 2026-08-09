@@ -2317,15 +2317,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#platform-level-recorded-not-applied" class="md-nav__link">
+  <a href="#platform-level-applied" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform-level — recorded, not applied
+        Platform-level — applied
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Platform-level — recorded, not applied">
+    <nav class="md-nav" aria-label="Platform-level — applied">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2786,15 +2786,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#platform-level-recorded-not-applied" class="md-nav__link">
+  <a href="#platform-level-applied" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platform-level — recorded, not applied
+        Platform-level — applied
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Platform-level — recorded, not applied">
+    <nav class="md-nav" aria-label="Platform-level — applied">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2883,14 +2883,17 @@
 
 
 <h1 id="public-launch-checklist">Public launch checklist<a class="headerlink" href="#public-launch-checklist" title="Permanent link">&para;</a></h1>
-<p>This records exact, ready-to-apply values and a completion checklist for
-the repository-local and platform-level steps involved in eventually
-making this repository public. Nothing on this page has been applied —
-every platform-level action here (repository visibility, GitHub Pages,
-GitHub About/topics) requires explicit owner action, taken deliberately
-and separately from this document existing. Repository-local content is
-already done; this page exists so applying the remaining platform steps
-is a copy-paste operation, not a re-derivation.</p>
+<p><strong>Status: complete (2026-08-09).</strong> The repository is public, GitHub
+Pages is live, and the About description/topics below are applied
+exactly as recorded. This page is kept as a historical record of the
+exact values used and the reasoning behind them, not as a forward-looking
+plan — the checkboxes below reflect what was actually done, not what
+remains to do. For current live state, see <code>reports-ai/latest.md</code>, not
+this page.</p>
+<p>This originally recorded exact, ready-to-apply values and a completion
+checklist for the repository-local and platform-level steps involved in
+making this repository public, so that applying the platform steps would
+be a copy-paste operation, not a re-derivation.</p>
 <h2 id="repository-local-already-done">Repository-local — already done<a class="headerlink" href="#repository-local-already-done" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[x] README rewritten as a concise, positioning-forward landing page
@@ -2911,7 +2914,7 @@ is a copy-paste operation, not a re-derivation.</p>
       already reflects everything above once the next version publishes;
       no separate PyPI-specific content needed.</li>
 </ul>
-<h2 id="platform-level-recorded-not-applied">Platform-level — recorded, not applied<a class="headerlink" href="#platform-level-recorded-not-applied" title="Permanent link">&para;</a></h2>
+<h2 id="platform-level-applied">Platform-level — applied<a class="headerlink" href="#platform-level-applied" title="Permanent link">&para;</a></h2>
 <h3 id="github-about-description">GitHub About description<a class="headerlink" href="#github-about-description" title="Permanent link">&para;</a></h3>
 <p>Exact recommended text for the repository's "About" field (GitHub's
 description field; keep it short, it's what shows in search results and
@@ -2945,37 +2948,36 @@ doesn't yet have.</p>
 for a Pages deployment from this repository with no custom domain:</p>
 <div class="highlight"><pre><span></span><code>https://night4me.github.io/pfsense-mcp-server/
 </code></pre></div>
-<p>Once Pages is enabled (a separate, explicit owner decision — see
-<code>reports-ai</code>'s "Push authorization" note, which explicitly reserves
-this), no <code>mkdocs.yml</code> change is needed; the existing <code>site_url</code> is
-already correct. At that point:</p>
+<p>Pages was enabled 2026-08-09; no <code>mkdocs.yml</code> change was needed, since
+the <code>site_url</code> above was already correct at the time. Deployment
+mechanism actually used: <code>mkdocs gh-deploy</code> (builds and pushes a
+<code>gh-pages</code> branch — GitHub auto-enabled Pages on detecting that branch
+on the now-public repo). Redeployment after a docs change is still
+manual; nothing currently automates re-running <code>mkdocs gh-deploy</code>.</p>
 <ul>
-<li>[ ] Enable GitHub Pages (owner decision, not covered here).</li>
-<li>[ ] Update <code>pyproject.toml</code>'s <code>Documentation</code> URL from the current
-      <code>docs/</code> source-tree link to the deployed site URL above.</li>
-<li>[ ] Update the README's "Documentation" section note ("A browsable
-      version... is built (not yet publicly deployed)") to drop the
-      "not yet" qualifier and link the live site directly.</li>
-<li>[ ] Update <code>docs/index.md</code>'s equivalent note.</li>
-<li>[ ] Set the repository's "Website" field (GitHub repo settings) to
-      the deployed site URL, so it appears alongside the About
-      description.</li>
+<li>[x] Enable GitHub Pages.</li>
+<li>[x] Update <code>pyproject.toml</code>'s <code>Documentation</code> URL from the <code>docs/</code>
+      source-tree link to the deployed site URL above.</li>
+<li>[x] Update the README's "Documentation" section to drop the "not yet"
+      qualifier and link the live site directly.</li>
+<li>[x] <code>docs/index.md</code> checked — it had no equivalent stale note, so no
+      change was needed there.</li>
+<li>[x] Set the repository's "Website" field (GitHub repo settings) to
+      the deployed site URL.</li>
 </ul>
 <h3 id="making-the-repository-public">Making the repository public<a class="headerlink" href="#making-the-repository-public" title="Permanent link">&para;</a></h3>
-<p>Not evaluated here beyond noting it is explicitly reserved to the owner
-(see <code>AGENTS.md</code>'s approval boundaries and <code>reports-ai</code>'s standing push-
-authorization note, which lists "making the repository public" as
-explicitly not delegated). When it happens:</p>
+<p>Done 2026-08-09, under explicit owner authorization (see
+<code>AGENTS.md</code>'s approval boundaries — this was never standing-delegated,
+and still is not for any future visibility change).</p>
 <ul>
-<li>[ ] Re-run <code>make validate</code>/<code>security_scan.py</code> immediately before
-      flipping visibility, as a final confirmation no private data has
-      landed since the last check (routine — every commit already passes
-      this, but a launch moment is worth one more explicit confirmation).</li>
-<li>[ ] Apply the About description and topics above.</li>
-<li>[ ] Consider whether <code>dependabot.yml</code>'s <code>open-pull-requests-limit: 5</code>
-      and weekly schedule are still the right cadence for a now-public,
-      possibly higher-traffic repository (not evaluated here — a
-      judgment call at the time, not a correctness issue today).</li>
+<li>[x] Re-ran <code>make validate</code>/<code>security_scan.py</code> immediately before
+      flipping visibility, as a final confirmation no private data had
+      landed since the last check.</li>
+<li>[x] Applied the About description and topics above.</li>
+<li>[ ] Whether <code>dependabot.yml</code>'s <code>open-pull-requests-limit: 5</code> and
+      weekly schedule are still the right cadence for a now-public,
+      real-traffic repository remains a genuinely open, unresolved
+      judgment call — not evaluated as part of the launch itself.</li>
 </ul>
 <h2 id="non-goals-of-this-document">Non-goals of this document<a class="headerlink" href="#non-goals-of-this-document" title="Permanent link">&para;</a></h2>
 <p>This is not a release checklist (see
