@@ -271,6 +271,188 @@ examples, explicitly caveated there as unconfirmed. Any future work in
 this area starts from primary-source verification of *whichever specific
 package* is actually being considered, not from this list.
 
+### Extended design and red-team (2026-08-09, evaluated — not implemented)
+
+Owner-directed follow-on design pass (Track 3 of an extended autonomous
+mission), extending the Part 2 vocabulary above with the specific
+lifecycle/persistence/staleness questions and attack scenarios it did not
+yet spell out. **Live appliance access was checked and found unavailable
+this session** (`pfsense_mcp.config.load_config()` fails closed with
+`ConfigurationError: Missing required environment variable(s):
+PFSENSE_API_URL, PFSENSE_IDENTITY, PFSENSE_API_KEY_FILE` — no
+`PFSENSE_*` variables are set in this environment) — so this remains
+design/red-team only, per this task's own explicit instruction: implement
+the inert foundation only if a concrete feature/package is justified by
+primary-source evidence, which requires exactly the live access this
+session does not have.
+
+**Lifecycle transitions — legal and illegal, stated explicitly (not
+previously enumerated).** Forward progression is strictly sequential,
+mirroring Part 1's Endpoint Catalogue sequence: `DISCOVERED → AVAILABLE →
+SUPPORTED → AUTHORIZED → EXPOSED`, no state may be skipped. The
+structurally-forbidden transitions — the ones the whole model exists to
+prevent — are `AVAILABLE → AUTHORIZED` and `AVAILABLE → EXPOSED`
+directly, bypassing the human-authored `SUPPORTED` design step. **Two
+kinds of fact must not be confused**: `DISCOVERED`/`SUPPORTED`/
+`AUTHORIZED`/`EXPOSED` are *project-level* facts — true or false for this
+codebase, independent of which appliance is connected, exactly like
+`Capability.ALIAS_READ` existing today doesn't depend on any specific
+appliance having aliases configured. `AVAILABLE` alone is an
+*appliance-level* fact, re-derived per live call. This means `EXPOSED`
+does not "revert" merely because one connected appliance happens not to
+have the package installed — the tool stays registered (same as any
+existing tool registers regardless of whether the specific feature it
+reads is configured on a given appliance); an unavailable package simply
+means that tool's underlying READ call returns empty/absent data for
+*this* appliance, the same failure shape every existing tool already
+handles for an unconfigured service. There is therefore no "downgrade"
+transition to design for `SUPPORTED`/`AUTHORIZED`/`EXPOSED` — those are
+monotonic project facts, changed only by a new commit, never by runtime
+observation.
+
+**Persistence vs. runtime derivation, per state**:
+
+| State | Persisted? | Where |
+|---|---|---|
+| `DISCOVERED` | Yes | A small Git-tracked, human-reviewed data artifact, same discipline as Part 1's catalogue — ecosystem research, not appliance-specific. |
+| `AVAILABLE` | **No, by design** | Always a live, per-call observation via the already-shipped `pfsense_get_system_packages` tool. Restates Part 2's existing "not cached by default" text as a persistence rule, not merely a caching note. |
+| `SUPPORTED` | Yes | Wherever the human-authored capability-mapping design is recorded (a reviewed doc/data file, analogous to the endpoint catalogue's `intended_use` field) — implementation detail for whoever builds this, not decided here. |
+| `AUTHORIZED` | Yes, implicitly | Source code: a real `Capability` enum member present in `SUPPORTED_CAPABILITIES_THIS_BUILD` — the existing mechanism, no new persistence layer. |
+| `EXPOSED` | Yes, implicitly | Source code: a tool registered in `ToolRegistry` — the existing mechanism. |
+
+**Stale capability evidence**: because `AVAILABLE` is never cached by
+default, staleness is a non-issue for the baseline design — every
+observation is fresh by construction. It only becomes a live question if
+a *future* caching layer is added, which Part 2's existing text already
+requires to carry "the same explicit freshness/provenance discipline" as
+the OPNsense-review-derived principle. Stated more concretely here: any
+future cache of `AVAILABLE` must carry an explicit `observed_at`
+timestamp and must never be treated as still-current at a later decision
+point without a fresh re-read — the identical rule Part 4 already
+requires for TOCTOU protection between discovery and a future PREPARE
+phase, restated because a cache is exactly where that rule would
+otherwise silently lapse.
+
+**Package removal / appliance reconnect**: because `AVAILABLE` carries no
+persisted per-appliance state, package removal is handled automatically
+— the next live call simply reflects it. "Appliance reconnect" (the same
+running server process being pointed at a *different* appliance
+mid-session) is not a scenario this project's current architecture
+supports at all: `Application`'s bootstrap loads `PfSenseConfig` once at
+process start from `PFSENSE_*` environment variables (confirmed by
+reading `config.py`/`application.py` directly, not assumed) — this is a
+single-appliance-per-process design, unchanged by this document. This is
+recorded as a scope boundary of the *current* architecture, not a gap
+this design closes; it would need re-examination only if a future,
+separate decision ever introduced multi-appliance or live-reconnect
+support.
+
+**Interaction with future PREPARE/WRITE**: unchanged from Part 4's
+existing TOCTOU section — any future integration of `InstalledFeatures`/
+capability evidence into a PREPARE phase must reuse Tier 1's existing
+fingerprint-binding/authoritative-re-read discipline, not invent a
+second one. Restated here only to confirm this extended pass introduces
+no new mechanism for this question.
+
+**Testability and auditability, extended**: Part 2's existing isolation-
+test requirement (no code path from a future `InstalledFeatures` module
+reaches `ToolRegistry.register_all()` or mutates
+`SUPPORTED_CAPABILITIES_THIS_BUILD`/`WriteEndpoints`) is necessary but
+not sufficient by itself — an isolation test only catches what it's
+written to check. **New structural requirement, mirroring
+`CatalogueEntry`'s own already-accepted design (Part 1)**: whatever type
+represents an `AVAILABLE` observation (a "`PackageObservation`" or
+equivalent) must have **no field capable of representing**
+`SUPPORTED`/`AUTHORIZED`/`EXPOSED` — the same "cannot infer later states
+even by mistake" property `CatalogueEntry` already has for Part 1's
+sequence, applied to Part 2. This turns "availability can never imply
+authority" from a code-review convention into something the type system
+itself makes impossible to violate, not merely something a test happens
+to catch. `AVAILABLE`-observation READ calls need no new audit trail —
+this project's existing pattern already doesn't audit-log READ calls
+(unlike Tier 1 WRITE's dedicated `write_audit.py`), and nothing about
+this model changes that.
+
+**Red-team, against all 8 explicitly named attack scenarios:**
+
+1. **Availability→authority collapse.** The core invariant this entire
+   model exists to enforce (already stated). Concrete attack: a future
+   engineer writes `if package_available("frr"): register_tool(...)`
+   directly inside `ToolRegistry.register_all()` or equivalent bootstrap
+   code, collapsing observation into registration. **Closed by two
+   independent mechanisms, not one**: the required isolation test
+   (existing) plus the new structural-typing requirement above — even a
+   reviewer who misses the isolation-test gap would find no
+   `AVAILABLE`-shaped value that type-checks where an `AUTHORIZED`/
+   `EXPOSED`-shaped one is required.
+2. **Dynamic MCP surface generation.** Concrete attack: rather than
+   gating registration directly on `AVAILABLE`, a tool's *schema* (e.g.
+   an operations enum) is computed from which packages are installed at
+   startup. This is Part 3's already-forbidden "closed-looking schema
+   hiding dynamic dispatch" pattern, restated for the package dimension:
+   a tool's registered existence and its complete input schema must be
+   decided entirely at code-review time, never computed from any runtime
+   `AVAILABLE` observation. No new mechanism needed — Part 3's existing
+   invariant already covers this if stated to cover it, which it now
+   explicitly does.
+3. **Stale package state.** Closed by design, not by policy: `AVAILABLE`
+   is never persisted by default, so there is no stale value to act on
+   in the baseline model (see Persistence table above).
+4. **Appliance identity changes.** Out of scope for the *current*
+   single-appliance-per-process architecture (confirmed directly from
+   `config.py`/`application.py`, see above) — not a gap in this design,
+   a boundary of what the running process can even do today.
+5. **Privilege escalation through installed packages.** Genuine, but a
+   Track 4 (Phase 5 readiness) concern, not a Part 2 (READ-only
+   observation) concern — the state model itself creates no new
+   authority; it only gates exposure of the *existing* capability system.
+   **New requirement recorded here for whenever a package is actually
+   proposed as `SUPPORTED`**: a package-derived capability (e.g. a
+   hypothetical FRR or HAProxy WRITE surface) must go through the exact
+   same rate/blast-radius policy (`rate_policy.py`) and Recovery Contract
+   discipline as any other WRITE capability — no exemption for
+   package-derived ones, and no assumption that a package's own scope is
+   narrower than a core firewall capability's just because it arrived via
+   this vocabulary.
+6. **Generated capability adapters.** Already evaluated and rejected
+   project-wide (Part 9 — no code generation). Restated for this Part
+   specifically: `FeatureCapabilityState`/`SUPPORTED` must never feed a
+   code-generation pipeline that auto-produces a capability adapter —
+   `SUPPORTED` remains a human-authored design step, full stop, not a
+   template-generation trigger.
+7. **Generic dispatch disguised behind closed enums.** Already covered
+   ("Package-name dispatch is a Part 3 violation" above) — restated as
+   fully closed: any future package-aware tool must be capability-scoped
+   to exactly one named package, matching the existing "one tool → one
+   `Capability` → exactly one client method" invariant. A closed-looking
+   enum of package names accepted as a tool parameter and dispatched
+   internally is exactly the Pixelworlds anti-pattern this whole document
+   exists to prevent, regardless of how closed the enum looks.
+8. **Accidental WRITE enablement.** **Confirmed closed by the existing
+   two-independent-chokepoint design, not merely by this Part's own
+   invariant** — traced directly, not assumed: `AUTHORIZED` still
+   requires a real `Capability` enum member present in
+   `SUPPORTED_CAPABILITIES_THIS_BUILD` (gates registration), and any
+   WRITE-flavored capability additionally requires a *separate*
+   `WriteEndpoints` allow-list entry (gates the executor's send path) —
+   the same split the ADR-019 acceptance review already established
+   ("same event for READ; two independent chokeponts for a mutation").
+   `FeatureCapabilityState` is fully orthogonal to both gates; it cannot
+   weaken either one, since it only ever feeds the human `SUPPORTED`
+   design step that precedes both.
+
+**Verdict: 0 BLOCKING.** Two explicit new requirements recorded (the
+`PackageObservation`-shaped structural-typing rule; the package-derived-
+capability rate/blast-radius rule) — both closures of gaps in what was
+*written down*, not new mechanisms; the remaining six angles were already
+closed by existing, already-accepted design, now traced and confirmed
+rather than assumed. **Implementation gate**: no concrete feature/package
+is justified by primary-source live-appliance evidence this session (no
+live access — see above) — per this task's own explicit condition, this
+track stops here, at a committed design/red-team artifact. No
+`FeatureCapabilityState` code was written. Full record:
+`reports-ai/reviews/ADR_019_FEATURE_CAPABILITY_STATE_EXTENDED_DESIGN_2026-08-09.md`.
+
 ## Part 3 — No generic API escape hatch (permanent invariant)
 
 **This project's public MCP surface must never expose dynamic dispatch**
