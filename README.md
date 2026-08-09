@@ -25,7 +25,7 @@ That split is deliberate, not incomplete. See
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.2.2'
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.3.0'
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```
@@ -197,10 +197,12 @@ A browsable version of the full documentation set below is published at
 
 ## Status
 
-v0.2.2 is the immutable production baseline, published on PyPI. v0.3.0 is
-active development of the Tier 1 safety framework described above — no
-mutating capability, endpoint, transport path, or MCP tool is active as
-part of it. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
+v0.3.0 is the immutable production baseline, published on PyPI. It ships
+the Tier 1 safety framework described above as implemented, tested,
+structurally isolated code — no mutating capability, endpoint, transport
+path, or MCP tool is active as part of it. v0.2.2 remains the prior
+published release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's
+next.
 
 ## Contributing
 

@@ -141,7 +141,7 @@ existing tag name; it rebuilds from that tag and refuses a tag/version mismatch.
 
 ```console
 gh workflow run publish.yml --ref main \
-  -f tag=v0.2.2 \
+  -f tag=v0.3.0 \
   -f confirm=publish-pfsense-mcp-server
 ```
 

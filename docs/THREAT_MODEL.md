@@ -1,6 +1,6 @@
 # Threat model
 
-Version: v0.2.2 production baseline with inert v0.3.0 Tier 1 development framework and inert ADR-017 guidance-layer scaffolding
+Version: v0.3.0 production baseline (same active READ path as v0.2.2) with inert Tier 1 development framework and inert ADR-017 guidance-layer scaffolding
 Scope: current local stdio MCP server, 41 READ tools, unreachable WRITE infrastructure, and the unreachable official-documentation guidance layer
 
 ## Purpose and scope

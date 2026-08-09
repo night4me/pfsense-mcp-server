@@ -7,6 +7,15 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-09
+
+Production contract is unchanged from v0.2.2: **41 READ tools, 0 WRITE
+tools.** This release ships the inert v0.3.0 Tier 1 safety architecture
+and the inert ADR-017 documentation-guidance layer as implemented,
+tested, structurally isolated code — neither is reachable from
+production, neither registers an MCP tool, and no mutating capability,
+endpoint, or transport path is active.
+
 ### Added
 
 - Inert v0.3.0 Tier 1 domain framework: canonical Recovery Contracts, closed
@@ -164,7 +173,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.0
 [0.2.2]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.2
 [0.2.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.1
 [0.2.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.0

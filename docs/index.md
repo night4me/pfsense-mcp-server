@@ -65,9 +65,9 @@ itself:
 ## Project status
 
 The production server is READ-only: 41 tools, zero WRITE tools, an empty
-WRITE endpoint allow-list. v0.2.2 is the current immutable, published
-release. v0.3.0 development continues the Tier 1 safety framework — every
-new module remains structurally unreachable from production until an
-explicit, separately authorized activation decision is made. See the
+WRITE endpoint allow-list. v0.3.0 is the current immutable, published
+release. It ships the Tier 1 safety framework — every new module remains
+structurally unreachable from production until an explicit, separately
+authorized activation decision is made. See the
 [public roadmap](ROADMAP.md) and [v0.3.0 milestone](V0.3.0_MILESTONE.md)
 for what "done" looks like for this phase.

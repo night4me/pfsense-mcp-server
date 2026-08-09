@@ -1,8 +1,9 @@
 # Architecture diagrams
 
-These diagrams describe the immutable v0.2.2 production baseline and inert
-v0.3.0 development framework. Solid paths are active in production;
-future/dormant paths are explicitly labeled.
+These diagrams describe the immutable v0.3.0 production baseline (same
+active READ path as v0.2.2) and the inert Tier 1 development framework it
+ships. Solid paths are active in production; future/dormant paths are
+explicitly labeled.
 
 ## Overall architecture
 

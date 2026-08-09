@@ -7,10 +7,10 @@ capability or authorizes a production change.
 
 ## Current baseline
 
-- Immutable published baseline: v0.2.2 project, packaging, CI, documentation,
-  and READ-platform hardening.
-- Active development milestone: v0.3.0 Tier 1 architecture and inert safety
-  framework. Production mutation remains separately blocked.
+- Immutable published baseline: v0.3.0 — the same READ-platform contract as
+  v0.2.2, plus the Tier 1 architecture and inert safety framework as
+  implemented, tested, and structurally isolated code. Production
+  mutation remains separately blocked.
 - Production MCP surface: 41 READ tools, 0 WRITE tools.
 - Tier 0 WRITE infrastructure: present, tested, and inert.
 
