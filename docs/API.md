@@ -1,11 +1,11 @@
 # MCP tool reference
 
-Version: 0.3.0 release state
+Version: 0.3.1 release state
 Profile: `auditor`  
-Registered tools: 41 READ, 0 WRITE
+Registered tools: 42 READ, 0 WRITE
 
 The normalized public contract is checked into
-`tests/contracts/mcp_public_contract_v0.3.0.json`. It records tool names,
+`tests/contracts/mcp_public_contract_v0.3.1.json`. It records tool names,
 descriptions, input/output schemas, annotations, capability ownership, client
 methods, and verified GET endpoint ownership. `make validate` fails on drift.
 After explicit approval of an intentional public API change, regenerate it with
@@ -28,11 +28,14 @@ connection, authentication, upstream API, validation, and response-shape
 failures are returned as typed, sanitized errors. Raw upstream bodies,
 credentials, request headers, and exception messages are never returned.
 
-Every tool advertises MCP `readOnlyHint=true` and `openWorldHint=true`.
-`destructiveHint` and `idempotentHint` are omitted because those hints are
-defined for tools that modify their environment. Annotations are untrusted
-client metadata only. They do not authorize a call or weaken capability,
-endpoint, GET-only, credential, audit, or WRITE-inactivity controls.
+Every tool advertises MCP `readOnlyHint=true`. Every tool except
+`pfsense_mcp_info` also advertises `openWorldHint=true`; `pfsense_mcp_info`
+is `openWorldHint=false` because it makes no pfSense API call and reports
+only this server process's own local state. `destructiveHint` and
+`idempotentHint` are omitted because those hints are defined for tools that
+modify their environment. Annotations are untrusted client metadata only.
+They do not authorize a call or weaken capability, endpoint, GET-only,
+credential, audit, or WRITE-inactivity controls.
 
 `PFSENSE_ALLOWED_TOOLS` may restrict registration to comma-separated exact
 names from this reference. It is intersected with the selected capability
@@ -452,6 +455,25 @@ Common parameters:
 - **Security:** Table members disclose live policy/topology data and may include
   blocklists or internal networks.
 - **Example:** `{"name":"pfsense_get_diagnostics_tables","arguments":{"limit":20}}`
+
+## Server introspection
+
+### `pfsense_mcp_info`
+
+- **Purpose:** Report this MCP server's own version, active capability
+  profile, registered tool counts, WRITE-inactivity facts, and Tier 1/ADR-017
+  presence — so a client can determine actual capability and safety state
+  without inference.
+- **Parameters:** None.
+- **Returns:** `ServerIntrospection`.
+- **Security:** Local process facts only — makes no pfSense API call. Every
+  field is already independently, redundantly enforced elsewhere (capability
+  gating, the empty `WriteEndpoints` allow-list, CI-enforced Tier 1/ADR-017
+  isolation tests); this tool only reports already-enforced state and cannot
+  itself grant or change any capability. Presence of the `pfsense_mcp.tier1`
+  or `pfsense_mcp.guidance` packages is a packaging fact, not a capability —
+  neither field means either package is reachable or active.
+- **Example:** `{"name":"pfsense_mcp_info","arguments":{}}`
 
 ## Security reminders
 

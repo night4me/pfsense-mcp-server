@@ -14,11 +14,11 @@ from __future__ import annotations
 
 import sys
 
-from pfsense_mcp.write_endpoints import WriteEndpointInfo, WriteEndpoints
+from pfsense_mcp.write_endpoints import WriteEndpoints
 
 
 def find_write_endpoint_entries() -> list[str]:
-    return [name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)]
+    return WriteEndpoints.active_entries()
 
 
 def main() -> int:

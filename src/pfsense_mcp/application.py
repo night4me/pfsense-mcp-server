@@ -55,6 +55,7 @@ class Application:
                 config.identity,
                 config.profile.capabilities,
                 allowed_tools=config.allowed_tools,
+                profile_name=config.profile.name,
             )
             registry.register_all()
         except ConfigurationError as exc:

@@ -36,4 +36,4 @@ def test_auditor_profile_registers_only_read_tools_no_write_tools():
     registry.register_all()
     registered_names = {fn.__name__ for fn in mcp.registered}
     assert registered_names
-    assert all(name.startswith("pfsense_get_") for name in registered_names)
+    assert all(name.startswith("pfsense_get_") or name == "pfsense_mcp_info" for name in registered_names)

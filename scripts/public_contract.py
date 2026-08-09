@@ -22,9 +22,13 @@ from pfsense_mcp.tools.registry import ToolRegistry
 from pfsense_mcp.transport.mock import MockTransport
 
 ROOT = Path(__file__).resolve().parents[1]
-SNAPSHOT = ROOT / "tests" / "contracts" / "mcp_public_contract_v0.3.0.json"
+SNAPSHOT = ROOT / "tests" / "contracts" / "mcp_public_contract_v0.3.1.json"
 READ_TOOLS = ROOT / "src" / "pfsense_mcp" / "tools" / "read"
 CLIENT_SOURCE = ROOT / "src" / "pfsense_mcp" / "pfsense_client.py"
+
+# Tools with no PfSenseClient dependency at all — they report local
+# process state and make no pfSense API call. Currently just the one.
+LOCAL_ONLY_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_mcp_info"})
 
 
 def _client() -> PfSenseClient:
@@ -49,8 +53,14 @@ def _single_attribute_calls(tree: ast.AST, owner: str) -> set[str]:
     }
 
 
-def _tool_definitions() -> dict[str, tuple[str, str]]:
-    result: dict[str, tuple[str, str]] = {}
+def _tool_definitions() -> dict[str, tuple[str | None, str]]:
+    """Map each tool name to (client_method, description).
+
+    Every tool has exactly one PfSenseClient method call except
+    pfsense_mcp_info, which has none by design (LOCAL_ONLY_TOOL_NAMES) —
+    it makes no pfSense API call at all, so client_method is None.
+    """
+    result: dict[str, tuple[str | None, str]] = {}
     for path in sorted(READ_TOOLS.glob("*.py")):
         if path.name == "__init__.py":
             continue
@@ -59,13 +69,17 @@ def _tool_definitions() -> dict[str, tuple[str, str]]:
             node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.startswith("pfsense_")
         ]
         methods = _single_attribute_calls(tree, "client")
-        if len(functions) != 1 or len(methods) != 1:
-            raise RuntimeError(f"Expected one public tool and client method in {path.relative_to(ROOT)}")
+        if len(functions) != 1:
+            raise RuntimeError(f"Expected exactly one public tool in {path.relative_to(ROOT)}")
         function = functions[0]
+        is_local_only = function.name in LOCAL_ONLY_TOOL_NAMES
+        expected_methods = 0 if is_local_only else 1
+        if len(methods) != expected_methods:
+            raise RuntimeError(f"Expected {expected_methods} client method(s) in {path.relative_to(ROOT)}")
         description = ast.get_docstring(function, clean=False)
         if description is None:
             raise RuntimeError(f"Expected a public tool description in {path.relative_to(ROOT)}")
-        result[function.name] = (methods.pop(), description)
+        result[function.name] = (methods.pop() if methods else None, description)
     return result
 
 
@@ -104,8 +118,18 @@ def build_contract() -> dict[str, Any]:
     tools: list[dict[str, Any]] = []
     for tool in sorted(_registered_tools(AuditorProfile.capabilities), key=lambda item: item.name):
         method, description = tool_definitions[tool.name]
-        endpoint_name = client_endpoints[method]
-        endpoint = getattr(Endpoints, endpoint_name)
+        if method is None:
+            endpoint_entry: dict[str, Any] | None = None
+        else:
+            endpoint_name = client_endpoints[method]
+            endpoint = getattr(Endpoints, endpoint_name)
+            endpoint_entry = {
+                "symbol": endpoint_name,
+                "method": "GET",
+                "path_suffix": endpoint.path_suffix,
+                "minimum_api_version": endpoint.min_api_version.value,
+                "verified": endpoint.verified,
+            }
         tools.append(
             {
                 "name": tool.name,
@@ -120,13 +144,7 @@ def build_contract() -> dict[str, Any]:
                 else None,
                 "capability": capability_ownership[tool.name],
                 "client_method": method,
-                "endpoint": {
-                    "symbol": endpoint_name,
-                    "method": "GET",
-                    "path_suffix": endpoint.path_suffix,
-                    "minimum_api_version": endpoint.min_api_version.value,
-                    "verified": endpoint.verified,
-                },
+                "endpoint": endpoint_entry,
             }
         )
     return {"snapshot_format": 1, "tools": tools}

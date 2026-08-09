@@ -31,3 +31,14 @@ class WriteEndpointInfo:
 
 class WriteEndpoints:
     """Deliberately empty in this build. See module docstring."""
+
+    @classmethod
+    def active_entries(cls) -> list[str]:
+        """Names of all WriteEndpointInfo entries currently declared here.
+
+        The single source of truth for "how many write endpoints are
+        allow-listed" — scripts/write_allow_list_check.py and any
+        runtime introspection both call this instead of each keeping
+        their own copy of the same vars()-scan.
+        """
+        return [name for name, value in vars(cls).items() if isinstance(value, WriteEndpointInfo)]

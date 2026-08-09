@@ -7,6 +7,30 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-09
+
+### Added
+
+- `pfsense_mcp_info`: a new READ-only server-introspection tool. Reports this
+  server's own version, active capability profile, registered tool counts,
+  active WRITE capabilities/endpoints (always empty in this build), and
+  Tier 1/ADR-017 presence — deterministic local process facts only, no
+  pfSense API call. Production contract: **42 READ tools, 0 WRITE tools**
+  (up from 41; this is the only functional change in this release). Gated
+  by a new `SERVER_INFO_READ` capability, following the same per-capability
+  registration pattern as every other tool — an empty capability set still
+  registers nothing. `openWorldHint=false` for this tool specifically,
+  since it never contacts pfSense (every other tool remains
+  `openWorldHint=true`). See `docs/API.md`'s "Server introspection" section.
+
+### Security
+
+- `pfsense_mcp.tier1` and `pfsense_mcp.guidance` presence/import status is
+  now independently, mechanically observable at runtime via
+  `pfsense_mcp_info` (`tier1_package_present`, `tier1_imported_this_process`,
+  `guidance_package_present`, `guidance_imported_this_process`), in addition
+  to the existing CI-enforced isolation tests — not a replacement for them.
+
 ## [0.3.0] - 2026-08-09
 
 Production contract is unchanged from v0.2.2: **41 READ tools, 0 WRITE
@@ -173,7 +197,8 @@ endpoint, or transport path is active.
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.1
 [0.3.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.0
 [0.2.2]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.2
 [0.2.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.1

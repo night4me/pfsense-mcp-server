@@ -3,6 +3,9 @@ is gated by which capabilities are active for this server instance."""
 
 from __future__ import annotations
 
+import importlib.metadata
+import importlib.util
+import sys
 from dataclasses import dataclass
 from typing import Callable
 
@@ -10,7 +13,9 @@ from mcp.types import ToolAnnotations
 
 from ..capabilities import Capability
 from ..errors import ConfigurationError
+from ..models.server_introspection import ServerIntrospection
 from ..pfsense_client import PfSenseClient
+from ..write_endpoints import WriteEndpoints
 from .audit import audit_logged
 from .read import (
     acme_settings,
@@ -41,6 +46,7 @@ from .read import (
     interface_bridges,
     interface_configs,
     interfaces,
+    mcp_info,
     ntp_settings,
     ntp_time_servers,
     service_status,
@@ -67,6 +73,10 @@ class ReadToolAnnotationPolicy:
 
 
 READ_TOOL_ANNOTATION_POLICY = ReadToolAnnotationPolicy()
+
+# pfsense_mcp_info is the only READ tool that never contacts pfSense —
+# every field it returns is already-resolved local process state.
+LOCAL_ONLY_ANNOTATION_POLICY = ReadToolAnnotationPolicy(open_world_hint=False)
 
 KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
     {
@@ -111,6 +121,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_system_version",
         "pfsense_get_user_groups",
         "pfsense_get_users",
+        "pfsense_mcp_info",
     }
 )
 
@@ -124,6 +135,7 @@ class ToolRegistry:
         capabilities: frozenset[Capability],
         *,
         allowed_tools: frozenset[str] | None = None,
+        profile_name: str = "unknown",
     ) -> None:
         unknown_tools = allowed_tools - KNOWN_READ_TOOL_NAMES if allowed_tools is not None else frozenset()
         if unknown_tools:
@@ -134,6 +146,14 @@ class ToolRegistry:
         self._identity = identity
         self._capabilities = capabilities
         self._allowed_tools = allowed_tools
+        self._profile_name = profile_name
+        # Populated by _register_read_tool()/a future write-registration
+        # equivalent only when a tool is actually registered (i.e. not
+        # filtered out by allowed_tools) — the source pfsense_mcp_info
+        # reads for its own registered-tool-count fields, so those counts
+        # can never drift from what was actually registered on self._mcp.
+        self._registered_read_names: list[str] = []
+        self._registered_write_names: list[str] = []
 
     def register_all(self) -> None:
         if Capability.SYSTEM_READ in self._capabilities:
@@ -204,6 +224,8 @@ class ToolRegistry:
             self._register_diagnostics_tables_read()
         if Capability.AUTH_KEYS_READ in self._capabilities:
             self._register_auth_keys_read()
+        if Capability.SERVER_INFO_READ in self._capabilities:
+            self._register_server_info_read()
 
         self.register_all_write()
 
@@ -217,10 +239,16 @@ class ToolRegistry:
         existing per-capability dispatch pattern above, under a
         separately authorized tier."""
 
-    def _register_read_tool(self, wrapped: Callable[..., object]) -> None:
+    def _register_read_tool(
+        self,
+        wrapped: Callable[..., object],
+        *,
+        annotation_policy: ReadToolAnnotationPolicy = READ_TOOL_ANNOTATION_POLICY,
+    ) -> None:
         if self._allowed_tools is not None and wrapped.__name__ not in self._allowed_tools:
             return
-        self._mcp.tool(annotations=READ_TOOL_ANNOTATION_POLICY.to_mcp())(wrapped)
+        self._mcp.tool(annotations=annotation_policy.to_mcp())(wrapped)
+        self._registered_read_names.append(wrapped.__name__)
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -423,3 +451,32 @@ class ToolRegistry:
         fn = auth_keys.build(self._client)
         wrapped = audit_logged("pfsense_get_auth_keys", self._identity)(fn)
         self._register_read_tool(wrapped)
+
+    def _register_server_info_read(self) -> None:
+        fn = mcp_info.build(self._build_introspection_snapshot)
+        wrapped = audit_logged("pfsense_mcp_info", self._identity)(fn)
+        self._register_read_tool(wrapped, annotation_policy=LOCAL_ONLY_ANNOTATION_POLICY)
+
+    def _build_introspection_snapshot(self) -> ServerIntrospection:
+        """Assemble pfsense_mcp_info's response from live process state,
+        evaluated at call time (not registration time) so it always
+        reflects everything register_all() actually did, including this
+        tool's own registration."""
+        active_write_capabilities = tuple(
+            sorted(capability.name for capability in self._capabilities if capability.name.endswith("_WRITE"))
+        )
+        return ServerIntrospection(
+            server_version=importlib.metadata.version("pfsense-mcp-server"),
+            active_profile=self._profile_name,
+            registered_tool_count=len(self._registered_read_names) + len(self._registered_write_names),
+            registered_read_tool_count=len(self._registered_read_names),
+            registered_write_tool_count=len(self._registered_write_names),
+            active_capability_set=tuple(sorted(capability.name for capability in self._capabilities)),
+            active_write_capabilities=active_write_capabilities,
+            active_write_endpoint_count=len(WriteEndpoints.active_entries()),
+            tier1_package_present=importlib.util.find_spec("pfsense_mcp.tier1") is not None,
+            tier1_imported_this_process="pfsense_mcp.tier1" in sys.modules,
+            guidance_package_present=importlib.util.find_spec("pfsense_mcp.guidance") is not None,
+            guidance_imported_this_process="pfsense_mcp.guidance" in sys.modules,
+            mcp_transport="stdio",
+        )
