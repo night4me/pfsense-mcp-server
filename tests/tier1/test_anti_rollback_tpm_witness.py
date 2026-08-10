@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 import respx
@@ -67,7 +69,7 @@ def test_advance_success_sends_expected_current_and_returns_new_value():
     route = respx.post(f"{_BASE_URL}/anchor/advance").mock(return_value=httpx.Response(200, json={"value": 48}))
     result = _anchor().advance(expected_current=47)
     assert result == 48
-    assert route.calls.last.request.content == b'{"expected_current":47}'
+    assert json.loads(route.calls.last.request.content) == {"expected_current": 47}
 
 
 @respx.mock
