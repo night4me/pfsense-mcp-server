@@ -100,6 +100,46 @@ anti-rollback, and operator-authentication decisions are approved.
 See [Tier 1 roadmap](TIER1_ROADMAP.md). Until every gate is accepted, zero
 WRITE tools register.
 
+## Operator setup and security profiles (idea, not committed)
+
+Idea-stage direction for a future `pfsense-mcp-security setup`
+CLI/wizard: let an operator explicitly choose a named security profile
+at setup time rather than silently ending up with stronger privileges
+than intended. No design work beyond this roadmap entry exists yet, and
+none of the below authorizes building the wizard, the profiles, or any
+underlying capability.
+
+Target end state, roughly:
+
+- **READ-only profile** — today's actual production default: the
+  existing READ-only MCP surface, no Tier 1/WRITE infrastructure
+  activated.
+- **Software-protected WRITE profile** — a future Tier 1 WRITE
+  capability (see "Tier 1" above) protected by the existing Recovery
+  Contract / sealed-executor machinery, without a hardware anti-rollback
+  anchor.
+- **Hardened hardware-TPM-witness profile** — Tier 1 WRITE plus the
+  `ADR-011` anti-rollback anchor backed by a real TPM. For this
+  profile, **the persistent, systemd-managed witness daemon is the
+  intended production behavior, not a manually-started daemon** — see
+  [ADR-011](adr/ADR-011-whole-store-anti-rollback-anchor.md)'s
+  "Deployment model decision" section (authoritative) and
+  [anti_rollback_tpm_host_witness.md](tier1/specs/anti_rollback_tpm_host_witness.md)'s
+  "Deployment model" section (operational detail). If/when this wizard
+  is built, selecting this profile should be able to provision the
+  persistent witness architecture automatically — service
+  installation/configuration and the full existing hardening posture
+  (dedicated identity, least privilege, mTLS, restricted network
+  exposure, fixed TPM handle/invariants) — while keeping the profile
+  choice explicit and never silently enabling a stronger profile than
+  the operator selected.
+
+Each profile's own activation gates (Tier 1's "Required before
+commitment" above, `ADR-011`'s backend/deployment decisions, WRITE
+capability/allow-list population, etc.) are unchanged and unaffected by
+this idea — the wizard, if built, would provision toward an explicitly
+chosen profile's already-existing gates, not bypass them.
+
 ## Tier 2 — additional controlled capabilities
 
 ### Possible future direction

@@ -1,9 +1,17 @@
 # Tier 1 — TPM-backed host-witness anti-rollback anchor (concrete `ADR-011` backend)
 
-Status: implementation-ready specification; implementation not authorized.
-Activation gate: `ADR-011`'s backend decision (below) plus Milestone 3
-(anti-rollback activation) and, separately, explicit provisioning
-authorization before any TPM-mutating command runs.
+Status: provisioning, guest-side integration, and the host-witness
+daemon (offline + real-hardware-verified) are implemented per the
+"Activation requirements" checklist below; fail-closed activation in
+`store.py` is not. Deployment model (persistent systemd service as the
+production default) decided 2026-08-10 — see this document's
+"Deployment model" section and `ADR-011`'s "Deployment model decision"
+section (authoritative).
+Activation gate (still applies to fail-closed enforcement/WRITE, not to
+already-completed provisioning/deployment steps): `ADR-011`'s backend
+decision (below) plus Milestone 3 (anti-rollback activation) and,
+separately, explicit provisioning authorization before any further
+TPM-mutating command runs.
 Related: [whole_store_anti_rollback.md](whole_store_anti_rollback.md)
 (the generic `AntiRollbackAnchor` protocol this backend implements —
 this document does not redefine it), [ADR-011](../../adr/ADR-011-whole-store-anti-rollback-anchor.md).
@@ -28,10 +36,12 @@ counter is confirmed. All 14 existing indices are foreign/vendor/OS-owned
 and must never be modified, reused, undefined, or otherwise touched by
 this project.
 
-**This document is a design only. No command in it has been executed.
-See "Provisioning procedure" for the exact, listed-but-not-run commands,
-and "Activation requirements" for what authorization each step still
-needs.**
+**Update (2026-08-10): provisioning steps 1–7 below have since been
+executed (owner, manually, on the real Proxmox console) under their own
+explicit, separately granted authorization — see "Activation
+requirements" for exactly which steps are done vs. still pending. This
+document's design itself is unchanged; only its implementation status
+has progressed.**
 
 ## Purpose
 
@@ -306,6 +316,55 @@ empty (device access via `DeviceAllow=/dev/tpmrm0 rw` in a scoped unit,
 not a capability), `SystemCallFilter=@system-service`,
 `LoadCredential=` for both the TPM index secret and the mTLS private key
 — never plaintext files on persistent storage.
+
+## Deployment model (owner decision 2026-08-10 — see `ADR-011`'s "Deployment model decision" section, the authoritative record; this section restates only the operational specifics)
+
+**The persistent, `systemd`-managed daemon
+(`witness_daemon/systemd/pfsense-mcp-tpm-witness.service`) is the
+intended production deployment shape for the hardened
+hardware-TPM-witness profile.** `systemctl enable --now
+pfsense-mcp-tpm-witness.service` (or the deployer's equivalent) so the
+service starts automatically with the host and restarts automatically
+on failure (`Restart=on-failure` in the reference unit) — runtime Tier
+1 verification (`tier1_anchor_check.run_anchor_startup_check()`)
+depends on the daemon already being reachable when the guest process
+starts; it does not start, manage, or wait for the daemon itself.
+
+**Manually starting the daemon in the foreground
+(`python3 -m witness_daemon`, outside `systemd`) is a development,
+diagnostic, or recovery mode only** — useful for the kind of read-only
+real-hardware verification this project's own Phase 2 already
+performed, or for troubleshooting a service that fails to start under
+`systemd`'s sandboxing. It is not a substitute for the systemd-managed
+deployment in normal operation and must not be left as the ongoing
+production configuration.
+
+**Persistence is an availability property, not a privilege change.**
+Every security boundary in this document — service privilege
+separation, the full hardening directive list below, mTLS on both
+ends, the firewall restriction to VM 106 only, the fixed non-caller-
+supplied NV handle, and the two-operation-only wire protocol — applies
+identically whether the daemon is started by `systemd` or by hand.
+Running it continuously does not grant, imply, or shortcut `advance()`
+use beyond the CAS semantics already specified, TPM mutation beyond
+provisioning, fail-closed WRITE gating, WRITE capability activation,
+`WriteEndpoints` population, or pfSense mutation.
+
+The reference unit's `ConfigurationDirectoryMode=0750` (tighter than
+`systemd`'s own undeclared default of `0755`) remains the correct
+intended setting: `ConfigurationDirectory=` holds only the two public,
+non-secret TLS files (server certificate, pinned client CA), but
+scoping directory read/traverse access to the dedicated service
+account and its group only — rather than every local account on a
+shared Proxmox management host — is consistent with this project's
+existing least-exposure posture even where the individual files are
+not secret. This value should not be loosened without a specific
+reason recorded here.
+
+Any known or suspected difference between a real installed deployment
+and this reference unit is tracked as an operational drift item in
+`reports-ai/` (private, host-specific), not in this public
+specification — this document states the intended target state only.
 
 ## Firewall requirements (not applied by this document)
 
@@ -713,21 +772,36 @@ tpm2_nvread -C 0x01XXXXXX -P file:<systemd-credential-path>/nv-index-auth -s 8 0
 - [x] Read-only enumeration (`tpm2_getcap handles-nv-index`/
       `properties-fixed`/`properties-variable`) run and reviewed — see
       above.
-- [ ] NV index provisioned (provisioning procedure above) — its own
-      separate, explicitly requested authorization, naming the exact
-      chosen handle. See "Smallest safe first mutating slice" below for
-      the recommended scope of that authorization.
-- [ ] `anti_rollback_tpm_witness.py` implemented and tested offline.
-- [ ] Witness daemon implemented, systemd-hardened, and deployed on the
-      Proxmox host.
+- [x] NV index provisioned (2026-08-10, owner, manually, on the real
+      Proxmox console) — handle `0x01500000`, initial value `2`.
+- [x] `anti_rollback_tpm_witness.py` implemented and tested offline
+      (Slice B).
+- [x] Witness daemon implemented (Phase 1) and real-hardware-verified
+      (Phase 2, 2026-08-10) — reachable and correctly serving `read()`
+      over mTLS as of the most recent read-only checkpoint check
+      (`2 == 2`). **Live-vs-repo deployment convergence not yet
+      independently re-verified this session** — see this document's
+      "Deployment model" section and `reports-ai/`'s dedicated
+      convergence-review entry for the exact, currently-known drift
+      item (`ConfigurationDirectoryMode`) and the proposed (not yet
+      applied) remediation/verification plan.
 - [ ] Host firewall configured to restrict the daemon's port to VM 106
-      only.
+      only — status not independently re-confirmed this session (no
+      SSH access; standing constraint).
+- [x] Live baseline-seeding of the production store — confirmed
+      complete via a read-only status check (2026-08-10):
+      `seeded=True`, `complete=True`, `handle=0x01500000`,
+      `baseline=2`, `provisioned_at=2026-08-10T15:10:16.416050+00:00`.
 - [ ] `store.py`'s `anti_rollback_anchor=None` default flipped to a hard
       refusal at activation time (already flagged as pending, unchanged,
-      in `whole_store_anti_rollback.md`).
-- [ ] `ADR-011`'s own `Status:` field updated from "Recommended — pending
-      owner decision" once this backend is fully provisioned and verified
-      end-to-end, not merely designed.
+      in `whole_store_anti_rollback.md`). **Unaffected by the deployment
+      model decision** — persistence of the daemon does not authorize
+      this.
+- [ ] `ADR-011`'s own `Status:` field fully reconciled with end-to-end
+      production verification (partially updated 2026-08-10 to reflect
+      provisioning/deployment progress; still not "activated" — WRITE
+      remains 0/3, and this anchor's fail-closed enforcement in
+      `store.py` is still the pending item directly above).
 
 ## Smallest safe first mutating slice (2026-08-10 addendum)
 
