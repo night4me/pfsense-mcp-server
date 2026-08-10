@@ -16,6 +16,7 @@ from .errors import ConfigurationError
 from .factory import build_pfsense_client
 from .logging_setup import DEFAULT_LOG_DIR as LOG_DIR
 from .logging_setup import configure_logging, shutdown_logging
+from .tier1_anchor_check import run_anchor_startup_check
 from .tools.registry import ToolRegistry
 from .transport.http import HttpTransport
 
@@ -41,6 +42,14 @@ class Application:
 
         redaction_filter = configure_logging(LOG_DIR, max_bytes=log_max_bytes, backup_count=log_backup_count)
         logger = logging.getLogger("pfsense_mcp")
+
+        # Read-only, opt-in, log-only Tier 1 anti-rollback anchor
+        # verification -- independent of, and never gating, the pfSense
+        # bootstrap below. Never raises; see tier1_anchor_check.py's own
+        # module docstring for the full scope and rationale. Runs before
+        # the pfSense-specific bootstrap so its outcome is visible in
+        # logs even if that bootstrap later fails.
+        run_anchor_startup_check(logger)
 
         try:
             config = load_config()

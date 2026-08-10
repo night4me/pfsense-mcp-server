@@ -12,23 +12,46 @@ def _tree(path: Path) -> ast.Module:
     return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
+def _is_tier1_module(module: str) -> bool:
+    # Exact-or-dotted-prefix match only -- "tier1_anchor_check" (a
+    # genuinely different, sibling top-level module) must not match
+    # "tier1" via a bare, boundary-unaware startswith() the way an
+    # earlier version of this helper did.
+    return module == "tier1" or module.startswith("tier1.")
+
+
 def _imports_tier1(path: Path) -> bool:
     for node in ast.walk(_tree(path)):
-        if isinstance(node, ast.Import) and any(alias.name.startswith("pfsense_mcp.tier1") for alias in node.names):
+        if isinstance(node, ast.Import) and any(
+            _is_tier1_module(alias.name.removeprefix("pfsense_mcp.")) for alias in node.names
+        ):
             return True
         if isinstance(node, ast.ImportFrom):
             module = node.module or ""
-            if module.startswith("pfsense_mcp.tier1") or (node.level and module.startswith("tier1")):
+            if _is_tier1_module(module.removeprefix("pfsense_mcp.")) or (node.level and _is_tier1_module(module)):
                 return True
     return False
 
 
 def test_tier1_is_not_imported_outside_its_inert_package():
+    # tier1_anchor_check.py is the one, narrow, explicit exception
+    # (2026-08-10, owner-authorized read-only runtime wiring): the sole
+    # production entrypoint for the read-only, opt-in, log-only
+    # anti-rollback anchor startup verification -- see its own module
+    # docstring for the full scope. application.py itself does NOT
+    # import pfsense_mcp.tier1 at all; it only imports
+    # tier1_anchor_check.run_anchor_startup_check(), so this exemption's
+    # surface is exactly one file, not application.py or any other
+    # production module. See
+    # tests/test_tier1_anchor_check_isolation.py for the stronger,
+    # dedicated tests proving this file's own access is read-only,
+    # opt-in, and cannot reach PREPARE/EXECUTE/WRITE.
+    exempt = {"tier1_anchor_check.py"}
     production = ROOT / "src/pfsense_mcp"
     offenders = [
         path.relative_to(ROOT).as_posix()
         for path in production.rglob("*.py")
-        if "tier1" not in path.relative_to(production).parts and _imports_tier1(path)
+        if "tier1" not in path.relative_to(production).parts and path.name not in exempt and _imports_tier1(path)
     ]
     assert offenders == []
 

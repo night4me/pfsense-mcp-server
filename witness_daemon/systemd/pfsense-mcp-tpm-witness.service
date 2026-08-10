@@ -46,7 +46,17 @@ SupplementaryGroups=tss
 #     the sandboxed process starts, which is why the two genuine secrets
 #     may still be sourced from a /root-owned path).
 ConfigurationDirectory=pfsense-mcp-tpm-witness
-# -> creates /etc/pfsense-mcp-tpm-witness/, owned by User=/Group= above.
+ConfigurationDirectoryMode=0750
+# -> creates /etc/pfsense-mcp-tpm-witness/, owned by User=/Group= above,
+#    mode 0750 -- found and fixed during real permanent deployment
+#    (2026-08-10): systemd's own undeclared default for
+#    ConfigurationDirectoryMode= is 0755, which does not match the
+#    tighter mode this deployment actually intends (these are public
+#    certificates, not secrets, so 0755 would not have been a severe
+#    exposure -- but leaving the declared and actual modes to silently
+#    disagree is its own defect, regardless of severity). Declaring it
+#    explicitly here means every future start enforces 0750 consistently
+#    instead of drifting toward systemd's own default.
 # Place the server certificate and pinned client CA certificate (both
 # public, non-secret) there before starting the service.
 
