@@ -16,7 +16,7 @@ silently rewrite earlier context.
 | [008](ADR-008-fail-closed-configuration.md) | Fail-closed configuration validation | Accepted |
 | [009](ADR-009-protected-artifact-encryption-provider.md) | Protected-artifact encryption provider | Accepted |
 | [010](ADR-010-key-lifecycle-and-delivery.md) | Key lifecycle and delivery | Accepted |
-| [011](ADR-011-whole-store-anti-rollback-anchor.md) | Whole-store anti-rollback anchor | Recommended — pending owner decision |
+| [011](ADR-011-whole-store-anti-rollback-anchor.md) | Whole-store anti-rollback anchor | Backend decided (2026-08-10, TPM-backed host witness) — design-ready, not yet provisioned |
 | [012](ADR-012-confirmation-authority.md) | Confirmation authority | Accepted |
 | [013](ADR-013-reconciliation-authority.md) | Reconciliation authority | Accepted |
 | [014](ADR-014-sealed-executor-interface.md) | Sealed executor interface | Accepted |

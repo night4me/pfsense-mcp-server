@@ -118,6 +118,7 @@ nav:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md
           - Whole-store anti-rollback: tier1/specs/whole_store_anti_rollback.md
+          - Anti-rollback TPM host-witness backend: tier1/specs/anti_rollback_tpm_host_witness.md
           - Confirmation authority: tier1/specs/confirmation_authority.md
           - Reconciliation authority: tier1/specs/reconciliation_authority.md
           - Rate and blast-radius policy: tier1/specs/rate_blast_radius_policy.md
