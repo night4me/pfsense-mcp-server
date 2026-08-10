@@ -84,7 +84,8 @@ capability or authorizes a production change.
   the GUI actually presents. See `READ_BACKLOG.md`'s "Post-snapshot
   discovery" addendum for the precise gap and evidence. Not scoped or
   authorized here — a new capability requires the same review any
-  public-contract addition does.
+  public-contract addition does. See also the "WebGUI Evidence Layer"
+  idea below, the broader future direction this specific gap motivated.
 
 ## Tier 1 — first controlled mutation
 
@@ -175,6 +176,117 @@ only, not to anchor-assurance provisioning — etc.) are unchanged and
 unaffected by this design phase — the wizard, if built, would provision
 toward an explicitly chosen combination's already-existing gates, not
 bypass or shortcut them.
+
+## WebGUI Evidence Layer (idea, not committed — independent of the security-posture work above)
+
+Working name: **WebGUI Evidence Layer**. Idea-stage future direction
+only — no design work beyond this roadmap entry exists yet, no ADR
+exists, and nothing below authorizes building it, adding a dependency,
+adding an MCP tool or capability, or touching a live pfSense appliance.
+A dedicated ADR/spec is a future step once this is actually being
+designed, not created merely to record the idea.
+
+**Motivation**: a real-world, read-only certificate-manager diagnostic
+session (2026-08-10) found a concrete, structural limit, not a bug —
+the REST API correctly exposed the certificate inventory and expiry
+(the MCP correctly identified the expired certificate), but could not
+answer "which certificate is the webConfigurator actually presenting,"
+because that relationship is only visible in the pfSense WebGUI itself
+(`system.webgui.ssl-certref`, exposed at `/system/webgui/settings` —
+see `READ_BACKLOG.md`'s "Post-snapshot discovery" addendum and the
+matching item above). The owner independently confirmed the correct
+answer via the GUI. This roadmap entry is about the general shape of
+that gap, not only this one endpoint.
+
+**Preferred hierarchy** (most to least authoritative):
+
+1. **REST API** — authoritative structured source whenever the
+   required information is exposed. Stays primary; this idea does not
+   change that.
+2. **Read-only WebGUI extraction/parsing** — a targeted fallback for
+   information genuinely absent from the API, only. Prefer structured
+   extraction from known WebGUI pages (parsing rendered HTML/DOM for a
+   specific, known field) over image interpretation wherever feasible.
+3. **Screenshot evidence** — the final visual fallback, used only when
+   the relevant information cannot be reliably extracted structurally.
+   May also be *captured* as provenance/evidence for a WebGUI-derived
+   observation, independent of whether it was the extraction method —
+   but capture is not the same as retention; see the retention
+   questions below, which this idea deliberately leaves open rather
+   than assuming screenshots are kept by default.
+
+**Non-negotiable architectural principle: this must NOT become a
+general browser-control capability.** An authenticated browser session
+capable of submitting forms or clicking mutating controls would be an
+undeclared WRITE path entirely outside the MCP capability registry —
+directly contradicting this project's own foundational invariants
+(`ADR-001` READ-only production architecture, `ADR-004` explicit
+capability profiles, `ADR-005` WRITE stays inert until separately
+authorized). Any future design must therefore investigate, at minimum:
+
+- an explicit allow-list of supported WebGUI pages/routes — never
+  arbitrary navigation;
+- mapping specific READ capabilities/questions to their known relevant
+  WebGUI page(s), so the model requests narrowly scoped supplementary
+  evidence, never browses generally;
+- navigation/read operations only;
+- **prohibit POST/PUT/PATCH/DELETE and form submission** outright;
+- prohibit interacting with Apply/Save/Delete or any other action
+  control, even by accident (e.g. never click anything, only read
+  rendered content);
+- no generic arbitrary browser-automation surface exposed to the
+  model, ever;
+- credentials, cookies, CSRF tokens, and session material must never
+  be returned to the model;
+- WebGUI access represented explicitly in the capability/security
+  model — not hidden inside an existing READ capability's
+  implementation;
+- **explicit provenance attached to every observation**, distinguishing:
+  - `API_VERIFIED`
+  - `WEBGUI_STRUCTURED_VERIFIED`
+  - `WEBGUI_VISUAL_VERIFIED`
+  - `INFERRED`
+  - `UNKNOWN`
+- WebGUI evidence must never silently override contradictory API
+  data — disagreement between sources must be surfaced explicitly, not
+  resolved by picking one silently;
+- screenshots are evidence, not canonical structured configuration —
+  never treated as a structured data source;
+- **failure of the WebGUI evidence layer must never change pfSense
+  state** — a failed/unavailable/ambiguous WebGUI read degrades to
+  `UNKNOWN`, exactly like any other unreachable READ source in this
+  project, never a fallback that silently mutates anything;
+- **screenshot retention must not be assumed permanent or the
+  default** — capturing a screenshot (for a visual-fallback
+  observation, or as provenance alongside a structured one) is not the
+  same decision as keeping it. Left as an open question for future
+  design, not decided here: capture on demand rather than continuously;
+  retain only when explicitly required for provenance/audit, not by
+  default; redaction of sensitive WebGUI content before any retention;
+  a bounded retention lifecycle (not indefinite storage); and, when a
+  structured (`WEBGUI_STRUCTURED_VERIFIED`) observation is
+  independently sufficient on its own, retaining an accompanying
+  screenshot should not be required just because one was captured
+  during extraction.
+
+**Potential future capability shape** (illustrative only, not a frozen
+contract): something resembling `pfsense_get_webgui_evidence(page=...)`.
+Exact tool shape, naming, and whether it is one tool or several remains
+undecided.
+
+**Capability-specific evidence mapping — a design question worth
+investigating explicitly**, rather than a single generic
+"fetch any WebGUI page" tool: whether each existing READ capability
+should carry its own declared WebGUI evidence source, e.g.:
+
+> `SYSTEM_CERTIFICATE_READ`
+> — REST source: certificate API (already implemented)
+> — WebGUI evidence source: Certificate Manager page (not implemented)
+
+This would let a future implementation request narrowly scoped
+supplementary evidence automatically, only when the normal REST-backed
+READ capability's answer is genuinely incomplete for the question
+asked — never as a general "browse the GUI" escape hatch.
 
 ## Tier 2 — additional controlled capabilities
 

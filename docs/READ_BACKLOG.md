@@ -43,7 +43,12 @@ enumerate certificates and their validity, but could not determine
 which one was actually bound to the GUI without a human checking the
 pfSense UI directly. See `reports-ai/` for the full session record;
 `docs/ROADMAP.md`'s "Possible ideas" (v0.3.0 section) now has a
-one-line pointer to this addendum.
+one-line pointer to this addendum. The same session also motivated a
+broader future direction — see `docs/ROADMAP.md`'s "WebGUI Evidence
+Layer" idea (a tightly constrained, provenance-tracked, READ-only
+WebGUI fallback for exactly this class of API-coverage gap) — this
+specific `/system/webgui/settings` gap is its motivating real-world
+example, not a duplicate of it.
 
 No implementation, scaffolding, or capability/tool change was made as
 part of recording this discovery.
