@@ -71,5 +71,9 @@ class WholeStoreRollbackDetected(Tier1Error):
     """The anti-rollback anchor is behind the store's recorded high-water mark."""
 
 
+class Tier1ConfigurationError(Tier1Error):
+    """Production Tier 1 store configuration is missing, partial, or unsafe."""
+
+
 class RateLimitExceededError(Tier1Error):
     """A capability/target/global rate or blast-radius limit would be exceeded."""

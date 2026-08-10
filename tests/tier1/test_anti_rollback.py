@@ -508,3 +508,69 @@ def test_interrupted_between_seed_and_marker_is_discoverable_and_resumable(tmp_p
             high_water_mark=store._high_water_mark,
         )
         assert store._provisioning_record.is_complete(connection) is True
+
+
+def test_provisioning_record_read_returns_none_before_completion(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        assert store._provisioning_record.read(connection) is None
+
+
+def test_provisioning_record_read_returns_parsed_payload_after_completion(tmp_path):
+    store = _store(tmp_path)
+    store.provision_anchor_baseline(value=99999, handle="0xREADTEST")
+
+    with store._connect() as connection:
+        payload = store._provisioning_record.read(connection)
+
+    assert payload == {"handle": "0xREADTEST", "verified_value": 99999, "provisioned_at": payload["provisioned_at"]}
+
+
+def test_provisioning_record_read_raises_on_corrupted_marker(tmp_path):
+    store = _store(tmp_path)
+    store.provision_anchor_baseline(value=99999, handle="0xREADTEST")
+
+    with store._connect() as connection:
+        connection.execute("UPDATE anchor_state SET mac = 'corrupted' WHERE key = 'anchor_provisioning_complete'")
+        connection.commit()
+
+    with store._connect() as connection, pytest.raises(ContractIntegrityError, match="integrity verification"):
+        store._provisioning_record.read(connection)
+
+
+def test_anchor_provisioning_status_before_any_provisioning(tmp_path):
+    store = _store(tmp_path)
+
+    status = store.anchor_provisioning_status()
+
+    assert status.seeded is False
+    assert status.baseline is None
+    assert status.complete is False
+    assert status.handle is None
+    assert status.provisioned_at is None
+
+
+def test_anchor_provisioning_status_after_provisioning(tmp_path):
+    store = _store(tmp_path)
+
+    store.provision_anchor_baseline(value=99999, handle="0xSTATUSTEST")
+    status = store.anchor_provisioning_status()
+
+    assert status.seeded is True
+    assert status.baseline == 99999
+    assert status.complete is True
+    assert status.handle == "0xSTATUSTEST"
+    assert status.provisioned_at is not None
+
+
+def test_anchor_provisioning_status_seeded_but_not_complete(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=8675309)
+
+    status = store.anchor_provisioning_status()
+
+    assert status.seeded is True
+    assert status.baseline == 8675309
+    assert status.complete is False
+    assert status.handle is None

@@ -161,6 +161,17 @@ def test_store_rejects_unsafe_parent_and_missing_contract(tmp_path):
         store.load("missing-contract")
 
 
+def test_store_rejects_nonexistent_parent_directory_cleanly(tmp_path):
+    missing_parent = tmp_path / "does-not-exist"
+    with pytest.raises(ContractValidationError, match="does not exist"):
+        SqliteRecoveryContractStore(
+            missing_parent / "contracts.sqlite3",
+            integrity_key=_KEY,
+            store_id="synthetic-store",
+        )
+    assert not missing_parent.exists()
+
+
 @pytest.mark.parametrize("store_id", ["", "unsafe\nstore", "store/path", "x" * 129])
 def test_store_identifier_is_bounded_and_safe(tmp_path, store_id):
     os.chmod(tmp_path, 0o700)

@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import sqlite3
+from dataclasses import dataclass
 from typing import Protocol
 
 from .canonical import canonical_json, frame_bytes, frame_str
@@ -44,6 +46,22 @@ class AntiRollbackAnchor(Protocol):
         current value does not match expected_current. Raises
         AnchorUnavailableError if unreachable."""
         ...
+
+
+@dataclass(frozen=True)
+class AnchorProvisioningStatus:
+    """Read-only snapshot returned by
+    `SqliteRecoveryContractStore.anchor_provisioning_status()` — for
+    operator tooling only, never consulted by provisioning or execution
+    logic itself (those use `HighWaterMark.is_seeded()`/
+    `ProvisioningRecord.is_complete()`/`mark_complete()` directly, inside
+    one transaction, not this dataclass)."""
+
+    seeded: bool
+    baseline: int | None
+    complete: bool
+    handle: str | None
+    provisioned_at: str | None
 
 
 class HighWaterMark:
@@ -229,6 +247,28 @@ class ProvisioningRecord:
         if not hmac.compare_digest(supplied_mac, self._mac(payload)):
             raise ContractIntegrityError("Anchor provisioning-complete marker failed integrity verification.")
         return True
+
+    def read(self, connection: sqlite3.Connection) -> dict[str, object] | None:
+        """Read-only status accessor (for operator tooling, e.g.
+        `scripts/tier1_store_bootstrap.py` -- never used by provisioning
+        logic itself, which uses `is_complete()`): the parsed
+        `{"handle", "verified_value", "provisioned_at"}` payload if a
+        valid marker exists, `None` if none exists. Raises
+        `ContractIntegrityError` on a corrupted marker, matching
+        `is_complete()`'s own fail-closed behavior exactly -- this method
+        performs the identical verification, it does not duplicate a
+        second, divergent check."""
+
+        row = connection.execute("SELECT value, mac FROM anchor_state WHERE key = ?", (self._KEY,)).fetchone()
+        if row is None:
+            return None
+        payload, supplied_mac = str(row[0]), str(row[1])
+        if not hmac.compare_digest(supplied_mac, self._mac(payload)):
+            raise ContractIntegrityError("Anchor provisioning-complete marker failed integrity verification.")
+        parsed = json.loads(payload)
+        if not isinstance(parsed, dict) or set(parsed) != {"handle", "verified_value", "provisioned_at"}:
+            raise ContractIntegrityError("Anchor provisioning-complete marker payload is malformed.")
+        return parsed
 
     def mark_complete(
         self,

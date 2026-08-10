@@ -22,7 +22,7 @@ from pathlib import Path
 
 from pfsense_mcp.capabilities import Capability
 
-from .anti_rollback import AntiRollbackAnchor, HighWaterMark, ProvisioningRecord
+from .anti_rollback import AnchorProvisioningStatus, AntiRollbackAnchor, HighWaterMark, ProvisioningRecord
 from .canonical import frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract
@@ -229,7 +229,10 @@ class SqliteRecoveryContractStore:
         if not hasattr(os, "O_NOFOLLOW"):
             raise ContractValidationError("Recovery store requires Linux O_NOFOLLOW support.")
         parent = self._path.parent
-        parent_info = parent.lstat()
+        try:
+            parent_info = parent.lstat()
+        except OSError:
+            raise ContractValidationError(f"Recovery store parent directory does not exist: {parent}") from None
         if not stat.S_ISDIR(parent_info.st_mode) or stat.S_ISLNK(parent_info.st_mode):
             raise ContractValidationError("Recovery store parent must be a real directory.")
         if parent_info.st_uid != os.geteuid() or stat.S_IMODE(parent_info.st_mode) & 0o077:
@@ -698,6 +701,28 @@ class SqliteRecoveryContractStore:
                 provisioned_at=provisioned_at,
                 high_water_mark=self._high_water_mark,
             )
+
+    def anchor_provisioning_status(self) -> AnchorProvisioningStatus:
+        """Read-only status accessor for operator tooling (e.g.
+        `scripts/tier1_store_bootstrap.py`) — never called by
+        `provision_anchor_baseline()` or any execution/reconciliation
+        path. Lets a caller ask "is this store's anchor already
+        provisioned, and with what?" without reaching into
+        `self._high_water_mark`/`self._provisioning_record` directly or
+        opening its own connection — the one sanctioned way to inspect
+        this state from outside the class."""
+
+        with self._connect() as connection:
+            seeded = self._high_water_mark.is_seeded(connection)
+            baseline = self._high_water_mark.read(connection) if seeded else None
+            marker = self._provisioning_record.read(connection)
+        return AnchorProvisioningStatus(
+            seeded=seeded,
+            baseline=baseline,
+            complete=marker is not None,
+            handle=str(marker["handle"]) if marker is not None else None,
+            provisioned_at=str(marker["provisioned_at"]) if marker is not None else None,
+        )
 
     def transition(
         self,
