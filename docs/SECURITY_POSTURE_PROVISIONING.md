@@ -187,6 +187,24 @@ actual history).
    nothing. See "Phase B — implemented" below for the actual commands,
    example output, and exact files. **No provisioning/setup subcommand
    exists yet** — Phase C onward remain future, separately-authorized work.
+2b. **Planning slice — `SELECT TARGET → EVALUATE VALIDITY → ASSESS
+   PREREQUISITES → GENERATE PLAN`, stopping before `PROVISIONING` —
+   implemented (2026-08-10).** Not itself one of Phases C–F below (none
+   of those are complete — no axis has moved past `DISCOVERED`/
+   `PREREQUISITES_VERIFIED` toward a real `PROVISIONING`/`ACTIVE`
+   transition). Instead, this is a read-only **planning** layer over
+   Phase B's own discovery evidence: `pfsense-mcp-security plan
+   --capability-posture <value> --anchor-assurance <value>` compares
+   current state against an explicit target, enforces `ADR-021`'s
+   validity constraint, and generates an ordered, structured,
+   never-executed description of what *would* need to happen — drawing
+   on the same requirement/state-machine detail Phases C–F describe
+   below, without performing any of it. See "Planning slice —
+   implemented" below for the actual commands, example output, exact
+   files, and the full mutation-free argument. **A generated plan is
+   never authorization to execute it** — selecting a target is intent,
+   not execution authorization; no `select`/`provision`/`apply`
+   subcommand exists yet.
 3. **Phase C — capability-posture axis, `read_only`.** Trivial by
    construction (already the default) but completes the
    `SELECTED → ACTIVE` path end to end for the simplest case, proving
@@ -364,6 +382,185 @@ signalling automation without conflating "just unconfigured" with
   remote-witness backend exists in this repository (Phase G); Phase B
   reports `unknown`/`none` rather than asserting a capability that
   cannot currently be verified.
+
+## Planning slice — implemented (2026-08-10)
+
+A second `pfsense-mcp-security` subcommand, `plan`, layered entirely on
+top of Phase B's own `discover_security_posture()` — no new source of
+live evidence, no new `pfsense_mcp.tier1` isolation exemption (this
+module never imports `pfsense_mcp.tier1` at all; see "Read-only
+guarantees" below). Bridges "what state do I have?" to "what would need
+to happen to reach a selected target?" without performing any of it:
+`DISCOVER → SELECT TARGET → EVALUATE VALIDITY → ASSESS PREREQUISITES →
+GENERATE PLAN`, then stop, before `PROVISIONING`.
+
+### Usage
+
+```
+$ pfsense-mcp-security plan --capability-posture write_protected --anchor-assurance hardware_witness
+pfsense-mcp-security: security posture plan (analysis only -- not authorization)
+
+Current:  capability_posture=read_only  anchor_assurance=hardware_witness (provisioned_verified)
+Target:   capability_posture=write_protected  anchor_assurance=hardware_witness
+Target validity:      valid
+Overall status:       plan_generated
+Safe to proceed:      True
+capability_posture:   upgrade
+anchor_assurance:     no_change
+
+Steps (ordered; none executed):
+  [1] (anchor_assurance) No change required
+      ...
+  [2] (capability_posture) Populate WriteEndpoints allow-list
+      ...
+      blocked:                False
+  [3] (capability_posture) Set PFSENSE_PROFILE=engineer
+      ...
+      blocked:                False
+  [4] (capability_posture) Obtain Milestone-9-class WRITE activation decision
+      ...
+      implementation_available: False
+      blocked:                True
+      blocked_reason:         src/pfsense_mcp/tools/write/ is a deliberately empty placeholder and
+                               SUPPORTED_CAPABILITIES_THIS_BUILD excludes every *_WRITE Capability in
+                               this build -- no WRITE tool implementation exists to register, regardless
+                               of configuration or authorization state.
+
+This plan is analysis only. It is NOT authorization to execute any step listed below. [...]
+```
+
+The example above is abbreviated for length (`...`/`[...]` mark omitted
+lines; every value shown is drawn unaltered from a real, captured run
+against this project's own real production environment). It also
+demonstrates a finding this slice
+made by reading the actual code, not asserting it: even after every
+mechanically-real configuration step (`WriteEndpoints`, `PFSENSE_PROFILE`),
+the final activation step is honestly reported as `implementation_available:
+False` — `src/pfsense_mcp/tools/write/` is a deliberately empty
+placeholder and no `*_WRITE` `Capability` is active anywhere in this
+build, so there is currently no WRITE tool to register regardless of
+authorization. **Valid design state is not the same as currently
+implementable target** — the same distinction this slice also applies
+to `anchor_assurance=software` (`docs/SECURITY_POSTURE_PROVISIONING.md`'s
+own Phase G note), now shown to apply to WRITE activation itself.
+
+`pfsense-mcp-security plan --json` emits the same information as
+deterministic, sorted-key JSON for automation. Exit codes: `0` whenever
+a plan was generated (including "already satisfied" and "valid target,
+backend not implemented" — neither is a usage error); `2` if the
+requested target combination is invalid per `ADR-021`, if the current
+state shows a store/witness mismatch, or if the current anchor-assurance
+state is indeterminate (e.g. a malformed/foreign file already at the
+configured store path) — reusing `discover`'s own exit-code-2 meaning
+rather than reinventing it.
+
+### Read-only guarantees
+
+- Never imports `pfsense_mcp.tier1` in any form — its only source of
+  live evidence is the one `discover_security_posture()` call at the
+  top of `generate_security_posture_plan()`; everything after that is
+  pure, deterministic computation over already-collected evidence.
+  Proven structurally (AST inspection) by
+  `tests/test_security_plan_isolation.py`, and behaviorally by a test
+  that replaces `sqlite3.connect`/`builtins.open` with functions that
+  raise `AssertionError` if called, then generates plans for every
+  target combination — passing only because plan generation performs
+  no I/O of its own.
+- **A generated plan is never authorization to execute it** — every
+  `SecurityPosturePlan` carries this statement in its own `notes` field
+  (machine-readable, not only documentation), proven present across
+  every reachable target combination by a dedicated test. No field in
+  the plan's schema could be mistaken for a "go ahead" signal: every
+  prospective mutating step declares its own
+  `authorization_required` value, and none is ever `none_required`.
+- **Hardware witness never implies WRITE**: selecting
+  `anchor_assurance=hardware_witness` never changes
+  `capability_posture_transition`; reaching `write_protected` always
+  requires its own explicit `--capability-posture write_protected`
+  target, proven by dedicated tests.
+- **Unavailable/indeterminate evidence is never treated as a clean
+  slate.** Found during this session's own adversarial self-review: an
+  early version of this slice, given a current anchor-assurance state
+  of `unknown` (evidence_state `store_error`/`configuration_invalid` --
+  e.g. a malformed/legacy/foreign file already at the configured store
+  path), silently generated an ordinary "provision from scratch" plan,
+  papering over the fact that *something* unexplained already occupies
+  that path. Fixed: an indeterminate current anchor-assurance value now
+  short-circuits to `PlanOverallStatus.BLOCKED_INDETERMINATE_CURRENT_STATE`
+  (`safe_to_proceed=False`, no steps generated) before any transition
+  logic runs, proven by dedicated regression tests.
+- **Store/witness mismatch blocks progression, never treated as an
+  ordinary prerequisite gate.** A detected mismatch forces
+  `PlanOverallStatus.BLOCKED_ANOMALY_DETECTED` and every prospective
+  mutating step to `blocked=True` with a mismatch-specific reason --
+  distinct from the ordinary "the anchor-assurance axis must reach its
+  target first" sequencing block an upgrade plan can otherwise show.
+- **Raw string targets cannot bypass the validity constraint.** Found
+  during adversarial self-review: `CapabilityPosture`/`AnchorAssurance`
+  are `(str, Enum)` hybrids, and this module's internal logic compares
+  them with `is`. A caller passing a plain, value-equal string instead
+  of the actual enum member would satisfy every `==` check but silently
+  fail every `is` check -- including the one guarding `write_protected`
+  + `none` -- without raising. Fixed: both targets are coerced through
+  their `Enum` constructor (idempotent for an already-correct member,
+  raises `ValueError` for anything invalid) at the very top of
+  `generate_security_posture_plan()`, closing this for every caller,
+  not only this slice's own CLI (which already only ever constructed
+  real enum members). Proven by a dedicated regression test.
+- **Downgrade is DEACTIVATE, never DEPROVISION.** Every downgrade step
+  this slice generates stops/disables the witness daemon only -- TPM NV
+  counter value and the guest-side store/high-water-mark are described
+  as untouched, and the step's own description states that TPM NV
+  index deletion and guest-side store/integrity-key deletion are not
+  included in this plan and would require their own separate
+  authorization (`ADR-021` question 4). `MutationClass.DESTRUCTIVE_DEPROVISIONING`/
+  `AuthorizationLevel.SEPARATE_DEPROVISION_AUTHORIZATION` are declared
+  in the schema for future forward-compatibility only and are never
+  emitted by this slice -- proven both statically (AST) and
+  behaviorally (a sweep over every reachable target combination and a
+  representative set of current states).
+- **Joint downgrades never pass through the disallowed
+  `write_protected` + `none` combination, even momentarily.** When both
+  axes downgrade at once, the capability-posture axis's steps are
+  ordered before the anchor-assurance axis's, so WRITE deactivates
+  first -- proven by a dedicated test.
+- Evidence strings never introduce a new raw configured path/URL beyond
+  what `security_discovery.py` (already audited) supplies via
+  `current.*.evidence` -- this slice's own new text (step descriptions,
+  `blocking_findings`, `notes`) never embeds one either, proven by
+  dedicated regression tests against both an unreachable-witness and a
+  malformed-store-path scenario.
+
+### Files
+
+- `src/pfsense_mcp/security_plan.py` (new) — the planning data model
+  and logic: target validity evaluation, per-axis transition
+  classification, ordered `PlanStep` generation, cross-axis ordering.
+  No `pfsense_mcp.tier1` import.
+- `src/pfsense_mcp/security_cli.py` (modified) — new `plan` subcommand:
+  argument parsing (`--capability-posture`/`--anchor-assurance` with
+  `choices=` excluding `unknown`), human/`--json` formatting, exit-code
+  handling.
+- `tests/test_security_plan.py`, `tests/test_security_plan_isolation.py`
+  (new); `tests/test_security_cli.py` (modified, `plan`-subcommand
+  coverage added).
+
+### What the planning slice deliberately does not do
+
+- No `select`/`apply`/`provision` subcommand — selecting a target here
+  is intent, not execution authorization; no later command in this
+  build turns a plan into action.
+- No interactive prompting or confirmation flow, and no `--dry-run`
+  flag — deliberately: this entire slice already behaves as a mandatory
+  dry-run, and introducing `--dry-run` terminology without a
+  corresponding non-dry-run mode would wrongly imply one exists.
+- No `AnchorAssurance.SOFTWARE` provisioning capability — a target
+  naming it is honestly reported as `TargetValidity.VALID_NOT_IMPLEMENTED`
+  (a valid design-state, not a currently implementable one), never
+  silently treated as invalid or silently treated as available.
+- No repair/reconciliation of a detected mismatch or indeterminate
+  current state — both are reported as blocking findings, never acted
+  on.
 
 ## Open design questions
 

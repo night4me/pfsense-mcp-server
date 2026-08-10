@@ -25,6 +25,38 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `src/pfsense_mcp/security_discovery.py`), not an MCP tool. No
   provisioning/setup subcommand exists yet — that is Phase C onward,
   each its own future, separately-authorized work.
+- `pfsense-mcp-security plan --capability-posture <value> --anchor-assurance
+  <value>`: a second, equally read-only/mutation-free subcommand
+  (`src/pfsense_mcp/security_plan.py`) that bridges `discover`'s "what
+  state do I have?" to "what would need to happen to reach a selected
+  target?" — `DISCOVER → SELECT TARGET → EVALUATE VALIDITY → ASSESS
+  PREREQUISITES → GENERATE PLAN`, then stops, before `PROVISIONING`.
+  Enforces `ADR-021`'s validity constraint (`write_protected` requires
+  anchor assurance `≠ none`), distinguishes a valid-but-unimplemented
+  target (`anchor_assurance=software`, and — a finding made by reading
+  the actual code — WRITE activation itself, since
+  `src/pfsense_mcp/tools/write/` is still an empty placeholder) from an
+  invalid one, orders anchor-assurance provisioning before
+  capability-posture activation on upgrade and the reverse on a joint
+  downgrade (never passing through the disallowed `write_protected` +
+  `none` combination even momentarily), and represents downgrades as
+  DEACTIVATE only, never DEPROVISION. **A generated plan is never
+  authorization to execute it** — every plan states this in its own
+  machine-readable `notes` field; no `select`/`apply`/`provision`
+  subcommand exists in this build. Never imports `pfsense_mcp.tier1`
+  (its only evidence source is `discover_security_posture()` itself) —
+  proven structurally and behaviorally, including a test that fails if
+  plan generation ever touches `sqlite3.connect`/`open`. An adversarial
+  self-review before this was committed found and fixed two real
+  defects: (1) a raw string target could bypass the validity constraint
+  via an `is`-vs-`==` mismatch on the `(str, Enum)` axis types, now
+  closed by coercing both targets through their `Enum` constructor; (2)
+  an indeterminate current anchor-assurance state (a malformed/foreign
+  file already at the configured store path) was being silently treated
+  as a clean slate safe to provision on top of, now surfaced as
+  `PlanOverallStatus.BLOCKED_INDETERMINATE_CURRENT_STATE` instead. **Does
+  not change the public MCP contract** — still 42 READ tools, 0 WRITE
+  tools.
 
 ### Fixed
 
