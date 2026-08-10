@@ -9,6 +9,18 @@
 # ships as a documented starting point, not a ready-to-run config.
 #
 # Requires systemd >= 247 for LoadCredential=.
+#
+# witness_daemon has zero third-party dependencies (stdlib only,
+# confirmed by direct inspection of every witness_daemon/*.py import
+# statement) -- no venv is required. ExecStart below uses the system
+# `python3` directly against a fixed, versioned deployment directory,
+# never a mutable Git working tree or /tmp checkout (a live checkout
+# could change under the running service; /tmp is typically cleared on
+# reboot). Deploy by extracting the exact reviewed commit's source into
+# <<path-to-deployed-code-directory>> (e.g.
+# /opt/pfsense-mcp-tpm-witness/<commit-sha>/) and pointing
+# WorkingDirectory at it -- never at a path that later commits could
+# silently change underneath the running service.
 
 [Unit]
 Description=pfSense MCP Server -- TPM anti-rollback anchor witness daemon
@@ -16,32 +28,46 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=<<path-to-venv>>/bin/python -m witness_daemon
+WorkingDirectory=<<path-to-deployed-code-directory>>
+ExecStart=/usr/bin/python3 -m witness_daemon
 
 # --- Identity: dedicated, non-root, no Proxmox-management privileges ---
 User=<<dedicated-service-account>>
 Group=<<dedicated-service-account>>
 SupplementaryGroups=tss
 
+# --- Non-secret runtime files (server certificate, pinned client CA
+#     certificate) must live somewhere the sandboxed process can still
+#     read under ProtectHome=true/ProtectSystem=strict below --
+#     ConfigurationDirectory= creates and owns exactly that location for
+#     us; never place these under /root or /home, which ProtectHome=true
+#     makes inaccessible to this process (LoadCredential= below is
+#     unaffected by that -- it is resolved by the service manager before
+#     the sandboxed process starts, which is why the two genuine secrets
+#     may still be sourced from a /root-owned path).
+ConfigurationDirectory=pfsense-mcp-tpm-witness
+# -> creates /etc/pfsense-mcp-tpm-witness/, owned by User=/Group= above.
+# Place the server certificate and pinned client CA certificate (both
+# public, non-secret) there before starting the service.
+
 # --- Credentials: tmpfs-backed, never plaintext files on persistent
 #     storage (anti_rollback_tpm_host_witness.md's "Secret storage and
 #     rotation"). Two independent secrets, per that section: the TPM
 #     index's own auth value, and the mTLS private key -- never
-#     conflated. Populate WITNESS_TPM_AUTH_CREDENTIAL_FILE /
-#     WITNESS_SERVER_KEY_FILE with the exact $CREDENTIALS_DIRECTORY
-#     paths systemd exposes for these at runtime.
+#     conflated. Both source paths below are read by the service
+#     manager itself (root), not the sandboxed process, so a /root-owned
+#     source file is fine here specifically -- unlike the non-secret
+#     files above.
 LoadCredential=nv-index-auth:<<host-local-path-to-generated-secret>>
 LoadCredential=witness-server-key:<<host-local-path-to-mtls-private-key>>
 
 Environment=WITNESS_TPM_NV_HANDLE=<<0x01XXXXXX>>
 Environment=WITNESS_BIND_HOST=<<interface-reachable-from-vm-106-only>>
 Environment=WITNESS_BIND_PORT=<<port>>
-Environment=WITNESS_SERVER_CERT_FILE=<<path-to-server-cert>>
-Environment=WITNESS_CLIENT_CA_FILE=<<path-to-pinned-client-ca>>
-# WITNESS_TPM_AUTH_CREDENTIAL_FILE / WITNESS_SERVER_KEY_FILE should be
-# set to systemd's own %d/nv-index-auth and %d/witness-server-key
-# credential paths once LoadCredential= above is filled in -- left as a
-# deployer TODO rather than guessed here.
+Environment=WITNESS_SERVER_CERT_FILE=%E/pfsense-mcp-tpm-witness/server.crt
+Environment=WITNESS_CLIENT_CA_FILE=%E/pfsense-mcp-tpm-witness/client-ca.crt
+Environment=WITNESS_TPM_AUTH_CREDENTIAL_FILE=%d/nv-index-auth
+Environment=WITNESS_SERVER_KEY_FILE=%d/witness-server-key
 
 # --- Hardening (anti_rollback_tpm_host_witness.md's exact list) ---
 NoNewPrivileges=true
