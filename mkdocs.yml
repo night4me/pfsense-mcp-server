@@ -88,6 +88,7 @@ nav:
       - v0.3.0 milestone: V0.3.0_MILESTONE.md
       - Tier 1 roadmap: TIER1_ROADMAP.md
       - Tier 1 implementation roadmap: tier1/IMPLEMENTATION_ROADMAP.md
+      - Phase 5 readiness review (2026-08): tier1/PHASE_5_READINESS_REVIEW_2026-08.md
       - Tier 1 overview: tier1/README.md
       - Tier 1 activation decisions: TIER1_ACTIVATION_DECISIONS.md
       - Disposable-lab plan: TIER1_LAB_PLAN.md

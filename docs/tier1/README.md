@@ -23,6 +23,15 @@ new security-relevant design decision.
   state ownership, interfaces, failure modes, recovery behavior,
   non-goals, required tests, activation requirements, and four
   checklists (implementation/review/security/test).
+- [`PHASE_5_READINESS_REVIEW_2026-08.md`](PHASE_5_READINESS_REVIEW_2026-08.md) —
+  a point-in-time gap analysis of exactly what remains between the
+  current repository and a safely implementable Phase 5: a dependency
+  graph, what's already built vs. genuinely missing (no production
+  PREPARE-construction function exists yet — the one concrete gap),
+  unresolved owner decisions (ADR-011's TPM confirmation, Milestone 0's
+  capability naming), the security invariants a first adapter must
+  preserve, and a proposed implementation/test/adversarial-test sequence.
+  Analysis only — activates nothing, implements nothing.
 
 ## Relationship to existing Tier 1 documents
 
