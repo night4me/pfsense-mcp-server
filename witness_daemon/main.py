@@ -58,7 +58,15 @@ def main() -> int:
 
     server = build_server(config)
     print(f"witness_daemon: listening on {config.bind_host}:{config.bind_port}, handle {config.nv_handle}")
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        # Confirmed expected manual-shutdown behavior during Phase 2
+        # real-hardware verification (2026-08-10, Ctrl+C) -- not an
+        # error condition.
+        print("witness_daemon: shutting down (KeyboardInterrupt)")
+    finally:
+        server.server_close()
     return 0
 
 

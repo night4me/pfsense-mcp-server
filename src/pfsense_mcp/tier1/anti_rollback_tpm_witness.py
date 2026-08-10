@@ -33,7 +33,12 @@ capability_adapter_contract.md's own I2, applied here) and never
 constructs, loads, or holds any certificate, key, or the TPM index's own
 authorization secret. The TPM authorization boundary never crosses into
 this guest process at all -- only the witness daemon (host-side, not
-this module) ever holds it.
+this module) ever holds it. See `witness_daemon/README.md`'s
+"Connecting from the guest" section for the confirmed-working (real-
+hardware verified, 2026-08-10) `httpx.Client` mTLS construction --
+build an explicit `ssl.SSLContext`, not the `cert=`/`verify=<path>`
+shorthand, which was found unreliable for client-certificate
+configuration on `httpx>=0.28`.
 """
 
 from __future__ import annotations

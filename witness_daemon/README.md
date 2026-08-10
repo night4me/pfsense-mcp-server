@@ -36,7 +36,42 @@ Requires the seven `WITNESS_*` environment variables documented in
 `config.py`'s module docstring, and `tpm2-tools` on `PATH`. See
 `systemd/pfsense-mcp-tpm-witness.service` for a reference (not
 installed/enabled by this repository) systemd unit implementing the
-accepted spec's full hardening requirements.
+accepted spec's full hardening requirements. `Ctrl+C` shuts the process
+down cleanly (`main.py` closes the listening socket and exits 0 rather
+than propagating `KeyboardInterrupt`).
+
+## Connecting from the guest
+
+`TpmHostWitnessAnchor` (`pfsense_mcp.tier1.anti_rollback_tpm_witness`)
+takes an already-configured `httpx.Client` — it never builds its own
+trust materials. The pattern below is **confirmed working against real
+hardware** (2026-08-10 real-Proxmox-host verification, `httpx==0.28.1`):
+
+```python
+import ssl
+
+import httpx
+
+from pfsense_mcp.tier1.anti_rollback_tpm_witness import TpmHostWitnessAnchor
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+ssl_context.load_verify_locations(cafile="/path/to/server.crt")  # the daemon's own pinned certificate
+ssl_context.load_cert_chain(certfile="/path/to/client.crt", keyfile="/path/to/client.key")
+
+client = httpx.Client(verify=ssl_context, timeout=10.0)
+anchor = TpmHostWitnessAnchor(client=client, base_url="https://<daemon-host>:<port>")
+value = anchor.read()
+```
+
+**Do not use** `httpx.Client(cert=(cert, key), verify="/path/to/ca.crt")`
+for this — that shorthand was found unreliable for client-certificate
+configuration during real-hardware verification on `httpx>=0.28`. Build
+the `ssl.SSLContext` explicitly as shown, matching `PROTOCOL_TLS_CLIENT`'s
+own default `verify_mode=CERT_REQUIRED`/`check_hostname=True` (never
+relax either). The server's certificate must carry an `IP:`-type
+`subjectAltName` matching whatever address `base_url` connects to —
+`httpx`/the stdlib `ssl` module verify against SAN entries only, never
+the certificate's `CN`.
 
 ## What this is not
 
