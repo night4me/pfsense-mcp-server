@@ -1,14 +1,15 @@
 # Security posture provisioning — design specification (`pfsense-mcp-security setup`)
 
-Status: architecture/design specification only, companion to
-[`ADR-021`](adr/ADR-021-security-posture-provisioning.md) (the
-authoritative decision record — read that first, including its
-"Revision note" and "Model comparison" sections; this document expands
-the **adopted two-axis model**'s mechanics). **Nothing here is
-implemented.** No wizard code, no CLI entrypoint, no new environment
-variable, and no runtime behavior exists yet. Building any of it is a
-separate, future, explicitly-scoped authorization — this document does
-not grant one.
+Status: companion specification to
+[`ADR-021`](adr/ADR-021-security-posture-provisioning.md), **Accepted**
+(2026-08-10, owner — see `ADR-021`'s "Acceptance note"). Read `ADR-021`
+first, including its "Revision note," "Second revision note," "Model
+comparison," and "Acceptance note" sections; this document expands the
+**accepted two-axis model**'s mechanics. **Acceptance is architectural
+only — nothing here is implemented.** No wizard code, no CLI
+entrypoint, no new environment variable, and no runtime behavior exists
+yet. Building any of it is a separate, future, explicitly-scoped
+authorization this document does not grant.
 
 ## Purpose
 
@@ -90,10 +91,12 @@ exactly this project's own real deployment history. Should be
 discoverable but not forced on operators who only want a simple
 three-choice front door.
 
-`read_only` + `software` is deliberately **not** offered as a preset
-(low value: pre-provisioning a remote witness with no WRITE decision
-made yet) — left as an open UX question in `ADR-021` (#6) whether to
-expose it at all behind the advanced path.
+`read_only` + `software` is deliberately **not** offered as a preset,
+and **not offered behind the advanced path either** —
+`ADR-021`'s question 6 resolved this as intentionally hidden until the
+`software` backend exists (Phase G) and a concrete operator need is
+identified. The advanced path therefore surfaces exactly one extra
+combination beyond the three presets: `read_only` + `hardware_witness`.
 
 ## State machine — per axis
 
@@ -110,7 +113,14 @@ other state, and this is intentional, not an inconsistency to resolve.
 | `PREREQUISITES_VERIFIED` | If target is `write_protected`: **re-check the anchor-assurance axis's current value here — this is where the validity constraint is enforced.** If anchor assurance is `none`, halt and direct the operator to the anchor axis first (or accept a combined preset that provisions both) | Re-derive TPM presence/store state fresh, never trust a prior `DISCOVERED` result without re-checking (mirrors the TPM provisioning spec's "state is derived, not logged" discipline) |
 | `PROVISIONING` | Populate `WriteEndpoints`, set `PFSENSE_PROFILE=engineer` — each step individually confirmed | For `hardware_witness`: the already-specified provisioning state machine in `anti_rollback_tpm_host_witness.md` (generate secret, define NV index, first increment, seed store, mark complete), reused not reinvented — each step individually confirmed |
 | `ACTIVE` | Requires the Milestone-9-class activation decision (`TIER1_ROADMAP.md`) — its own explicit approval, separate from every `PROVISIONING` step's confirmation | For `hardware_witness`: does **not** require the Milestone-9 decision — that gate is specific to WRITE activation, not anchor readiness. This is the axis independence's clearest consequence: this project already reached anchor-assurance `ACTIVE` without WRITE ever reaching it |
-| `DOWNGRADING` | Deactivates WRITE; **does not touch the anchor-assurance axis** — a provisioned anchor is left in place | Independent of capability posture; downgrading to `none` while capability posture is `write_protected` `ACTIVE` must itself be rejected or forced to jointly downgrade capability posture (never leave the disallowed combination reachable) |
+| `DOWNGRADING` (= DEACTIVATE, per `ADR-021` question 4 — never DEPROVISION) | Deactivates WRITE; **does not touch the anchor-assurance axis, including the daemon/service state, not only the abstract value** — a provisioned anchor and a running-or-stopped daemon are both left exactly as they are | Independent of capability posture; stops/disables the witness daemon but leaves TPM NV counter value and guest-side store/high-water-mark untouched (fully reversible: re-enable, resume); downgrading to `none` while capability posture is `write_protected` `ACTIVE` must itself be rejected or forced to jointly downgrade capability posture (never leave the disallowed combination reachable, even momentarily) |
+
+**DEPROVISION is explicitly not part of this table.** TPM NV index
+deletion and guest-side store/integrity-key deletion are a separate,
+rare, manually-authorized procedure outside the routine per-axis
+lifecycle entirely — see `ADR-021`'s "Resolving open questions 3–6"
+(question 4) for the full DEACTIVATE-vs-DEPROVISION distinction and
+what must never happen automatically.
 
 **Interruption behavior** (either axis): re-derive current state from
 the environment itself on the next invocation, never from a separate,
@@ -132,6 +142,27 @@ halts for human review; none auto-resolves.
 | `docs/CONFIGURATION.md` | Documents only the currently-production-relevant env vars | Would eventually need the `PFSENSE_TIER1_*`/`WITNESS_*` vars documented once the anchor-assurance axis is real — independent of whether the capability-posture axis has also advanced |
 | `Makefile`'s `write-allow-list-check`/`write-capability-check` | Assert zero entries / 0-of-3 active | Would need to evolve from "assert empty" to "assert matches the declared capability-posture axis state" — no equivalent check exists yet for anchor assurance and one would need designing |
 
+## Declarative vs. interactive provisioning (resolves `ADR-021` question 5)
+
+Both modes are supported, but not symmetrically:
+
+| Axis / step | Interactive | Declarative/non-interactive |
+|---|---|---|
+| Either axis's `DISCOVERED`/`PREREQUISITES_VERIFIED` (read-only) | Supported | Supported freely — no consent needed beyond invoking the tool |
+| Capability-posture axis `PROVISIONING`/`DOWNGRADING` (`PFSENSE_PROFILE`, `WriteEndpoints` — software-only) | Supported | Supported, **with itemized, named authorization** (e.g. an explicit list of exactly which steps are authorized) — never a blanket `authorize: true` flag |
+| Anchor-assurance axis `PROVISIONING`/`DOWNGRADING` that touches physical TPM state | Supported (the only mode) | **Not supported** — matches this project's standing practice of never automating TPM-facing commands (`CURRENT_MISSION.md`'s "Standing SSH constraint") |
+| Anchor-assurance DEPROVISION (TPM/store deletion) | Supported, its own separate authorization, outside the routine lifecycle entirely | Not supported |
+
+A first declarative/non-interactive invocation should require a
+`--dry-run`/preview mode showing exactly what would be authorized and
+executed without executing it, matching this project's general
+practice of never running a live-host command without a prior
+read-only preview. A real implementation would need a declarative
+config format (new code area, not yet designed) capable of the same
+per-step itemization the interactive flow already requires — sketching
+that format is future implementation work, not part of this design
+phase.
+
 ## Phased implementation plan (for if/when separately authorized — not scheduled, not committed)
 
 Ordering reflects the two axes' independence — anchor-assurance work is
@@ -140,10 +171,15 @@ document's earlier draft (which had implicitly assumed hardware
 provisioning follows WRITE protection, contradicting this project's own
 actual history).
 
-1. **Phase A — remaining design closure.** Resolve `ADR-021`'s
-   remaining open questions (3–6: allow-list sharing, decommissioning
-   path, interactive-vs-declarative UX, whether to expose `read_only` +
-   `software`). Produces an accepted `ADR-021` (status → Accepted).
+1. **Phase A — design closure — complete, and accepted.** `ADR-021`'s
+   open questions 3–6 (allow-list sharing, decommissioning path,
+   interactive-vs-declarative UX, whether to expose `read_only` +
+   `software`) are resolved; see `ADR-021`'s "Resolving open questions
+   3–6" section. **`ADR-021` is Status: Accepted** (owner, 2026-08-10 —
+   see its "Acceptance note"). Acceptance is architectural only —
+   Phases B onward below each remain their own separate, future,
+   explicitly-scoped implementation authorization; none is granted by
+   acceptance.
 2. **Phase B — read-only discovery only.** Implement `DISCOVERED` and
    `PREREQUISITES_VERIFIED` for both axes, independently: a CLI that
    reports current capability posture and anchor assurance, writes
@@ -174,9 +210,12 @@ Each phase is its own future authorization; nothing above is scheduled.
 
 ## Open design questions
 
-See `ADR-021`'s "Open design questions" section (as revised) — this
-document does not duplicate or resolve them, only provides the
-mechanical grounding they'd need once resolved.
+**All six of `ADR-021`'s original open questions are resolved** — see
+its "Open design questions" and "Resolving open questions 3–6"
+sections. This document does not duplicate the decisions, only
+provides their mechanical grounding (the per-axis state-machine table,
+the declarative-vs-interactive scoping table, and the affected-code
+inventory above).
 
 ## References
 

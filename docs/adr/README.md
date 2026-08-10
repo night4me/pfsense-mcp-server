@@ -26,7 +26,7 @@ silently rewrite earlier context.
 | [018](ADR-018-version-aware-guidance-resolution.md) | Version-aware Official Guidance resolution | Accepted — architecture and trust boundaries only; live retrieval, guidance exposure, Tier 1/WRITE/Phase 5 activation not authorized by acceptance; nothing implemented yet |
 | [019](ADR-019-api-surface-capability-discovery-and-extension-architecture.md) | API Surface, Capability Discovery, and Extension Architecture | Accepted — vocabulary and evaluation only; individual mechanisms remain separately gated, public contract unchanged |
 | [020](ADR-020-milestone-0-first-write-capability-candidate.md) | Milestone 0 — first WRITE capability candidate authorization | Accepted — candidate naming only; implementation, live lab run, allow-list population, and WRITE activation all remain separately gated |
-| [021](ADR-021-security-posture-provisioning.md) | Guided security-posture provisioning (`pfsense-mcp-security setup`) | Proposed — architecture/design only; no wizard, posture, WRITE, or fail-closed enforcement authorized |
+| [021](ADR-021-security-posture-provisioning.md) | Guided security-posture provisioning (`pfsense-mcp-security setup`) | Accepted — architecture/design only; no wizard, posture, WRITE, or fail-closed enforcement authorized |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.

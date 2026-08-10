@@ -108,21 +108,23 @@ anti-rollback, and operator-authentication decisions are approved.
 See [Tier 1 roadmap](TIER1_ROADMAP.md). Until every gate is accepted, zero
 WRITE tools register.
 
-## Operator setup and security postures (design phase complete, not committed)
+## Operator setup and security postures (architecture accepted, implementation not started)
 
 Future `pfsense-mcp-security setup` CLI/wizard: let an operator
 explicitly choose their security posture at setup time rather than
 silently ending up with stronger privileges than intended. This item
 moved from idea-stage to a completed architecture/design phase on
-2026-08-10, then was **revised the same day** after a rigorous
-comparison found the original three-rung ladder couldn't represent this
-project's own real deployment state —
+2026-08-10, was **revised the same day** after a rigorous comparison
+found the original three-rung ladder couldn't represent this project's
+own real deployment state, and was **accepted by the owner, same day,
+after a second revision closed all remaining open design questions** —
 [ADR-021](adr/ADR-021-security-posture-provisioning.md) is now the
-authoritative decision record (Proposed status: design only), with
-mechanical detail in
+authoritative, **Accepted** decision record, with mechanical detail in
 [`SECURITY_POSTURE_PROVISIONING.md`](SECURITY_POSTURE_PROVISIONING.md).
-Nothing below authorizes building the wizard, any posture, WRITE, or
-fail-closed enforcement.
+**Acceptance is architectural only** — nothing below authorizes
+building the wizard, any posture, WRITE, or fail-closed enforcement;
+each remains its own separate, future, explicitly-scoped
+authorization.
 
 **Model: two independent axes, not one linear ladder.** `ADR-021`
 adopted a **capability posture** axis (`read_only`/`write_protected`,
