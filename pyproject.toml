@@ -72,7 +72,11 @@ pythonpath = ["scripts"]
 # lab/ is disposable-lab tooling (docs/tier1/specs/
 # disposable_lab_execution_model.md) -- never collected by the default
 # suite; run its offline tests explicitly via `pytest lab/`.
-addopts = "--ignore=lab"
+# witness_daemon/ is the separate, host-side TPM witness daemon
+# (docs/tier1/specs/anti_rollback_tpm_host_witness.md) -- a different
+# deployable entirely, never shipped in this package; run its offline
+# tests explicitly via `pytest witness_daemon/`.
+addopts = "--ignore=lab --ignore=witness_daemon"
 markers = [
     "live: makes a real network call to a live pfSense instance; skipped unless PFSENSE_RUN_LIVE_TESTS=true is set explicitly.",
 ]

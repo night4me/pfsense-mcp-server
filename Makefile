@@ -6,7 +6,7 @@
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
-        docs-build docs-serve sbom min-deps-check
+        docs-build docs-serve sbom min-deps-check witness-daemon-check
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -31,11 +31,11 @@ _ruff-check:
 	@$(PYTHON) -m ruff check .
 
 _mypy:
-	@$(PYTHON) -m mypy src/pfsense_mcp scripts lab
+	@$(PYTHON) -m mypy src/pfsense_mcp scripts lab witness_daemon
 
 syntax-check:
 	@echo "[ 1/20] Syntax/import validation ............."
-	@$(PYTHON) -m compileall -q src scripts tests lab
+	@$(PYTHON) -m compileall -q src scripts tests lab witness_daemon
 	@$(PYTHON) -c "import pfsense_mcp"
 	@echo "  OK"
 
@@ -194,7 +194,7 @@ coverage:
 	@$(PYTHON) -m pytest --cov=pfsense_mcp --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
 
 security-static:
-	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts
+	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts witness_daemon
 
 package-check:
 	@$(PYTHON) -m build --no-isolation --sdist --wheel
@@ -329,3 +329,13 @@ sbom:
 	    -o $(SBOM_OUTPUT)
 	@$(PYTHON) scripts/verify_sbom.py $(SBOM_OUTPUT)
 	@echo "sbom: generated $(SBOM_OUTPUT) (local artifact only -- not attached to any release)"
+
+# witness_daemon/ is a separate deployable (the Proxmox-host TPM witness
+# daemon, docs/tier1/specs/anti_rollback_tpm_host_witness.md) -- never
+# shipped in this package, excluded from the default pytest collection
+# (pyproject.toml), but its own tests are real and should not silently
+# rot: this target runs them explicitly, and CI calls it on every push.
+witness-daemon-check:
+	@echo "witness-daemon-check: running witness_daemon/'s own offline test suite"
+	@$(PYTHON) -m pytest -q witness_daemon/
+	@echo "witness-daemon-check: OK"

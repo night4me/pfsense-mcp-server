@@ -1,0 +1,70 @@
+# Reference unit file for the TPM host-witness daemon
+# (docs/tier1/specs/anti_rollback_tpm_host_witness.md's "systemd
+# hardening requirements" section, reproduced here as an actual,
+# reviewable deployment artifact rather than only prose).
+#
+# NOT installed, enabled, or started by anything in this repository or
+# any CI/CD pipeline. A deployer must review every path/value below
+# (marked <<...>>) and adapt it to the real host before use -- this file
+# ships as a documented starting point, not a ready-to-run config.
+#
+# Requires systemd >= 247 for LoadCredential=.
+
+[Unit]
+Description=pfSense MCP Server -- TPM anti-rollback anchor witness daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=<<path-to-venv>>/bin/python -m witness_daemon
+
+# --- Identity: dedicated, non-root, no Proxmox-management privileges ---
+User=<<dedicated-service-account>>
+Group=<<dedicated-service-account>>
+SupplementaryGroups=tss
+
+# --- Credentials: tmpfs-backed, never plaintext files on persistent
+#     storage (anti_rollback_tpm_host_witness.md's "Secret storage and
+#     rotation"). Two independent secrets, per that section: the TPM
+#     index's own auth value, and the mTLS private key -- never
+#     conflated. Populate WITNESS_TPM_AUTH_CREDENTIAL_FILE /
+#     WITNESS_SERVER_KEY_FILE with the exact $CREDENTIALS_DIRECTORY
+#     paths systemd exposes for these at runtime.
+LoadCredential=nv-index-auth:<<host-local-path-to-generated-secret>>
+LoadCredential=witness-server-key:<<host-local-path-to-mtls-private-key>>
+
+Environment=WITNESS_TPM_NV_HANDLE=<<0x01XXXXXX>>
+Environment=WITNESS_BIND_HOST=<<interface-reachable-from-vm-106-only>>
+Environment=WITNESS_BIND_PORT=<<port>>
+Environment=WITNESS_SERVER_CERT_FILE=<<path-to-server-cert>>
+Environment=WITNESS_CLIENT_CA_FILE=<<path-to-pinned-client-ca>>
+# WITNESS_TPM_AUTH_CREDENTIAL_FILE / WITNESS_SERVER_KEY_FILE should be
+# set to systemd's own %d/nv-index-auth and %d/witness-server-key
+# credential paths once LoadCredential= above is filled in -- left as a
+# deployer TODO rather than guessed here.
+
+# --- Hardening (anti_rollback_tpm_host_witness.md's exact list) ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_INET AF_INET6
+CapabilityBoundingSet=
+SystemCallFilter=@system-service
+
+# Device access via a scoped allow-list, not a capability -- the kernel
+# TPM Resource Manager device only, never raw /dev/tpm0 (see the spec's
+# "Service privilege separation" section for why).
+DeviceAllow=/dev/tpmrm0 rw
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
