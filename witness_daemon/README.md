@@ -58,10 +58,23 @@ ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 ssl_context.load_verify_locations(cafile="/path/to/server.crt")  # the daemon's own pinned certificate
 ssl_context.load_cert_chain(certfile="/path/to/client.crt", keyfile="/path/to/client.key")
 
-client = httpx.Client(verify=ssl_context, timeout=10.0)
+client = httpx.Client(verify=ssl_context, trust_env=False, timeout=10.0)
 anchor = TpmHostWitnessAnchor(client=client, base_url="https://<daemon-host>:<port>")
 value = anchor.read()
 ```
+
+`trust_env=False` matters here specifically: httpx's default (`trust_env=True`)
+makes the client honor ambient environment variables such as
+`HTTPS_PROXY`/`HTTP_PROXY`/`NO_PROXY` and `~/.netrc`. For this internal,
+pinned-mTLS-only channel, an unrelated proxy variable happening to be
+set in the caller's environment could silently route the connection
+through an intermediary the daemon was never designed to be reached
+through (breaking the direct end-to-end TLS assumption the pinned
+certificates rely on) — `trust_env=False` makes the connection's
+behavior depend only on what this code explicitly configures, never on
+ambient shell state. This was part of the exact configuration confirmed
+working during real-hardware verification (2026-08-10, `httpx==0.28.1`);
+it is not optional for this use case, not merely a preference.
 
 **Do not use** `httpx.Client(cert=(cert, key), verify="/path/to/ca.crt")`
 for this — that shorthand was found unreliable for client-certificate
