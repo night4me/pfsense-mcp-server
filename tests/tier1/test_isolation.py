@@ -50,6 +50,19 @@ def test_tier1_domain_has_no_transport_or_tool_registration_dependency():
     # importing either.
     executor_only_import_roots = {"pfsense_mcp.write_api_client", "pfsense_mcp.pfsense_client"}
     forbidden_calls = {"delete", "patch", "post", "put", "request", "tool"}
+    # anti_rollback_tpm_witness.py is a second, narrow, explicit exception,
+    # mirroring executor.py's own pattern above: it is the guest side of the
+    # ADR-011 TPM-backed anti-rollback witness service
+    # (docs/tier1/specs/anti_rollback_tpm_host_witness.md) -- a system with
+    # no relationship to pfSense at all. Its httpx.Client.post() call reaches
+    # only the witness daemon's own /anchor/advance endpoint. It remains
+    # fully subject to universally_forbidden_import_roots and
+    # executor_only_import_roots above (still cannot import
+    # rest_api_client/transport/tools/write_api_client/pfsense_client), so
+    # it stays structurally incapable of reaching pfSense even with this
+    # one call-name check relaxed. No other tier1 module gets this
+    # exception, and "post" is the only call name relaxed for it.
+    call_name_exceptions = {"anti_rollback_tpm_witness.py": {"post"}}
     for path in (ROOT / "src/pfsense_mcp/tier1").glob("*.py"):
         forbidden_import_roots = universally_forbidden_import_roots | (
             set() if path.name == "executor.py" else executor_only_import_roots
@@ -66,7 +79,8 @@ def test_tier1_domain_has_no_transport_or_tool_registration_dependency():
             for node in ast.walk(tree)
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
         }
-        assert called_attributes.isdisjoint(forbidden_calls), f"{path.name} calls a forbidden attribute name"
+        effective_forbidden_calls = forbidden_calls - call_name_exceptions.get(path.name, set())
+        assert called_attributes.isdisjoint(effective_forbidden_calls), f"{path.name} calls a forbidden attribute name"
 
 
 def test_all_production_write_surfaces_remain_inactive():

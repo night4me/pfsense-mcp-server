@@ -8,9 +8,11 @@ import pytest
 
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.errors import (
+    AnchorAlreadyProvisionedError,
     AnchorConflictError,
     AnchorUnavailableError,
     ContractIntegrityError,
+    ContractValidationError,
     WholeStoreRollbackDetected,
 )
 from pfsense_mcp.tier1.state_machine import RecoveryState
@@ -272,3 +274,237 @@ def test_high_water_mark_rejects_tampered_value(tmp_path, contract_factory):
         pytest.raises(ContractIntegrityError, match="integrity verification"),
     ):
         store._high_water_mark.read(connection)
+
+
+# --- Slice B: HighWaterMark.seed() / ProvisioningRecord provisioning primitives ---
+
+
+def test_seed_succeeds_on_empty_store_and_is_readable(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        assert store._high_water_mark.is_seeded(connection) is False
+        store._high_water_mark.seed(connection, value=47)
+        assert store._high_water_mark.is_seeded(connection) is True
+        assert store._high_water_mark.read(connection) == 47
+
+
+def test_seed_second_attempt_raises_already_provisioned(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+        with pytest.raises(AnchorAlreadyProvisionedError):
+            store._high_water_mark.seed(connection, value=99)
+
+
+def test_seed_failure_does_not_overwrite_existing_value(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+        with pytest.raises(AnchorAlreadyProvisionedError):
+            store._high_water_mark.seed(connection, value=99)
+        assert store._high_water_mark.read(connection) == 47
+
+
+def test_seed_refuses_when_existing_row_is_corrupted(tmp_path):
+    """Malformed/HMAC-invalid existing state must also fail closed --
+    seed() must never distinguish "corrupted existing row" from "valid
+    existing row" as an opportunity to overwrite; presence alone, not
+    validity, is the gate."""
+
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        connection.execute("UPDATE anchor_state SET mac = 'corrupted' WHERE key = 'high_water_mark'")
+        connection.commit()
+    with store._connect() as connection, pytest.raises(AnchorAlreadyProvisionedError):
+        store._high_water_mark.seed(connection, value=99)
+
+
+def test_seed_accepts_realistic_nonzero_nonone_baseline(tmp_path, contract_factory):
+    """A freshly-defined TPM counter's real first value is unpredictable
+    and non-zero (per the TPM2 spec's own NV_Increment behavior) --
+    seed() must not special-case 0 or 1, and a subsequent legitimate
+    EXECUTING transition must succeed against a seeded non-trivial
+    baseline, not just against 0."""
+
+    seeded_value = 8675309
+    anchor = _FakeAnchor(value=seeded_value)
+    store = _store(tmp_path, anchor=anchor)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=seeded_value)
+
+    confirmed = _confirmed(store, contract_factory())
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    assert executing.state == RecoveryState.EXECUTING
+    assert anchor.advance_calls == [seeded_value + 1]
+
+
+def test_seed_rejects_negative_value(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection, pytest.raises(ContractValidationError):
+        store._high_water_mark.seed(connection, value=-1)
+
+
+def test_mark_complete_before_seed_raises_validation_error(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection, pytest.raises(ContractValidationError):
+        store._provisioning_record.mark_complete(
+            connection,
+            handle="0x01500000",
+            verified_value=47,
+            provisioned_at="2026-08-10T00:00:00+00:00",
+            high_water_mark=store._high_water_mark,
+        )
+
+
+def test_mark_complete_with_mismatched_value_raises_validation_error(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+        with pytest.raises(ContractValidationError):
+            store._provisioning_record.mark_complete(
+                connection,
+                handle="0x01500000",
+                verified_value=99,  # does not match the seeded value
+                provisioned_at="2026-08-10T00:00:00+00:00",
+                high_water_mark=store._high_water_mark,
+            )
+        assert store._provisioning_record.is_complete(connection) is False
+
+
+def test_mark_complete_succeeds_after_matching_seed(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+        store._provisioning_record.mark_complete(
+            connection,
+            handle="0x01500000",
+            verified_value=47,
+            provisioned_at="2026-08-10T00:00:00+00:00",
+            high_water_mark=store._high_water_mark,
+        )
+        assert store._provisioning_record.is_complete(connection) is True
+
+
+def test_mark_complete_second_attempt_raises_already_provisioned(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+        store._provisioning_record.mark_complete(
+            connection,
+            handle="0x01500000",
+            verified_value=47,
+            provisioned_at="2026-08-10T00:00:00+00:00",
+            high_water_mark=store._high_water_mark,
+        )
+        with pytest.raises(AnchorAlreadyProvisionedError):
+            store._provisioning_record.mark_complete(
+                connection,
+                handle="0x01500000",
+                verified_value=47,
+                provisioned_at="2026-08-10T00:01:00+00:00",
+                high_water_mark=store._high_water_mark,
+            )
+
+
+def test_is_complete_false_when_no_marker(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        assert store._provisioning_record.is_complete(connection) is False
+
+
+def test_is_complete_raises_on_corrupted_marker(tmp_path):
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=47)
+        store._provisioning_record.mark_complete(
+            connection,
+            handle="0x01500000",
+            verified_value=47,
+            provisioned_at="2026-08-10T00:00:00+00:00",
+            high_water_mark=store._high_water_mark,
+        )
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        connection.execute("UPDATE anchor_state SET mac = 'corrupted' WHERE key = 'anchor_provisioning_complete'")
+        connection.commit()
+    with store._connect() as connection, pytest.raises(ContractIntegrityError, match="integrity verification"):
+        store._provisioning_record.is_complete(connection)
+
+
+def test_provisioning_record_mac_is_domain_separated_from_high_water_mark(tmp_path):
+    """A ProvisioningRecord MAC must never be computable as, or confused
+    with, a HighWaterMark MAC over the same store/payload -- proven by
+    computing both over an identical string and asserting inequality,
+    not merely asserting the labels differ in source code."""
+
+    store = _store(tmp_path)
+    payload = "47"
+    hwm_mac = store._high_water_mark._mac(47)
+    marker_mac = store._provisioning_record._mac(payload)
+    assert hwm_mac != marker_mac
+
+
+# --- Slice B: SqliteRecoveryContractStore.provision_anchor_baseline() ---
+
+
+def test_provision_anchor_baseline_seeds_and_marks_complete_atomically(tmp_path):
+    store = _store(tmp_path)
+    store.provision_anchor_baseline(value=8675309, handle="0x01500000")
+    with store._connect() as connection:
+        assert store._high_water_mark.read(connection) == 8675309
+        assert store._provisioning_record.is_complete(connection) is True
+
+
+def test_provision_anchor_baseline_second_call_raises_already_provisioned(tmp_path):
+    store = _store(tmp_path)
+    store.provision_anchor_baseline(value=8675309, handle="0x01500000")
+    with pytest.raises(AnchorAlreadyProvisionedError):
+        store.provision_anchor_baseline(value=99999, handle="0x01500000")
+    # the original baseline must be unchanged
+    with store._connect() as connection:
+        assert store._high_water_mark.read(connection) == 8675309
+
+
+def test_provision_anchor_baseline_rejects_empty_handle(tmp_path):
+    store = _store(tmp_path)
+    with pytest.raises(ContractValidationError):
+        store.provision_anchor_baseline(value=8675309, handle="")
+
+
+def test_interrupted_between_seed_and_marker_is_discoverable_and_resumable(tmp_path):
+    """Simulates a crash after S7 (seed) but before S9 (mark complete) --
+    the exact interruption point the provisioning state machine
+    (docs/tier1/specs/anti_rollback_tpm_host_witness.md) requires be
+    safely discoverable and resumable, never requiring a re-seed."""
+
+    store = _store(tmp_path)
+    with store._connect() as connection:
+        store._high_water_mark.seed(connection, value=8675309)
+        # "crash" here: mark_complete() is never called in this transaction.
+
+    # Discovery, on resume: seeded but not yet marked complete.
+    with store._connect() as connection:
+        assert store._high_water_mark.is_seeded(connection) is True
+        assert store._high_water_mark.read(connection) == 8675309
+        assert store._provisioning_record.is_complete(connection) is False
+
+    # Resuming a rerun must never re-seed.
+    with store._connect() as connection, pytest.raises(AnchorAlreadyProvisionedError):
+        store._high_water_mark.seed(connection, value=8675309)
+
+    # Resuming completes provisioning without touching the seed again.
+    with store._connect() as connection:
+        store._provisioning_record.mark_complete(
+            connection,
+            handle="0x01500000",
+            verified_value=8675309,
+            provisioned_at="2026-08-10T00:05:00+00:00",
+            high_water_mark=store._high_water_mark,
+        )
+        assert store._provisioning_record.is_complete(connection) is True

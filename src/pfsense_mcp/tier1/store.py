@@ -22,7 +22,7 @@ from pathlib import Path
 
 from pfsense_mcp.capabilities import Capability
 
-from .anti_rollback import AntiRollbackAnchor, HighWaterMark
+from .anti_rollback import AntiRollbackAnchor, HighWaterMark, ProvisioningRecord
 from .canonical import frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
 from .contract import ProtectedArtifact, RecoveryContract
@@ -221,6 +221,7 @@ class SqliteRecoveryContractStore:
         # switched on here -- see that spec's Activation requirements.
         self._anti_rollback_anchor = anti_rollback_anchor
         self._high_water_mark = HighWaterMark(integrity_key=self._integrity_key, store_id=store_id)
+        self._provisioning_record = ProvisioningRecord(integrity_key=self._integrity_key, store_id=store_id)
         self._prepare_path()
         self._initialize_schema()
 
@@ -653,6 +654,50 @@ class SqliteRecoveryContractStore:
             for contract in contracts:
                 self._verify_related_state(connection, contract)
             return contracts
+
+    def provision_anchor_baseline(self, *, value: int, handle: str) -> None:
+        """One-time administrative operation (Slice B primitive; never
+        called by normal contract lifecycle operations): seeds this
+        store's `HighWaterMark` with an externally-observed anchor
+        value -- e.g. a TPM counter's real initial value, obtained and
+        verified per docs/tier1/specs/anti_rollback_tpm_host_witness.md's
+        provisioning state machine (S7) -- and, once re-read and
+        confirmed to agree (S8), durably marks provisioning complete
+        (S9). This is the single, exact entry point a future provisioning
+        script (or its manual equivalent) calls to perform the store-side
+        half of anchor provisioning; it performs no TPM or network I/O
+        itself.
+
+        Insert-only throughout, atomically, within one transaction:
+        raises `AnchorAlreadyProvisionedError` if either the high-water
+        mark or the completion marker already exists for this store —
+        neither is ever silently overwritten. Raises
+        `ContractIntegrityError` if the immediate re-read after seeding
+        does not exactly match `value` (paranoid self-check, not assumed
+        from the write alone).
+
+        `value` must already have been obtained from the real,
+        authoritative anchor by the caller — this method does not
+        validate it against any live TPM/witness backend, and does not
+        assume it is 0 or any other specific number (a freshly-defined
+        TPM counter's real first value is unpredictable and non-zero;
+        see the provisioning spec's "Initial baseline" section)."""
+
+        if not isinstance(handle, str) or not handle:
+            raise ContractValidationError("Anchor handle must be a non-empty string.")
+        provisioned_at = self._now().isoformat()
+        with self._connect() as connection:
+            self._high_water_mark.seed(connection, value=value)
+            reread = self._high_water_mark.read(connection)
+            if reread != value:
+                raise ContractIntegrityError("Anchor baseline verification failed immediately after seeding.")
+            self._provisioning_record.mark_complete(
+                connection,
+                handle=handle,
+                verified_value=value,
+                provisioned_at=provisioned_at,
+                high_water_mark=self._high_water_mark,
+            )
 
     def transition(
         self,

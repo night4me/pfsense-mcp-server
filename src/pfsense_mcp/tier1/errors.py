@@ -61,6 +61,12 @@ class AnchorConflictError(Tier1Error):
     """The anti-rollback anchor's actual value did not match the expected one."""
 
 
+class AnchorAlreadyProvisionedError(Tier1Error):
+    """A one-time anchor provisioning operation (baseline seed or
+    completion marker) was attempted against a store that already has
+    one recorded -- refused, never silently overwritten."""
+
+
 class WholeStoreRollbackDetected(Tier1Error):
     """The anti-rollback anchor is behind the store's recorded high-water mark."""
 

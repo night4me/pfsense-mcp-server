@@ -5,7 +5,8 @@ factory, tool registry, or READ client. It contains no endpoint, transport,
 tool registration, or mutation executor.
 """
 
-from .anti_rollback import AntiRollbackAnchor, HighWaterMark
+from .anti_rollback import AntiRollbackAnchor, HighWaterMark, ProvisioningRecord
+from .anti_rollback_tpm_witness import TpmHostWitnessAnchor
 from .audit import Tier1AuditEvent
 from .canonical import DigestPurpose, canonical_json, digest_value, frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
@@ -39,6 +40,7 @@ __all__ = [
     "NonceCounter",
     "PinnedAuthority",
     "ProtectedArtifact",
+    "ProvisioningRecord",
     "RateLimits",
     "RatePolicy",
     "ReconciliationEvidence",
@@ -49,6 +51,7 @@ __all__ = [
     "RotationReport",
     "SqliteRecoveryContractStore",
     "Tier1AuditEvent",
+    "TpmHostWitnessAnchor",
     "build_nonce",
     "canonical_json",
     "decrypt_artifact",
