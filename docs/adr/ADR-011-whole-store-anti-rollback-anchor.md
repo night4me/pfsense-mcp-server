@@ -6,8 +6,18 @@
   `reports-ai/latest.md` for full session-by-session evidence). Live
   baseline-seeding of the production store is confirmed complete.
   Deployment model (persistent vs. manual) decided 2026-08-10 — see
-  "Deployment model decision" below. WRITE remains fully unauthorized
-  and unaffected by any of this — 0/3 active, empty allow-list.
+  "Deployment model decision" below — **and the persistent deployment
+  itself is now functionally verified live** (`enabled`/`active`,
+  survived an unplanned host reboot, correct identity/hardening/TPM
+  access/mTLS certs, deployed code confirmed to include the Phase 2
+  hardware fixes; one optional hygiene item,
+  `ConfigurationDirectoryMode`, remains unremediated — see
+  `reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md`).
+  This closes the anti-rollback anchor's provisioning/deployment
+  milestone; it does **not** activate anything — fail-closed enforcement
+  in `store.py` remains unimplemented, and WRITE remains fully
+  unauthorized and unaffected by any of this — 0/3 active, empty
+  allow-list.
 - **Date:** 2026-08-08
 
 ## Context

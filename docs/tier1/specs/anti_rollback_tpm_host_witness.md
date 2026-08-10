@@ -1,12 +1,15 @@
 # Tier 1 — TPM-backed host-witness anti-rollback anchor (concrete `ADR-011` backend)
 
 Status: provisioning, guest-side integration, and the host-witness
-daemon (offline + real-hardware-verified) are implemented per the
-"Activation requirements" checklist below; fail-closed activation in
-`store.py` is not. Deployment model (persistent systemd service as the
-production default) decided 2026-08-10 — see this document's
-"Deployment model" section and `ADR-011`'s "Deployment model decision"
-section (authoritative).
+daemon are implemented and **deployed as a persistent `systemd`
+service, functionally verified 2026-08-10** (see "Activation
+requirements" below); fail-closed activation in `store.py` is not.
+Deployment model (persistent systemd service as the production
+default) decided 2026-08-10 — see this document's "Deployment model"
+section and `ADR-011`'s "Deployment model decision" section
+(authoritative). One optional configuration convergence item is open
+(`ConfigurationDirectoryMode`, not yet remediated) — see
+`reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md`.
 Activation gate (still applies to fail-closed enforcement/WRITE, not to
 already-completed provisioning/deployment steps): `ADR-011`'s backend
 decision (below) plus Milestone 3 (anti-rollback activation) and,
@@ -776,15 +779,25 @@ tpm2_nvread -C 0x01XXXXXX -P file:<systemd-credential-path>/nv-index-auth -s 8 0
       Proxmox console) — handle `0x01500000`, initial value `2`.
 - [x] `anti_rollback_tpm_witness.py` implemented and tested offline
       (Slice B).
-- [x] Witness daemon implemented (Phase 1) and real-hardware-verified
-      (Phase 2, 2026-08-10) — reachable and correctly serving `read()`
-      over mTLS as of the most recent read-only checkpoint check
-      (`2 == 2`). **Live-vs-repo deployment convergence not yet
-      independently re-verified this session** — see this document's
-      "Deployment model" section and `reports-ai/`'s dedicated
-      convergence-review entry for the exact, currently-known drift
-      item (`ConfigurationDirectoryMode`) and the proposed (not yet
-      applied) remediation/verification plan.
+- [x] Witness daemon implemented (Phase 1), real-hardware-verified
+      (Phase 2, 2026-08-10), and **deployed as a persistent
+      `systemd`-managed production service — functionally verified,
+      2026-08-10** (owner-supplied `systemctl`/process/certificate
+      output): `enabled`/`active`, survived an unplanned Proxmox reboot
+      with no manual intervention, correct dedicated service identity
+      (`User=pfsense-witness`, `tss` group, no Proxmox-management
+      privilege), correct TPM device access (`DeviceAllow=/dev/tpmrm0
+      rw`), deployed code confirmed to include both Phase 2 hardware
+      fixes, every hardening directive present matching the reference
+      unit exactly, and the full `2 == 2` read-only chain independently
+      reproduced post-reboot. **One optional convergence item remains**:
+      `ConfigurationDirectoryMode=0750` is declared in the repository
+      reference but absent from the live unit (falls back to
+      `systemd`'s `0755` default) — a declared-vs-actual hygiene item,
+      not a functional gap (the directory's two files are already
+      individually `644`). Full detail, classification, and the
+      proposed (not yet applied) one-line remediation:
+      `reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md`.
 - [ ] Host firewall configured to restrict the daemon's port to VM 106
       only — status not independently re-confirmed this session (no
       SSH access; standing constraint).
