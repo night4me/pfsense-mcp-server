@@ -34,7 +34,7 @@ def _imports_tier1(path: Path) -> bool:
 
 
 def test_tier1_is_not_imported_outside_its_inert_package():
-    # tier1_anchor_check.py is the one, narrow, explicit exception
+    # tier1_anchor_check.py is the first, narrow, explicit exception
     # (2026-08-10, owner-authorized read-only runtime wiring): the sole
     # production entrypoint for the read-only, opt-in, log-only
     # anti-rollback anchor startup verification -- see its own module
@@ -46,7 +46,16 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # tests/test_tier1_anchor_check_isolation.py for the stronger,
     # dedicated tests proving this file's own access is read-only,
     # opt-in, and cannot reach PREPARE/EXECUTE/WRITE.
-    exempt = {"tier1_anchor_check.py"}
+    #
+    # security_discovery.py is the second such exception (2026-08-10,
+    # ADR-021 Phase B: read-only security-posture discovery CLI). Its
+    # own module docstring states the same discipline; security_cli.py
+    # (the actual `pfsense-mcp-security` entrypoint) does NOT import
+    # pfsense_mcp.tier1 at all, only security_discovery.py's public
+    # functions -- mirroring tier1_anchor_check.py/application.py's own
+    # pattern exactly. See tests/test_security_discovery_isolation.py
+    # for the matching stronger, dedicated tests.
+    exempt = {"tier1_anchor_check.py", "security_discovery.py"}
     production = ROOT / "src/pfsense_mcp"
     offenders = [
         path.relative_to(ROOT).as_posix()

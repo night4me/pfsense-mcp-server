@@ -7,6 +7,25 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `pfsense-mcp-security`: a new, separately-installed CLI (`ADR-021`,
+  Accepted; Phase B of `docs/SECURITY_POSTURE_PROVISIONING.md`) offering
+  one subcommand, `discover`, which reports the current capability-posture
+  (`read_only`/`write_protected`) and anchor-assurance
+  (`none`/`software`/`hardware_witness`) axis state, read-only, with
+  human-readable and deterministic `--json` output. Correctly recognizes
+  `read_only` + `hardware_witness` (this project's own real production
+  state) as a valid, representable combination. Never calls
+  `provision_anchor_baseline()`, `advance()`, or anything else that
+  mutates the Tier 1 store, the TPM, or pfSense — proven by dedicated
+  structural (AST) and behavioral tests. **Does not change the public
+  MCP contract** — still 42 READ tools, 0 WRITE tools; this is a
+  standalone CLI (`src/pfsense_mcp/security_cli.py`,
+  `src/pfsense_mcp/security_discovery.py`), not an MCP tool. No
+  provisioning/setup subcommand exists yet — that is Phase C onward,
+  each its own future, separately-authorized work.
+
 ### Fixed
 
 - The declared `mcp>=1.0.0` minimum dependency version was false: every

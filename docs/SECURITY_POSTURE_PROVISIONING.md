@@ -180,10 +180,13 @@ actual history).
    Phases B onward below each remain their own separate, future,
    explicitly-scoped implementation authorization; none is granted by
    acceptance.
-2. **Phase B — read-only discovery only.** Implement `DISCOVERED` and
-   `PREREQUISITES_VERIFIED` for both axes, independently: a CLI that
-   reports current capability posture and anchor assurance, writes
-   nothing. Lowest-risk, independently useful today.
+2. **Phase B — read-only discovery only — implemented (2026-08-10).**
+   `DISCOVERED`, and where evidence allows `PREREQUISITES_VERIFIED`,
+   detail for both axes, independently: the `pfsense-mcp-security discover`
+   CLI reports current capability posture and anchor assurance, writes
+   nothing. See "Phase B — implemented" below for the actual commands,
+   example output, and exact files. **No provisioning/setup subcommand
+   exists yet** — Phase C onward remain future, separately-authorized work.
 3. **Phase C — capability-posture axis, `read_only`.** Trivial by
    construction (already the default) but completes the
    `SELECTED → ACTIVE` path end to end for the simplest case, proving
@@ -207,6 +210,160 @@ actual history).
    unblocked by and independent of every phase above.
 
 Each phase is its own future authorization; nothing above is scheduled.
+
+## Phase B — implemented (2026-08-10)
+
+A real, installed `pfsense-mcp-security` CLI, registered the same way
+`pfsense-mcp-server` is (`[project.scripts]` in `pyproject.toml`) and
+shipped in the same wheel (it lives in `src/pfsense_mcp/`, unlike
+`witness_daemon/`/`scripts/tier1_store_bootstrap.py`, which are
+deliberately excluded from the package). One subcommand exists:
+`discover`. It is genuinely read-only — see "Read-only guarantees"
+below.
+
+### Usage
+
+```
+$ pfsense-mcp-security discover
+pfsense-mcp-security: security posture discovery (read-only)
+
+Capability posture: read_only
+  configured profile name:    auditor (valid=True)
+  write capabilities active:  0 of 3
+  allow-list entries:         0
+  - PFSENSE_PROFILE='auditor', 0 WRITE capabilities active.
+
+Anchor assurance:    hardware_witness
+  evidence state:              provisioned_verified
+  store configured:            True
+  store exists:                True
+  seeded / complete:           True / True
+  handle:                      0x01500000
+  baseline:                    2
+  provisioned_at:              2026-08-10T15:10:16.416050+00:00
+  witness configured:          True
+  witness reachable:           True
+  witness value:               2
+  witness matches baseline:    True
+  - Store provisioning record: handle=0x01500000 baseline=2 provisioned_at=2026-08-10T15:10:16.416050+00:00.
+  - Witness value (2) matches persisted high-water mark (2).
+
+Note: read_only + hardware_witness is a valid, representable combination
+in the accepted ADR-021 two-axis model -- not one of the three curated
+setup presets, but fully supported.
+This report is read-only discovery only (ADR-021 Phase B). No
+provisioning/setup subcommand exists yet.
+```
+
+The example above is real output, captured against this project's own
+real production environment (the seven `PFSENSE_TIER1_*`/`WITNESS_*`
+variables already in operational use) — proving Phase B's own
+requirement that `read_only` + `hardware_witness` be recognized
+accurately, not treated as a special case.
+
+`pfsense-mcp-security discover --json` emits the same information as
+deterministic, sorted-key JSON (`capability_posture`, `anchor_assurance`,
+`notes`) for automation — verified byte-identical across repeated
+invocations of the same environment.
+
+Exit codes: `0` on a clean discovery result (including "nothing
+configured" — that is not a failure); `2` if the anchor-assurance axis's
+evidence state is `provisioned_mismatch` (a security-relevant anomaly:
+the live witness value disagrees with the persisted high-water mark) —
+signalling automation without conflating "just unconfigured" with
+"something is actually wrong."
+
+### Read-only guarantees
+
+- Never calls `provision_anchor_baseline()`, `TpmHostWitnessAnchor.advance()`,
+  or anything that constructs a `RecoveryContract`/`MutationExecutor`/
+  `WriteApiClient`. Proven structurally (AST inspection of the actual
+  shipped source, not the module's own docstring) by
+  `tests/test_security_discovery_isolation.py`, and behaviorally by
+  `tests/test_security_discovery.py`'s dedicated mutation-proof tests
+  (a fake anchor whose `advance()` raises if ever called; a monkeypatched
+  `provision_anchor_baseline` that raises if ever called — both tests
+  pass because discovery never reaches either).
+- Never calls `open_production_store()` / constructs
+  `SqliteRecoveryContractStore` at all — its `__init__` always runs
+  `_initialize_schema()` (`CREATE TABLE IF NOT EXISTS ...`), which is
+  harmless for a healthy store but capable of creating missing tables
+  as a side effect of merely looking, against a legacy/partial/foreign
+  SQLite file. Instead calls the dedicated
+  `read_only_anchor_provisioning_status()`
+  (`src/pfsense_mcp/tier1/production_store.py`), which opens the store
+  via SQLite's own `mode=ro` URI — the database engine itself refuses
+  any DDL/DML attempt, a structural guarantee rather than a convention
+  this module's own code happens to follow. A missing/incomplete/
+  malformed schema surfaces as `store_error` evidence, never repaired.
+  Found via pre-commit call-graph review (the original Phase B
+  implementation went through `open_production_store()`) and fixed
+  before this feature was ever committed; proven by dedicated
+  regression tests asserting a foreign SQLite file (and a file with an
+  incomplete `anchor_state` table) is left byte-for-byte unchanged and
+  gains no new tables after discovery runs.
+- Also never calls `read_only_anchor_provisioning_status()` (or
+  anything else) against a store path that has not already been
+  created on disk — SQLite's own `mode=ro` would refuse to create one,
+  but the existence check happens first anyway, to keep "not
+  provisioned" evidence accurate and avoid an avoidable error path.
+  Mirrors `scripts/tier1_store_bootstrap.py`'s own existence check
+  exactly; proven by a dedicated test asserting the store file (and its
+  parent directory) still does not exist after discovery runs against
+  an unconfigured-but-named path.
+- `security_discovery.py` is the second, narrow, explicit exception to
+  `pfsense_mcp.tier1` never being imported from outside its own package
+  (`tier1_anchor_check.py` remains the first) — the isolation exemption
+  list in `tests/tier1/test_isolation.py` now names both, and
+  `security_cli.py` itself does not import `pfsense_mcp.tier1` at all,
+  matching `application.py`'s own established pattern of only calling
+  the exempted module's public functions.
+- Evidence strings (which flow directly into `--json` output, intended
+  for logging/automation) never embed a raw configured file path, URL,
+  or unaudited third-party exception message. Several `Tier1Error`/
+  `OSError`/`ssl.SSLError` messages from lower layers do embed absolute
+  filesystem paths (e.g. a failed `ssl.SSLContext.load_cert_chain()`);
+  discovery reports only the exception's *class name* in those cases,
+  never `str(exc)` verbatim. Found during pre-commit review and fixed
+  before this feature was ever committed; proven by dedicated
+  regression tests asserting the raw configured path/URL never appears
+  in evidence, for every failure state that could otherwise expose one.
+
+### Files
+
+- `src/pfsense_mcp/security_discovery.py` (new) — the read-only
+  discovery data model and logic, structured dataclasses/enums, no
+  logging or other side effects.
+- `src/pfsense_mcp/security_cli.py` (new) — the actual
+  `pfsense-mcp-security` entrypoint: argument parsing, human/`--json`
+  formatting. Does not import `pfsense_mcp.tier1`.
+- `src/pfsense_mcp/tier1/production_store.py` (modified) — added
+  `read_only_anchor_provisioning_status()`, the genuinely read-only
+  primitive `security_discovery.py` uses instead of
+  `open_production_store()`. `open_production_store()` and
+  `SqliteRecoveryContractStore` themselves are unchanged and remain
+  the correct choice for every caller that needs a real,
+  schema-guaranteed store (`scripts/tier1_store_bootstrap.py`,
+  `tier1_anchor_check.py`).
+- `pyproject.toml` — new `pfsense-mcp-security` console-script entry.
+- `tests/test_security_discovery.py`, `tests/test_security_cli.py`,
+  `tests/test_security_discovery_isolation.py` (new).
+- `tests/tier1/test_isolation.py` — exemption list extended.
+
+### What Phase B deliberately does not do
+
+- No `select`/`provision`/`downgrade` subcommand — Phase C onward.
+- No interactive prompting or confirmation flow — discovery needs none
+  (it performs no mutating action), and the granular per-step consent
+  model (`ADR-021`'s "User consent boundaries") only applies once a
+  mutating subcommand exists.
+- No declarative/config-file input — `discover` takes no target to
+  authorize; the declarative-vs-interactive scoping table above applies
+  starting at Phase C/D.
+- `AnchorAssurance.SOFTWARE` is never resolved by Phase B — no
+  remote-witness backend exists in this repository (Phase G); Phase B
+  reports `unknown`/`none` rather than asserting a capability that
+  cannot currently be verified.
 
 ## Open design questions
 

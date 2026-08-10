@@ -41,6 +41,7 @@ dependencies = [
 
 [project.scripts]
 pfsense-mcp-server = "pfsense_mcp.server:main"
+pfsense-mcp-security = "pfsense_mcp.security_cli:main"
 
 [project.optional-dependencies]
 dev = [

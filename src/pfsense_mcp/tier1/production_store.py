@@ -42,10 +42,12 @@ duplicating any HMAC/insert-only logic.
 from __future__ import annotations
 
 import os
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from .errors import Tier1ConfigurationError
+from .anti_rollback import AnchorProvisioningStatus, HighWaterMark, ProvisioningRecord
+from .errors import ContractIntegrityError, Tier1ConfigurationError
 from .key_lifecycle import KeyPurpose, load_key_material
 from .store import SqliteRecoveryContractStore
 
@@ -131,6 +133,71 @@ def open_production_store(config: ProductionStoreConfig) -> SqliteRecoveryContra
         config.store_path,
         integrity_key=key_record.material,
         store_id=config.store_id,
+    )
+
+
+def read_only_anchor_provisioning_status(config: ProductionStoreConfig) -> AnchorProvisioningStatus:
+    """Genuinely read-only anchor-provisioning status against an
+    **already-existing** store file -- for callers (e.g.
+    `pfsense_mcp.security_discovery`) that must observe a store's state
+    without any possibility of creating or modifying it, including its
+    schema.
+
+    Deliberately does NOT construct `SqliteRecoveryContractStore`:
+    `SqliteRecoveryContractStore.__init__` always calls
+    `_initialize_schema()` (`CREATE TABLE IF NOT EXISTS ...`), even
+    against an existing, otherwise-untouched file -- harmless DDL for a
+    healthy store with the schema already present, but a real,
+    unwanted repair-as-a-side-effect if the file is a legacy, partial,
+    or foreign SQLite database missing one or more expected tables.
+    This function instead opens the connection via SQLite's own
+    `mode=ro` URI, which makes the database engine itself refuse any
+    write attempt (DDL or DML) -- a structural guarantee, not merely a
+    convention this function's own code happens to follow.
+
+    Reuses `HighWaterMark`/`ProvisioningRecord`'s existing
+    HMAC-authenticated `read()`/`is_seeded()` methods directly (the
+    exact same calls `SqliteRecoveryContractStore.anchor_provisioning_status()`
+    itself makes) rather than duplicating that verification logic --
+    only the connection-opening strategy differs.
+
+    Raises `ContractIntegrityError` if the file cannot be opened
+    read-only, is not a valid SQLite database, or is missing the
+    expected schema (a legacy/malformed/foreign file) -- in every case
+    the caller must treat this as "could not verify," never attempt to
+    create or repair anything as a result. Never used by provisioning
+    or execution logic itself; `SqliteRecoveryContractStore` and
+    `open_production_store()` are completely unaffected by this
+    function's existence and remain the correct choice for every
+    caller that needs a real, schema-guaranteed store."""
+
+    key_record = load_key_material(config.key_file, purpose=KeyPurpose.INTEGRITY)
+    high_water_mark = HighWaterMark(integrity_key=key_record.material, store_id=config.store_id)
+    provisioning_record = ProvisioningRecord(integrity_key=key_record.material, store_id=config.store_id)
+
+    try:
+        connection = sqlite3.connect(f"file:{config.store_path}?mode=ro", uri=True, timeout=5.0)
+    except sqlite3.Error as exc:
+        raise ContractIntegrityError("Recovery store database could not be opened read-only.") from exc
+
+    try:
+        connection.execute("PRAGMA foreign_keys = ON")
+        seeded = high_water_mark.is_seeded(connection)
+        baseline = high_water_mark.read(connection) if seeded else None
+        marker = provisioning_record.read(connection)
+    except sqlite3.Error as exc:
+        raise ContractIntegrityError(
+            "Recovery store schema is missing, incomplete, or unreadable in read-only mode."
+        ) from exc
+    finally:
+        connection.close()
+
+    return AnchorProvisioningStatus(
+        seeded=seeded,
+        baseline=baseline,
+        complete=marker is not None,
+        handle=str(marker["handle"]) if marker is not None else None,
+        provisioned_at=str(marker["provisioned_at"]) if marker is not None else None,
     )
 
 
