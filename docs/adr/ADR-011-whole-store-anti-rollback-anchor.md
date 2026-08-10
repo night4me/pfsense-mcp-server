@@ -130,10 +130,15 @@ documentation, Proxmox's own `qm` manual page), not assumption:
 Full concrete design (NV index type/attributes/auth model, host service
 protocol, guest integration, provisioning procedure, required tests):
 [anti_rollback_tpm_host_witness.md](../tier1/specs/anti_rollback_tpm_host_witness.md).
-**Design only — no TPM index has been provisioned, no daemon deployed, no
-mutating TPM command executed.** `AntiRollbackAnchor`'s existing protocol
-and `store.py`'s call site require no change (this ADR's own "Future
-migration path" text, below, already anticipated this).
+**At the time this backend decision was recorded, this was design
+only — no TPM index had been provisioned, no daemon deployed, no
+mutating TPM command executed.** (That has since progressed — see
+this ADR's Status line and "Deployment model decision" section below
+for the current, authoritative state; this paragraph is preserved
+as-written to record the decision accurately at the point it was
+made.) `AntiRollbackAnchor`'s existing protocol and `store.py`'s call
+site require no change (this ADR's own "Future migration path" text,
+below, already anticipated this).
 
 ## Deployment model decision (2026-08-10)
 
