@@ -77,6 +77,14 @@ capability or authorizes a production change.
 - A documented internal diagnostics CLI that remains outside the MCP surface.
 - Optional tamper-evident audit forwarding containing metadata only.
 - Resource/rate controls if measured deployments show a need.
+- A READ capability covering `/system/webgui/settings` (WebGUI/Admin
+  Access configuration, including the configured `ssl-certref`) —
+  found missing during a real-world diagnostic session (2026-08-10):
+  an agent could enumerate certificates but not determine which one
+  the GUI actually presents. See `READ_BACKLOG.md`'s "Post-snapshot
+  discovery" addendum for the precise gap and evidence. Not scoped or
+  authorized here — a new capability requires the same review any
+  public-contract addition does.
 
 ## Tier 1 — first controlled mutation
 

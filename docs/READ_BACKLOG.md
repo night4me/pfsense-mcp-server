@@ -15,6 +15,39 @@ This is a roadmap, not a design document. No capability listed here as
 "Planned" or "Deferred" has been implemented, scaffolded, or otherwise
 changed as part of producing this document.
 
+## Post-snapshot discovery (2026-08-10) — `SYSTEM_INFO_READ` implemented narrower than originally planned
+
+Found during a real-world READ-only diagnostic session (a certificate-
+manager investigation, see `reports-ai/` for the full session record),
+not while producing or revising this snapshot. Recorded here as an
+addendum, not a rewrite of the table above — the original snapshot row
+is left exactly as it was written.
+
+The table below groups `/system/webgui/settings` under
+`SYSTEM_INFO_READ` alongside `/system/version`, `/system/hostname`,
+`/system/timezone`, `/system/dns`, and `/system/console`. **As actually
+built, `SYSTEM_INFO_READ` registers exactly one tool**,
+`pfsense_get_system_version`
+(`src/pfsense_mcp/tools/registry.py::_register_system_info_read`, which
+calls only `src/pfsense_mcp/tools/read/system_version.py`) — covering
+`/system/version` alone. None of the other five endpoints originally
+grouped under this capability, including `/system/webgui/settings`,
+were ever implemented. This was confirmed by reading the registry and
+tool source directly, not inferred from behavior alone.
+
+**Why this specific endpoint matters**: `/system/webgui/settings` is
+where pfSense's `ssl-certref` — which certificate the webConfigurator
+GUI is actually presenting — lives. During the diagnostic session that
+found this gap, an agent using only this MCP server's READ tools could
+enumerate certificates and their validity, but could not determine
+which one was actually bound to the GUI without a human checking the
+pfSense UI directly. See `reports-ai/` for the full session record;
+`docs/ROADMAP.md`'s "Possible ideas" (v0.3.0 section) now has a
+one-line pointer to this addendum.
+
+No implementation, scaffolding, or capability/tool change was made as
+part of recording this discovery.
+
 ## Coverage summary
 
 | Metric | Count |
