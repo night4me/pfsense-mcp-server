@@ -132,6 +132,18 @@ event/state table rejects every transition not declared in the specification.
 
 ## Milestone 0 — capability and threat-model selection
 
+**Naming deliverable satisfied 2026-08-10 (`ADR-020`): firewall-alias
+description-only `PATCH` (`/api/v2/firewall/alias`, `descr` field only)
+is the named first candidate.** This section's original framing below is
+preserved as historical rationale for *why* this document does not
+pre-choose a capability itself; the naming decision it called for now
+exists as `ADR-020`, not here. The remaining deliverables below that are
+empirically lab-dependent (natural-identity uniqueness proof, upstream
+API semantics/idempotency/response-code/concurrency confirmation) remain
+**open**, pending Milestone 8's live lab evidence — naming the candidate
+does not itself satisfy them, per `ADR-016`'s own already-accepted
+position that code review cannot resolve these questions.
+
 The roadmap does not choose the first capability. Owner approval must select it
 using objective criteria: smallest blast radius, a reliable verified READ
 dependency, stable natural target identity, deterministic rollback, no
@@ -159,8 +171,14 @@ the decision record, but no specific capability is implied or preferred here.
 ### Acceptance criteria
 
 - Separate written authorization names the capability and test appliance.
+  **Capability named 2026-08-10 (`ADR-020`); the disposable test appliance
+  itself is not yet provisioned or named — that is part of Milestone 8's
+  own scope, not satisfied by `ADR-020` alone.**
 - No ambiguity exists about target identity, pre-state capture, apply/read-back,
-  and rollback operations.
+  and rollback operations. **Target identity (`descr` field, natural
+  identity = alias `name`) is unambiguous per `ADR-020`; pre-state
+  capture, apply/read-back, and rollback operations remain to be proven
+  by Milestone 8's live lab run, not yet demonstrated.**
 
 ## Milestone 1 — authoritative contract model
 

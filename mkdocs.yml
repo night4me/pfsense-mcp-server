@@ -113,6 +113,7 @@ nav:
           - ADR-017 Official guidance layer: adr/ADR-017-official-guidance-layer.md
           - ADR-018 Version-aware Official Guidance resolution: adr/ADR-018-version-aware-guidance-resolution.md
           - ADR-019 API surface, capability discovery and extension architecture: adr/ADR-019-api-surface-capability-discovery-and-extension-architecture.md
+          - ADR-020 Milestone 0 first WRITE capability candidate: adr/ADR-020-milestone-0-first-write-capability-candidate.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md
