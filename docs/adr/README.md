@@ -26,6 +26,7 @@ silently rewrite earlier context.
 | [018](ADR-018-version-aware-guidance-resolution.md) | Version-aware Official Guidance resolution | Accepted — architecture and trust boundaries only; live retrieval, guidance exposure, Tier 1/WRITE/Phase 5 activation not authorized by acceptance; nothing implemented yet |
 | [019](ADR-019-api-surface-capability-discovery-and-extension-architecture.md) | API Surface, Capability Discovery, and Extension Architecture | Accepted — vocabulary and evaluation only; individual mechanisms remain separately gated, public contract unchanged |
 | [020](ADR-020-milestone-0-first-write-capability-candidate.md) | Milestone 0 — first WRITE capability candidate authorization | Accepted — candidate naming only; implementation, live lab run, allow-list population, and WRITE activation all remain separately gated |
+| [021](ADR-021-security-posture-provisioning.md) | Guided security-posture provisioning (`pfsense-mcp-security setup`) | Proposed — architecture/design only; no wizard, posture, WRITE, or fail-closed enforcement authorized |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
@@ -41,3 +42,11 @@ ADR-017 is not a Tier 1 subsystem — it is orthogonal, applying eventually
 to both the active READ path and the still-inert future WRITE path. Its
 companion spec is [`docs/OFFICIAL_GUIDANCE_LAYER.md`](../OFFICIAL_GUIDANCE_LAYER.md),
 alongside `TIER1_ARCHITECTURE.md` rather than under `docs/tier1/specs/`.
+
+ADR-021 is likewise not a Tier 1 subsystem — its capability-posture
+axis (`read_only`/`write_protected`) is not a Tier 1 concept at all,
+and its anchor-assurance axis spans Tier 0/Tier 1 WRITE and the
+Tier-1-adjacent anti-rollback anchor independently of it. Its
+companion spec is
+[`docs/SECURITY_POSTURE_PROVISIONING.md`](../SECURITY_POSTURE_PROVISIONING.md),
+following the same top-level placement as ADR-017's.

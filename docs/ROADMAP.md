@@ -100,45 +100,71 @@ anti-rollback, and operator-authentication decisions are approved.
 See [Tier 1 roadmap](TIER1_ROADMAP.md). Until every gate is accepted, zero
 WRITE tools register.
 
-## Operator setup and security profiles (idea, not committed)
+## Operator setup and security postures (design phase complete, not committed)
 
-Idea-stage direction for a future `pfsense-mcp-security setup`
-CLI/wizard: let an operator explicitly choose a named security profile
-at setup time rather than silently ending up with stronger privileges
-than intended. No design work beyond this roadmap entry exists yet, and
-none of the below authorizes building the wizard, the profiles, or any
-underlying capability.
+Future `pfsense-mcp-security setup` CLI/wizard: let an operator
+explicitly choose their security posture at setup time rather than
+silently ending up with stronger privileges than intended. This item
+moved from idea-stage to a completed architecture/design phase on
+2026-08-10, then was **revised the same day** after a rigorous
+comparison found the original three-rung ladder couldn't represent this
+project's own real deployment state —
+[ADR-021](adr/ADR-021-security-posture-provisioning.md) is now the
+authoritative decision record (Proposed status: design only), with
+mechanical detail in
+[`SECURITY_POSTURE_PROVISIONING.md`](SECURITY_POSTURE_PROVISIONING.md).
+Nothing below authorizes building the wizard, any posture, WRITE, or
+fail-closed enforcement.
 
-Target end state, roughly:
+**Model: two independent axes, not one linear ladder.** `ADR-021`
+adopted a **capability posture** axis (`read_only`/`write_protected`,
+mapping 1:1 onto `ADR-004`'s capability profiles) crossed with an
+**anchor assurance** axis (`none`/`software`/`hardware_witness`,
+mapping onto `ADR-011`'s own backend hierarchy), with one validity
+constraint directly sourced from `ADR-011`'s own accepted text:
+**`write_protected` requires anchor assurance `≠ none`** ("if neither
+[TPM nor remote witness] is available, mutation must stay blocked").
+This correctly represents this project's own actual production state —
+`read_only` capability with `hardware_witness` assurance already fully
+provisioned and verified — as a first-class, valid point in the model,
+not a special case the original ladder couldn't express.
 
-- **READ-only profile** — today's actual production default: the
-  existing READ-only MCP surface, no Tier 1/WRITE infrastructure
-  activated.
-- **Software-protected WRITE profile** — a future Tier 1 WRITE
-  capability (see "Tier 1" above) protected by the existing Recovery
-  Contract / sealed-executor machinery, without a hardware anti-rollback
-  anchor.
-- **Hardened hardware-TPM-witness profile** — Tier 1 WRITE plus the
-  `ADR-011` anti-rollback anchor backed by a real TPM. For this
-  profile, **the persistent, systemd-managed witness daemon is the
-  intended production behavior, not a manually-started daemon** — see
+The wizard's default front door still offers three named, curated
+presets over that model (see `ADR-021`/`SECURITY_POSTURE_PROVISIONING.md`
+for the full grid, including the advanced/staged path):
+
+- **READ-only** (`read_only` + `none`, default) — today's actual
+  production default, named explicitly rather than left an implicit,
+  never-consciously-chosen default.
+- **Software-protected WRITE** (`write_protected` + `software`) — a
+  future Tier 1 WRITE capability (see "Tier 1" above) protected by the
+  existing Recovery Contract / sealed-executor machinery plus a
+  non-hardware anti-rollback witness. The `software` anchor backend
+  itself has no implementation in this repository yet — a named,
+  separate future effort.
+- **Hardened hardware TPM witness** (`write_protected` +
+  `hardware_witness`) — Tier 1 WRITE plus the `ADR-011` anti-rollback
+  anchor backed by a real TPM. **The persistent, systemd-managed
+  witness daemon is the intended production behavior, not a
+  manually-started daemon** — see
   [ADR-011](adr/ADR-011-whole-store-anti-rollback-anchor.md)'s
-  "Deployment model decision" section (authoritative) and
-  [anti_rollback_tpm_host_witness.md](tier1/specs/anti_rollback_tpm_host_witness.md)'s
-  "Deployment model" section (operational detail). If/when this wizard
-  is built, selecting this profile should be able to provision the
-  persistent witness architecture automatically — service
+  "Deployment model decision" section (authoritative). If/when this
+  wizard is built, selecting this preset should be able to provision
+  the persistent witness architecture automatically — service
   installation/configuration and the full existing hardening posture
   (dedicated identity, least privilege, mTLS, restricted network
-  exposure, fixed TPM handle/invariants) — while keeping the profile
-  choice explicit and never silently enabling a stronger profile than
-  the operator selected.
+  exposure, fixed TPM handle/invariants) — while keeping the choice
+  explicit and never silently enabling stronger privilege than the
+  operator selected.
 
-Each profile's own activation gates (Tier 1's "Required before
+Each axis's own activation gates (Tier 1's "Required before
 commitment" above, `ADR-011`'s backend/deployment decisions, WRITE
-capability/allow-list population, etc.) are unchanged and unaffected by
-this idea — the wizard, if built, would provision toward an explicitly
-chosen profile's already-existing gates, not bypass them.
+capability/allow-list population, `TIER1_ROADMAP.md`'s Milestone 9
+activation decision — which applies to the capability-posture axis
+only, not to anchor-assurance provisioning — etc.) are unchanged and
+unaffected by this design phase — the wizard, if built, would provision
+toward an explicitly chosen combination's already-existing gates, not
+bypass or shortcut them.
 
 ## Tier 2 — additional controlled capabilities
 
