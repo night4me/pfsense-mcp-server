@@ -118,6 +118,7 @@ nav:
           - ADR-020 Milestone 0 first WRITE capability candidate: adr/ADR-020-milestone-0-first-write-capability-candidate.md
           - ADR-021 Security posture provisioning: adr/ADR-021-security-posture-provisioning.md
           - ADR-022 Execution-authorization boundary: adr/ADR-022-execution-authorization-boundary.md
+          - ADR-023 Authorization-verification boundary: adr/ADR-023-authorization-verification-boundary.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

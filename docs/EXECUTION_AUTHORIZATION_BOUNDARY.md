@@ -161,6 +161,11 @@ Future phases (see `ADR-022`'s own "Future implementation phases" for
 the recommended sequence, starting at Phase D — authorization
 *verification*, still no execution) should record their own
 "implemented" entry here when and if separately authorized and built.
+[`ADR-023`](adr/ADR-023-authorization-verification-boundary.md)
+(Proposed, 2026-08-11) is a planning-only pass proposing Phase D's
+scope, missing primitives, and open architectural questions — it
+authorizes nothing and should be updated in place, not restated here,
+if and when Phase D is separately authorized.
 
 **Phase B — canonical `PlanDigest` computation — implemented
 (2026-08-11).** Plan identity only. No `PlanAuthorization`/
