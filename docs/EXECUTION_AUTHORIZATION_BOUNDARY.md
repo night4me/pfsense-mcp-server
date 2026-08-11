@@ -199,6 +199,13 @@ section above and
 sequence, starting at Phase E — the freshness/precondition engine,
 still out of scope) should record their own "implemented" entry here
 when and if separately authorized and built.
+[`ADR-024`](adr/ADR-024-execution-authorization-coordination.md)
+(Proposed, 2026-08-11) is an architecture/decision pass, no code,
+covering the combined territory `ADR-022` numbers as Phases E/F/G —
+freshness re-check design, the proposed execution-coordinator boundary,
+consumption/crash semantics, and the `target_identity_digest` question
+— it authorizes nothing and should be updated in place, not restated
+here, if and when any of that is separately authorized and built.
 
 **Phase B — canonical `PlanDigest` computation — implemented
 (2026-08-11).** Plan identity only. No `PlanAuthorization`/
