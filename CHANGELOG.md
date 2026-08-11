@@ -74,6 +74,37 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   handling, schema-version safety, and a no-I/O behavioral proof. No
   authorization artifact, verification, or execution code exists —
   still 42 READ tools, 0 WRITE tools, `WriteEndpoints` empty, WRITE 0/3.
+- ADR-022 Phase C implemented: `security_authorization.py` adds
+  `PlanAuthorization`/`DeprovisionAuthorization` — signed, expiring,
+  narrowly-scoped authorization artifacts (structurally mirroring
+  `ConfirmationEvidence`/`ADR-012` one layer up) — their canonical
+  signing payloads, and `sign_plan_authorization()`/
+  `sign_deprovision_authorization()`, pure Ed25519 signing functions
+  over caller-supplied key material. **Signing construction only; no
+  verification, consumption, replay tracking, freshness enforcement,
+  execution, or `RecoveryContract` creation exists anywhere in this
+  repository.** `PlanAuthorization` binds `plan_digest` (exact, via
+  `compute_plan_digest()`) and an explicit, non-empty, duplicate-free
+  `authorized_step_ids` set (never a wildcard; unknown/disallowed step
+  IDs rejected at construction) plus a `risk_class` (`AuthorizationLevel`)
+  computed from the authorized steps themselves, not caller-supplied.
+  `DeprovisionAuthorization` is a wholly separate artifact type (own
+  schema, own `DigestPurpose.DEPROVISION_AUTHORIZATION` domain, no
+  `plan_digest`/`authorized_step_ids` field at all) — never a boolean
+  flag on `PlanAuthorization`, and no code path anywhere in this
+  repository computes a real `target_identity_digest` for it. Both new
+  `DigestPurpose` members (`PLAN_AUTHORIZATION`/`DEPROVISION_AUTHORIZATION`)
+  are additive; both signing payloads carry an explicit `"digest_purpose"`
+  tag for structural domain separation from each other and from
+  `ConfirmationEvidence`/`ReconciliationEvidence`. Fourth, narrow
+  `pfsense_mcp.tier1` isolation exemption (only `canonical`). No CLI
+  subcommand or MCP tool added — this module is never imported by
+  `security_cli.py` or any tool-registration code path (proved by AST
+  isolation tests). 64 new tests (55 regression/adversarial + 9
+  AST-based isolation), including cross-type signature non-verification,
+  step-set widening-after-signing detection, and a no-I/O behavioral
+  proof. Still 42 READ tools, 0 WRITE tools, `WriteEndpoints` empty,
+  WRITE 0/3.
 
 ### Changed
 

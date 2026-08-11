@@ -65,7 +65,16 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # tests/test_security_plan_digest_isolation.py for the matching
     # stronger, dedicated tests, including that this is the *only*
     # pfsense_mcp.tier1 submodule this file ever imports.
-    exempt = {"tier1_anchor_check.py", "security_discovery.py", "security_plan_digest.py"}
+    #
+    # security_authorization.py is the fourth such exception (2026-08-11,
+    # ADR-022 Phase C: PlanAuthorization/DeprovisionAuthorization data
+    # models, canonical signing payloads, and signature construction on
+    # the signing/operator side only). Like security_plan_digest.py, the
+    # only pfsense_mcp.tier1 import here is `canonical`
+    # (`DigestPurpose`/`canonical_json`) -- no store/witness/confirmation/
+    # contract access. See tests/test_security_authorization_isolation.py
+    # for the matching stronger, dedicated tests.
+    exempt = {"tier1_anchor_check.py", "security_discovery.py", "security_plan_digest.py", "security_authorization.py"}
     production = ROOT / "src/pfsense_mcp"
     offenders = [
         path.relative_to(ROOT).as_posix()

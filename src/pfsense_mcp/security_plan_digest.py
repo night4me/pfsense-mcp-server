@@ -81,14 +81,22 @@ def _step_payload(step: PlanStep) -> dict[str, CanonicalValue]:
     }
 
 
-def _evidence_fingerprint(plan: SecurityPosturePlan) -> dict[str, CanonicalValue]:
+def evidence_fingerprint_payload(plan: SecurityPosturePlan) -> dict[str, CanonicalValue]:
     """The compact, *structured* evidence fingerprint ADR-022 requires --
     `capability_posture.value`/`anchor_assurance.{value, evidence_state,
     baseline, witness_value, provisioned_at}` -- the same fields
     `security_plan.py` itself already treats as authoritative, never the
     raw prose `evidence` tuples (which would make the digest fragile to
     non-semantic wording changes in `security_discovery.py`, exactly the
-    failure mode ADR-022 explicitly rejects)."""
+    failure mode ADR-022 explicitly rejects).
+
+    Public (ADR-022 Phase C addition): `PlanAuthorization`'s own
+    `evidence_fingerprint` field is defined as "a copy of the compact
+    fingerprint from the `PlanDigest` computation" (Decision item 4) --
+    `security_authorization.py` imports this function rather than
+    recomputing an equivalent structure, so the one definition of what
+    the fingerprint contains can never silently drift between the two
+    modules."""
 
     anchor = plan.current.anchor_assurance
     return {
@@ -116,7 +124,7 @@ def _plan_payload(plan: SecurityPosturePlan) -> dict[str, CanonicalValue]:
         "target_anchor_assurance": plan.target_anchor_assurance.value,
         "target_validity": plan.target_validity.value,
         "steps": [_step_payload(step) for step in plan.steps],
-        "evidence_fingerprint": _evidence_fingerprint(plan),
+        "evidence_fingerprint": evidence_fingerprint_payload(plan),
         "overall_status": plan.overall_status.value,
         "safe_to_proceed": plan.safe_to_proceed,
     }

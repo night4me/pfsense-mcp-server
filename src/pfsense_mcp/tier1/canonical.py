@@ -38,6 +38,21 @@ class DigestPurpose(str, Enum):
     #: change any existing member's meaning; `security_plan_digest.py`
     #: is the only caller.
     PLAN = "plan"
+    #: ADR-022 Phase C -- domain-separates a `PlanAuthorization`'s signed
+    #: payload from every other purpose above, including `PLAN` itself
+    #: and `DEPROVISION_AUTHORIZATION` below. Included as a literal field
+    #: inside the canonical payload `security_authorization.py` signs
+    #: (not used to compute a `digest_value()` hash for the signature
+    #: itself), so a signature produced over one purpose's payload can
+    #: never verify against another purpose's payload even if the two
+    #: payloads' other fields happened to collide. Additive only.
+    PLAN_AUTHORIZATION = "plan-authorization"
+    #: ADR-022 Phase C -- domain-separates `DeprovisionAuthorization`,
+    #: a structurally distinct artifact *type* from `PlanAuthorization`
+    #: (own schema, own fields, own signing payload) per ADR-022's
+    #: "Destructive operations" section -- never a boolean flag on the
+    #: routine artifact. Additive only.
+    DEPROVISION_AUTHORIZATION = "deprovision-authorization"
 
 
 _DOMAIN_PREFIX = "pfSense-MCP/Tier1/v1"

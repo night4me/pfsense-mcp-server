@@ -67,6 +67,7 @@ _EXPECTED_PUBLIC_SURFACE = {
     "PLAN_DIGEST_SCHEMA_VERSION",
     "compute_plan_digest",
     "verify_plan_digest",
+    "evidence_fingerprint_payload",
 }
 
 
