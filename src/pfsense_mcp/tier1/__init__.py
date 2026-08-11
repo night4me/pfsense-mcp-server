@@ -15,6 +15,12 @@ from .contract import ProtectedArtifact, RecoveryContract, derive_idempotency_ke
 from .crypto import ArtifactAlgorithm, ArtifactRole, build_nonce, decrypt_artifact, encrypt_artifact
 from .key_lifecycle import KeyPurpose, KeyRecord, NonceCounter, RotationReport, load_key_material, rotate_key
 from .policy import INACTIVE_TIER1_POLICY, MutationPolicy, MutationRule
+from .prepared_execution_intent import (
+    PREPARED_EXECUTION_INTENT_SCHEMA_VERSION,
+    PreparedExecutionIntentV1,
+    compute_execution_intent_digest,
+    prepared_execution_intent_payload_of,
+)
 from .production_store import (
     PRODUCTION_STORE_ID,
     ProductionStoreConfig,
@@ -31,6 +37,7 @@ from .store import SqliteRecoveryContractStore
 __all__ = [
     "INACTIVE_TIER1_POLICY",
     "OUTCOME_TARGET_STATE",
+    "PREPARED_EXECUTION_INTENT_SCHEMA_VERSION",
     "PRODUCTION_STORE_ID",
     "AnchorProvisioningStatus",
     "AntiRollbackAnchor",
@@ -48,6 +55,7 @@ __all__ = [
     "MutationRule",
     "NonceCounter",
     "PinnedAuthority",
+    "PreparedExecutionIntentV1",
     "ProductionStoreConfig",
     "ProtectedArtifact",
     "ProvisioningRecord",
@@ -64,6 +72,7 @@ __all__ = [
     "TpmHostWitnessAnchor",
     "build_nonce",
     "canonical_json",
+    "compute_execution_intent_digest",
     "decrypt_artifact",
     "derive_idempotency_key",
     "digest_value",
@@ -74,6 +83,7 @@ __all__ = [
     "load_key_material",
     "load_production_store_config",
     "open_production_store",
+    "prepared_execution_intent_payload_of",
     "provision_production_anchor_baseline",
     "rotate_key",
 ]

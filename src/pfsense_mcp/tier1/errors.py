@@ -86,3 +86,7 @@ class AuthorizationConsumptionError(Tier1Error):
     verification. Never raised for an ordinary, honest replay attempt
     (see AuthorizationConsumptionStore.try_consume(), which returns
     False for that case instead)."""
+
+
+class PreparedExecutionIntentError(Tier1Error):
+    """A prepared execution intent is structurally invalid or unsupported."""

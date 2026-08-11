@@ -53,6 +53,12 @@ class DigestPurpose(str, Enum):
     #: "Destructive operations" section -- never a boolean flag on the
     #: routine artifact. Additive only.
     DEPROVISION_AUTHORIZATION = "deprovision-authorization"
+    #: ADR-025 Slice B1 -- identifies one complete, versioned prepared
+    #: execution/recovery tuple. The prepared-execution-intent module is
+    #: the sole semantic owner and sole caller. Distinct from the narrower
+    #: INTENT, TARGET_*, SNAPSHOT, IDEMPOTENCY, PLAN, and authorization
+    #: domains; none of those digests can be substituted for this one.
+    EXECUTION_INTENT = "execution-intent"
 
 
 _DOMAIN_PREFIX = "pfSense-MCP/Tier1/v1"

@@ -5,6 +5,36 @@
 - **Scope:** Architecture only. This ADR authorizes no schema, code, test,
   production-construction, MCP, capability, or WRITE change.
 
+## Implementation status
+
+**Slice B1 — prepared execution-intent model and canonical digest — implemented
+(2026-08-11), under a fixed owner scope.** New inert module
+`src/pfsense_mcp/tier1/prepared_execution_intent.py` defines the frozen,
+explicitly versioned `PreparedExecutionIntentV1`, its sole canonical payload
+function, and `compute_execution_intent_digest()`. The existing canonical
+owner gained only `DigestPurpose.EXECUTION_INTENT`; no second JSON/hash path was
+introduced.
+
+The B1 semantic fields are schema version, WRITE capability, endpoint symbol,
+mutating HTTP method, adapter-semantics version, resource-level natural target,
+exact target precondition, full normalized mutation intent, exact rollback
+snapshot, and rollback-plan version. The four canonical values are deeply
+frozen after validation and exposed only as defensive copies. Adapter version
+plus normalized intent owns request/post-condition interpretation, so a second
+expected-post-condition description would be duplicative. Generated IDs,
+lifecycle state, expiry, authorization/plan/step provenance, digests of fields,
+confirmation, and appliance identity are deliberately absent.
+
+The digest domain is the existing framed Tier 1 v1 prefix plus the new
+`execution-intent` purpose and fixed `PreparedExecutionIntentV1` context. The
+schema version also participates in the payload. Unsupported versions fail
+closed; there is no V0/legacy inference.
+
+B1 remains synthetic and production-unreachable. It does not implement B2's
+PlanAuthorization v2 binding, B3's preparer, B4's RecoveryContract provenance,
+B5's freshness composition, or B6/E3. ADR-025 remains Proposed; public MCP
+remains 42 READ / 0 WRITE and WRITE remains 0/3 active.
+
 ## Context
 
 ADR-022 defines `Plan → Authorize → Execute → Verify`. ADR-024 Slice E1
