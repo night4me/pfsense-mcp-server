@@ -677,7 +677,9 @@ migration plan before implementation.
 - Appliance-level target identity and its privacy/lifecycle policy.
 - DeprovisionAuthorization verification and destructive-target binding.
 - Two-phase authorization consumption.
-- Concrete capability adapter/preparer design for the first WRITE candidate.
+- Concrete capability adapter/preparer implementation. ADR-026 now specifies
+  the Proposed, lab-gated firewall-alias description-only semantic unit; its
+  empirical evidence and owner decisions remain prerequisites to B3b.
 - Numeric authorization/contract expiry policy.
 - Production construction, MCP WRITE registration, allow-list population, and
   all three WRITE activation milestones.
@@ -831,3 +833,4 @@ legacy ineligibility explicit and keeps the appliance-identity gap visible.
 - [Execution Authorization Boundary](../EXECUTION_AUTHORIZATION_BOUNDARY.md)
 - [Tier 1 Architecture](../TIER1_ARCHITECTURE.md)
 - [Codex Takeover](../CODEX_TAKEOVER.md)
+- [ADR-026: First WRITE capability adapter semantic unit](ADR-026-first-write-capability-adapter.md)

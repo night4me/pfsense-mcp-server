@@ -121,6 +121,7 @@ nav:
           - ADR-023 Authorization-verification boundary: adr/ADR-023-authorization-verification-boundary.md
           - ADR-024 Execution-authorization coordination: adr/ADR-024-execution-authorization-coordination.md
           - ADR-025 Authorization-to-RecoveryContract binding: adr/ADR-025-authorization-recovery-contract-binding.md
+          - ADR-026 First WRITE capability adapter: adr/ADR-026-first-write-capability-adapter.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

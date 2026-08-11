@@ -31,6 +31,7 @@ silently rewrite earlier context.
 | [023](ADR-023-authorization-verification-boundary.md) | Authorization-verification boundary (`ADR-022` Phase D) | Proposed (architecture) — owner decisions made and Phase D implemented under them; not a full `ADR-021`/`ADR-022`-style acceptance |
 | [024](ADR-024-execution-authorization-coordination.md) | Execution-authorization coordination boundary (`ADR-022` Phase E/F/G territory) | Proposed (architecture) — Slice E1 (freshness primitive) and Slice E2 (coordinator skeleton through one-time consumption) separately authorized and implemented; Slice E3 and full execution wiring still unauthorized, unimplemented |
 | [025](ADR-025-authorization-recovery-contract-binding.md) | Authorization-to-RecoveryContract binding | Proposed (architecture) — designs the missing signed plan/step-to-execution-intent binding; no implementation or WRITE activation authorized |
+| [026](ADR-026-first-write-capability-adapter.md) | First WRITE capability adapter semantic unit | Proposed (architecture/evidence) — specifies the lab-gated firewall-alias description-only candidate; no adapter, endpoint, live mutation, or WRITE activation authorized |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
