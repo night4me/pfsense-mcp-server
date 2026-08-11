@@ -74,7 +74,26 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # (`DigestPurpose`/`canonical_json`) -- no store/witness/confirmation/
     # contract access. See tests/test_security_authorization_isolation.py
     # for the matching stronger, dedicated tests.
-    exempt = {"tier1_anchor_check.py", "security_discovery.py", "security_plan_digest.py", "security_authorization.py"}
+    #
+    # security_authorization_verifier.py is the fifth such exception
+    # (2026-08-11, ADR-022 Phase D: pure PlanAuthorization signature/
+    # expiry/step-scope verification only). The only pfsense_mcp.tier1
+    # import here is `ed25519_authority.PinnedAuthoritySet` -- the same,
+    # already-reviewed pinned-authority verification mechanics
+    # `confirmation_providers.py`/`reconciliation_providers.py` already
+    # reuse, not a new cryptographic primitive. No store/contract/
+    # executor/state-machine access. See
+    # tests/test_security_authorization_verifier_isolation.py for the
+    # matching stronger, dedicated tests, including that this is the
+    # *only* pfsense_mcp.tier1 submodule this file ever imports and that
+    # no production module ever imports this file.
+    exempt = {
+        "tier1_anchor_check.py",
+        "security_discovery.py",
+        "security_plan_digest.py",
+        "security_authorization.py",
+        "security_authorization_verifier.py",
+    }
     production = ROOT / "src/pfsense_mcp"
     offenders = [
         path.relative_to(ROOT).as_posix()

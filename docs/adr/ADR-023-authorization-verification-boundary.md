@@ -1,9 +1,17 @@
 # ADR-023: Authorization-verification boundary (`ADR-022` Phase D)
 
-- **Status:** Proposed — architecture/planning only. No code, no
-  storage schema, no MCP tool, no runtime authorization consumption.
-  Does not authorize implementation of any kind.
-- **Date:** 2026-08-11
+- **Status:** Proposed (architecture) — the owner made explicit
+  decisions on this document's two previously-open questions and
+  authorized Phase D implementation under a named hard scope (see
+  "Owner decisions" below); Phase D is now implemented under that
+  authorization (see "Implementation status" below). This is **not**
+  the same as the `ADR-021`/`ADR-022`-style full acceptance of this
+  document's entire text ("I accept ADR-XXX as the architectural
+  design") — no such statement was given, so the Status line is not
+  changed to "Accepted." No MCP tool, no runtime authorization
+  consumption of a *real* WRITE path, no execution wiring exists.
+- **Date:** 2026-08-11 (proposed); owner decisions and Phase D
+  implementation same day.
 
 ## Context
 
@@ -76,6 +84,194 @@ from "what an owner has authorized."
   Phase D is step 3. Step 4 (freshness) is `ADR-022`'s own Phase E,
   explicitly a separate phase — this document treats that boundary as
   already decided and does not reopen it (see "Scope" below).
+
+## Owner decisions (2026-08-11)
+
+Made explicitly, in response to this document's own "requires an
+explicit owner/architecture decision" list (see that section below,
+left unchanged as the historical record of what was asked):
+
+**1. Authorization consumption / replay tracking — Option A is
+resolved out; a dedicated table is required.** "Use explicit one-time
+consumption semantics backed by persistent atomic state. Do not rely on
+short expiry alone as the replay defense [Option C, rejected]. Use a
+dedicated authorization-consumption persistence structure/table rather
+than extending or overloading the existing Recovery Contract
+`contracts` table [Option A, rejected as stated — a *new*, separate
+structure is required, not an extension of the existing store].
+Authorization consumption is a separate security domain with its own
+lifecycle and invariants. The persistence primitive must support an
+atomic compare-and-set / insert-once style transition so two concurrent
+consumers cannot both successfully consume the same authorization."
+This resolves the option this document itself left as a non-binding
+lean toward Option A — the owner chose the more strongly separated
+Option B shape instead, explicitly, not left to inference.
+
+**2. Pinned-authority configuration — reuse the mechanism, keep the
+policy separable.** "Reuse the existing `PinnedAuthoritySet` trust
+mechanism and its established cryptographic verification patterns. Do
+not duplicate or fork the underlying pinned-authority verification
+implementation. However, keep authorization trust policy logically
+separable from confirmation/reconciliation authority roles... If the
+current configuration model cannot express that distinction safely
+without broadening scope, stop at the narrowest compatible abstraction
+and document the remaining configuration decision rather than
+redesigning the whole trust subsystem." Resolved during implementation:
+`PinnedAuthoritySet` is already, by construction, a per-instance value
+(no global/shared state) — accepting one as an explicit function
+parameter (never importing or referencing `confirmation_providers.py`/
+`reconciliation_providers.py`'s own instances) already satisfies
+separability without any new abstraction. The remaining configuration
+question (one shared pinned-authority table across all three artifact
+types, or a second `PlanAuthorization`-specific one) remains
+undecided, deliberately, as a future activation-time decision — see
+`security_authorization_verifier.py`'s own "Trust-policy separability"
+docstring section.
+
+**3. Phase boundary — Phase D only, hard-scoped.** "Authorize Phase D
+alone. Do not combine Phase D implementation with Phase E." A full,
+itemized hard-scope list (primitives to implement, required invariants,
+design constraints, and an explicit list of adversarial cases) was
+given and is treated as authoritative for what Phase D actually ships —
+see "Implementation status" below for the exact mapping from that list
+to what was built.
+
+## Implementation status
+
+**Phase D — pure `PlanAuthorization` verification + durable one-time
+consumption tracking — implemented (2026-08-11).** Still no runtime
+effect connected to anything that mutates anything: no MCP tool, no
+freshness re-check, no `RecoveryContract` creation, no execution
+coordinator, no wiring into `MutationExecutor`/`tier1/state_machine.py`/
+`WriteApiClient`/`WriteEndpoints`/pfSense/Proxmox/TPM/witness state
+anywhere.
+
+### What Phase D implements
+
+- **`src/pfsense_mcp/security_authorization.py`** (modified, additive
+  only) — one new pure function, `plan_authorization_payload_of(authz)`,
+  reconstructing the exact `PlanAuthorizationPayload` `authz.proof` was
+  computed over, directly from `authz`'s own already-validated fields
+  (never from a `SecurityPosturePlan`). No behavior change to any
+  existing function; no schema change.
+- **`src/pfsense_mcp/security_authorization_verifier.py`** (new) --
+  three independent, pure functions, deliberately never composed into
+  one combined check (per the owner's "prefer narrow new types/
+  functions" instruction):
+  - `verify_plan_authorization_signature(authz, authorities: PinnedAuthoritySet) -> bool`
+    -- mirrors `Ed25519ConfirmationVerifier.verify()` exactly: checks
+    `algorithm`, then delegates entirely to
+    `PinnedAuthoritySet.verify_signature()` (reused unchanged, not
+    duplicated or forked). Fails closed for an unknown/inactive/
+    unconfigured authority via that existing, already-tested mechanism.
+  - `plan_authorization_is_current(authz, *, now: datetime) -> bool` --
+    a pure `now < authz.expires_at` comparison against a caller-supplied,
+    timezone-aware UTC clock value (never reads a real clock itself);
+    the boundary is exclusive (`now == expires_at` is already expired),
+    matching `RecoveryContract.is_expired()`'s existing convention.
+    Deliberately does not check `now` against `issued_at` -- no such
+    concept exists in the accepted `PlanAuthorization` schema, and the
+    owner's own instruction warned against inventing freshness policy
+    beyond the defined contract.
+  - `plan_authorization_authorizes_step(authz, *, plan_digest: str, step_id: str) -> bool`
+    -- requires both an exact, constant-time `plan_digest` match and
+    exact `step_id` membership in `authorized_step_ids`; no wildcard,
+    prefix, or subset-expansion path exists.
+  - Fifth, narrow `pfsense_mcp.tier1` isolation exemption (alongside
+    `tier1_anchor_check.py`, `security_discovery.py`,
+    `security_plan_digest.py`, `security_authorization.py`): the only
+    import from `pfsense_mcp.tier1` here is `ed25519_authority.PinnedAuthoritySet`.
+- **`src/pfsense_mcp/tier1/authorization_consumption_store.py`** (new)
+  -- `AuthorizationConsumptionStore` (a small `Protocol`, one method:
+  `try_consume(authorization_id: str) -> bool`) and
+  `SqliteAuthorizationConsumptionStore` (the concrete, file-backed
+  implementation), per the owner's decision 1. **A wholly separate
+  file/store/schema from `SqliteRecoveryContractStore`** -- shares no
+  table, no schema version, no code path with `store.py`. Minimal,
+  two-table schema (`metadata` for schema-version/store-identity
+  self-check; `consumed_authorizations(authorization_id PRIMARY KEY,
+  consumed_at, mac)`). Atomicity via the identical `BEGIN IMMEDIATE` +
+  unique-constraint discipline `SqliteRecoveryContractStore.create()`
+  already uses. Each row HMAC-authenticated (reusing
+  `tier1.canonical.frame_str`/`frame_bytes`, not a new framing scheme);
+  a tampered/corrupted existing row fails closed
+  (`AuthorizationConsumptionError`) on a replay attempt rather than
+  being silently trusted either way. Path-safety checks
+  (owner-only parent/file, no symlinks) mirror `store.py`'s own
+  `_prepare_path()` exactly, duplicated rather than extracted into a
+  shared helper (deliberately -- `store.py` itself was not touched).
+  No background cleanup, retention policy, or administrative tooling
+  was added, per the owner's explicit instruction.
+- **`src/pfsense_mcp/tier1/errors.py`** (modified, additive only) --
+  one new exception, `AuthorizationConsumptionError(Tier1Error)`.
+
+### What Phase D deliberately does not implement
+
+Per the owner's hard-scope list, unchanged: `DeprovisionAuthorization`
+verification, real `target_identity_digest` construction, freshness/
+TOCTOU handling (Phase E), any execution coordinator, any MCP tool, any
+wiring into `MutationExecutor`/the Tier 1 state machine/`WriteApiClient`/
+`WriteEndpoints`, background cleanup/retention/migration tooling, and
+any `execute()`/`apply()`/`consume_and_execute()`-shaped bearer-token
+API. `security_authorization_verifier.py` and
+`authorization_consumption_store.py` are never imported by any
+production module other than their own tests (proved by dedicated AST
+isolation tests).
+
+### Tests
+
+`tests/test_security_authorization_verifier.py` (23 tests): valid/
+wrong-key/unknown-authority/inactive-authority/invalid-signature/
+modified-signed-field/algorithm-mismatch/differently-scoped-payload
+signature cases; expiry before/at-boundary/after; naive and non-UTC
+`now` rejection; the deliberate "not-yet-valid" non-check documented and
+tested; expiry-independent-of-signature-validity; correct/wrong
+plan_digest; unauthorized/missing/wildcard/prefix step-id cases; a
+same-named-step-different-plan case; non-string-input rejection.
+`tests/test_security_authorization_verifier_isolation.py` (9 tests):
+only `ed25519_authority` imported from `pfsense_mcp.tier1`; no mutating/
+IO-shaped calls; no `RecoveryContract`/`MutationExecutor`/state-machine
+references; no `execute`/`apply`/`consume`-shaped method; exact public
+surface; no production importer. `tests/tier1/test_authorization_consumption_store.py`
+(21 tests): construction safety (short key, invalid store ID, non-UTC
+clock, owner-only file mode); first-consumption success; replay
+failure; repeated-replay stability; independent IDs; store-reopen
+preserving consumed state; store-reopen rejecting a mismatched
+`store_id`; an 8-thread concurrent-race test asserting exactly one
+success; an 8-thread concurrent-distinct-IDs test asserting all
+succeed; malformed/empty/non-string `authorization_id` rejection;
+tampered-MAC and tampered-`consumed_at` fail-closed cases; simulated
+database-failure fail-closed case; malformed-schema-on-reopen
+fail-closed case; no execution-shaped method present.
+`tests/tier1/test_authorization_consumption_store_isolation.py` (4
+tests): exact public surface, no execution-shaped method, no production
+importer. `tests/test_security_authorization_phase_d_integration.py`
+(3 tests, the only place the verifier and the consumption store are
+used together, deliberately only to prove independence): verifying a
+signature any number of times never itself consumes anything;
+consuming an `authorization_id` has zero effect on a *different*
+artifact's signature validity; both gates independently pass/fail in
+every combination.
+
+`tests/tier1/test_isolation.py`'s exemption list now names
+`security_authorization_verifier.py` as the fifth, narrow exception.
+`tests/test_security_authorization_isolation.py`'s
+`test_no_production_module_imports_security_authorization` now names
+`security_authorization_verifier.py` as the one reviewed exception to
+"no production module imports `security_authorization.py`" (a pure
+verifier, never a signer).
+
+### Verification / validation
+
+Full pytest 2214 passed (up from 2154 -- 60 new tests), `make quick`
+11/11, `make validate` 20/20 (`public_contract: OK (42 tools)`,
+`write_allow_list_check: OK`, `write_capability_check: OK (0 of 3)`),
+`mkdocs build --strict` exit 0, `make package-check` OK,
+`scripts/security_scan.py` clean. Independent post-implementation grep
+across both new production files confirmed every reference to
+`MutationExecutor`/`RecoveryState`/`state_machine`/`RecoveryContract`/
+`WriteApiClient`/`WriteEndpoints` is inside a comment/docstring
+explaining what is *not* imported -- never an actual import or call.
 
 ## Terminology (new for this document)
 
@@ -601,7 +797,8 @@ Phase D only and does not alter the sequence:
 - Phase C (authorization data model + signing) — implemented, pushed,
   one corrective fix applied and pushed.
 - **Phase D (this document's subject) — authorization verification, no
-  execution — proposed, not yet authorized for implementation.**
+  execution — implemented, pushed, under the owner's 2026-08-11 scope
+  decisions.**
 - Phase E — freshness/precondition engine.
 - Phase F — execution coordinator, `CONFIGURATION`-class mechanism only.
 - Phase G — execution coordinator around `RecoveryContract`/

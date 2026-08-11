@@ -224,6 +224,21 @@ repository including the workflow itself. No MCP tool is added either --
 `AuthorizationRequest`-shaped MCP exposure is explicitly out of Phase C's
 scope (ADR-022 "Future implementation phases", Phase C's own description).
 
+## Phase D reuse: `plan_authorization_payload_of()`
+
+ADR-022 Phase D (authorization *verification*, `security_authorization_verifier.py`)
+needs to recompute `plan_authorization_signing_payload()` from an
+already-signed `PlanAuthorization` to check its `proof` -- never trusting
+a caller-supplied payload as its own recomputation input, the same
+discipline `verify_plan_digest()` already established in Phase B.
+`plan_authorization_payload_of()` is the one, pure, additive function
+Phase C exposes for that reuse: it reconstructs a `PlanAuthorizationPayload`
+directly from `authz`'s own fields (dropping only `proof`), never from a
+`SecurityPosturePlan`. This module still performs no verification itself
+-- it only makes the artifact's own already-signed content
+re-derivable by a future verifier without that verifier needing to
+duplicate `PlanAuthorization`'s field list a second time.
+
 ## Isolation
 
 Fourth, narrow, explicit exception (alongside `tier1_anchor_check.py`,
@@ -263,6 +278,7 @@ __all__ = [
     "build_deprovision_authorization_payload",
     "build_plan_authorization_payload",
     "deprovision_authorization_signing_payload",
+    "plan_authorization_payload_of",
     "plan_authorization_signing_payload",
     "sign_deprovision_authorization",
     "sign_plan_authorization",
@@ -565,6 +581,31 @@ class PlanAuthorization:
             raise SecurityAuthorizationError("PlanAuthorization risk_class is invalid.")
         if not isinstance(self.evidence_fingerprint, AuthorizationEvidenceFingerprint):
             raise SecurityAuthorizationError("PlanAuthorization evidence_fingerprint is invalid.")
+
+
+def plan_authorization_payload_of(authz: PlanAuthorization) -> PlanAuthorizationPayload:
+    """The exact `PlanAuthorizationPayload` `authz.proof` was computed
+    over -- every field of `authz` except `proof` itself, reconstructed
+    directly from the artifact's own already-validated fields, never
+    re-derived from a `SecurityPosturePlan` (this function takes no such
+    argument and performs no lookup). This is the reverse of
+    `sign_plan_authorization()`: given a signed artifact, recover the
+    payload a verifier must recompute `plan_authorization_signing_payload()`
+    from, so it never has to trust a caller-supplied payload directly.
+    Pure; no I/O."""
+
+    return PlanAuthorizationPayload(
+        schema_version=authz.schema_version,
+        authorization_id=authz.authorization_id,
+        plan_digest=authz.plan_digest,
+        authorized_step_ids=authz.authorized_step_ids,
+        authority_id=authz.authority_id,
+        algorithm=authz.algorithm,
+        issued_at=authz.issued_at,
+        expires_at=authz.expires_at,
+        risk_class=authz.risk_class,
+        evidence_fingerprint=authz.evidence_fingerprint,
+    )
 
 
 def sign_plan_authorization(payload: PlanAuthorizationPayload, private_key: Ed25519PrivateKey) -> PlanAuthorization:

@@ -77,3 +77,12 @@ class Tier1ConfigurationError(Tier1Error):
 
 class RateLimitExceededError(Tier1Error):
     """A capability/target/global rate or blast-radius limit would be exceeded."""
+
+
+class AuthorizationConsumptionError(Tier1Error):
+    """A PlanAuthorization consumption record could not be safely
+    written or read -- e.g. a malformed authorization_id, an unsafe
+    store path, or a stored consumption row that failed integrity
+    verification. Never raised for an ordinary, honest replay attempt
+    (see AuthorizationConsumptionStore.try_consume(), which returns
+    False for that case instead)."""

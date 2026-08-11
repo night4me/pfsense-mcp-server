@@ -9,14 +9,17 @@ threat-model findings, and the future-phase list. **Acceptance was
 architectural only and did not itself authorize implementation** —
 `ADR-022`'s own Phase B (canonical `PlanDigest` computation, plan
 identity only, still no authorization artifact, no verification, no
-execution) and Phase C (`PlanAuthorization`/`DeprovisionAuthorization`
+execution), Phase C (`PlanAuthorization`/`DeprovisionAuthorization`
 data models, canonicalization, signature construction on the
-signing/operator side only, still no verification, no execution) were
+signing/operator side only, still no verification, no execution), and
+Phase D (pure signature/expiry/plan-step-scope verification plus
+durable one-time consumption tracking, still no freshness re-check, no
+execution, per the owner's `ADR-023`-recorded scope decisions) were
 each separately authorized and implemented the same day; see
-"Implementation status" below. Phase D onward (authorization
-*verification*, execution coordinators, MCP WRITE exposure) remains
+"Implementation status" below. Phase E onward (freshness/precondition
+engine, execution coordinators, MCP WRITE exposure) remains
 separate, future, explicitly-scoped authorizations neither `ADR-022`'s
-acceptance nor Phase B/C's implementation grants. This document adds two
+acceptance nor Phase B/C/D's implementation grants. This document adds two
 things the ADR does not carry: a scoping/affected-code inventory and a
 running "implementation status" record, mirroring
 [`SECURITY_POSTURE_PROVISIONING.md`](SECURITY_POSTURE_PROVISIONING.md)'s
@@ -52,6 +55,35 @@ E (`write_protected`) are exactly the cases this ADR's three-mechanism
 scope finding (hardware-class vs. activation-class) was written for.
 
 ## Implementation status
+
+**Phase D — pure `PlanAuthorization` verification (signature, expiry,
+plan/step scope) plus durable one-time `authorization_id` consumption
+tracking — implemented (2026-08-11), under the owner's explicit
+scope decisions recorded in [`ADR-023`](adr/ADR-023-authorization-verification-boundary.md)'s
+own "Owner decisions" section.** Still no runtime effect connected to
+anything that mutates anything: no freshness re-check (`ADR-022`'s own
+Phase E), no `RecoveryContract` creation, no execution coordinator, no
+MCP tool, no wiring into `MutationExecutor`/`tier1/state_machine.py`/
+`WriteApiClient`/`WriteEndpoints`/pfSense/Proxmox/TPM/witness state.
+`ADR-021`/`ADR-022` remain unmodified. See `ADR-023`'s own
+"Implementation status" section for the complete schema/API detail;
+not restated here in full to avoid two documents drifting out of sync
+-- summary only:
+
+- `src/pfsense_mcp/security_authorization.py` (modified, additive) --
+  new `plan_authorization_payload_of()`.
+- `src/pfsense_mcp/security_authorization_verifier.py` (new) --
+  `verify_plan_authorization_signature()`, `plan_authorization_is_current()`,
+  `plan_authorization_authorizes_step()`. Fifth, narrow
+  `pfsense_mcp.tier1` isolation exemption (only `ed25519_authority`).
+- `src/pfsense_mcp/tier1/authorization_consumption_store.py` (new) --
+  `AuthorizationConsumptionStore` Protocol + `SqliteAuthorizationConsumptionStore`,
+  a wholly separate, minimal, HMAC-authenticated, atomic-insert-once
+  store -- never extends `SqliteRecoveryContractStore`.
+- `src/pfsense_mcp/tier1/errors.py` (modified, additive) -- new
+  `AuthorizationConsumptionError`.
+- 60 new tests (23 verifier + 9 verifier-isolation + 21 store + 4
+  store-isolation + 3 cross-module independence).
 
 **Phase C — `PlanAuthorization`/`DeprovisionAuthorization` data models,
 canonicalization, and signature construction — implemented
@@ -157,15 +189,16 @@ public surface; no production importer anywhere in the repository).
 `tests/tier1/test_isolation.py`'s exemption list now names
 `security_authorization.py` as the fourth, narrow exception.
 
-Future phases (see `ADR-022`'s own "Future implementation phases" for
-the recommended sequence, starting at Phase D — authorization
-*verification*, still no execution) should record their own
-"implemented" entry here when and if separately authorized and built.
-[`ADR-023`](adr/ADR-023-authorization-verification-boundary.md)
-(Proposed, 2026-08-11) is a planning-only pass proposing Phase D's
-scope, missing primitives, and open architectural questions — it
-authorizes nothing and should be updated in place, not restated here,
-if and when Phase D is separately authorized.
+**Phase D — implemented the same day** (pure `PlanAuthorization`
+signature/expiry/plan-step-scope verification plus durable one-time
+consumption tracking); see this document's own "Implementation status"
+section above and
+[`ADR-023`](adr/ADR-023-authorization-verification-boundary.md)'s
+"Implementation status" section for the complete detail. Future phases
+(see `ADR-022`'s own "Future implementation phases" for the recommended
+sequence, starting at Phase E — the freshness/precondition engine,
+still out of scope) should record their own "implemented" entry here
+when and if separately authorized and built.
 
 **Phase B — canonical `PlanDigest` computation — implemented
 (2026-08-11).** Plan identity only. No `PlanAuthorization`/
@@ -294,20 +327,25 @@ confirmed byte-identical before/after (SHA-256 unchanged).
 
 ## Affected code areas (identified for future scoping — none modified by this document)
 
-| Area | Current state (verified by reading; Phase B/C changes noted explicitly) | Eventual relevance |
+| Area | Current state (verified by reading; Phase B/C/D changes noted explicitly) | Eventual relevance |
 |---|---|---|
-| `src/pfsense_mcp/security_plan.py` | Unmodified by Phase B/C — `SecurityPosturePlan`/`PlanStep` dataclasses, pure computation, no `pfsense_mcp.tier1` import | `security_plan_digest.py`/`security_authorization.py` (Phase B/C, implemented) are new, separate, read-only modules operating *on* this module's output — no change to this file's own shipped API/behavior |
+| `src/pfsense_mcp/security_plan.py` | Unmodified by Phase B/C/D — `SecurityPosturePlan`/`PlanStep` dataclasses, pure computation, no `pfsense_mcp.tier1` import | `security_plan_digest.py`/`security_authorization.py` (Phase B/C, implemented) are new, separate, read-only modules operating *on* this module's output — no change to this file's own shipped API/behavior |
 | `src/pfsense_mcp/security_plan_digest.py` | **Phase B implemented (2026-08-11); modified for Phase C (2026-08-11)** — `compute_plan_digest()`/`verify_plan_digest()` unchanged; `_evidence_fingerprint()` made public as `evidence_fingerprint_payload()` so Phase C reuses it | Complete for Phase B's own scope; `security_authorization.py` (Phase C, implemented) calls `compute_plan_digest()`/`evidence_fingerprint_payload()`, never reimplements them |
-| `src/pfsense_mcp/security_authorization.py` | **New, Phase C implemented (2026-08-11)** — `PlanAuthorization`/`DeprovisionAuthorization` data models, canonical signing payloads, `sign_plan_authorization()`/`sign_deprovision_authorization()`, pure over caller-supplied key material, fourth narrow `pfsense_mcp.tier1` isolation exemption (only imports `canonical`) | Complete for Phase C's own scope; a future verifier (Phase D) would independently recompute `plan_authorization_signing_payload()`/`deprovision_authorization_signing_payload()`, never reimplement the canonical payload shape |
-| `src/pfsense_mcp/tier1/canonical.py` | **Modified, Phase B implemented; extended for Phase C** — `DigestPurpose` enum gained `PLAN` (Phase B), then `PLAN_AUTHORIZATION`/`DEPROVISION_AUTHORIZATION` (Phase C; now 10 members), additive only, no existing member's meaning changed | Phase D (verification) reuses these same purpose values; no new member needed until a genuinely new artifact type exists |
-| `src/pfsense_mcp/tier1/confirmation.py` | Unmodified — `ConfirmationEvidence`, `ConfirmationVerifier` Protocol, Ed25519 mechanism (`ADR-012`) | `PlanAuthorization` (Phase C, implemented) reuses this exact cryptographic mechanism (detached Ed25519, `authority_id`-based rotation) with its own digest-purpose domain separator — not a new cryptographic primitive; `confirmation.py` itself is not imported by `security_authorization.py` |
+| `src/pfsense_mcp/security_authorization.py` | **Phase C implemented (2026-08-11); modified for Phase D (2026-08-11)** — `PlanAuthorization`/`DeprovisionAuthorization` data models, canonical signing payloads, `sign_plan_authorization()`/`sign_deprovision_authorization()` unchanged; new `plan_authorization_payload_of()` added so Phase D's verifier reuses the exact payload reconstruction rather than re-deriving it | Complete for Phase C's own scope; `security_authorization_verifier.py` (Phase D, implemented) calls `plan_authorization_payload_of()`/`plan_authorization_signing_payload()`, never reimplements them |
+| `src/pfsense_mcp/security_authorization_verifier.py` | **New, Phase D implemented (2026-08-11)** — `verify_plan_authorization_signature()`, `plan_authorization_is_current()`, `plan_authorization_authorizes_step()`, pure, three independent functions never composed. Fifth narrow `pfsense_mcp.tier1` isolation exemption (only imports `ed25519_authority`) | Complete for Phase D's own verification scope; a future Phase E freshness engine and any eventual WRITE-tool caller would call these directly, never reimplement signature/expiry/scope checking |
+| `src/pfsense_mcp/tier1/authorization_consumption_store.py` | **New, Phase D implemented (2026-08-11)** — `AuthorizationConsumptionStore` Protocol + `SqliteAuthorizationConsumptionStore`, a wholly separate, minimal, HMAC-authenticated, atomic-insert-once store; never extends `SqliteRecoveryContractStore`, per the owner's explicit decision | Complete for Phase D's own consumption-tracking scope; a future WRITE-tool caller (Phase H) would call `try_consume()` directly as one of several required gates, never reimplement replay tracking |
+| `src/pfsense_mcp/tier1/canonical.py` | **Modified, Phase B implemented; extended for Phase C** — `DigestPurpose` enum gained `PLAN` (Phase B), then `PLAN_AUTHORIZATION`/`DEPROVISION_AUTHORIZATION` (Phase C; now 10 members), additive only, no existing member's meaning changed; unmodified by Phase D | Phase D (verification, implemented) reuses these same purpose values via `plan_authorization_signing_payload()`; no new member needed |
+| `src/pfsense_mcp/tier1/confirmation.py` | Unmodified — `ConfirmationEvidence`, `ConfirmationVerifier` Protocol, Ed25519 mechanism (`ADR-012`) | `PlanAuthorization` (Phase C, implemented) reuses this exact cryptographic mechanism (detached Ed25519, `authority_id`-based rotation) with its own digest-purpose domain separator — not a new cryptographic primitive; `confirmation.py` itself is not imported by `security_authorization.py`/`security_authorization_verifier.py` |
+| `src/pfsense_mcp/tier1/ed25519_authority.py` | Unmodified — `PinnedAuthority`/`PinnedAuthoritySet` (`ADR-012`, reused twice already by confirmation/reconciliation) | `security_authorization_verifier.py` (Phase D, implemented) reuses this exact, already-reviewed mechanism as its sole `pfsense_mcp.tier1` dependency — no new cryptographic primitive |
 | `src/pfsense_mcp/tier1/reconciliation.py` | `ReconciliationEvidence`, four-outcome enum (`ADR-013`) | `NEEDS_RECONCILIATION` (this design's state) is a pass-through to this existing, unmodified mechanism for pfSense-API-class steps only |
-| `src/pfsense_mcp/tier1/contract.py`, `state_machine.py`, `executor.py` | `RecoveryContract`, closed `RecoveryState` machine, `MutationExecutor` (`ADR-006`/`014`) | Unaffected; `PlanAuthorization` becomes a precondition *for creating* a `RecoveryContract` for `ACTIVATION`-class steps only, per `ADR-022`'s "MCP WRITE boundary" ordering |
+| `src/pfsense_mcp/tier1/store.py` | Unmodified — `SqliteRecoveryContractStore` (`ADR-006`), the precedent `authorization_consumption_store.py`'s atomicity/integrity/path-safety discipline mirrors but never extends or shares a schema with | Unaffected; remains the sole persistence for `RecoveryContract` rows |
+| `src/pfsense_mcp/tier1/contract.py`, `state_machine.py`, `executor.py` | `RecoveryContract`, closed `RecoveryState` machine, `MutationExecutor` (`ADR-006`/`014`); unmodified by Phase D | Unaffected; `PlanAuthorization` becomes a precondition *for creating* a `RecoveryContract` for `ACTIVATION`-class steps only, per `ADR-022`'s "MCP WRITE boundary" ordering — that wiring remains unbuilt (Phase G) |
+| `src/pfsense_mcp/tier1/errors.py` | **Modified, Phase D implemented (2026-08-11)** — new `AuthorizationConsumptionError(Tier1Error)`, additive only | Used only by `authorization_consumption_store.py`'s own fail-closed paths |
 | `src/pfsense_mcp/tier1/rate_policy.py` | Store-backed counters, explicitly "not an authorization mechanism" (`ADR-015`) | Unaffected; remains a separate, later containment layer after authorization |
 | `src/pfsense_mcp/write_endpoints.py`, `write_api_client.py` | `WriteEndpoints` (zero entries), `dry_run()`/`execute()` | Unaffected; allow-listing remains its own, separately-governed gate (`WRITE_ENDPOINT_RISK_MATRIX.md`, `ADR-020`), independent of plan-level authorization |
 | `src/pfsense_mcp/tools/write/` | Empty, deliberately inert placeholder | The eventual home of any WRITE MCP tool that would enforce `ADR-022`'s "MCP WRITE boundary" ordering — nothing exists here yet |
 | `scripts/tier1_store_bootstrap.py`, `witness_daemon/`, `docs/tier1/specs/anti_rollback_tpm_host_witness.md` | Existing hardware-class provisioning tooling/spec | The hardware-class execution mechanism `ADR-022`'s "Scope" table names — reused, not reimplemented, once a hardware-class `PlanAuthorization` is ever built |
-| `tests/tier1/test_isolation.py` | **Modified, Phase B implemented; extended for Phase C** — exemption list now names `security_plan_digest.py` (third) and `security_authorization.py` (fourth); both only import `canonical` | A future authorization-verification module, if it needs to read (never construct) `RecoveryContract`/confirmation state, would need its own narrow, reviewed exemption — same discipline, not relaxed |
+| `tests/tier1/test_isolation.py` | **Modified, Phase B implemented; extended for Phase C and Phase D** — exemption list now names `security_plan_digest.py` (third), `security_authorization.py` (fourth), and `security_authorization_verifier.py` (fifth) | A future freshness-engine module (Phase E), if it needs to read (never construct) `RecoveryContract`/confirmation state, would need its own narrow, reviewed exemption — same discipline, not relaxed |
 | `docs/TIER1_ROADMAP.md` | Milestone 6 ("audit, authorization, and MCP surface design") now carries a small, additive cross-reference note pointing to `ADR-022` (applied 2026-08-11, resolving `ADR-022`'s original question 5) | Text itself still predates the three-mechanism finding in detail; the note directs a future implementer to `ADR-022` before treating Milestone 6's authorization text as covering all mutation classes |
 
 ## References

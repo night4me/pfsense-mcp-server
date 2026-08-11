@@ -104,6 +104,39 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   AST-based isolation), including cross-type signature non-verification,
   step-set widening-after-signing detection, and a no-I/O behavioral
   proof. Still 42 READ tools, 0 WRITE tools, `WriteEndpoints` empty,
+  WRITE 0/3. **A final adversarial pre-push review found and fixed one
+  real coercion-safety defect**: `PlanAuthorization`'s `risk_class`
+  validation used dict-membership alone, which a raw string equal to an
+  `AuthorizationLevel` member's value could satisfy without being that
+  enum type — fixed with an explicit `isinstance()` check matching this
+  codebase's own established `(str, Enum)`-field precedent, plus 7 more
+  regression/coverage tests (71 total).
+- ADR-022 Phase D implemented: `security_authorization_verifier.py`
+  adds pure `PlanAuthorization` verification —
+  `verify_plan_authorization_signature()` (mirrors
+  `Ed25519ConfirmationVerifier.verify()`, reusing
+  `PinnedAuthoritySet` unchanged, fifth narrow `pfsense_mcp.tier1`
+  isolation exemption), `plan_authorization_is_current()` (independent
+  expiry check, no freshness policy invented), and
+  `plan_authorization_authorizes_step()` (exact `plan_digest` +
+  `authorized_step_ids` binding, never a wildcard/prefix/subset match)
+  — three separate, never-composed primitives. New
+  `tier1/authorization_consumption_store.py` adds durable, one-time
+  `authorization_id` consumption tracking (`AuthorizationConsumptionStore`
+  Protocol + `SqliteAuthorizationConsumptionStore`), a wholly separate,
+  minimal, HMAC-authenticated store — never extends
+  `SqliteRecoveryContractStore`, atomic via the same `BEGIN IMMEDIATE`
+  + unique-constraint discipline that store already uses. **Signature
+  validity, expiry, and consumption are independently checked; none
+  implies another.** No freshness re-check (`ADR-022`'s own Phase E),
+  no `RecoveryContract` creation, no execution coordinator, no MCP
+  tool, no wiring into `MutationExecutor`/the Tier 1 state machine/
+  `WriteApiClient`/`WriteEndpoints`. 60 new tests (23 verifier + 9
+  verifier-isolation + 21 store + 4 store-isolation + 3 cross-module
+  independence proofs). See
+  `docs/adr/ADR-023-authorization-verification-boundary.md`'s "Owner
+  decisions"/"Implementation status" sections for the full design
+  record. Still 42 READ tools, 0 WRITE tools, `WriteEndpoints` empty,
   WRITE 0/3.
 
 ### Changed

@@ -76,6 +76,7 @@ _EXPECTED_PUBLIC_SURFACE = {
     "build_deprovision_authorization_payload",
     "build_plan_authorization_payload",
     "deprovision_authorization_signing_payload",
+    "plan_authorization_payload_of",
     "plan_authorization_signing_payload",
     "sign_deprovision_authorization",
     "sign_plan_authorization",
@@ -169,11 +170,20 @@ def test_no_production_module_imports_security_authorization():
     """No MCP tool, `security_cli.py`, or any other production
     request-handling module ever imports this module -- signing
     construction happens only on the signing/operator side, never inside
-    the MCP server's own process (module docstring "CLI boundary")."""
+    the MCP server's own process (module docstring "CLI boundary").
 
+    `security_authorization_verifier.py` is the one reviewed exception
+    (ADR-022 Phase D, 2026-08-11): a pure, read-only verifier that reads
+    `PlanAuthorization`'s own already-signed fields -- never signs,
+    never touches key material, never wired into any request-handling
+    path itself either (see
+    `tests/test_security_authorization_verifier_isolation.py`'s own
+    no-production-importer proof)."""
+
+    _ALLOWED_IMPORTERS = {"security_authorization_verifier.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
-        if path == MODULE_PATH:
+        if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:
             continue
         tree = _tree(path)
         for node in ast.walk(tree):
