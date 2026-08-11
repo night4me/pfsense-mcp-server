@@ -177,6 +177,21 @@ unaffected by this design phase — the wizard, if built, would provision
 toward an explicitly chosen combination's already-existing gates, not
 bypass or shortcut them.
 
+Two mutation-free CLI slices are implemented on top of this design:
+`pfsense-mcp-security discover` (current-state evidence) and
+`pfsense-mcp-security plan` (compares current evidence against an
+explicit target and generates an ordered, never-executed plan) — see
+`SECURITY_POSTURE_PROVISIONING.md`'s own implementation sections. The
+boundary between that planning layer and actually authorizing/executing
+one specific planned step — without turning target selection, plan
+generation, a stale plan, or an AI/MCP request into reusable or implicit
+mutation authority — is designed and **Accepted** (2026-08-11, owner) as
+its own separate architecture, **architectural acceptance only**:
+[ADR-022](adr/ADR-022-execution-authorization-boundary.md), companion
+spec [`EXECUTION_AUTHORIZATION_BOUNDARY.md`](EXECUTION_AUTHORIZATION_BOUNDARY.md).
+No authorization/execution code exists; building any part of it remains
+its own separate, future, explicitly-scoped authorization.
+
 ## WebGUI Evidence Layer (idea, not committed — independent of the security-posture work above)
 
 Working name: **WebGUI Evidence Layer**. Idea-stage future direction

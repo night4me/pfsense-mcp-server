@@ -82,6 +82,7 @@ nav:
       - Version-aware Official Guidance (design only, ADR-018): VERSION_AWARE_GUIDANCE.md
       - API surface, capability discovery and extension (design only, ADR-019): API_SURFACE_ARCHITECTURE.md
       - Security posture provisioning (design only, ADR-021): SECURITY_POSTURE_PROVISIONING.md
+      - Execution-authorization boundary (design only, ADR-022): EXECUTION_AUTHORIZATION_BOUNDARY.md
   - Tier 1 — future WRITE safety framework (inert):
       - Overview: TIER1_ARCHITECTURE.md
       - WRITE Tier 0 (inert infrastructure): WRITE_TIER0_SPEC.md
@@ -116,6 +117,7 @@ nav:
           - ADR-019 API surface, capability discovery and extension architecture: adr/ADR-019-api-surface-capability-discovery-and-extension-architecture.md
           - ADR-020 Milestone 0 first WRITE capability candidate: adr/ADR-020-milestone-0-first-write-capability-candidate.md
           - ADR-021 Security posture provisioning: adr/ADR-021-security-posture-provisioning.md
+          - ADR-022 Execution-authorization boundary: adr/ADR-022-execution-authorization-boundary.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

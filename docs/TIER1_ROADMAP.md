@@ -361,6 +361,15 @@ In-memory-only state must not be presented as crash-safe recovery.
 
 ## Milestone 6 — audit, authorization, and MCP surface design
 
+**Note (2026-08-11):** this milestone's own "authorization" text predates
+`ADR-021`'s planning layer and `ADR-022` (Accepted — execution-authorization
+boundary design; architectural acceptance only, no code). `ADR-022`
+found that `security_plan.py`'s mutation classes map onto three
+structurally different future execution mechanisms, only one of which
+(pfSense API mutations) is `RecoveryContract`-shaped the way this
+milestone's text below assumes — see `ADR-022` before implementing any
+part of this milestone.
+
 ### Work
 
 - Define caller/operator authorization appropriate to the local stdio trust

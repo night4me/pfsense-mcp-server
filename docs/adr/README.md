@@ -27,6 +27,7 @@ silently rewrite earlier context.
 | [019](ADR-019-api-surface-capability-discovery-and-extension-architecture.md) | API Surface, Capability Discovery, and Extension Architecture | Accepted — vocabulary and evaluation only; individual mechanisms remain separately gated, public contract unchanged |
 | [020](ADR-020-milestone-0-first-write-capability-candidate.md) | Milestone 0 — first WRITE capability candidate authorization | Accepted — candidate naming only; implementation, live lab run, allow-list population, and WRITE activation all remain separately gated |
 | [021](ADR-021-security-posture-provisioning.md) | Guided security-posture provisioning (`pfsense-mcp-security setup`) | Accepted — architecture/design only; no wizard, posture, WRITE, or fail-closed enforcement authorized |
+| [022](ADR-022-execution-authorization-boundary.md) | Execution-authorization boundary (Plan → Authorize → Execute → Verify) | Accepted — architecture/design only; no authorization/execution code, no WRITE tool, no schema change authorized |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
@@ -50,3 +51,12 @@ Tier-1-adjacent anti-rollback anchor independently of it. Its
 companion spec is
 [`docs/SECURITY_POSTURE_PROVISIONING.md`](../SECURITY_POSTURE_PROVISIONING.md),
 following the same top-level placement as ADR-017's.
+
+ADR-022 sits above both ADR-021 (the planning layer) and Tier 1's
+existing execution architecture (ADR-006/012/013/014/015) — it governs
+how an operator's authority reaches that machinery, and covers two
+mutation classes (configuration-file changes, physical TPM provisioning)
+Tier 1's `RecoveryContract` was never designed to cover at all. Its
+companion spec is
+[`docs/EXECUTION_AUTHORIZATION_BOUNDARY.md`](../EXECUTION_AUTHORIZATION_BOUNDARY.md),
+same top-level placement.
