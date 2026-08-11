@@ -554,7 +554,14 @@ class PlanAuthorization:
             raise SecurityAuthorizationError("PlanAuthorization timestamps must be UTC datetimes.")
         if not _is_utc(self.issued_at) or not _is_utc(self.expires_at) or self.expires_at <= self.issued_at:
             raise SecurityAuthorizationError("PlanAuthorization validity window is invalid.")
-        if self.risk_class not in _AUTHORIZATION_LEVEL_RANK:
+        # AuthorizationLevel is a (str, Enum) hybrid, so a raw string equal
+        # to a member's value (e.g. "configuration_change") also hashes
+        # and compares equal to that member -- `not in _AUTHORIZATION_LEVEL_RANK`
+        # alone would silently accept it. isinstance() is required first,
+        # matching this codebase's own established precedent for
+        # (str, Enum)-typed fields (ReconciliationEvidence.outcome,
+        # RecoveryContract.state).
+        if not isinstance(self.risk_class, AuthorizationLevel) or self.risk_class not in _AUTHORIZATION_LEVEL_RANK:
             raise SecurityAuthorizationError("PlanAuthorization risk_class is invalid.")
         if not isinstance(self.evidence_fingerprint, AuthorizationEvidenceFingerprint):
             raise SecurityAuthorizationError("PlanAuthorization evidence_fingerprint is invalid.")

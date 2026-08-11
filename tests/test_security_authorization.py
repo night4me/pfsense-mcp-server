@@ -594,6 +594,36 @@ def test_no_production_path_ever_constructs_a_deprovision_authorization_from_rea
     assert sig.parameters["target_identity_digest"].default is inspect.Parameter.empty
 
 
+def test_target_identity_digest_omission_raises_type_error():
+    issued_at, expires_at = _times()
+    with pytest.raises(TypeError):
+        build_deprovision_authorization_payload(  # type: ignore[call-arg]
+            authorization_id="deprov-1", authority_id="owner-key-1", issued_at=issued_at, expires_at=expires_at
+        )
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        "AB" * 32,  # uppercase hex rejected -- lowercase only
+        "ab" * 31,  # too short
+        "ab" * 33,  # too long
+        "not-hex-at-all-" + "0" * 49,
+        "",
+    ],
+)
+def test_malformed_target_identity_digest_is_rejected(malformed):
+    issued_at, expires_at = _times()
+    with pytest.raises(SecurityAuthorizationError):
+        build_deprovision_authorization_payload(
+            target_identity_digest=malformed,
+            authorization_id="deprov-1",
+            authority_id="owner-key-1",
+            issued_at=issued_at,
+            expires_at=expires_at,
+        )
+
+
 # ---------------------------------------------------------------------------
 # 11. Confirmation/reconciliation domain separation
 # ---------------------------------------------------------------------------
@@ -638,6 +668,32 @@ def test_schema_version_bool_is_rejected_not_coerced_to_int():
             issued_at=authz.issued_at,
             expires_at=authz.expires_at,
             risk_class=authz.risk_class,
+            evidence_fingerprint=authz.evidence_fingerprint,
+        )
+
+
+def test_risk_class_raw_string_equal_to_a_member_value_is_rejected():
+    """AuthorizationLevel is a (str, Enum) hybrid: a raw string equal to a
+    member's value hashes and compares equal to that member, so a naive
+    `not in <rank dict>` check alone would silently accept it. This must
+    be rejected -- risk_class must be the real enum type, not a
+    string that merely happens to match its value."""
+
+    payload = _build_payload()
+    authz = sign_plan_authorization(payload, _key())
+    assert AuthorizationLevel.CONFIGURATION_CHANGE == "configuration_change"  # sanity: the collision is real
+    with pytest.raises(SecurityAuthorizationError):
+        PlanAuthorization(
+            schema_version=authz.schema_version,
+            authorization_id=authz.authorization_id,
+            plan_digest=authz.plan_digest,
+            authorized_step_ids=authz.authorized_step_ids,
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=authz.proof,
+            issued_at=authz.issued_at,
+            expires_at=authz.expires_at,
+            risk_class="configuration_change",  # raw str, not AuthorizationLevel
             evidence_fingerprint=authz.evidence_fingerprint,
         )
 
