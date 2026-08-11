@@ -202,7 +202,8 @@ def _format_plan_human(plan: SecurityPosturePlan) -> str:
         f"anchor_assurance={plan.target_anchor_assurance.value}",
         f"Target validity:      {plan.target_validity.value}",
         f"Overall status:       {plan.overall_status.value}",
-        f"Safe to proceed:      {plan.safe_to_proceed}",
+        f"Safe to proceed:      {plan.safe_to_proceed}  "
+        "(plan validity only -- not authorization or execution readiness; see notes below)",
         f"capability_posture:   {plan.capability_posture_transition.value}",
         f"anchor_assurance:     {plan.anchor_assurance_transition.value}",
         "",
@@ -284,7 +285,10 @@ def _build_parser() -> argparse.ArgumentParser:
             "reinvented.\n\n"
             "This command selects nothing and authorizes nothing: selecting a target here is intent, "
             "not execution authorization, and no subsequent 'apply this plan' command exists in this "
-            "build."
+            "build.\n\n"
+            "'Safe to proceed' means only that the target is architecturally valid and current evidence "
+            "shows no detected anomaly -- it is never authorization, approval, execution-readiness, or a "
+            "claim that every step is unblocked or implemented."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

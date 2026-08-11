@@ -486,6 +486,21 @@ def test_plan_always_states_it_is_not_authorization(monkeypatch, tmp_path):
             assert any("NOT authorization" in note for note in plan.notes)
 
 
+def test_security_posture_plan_docstring_clarifies_safe_to_proceed_meaning():
+    """ADR-022 owner review (2026-08-11): safe_to_proceed's published
+    behavior/schema is unchanged; only its documentation was clarified.
+    Pins the exact clarifying language (whitespace-normalized, since the
+    docstring wraps across source lines) so a future edit cannot
+    silently drop it."""
+
+    doc = security_plan.SecurityPosturePlan.__doc__
+    assert doc is not None
+    normalized = " ".join(doc.split())
+    assert "means **only**" in normalized
+    assert "not** mean authorized, approved, executable" in normalized
+    assert "never grants anything" in normalized
+
+
 # ---------------------------------------------------------------------------
 # 10. Mutation-free hard boundary
 # ---------------------------------------------------------------------------

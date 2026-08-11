@@ -404,7 +404,7 @@ Current:  capability_posture=read_only  anchor_assurance=hardware_witness (provi
 Target:   capability_posture=write_protected  anchor_assurance=hardware_witness
 Target validity:      valid
 Overall status:       plan_generated
-Safe to proceed:      True
+Safe to proceed:      True  (plan validity only -- not authorization or execution readiness; see notes below)
 capability_posture:   upgrade
 anchor_assurance:     no_change
 
@@ -473,6 +473,15 @@ rather than reinventing it.
   the plan's schema could be mistaken for a "go ahead" signal: every
   prospective mutating step declares its own
   `authorization_required` value, and none is ever `none_required`.
+- **`safe_to_proceed` means only "the plan itself is safe to present/
+  continue reasoning about," never authorization.** Clarified explicitly
+  (ADR-022 owner review, 2026-08-11; behavior and the published JSON
+  schema unchanged) with a `SecurityPosturePlan` class docstring, an
+  inline CLI caveat on the human-output line, and a `plan --help` epilog
+  sentence — `True` means only that the target is architecturally valid
+  and current evidence shows no detected anomaly; it does not mean
+  approved, executable, that mutation is permitted, or that every step
+  is unblocked or implemented.
 - **Hardware witness never implies WRITE**: selecting
   `anchor_assurance=hardware_witness` never changes
   `capability_posture_transition`; reaching `write_protected` always

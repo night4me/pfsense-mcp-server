@@ -149,6 +149,25 @@ def test_plan_default_environment_human_output(capsys, monkeypatch):
     assert "NOT authorization to execute" in out
 
 
+def test_plan_human_output_clarifies_safe_to_proceed_is_not_authorization(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    main(["plan", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+
+    out = capsys.readouterr().out
+    assert "Safe to proceed:      True" in out
+    assert "not authorization or execution readiness" in out
+
+
+def test_plan_help_clarifies_safe_to_proceed_meaning(capsys):
+    with pytest.raises(SystemExit) as excinfo:
+        main(["plan", "--help"])
+    assert excinfo.value.code == 0
+    out = capsys.readouterr().out
+    assert "'Safe to proceed' means only" in out
+    assert "never authorization, approval, execution-readiness" in out
+
+
 def test_plan_json_output_is_valid_and_deterministic(capsys, monkeypatch):
     _clear_relevant_env(monkeypatch)
 

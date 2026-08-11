@@ -185,6 +185,26 @@ class PlanStep:
 
 @dataclass(frozen=True)
 class SecurityPosturePlan:
+    """The complete output of `generate_security_posture_plan()` --
+    never itself authorization; see this module's own docstring and
+    every plan's own `notes` field, which restates that explicitly.
+
+    `safe_to_proceed` (ADR-022 "safe_to_proceed clarification", reviewed
+    and confirmed correct 2026-08-11) means **only**: the requested
+    target is architecturally valid (`target_validity is
+    TargetValidity.VALID`) and current evidence shows no detected
+    anomaly/indeterminacy that blocks planning (no store/witness
+    mismatch, no indeterminate anchor state) -- i.e., it is reasonable
+    to continue reviewing/preparing this plan. It does **not** mean
+    authorized, approved, executable, that mutation is permitted, that
+    operator consent was obtained, that every prerequisite is
+    implemented, or that every step is unblocked. `True` is fully
+    compatible with individual `steps` still showing `blocked=True`
+    (ordinary sequencing, e.g. "the anchor-assurance axis must reach its
+    target first") or `implementation_available=False` (e.g. no WRITE
+    tool exists yet) -- `safe_to_proceed` judges the *plan*, never any
+    individual step's own readiness, and never grants anything."""
+
     current: SecurityPostureDiscovery
     target_capability_posture: CapabilityPosture
     target_anchor_assurance: AnchorAssurance
