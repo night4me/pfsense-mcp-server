@@ -148,14 +148,22 @@ def test_only_imports_security_discovery_and_security_plan_family_within_the_pac
 
 
 def test_no_production_module_imports_security_plan_freshness():
-    """No MCP tool, security_cli.py, MutationExecutor, any future
-    ExecutionCoordinator, or any other production module imports this
-    module yet -- Slice E1 introduces the primitive only, never wiring
-    it to anything."""
+    """No MCP tool, security_cli.py, MutationExecutor, or any other
+    production module imports this module except the one reviewed
+    exception below -- Slice E1 introduces the primitive only, never
+    wiring it to anything itself.
 
+    `tier1/execution_coordinator.py` is the one reviewed exception
+    (ADR-022 Phase E, Slice E2, 2026-08-11): it composes
+    `plan_authorization_is_fresh()` as its own freshness gate -- see
+    `tests/tier1/test_execution_coordinator_isolation.py`'s own
+    no-production-importer proof that the coordinator itself remains
+    unwired/unconstructed by any production entry point."""
+
+    _ALLOWED_IMPORTERS = {"execution_coordinator.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
-        if path == MODULE_PATH:
+        if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:
             continue
         tree = _tree(path)
         for node in ast.walk(tree):

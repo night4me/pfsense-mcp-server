@@ -2,13 +2,18 @@
 
 - **Status:** Proposed — the architecture remains a proposal; this ADR
   is not "Accepted" in the `ADR-021`/`ADR-022`-style sense (no "I
-  accept ADR-024 as written" statement has been given). **Slice E1
-  only** (the freshness/precondition re-check primitive) has since been
-  separately authorized under a fixed, narrow scope and implemented —
-  see "Implementation status" below. The coordinator, Slice E2/E3, and
-  every other item in "Implementation slices" remain unauthorized,
-  unimplemented proposals.
-- **Date:** 2026-08-11 (proposed); Slice E1 implemented same day.
+  accept ADR-024 as written" statement has been given). **Slice E1**
+  (the freshness/precondition re-check primitive) and **Slice E2** (the
+  `ExecutionCoordinator` skeleton, through one-time authorization
+  consumption only) have since been separately authorized under fixed,
+  narrow scopes and implemented — see "Implementation status" below.
+  Slice E3 (wiring `store.create()`/`confirm()`/`executor.execute()`
+  behind the coordinator) and every other item in "Implementation
+  slices" remain unauthorized, unimplemented proposals. The coordinator
+  is not constructed by production anywhere in this repository, and
+  public MCP remains 42 READ / 0 WRITE.
+- **Date:** 2026-08-11 (proposed); Slice E1 implemented same day; Slice
+  E2 implemented same day.
 
 ## Implementation status
 
@@ -53,9 +58,95 @@ validate` all green). `MutationExecutor`, `tier1/state_machine.py`, and
 `PlanAuthorization`'s schema confirmed byte-identical to the pre-slice
 checkpoint via direct diff/sha256.
 
-**Slice E2/E3 and the coordinator itself remain fully unimplemented,
-unauthorized proposals** — see "Implementation slices" below, unchanged
-by this status update.
+**Slice E2 — `ExecutionCoordinator` skeleton, through one-time
+authorization consumption only — implemented (2026-08-11), under a
+fixed owner scope.** New `src/pfsense_mcp/tier1/execution_coordinator.py`:
+one public class, `ExecutionCoordinator(*, authorities: PinnedAuthoritySet,
+consumption_store: AuthorizationConsumptionStore)`, with one public
+method, `authorize_and_consume(authz, *, requested_plan_digest,
+requested_step_id, target_capability_posture, target_anchor_assurance,
+now, env=None) -> PreExecutionAuthorizationGranted` (raises
+`PreExecutionAuthorizationDenied`, uniformly, on any failed gate).
+Establishes exactly the invariant this slice was authorized to
+establish: *an execution attempt may reach the consumed state only
+after signature validity, expiry/currentness, exact plan-digest +
+authorized-step membership, and full freshness re-check all succeed, in
+that order.*
+
+Composes five already-shipped primitives only, in the fixed order
+`verify_plan_authorization_signature()` →
+`plan_authorization_is_current()` → `plan_authorization_authorizes_step()`
+→ `plan_authorization_is_fresh()` → `AuthorizationConsumptionStore.try_consume()`
+— introduces no new cryptography, canonicalization, hashing, discovery,
+or persistence logic of its own. The anchor/capability-appropriateness
+check named at ordering step 7 in this document's "Exact proposed
+verification/execution ordering" is deliberately not re-implemented as
+a separate gate: it is structurally subsumed by the freshness re-check
+(an invalid target combination never reaches
+`generate_security_posture_plan()`'s output, and any anchor regression
+changes the freshly regenerated plan's own digest), matching this
+document's own "MUST NOT duplicate any check another component already
+owns" responsibility for the coordinator.
+
+`requested_plan_digest`/`requested_step_id` are caller-supplied
+parameters, deliberately distinct from `authz`'s own fields — passing
+`authz.plan_digest` back as its own comparison target would be a
+tautology; the real check is that what the caller believes they are
+requesting matches what `authz` actually authorizes, closing a
+confused-deputy class of error. Every failure path (signature, expiry,
+scope, freshness, malformed input, consumption-store error) raises the
+same `PreExecutionAuthorizationDenied` with a fixed, generic message —
+never reveals which gate failed. A failed gate is proven, by direct
+test, never to consume the authorization; consumption is proven, by
+direct test (including an 8-thread concurrency race and a call-order
+spy), to happen last and exactly once. Does not create a
+`RecoveryContract`, does not call `MutationExecutor`, does not touch
+`tier1/state_machine.py` — confirmed both by AST-based isolation tests
+and by direct diff/sha256 showing those files byte-identical to the
+pre-slice checkpoint. Not imported or constructed by any production
+module (proven by AST-based isolation tests scanning the full
+production tree for both import and literal-construction patterns).
+
+This is the first `tier1/*.py` module to import the `security_`
+family in the outward direction this document's "E1 — Coordinator
+ownership and placement" section names explicitly (`security_authorization`,
+`security_authorization_verifier`, `security_discovery`,
+`security_plan_freshness`) — not structurally forbidden by the
+pre-existing `test_tier1_domain_has_no_transport_or_tool_registration_dependency`
+test (which only names `rest_api_client`/`transport`/`tools`/
+`write_api_client`/`pfsense_client` as forbidden roots), so no
+modification to that shared test was needed; a new, dedicated
+`tests/tier1/test_execution_coordinator_isolation.py` locks down
+exactly this module's reviewed import set instead, mirroring the
+per-module isolation-test pattern already used for
+`security_authorization_verifier.py`/`security_plan_freshness.py`. Four
+pre-existing "no production module imports this yet" isolation tests
+(`security_authorization`, `security_authorization_verifier`,
+`security_plan_freshness`, `authorization_consumption_store`) were
+each narrowly extended to name `execution_coordinator.py` as their one
+reviewed consumer — the same, already-established pattern
+`security_authorization_isolation.py` used when
+`security_authorization_verifier.py` first became its own reviewed
+consumer.
+
+Owner scope fixed for this slice, unchanged by implementation: no
+`store.create()`/`store.confirm()`/`executor.execute()` call anywhere
+in this slice (Slice E3 territory, not authorized here), no two-phase
+consumption, no `DeprovisionAuthorization` work, no
+`target_identity_digest`/appliance-identity mechanism of any kind
+(confirmed absent by direct grep, not merely by omission), no
+`PlanAuthorization` schema change. 38 new tests (29 regression/
+adversarial/concurrency + 9 AST-based isolation). Full validation clean
+(2288 pytest passed, up from 2250; `ruff`/`mypy`/`mkdocs build
+--strict`/`make quick`/`make validate` all green, public contract still
+42 READ / 0 WRITE). `MutationExecutor`, `tier1/state_machine.py`,
+`tier1/store.py`, `tier1/contract.py`, `write_api_client.py`,
+`write_endpoints.py`, and `PlanAuthorization`'s schema confirmed
+byte-identical to the pre-slice checkpoint via direct diff.
+
+**Slice E3 and the remainder of the coordinator's eventual full call
+path remain fully unimplemented, unauthorized proposals** — see
+"Implementation slices" below, unchanged by this status update.
 
 ## Naming note (read first)
 

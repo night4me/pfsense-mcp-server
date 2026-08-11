@@ -178,9 +178,17 @@ def test_no_production_module_imports_security_authorization():
     never touches key material, never wired into any request-handling
     path itself either (see
     `tests/test_security_authorization_verifier_isolation.py`'s own
-    no-production-importer proof)."""
+    no-production-importer proof).
 
-    _ALLOWED_IMPORTERS = {"security_authorization_verifier.py"}
+    `tier1/execution_coordinator.py` is the second reviewed exception
+    (ADR-022 Phase E, Slice E2, 2026-08-11): it type-hints/consumes a
+    `PlanAuthorization` instance passed to it, composing the
+    already-reviewed verifier/freshness primitives -- see
+    `tests/tier1/test_execution_coordinator_isolation.py`'s own
+    no-production-importer proof that the coordinator itself remains
+    unwired/unconstructed by any production entry point."""
+
+    _ALLOWED_IMPORTERS = {"security_authorization_verifier.py", "execution_coordinator.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:

@@ -162,11 +162,19 @@ def test_no_production_module_imports_security_authorization_verifier():
     """No MCP tool, security_cli.py, MutationExecutor, or any other
     production request-handling/execution module ever imports this
     module -- Phase D introduces no consumer, only the verification
-    primitive itself."""
+    primitive itself.
 
+    `tier1/execution_coordinator.py` is the one reviewed exception
+    (ADR-022 Phase E, Slice E2, 2026-08-11): it composes this module's
+    three verification functions as part of its own fixed gate ordering
+    -- see `tests/tier1/test_execution_coordinator_isolation.py`'s own
+    no-production-importer proof that the coordinator itself remains
+    unwired/unconstructed by any production entry point."""
+
+    _ALLOWED_IMPORTERS = {"execution_coordinator.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
-        if path == MODULE_PATH:
+        if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:
             continue
         tree = _tree(path)
         for node in ast.walk(tree):
