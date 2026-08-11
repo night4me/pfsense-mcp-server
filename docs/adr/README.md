@@ -30,6 +30,7 @@ silently rewrite earlier context.
 | [022](ADR-022-execution-authorization-boundary.md) | Execution-authorization boundary (Plan → Authorize → Execute → Verify) | Accepted — architecture/design only; no authorization/execution code, no WRITE tool, no schema change authorized |
 | [023](ADR-023-authorization-verification-boundary.md) | Authorization-verification boundary (`ADR-022` Phase D) | Proposed (architecture) — owner decisions made and Phase D implemented under them; not a full `ADR-021`/`ADR-022`-style acceptance |
 | [024](ADR-024-execution-authorization-coordination.md) | Execution-authorization coordination boundary (`ADR-022` Phase E/F/G territory) | Proposed (architecture) — Slice E1 (freshness primitive) and Slice E2 (coordinator skeleton through one-time consumption) separately authorized and implemented; Slice E3 and full execution wiring still unauthorized, unimplemented |
+| [025](ADR-025-authorization-recovery-contract-binding.md) | Authorization-to-RecoveryContract binding | Proposed (architecture) — designs the missing signed plan/step-to-execution-intent binding; no implementation or WRITE activation authorized |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
