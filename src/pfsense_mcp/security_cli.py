@@ -49,6 +49,7 @@ from .security_plan import (
     SecurityPosturePlan,
     generate_security_posture_plan,
 )
+from .security_plan_digest import PLAN_DIGEST_SCHEMA_VERSION, compute_plan_digest
 
 _MISMATCH_EXIT_CODE = 2
 _BLOCKED_TARGET_EXIT_CODE = 2
@@ -188,6 +189,13 @@ def _plan_to_dict(plan: SecurityPosturePlan) -> dict[str, Any]:
         "blocking_findings": list(plan.blocking_findings),
         "steps": [_plan_step_to_dict(step) for step in plan.steps],
         "notes": list(plan.notes),
+        # ADR-022 Phase B: plan identity only -- never authorization. See
+        # security_plan_digest.py's own module docstring. A future,
+        # separately-authorized authorization artifact would reference
+        # this value; nothing in this build accepts, verifies, or acts
+        # on one.
+        "plan_digest": compute_plan_digest(plan),
+        "plan_digest_schema_version": PLAN_DIGEST_SCHEMA_VERSION,
     }
 
 
@@ -195,6 +203,8 @@ def _format_plan_human(plan: SecurityPosturePlan) -> str:
     lines = [
         "pfsense-mcp-security: security posture plan (analysis only -- not authorization)",
         "",
+        f"Plan digest (schema v{PLAN_DIGEST_SCHEMA_VERSION}): {compute_plan_digest(plan)}  "
+        "(plan identity only -- not authorization)",
         f"Current:  capability_posture={plan.current.capability_posture.value.value}  "
         f"anchor_assurance={plan.current.anchor_assurance.value.value} "
         f"({plan.current.anchor_assurance.evidence_state.value})",
@@ -288,7 +298,11 @@ def _build_parser() -> argparse.ArgumentParser:
             "build.\n\n"
             "'Safe to proceed' means only that the target is architecturally valid and current evidence "
             "shows no detected anomaly -- it is never authorization, approval, execution-readiness, or a "
-            "claim that every step is unblocked or implemented."
+            "claim that every step is unblocked or implemented.\n\n"
+            "'Plan digest' is a deterministic identity value (ADR-022 Phase B) binding a future "
+            "authorization to this exact plan -- it is plan identity only, never authorization, a "
+            "secret, a bearer token, or proof of operator consent. No command in this build creates, "
+            "accepts, or verifies an authorization artifact."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

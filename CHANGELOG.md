@@ -57,6 +57,33 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `PlanOverallStatus.BLOCKED_INDETERMINATE_CURRENT_STATE` instead. **Does
   not change the public MCP contract** — still 42 READ tools, 0 WRITE
   tools.
+- ADR-022 (execution-authorization boundary — `Plan → Authorize →
+  Execute → Verify`) Accepted, and its own Phase B implemented:
+  `security_plan_digest.py`'s `compute_plan_digest()`/`verify_plan_digest()`
+  give every `SecurityPosturePlan` a canonical, deterministic
+  `PlanDigest` (SHA-256, `tier1.canonical.digest_value()` reused, new
+  `DigestPurpose.PLAN` domain separator) — plan identity only, never
+  authorization, a secret, a bearer token, or proof of operator consent.
+  Third, narrow `pfsense_mcp.tier1` isolation exemption, importing only
+  `canonical` (pure hashing, zero I/O), never the store/witness/anchor
+  machinery. `pfsense-mcp-security plan` now shows the digest in both
+  human output and `--json` (`plan_digest`/`plan_digest_schema_version`
+  keys). 54 new tests (46 regression + 8 AST-based isolation), including
+  exact per-field participation proofs matching ADR-022's own
+  participates/does-not-participate list, duplicate/reordered-step
+  handling, schema-version safety, and a no-I/O behavioral proof. No
+  authorization artifact, verification, or execution code exists —
+  still 42 READ tools, 0 WRITE tools, `WriteEndpoints` empty, WRITE 0/3.
+
+### Changed
+
+- `SecurityPosturePlan.safe_to_proceed`'s meaning clarified (documentation
+  only — behavior, computation, and published JSON schema unchanged): a
+  class docstring, an inline CLI caveat, and a `plan --help` epilog
+  sentence now state explicitly that `True` means only that the target
+  is architecturally valid and current evidence shows no detected
+  anomaly — never authorized, approved, executable, or that every step
+  is unblocked.
 
 ### Fixed
 

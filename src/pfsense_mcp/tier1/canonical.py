@@ -30,6 +30,14 @@ class DigestPurpose(str, Enum):
     CONFIRMATION = "confirmation"
     IDEMPOTENCY = "idempotency"
     RECONCILIATION = "reconciliation"
+    #: ADR-022 Phase B -- binds a `pfsense_mcp.security_plan_digest`
+    #: `PlanDigest` to one exact `SecurityPosturePlan`. Domain-separated
+    #: from every other purpose above so a plan digest can never be
+    #: replayed as, or confused with, a contract/confirmation/
+    #: reconciliation digest, or vice versa. Additive only -- does not
+    #: change any existing member's meaning; `security_plan_digest.py`
+    #: is the only caller.
+    PLAN = "plan"
 
 
 _DOMAIN_PREFIX = "pfSense-MCP/Tier1/v1"

@@ -55,7 +55,17 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # functions -- mirroring tier1_anchor_check.py/application.py's own
     # pattern exactly. See tests/test_security_discovery_isolation.py
     # for the matching stronger, dedicated tests.
-    exempt = {"tier1_anchor_check.py", "security_discovery.py"}
+    #
+    # security_plan_digest.py is the third such exception (2026-08-11,
+    # ADR-022 Phase B: canonical PlanDigest computation). Unlike the two
+    # above, the only pfsense_mcp.tier1 import here is `canonical` --
+    # pure, stateless canonicalization/hashing with zero I/O and zero
+    # mutation capability of any kind, not the store/witness/anchor
+    # machinery the other two exemptions read. See
+    # tests/test_security_plan_digest_isolation.py for the matching
+    # stronger, dedicated tests, including that this is the *only*
+    # pfsense_mcp.tier1 submodule this file ever imports.
+    exempt = {"tier1_anchor_check.py", "security_discovery.py", "security_plan_digest.py"}
     production = ROOT / "src/pfsense_mcp"
     offenders = [
         path.relative_to(ROOT).as_posix()

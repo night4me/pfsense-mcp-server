@@ -400,6 +400,7 @@ GENERATE PLAN`, then stop, before `PROVISIONING`.
 $ pfsense-mcp-security plan --capability-posture write_protected --anchor-assurance hardware_witness
 pfsense-mcp-security: security posture plan (analysis only -- not authorization)
 
+Plan digest (schema v1): bff0326a38a3e8a3f8d2c9b72a6518c4129fef70b43282cabc70ca6f94f47f89  (plan identity only -- not authorization)
 Current:  capability_posture=read_only  anchor_assurance=hardware_witness (provisioned_verified)
 Target:   capability_posture=write_protected  anchor_assurance=hardware_witness
 Target validity:      valid

@@ -168,6 +168,53 @@ def test_plan_help_clarifies_safe_to_proceed_meaning(capsys):
     assert "never authorization, approval, execution-readiness" in out
 
 
+def test_plan_human_output_shows_plan_digest_clearly(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    main(["plan", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+
+    out = capsys.readouterr().out
+    assert "Plan digest (schema v1):" in out
+    assert "(plan identity only -- not authorization)" in out
+    digest_line = next(line for line in out.splitlines() if line.startswith("Plan digest"))
+    digest = digest_line.split(": ", 1)[1].split("  ", 1)[0]
+    assert len(digest) == 64
+    assert set(digest) <= set("0123456789abcdef")
+
+
+def test_plan_json_output_includes_deterministic_plan_digest(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    main(["plan", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"])
+    first = json.loads(capsys.readouterr().out)
+    main(["plan", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"])
+    second = json.loads(capsys.readouterr().out)
+
+    assert first["plan_digest"] == second["plan_digest"]
+    assert len(first["plan_digest"]) == 64
+    assert first["plan_digest_schema_version"] == 1
+
+
+def test_plan_digest_differs_for_a_different_target(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    main(["plan", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"])
+    read_only_payload = json.loads(capsys.readouterr().out)
+    main(["plan", "--capability-posture", "write_protected", "--anchor-assurance", "software", "--json"])
+    write_protected_payload = json.loads(capsys.readouterr().out)
+
+    assert read_only_payload["plan_digest"] != write_protected_payload["plan_digest"]
+
+
+def test_plan_help_documents_plan_digest_meaning(capsys):
+    with pytest.raises(SystemExit) as excinfo:
+        main(["plan", "--help"])
+    assert excinfo.value.code == 0
+    out = capsys.readouterr().out
+    assert "'Plan digest' is a deterministic identity value" in out
+    assert "never authorization, a" in out
+
+
 def test_plan_json_output_is_valid_and_deterministic(capsys, monkeypatch):
     _clear_relevant_env(monkeypatch)
 
