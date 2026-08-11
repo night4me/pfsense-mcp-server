@@ -14,8 +14,11 @@ from __future__ import annotations
 
 import os
 import re
+import unicodedata
 from dataclasses import dataclass
+from ipaddress import IPv4Address, ip_network
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from pfsense_mcp.secure_file import open_nofollow, validate_descriptor
 
@@ -24,6 +27,7 @@ _REQUIRED_VARS = (
     "PFSENSE_LAB_IDENTITY",
     "PFSENSE_LAB_API_KEY_FILE",
     "PFSENSE_LAB_CANDIDATE",
+    "PFSENSE_LAB_ATTESTATION_FILE",
 )
 _KEY_FILE_MAX_BYTES = 16 * 1024
 _KEY_LINE_MAX_LENGTH = 4096
@@ -50,10 +54,48 @@ class LabConfig:
     identity: str
     key_file: Path
     candidate: str
+    attestation_file: Path
+
+
+_IDENTITY_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+_CANDIDATE_RE = re.compile(r"^(?:LAB|TEST)_[A-Za-z0-9_]{1,59}$", re.IGNORECASE)
+
+
+def normalize_lab_candidate(raw: str) -> str:
+    """Return the exact ADR-026 alias identity or fail closed.
+
+    The deliberately narrow LAB_/TEST_ prefix is a lab safety signal, not
+    proof of non-use and not a production alias policy.
+    """
+
+    normalized = unicodedata.normalize("NFC", raw)
+    if normalized != raw or not _CANDIDATE_RE.fullmatch(normalized):
+        raise LabConfigError(
+            "PFSENSE_LAB_CANDIDATE must already be NFC-normalized and be an exact LAB_*/TEST_* alias name"
+        )
+    return normalized
 
 
 def _host_is_lab_allowed(base_url: str) -> bool:
-    return any(pattern.fullmatch(base_url) for pattern in _LAB_HOST_ALLOW_PATTERNS)
+    if not any(pattern.fullmatch(base_url) for pattern in _LAB_HOST_ALLOW_PATTERNS):
+        return False
+    try:
+        parsed = urlsplit(base_url)
+        port = parsed.port
+    except ValueError:
+        return False
+    if port is not None and not 1 <= port <= 65535:
+        return False
+    if parsed.hostname and parsed.hostname.endswith(".lab.invalid"):
+        return True
+    try:
+        address = IPv4Address(parsed.hostname or "")
+    except ValueError:
+        return False
+    return any(
+        address in network
+        for network in (ip_network("192.0.2.0/24"), ip_network("198.51.100.0/24"), ip_network("203.0.113.0/24"))
+    )
 
 
 def load_lab_config(env: dict[str, str] | None = None) -> LabConfig:
@@ -78,11 +120,16 @@ def load_lab_config(env: dict[str, str] | None = None) -> LabConfig:
     if not _host_is_lab_allowed(base_url):
         raise LabConfigError(f"{base_url!r} does not match the lab-only host allow-list.")
 
+    identity = source["PFSENSE_LAB_IDENTITY"]
+    if not _IDENTITY_RE.fullmatch(identity):
+        raise LabConfigError("PFSENSE_LAB_IDENTITY must be a short sanitized lab label")
+
     return LabConfig(
         base_url=base_url,
-        identity=source["PFSENSE_LAB_IDENTITY"],
+        identity=identity,
         key_file=Path(source["PFSENSE_LAB_API_KEY_FILE"]),
-        candidate=source["PFSENSE_LAB_CANDIDATE"],
+        candidate=normalize_lab_candidate(source["PFSENSE_LAB_CANDIDATE"]),
+        attestation_file=Path(source["PFSENSE_LAB_ATTESTATION_FILE"]),
     )
 
 

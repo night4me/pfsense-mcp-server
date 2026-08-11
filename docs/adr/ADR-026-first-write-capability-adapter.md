@@ -25,6 +25,21 @@ Netgate-supported interface. Source review is useful design evidence, but the
 exact disposable appliance's generated OpenAPI document and observed behavior
 remain authoritative for acceptance.
 
+### LAB-T1 prerequisite status
+
+The read-only LAB-T1 harness uses a separately owner-approved, lab-only manual
+attestation gate for dependency surfaces that current APIs cannot enumerate
+completely. It still automatically checks available firewall-rule and NAT
+references, and positive, failed, malformed, or incomplete automatic evidence
+cannot be overridden by an attestation. Attestations bind the exact sanitized
+lab identity and normalized synthetic alias for at most ten minutes.
+
+This does not establish global absence of alias dependencies and is explicitly
+unacceptable as a production authorization, dependency, or target-identity
+mechanism. Completing LAB-T1 does not authorize or begin this ADR's mutation
+evidence matrix; a successful sanitized read-only preflight must return for
+owner review first.
+
 ## B3 blocker
 
 Current `SecurityPosturePlan` steps are policy/provisioning actions. They do not

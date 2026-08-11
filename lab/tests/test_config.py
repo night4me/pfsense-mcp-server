@@ -13,14 +13,15 @@ def _base_env(key_file) -> dict[str, str]:
         "PFSENSE_LAB_API_URL": "https://alias-candidate.lab.invalid",
         "PFSENSE_LAB_IDENTITY": "lab-mcp-test",
         "PFSENSE_LAB_API_KEY_FILE": str(key_file),
-        "PFSENSE_LAB_CANDIDATE": "firewall_alias_description",
+        "PFSENSE_LAB_CANDIDATE": "LAB_FIREWALL_ALIAS",
+        "PFSENSE_LAB_ATTESTATION_FILE": str(key_file) + ".attestation.json",
     }
 
 
 def test_valid_lab_hostname_is_accepted(tmp_path):
     config = load_lab_config(_base_env(tmp_path / "key"))
     assert config.base_url == "https://alias-candidate.lab.invalid"
-    assert config.candidate == "firewall_alias_description"
+    assert config.candidate == "LAB_FIREWALL_ALIAS"
 
 
 @pytest.mark.parametrize(
@@ -47,6 +48,8 @@ def test_valid_rfc5737_address_is_accepted(tmp_path, base_url):
         "http://alias-candidate.lab.invalid",  # not https
         "https://alias-candidate.lab.invalid.evil.com",
         "https://not-lab-invalid.com",
+        "https://192.0.2.999",
+        "https://192.0.2.1:99999",
     ],
 )
 def test_non_lab_hosts_are_refused(tmp_path, base_url):
@@ -58,7 +61,13 @@ def test_non_lab_hosts_are_refused(tmp_path, base_url):
 
 @pytest.mark.parametrize(
     "missing_var",
-    ["PFSENSE_LAB_API_URL", "PFSENSE_LAB_IDENTITY", "PFSENSE_LAB_API_KEY_FILE", "PFSENSE_LAB_CANDIDATE"],
+    [
+        "PFSENSE_LAB_API_URL",
+        "PFSENSE_LAB_IDENTITY",
+        "PFSENSE_LAB_API_KEY_FILE",
+        "PFSENSE_LAB_CANDIDATE",
+        "PFSENSE_LAB_ATTESTATION_FILE",
+    ],
 )
 def test_missing_lab_variable_fails_closed(tmp_path, missing_var):
     env = _base_env(tmp_path / "key")
@@ -79,6 +88,22 @@ def test_setting_only_production_variables_is_refused(tmp_path):
         "PFSENSE_API_KEY_FILE": str(tmp_path / "key"),
     }
     with pytest.raises(LabConfigError):
+        load_lab_config(env)
+
+
+@pytest.mark.parametrize("identity", ["", " lab", "lab identity", "lab\nidentity"])
+def test_malformed_lab_identity_is_refused(tmp_path, identity):
+    env = _base_env(tmp_path / "key")
+    env["PFSENSE_LAB_IDENTITY"] = identity
+    with pytest.raises(LabConfigError, match=r"identity|IDENTITY"):
+        load_lab_config(env)
+
+
+@pytest.mark.parametrize("candidate", ["", "*", "LAB_*", "operational_alias", " LAB_ALIAS"])
+def test_malformed_candidate_is_refused(tmp_path, candidate):
+    env = _base_env(tmp_path / "key")
+    env["PFSENSE_LAB_CANDIDATE"] = candidate
+    with pytest.raises(LabConfigError, match="CANDIDATE"):
         load_lab_config(env)
 
 

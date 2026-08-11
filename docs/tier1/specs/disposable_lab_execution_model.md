@@ -30,10 +30,97 @@ decision to make once a real adapter exists. Correspondingly,
 `run_scenario()`/`run_full_acceptance()` take explicit `store`/
 `executor`/`adapter`/`confirm` parameters beyond the original pseudocode's
 `LabConfig`-only signature, so they are fully testable now without a real
-adapter or a live lab VM — `LabConfig.candidate` remains a purely
-informational field until Phase 5 introduces a real
-`Capability -> CapabilityAdapter` mapping for the harness to resolve it
-against.
+adapter or a live lab VM. `LabConfig.candidate` is now load-bearing for the
+LAB-T1 read-only safety gate below, but remains unavailable as a production
+`Capability -> CapabilityAdapter` mapping until Phase 5 introduces one.
+
+### LAB-T1 read-only safety preflight
+
+LAB-T1 adds a separate read-only gate for ADR-026 evidence preparation. It
+requires exactly these lab-scoped inputs; there is no production-variable
+fallback:
+
+```text
+PFSENSE_LAB_API_URL=https://candidate.lab.invalid
+PFSENSE_LAB_IDENTITY=lab-adr026
+PFSENSE_LAB_API_KEY_FILE=/outside/repository/lab-api-key
+PFSENSE_LAB_CANDIDATE=LAB_ADR026_ALIAS
+PFSENSE_LAB_ATTESTATION_FILE=/outside/repository/lab-attestation.json
+```
+
+The key and attestation files must be owner-only regular files and remain
+outside Git. The candidate must already be NFC-normalized, match the exact
+`LAB_*`/`TEST_*` synthetic-alias convention, and is never inferred.
+
+A v1 attestation is created explicitly by the lab operator (the harness never
+creates one). Replace every placeholder and choose `expires_at` no more than
+ten minutes after `issued_at`:
+
+```json
+{
+  "schema_version": 1,
+  "lab_identity": "lab-adr026",
+  "candidate": "LAB_ADR026_ALIAS",
+  "issued_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "expires_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "target_is_disposable_lab": true,
+  "candidate_is_synthetic_test_only": true,
+  "verified_no_operational_references": true,
+  "operator_checked_surfaces": [
+    "routing",
+    "vpn",
+    "services",
+    "firewall_policy",
+    "nat",
+    "other_operational_configuration"
+  ]
+}
+```
+
+Set owner-only permissions on both files (for example, `chmod 600`) before
+running the harness. Never place either credential content or a completed
+attestation containing real lab metadata in the repository.
+
+The attestation is schema v1 JSON containing exactly: `schema_version`,
+`lab_identity`, `candidate`, `issued_at`, `expires_at`, three explicit true
+statements (`target_is_disposable_lab`, `candidate_is_synthetic_test_only`, and
+`verified_no_operational_references`), and `operator_checked_surfaces`. The
+surface set is exactly `routing`, `vpn`, `services`, `firewall_policy`, `nat`,
+and `other_operational_configuration`. Timestamps are UTC `Z`; validity must be
+positive and no longer than ten minutes, and issue time may be at most 30
+seconds in the future. Attestations are never generated or refreshed by the
+harness.
+
+Run configuration visibility without revealing values, then the GET-only
+safety gate:
+
+```bash
+python -m lab.cli evidence-env
+python -m lab.cli preflight
+python -m lab.cli dry-run --test-case-id adr026-review
+```
+
+Both networked commands validate URL, credential, and attestation locally
+before constructing a transport. They resolve exactly one complete alias, then
+inspect firewall-rule source/destination and NAT source/destination/target
+references. A reference, query failure, malformed result, or potentially
+truncated bounded enumeration fails closed. The dry run reports the proposed
+semantic unit but sends no PATCH.
+
+This mechanism does **not** prove globally that an alias has no references.
+It is an intentionally scoped disposable-lab safety gate combining partial
+authoritative READ checks with explicit human attestation for currently
+uncovered dependency domains. It is unacceptable as a production WRITE
+dependency model, production authorization, or appliance identity mechanism.
+
+Safe operator sequence:
+
+1. provision the isolated disposable appliance;
+2. create one harmless synthetic alias and manually inspect uncovered uses;
+3. configure the five lab-only inputs and create a fresh v1 attestation;
+4. run `evidence-env`, `preflight`, and `dry-run`;
+5. return the sanitized preflight result for owner review;
+6. request separate authorization before any ADR-026 mutation evidence.
 
 ## Purpose
 
