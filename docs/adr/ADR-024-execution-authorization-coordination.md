@@ -1,9 +1,61 @@
 # ADR-024: Execution-authorization coordination boundary
 
-- **Status:** Proposed — architecture/decision pass only. No code, no
-  execution coordinator, no runtime WRITE behavior, no MCP tool. Does
-  not authorize implementation of any kind.
-- **Date:** 2026-08-11
+- **Status:** Proposed — the architecture remains a proposal; this ADR
+  is not "Accepted" in the `ADR-021`/`ADR-022`-style sense (no "I
+  accept ADR-024 as written" statement has been given). **Slice E1
+  only** (the freshness/precondition re-check primitive) has since been
+  separately authorized under a fixed, narrow scope and implemented —
+  see "Implementation status" below. The coordinator, Slice E2/E3, and
+  every other item in "Implementation slices" remain unauthorized,
+  unimplemented proposals.
+- **Date:** 2026-08-11 (proposed); Slice E1 implemented same day.
+
+## Implementation status
+
+**Slice E1 — freshness/precondition re-check primitive — implemented
+(2026-08-11), under a fixed owner scope.** New
+`src/pfsense_mcp/security_plan_freshness.py`: one public function,
+`plan_authorization_is_fresh(*, target_capability_posture,
+target_anchor_assurance, expected_plan_digest, env=None) -> bool`, and
+one public exception, `PlanFreshnessError`. Establishes exactly the
+invariant this slice was authorized to establish: *a previously
+authorized plan is fresh only when a newly discovered authoritative
+posture, passed through the existing `generate_security_posture_plan()`
+and `compute_plan_digest()`/`verify_plan_digest()` (via
+`security_plan_digest.py`, unmodified), reproduces the exact authorized
+`plan_digest`* — `evidence_fingerprint` is never read by this module at
+all, closing off any possibility of it becoming the authoritative gate
+by accident.
+
+Composes two existing, unmodified primitives only — introduces zero new
+hashing/canonicalization/comparison logic
+(`test_module_defines_no_second_digest_or_canonicalization_function`
+proves this by source inspection, not merely by claim). Zero
+`pfsense_mcp.tier1` imports (no new isolation exemption needed).
+Structurally cannot accept a caller-supplied "fresh" digest or a
+caller-supplied plan object — no such parameter exists on the public
+function (`inspect.signature`-based structural tests confirm this
+directly). Malformed/wrong-type `expected_plan_digest` returns `False`;
+an unexpected discovery/plan-generation/digest-generation failure raises
+a sanitized `PlanFreshnessError` (never silently returns `True`, never
+leaks the original exception's message).
+
+Owner scope fixed for this slice, unchanged by implementation: no
+coordinator, no `MutationExecutor`/state-machine modification, no
+authorization consumption (this module never imports
+`tier1.authorization_consumption_store`), no two-phase consumption, no
+`DeprovisionAuthorization` work, no `target_identity_digest`/
+appliance-identity mechanism of any kind (confirmed absent by direct
+grep, not merely by omission). 36 new tests (27 regression/adversarial
++ 9 AST-based isolation). Full validation clean (2250 pytest passed, up
+from 2214; `ruff`/`mypy`/`mkdocs build --strict`/`make quick`/`make
+validate` all green). `MutationExecutor`, `tier1/state_machine.py`, and
+`PlanAuthorization`'s schema confirmed byte-identical to the pre-slice
+checkpoint via direct diff/sha256.
+
+**Slice E2/E3 and the coordinator itself remain fully unimplemented,
+unauthorized proposals** — see "Implementation slices" below, unchanged
+by this status update.
 
 ## Naming note (read first)
 
@@ -793,8 +845,11 @@ confirmed unchanged by validation (below).
 
 ## Deferred work
 
-- The freshness/precondition engine itself (`ADR-022`'s own Phase E) —
-  designed in detail above, not implemented.
+- The freshness/precondition engine's core primitive (Slice E1) is
+  **implemented** — see "Implementation status" above. Composing it
+  with the other Phase D primitives and wiring it into an actual
+  execution path (Slice E2/E3, the coordinator) remains fully
+  deferred, not implemented.
 - The execution coordinator itself (`ADR-022`'s own Phase F/G) —
   designed in detail above, not implemented.
 - `target_identity_digest` for ordinary `PlanAuthorization` (Question B
@@ -813,7 +868,7 @@ authorization to select from — prefer the earliest slices over later
 ones; each should be independently reviewable and independently
 mergeable.**
 
-### Slice 1 — freshness re-check (pure comparison + I/O boundary split)
+### Slice 1 — freshness re-check (pure comparison + I/O boundary split) — **implemented, see "Implementation status" above**
 
 - **Files expected to change**: one new file (e.g.
   `security_plan_freshness.py`), sibling to

@@ -200,12 +200,23 @@ sequence, starting at Phase E — the freshness/precondition engine,
 still out of scope) should record their own "implemented" entry here
 when and if separately authorized and built.
 [`ADR-024`](adr/ADR-024-execution-authorization-coordination.md)
-(Proposed, 2026-08-11) is an architecture/decision pass, no code,
-covering the combined territory `ADR-022` numbers as Phases E/F/G —
-freshness re-check design, the proposed execution-coordinator boundary,
-consumption/crash semantics, and the `target_identity_digest` question
-— it authorizes nothing and should be updated in place, not restated
-here, if and when any of that is separately authorized and built.
+(Proposed, 2026-08-11) is an architecture/decision pass covering the
+combined territory `ADR-022` numbers as Phases E/F/G — freshness
+re-check design, the proposed execution-coordinator boundary,
+consumption/crash semantics, and the `target_identity_digest` question.
+Its own **Slice E1 (the freshness/precondition re-check primitive) has
+since been separately authorized under a fixed, narrow scope and
+implemented** — new `src/pfsense_mcp/security_plan_freshness.py`,
+`plan_authorization_is_fresh()`, composing the existing
+`generate_security_posture_plan()`/`compute_plan_digest()`/
+`verify_plan_digest()` only, zero `pfsense_mcp.tier1` imports, no
+authorization consumption, no coordinator, no `MutationExecutor`/
+state-machine change. See `ADR-024`'s own "Implementation status"
+section for the complete detail. The coordinator and every other item
+in `ADR-024`'s "Implementation slices" remain unauthorized,
+unimplemented proposals — this document and `ADR-024` should be
+updated in place, not restated here, if and when any of that is
+separately authorized and built.
 
 **Phase B — canonical `PlanDigest` computation — implemented
 (2026-08-11).** Plan identity only. No `PlanAuthorization`/

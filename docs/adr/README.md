@@ -29,7 +29,7 @@ silently rewrite earlier context.
 | [021](ADR-021-security-posture-provisioning.md) | Guided security-posture provisioning (`pfsense-mcp-security setup`) | Accepted — architecture/design only; no wizard, posture, WRITE, or fail-closed enforcement authorized |
 | [022](ADR-022-execution-authorization-boundary.md) | Execution-authorization boundary (Plan → Authorize → Execute → Verify) | Accepted — architecture/design only; no authorization/execution code, no WRITE tool, no schema change authorized |
 | [023](ADR-023-authorization-verification-boundary.md) | Authorization-verification boundary (`ADR-022` Phase D) | Proposed (architecture) — owner decisions made and Phase D implemented under them; not a full `ADR-021`/`ADR-022`-style acceptance |
-| [024](ADR-024-execution-authorization-coordination.md) | Execution-authorization coordination boundary (`ADR-022` Phase E/F/G territory) | Proposed — architecture/decision pass only; no coordinator, no freshness engine, no execution wiring, no owner decision made yet |
+| [024](ADR-024-execution-authorization-coordination.md) | Execution-authorization coordination boundary (`ADR-022` Phase E/F/G territory) | Proposed (architecture) — Slice E1 (freshness primitive) separately authorized and implemented; coordinator and remaining slices still unauthorized, unimplemented |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
