@@ -35,6 +35,30 @@ PlanAuthorization v2 binding, B3's preparer, B4's RecoveryContract provenance,
 B5's freshness composition, or B6/E3. ADR-025 remains Proposed; public MCP
 remains 42 READ / 0 WRITE and WRITE remains 0/3 active.
 
+**Slice B2 — PlanAuthorization v2 signed per-step binding — implemented
+(2026-08-11), under a fixed owner scope.** `PlanAuthorizationV2` is a separate
+concrete artifact with schema version 2. It replaces v1's independent
+`authorized_step_ids` with one authoritative, non-empty tuple of typed
+`PlanAuthorizationStepBinding(step_id, execution_intent_digest)` values.
+Duplicate step IDs, malformed safe-token step IDs, and non-64-lowercase-hex
+digest values fail construction. Binding order has no semantic meaning; the
+signed payload sorts exact `(step_id, digest)` pairs deterministically.
+
+V2 signs the existing plan digest, the exact binding set, authority/algorithm,
+timestamps, risk class, and evidence fingerprint under the distinct
+`plan-authorization-v2` purpose plus signed schema version 2. V1 remains its
+unchanged concrete type/domain/schema and cannot verify as v2 (or vice versa).
+Expiry remains the same exclusive `now < expires_at` check and the same pinned
+Ed25519 authority mechanism is reused.
+
+B2 validates and signs only the B1 digest's stable 64-hex output shape. It does
+not import a prepared intent, prepare or recompute an execution-intent digest,
+claim freshness/consumption, or create a RecoveryContract. A same-shaped digest
+from another domain cannot be distinguished structurally at B2; B3/B5 must
+authoritatively recompute the B1 domain and compare it. B3–B6/E3 remain
+unimplemented and unauthorized. ADR-025 remains Proposed; public MCP remains
+42 READ / 0 WRITE and WRITE remains 0/3 active.
+
 ## Context
 
 ADR-022 defines `Plan → Authorize → Execute → Verify`. ADR-024 Slice E1

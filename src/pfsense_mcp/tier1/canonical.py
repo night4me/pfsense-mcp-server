@@ -47,6 +47,11 @@ class DigestPurpose(str, Enum):
     #: never verify against another purpose's payload even if the two
     #: payloads' other fields happened to collide. Additive only.
     PLAN_AUTHORIZATION = "plan-authorization"
+    #: ADR-025 Slice B2 -- signed PlanAuthorization v2 payloads, which
+    #: bind exact step IDs to B1 execution-intent digests. Kept distinct
+    #: from v1 PLAN_AUTHORIZATION in addition to signing schema_version=2,
+    #: so neither version's signature can be interpreted as the other.
+    PLAN_AUTHORIZATION_V2 = "plan-authorization-v2"
     #: ADR-022 Phase C -- domain-separates `DeprovisionAuthorization`,
     #: a structurally distinct artifact *type* from `PlanAuthorization`
     #: (own schema, own fields, own signing payload) per ADR-022's

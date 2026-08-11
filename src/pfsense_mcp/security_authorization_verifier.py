@@ -143,16 +143,21 @@ from datetime import datetime, timezone
 from .security_authorization import (
     AUTHORIZATION_SIGNING_ALGORITHM,
     PlanAuthorization,
+    PlanAuthorizationV2,
     SecurityAuthorizationError,
     plan_authorization_payload_of,
     plan_authorization_signing_payload,
+    plan_authorization_v2_payload_of,
+    plan_authorization_v2_signing_payload,
 )
 from .tier1.ed25519_authority import PinnedAuthoritySet
 
 __all__ = [
     "plan_authorization_authorizes_step",
     "plan_authorization_is_current",
+    "plan_authorization_v2_authorizes_execution",
     "verify_plan_authorization_signature",
+    "verify_plan_authorization_v2_signature",
 ]
 
 
@@ -174,13 +179,22 @@ def verify_plan_authorization_signature(authz: PlanAuthorization, authorities: P
     re-validate its shape. Says nothing about expiry, consumption, or
     freshness -- see module docstring."""
 
-    if authz.algorithm != AUTHORIZATION_SIGNING_ALGORITHM:
+    if not isinstance(authz, PlanAuthorization) or authz.algorithm != AUTHORIZATION_SIGNING_ALGORITHM:
         return False
     message = plan_authorization_signing_payload(plan_authorization_payload_of(authz))
     return authorities.verify_signature(authority_id=authz.authority_id, message=message, signature=authz.proof)
 
 
-def plan_authorization_is_current(authz: PlanAuthorization, *, now: datetime) -> bool:
+def verify_plan_authorization_v2_signature(authz: PlanAuthorizationV2, authorities: PinnedAuthoritySet) -> bool:
+    """Verify only the signature over one structurally valid v2 artifact."""
+
+    if not isinstance(authz, PlanAuthorizationV2) or authz.algorithm != AUTHORIZATION_SIGNING_ALGORITHM:
+        return False
+    message = plan_authorization_v2_signing_payload(plan_authorization_v2_payload_of(authz))
+    return authorities.verify_signature(authority_id=authz.authority_id, message=message, signature=authz.proof)
+
+
+def plan_authorization_is_current(authz: PlanAuthorization | PlanAuthorizationV2, *, now: datetime) -> bool:
     """`True` only if `now` is strictly before `authz.expires_at`. `now`
     must be a caller-supplied, timezone-aware UTC `datetime` -- this
     function performs no clock read of its own. Raises
@@ -207,3 +221,24 @@ def plan_authorization_authorizes_step(authz: PlanAuthorization, *, plan_digest:
     digest_matches = hmac.compare_digest(authz.plan_digest, plan_digest)
     step_matches = step_id in authz.authorized_step_ids
     return digest_matches and step_matches
+
+
+def plan_authorization_v2_authorizes_execution(
+    authz: PlanAuthorizationV2,
+    *,
+    plan_digest: str,
+    step_id: str,
+    execution_intent_digest: str,
+) -> bool:
+    """Exact v2 plan plus step/digest membership; never recomputes intent."""
+
+    if not isinstance(authz, PlanAuthorizationV2) or not all(
+        isinstance(value, str) for value in (plan_digest, step_id, execution_intent_digest)
+    ):
+        return False
+    if not hmac.compare_digest(authz.plan_digest, plan_digest):
+        return False
+    return any(
+        binding.step_id == step_id and hmac.compare_digest(binding.execution_intent_digest, execution_intent_digest)
+        for binding in authz.authorized_executions
+    )

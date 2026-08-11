@@ -124,6 +124,18 @@ identical artifacts, not two different ones; the dataclass field itself
 retains the caller-supplied order for display/audit purposes, since that
 does not affect the signed identity either way.
 
+## `PlanAuthorizationV2` -- ADR-025 B2 execution-intent binding
+
+V2 is a separate concrete type and schema, never a reinterpretation of v1. It
+replaces `authorized_step_ids` with one authoritative, non-empty tuple of
+`PlanAuthorizationStepBinding(step_id, execution_intent_digest)` values.
+Step IDs are exact safe tokens and unique; digests are exactly 64 lowercase
+hex characters, matching B1's output shape. Binding presentation order is not
+semantic, so signing sorts complete `(step_id, digest)` pairs. The signing
+payload uses `DigestPurpose.PLAN_AUTHORIZATION_V2` and schema version 2, making
+v1/v2 signatures non-interchangeable. B2 never imports or recomputes a
+prepared execution intent; authoritative digest provenance remains B3/B5.
+
 ## `DeprovisionAuthorization` -- exact schema (version 1)
 
 Deliberately a **wholly separate artifact type** (own schema version,
@@ -269,19 +281,27 @@ __all__ = [
     "AUTHORIZATION_SIGNING_ALGORITHM",
     "DEPROVISION_AUTHORIZATION_SCHEMA_VERSION",
     "PLAN_AUTHORIZATION_SCHEMA_VERSION",
+    "PLAN_AUTHORIZATION_V2_SCHEMA_VERSION",
     "AuthorizationEvidenceFingerprint",
     "DeprovisionAuthorization",
     "DeprovisionAuthorizationPayload",
     "PlanAuthorization",
     "PlanAuthorizationPayload",
+    "PlanAuthorizationStepBinding",
+    "PlanAuthorizationV2",
+    "PlanAuthorizationV2Payload",
     "SecurityAuthorizationError",
     "build_deprovision_authorization_payload",
     "build_plan_authorization_payload",
+    "build_plan_authorization_v2_payload",
     "deprovision_authorization_signing_payload",
     "plan_authorization_payload_of",
     "plan_authorization_signing_payload",
+    "plan_authorization_v2_payload_of",
+    "plan_authorization_v2_signing_payload",
     "sign_deprovision_authorization",
     "sign_plan_authorization",
+    "sign_plan_authorization_v2",
 ]
 
 _SAFE_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
@@ -292,6 +312,11 @@ _ED25519_SIGNATURE_BYTES = 64
 #: `PlanAuthorization` -- independent of `DEPROVISION_AUTHORIZATION_SCHEMA_VERSION`
 #: below, since the two are separate artifact types with separate schemas.
 PLAN_AUTHORIZATION_SCHEMA_VERSION = 1
+
+#: ADR-025 Slice B2's wholly explicit PlanAuthorization v2 schema. V1 is
+#: intentionally not bumped or reinterpreted; the two concrete artifact
+#: types and signing functions remain separate.
+PLAN_AUTHORIZATION_V2_SCHEMA_VERSION = 2
 
 #: Independent schema-version namespace for `DeprovisionAuthorization` --
 #: never incremented merely because `PlanAuthorization`'s schema changes,
@@ -622,6 +647,256 @@ def sign_plan_authorization(payload: PlanAuthorizationPayload, private_key: Ed25
         authorization_id=payload.authorization_id,
         plan_digest=payload.plan_digest,
         authorized_step_ids=payload.authorized_step_ids,
+        authority_id=payload.authority_id,
+        algorithm=payload.algorithm,
+        proof=proof,
+        issued_at=payload.issued_at,
+        expires_at=payload.expires_at,
+        risk_class=payload.risk_class,
+        evidence_fingerprint=payload.evidence_fingerprint,
+    )
+
+
+# --------------------------------------------------------------------------
+# PlanAuthorization v2 -- exact step-to-execution-intent bindings
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PlanAuthorizationStepBinding:
+    """One exact step ID to one claimed B1 execution-intent digest.
+
+    B2 validates the digest's stable 64-lowercase-hex output shape only. It
+    does not recompute a PreparedExecutionIntent; authoritative derivation and
+    recomputation remain B3/B5 responsibilities.
+    """
+
+    step_id: str
+    execution_intent_digest: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.step_id, str) or not _SAFE_TOKEN.fullmatch(self.step_id):
+            raise SecurityAuthorizationError("PlanAuthorization v2 step_id is invalid.")
+        if not isinstance(self.execution_intent_digest, str) or not _HEX_64.fullmatch(self.execution_intent_digest):
+            raise SecurityAuthorizationError("PlanAuthorization v2 execution_intent_digest is invalid.")
+
+    def to_payload(self) -> dict[str, CanonicalValue]:
+        return {
+            "step_id": self.step_id,
+            "execution_intent_digest": self.execution_intent_digest,
+        }
+
+
+@dataclass(frozen=True)
+class PlanAuthorizationV2Payload:
+    """Every signed PlanAuthorization v2 field except ``proof``."""
+
+    schema_version: int
+    authorization_id: str
+    plan_digest: str
+    authorized_executions: tuple[PlanAuthorizationStepBinding, ...]
+    authority_id: str
+    algorithm: str
+    issued_at: datetime
+    expires_at: datetime
+    risk_class: AuthorizationLevel
+    evidence_fingerprint: AuthorizationEvidenceFingerprint
+
+    def __post_init__(self) -> None:
+        if type(self.schema_version) is not int or self.schema_version != PLAN_AUTHORIZATION_V2_SCHEMA_VERSION:
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload schema_version is unsupported.")
+        tokens = (self.authorization_id, self.authority_id, self.algorithm)
+        if not all(isinstance(value, str) and _SAFE_TOKEN.fullmatch(value) for value in tokens):
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload metadata is invalid.")
+        if self.algorithm != AUTHORIZATION_SIGNING_ALGORITHM:
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload algorithm is unsupported.")
+        if not isinstance(self.plan_digest, str) or not _HEX_64.fullmatch(self.plan_digest):
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload plan_digest is invalid.")
+        if not isinstance(self.authorized_executions, tuple) or not self.authorized_executions:
+            raise SecurityAuthorizationError("PlanAuthorization v2 bindings must be a non-empty tuple.")
+        if not all(isinstance(binding, PlanAuthorizationStepBinding) for binding in self.authorized_executions):
+            raise SecurityAuthorizationError("PlanAuthorization v2 binding is invalid.")
+        step_ids = tuple(binding.step_id for binding in self.authorized_executions)
+        if len(set(step_ids)) != len(step_ids):
+            raise SecurityAuthorizationError("PlanAuthorization v2 step IDs must be unique.")
+        if not isinstance(self.issued_at, datetime) or not isinstance(self.expires_at, datetime):
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload timestamps must be UTC datetimes.")
+        if not _is_utc(self.issued_at) or not _is_utc(self.expires_at) or self.expires_at <= self.issued_at:
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload validity window is invalid.")
+        if not isinstance(self.risk_class, AuthorizationLevel) or self.risk_class not in _AUTHORIZATION_LEVEL_RANK:
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload risk_class is invalid.")
+        if not isinstance(self.evidence_fingerprint, AuthorizationEvidenceFingerprint):
+            raise SecurityAuthorizationError("PlanAuthorization v2 payload evidence_fingerprint is invalid.")
+
+
+def build_plan_authorization_v2_payload(
+    plan: SecurityPosturePlan,
+    authorized_executions: Sequence[PlanAuthorizationStepBinding],
+    *,
+    authorization_id: str,
+    authority_id: str,
+    issued_at: datetime,
+    expires_at: datetime,
+    algorithm: str = AUTHORIZATION_SIGNING_ALGORITHM,
+    schema_version: int = PLAN_AUTHORIZATION_V2_SCHEMA_VERSION,
+) -> PlanAuthorizationV2Payload:
+    """Build the exact v2 payload; never prepares or recomputes an intent."""
+
+    if not isinstance(authorized_executions, (tuple, list)) or not authorized_executions:
+        raise SecurityAuthorizationError("authorized_executions must be a non-empty, explicit sequence.")
+    bindings = tuple(authorized_executions)
+    if not all(isinstance(binding, PlanAuthorizationStepBinding) for binding in bindings):
+        raise SecurityAuthorizationError("authorized_executions contains an invalid binding.")
+    step_ids = tuple(binding.step_id for binding in bindings)
+    if len(set(step_ids)) != len(step_ids):
+        raise SecurityAuthorizationError("authorized_executions must not contain duplicate step IDs.")
+
+    steps_by_id = {step.step_id: step for step in plan.steps}
+    selected_levels: list[AuthorizationLevel] = []
+    for step_id in step_ids:
+        step = steps_by_id.get(step_id)
+        if step is None:
+            raise SecurityAuthorizationError(f"Step {step_id!r} is not part of the supplied plan.")
+        if step.authorization_required in _NEVER_PLAN_AUTHORIZATION_LEVELS:
+            raise SecurityAuthorizationError(
+                f"Step {step_id!r} requires {step.authorization_required.value!r}, "
+                "which a PlanAuthorization can never cover."
+            )
+        selected_levels.append(step.authorization_required)
+
+    if not isinstance(authorization_id, str) or not _SAFE_TOKEN.fullmatch(authorization_id):
+        raise SecurityAuthorizationError("authorization_id is invalid.")
+    if not isinstance(authority_id, str) or not _SAFE_TOKEN.fullmatch(authority_id):
+        raise SecurityAuthorizationError("authority_id is invalid.")
+    if algorithm != AUTHORIZATION_SIGNING_ALGORITHM:
+        raise SecurityAuthorizationError("Unsupported authorization signing algorithm.")
+    if schema_version != PLAN_AUTHORIZATION_V2_SCHEMA_VERSION:
+        raise SecurityAuthorizationError("Unsupported PlanAuthorization v2 schema version.")
+    if not isinstance(issued_at, datetime) or not isinstance(expires_at, datetime):
+        raise SecurityAuthorizationError("issued_at/expires_at must be UTC datetimes.")
+    if not _is_utc(issued_at) or not _is_utc(expires_at):
+        raise SecurityAuthorizationError("issued_at/expires_at must be timezone-aware UTC datetimes.")
+    if expires_at <= issued_at:
+        raise SecurityAuthorizationError("expires_at must be strictly after issued_at.")
+
+    return PlanAuthorizationV2Payload(
+        schema_version=schema_version,
+        authorization_id=authorization_id,
+        plan_digest=compute_plan_digest(plan),
+        authorized_executions=bindings,
+        authority_id=authority_id,
+        algorithm=algorithm,
+        issued_at=issued_at,
+        expires_at=expires_at,
+        risk_class=max(selected_levels, key=lambda level: _AUTHORIZATION_LEVEL_RANK[level]),
+        evidence_fingerprint=AuthorizationEvidenceFingerprint.from_plan(plan),
+    )
+
+
+def plan_authorization_v2_signing_payload(payload: PlanAuthorizationV2Payload) -> bytes:
+    """Canonical v2 signing bytes; binding order has no semantic meaning."""
+
+    if not isinstance(payload, PlanAuthorizationV2Payload):
+        raise SecurityAuthorizationError("Expected PlanAuthorizationV2Payload.")
+    sorted_bindings: list[CanonicalValue] = [
+        binding.to_payload()
+        for binding in sorted(
+            payload.authorized_executions,
+            key=lambda binding: (binding.step_id, binding.execution_intent_digest),
+        )
+    ]
+    body: dict[str, CanonicalValue] = {
+        "digest_purpose": DigestPurpose.PLAN_AUTHORIZATION_V2.value,
+        "schema_version": payload.schema_version,
+        "authorization_id": payload.authorization_id,
+        "plan_digest": payload.plan_digest,
+        "authorized_executions": sorted_bindings,
+        "authority_id": payload.authority_id,
+        "algorithm": payload.algorithm,
+        "issued_at": payload.issued_at.isoformat(),
+        "expires_at": payload.expires_at.isoformat(),
+        "risk_class": payload.risk_class.value,
+        "evidence_fingerprint": payload.evidence_fingerprint.to_payload(),
+    }
+    return canonical_json(body)
+
+
+@dataclass(frozen=True)
+class PlanAuthorizationV2:
+    """Signed v2 authorization for exact plan/step/digest associations."""
+
+    schema_version: int
+    authorization_id: str
+    plan_digest: str
+    authorized_executions: tuple[PlanAuthorizationStepBinding, ...]
+    authority_id: str
+    algorithm: str
+    proof: bytes
+    issued_at: datetime
+    expires_at: datetime
+    risk_class: AuthorizationLevel
+    evidence_fingerprint: AuthorizationEvidenceFingerprint
+
+    def __post_init__(self) -> None:
+        if type(self.schema_version) is not int or self.schema_version != PLAN_AUTHORIZATION_V2_SCHEMA_VERSION:
+            raise SecurityAuthorizationError("PlanAuthorization v2 schema_version is unsupported.")
+        tokens = (self.authorization_id, self.authority_id, self.algorithm)
+        if not all(isinstance(value, str) and _SAFE_TOKEN.fullmatch(value) for value in tokens):
+            raise SecurityAuthorizationError("PlanAuthorization v2 metadata is invalid.")
+        if self.algorithm != AUTHORIZATION_SIGNING_ALGORITHM:
+            raise SecurityAuthorizationError("PlanAuthorization v2 algorithm is unsupported.")
+        if not isinstance(self.plan_digest, str) or not _HEX_64.fullmatch(self.plan_digest):
+            raise SecurityAuthorizationError("PlanAuthorization v2 plan_digest is invalid.")
+        if not isinstance(self.authorized_executions, tuple) or not self.authorized_executions:
+            raise SecurityAuthorizationError("PlanAuthorization v2 bindings are invalid.")
+        if not all(isinstance(binding, PlanAuthorizationStepBinding) for binding in self.authorized_executions):
+            raise SecurityAuthorizationError("PlanAuthorization v2 binding is invalid.")
+        if len({binding.step_id for binding in self.authorized_executions}) != len(self.authorized_executions):
+            raise SecurityAuthorizationError("PlanAuthorization v2 step IDs must be unique.")
+        if not isinstance(self.proof, bytes) or len(self.proof) != _ED25519_SIGNATURE_BYTES:
+            raise SecurityAuthorizationError("PlanAuthorization v2 proof must be a 64-byte Ed25519 signature.")
+        if not isinstance(self.issued_at, datetime) or not isinstance(self.expires_at, datetime):
+            raise SecurityAuthorizationError("PlanAuthorization v2 timestamps must be UTC datetimes.")
+        if not _is_utc(self.issued_at) or not _is_utc(self.expires_at) or self.expires_at <= self.issued_at:
+            raise SecurityAuthorizationError("PlanAuthorization v2 validity window is invalid.")
+        if not isinstance(self.risk_class, AuthorizationLevel) or self.risk_class not in _AUTHORIZATION_LEVEL_RANK:
+            raise SecurityAuthorizationError("PlanAuthorization v2 risk_class is invalid.")
+        if not isinstance(self.evidence_fingerprint, AuthorizationEvidenceFingerprint):
+            raise SecurityAuthorizationError("PlanAuthorization v2 evidence_fingerprint is invalid.")
+
+
+def plan_authorization_v2_payload_of(authz: PlanAuthorizationV2) -> PlanAuthorizationV2Payload:
+    """Reconstruct the exact signed v2 payload from the artifact itself."""
+
+    if not isinstance(authz, PlanAuthorizationV2):
+        raise SecurityAuthorizationError("Expected PlanAuthorizationV2.")
+    return PlanAuthorizationV2Payload(
+        schema_version=authz.schema_version,
+        authorization_id=authz.authorization_id,
+        plan_digest=authz.plan_digest,
+        authorized_executions=authz.authorized_executions,
+        authority_id=authz.authority_id,
+        algorithm=authz.algorithm,
+        issued_at=authz.issued_at,
+        expires_at=authz.expires_at,
+        risk_class=authz.risk_class,
+        evidence_fingerprint=authz.evidence_fingerprint,
+    )
+
+
+def sign_plan_authorization_v2(
+    payload: PlanAuthorizationV2Payload, private_key: Ed25519PrivateKey
+) -> PlanAuthorizationV2:
+    """Signing-side only; signs one exact v2 payload with caller-held key."""
+
+    if not isinstance(payload, PlanAuthorizationV2Payload):
+        raise SecurityAuthorizationError("Expected PlanAuthorizationV2Payload.")
+    proof = private_key.sign(plan_authorization_v2_signing_payload(payload))
+    return PlanAuthorizationV2(
+        schema_version=payload.schema_version,
+        authorization_id=payload.authorization_id,
+        plan_digest=payload.plan_digest,
+        authorized_executions=payload.authorized_executions,
         authority_id=payload.authority_id,
         algorithm=payload.algorithm,
         proof=proof,

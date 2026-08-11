@@ -67,7 +67,9 @@ _FORBIDDEN_REFERENCED_NAMES = {
 _EXPECTED_PUBLIC_SURFACE = {
     "plan_authorization_authorizes_step",
     "plan_authorization_is_current",
+    "plan_authorization_v2_authorizes_execution",
     "verify_plan_authorization_signature",
+    "verify_plan_authorization_v2_signature",
 }
 
 
