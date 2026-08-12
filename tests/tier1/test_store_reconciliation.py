@@ -60,7 +60,7 @@ def _confirmation_evidence(contract):
     )
 
 
-def _to_reconciliation(store, contract):
+def _to_reconciliation(store, contract, *, rollback=False):
     store.create(contract)
     prepared = store.transition(
         contract.contract_id,
@@ -77,10 +77,24 @@ def _to_reconciliation(store, contract):
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
     )
+    current = executing
+    if rollback:
+        current = store.mark_execution_verified(
+            contract.contract_id,
+            expected_version=executing.state_version,
+            verified_target_fingerprint=contract.target_fingerprint,
+            verified_lifecycle_locator=contract.lifecycle_locator,
+        )
+        current = store.transition(
+            contract.contract_id,
+            expected_state=RecoveryState.VERIFIED,
+            expected_version=current.state_version,
+            target_state=RecoveryState.ROLLING_BACK,
+        )
     return store.transition(
         executing.contract_id,
-        expected_state=RecoveryState.EXECUTING,
-        expected_version=executing.state_version,
+        expected_state=current.state,
+        expected_version=current.state_version,
         target_state=RecoveryState.RECONCILIATION,
     )
 
@@ -117,7 +131,11 @@ def _reconciliation_evidence(contract, *, outcome, proof=_VALID_RECONCILIATION_P
 )
 def test_each_outcome_resolves_to_its_declared_target_state(tmp_path, contract_factory, outcome, expected_state):
     store = _store(tmp_path)
-    contract = _to_reconciliation(store, contract_factory())
+    rollback = outcome in {
+        ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED,
+        ReconciliationOutcome.CONFIRMED_ROLLBACK_NOT_APPLIED,
+    }
+    contract = _to_reconciliation(store, contract_factory(), rollback=rollback)
 
     resolved = store.resolve_reconciliation(
         contract.contract_id, evidence=_reconciliation_evidence(contract, outcome=outcome)
@@ -223,7 +241,7 @@ def test_resolution_produces_a_chained_audit_event(tmp_path, contract_factory):
 
 def test_rollback_failed_outcome_keeps_target_reserved(tmp_path, contract_factory):
     store = _store(tmp_path)
-    contract = _to_reconciliation(store, contract_factory())
+    contract = _to_reconciliation(store, contract_factory(), rollback=True)
 
     resolved = store.resolve_reconciliation(
         contract.contract_id,

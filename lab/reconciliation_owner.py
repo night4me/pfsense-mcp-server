@@ -13,6 +13,7 @@ from pfsense_mcp.tier1.reconciliation_providers import signing_payload
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 
 from .reconciliation_authority import (
+    AuditLoader,
     ContractLoader,
     LabReconciliationError,
     LabReconciliationPaths,
@@ -32,15 +33,19 @@ def sign_existing_pending(
     private_key_file: Path,
     outcome: ReconciliationOutcome,
     contract_loader: ContractLoader,
+    audit_loader: AuditLoader,
+    integrity_key: bytes,
 ) -> None:
-    pending: PendingReconciliation = load_pending(paths)
-    validate_pending_against_store(pending, contract_loader)
+    pending: PendingReconciliation = load_pending(paths, integrity_key=integrity_key)
+    validate_pending_against_store(pending, contract_loader, audit_loader)
     key_bytes = _read_secure(private_key_file)
     if len(key_bytes) != 32:
         raise LabReconciliationError("LAB-T1 reconciliation private key is malformed")
     unsigned = pending.evidence(outcome, b"placeholder")
     signature = Ed25519PrivateKey.from_private_bytes(key_bytes).sign(signing_payload(unsigned))
     evidence = pending.evidence(outcome, signature)
+    if not load_verifier(paths).verify(evidence):
+        raise LabReconciliationError("LAB-T1 reconciliation private key does not match the pinned authority")
     write_secure_new(paths.signed_file, signed_to_bytes(evidence))
 
 
@@ -77,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
         private_key_file=private_key_file,
         outcome=ReconciliationOutcome(args.outcome),
         contract_loader=store.load,
+        audit_loader=store.audit_events,
+        integrity_key=integrity_key,
     )
     return 0
 

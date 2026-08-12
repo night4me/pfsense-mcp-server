@@ -612,6 +612,22 @@ class SqliteRecoveryContractStore:
         current = self.load(contract_id)
         if current.state != RecoveryState.RECONCILIATION:
             raise ContractConflictError("Recovery Contract is not in RECONCILIATION.")
+        events = self.audit_events(contract_id)
+        origin = events[-1]["previous_state"] if events else None
+        forward_outcomes = {
+            ReconciliationOutcome.CONFIRMED_APPLIED,
+            ReconciliationOutcome.CONFIRMED_NOT_APPLIED,
+        }
+        rollback_outcomes = {
+            ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED,
+            ReconciliationOutcome.CONFIRMED_ROLLBACK_NOT_APPLIED,
+        }
+        if (origin == RecoveryState.EXECUTING.value and evidence.outcome not in forward_outcomes) or (
+            origin == RecoveryState.ROLLING_BACK.value and evidence.outcome not in rollback_outcomes
+        ):
+            raise ConfirmationError("Reconciliation outcome does not match the persisted uncertainty boundary.")
+        if origin not in {RecoveryState.EXECUTING.value, RecoveryState.ROLLING_BACK.value}:
+            raise ConfirmationError("Reconciliation uncertainty boundary is invalid.")
         evidence.verify_bindings(
             contract_id=current.contract_id,
             operation_id=current.operation_id,
