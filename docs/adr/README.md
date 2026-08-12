@@ -32,7 +32,7 @@ silently rewrite earlier context.
 | [024](ADR-024-execution-authorization-coordination.md) | Execution-authorization coordination boundary (`ADR-022` Phase E/F/G territory) | Proposed (architecture) — Slice E1 (freshness primitive) and Slice E2 (coordinator skeleton through one-time consumption) separately authorized and implemented; Slice E3 and full execution wiring still unauthorized, unimplemented |
 | [025](ADR-025-authorization-recovery-contract-binding.md) | Authorization-to-RecoveryContract binding | Proposed (architecture) — designs the missing signed plan/step-to-execution-intent binding; no implementation or WRITE activation authorized |
 | [026](ADR-026-first-write-capability-adapter.md) | First WRITE capability adapter semantic unit | Proposed (architecture/evidence) — specifies the lab-gated firewall-alias description-only candidate; no adapter, endpoint, live mutation, or WRITE activation authorized |
-| [027](ADR-027-closed-stage3-execution-port.md) | Closed LAB-T1 Stage 3 execution-port composition | Proposed — thin composition design and narrow reconciliation-observation interface; no implementation or live authority |
+| [027](ADR-027-closed-stage3-execution-port.md) | Closed LAB-T1 Stage 3 execution-port composition | Accepted — thin composition design and narrow reconciliation-observation interface; implementation and live authority remain separate |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.

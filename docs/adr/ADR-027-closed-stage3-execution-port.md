@@ -1,6 +1,6 @@
 # ADR-027: Closed LAB-T1 Stage 3 execution-port composition
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-08-12, owner)
 - **Date:** 2026-08-12
 - **Scope:** Architecture only. This ADR does not authorize implementation,
   live LAB access, key provisioning, attestation creation, mutation, WRITE
@@ -30,6 +30,10 @@ port recompute them would create a second security owner. A narrow read-only
 executor observation interface is therefore required.
 
 ## Decision proposed
+
+The owner accepted this decision on 2026-08-12. Acceptance fixes the ownership
+and interface boundaries below but does not authorize any implementation slice,
+live LAB activity, key provisioning, WRITE activation, Stage 3F, or B3b.
 
 `ClosedStage3ExecutionPort` is a **thin lab-only composition root with narrowly
 typed per-stage orchestration methods**. It is not an execution engine. Its
