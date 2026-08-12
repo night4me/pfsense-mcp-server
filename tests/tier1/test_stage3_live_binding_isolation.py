@@ -9,7 +9,7 @@ def test_production_source_cannot_import_lab_stage3_binding():
     imported = []
     for path in production.rglob("*.py"):
         text = path.read_text(encoding="utf-8")
-        if "lab.stage3" in text or "from lab" in text:
+        if "lab.stage3" in text or "lab.reconciliation" in text or "from lab" in text:
             imported.append(path)
     assert imported == []
 
