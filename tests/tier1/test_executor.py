@@ -246,6 +246,7 @@ def _verified(store: SqliteRecoveryContractStore, contract: RecoveryContract) ->
         contract.contract_id,
         expected_version=executing.state_version,
         verified_target_fingerprint=verified_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
     )
 
 
@@ -522,6 +523,8 @@ def test_execute_fails_when_pre_send_read_raises(tmp_path, monkeypatch):
     outcome = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
 
     assert outcome.state == RecoveryState.FAILED
+    assert "no such target" not in outcome.detail
+    assert "RuntimeError" in outcome.detail
     assert transport.calls == []
 
 
@@ -742,6 +745,40 @@ def test_execute_postcondition_mismatch_does_not_seal_verified_fingerprint(tmp_p
     assert store.load(contract.contract_id).verified_target_fingerprint is None
 
 
+def test_execute_post_read_locator_change_enters_reconciliation(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _SyntheticAdapter(
+        reads=[
+            {"id": 7, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"id": 9, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+        ]
+    )
+
+    outcome = _executor(store, write_client).execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.RECONCILIATION
+    assert transport.calls == [("PATCH", "/api/v2/synthetic")]
+    assert store.load(contract.contract_id).verified_target_fingerprint is None
+
+
+def test_malformed_pre_send_fingerprint_fails_closed_with_zero_send(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    adapter = _SyntheticAdapter(reads=[{"id": 7, "name": "synthetic-target.invalid", "descr": "original-description"}])
+
+    outcome = _executor(store, write_client).execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.FAILED
+    assert outcome.detail == "pre-send target validation failed"
+    assert transport.calls == []
+
+
 def test_rollback_reaches_reconciliation_on_ambiguous_send(tmp_path):
     store = _store(tmp_path)
     contract, _intent = _build_contract()
@@ -775,3 +812,36 @@ def test_rollback_fails_when_not_rollback_verified(tmp_path, monkeypatch):
     outcome = executor.rollback(contract.contract_id, adapter=adapter)
 
     assert outcome.state == RecoveryState.ROLLBACK_FAILED
+
+
+def test_rollback_post_read_locator_change_enters_reconciliation(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    _verified(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _SyntheticAdapter(
+        reads=[
+            {"id": 7, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+            {"id": 9, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+        ]
+    )
+
+    outcome = _executor(store, write_client).rollback(contract.contract_id, adapter=adapter)
+
+    assert outcome.state == RecoveryState.RECONCILIATION
+    assert transport.calls == [("PATCH", "/api/v2/synthetic")]
+
+
+def test_malformed_pre_rollback_fingerprint_fails_closed_with_zero_send(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    _verified(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    adapter = _SyntheticAdapter(reads=[{"id": 7, "name": "synthetic-target.invalid", "descr": "updated-description"}])
+
+    outcome = _executor(store, write_client).rollback(contract.contract_id, adapter=adapter)
+
+    assert outcome.state == RecoveryState.ROLLBACK_FAILED
+    assert outcome.detail == "pre-rollback target validation failed"
+    assert transport.calls == []

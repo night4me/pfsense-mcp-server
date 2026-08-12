@@ -75,7 +75,7 @@ ranking.
 
 | Rank | Semantic unit | READ / WRITE | Identity | Mutation and rollback | Risk / decision |
 |---:|---|---|---|---|---|
-| 1 | firewall alias: replace `descr` only | `GET /api/v2/firewall/aliases`; `PATCH /api/v2/firewall/alias` | exact normalized unique alias `name`; numeric `id` is a refreshed locator | one bounded string; restore old string after full conflict check | High* because aliases influence policy, but narrowest evidenced candidate; **selected, lab-gated** |
+| 1 | firewall alias: replace `descr` only | `GET /api/v2/firewall/aliases`; `PATCH /api/v2/firewall/alias` | exact normalized unique alias `name`; numeric `id` is a fresh transport locator and protected lifecycle-continuity guard | one bounded string; restore old string after full conflict check | High* because aliases influence policy, but narrowest evidenced candidate; **selected, lab-gated** |
 | 2 | system tunable: replace `descr` only | existing tunables READ; `PATCH /api/v2/system/tunable` | exact tunable name; numeric ID locator | one string; restore old string | High* and system-wide; description/value coupling and runtime effects are less favorable; fallback only |
 | 3 | DNS resolver host-override metadata | `GET /api/v2/services/dns_resolver/host_overrides`; singular PATCH endpoint in upstream inventory | compound host/domain key is mutable and duplicate/normalization behavior is unproven | likely service-config write and resolver reload; exact rollback depends on full object | High/service-wide; rejected for first adapter because identity, reload, and rollback are materially more complex |
 
@@ -291,9 +291,11 @@ exact natural name again.
 
 Verified success requires exactly one match, `descr == new_description`, and
 `name`, `type`, ordered `address`, and ordered `detail` equal the pre-state.
-Numeric ID may change only if lab evidence establishes benign ID reassignment;
-without that evidence, ID change is treated as ambiguity/reconciliation even
-though it is not in the semantic fingerprint.
+The numeric ID is not semantic identity, but the API exposes no independent
+incarnation marker. The ID captured when the lifecycle is protected is
+therefore a continuity guard: every authoritative read before or after a send
+must resolve the same ID. Any change means continuity is unproven and fails
+closed; the operation never infers safe renumbering or recreation.
 
 Zero/multiple matches, malformed data, a different description, or any
 forbidden-field difference fails semantic verification. Timeout or lost
@@ -310,7 +312,8 @@ The rollback snapshot is the same complete canonical semantic object used for
 the precondition: `name`, `type`, old `descr`, ordered `address`, and ordered
 `detail`. It is a full semantic snapshot, not a serialized API envelope and not
 a global pfSense configuration revision. Numeric ID is intentionally excluded
-and refreshed by exact-name READ.
+from this semantic snapshot, but is separately integrity-bound as the
+lifecycle-continuity guard and freshly resolved at every send boundary.
 
 The rollback mutation itself changes only `descr` back to the captured value.
 The full snapshot exists to prevent rollback from overwriting unrelated edits,
@@ -331,8 +334,10 @@ firewall-alias-description-rollback/v1
 Rollback is allowed only when the current exact-name read returns one object
 whose name/type/address/detail equal the snapshot, whose description equals the
 successfully written new description, and whose target reservation/state permits
-rollback. It resolves a fresh numeric ID, PATCHes only the original description
-with `apply=false`, and performs the full authoritative read-back again.
+rollback. It resolves a fresh numeric ID, requires exact equality with the
+protected lifecycle guard, PATCHes only the original description with
+`apply=false`, and performs the full authoritative read-back plus continuity
+check again.
 
 Rollback succeeds only when all semantic fields equal the snapshot. Any
 concurrent change, ambiguous send, missing/multiple resource, reload effect, or
@@ -442,7 +447,7 @@ signed pair before consumption.
 
 | Threat | Classification and treatment |
 |---|---|
-| wrong numeric ID | prevented: ID is refreshed from exact-name READ and never caller supplied |
+| wrong or changed numeric ID | prevented: every fresh exact-name READ must match the integrity-bound lifecycle guard; mismatch fails closed and is never caller-overridable |
 | duplicate/mutable name | lab must prove uniqueness/non-editability; zero/multiple fail closed; otherwise unacceptable |
 | stale precondition / change between read and send | detected by executor re-read/fingerprint; fail closed before send |
 | omitted field resets or hidden default | lab acceptance gate; any unrelated change rejects candidate |
@@ -508,8 +513,9 @@ referenced by management or production-equivalent rules.
 - Change name/type/member/detail externally; expect refusal.
 - Change a separate alias; measure whether execution can safely proceed without
   confusing global config revisions.
-- Delete/recreate and reorder aliases; prove natural-name resolution and ID
-  refresh behavior.
+- Delete/recreate and reorder aliases; prove natural-name resolution and that
+  any lifecycle ID change refuses conservatively because incarnation continuity
+  cannot otherwise be proven.
 - Drop connection during upload, drop response after commit, and timeout during
   read-back; prove no automatic second PATCH and deterministic reconciliation.
 - Conflict after forward verification but before rollback; prove rollback stops.
@@ -532,7 +538,8 @@ B3b implementation may be proposed only after an owner-reviewed evidence
 package proves all of the following on the pinned disposable appliance:
 
 - generated OpenAPI exact selector/body/control semantics;
-- stable unique exact-name identity and safe numeric-ID refresh;
+- stable unique exact-name identity and fail-closed lifecycle numeric-ID
+  continuity;
 - complete authoritative READ including name/type/descr/address/detail;
 - partial PATCH preserves every omitted field and ordering;
 - explicit apply suppression produces no filter reload or service-wide effect;

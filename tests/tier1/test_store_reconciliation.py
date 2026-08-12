@@ -98,6 +98,11 @@ def _reconciliation_evidence(contract, *, outcome, proof=_VALID_RECONCILIATION_P
         verified_target_fingerprint=(
             contract.target_fingerprint if outcome is ReconciliationOutcome.CONFIRMED_APPLIED else None
         ),
+        verified_lifecycle_locator=(
+            contract.lifecycle_locator
+            if outcome in {ReconciliationOutcome.CONFIRMED_APPLIED, ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED}
+            else None
+        ),
     )
 
 
@@ -132,6 +137,30 @@ def test_stale_observed_state_version_is_refused(tmp_path, contract_factory):
     )
     with pytest.raises(ConfirmationError, match="does not match"):
         store.resolve_reconciliation(contract.contract_id, evidence=stale)
+    assert store.load(contract.contract_id).state == RecoveryState.RECONCILIATION
+
+
+def test_confirmed_applied_locator_drift_is_refused(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contract = _to_reconciliation(store, contract_factory(lifecycle_locator=7))
+    evidence = _reconciliation_evidence(contract, outcome=ReconciliationOutcome.CONFIRMED_APPLIED)
+
+    with pytest.raises(ConfirmationError, match="does not match"):
+        store.resolve_reconciliation(
+            contract.contract_id,
+            evidence=ReconciliationEvidence(
+                authority_id=evidence.authority_id,
+                algorithm=evidence.algorithm,
+                contract_id=evidence.contract_id,
+                operation_id=evidence.operation_id,
+                observed_state_version=evidence.observed_state_version,
+                outcome=evidence.outcome,
+                issued_at=evidence.issued_at,
+                proof=evidence.proof,
+                verified_target_fingerprint=evidence.verified_target_fingerprint,
+                verified_lifecycle_locator=9,
+            ),
+        )
     assert store.load(contract.contract_id).state == RecoveryState.RECONCILIATION
 
 

@@ -16,7 +16,7 @@ from pfsense_mcp.tier1.state_machine import RecoveryState
 def _evidence(**overrides):
     fields = {
         "authority_id": "synthetic-owner",
-        "algorithm": "ed25519-reconciliation-v1",
+        "algorithm": "ed25519-reconciliation-v2",
         "contract_id": "contract-001",
         "operation_id": "operation-001",
         "observed_state_version": 3,
@@ -24,6 +24,7 @@ def _evidence(**overrides):
         "issued_at": datetime.now(timezone.utc),
         "proof": b"synthetic-proof",
         "verified_target_fingerprint": "a" * 64,
+        "verified_lifecycle_locator": 7,
     }
     fields.update(overrides)
     return ReconciliationEvidence(**fields)
@@ -39,9 +40,34 @@ def test_confirmed_applied_requires_verified_target_fingerprint():
         _evidence(verified_target_fingerprint=None)
 
 
-def test_non_applied_outcome_rejects_verified_target_fingerprint():
+@pytest.mark.parametrize("fingerprint", ["d" * 64, "malformed", 7])
+def test_non_applied_outcome_rejects_any_verified_target_fingerprint(fingerprint):
     with pytest.raises(ConfirmationError, match="verified target fingerprint"):
-        _evidence(outcome=ReconciliationOutcome.CONFIRMED_NOT_APPLIED)
+        _evidence(
+            outcome=ReconciliationOutcome.CONFIRMED_NOT_APPLIED,
+            verified_target_fingerprint=fingerprint,
+            verified_lifecycle_locator=None,
+        )
+
+
+def test_applied_outcomes_require_verified_lifecycle_locator():
+    with pytest.raises(ConfirmationError, match="verified lifecycle locator"):
+        _evidence(verified_lifecycle_locator=None)
+    rollback = _evidence(
+        outcome=ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED,
+        verified_target_fingerprint=None,
+    )
+    assert rollback.verified_lifecycle_locator == 7
+
+
+@pytest.mark.parametrize("locator", [7, "7", True, -1, 2_147_483_648])
+def test_non_applied_outcomes_reject_any_verified_lifecycle_locator(locator):
+    with pytest.raises(ConfirmationError, match="verified lifecycle locator"):
+        _evidence(
+            outcome=ReconciliationOutcome.CONFIRMED_NOT_APPLIED,
+            verified_target_fingerprint=None,
+            verified_lifecycle_locator=locator,
+        )
 
 
 @pytest.mark.parametrize(
@@ -62,15 +88,18 @@ def test_invalid_fields_are_rejected(overrides):
 
 def test_verify_bindings_accepts_matching_contract():
     evidence = _evidence()
-    evidence.verify_bindings(contract_id="contract-001", operation_id="operation-001", state_version=3)
+    evidence.verify_bindings(
+        contract_id="contract-001", operation_id="operation-001", state_version=3, lifecycle_locator=7
+    )
 
 
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"contract_id": "contract-002", "operation_id": "operation-001", "state_version": 3},
-        {"contract_id": "contract-001", "operation_id": "operation-002", "state_version": 3},
-        {"contract_id": "contract-001", "operation_id": "operation-001", "state_version": 4},
+        {"contract_id": "contract-002", "operation_id": "operation-001", "state_version": 3, "lifecycle_locator": 7},
+        {"contract_id": "contract-001", "operation_id": "operation-002", "state_version": 3, "lifecycle_locator": 7},
+        {"contract_id": "contract-001", "operation_id": "operation-001", "state_version": 4, "lifecycle_locator": 7},
+        {"contract_id": "contract-001", "operation_id": "operation-001", "state_version": 3, "lifecycle_locator": 9},
     ],
 )
 def test_verify_bindings_rejects_any_mismatch(kwargs):

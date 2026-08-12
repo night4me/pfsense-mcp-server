@@ -776,6 +776,7 @@ def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
         executing.contract_id,
         expected_version=executing.state_version,
         verified_target_fingerprint=executing.target_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
     )
     rolling_back = store.transition(
         verified.contract_id,
@@ -800,6 +801,123 @@ def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
     assert rolling_back.target_identity_digest == reconciled.target_identity_digest
 
 
+@pytest.mark.parametrize("observed_locator", [True, "7", 9])
+def test_verified_transition_requires_exact_typed_lifecycle_locator(tmp_path, contract_factory, observed_locator):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory(lifecycle_locator=7))
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+
+    with pytest.raises(ContractConflictError, match="incarnation continuity"):
+        store.mark_execution_verified(
+            executing.contract_id,
+            expected_version=executing.state_version,
+            verified_target_fingerprint=executing.target_fingerprint,
+            verified_lifecycle_locator=observed_locator,
+        )
+    assert store.load(executing.contract_id).state == RecoveryState.EXECUTING
+
+
+@pytest.mark.parametrize("observed_locator", [True, "7", 9])
+def test_rollback_completion_requires_exact_typed_lifecycle_locator(tmp_path, contract_factory, observed_locator):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory(lifecycle_locator=7))
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    verified = store.mark_execution_verified(
+        executing.contract_id,
+        expected_version=executing.state_version,
+        verified_target_fingerprint=executing.target_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
+    )
+    rolling_back = store.transition(
+        verified.contract_id,
+        expected_state=RecoveryState.VERIFIED,
+        expected_version=verified.state_version,
+        target_state=RecoveryState.ROLLING_BACK,
+    )
+
+    with pytest.raises(ContractConflictError, match="incarnation continuity"):
+        store.mark_rollback_verified(
+            rolling_back.contract_id,
+            expected_version=rolling_back.state_version,
+            verified_lifecycle_locator=observed_locator,
+        )
+    assert store.load(rolling_back.contract_id).state == RecoveryState.ROLLING_BACK
+
+
+def test_generic_transition_cannot_claim_rollback_success(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory())
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    verified = store.mark_execution_verified(
+        executing.contract_id,
+        expected_version=executing.state_version,
+        verified_target_fingerprint=executing.target_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
+    )
+    rolling_back = store.transition(
+        verified.contract_id,
+        expected_state=RecoveryState.VERIFIED,
+        expected_version=verified.state_version,
+        target_state=RecoveryState.ROLLING_BACK,
+    )
+
+    with pytest.raises(ContractConflictError, match="ROLLED_BACK requires"):
+        store.transition(
+            rolling_back.contract_id,
+            expected_state=RecoveryState.ROLLING_BACK,
+            expected_version=rolling_back.state_version,
+            target_state=RecoveryState.ROLLED_BACK,
+        )
+
+
+def test_restart_preserves_verified_b_and_lifecycle_guard_for_rollback(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    confirmed = _confirmed(store, contract_factory(lifecycle_locator=7))
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    expected_b = "b" * 64
+    store.mark_execution_verified(
+        executing.contract_id,
+        expected_version=executing.state_version,
+        verified_target_fingerprint=expected_b,
+        verified_lifecycle_locator=7,
+    )
+
+    restarted = _store(tmp_path)
+    persisted = restarted.load(executing.contract_id)
+
+    assert persisted.state == RecoveryState.VERIFIED
+    assert persisted.verified_target_fingerprint == expected_b
+    assert persisted.lifecycle_locator == 7
+    rolling_back = restarted.transition(
+        persisted.contract_id,
+        expected_state=RecoveryState.VERIFIED,
+        expected_version=persisted.state_version,
+        target_state=RecoveryState.ROLLING_BACK,
+    )
+    assert rolling_back.verified_target_fingerprint == expected_b
+    assert rolling_back.lifecycle_locator == 7
+
+
 def test_verified_releases_target_and_later_rollback_refuses_on_conflict(tmp_path, contract_factory):
     """VERIFIED is not a reservation state (see TIER1_ARCHITECTURE.md's
     Rollback section): the target becomes claimable immediately after
@@ -822,6 +940,7 @@ def test_verified_releases_target_and_later_rollback_refuses_on_conflict(tmp_pat
         executing.contract_id,
         expected_version=executing.state_version,
         verified_target_fingerprint=executing.target_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
     )
 
     competing = _confirmed(
@@ -858,6 +977,7 @@ def test_failed_rollback_keeps_target_locked(tmp_path, contract_factory):
         executing.contract_id,
         expected_version=executing.state_version,
         verified_target_fingerprint=executing.target_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
     )
     rolling_back = store.transition(
         verified.contract_id,

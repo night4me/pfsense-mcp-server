@@ -175,9 +175,15 @@ class MutationExecutor:
         try:
             pre = adapter.read_target(self._read_client, target_identity)
         except Exception as exc:
-            return self._finish_execute(executing, RecoveryState.FAILED, f"pre-send target read failed: {exc!r}")
+            return self._finish_execute(
+                executing, RecoveryState.FAILED, f"pre-send target read failed ({type(exc).__name__})"
+            )
 
-        if self._fingerprint_digest(executing, adapter.fingerprint(pre)) != executing.target_fingerprint:
+        try:
+            pre_fingerprint = self._fingerprint_digest(executing, adapter.fingerprint(pre))
+        except Exception:
+            return self._finish_execute(executing, RecoveryState.FAILED, "pre-send target validation failed")
+        if pre_fingerprint != executing.target_fingerprint:
             return self._finish_execute(executing, RecoveryState.FAILED, "target fingerprint drift before send")
 
         try:
@@ -191,7 +197,9 @@ class MutationExecutor:
             plaintext_intent = self._decrypt(executing, executing.protected_intent, ArtifactRole.INTENT)
             request = adapter.build_request(plaintext_intent, transport_target)
         except Exception as exc:
-            return self._finish_execute(executing, RecoveryState.FAILED, f"request construction failed: {exc!r}")
+            return self._finish_execute(
+                executing, RecoveryState.FAILED, f"request construction failed ({type(exc).__name__})"
+            )
 
         if not isinstance(request, BaseModel):
             return self._finish_execute(executing, RecoveryState.FAILED, "adapter did not return a typed request")
@@ -209,6 +217,7 @@ class MutationExecutor:
 
         try:
             post = adapter.read_target(self._read_client, target_identity)
+            post_transport_target = self._resolve_transport_target(executing, adapter, post)
             outcome = adapter.parse_response(raw_response)
             verified = adapter.is_semantically_verified(pre, post, plaintext_intent)
             verified_target_fingerprint = (
@@ -216,7 +225,7 @@ class MutationExecutor:
             )
         except Exception as exc:
             return self._finish_execute(
-                executing, RecoveryState.RECONCILIATION, f"post-send verification failed: {exc!r}"
+                executing, RecoveryState.RECONCILIATION, f"post-send verification failed ({type(exc).__name__})"
             )
 
         if verified_target_fingerprint is not None:
@@ -224,6 +233,7 @@ class MutationExecutor:
                 executing.contract_id,
                 expected_version=executing.state_version,
                 verified_target_fingerprint=verified_target_fingerprint,
+                verified_lifecycle_locator=post_transport_target.numeric_locator,
             )
             return ExecutionOutcome(
                 contract_id=executing.contract_id,
@@ -270,10 +280,18 @@ class MutationExecutor:
             pre = adapter.read_target(self._read_client, target_identity)
         except Exception as exc:
             return self._finish_rollback(
-                rolling_back, RecoveryState.ROLLBACK_FAILED, f"pre-rollback target read failed: {exc!r}"
+                rolling_back,
+                RecoveryState.ROLLBACK_FAILED,
+                f"pre-rollback target read failed ({type(exc).__name__})",
             )
 
-        if self._fingerprint_digest(rolling_back, adapter.fingerprint(pre)) != rolling_back.verified_target_fingerprint:
+        try:
+            pre_fingerprint = self._fingerprint_digest(rolling_back, adapter.fingerprint(pre))
+        except Exception:
+            return self._finish_rollback(
+                rolling_back, RecoveryState.ROLLBACK_FAILED, "pre-rollback target validation failed"
+            )
+        if pre_fingerprint != rolling_back.verified_target_fingerprint:
             # An unrelated change since VERIFIED is a conflict, never a
             # forced overwrite (sealed_executor.md Rollback flow).
             return self._finish_rollback(rolling_back, RecoveryState.ROLLBACK_FAILED, "unrelated change detected")
@@ -292,7 +310,9 @@ class MutationExecutor:
             request = adapter.build_rollback_request(plaintext_snapshot, transport_target)
         except Exception as exc:
             return self._finish_rollback(
-                rolling_back, RecoveryState.ROLLBACK_FAILED, f"rollback request construction failed: {exc!r}"
+                rolling_back,
+                RecoveryState.ROLLBACK_FAILED,
+                f"rollback request construction failed ({type(exc).__name__})",
             )
 
         if not isinstance(request, BaseModel):
@@ -321,16 +341,30 @@ class MutationExecutor:
 
         try:
             post_rollback = adapter.read_target(self._read_client, target_identity)
+            post_rollback_target = self._resolve_transport_target(rolling_back, adapter, post_rollback)
             verified = adapter.is_rollback_verified(plaintext_snapshot, post_rollback)
         except Exception as exc:
             return self._finish_rollback(
-                rolling_back, RecoveryState.RECONCILIATION, f"post-rollback verification failed: {exc!r}"
+                rolling_back,
+                RecoveryState.RECONCILIATION,
+                f"post-rollback verification failed ({type(exc).__name__})",
             )
 
-        final_knowledge = EffectKnowledge.VERIFIED_SUCCESS if verified else EffectKnowledge.VERIFIED_FAILURE
-        decision = classify_fault(MutationBoundary.DURING_ROLLBACK, final_knowledge)
-        detail = "rollback verified" if verified else "rollback response received but not semantically verified"
-        return self._finish_rollback(rolling_back, decision.target_state, detail)
+        if verified:
+            updated = self._store.mark_rollback_verified(
+                rolling_back.contract_id,
+                expected_version=rolling_back.state_version,
+                verified_lifecycle_locator=post_rollback_target.numeric_locator,
+            )
+            return RollbackOutcome(
+                contract_id=rolling_back.contract_id,
+                state=updated.state,
+                detail="rollback verified",
+            )
+        decision = classify_fault(MutationBoundary.DURING_ROLLBACK, EffectKnowledge.VERIFIED_FAILURE)
+        return self._finish_rollback(
+            rolling_back, decision.target_state, "rollback response received but not semantically verified"
+        )
 
     def _finish_rollback(self, contract: RecoveryContract, target_state: RecoveryState, detail: str) -> RollbackOutcome:
         updated = self._store.transition(

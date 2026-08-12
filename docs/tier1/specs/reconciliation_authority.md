@@ -1,13 +1,18 @@
 # Tier 1 — Reconciliation authority
 
-Status: implementation-ready specification; implementation not authorized.
+Status: implemented as an inert Tier 1 primitive; production construction and
+WRITE activation are not authorized.
 Activation gate: Milestone 6; requires
 [ADR-013](../../adr/ADR-013-reconciliation-authority.md).
 Related: [confirmation_authority.md](confirmation_authority.md) (this spec
 reuses its signature mechanism), `state_machine.py`'s
 `RECONCILIATION -> {VERIFIED, FAILED, ROLLING_BACK, ROLLED_BACK,
-ROLLBACK_FAILED}` manual-only edges (existing, currently unreachable by
-any code — no resolver exists yet).
+ROLLBACK_FAILED}` manual-only edges. `store.resolve_reconciliation()` is the
+sole authenticated resolver; it is not constructed by production.
+
+The implemented signed payload is `ed25519-reconciliation-v2`. Version 2 adds
+the applied-state lifecycle-locator observation required by ADR-026. Version 1
+signatures are not reinterpreted or upgraded and fail closed.
 
 ## Purpose
 
@@ -65,6 +70,11 @@ sets the contract's final, trusted, audited state.
   to be.
 - I5: The resolver, like the confirmation verifier, never persists raw
   proof bytes and never leaks which specific check failed.
+- I6: Every applied outcome signs an exact observed lifecycle locator that
+  must equal the contract's integrity-protected locator guard. A
+  `CONFIRMED_APPLIED` outcome additionally signs the exact authoritative
+  post-forward fingerprint. Reconciliation cannot be used to infer continuity
+  across a locator change or to create rollback eligibility without B.
 
 ## Trust boundaries
 
@@ -117,6 +127,8 @@ class ReconciliationEvidence:
     outcome: ReconciliationOutcome
     issued_at: datetime
     proof: bytes
+    verified_target_fingerprint: str | None = None
+    verified_lifecycle_locator: int | None = None
     # __post_init__ validation mirrors ConfirmationEvidence exactly
     # (safe-token checks, UTC checks, bounded proof size).
 

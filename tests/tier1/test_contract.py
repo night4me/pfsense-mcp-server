@@ -96,6 +96,9 @@ def test_confirmation_authority_identifier_is_bounded_and_safe(contract_factory,
         {"state_version": -1},
         {"lifecycle_locator": -1},
         {"lifecycle_locator": True},
+        {"lifecycle_locator": "7"},
+        {"lifecycle_locator": 7.0},
+        {"lifecycle_locator": 2_147_483_648},
         {"confirmation_digest": "a" * 64},
     ],
 )
@@ -173,3 +176,21 @@ def test_verified_target_fingerprint_cannot_be_injected_before_execution(contrac
         replace(contract_factory(), verified_target_fingerprint="a" * 64)
     with pytest.raises(ContractValidationError, match="state and verified target fingerprint"):
         replace(contract_factory(), state=RecoveryState.VERIFIED)
+
+
+@pytest.mark.parametrize("locator", [False, True, -1, 2_147_483_648, "7", 7.0, None])
+def test_resolved_transport_target_rejects_ambiguous_or_unbounded_locator(locator):
+    from pfsense_mcp.tier1.executor import ResolvedTransportTarget
+
+    with pytest.raises(Exception, match="transport locator") as exc_info:
+        ResolvedTransportTarget(numeric_locator=locator, target_identity_digest="a" * 64)
+    assert type(exc_info.value).__name__ == "ContractValidationError"
+
+
+@pytest.mark.parametrize("identity_digest", ["A" * 64, "a" * 63, "a" * 65, "not-hex", b"a" * 64])
+def test_resolved_transport_target_requires_exact_canonical_identity_digest(identity_digest):
+    from pfsense_mcp.tier1.executor import ResolvedTransportTarget
+
+    with pytest.raises(Exception, match="target identity") as exc_info:
+        ResolvedTransportTarget(numeric_locator=7, target_identity_digest=identity_digest)
+    assert type(exc_info.value).__name__ == "ContractValidationError"

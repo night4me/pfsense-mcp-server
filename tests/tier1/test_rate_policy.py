@@ -182,6 +182,7 @@ def test_cooldown_blocks_immediate_reprepare_and_expires(tmp_path, contract_fact
         executing.contract_id,
         expected_version=executing.state_version,
         verified_target_fingerprint=executing.target_fingerprint,
+        verified_lifecycle_locator=executing.lifecycle_locator,
     )
 
     same_target_new_contract = contract_factory(

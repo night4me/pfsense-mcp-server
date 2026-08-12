@@ -372,7 +372,9 @@ decision:
 8. Decrypt the protected intent/snapshot via `crypto.decrypt_artifact()`
    using the executor's held key — the adapter never sees ciphertext or
    the key.
-9. Build the request via `adapter.build_request(intent)`, send **exactly
+9. Derive a fresh immutable transport projection only after semantic identity,
+   fingerprint, and lifecycle-locator checks; build the request via
+   `adapter.build_request(intent, resolved_target)`, then send **exactly
    one** call through `WriteApiClient` to the exact allow-listed
    `(endpoint_symbol, http_method)` — the executor, not the adapter,
    invokes the client.
@@ -443,9 +445,13 @@ execute(contract_id, adapter, intent):
   classify boundary/knowledge from what actually happened during send()
   if knowledge == AMBIGUOUS: store.transition(... -> RECONCILIATION); return
   post = adapter.read_target(read_client, target_identity)
+  post_target = immutable projection from post
+  require post_target semantic identity == contract target identity
+  require post_target numeric locator == contract lifecycle locator
   if adapter.is_semantically_verified(pre, post, plaintext_intent) and knowledge == VERIFIED_SUCCESS:
       verified_target_fingerprint = digest(adapter.fingerprint(post))
-      store.mark_execution_verified(..., verified_target_fingerprint)  # atomically seals value + VERIFIED
+      store.mark_execution_verified(..., verified_target_fingerprint,
+                                    verified_lifecycle_locator=post_target.numeric_locator)
   elif knowledge in {PROVEN_NONE, VERIFIED_FAILURE}:
       store.transition(... -> FAILED)
   else:
@@ -474,8 +480,12 @@ rollback(contract_id, adapter):
   outcome = write_client.send(...)   # the one rollback send
   classify boundary/knowledge (MutationBoundary.DURING_ROLLBACK)
   post = adapter.read_target(read_client, target_identity)
+  post_target = a fresh immutable projection from post
+  require post_target semantic identity == contract target identity
+  require post_target numeric locator == contract lifecycle locator
   if adapter.is_rollback_verified(plaintext_snapshot, post) and knowledge == VERIFIED_SUCCESS:
-      store.transition(... -> ROLLED_BACK)
+      store.mark_rollback_verified(...,
+                                   verified_lifecycle_locator=post_target.numeric_locator)
   else:
       store.transition(... -> ROLLBACK_FAILED)  # or RECONCILIATION if ambiguous
 ```
@@ -485,9 +495,11 @@ never weakened or overwritten. The distinct verified fingerprint is derived
 only after the authoritative post-read satisfies the capability's semantic
 post-condition. This distinction is required whenever the authorized mutation
 itself changes a fingerprinted field. A generic transition may not create
-`VERIFIED` without the post-forward binding. Authenticated reconciliation of a
-confirmed-applied ambiguous outcome must likewise bind the signed observed
-post-forward fingerprint; otherwise rollback remains unavailable.
+`VERIFIED` or `ROLLED_BACK` without these verified bindings. Authenticated
+reconciliation of an applied ambiguous outcome must likewise bind the signed
+observed lifecycle locator; a confirmed-forward outcome also binds the signed
+observed post-forward fingerprint. A mismatch with the contract's
+integrity-protected guard is refused.
 
 ## Audit flow
 

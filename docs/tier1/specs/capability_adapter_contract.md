@@ -204,7 +204,7 @@ the executor's and store's responsibility (see `sealed_executor.md`).
 
 Every adapter, once one is authorized and written, must include:
 
-- Round-trip test: `build_request(intent)` produces exactly the expected
+- Round-trip test: `build_request(intent, resolved_target)` produces exactly the expected
   narrow payload for a representative intent, and rejects (via Pydantic
   validation) any attempt to construct an intent or request with an extra
   field.

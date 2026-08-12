@@ -68,6 +68,7 @@ class ReconciliationEvidence:
     issued_at: datetime
     proof: bytes
     verified_target_fingerprint: str | None = None
+    verified_lifecycle_locator: int | None = None
 
     def __post_init__(self) -> None:
         tokens = (self.authority_id, self.algorithm, self.contract_id, self.operation_id)
@@ -89,10 +90,21 @@ class ReconciliationEvidence:
         valid_fingerprint = isinstance(self.verified_target_fingerprint, str) and bool(
             _HEX_64.fullmatch(self.verified_target_fingerprint)
         )
-        if applied != valid_fingerprint:
+        if (applied and not valid_fingerprint) or (not applied and self.verified_target_fingerprint is not None):
             raise ConfirmationError(
                 "Confirmed-applied reconciliation evidence requires exactly one verified target fingerprint."
             )
+        applied_outcome = self.outcome in {
+            ReconciliationOutcome.CONFIRMED_APPLIED,
+            ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED,
+        }
+        valid_locator = (
+            type(self.verified_lifecycle_locator) is int and 0 <= self.verified_lifecycle_locator <= 2_147_483_647
+        )
+        if (applied_outcome and not valid_locator) or (
+            not applied_outcome and self.verified_lifecycle_locator is not None
+        ):
+            raise ConfirmationError("Applied reconciliation evidence requires exactly one verified lifecycle locator.")
 
     @property
     def evidence_digest(self) -> str:
@@ -114,14 +126,18 @@ class ReconciliationEvidence:
                 "outcome": self.outcome.value,
                 "proof_digest": proof_digest,
                 "verified_target_fingerprint": self.verified_target_fingerprint,
+                "verified_lifecycle_locator": self.verified_lifecycle_locator,
             },
         )
 
-    def verify_bindings(self, *, contract_id: str, operation_id: str, state_version: int) -> None:
+    def verify_bindings(
+        self, *, contract_id: str, operation_id: str, state_version: int, lifecycle_locator: int
+    ) -> None:
         if (
             self.contract_id != contract_id
             or self.operation_id != operation_id
             or self.observed_state_version != state_version
+            or (self.verified_lifecycle_locator is not None and self.verified_lifecycle_locator != lifecycle_locator)
         ):
             raise ConfirmationError("Reconciliation evidence does not match the authoritative contract.")
 

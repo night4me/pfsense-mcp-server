@@ -19,7 +19,10 @@ __all__ = ["ACCEPTED_ALGORITHM", "Ed25519ReconciliationVerifier", "PinnedAuthori
 
 #: Distinct from confirmation_providers.ACCEPTED_ALGORITHM by design --
 #: this is part of the domain separation between the two authorities.
-ACCEPTED_ALGORITHM = "ed25519-reconciliation-v1"
+# v2 adds the signed lifecycle-locator observation required by the
+# incarnation-continuity invariant. Reusing v1's name for a different payload
+# would create schema ambiguity; legacy v1 signatures therefore fail closed.
+ACCEPTED_ALGORITHM = "ed25519-reconciliation-v2"
 
 
 def signing_payload(evidence: ReconciliationEvidence) -> bytes:
@@ -38,6 +41,7 @@ def signing_payload(evidence: ReconciliationEvidence) -> bytes:
             "operation_id": evidence.operation_id,
             "outcome": evidence.outcome.value,
             "verified_target_fingerprint": evidence.verified_target_fingerprint,
+            "verified_lifecycle_locator": evidence.verified_lifecycle_locator,
         }
     )
 

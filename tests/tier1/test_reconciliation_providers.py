@@ -26,6 +26,11 @@ def _keypair():
 
 def _evidence(private_key, *, algorithm=ACCEPTED_ALGORITHM, outcome=ReconciliationOutcome.CONFIRMED_APPLIED):
     verified_target_fingerprint = "d" * 64 if outcome is ReconciliationOutcome.CONFIRMED_APPLIED else None
+    verified_lifecycle_locator = (
+        7
+        if outcome in {ReconciliationOutcome.CONFIRMED_APPLIED, ReconciliationOutcome.CONFIRMED_ROLLBACK_APPLIED}
+        else None
+    )
     unsigned = ReconciliationEvidence(
         authority_id="synthetic-owner",
         algorithm=algorithm,
@@ -36,6 +41,7 @@ def _evidence(private_key, *, algorithm=ACCEPTED_ALGORITHM, outcome=Reconciliati
         issued_at=datetime.now(timezone.utc),
         proof=b"placeholder-proof-bytes",
         verified_target_fingerprint=verified_target_fingerprint,
+        verified_lifecycle_locator=verified_lifecycle_locator,
     )
     signature = private_key.sign(signing_payload(unsigned))
     return ReconciliationEvidence(
@@ -48,6 +54,7 @@ def _evidence(private_key, *, algorithm=ACCEPTED_ALGORITHM, outcome=Reconciliati
         issued_at=unsigned.issued_at,
         proof=signature,
         verified_target_fingerprint=unsigned.verified_target_fingerprint,
+        verified_lifecycle_locator=unsigned.verified_lifecycle_locator,
     )
 
 
@@ -70,6 +77,16 @@ def test_verified_target_fingerprint_is_covered_by_signature():
     assert verifier.verify(dc_replace(evidence, verified_target_fingerprint="e" * 64)) is False
 
 
+def test_verified_lifecycle_locator_is_covered_by_signature():
+    private_key, public_bytes = _keypair()
+    verifier = Ed25519ReconciliationVerifier(
+        (PinnedAuthority(authority_id="synthetic-owner", public_key=public_bytes),)
+    )
+    evidence = _evidence(private_key)
+
+    assert verifier.verify(dc_replace(evidence, verified_lifecycle_locator=9)) is False
+
+
 def test_algorithm_downgrade_is_refused():
     private_key, public_bytes = _keypair()
     verifier = Ed25519ReconciliationVerifier(
@@ -78,6 +95,18 @@ def test_algorithm_downgrade_is_refused():
 
     evidence = _evidence(private_key, algorithm="ed25519-v1")  # confirmation's algorithm, not reconciliation's
     assert verifier.verify(evidence) is False
+
+
+def test_legacy_reconciliation_v1_domain_is_not_reinterpreted_as_v2():
+    private_key, public_bytes = _keypair()
+    verifier = Ed25519ReconciliationVerifier(
+        (PinnedAuthority(authority_id="synthetic-owner", public_key=public_bytes),)
+    )
+
+    legacy = _evidence(private_key, algorithm="ed25519-reconciliation-v1")
+
+    assert ACCEPTED_ALGORITHM == "ed25519-reconciliation-v2"
+    assert verifier.verify(legacy) is False
 
 
 def test_confirmation_signature_cannot_be_replayed_as_reconciliation():

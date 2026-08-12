@@ -150,6 +150,7 @@ execute(contract_id, request):
   require exact accepted status and response shape
   authoritative_read_after_write()
   if semantic intent verified:
+      require fresh semantic identity and lifecycle locator still match the protected contract
       atomically seal authoritative post-forward fingerprint and transition EXECUTING -> VERIFIED
   elif no effect/failure proven: EXECUTING -> FAILED
   else: EXECUTING -> RECONCILIATION
@@ -159,9 +160,11 @@ No generic execute tool is permitted. Every request/response rule is
 capability-specific.
 
 A reconciliation authority declaring `CONFIRMED_APPLIED` must sign the exact
-verified post-forward fingerprint. Other reconciliation outcomes must not
-carry it. This prevents an ambiguous-send resolution from creating a VERIFIED
-contract whose rollback precondition was never authenticated.
+verified post-forward fingerprint and the exact observed lifecycle locator.
+An authority declaring `CONFIRMED_ROLLBACK_APPLIED` must also sign the exact
+observed lifecycle locator. Non-applied outcomes carry neither applied-state
+binding. This prevents reconciliation from bypassing either the rollback
+fingerprint or the integrity-protected incarnation-continuity guard.
 
 ## Fault decisions
 

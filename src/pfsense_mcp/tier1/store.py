@@ -616,6 +616,7 @@ class SqliteRecoveryContractStore:
             contract_id=current.contract_id,
             operation_id=current.operation_id,
             state_version=current.state_version,
+            lifecycle_locator=current.lifecycle_locator,
         )
         verifier = self._reconciliation_verifier
         if verifier is None:
@@ -755,6 +756,8 @@ class SqliteRecoveryContractStore:
         require_transition(expected_state, target_state)
         if target_state == RecoveryState.VERIFIED:
             raise ContractConflictError("VERIFIED requires an atomically sealed post-forward fingerprint.")
+        if target_state == RecoveryState.ROLLED_BACK:
+            raise ContractConflictError("ROLLED_BACK requires atomically verified lifecycle continuity.")
         current = self.load(contract_id)
         if current.state != expected_state or current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract state changed before atomic transition.")
@@ -785,6 +788,7 @@ class SqliteRecoveryContractStore:
         *,
         expected_version: int,
         verified_target_fingerprint: str,
+        verified_lifecycle_locator: int,
     ) -> RecoveryContract:
         """Atomically seal the verified post-forward fingerprint and state.
 
@@ -797,11 +801,34 @@ class SqliteRecoveryContractStore:
         current = self.load(contract_id)
         if current.state != RecoveryState.EXECUTING or current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract state changed before verified transition.")
+        if type(verified_lifecycle_locator) is not int or verified_lifecycle_locator != current.lifecycle_locator:
+            raise ContractConflictError("Target incarnation continuity is unproven at verified transition.")
         updated = replace(
             current,
             state=RecoveryState.VERIFIED,
             state_version=current.state_version + 1,
             verified_target_fingerprint=verified_target_fingerprint,
+        )
+        return self._replace(current, updated, event_type="state_transition")
+
+    def mark_rollback_verified(
+        self,
+        contract_id: str,
+        *,
+        expected_version: int,
+        verified_lifecycle_locator: int,
+    ) -> RecoveryContract:
+        """Atomically complete rollback only with the protected locator guard."""
+
+        current = self.load(contract_id)
+        if current.state != RecoveryState.ROLLING_BACK or current.state_version != expected_version:
+            raise ContractConflictError("Recovery Contract state changed before rollback verification.")
+        if type(verified_lifecycle_locator) is not int or verified_lifecycle_locator != current.lifecycle_locator:
+            raise ContractConflictError("Target incarnation continuity is unproven at rollback verification.")
+        updated = replace(
+            current,
+            state=RecoveryState.ROLLED_BACK,
+            state_version=current.state_version + 1,
         )
         return self._replace(current, updated, event_type="state_transition")
 
