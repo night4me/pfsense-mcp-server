@@ -1,6 +1,6 @@
 import pytest
 
-from lab.fault_proxy import NETWORK_INJECTABLE_SCENARIOS, FaultProxy, FaultScenario
+from lab.fault_proxy import NETWORK_INJECTABLE_SCENARIOS, FaultProxy, FaultScenario, UpstreamDelivery
 from pfsense_mcp.transport.base import TransportConnectionError, TransportTimeoutError
 from pfsense_mcp.transport.mock import MockTransport
 
@@ -67,6 +67,22 @@ def test_response_dropped_after_commit_raises_transport_timeout_error():
 
     assert transport.calls == [("PATCH", "/api/v2/synthetic")]
     assert proxy.send_attempts == 1
+    assert proxy.delivery_semantics is UpstreamDelivery.PROVEN_DELIVERED
+
+
+@pytest.mark.parametrize(
+    ("scenario", "delivery"),
+    [
+        (FaultScenario.CONNECTION_RESET_DURING_UPLOAD, UpstreamDelivery.PROVEN_NOT_DELIVERED),
+        (FaultScenario.RESPONSE_DROPPED_AFTER_COMMIT, UpstreamDelivery.PROVEN_DELIVERED),
+        (FaultScenario.TIMEOUT_DURING_RESPONSE, UpstreamDelivery.POSSIBLY_DELIVERED),
+        (FaultScenario.TIMEOUT_DURING_READBACK, UpstreamDelivery.PROVEN_NOT_DELIVERED),
+    ],
+)
+def test_fault_delivery_semantics_are_declared(scenario, delivery):
+    proxy, _transport = _proxy()
+    proxy.install(scenario)
+    assert proxy.delivery_semantics is delivery
 
 
 def test_fault_only_triggers_once_per_install():
@@ -95,6 +111,19 @@ def test_reinstalling_resets_the_trigger():
         proxy.request("PATCH", "/api/v2/synthetic", body=b"{}")
 
     assert transport.calls == []
+
+
+def test_install_resets_send_attempt_accounting_per_scenario():
+    proxy, _transport = _proxy()
+    proxy.install(FaultScenario.CLEAN_PASSTHROUGH)
+    proxy.request("PATCH", "/api/v2/synthetic", body=b"{}")
+    assert proxy.send_attempts == 1
+
+    proxy.install(FaultScenario.CONNECTION_RESET_DURING_UPLOAD)
+    assert proxy.send_attempts == 0
+    with pytest.raises(TransportConnectionError):
+        proxy.request("PATCH", "/api/v2/synthetic", body=b"{}")
+    assert proxy.send_attempts == 1
 
 
 @pytest.mark.parametrize(

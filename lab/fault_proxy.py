@@ -39,6 +39,22 @@ class FaultScenario(str, Enum):
     CORRUPT_OR_REPLAYED_LOCAL_STORE = "corrupt_or_replayed_local_store"
 
 
+class UpstreamDelivery(str, Enum):
+    """What a fault injection proves about upstream request delivery."""
+
+    PROVEN_DELIVERED = "proven_delivered"
+    PROVEN_NOT_DELIVERED = "proven_not_delivered"
+    POSSIBLY_DELIVERED = "possibly_delivered"
+
+
+FAULT_DELIVERY: dict[FaultScenario, UpstreamDelivery] = {
+    FaultScenario.CONNECTION_RESET_DURING_UPLOAD: UpstreamDelivery.PROVEN_NOT_DELIVERED,
+    FaultScenario.RESPONSE_DROPPED_AFTER_COMMIT: UpstreamDelivery.PROVEN_DELIVERED,
+    FaultScenario.TIMEOUT_DURING_RESPONSE: UpstreamDelivery.POSSIBLY_DELIVERED,
+    FaultScenario.TIMEOUT_DURING_READBACK: UpstreamDelivery.PROVEN_NOT_DELIVERED,
+}
+
+
 # The subset FaultProxy can mechanically inject at the transport
 # boundary. Every other member is exercised by other means (store
 # fault_hook, or constructed starting state) — installing one of those on
@@ -70,9 +86,16 @@ class FaultProxy:
     def send_attempts(self) -> int:
         return self._send_attempts
 
+    @property
+    def delivery_semantics(self) -> UpstreamDelivery | None:
+        """Return declared delivery knowledge, never an inference from timing."""
+
+        return FAULT_DELIVERY.get(self._scenario)
+
     def install(self, scenario: FaultScenario) -> None:
         self._scenario = scenario
         self._triggered = False
+        self._send_attempts = 0
 
     def request(self, method: str, path: str, *, body: bytes | None = None) -> TransportResponse:
         self._send_attempts += 1
