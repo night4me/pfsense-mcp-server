@@ -165,6 +165,31 @@ def test_prepare_contract_produces_a_preparing_contract_and_matching_intent():
     assert intent["descr"] == "updated-description"
 
 
+def test_prepare_contract_protects_canonical_identity_not_raw_target_hint(monkeypatch):
+    captured = []
+    from lab import harness
+
+    real_encrypt = harness._encrypt
+
+    def capture_encrypt(payload, **kwargs):
+        captured.append(payload)
+        return real_encrypt(payload, **kwargs)
+
+    monkeypatch.setattr("lab.harness._encrypt", capture_encrypt)
+    adapter = _SyntheticAdapter()
+
+    prepare_contract(
+        adapter=adapter,
+        setup=_setup(),
+        encryption_key=_ENCRYPTION_KEY,
+        contract_id="lab-contract-identity",
+        operation_id="lab-operation-identity",
+    )
+
+    assert captured[0] == {"name": "lab-synthetic-target.invalid"}
+    assert captured[0] != _setup().raw_target_hint
+
+
 def test_run_scenario_clean_passthrough_reaches_verified(tmp_path, monkeypatch):
     store = _store(tmp_path)
     write_client, transport, proxy = _write_client(monkeypatch)
@@ -262,6 +287,7 @@ def test_run_scenario_captures_unexpected_exception_without_raising(tmp_path, mo
 
     assert report.passed is False
     assert "RuntimeError" in report.detail
+    assert "synthetic confirm failure" not in report.detail
     assert report.final_state is None
 
 
@@ -326,6 +352,7 @@ def test_exit_condition_verification_runs_even_when_a_runner_raises():
     assert verified["called"] is True
     assert report.scenario_reports[0].passed is False
     assert "RuntimeError" in report.scenario_reports[0].detail
+    assert "harness control-flow fault" not in report.scenario_reports[0].detail
 
 
 def test_exit_condition_not_clean_marks_acceptance_failed_even_if_every_scenario_passed():

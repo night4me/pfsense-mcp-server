@@ -144,7 +144,7 @@ def prepare_contract(
         state=RecoveryState.PREPARING,
         state_version=0,
         protected_target_identity=_encrypt(
-            setup.raw_target_hint,
+            identity,
             key=encryption_key,
             contract_id=contract_id,
             role=ArtifactRole.TARGET_IDENTITY,
@@ -199,7 +199,7 @@ def run_scenario(
         outcome = executor.execute(confirmed.contract_id, adapter=adapter, intent=intent)
         return ScenarioReport(scenario=scenario, passed=True, detail=outcome.detail, final_state=outcome.state.value)
     except Exception as exc:
-        return ScenarioReport(scenario=scenario, passed=False, detail=f"{type(exc).__name__}: {exc}")
+        return ScenarioReport(scenario=scenario, passed=False, detail=f"{type(exc).__name__}: scenario failed")
 
 
 def run_full_acceptance(
@@ -221,7 +221,9 @@ def run_full_acceptance(
             try:
                 reports.append(runner())
             except Exception as exc:
-                reports.append(ScenarioReport(scenario=scenario, passed=False, detail=f"{type(exc).__name__}: {exc}"))
+                reports.append(
+                    ScenarioReport(scenario=scenario, passed=False, detail=f"{type(exc).__name__}: scenario failed")
+                )
     finally:
         exit_condition = verify_exit_conditions()
     return AcceptanceReport(scenario_reports=tuple(reports), exit_condition=exit_condition)
