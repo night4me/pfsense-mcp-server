@@ -1,0 +1,710 @@
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import sqlite3
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from pydantic import ValidationError
+
+from pfsense_mcp.models.firewall_alias import FirewallAlias
+from pfsense_mcp.models.system import SystemStatus
+from pfsense_mcp.models.system_ha_sync import SystemHaSync
+from pfsense_mcp.security_authorization import (
+    PlanAuthorization,
+    PlanAuthorizationStepBinding,
+    build_plan_authorization_payload,
+    build_plan_authorization_v2_payload,
+    sign_plan_authorization,
+    sign_plan_authorization_v2,
+)
+from pfsense_mcp.security_discovery import AnchorAssurance, CapabilityPosture
+from pfsense_mcp.security_plan import AuthorizationLevel
+from pfsense_mcp.tier1.alias_description import (
+    ADAPTER_VERSION,
+    ENDPOINT_SYMBOL,
+    HTTP_METHOD,
+    ROLLBACK_VERSION,
+    SEMANTIC_UNIT,
+    AliasDescriptionAdapterV1,
+    AliasDescriptionChangeV1,
+    AliasDescriptionPatchV1,
+    AliasDescriptionPreparerV1,
+    ConfiguredApplianceTargetV1,
+)
+from pfsense_mcp.tier1.alias_description_execution import AliasDescriptionExecutionCoreV1
+from pfsense_mcp.tier1.authorization_consumption_store import AuthorizationConsumptionStore
+from pfsense_mcp.tier1.canonical import DigestPurpose, digest_value, frame_bytes, frame_str
+from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
+from pfsense_mcp.tier1.contract import AuthorizationProvenance
+from pfsense_mcp.tier1.ed25519_authority import PinnedAuthority, PinnedAuthoritySet
+from pfsense_mcp.tier1.errors import (
+    BoundExecutionError,
+    ContractIntegrityError,
+    ContractValidationError,
+    PreparedExecutionIntentError,
+)
+from pfsense_mcp.tier1.executor import ExecutionOutcome, MutationExecutor, ResolvedTransportTarget
+from pfsense_mcp.tier1.key_lifecycle import KeyPurpose, KeyRecord, NonceCounter
+from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
+from pfsense_mcp.tier1.prepared_execution_intent import compute_execution_intent_digest
+from pfsense_mcp.tier1.state_machine import RecoveryState
+from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tls import TLSMode
+from pfsense_mcp.transport.base import TransportResponse
+from tests.test_security_plan_digest import _synthetic_plan, _synthetic_step
+
+NOW = datetime.now(timezone.utc).replace(microsecond=0)
+
+
+class _ReadClient:
+    def __init__(self) -> None:
+        self.aliases = [
+            FirewallAlias(
+                id=0,
+                name="LAB_ALIAS_TEST",
+                type="host",
+                descr="before",
+                address=["192.0.2.10"],
+                detail=["synthetic"],
+            )
+        ]
+        self.netgate_id: str | None = "netgate-synthetic"
+        self.pfhostid: str | None = "pfhost-synthetic"
+        self.alias_reads = 0
+
+    def get_firewall_aliases(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FirewallAlias]:
+        assert include_identifying_metadata is True
+        assert limit == 500
+        self.alias_reads += 1
+        return list(self.aliases)
+
+    def get_system_status(self, *, include_identifying_metadata: bool = False) -> SystemStatus:
+        assert include_identifying_metadata is True
+        return SystemStatus(
+            platform="synthetic",
+            uptime="1 day",
+            cpu_model="synthetic",
+            cpu_count=1,
+            cpu_usage=0.0,
+            mem_usage=1,
+            swap_usage=0,
+            disk_usage=1,
+            netgate_id=self.netgate_id,
+        )
+
+    def get_system_hasync(self, *, include_identifying_metadata: bool = False) -> SystemHaSync:
+        assert include_identifying_metadata is True
+        values = {name: False for name, field in SystemHaSync.model_fields.items() if field.annotation is bool}
+        values.update(
+            {
+                "pfsyncinterface": "none",
+                "pfsyncpeerip": None,
+                "synchronizetoip": None,
+                "pfhostid": self.pfhostid,
+                "username": None,
+            }
+        )
+        return SystemHaSync.model_validate(values)
+
+
+class _ConsumptionStore(AuthorizationConsumptionStore):
+    def __init__(self) -> None:
+        self.consumed: set[str] = set()
+        self.calls = 0
+
+    def try_consume(self, authorization_id: str) -> bool:
+        self.calls += 1
+        if authorization_id in self.consumed:
+            return False
+        self.consumed.add(authorization_id)
+        return True
+
+
+class _ConfirmationVerifier:
+    def verify(self, evidence: ConfirmationEvidence) -> bool:
+        return evidence.algorithm == "synthetic-confirmation-v1" and evidence.proof == b"valid"
+
+
+class _WriteClient:
+    def __init__(self, client: _ReadClient, *, restore_description: str | None = None) -> None:
+        self.client = client
+        self.restore_description = restore_description
+        self.calls = 0
+
+    def send_for_tier1(self, *, endpoint_symbol: str, http_method: str, body: bytes) -> TransportResponse:
+        assert endpoint_symbol == ENDPOINT_SYMBOL
+        assert http_method == HTTP_METHOD
+        assert body
+        self.calls += 1
+        if self.restore_description is not None:
+            self.client.aliases[0] = self.client.aliases[0].model_copy(update={"descr": self.restore_description})
+        return TransportResponse(status_code=200, text="synthetic")
+
+
+def _plan():
+    return _synthetic_plan(
+        steps=(
+            _synthetic_step(
+                step_id="first.write.alias.description",
+                order=1,
+                authorization_required=AuthorizationLevel.CONFIGURATION_CHANGE,
+            ),
+        )
+    )
+
+
+def _target() -> ConfiguredApplianceTargetV1:
+    return ConfiguredApplianceTargetV1(base_url="https://pfsense.invalid", tls_mode=TLSMode.STRICT)
+
+
+def _preparer(client: _ReadClient) -> AliasDescriptionPreparerV1:
+    return AliasDescriptionPreparerV1(read_client=client, configured_target=_target())
+
+
+def _keypair() -> tuple[Ed25519PrivateKey, PinnedAuthoritySet]:
+    private = Ed25519PrivateKey.generate()
+    public = private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    return private, PinnedAuthoritySet((PinnedAuthority(authority_id="owner-v2", public_key=public),))
+
+
+def _authorization(private: Ed25519PrivateKey, digest: str, **changes: object):
+    values = {
+        "plan": _plan(),
+        "authorized_executions": (
+            PlanAuthorizationStepBinding(
+                step_id="first.write.alias.description",
+                execution_intent_digest=digest,
+            ),
+        ),
+        "authorization_id": "authz-v2-one",
+        "authority_id": "owner-v2",
+        "issued_at": NOW - timedelta(minutes=1),
+        "expires_at": NOW + timedelta(minutes=4),
+    }
+    values.update(changes)
+    return sign_plan_authorization_v2(build_plan_authorization_v2_payload(**values), private)  # type: ignore[arg-type]
+
+
+def _store(tmp_path: Path) -> SqliteRecoveryContractStore:
+    tmp_path.chmod(0o700)
+    return SqliteRecoveryContractStore(
+        tmp_path / "contracts.sqlite3",
+        integrity_key=b"i" * 32,
+        store_id="w1-synthetic",
+        clock=lambda: NOW,
+        confirmation_verifier=_ConfirmationVerifier(),
+    )
+
+
+def _core(tmp_path: Path, client: _ReadClient):
+    private, authorities = _keypair()
+    store = _store(tmp_path)
+    consumption = _ConsumptionStore()
+    executor = Mock(spec=MutationExecutor)
+    executor.execute.return_value = ExecutionOutcome("unused", RecoveryState.VERIFIED, "synthetic")
+    counter_path = tmp_path / "nonce.json"
+    counter = NonceCounter(counter_path, key_id="enc-w1")
+    core = AliasDescriptionExecutionCoreV1(
+        preparer=_preparer(client),
+        authorities=authorities,
+        consumption_store=consumption,
+        contract_store=store,
+        executor=executor,
+        encryption_key=KeyRecord("enc-w1", 0, b"e" * 32, KeyPurpose.ENCRYPTION),
+        nonce_counter=counter,
+    )
+    return core, private, store, consumption, executor
+
+
+def _confirmation(contract) -> ConfirmationEvidence:
+    return ConfirmationEvidence(
+        authority_id="confirmation-owner",
+        algorithm="synthetic-confirmation-v1",
+        nonce="nonce-w1",
+        contract_id=contract.contract_id,
+        operation_id=contract.operation_id,
+        target_identity_digest=contract.target_identity_digest,
+        target_fingerprint=contract.target_fingerprint,
+        intent_digest=contract.intent_digest,
+        expires_at=contract.expires_at,
+        issued_at=NOW,
+        proof=b"valid",
+    )
+
+
+def _authorize(core, private, request, prepared, authz=None, **changes):
+    authorization = authz or _authorization(private, compute_execution_intent_digest(prepared.intent))
+    values = {
+        "authorized_preparation": prepared,
+        "authorization": authorization,
+        "requested_plan_digest": authorization.plan_digest,
+        "requested_step_id": "first.write.alias.description",
+        "target_capability_posture": CapabilityPosture.WRITE_PROTECTED,
+        "target_anchor_assurance": AnchorAssurance.HARDWARE_WITNESS,
+        "now": NOW,
+    }
+    values.update(changes)
+    return core.authorize_and_create(request, **values)
+
+
+def _executor_intent(prepared) -> dict:
+    state = prepared.authoritative_a
+    return {
+        **prepared.intent.normalized_mutation_intent,
+        "raw_target_hint": {
+            "name": state.name,
+            "id": state.numeric_locator,
+            "type": state.alias_type,
+            "descr": state.descr,
+            "address": list(state.address),
+            "detail": list(state.detail),
+        },
+    }
+
+
+def _sealed_executor(store, client, write_client) -> MutationExecutor:
+    return MutationExecutor(
+        store=store,
+        write_client=write_client,
+        read_client=client,
+        policy=MutationPolicy(
+            frozenset({MutationRule(AliasDescriptionAdapterV1.capability, ENDPOINT_SYMBOL, HTTP_METHOD)})
+        ),
+        anti_rollback_anchor=None,
+        encryption_key=b"e" * 32,
+    )
+
+
+def test_request_is_exactly_two_fields_and_normalizes_nfc():
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="cafe\u0301")
+    assert request.model_dump() == {"alias_name": "LAB_ALIAS_TEST", "description": "café"}
+    with pytest.raises(ValidationError):
+        AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after", id=0)  # type: ignore[call-arg]
+    with pytest.raises(ValidationError):
+        AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="x" * 1025)
+    with pytest.raises(ValidationError):
+        AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="bad\x01")
+
+
+def test_preparer_and_adapter_are_closed_description_only():
+    client = _ReadClient()
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    assert prepared.intent.endpoint_symbol == ENDPOINT_SYMBOL
+    assert prepared.intent.http_method == HTTP_METHOD
+    assert prepared.intent.adapter_version == ADAPTER_VERSION
+    assert prepared.intent.rollback_plan_version == ROLLBACK_VERSION
+    assert prepared.intent.normalized_mutation_intent["operation"] == SEMANTIC_UNIT
+    assert prepared.intent.target_precondition == prepared.intent.rollback_snapshot
+    patch = AliasDescriptionAdapterV1().build_request(
+        prepared.intent.normalized_mutation_intent,
+        ResolvedTransportTarget(numeric_locator=0, target_identity_digest="a" * 64),
+    )
+    assert patch == AliasDescriptionPatchV1(id=0, descr="after", apply=False)
+    assert set(patch.model_dump()) == {"id", "descr", "apply"}
+
+
+@pytest.mark.parametrize("mode", ["missing", "duplicate", "malformed"])
+def test_preparer_refuses_non_singular_or_malformed_target(mode: str):
+    client = _ReadClient()
+    if mode == "missing":
+        client.aliases = []
+    elif mode == "duplicate":
+        client.aliases *= 2
+    else:
+        client.aliases[0] = client.aliases[0].model_copy(update={"address": None})
+    with pytest.raises(PreparedExecutionIntentError):
+        _preparer(client).prepare(AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after"))
+
+
+def test_appliance_netgate_and_pfhostid_fallback_and_absence():
+    client = _ReadClient()
+    first = _preparer(client).prepare(AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after"))
+    client.netgate_id = None
+    second = _preparer(client).prepare(AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after"))
+    assert first.appliance_target_digest != second.appliance_target_digest
+    client.pfhostid = None
+    with pytest.raises(PreparedExecutionIntentError, match="unavailable"):
+        _preparer(client).prepare(AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after"))
+
+
+def test_configured_appliance_binding_refuses_insecure_or_ambiguous_tls():
+    with pytest.raises(PreparedExecutionIntentError):
+        ConfiguredApplianceTargetV1(base_url="https://pfsense.invalid", tls_mode=TLSMode.INSECURE)
+    with pytest.raises(PreparedExecutionIntentError):
+        ConfiguredApplianceTargetV1(base_url="https://pfsense.invalid", tls_mode=TLSMode.AUTO)
+    with pytest.raises(PreparedExecutionIntentError):
+        ConfiguredApplianceTargetV1(
+            base_url="https://other.invalid/path",
+            tls_mode=TLSMode.AUTO,
+            ca_certificate_digest="a" * 64,
+        )
+
+
+def test_valid_v2_consumes_creates_confirms_and_hands_off_once(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+    assert contract.state is RecoveryState.PREPARED
+    assert isinstance(contract.authorization_provenance, AuthorizationProvenance)
+    assert contract.authorization_provenance.execution_intent_digest == compute_execution_intent_digest(prepared.intent)
+    assert contract.expires_at == NOW + timedelta(minutes=4)
+    result = core.confirm_and_handoff(handle, confirmation=_confirmation(contract), now=NOW)
+    assert result.state is RecoveryState.VERIFIED
+    assert consumption.calls == 1
+    executor.execute.assert_called_once()
+    with pytest.raises(BoundExecutionError):
+        core.confirm_and_handoff(handle, confirmation=_confirmation(contract), now=NOW)
+    executor.execute.assert_called_once()
+
+
+def test_replay_is_refused_before_second_contract_or_handoff(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    authz = _authorization(private, compute_execution_intent_digest(prepared.intent))
+    first = _authorize(core, private, request, prepared, authz=authz)
+    with pytest.raises(BoundExecutionError):
+        _authorize(core, private, request, prepared, authz=authz)
+    assert consumption.calls == 2
+    assert tuple(contract.contract_id for contract in store.all_contracts()) == (first.contract_id,)
+    executor.execute.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "wrong-step",
+        "wrong-plan",
+        "wrong-digest",
+        "future",
+        "expired",
+        "bad-signature",
+        "wrong-authority",
+        "stale-description",
+        "sibling-drift",
+        "locator-drift",
+        "changed-appliance",
+        "stale-plan",
+    ],
+)
+def test_all_preconsumption_failures_leave_auth_unconsumed_and_zero_handoff(tmp_path: Path, monkeypatch, case: str):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, _store_value, consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    authz = _authorization(private, compute_execution_intent_digest(prepared.intent))
+    changes = {}
+    if case == "wrong-step":
+        changes["requested_step_id"] = "wrong-step"
+    elif case == "wrong-plan":
+        changes["requested_plan_digest"] = "0" * 64
+    elif case == "wrong-digest":
+        authz = _authorization(private, "f" * 64)
+    elif case == "future":
+        authz = _authorization(
+            private,
+            compute_execution_intent_digest(prepared.intent),
+            issued_at=NOW + timedelta(seconds=1),
+            expires_at=NOW + timedelta(minutes=5),
+        )
+    elif case == "expired":
+        authz = _authorization(
+            private,
+            compute_execution_intent_digest(prepared.intent),
+            issued_at=NOW - timedelta(minutes=5),
+            expires_at=NOW,
+        )
+    elif case == "bad-signature":
+        authz = replace(authz, proof=b"x" * 64)
+    elif case == "wrong-authority":
+        authz = replace(authz, authority_id="unknown-owner")
+    elif case == "stale-description":
+        client.aliases[0] = client.aliases[0].model_copy(update={"descr": "concurrent"})
+    elif case == "sibling-drift":
+        client.aliases[0] = client.aliases[0].model_copy(update={"address": ["192.0.2.99"]})
+    elif case == "locator-drift":
+        client.aliases[0] = client.aliases[0].model_copy(update={"id": 1})
+    elif case == "changed-appliance":
+        client.netgate_id = "different-installation"
+    elif case == "stale-plan":
+        monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: False))
+    with pytest.raises(BoundExecutionError):
+        _authorize(core, private, request, prepared, authz=authz, **changes)
+    assert consumption.calls == 0
+    executor.execute.assert_not_called()
+
+
+def test_v1_authorization_is_structurally_ineligible(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, _store_value, consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    payload = build_plan_authorization_payload(
+        _plan(),
+        ("first.write.alias.description",),
+        authorization_id="legacy-v1",
+        authority_id="owner-v2",
+        issued_at=NOW - timedelta(minutes=1),
+        expires_at=NOW + timedelta(minutes=4),
+    )
+    legacy: PlanAuthorization = sign_plan_authorization(payload, private)
+    with pytest.raises(BoundExecutionError):
+        core.authorize_and_create(
+            request,
+            authorized_preparation=prepared,
+            authorization=legacy,  # type: ignore[arg-type]
+            requested_plan_digest=legacy.plan_digest,
+            requested_step_id="first.write.alias.description",
+            target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
+            target_anchor_assurance=AnchorAssurance.HARDWARE_WITNESS,
+            now=NOW,
+        )
+    assert consumption.calls == 0
+    executor.execute.assert_not_called()
+
+
+def test_post_consumption_create_failure_burns_authorization(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    authz = _authorization(private, compute_execution_intent_digest(prepared.intent))
+    original = store.create_authorized
+    store.create_authorized = Mock(side_effect=RuntimeError("synthetic create failure"))  # type: ignore[method-assign]
+    with pytest.raises(BoundExecutionError):
+        _authorize(core, private, request, prepared, authz=authz)
+    assert authz.authorization_id in consumption.consumed
+    store.create_authorized = original  # type: ignore[method-assign]
+    with pytest.raises(BoundExecutionError):
+        _authorize(core, private, request, prepared, authz=authz)
+    executor.execute.assert_not_called()
+
+
+def test_confirmation_mismatch_and_expiry_never_handoff(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+    wrong = replace(_confirmation(contract), intent_digest="f" * 64)
+    with pytest.raises(BoundExecutionError):
+        core.confirm_and_handoff(handle, confirmation=wrong, now=NOW)
+    with pytest.raises(BoundExecutionError):
+        core.confirm_and_handoff(handle, confirmation=_confirmation(contract), now=contract.expires_at)
+    executor.execute.assert_not_called()
+
+
+def test_production_adapter_drift_refuses_before_executor_send(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _mock_executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+    store.confirm(contract.contract_id, evidence=_confirmation(contract), expected_version=contract.state_version)
+    client.aliases[0] = client.aliases[0].model_copy(update={"descr": "concurrent"})
+    write_client = _WriteClient(client)
+    outcome = _sealed_executor(store, client, write_client).execute(
+        contract.contract_id,
+        adapter=AliasDescriptionAdapterV1(),
+        intent=_executor_intent(prepared),
+    )
+    assert outcome.state is RecoveryState.FAILED
+    assert write_client.calls == 0
+
+
+def test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_remains_available(
+    tmp_path: Path, monkeypatch
+):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _mock_executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+    confirmed = store.confirm(
+        contract.contract_id,
+        evidence=_confirmation(contract),
+        expected_version=contract.state_version,
+    )
+    executing = store.transition(
+        confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    client.aliases[0] = client.aliases[0].model_copy(update={"descr": "after"})
+    adapter = AliasDescriptionAdapterV1()
+    context = (adapter.capability.name, adapter.endpoint_symbol, adapter.http_method)
+    verified_fingerprint = digest_value(
+        DigestPurpose.TARGET_FINGERPRINT,
+        adapter.fingerprint(adapter.read_target(client, {"alias_name": "LAB_ALIAS_TEST"})),
+        context=context,
+    )
+    verified = store.mark_execution_verified(
+        executing.contract_id,
+        expected_version=executing.state_version,
+        verified_target_fingerprint=verified_fingerprint,
+        verified_lifecycle_locator=0,
+    )
+
+    client.aliases[0] = client.aliases[0].model_copy(update={"descr": "concurrent"})
+    conflict_write = _WriteClient(client)
+    conflict = _sealed_executor(store, client, conflict_write).rollback(verified.contract_id, adapter=adapter)
+    assert conflict.state is RecoveryState.ROLLBACK_FAILED
+    assert conflict_write.calls == 0
+
+    # A separate verified operation proves source-authorization expiry is not
+    # consulted by rollback. The authenticated VERIFIED state and B/locator
+    # precondition remain the authority for safety recovery.
+    second_dir = tmp_path / "second"
+    second_dir.mkdir(mode=0o700)
+    second_client = _ReadClient()
+    second_core, second_private, second_store, _consumption2, _mock2 = _core(second_dir, second_client)
+    second_prepared = _preparer(second_client).prepare(request)
+    second_handle = _authorize(second_core, second_private, request, second_prepared)
+    second_contract = second_store.load(second_handle.contract_id)
+    second_confirmed = second_store.confirm(
+        second_contract.contract_id,
+        evidence=_confirmation(second_contract),
+        expected_version=second_contract.state_version,
+    )
+    second_executing = second_store.transition(
+        second_confirmed.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=second_confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    second_client.aliases[0] = second_client.aliases[0].model_copy(update={"descr": "after"})
+    second_verified_fingerprint = digest_value(
+        DigestPurpose.TARGET_FINGERPRINT,
+        adapter.fingerprint(adapter.read_target(second_client, {"alias_name": "LAB_ALIAS_TEST"})),
+        context=context,
+    )
+    second_verified = second_store.mark_execution_verified(
+        second_executing.contract_id,
+        expected_version=second_executing.state_version,
+        verified_target_fingerprint=second_verified_fingerprint,
+        verified_lifecycle_locator=0,
+    )
+    assert second_verified.authorization_provenance is not None
+    assert second_verified.authorization_provenance.authorization_expires_at < NOW + timedelta(hours=1)
+    recovery_write = _WriteClient(second_client, restore_description="before")
+    recovered = _sealed_executor(second_store, second_client, recovery_write).rollback(
+        second_verified.contract_id,
+        adapter=adapter,
+    )
+    assert recovered.state is RecoveryState.ROLLED_BACK
+    assert recovery_write.calls == 1
+
+
+def test_authorized_store_entry_requires_non_null_provenance(tmp_path: Path, contract_factory):
+    store = _store(tmp_path)
+    with pytest.raises(ContractValidationError, match="provenance"):
+        store.create_authorized(contract_factory(now=NOW))
+
+
+def test_schema_v6_contract_migrates_without_inferred_provenance(tmp_path: Path, contract_factory):
+    store = _store(tmp_path)
+    legacy = contract_factory(now=NOW)
+    store.create(legacy)
+    database = tmp_path / "contracts.sqlite3"
+    with sqlite3.connect(database) as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (legacy.contract_id,)
+        ).fetchone()[0]
+        value = json.loads(payload)
+        del value["authorization_provenance"]
+        legacy_payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        mac = hmac.new(
+            b"i" * 32,
+            frame_str("w1-synthetic") + frame_bytes(legacy_payload),
+            hashlib.sha256,
+        ).hexdigest()
+        connection.execute(
+            "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
+            (legacy_payload, mac, legacy.contract_id),
+        )
+        connection.execute("UPDATE metadata SET value = '6' WHERE key = 'schema_version'")
+    reopened = _store(tmp_path)
+    migrated = reopened.load(legacy.contract_id)
+    assert migrated.authorization_provenance is None
+    with sqlite3.connect(database) as connection:
+        assert dict(connection.execute("SELECT key, value FROM metadata"))["schema_version"] == "7"
+        migrated_payload = json.loads(connection.execute("SELECT payload FROM contracts").fetchone()[0])
+    assert migrated_payload["authorization_provenance"] is None
+
+
+def test_provenance_survives_reopen_and_hmac_tamper_fails(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    reopened = SqliteRecoveryContractStore(
+        tmp_path / "contracts.sqlite3",
+        integrity_key=b"i" * 32,
+        store_id="w1-synthetic",
+        clock=lambda: NOW,
+        confirmation_verifier=_ConfirmationVerifier(),
+    )
+    assert (
+        reopened.load(handle.contract_id).authorization_provenance
+        == store.load(handle.contract_id).authorization_provenance
+    )
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (handle.contract_id,)
+        ).fetchone()[0]
+        value = json.loads(payload)
+        value["authorization_provenance"]["appliance_target_digest"] = "0" * 64
+        connection.execute(
+            "UPDATE contracts SET payload = ? WHERE contract_id = ?",
+            (json.dumps(value, sort_keys=True, separators=(",", ":")).encode(), handle.contract_id),
+        )
+    with pytest.raises(ContractIntegrityError):
+        reopened.load(handle.contract_id)
+
+
+def test_authorization_expiry_after_legitimate_send_does_not_expire_recovery_contract():
+    provenance = AuthorizationProvenance(
+        schema_version=2,
+        authorization_id="authz",
+        authority_id="owner",
+        plan_authorization_schema_version=2,
+        plan_digest="a" * 64,
+        step_id="step",
+        execution_intent_digest="b" * 64,
+        authorization_issued_at=NOW - timedelta(minutes=1),
+        authorization_expires_at=NOW + timedelta(minutes=1),
+        appliance_target_digest="c" * 64,
+    )
+    assert provenance.authorization_expires_at < NOW + timedelta(minutes=2)
+    # Recovery authorization is represented by the persisted contract state;
+    # no coordinator method rechecks source authorization during rollback.
+    assert "authorization" not in MutationExecutor.rollback.__code__.co_names

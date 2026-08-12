@@ -90,3 +90,7 @@ class AuthorizationConsumptionError(Tier1Error):
 
 class PreparedExecutionIntentError(Tier1Error):
     """A prepared execution intent is structurally invalid or unsupported."""
+
+
+class BoundExecutionError(Tier1Error):
+    """The closed first-WRITE authorization/contract binding was refused."""

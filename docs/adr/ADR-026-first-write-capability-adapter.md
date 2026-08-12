@@ -43,7 +43,7 @@ the first-WRITE semantic scope and is not PASS.
 | no blind retry after uncertainty | MUST COMPLETE | executor/offline fault and reconciliation tests establish the security owner; confirm W1/W2 composition adds no retry; additional live permutations only if production introduces materially different behavior |
 | authoritative uncertainty classification | MUST COMPLETE | ADR-027 observation and closed offline classifiers exist; integrate and test applied/not-applied/ambiguous in fixed production composition |
 | fail-closed reconciliation | MUST COMPLETE | signed reconciliation architecture is established offline; fixed production verifier/resume construction and refusal tests remain |
-| authenticated recovery across restart | MUST COMPLETE | schema-v6 encrypted/HMAC restart evidence is established offline; W2 must prove fixed production reconstruction and no resend |
+| authenticated recovery across restart | MUST COMPLETE | schema-v6 encrypted/HMAC restart evidence is established offline; W1 migrated authenticated contracts to schema-v7 with explicit V2 provenance; W2 must prove fixed production reconstruction and no resend |
 | least privilege for exact endpoint/capability | MUST COMPLETE | prove the enabled production/test identity needs only the one alias-description endpoint/capability and no broader permission |
 | sufficient authoritative side-effect evidence | MUST COMPLETE | deterministic config read-back and apply behavior are known; any unknown reload/service/config-history effect capable of invalidating verification or recovery remains blocking |
 
@@ -58,6 +58,24 @@ resolved exact alias locator. An unrelated change therefore cannot satisfy a
 stale target fingerprint, change the resolved locator without refusal, or
 redirect the request. If W1 review discovers shared appliance behavior that
 breaks this separation, that concrete case becomes mandatory again.
+
+### W1 implementation evidence
+
+The separately authorized W1 implementation completed the production-inert
+parts of this matrix offline. The two-field request, exact-name preparer and
+production adapter now reuse the accepted five-field fingerprint and fresh
+numeric lifecycle locator. A second authoritative preparation before
+authorization consumption refuses description, protected-sibling, locator,
+configured-target or stable-appliance-identity drift. Focused tests also run
+the production adapter through `MutationExecutor` and prove zero forward send
+on stale A, zero rollback send when live B differs from the sealed verified B,
+one coordinator handoff maximum, and no retry right after consumption or
+handoff failure.
+
+This does not relabel remaining empirical/runtime rows as PASS. W2 still owns
+fixed production construction, authenticated restart/reconciliation wiring and
+authority configuration. W3 still owns endpoint/capability/tool activation,
+selected remaining live evidence, and the operational side-effect decision.
 
 ### Response-loss and timeout boundary
 

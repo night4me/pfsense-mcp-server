@@ -877,7 +877,7 @@ Implementation must stop if:
 | Binding architecture | Alternative F: prepared intent + signed per-step digest + contract provenance | singular derivation and durable transitive proof | Resolved |
 | Authorization versioning | PlanAuthorization v2 only; v1 never execution-eligible | fail-closed migration | Resolved |
 | Plan integration | keep PlanDigest/PlanStep v1; bind execution in authorization v2 | preserves E1 and avoids planner duplication | Resolved |
-| Contract persistence | authenticated provenance fields and the minimum schema-v6 migration | durable tuple proof; no inferred legacy data | Resolved |
+| Contract persistence | authenticated provenance fields and the minimum schema-v6 → schema-v7 migration | durable tuple proof; no inferred legacy data | Resolved |
 | Prepared snapshot scope | include snapshot and rollback-plan version in execution digest | recovery policy is authorized with mutation | Resolved |
 | Legacy contracts | existing recovery only; never coordinator-authorized | no invented provenance | Resolved |
 | Adapter selection | sealed exact first-WRITE registry entry | removes post-authorization substitution | Resolved |

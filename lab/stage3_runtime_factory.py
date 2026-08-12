@@ -36,7 +36,7 @@ from .reconciliation_authority import LabReconciliationPaths, _read_secure, load
 from .stage3_deg import CANDIDATE
 
 LAB_STAGE3_STORE_ID = "lab-t1-stage3-recovery-v1"
-LAB_STAGE3_STORE_SCHEMA_VERSION = 6
+LAB_STAGE3_STORE_SCHEMA_VERSION = 7
 _STORE_FILE_VAR = "PFSENSE_LAB_RECOVERY_STORE_FILE"
 _STORE_ID_VAR = "PFSENSE_LAB_RECOVERY_STORE_ID"
 _INTEGRITY_KEY_FILE_VAR = "PFSENSE_LAB_RECOVERY_INTEGRITY_KEY_FILE"
@@ -168,7 +168,7 @@ def _require_existing_store(path: Path) -> None:
         finally:
             connection.close()
     except sqlite3.Error:
-        raise LabStage3RuntimeError("LAB-T1 recovery store is not an initialized schema-v6 store") from None
+        raise LabStage3RuntimeError("LAB-T1 recovery store is not an initialized schema-v7 store") from None
     if metadata_values != {
         "schema_version": str(LAB_STAGE3_STORE_SCHEMA_VERSION),
         "store_id": LAB_STAGE3_STORE_ID,

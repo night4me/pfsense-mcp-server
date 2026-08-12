@@ -17,6 +17,7 @@ _HEX_64 = re.compile(r"[0-9a-f]{64}")
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 MAX_PROTECTED_ARTIFACT_BYTES = 1_048_576
+AUTHORIZATION_PROVENANCE_SCHEMA_VERSION = 2
 
 
 def _is_utc(value: datetime) -> bool:
@@ -40,6 +41,44 @@ class ProtectedArtifact:
             raise ContractValidationError("Protected artifact ciphertext must be non-empty bytes.")
         if len(self.ciphertext) > MAX_PROTECTED_ARTIFACT_BYTES:
             raise ContractValidationError("Protected artifact ciphertext exceeds the safety limit.")
+
+
+@dataclass(frozen=True)
+class AuthorizationProvenance:
+    """Authenticated PlanAuthorizationV2 lineage for a new contract."""
+
+    schema_version: int
+    authorization_id: str
+    authority_id: str
+    plan_authorization_schema_version: int
+    plan_digest: str
+    step_id: str
+    execution_intent_digest: str
+    authorization_issued_at: datetime
+    authorization_expires_at: datetime
+    appliance_target_digest: str
+
+    def __post_init__(self) -> None:
+        if type(self.schema_version) is not int or self.schema_version != AUTHORIZATION_PROVENANCE_SCHEMA_VERSION:
+            raise ContractValidationError("Authorization provenance schema version is unsupported.")
+        if type(self.plan_authorization_schema_version) is not int or self.plan_authorization_schema_version != 2:
+            raise ContractValidationError("Authorization provenance requires PlanAuthorizationV2.")
+        identifiers = (self.authorization_id, self.authority_id, self.step_id)
+        if not all(isinstance(value, str) and _IDENTIFIER.fullmatch(value) for value in identifiers):
+            raise ContractValidationError("Authorization provenance identifier is invalid.")
+        digests = (self.plan_digest, self.execution_intent_digest, self.appliance_target_digest)
+        if not all(isinstance(value, str) and _HEX_64.fullmatch(value) for value in digests):
+            raise ContractValidationError("Authorization provenance digest is invalid.")
+        if not isinstance(self.authorization_issued_at, datetime) or not isinstance(
+            self.authorization_expires_at, datetime
+        ):
+            raise ContractValidationError("Authorization provenance timestamps must be UTC.")
+        if (
+            not _is_utc(self.authorization_issued_at)
+            or not _is_utc(self.authorization_expires_at)
+            or self.authorization_expires_at <= self.authorization_issued_at
+        ):
+            raise ContractValidationError("Authorization provenance validity window is invalid.")
 
 
 def derive_idempotency_key(
@@ -90,6 +129,7 @@ class RecoveryContract:
     protected_target_identity: ProtectedArtifact
     protected_intent: ProtectedArtifact
     protected_snapshot: ProtectedArtifact
+    authorization_provenance: AuthorizationProvenance | None = None
     confirmation_digest: str | None = None
     confirmed_at: datetime | None = None
     verified_target_fingerprint: str | None = None
@@ -148,6 +188,10 @@ class RecoveryContract:
             not _is_utc(self.confirmed_at) or not self.created_at <= self.confirmed_at < self.expires_at
         ):
             raise ContractValidationError("Recovery Contract confirmation timestamp is outside its validity window.")
+        if self.authorization_provenance is not None:
+            provenance = self.authorization_provenance
+            if self.expires_at > provenance.authorization_expires_at:
+                raise ContractValidationError("Recovery Contract outlives its source authorization.")
         expected_idempotency_key = derive_idempotency_key(
             capability=self.capability,
             endpoint_symbol=self.endpoint_symbol,

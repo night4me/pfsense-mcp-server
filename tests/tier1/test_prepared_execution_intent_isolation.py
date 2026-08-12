@@ -111,10 +111,11 @@ def test_digest_function_hard_codes_execution_domain_not_caller_input():
 
 
 def test_module_is_not_imported_by_production_construction_sites():
+    allowed = {"alias_description.py", "alias_description_execution.py"}
     offenders: list[str] = []
     production = ROOT / "src/pfsense_mcp"
     for path in production.rglob("*.py"):
-        if path == MODULE or (path.name == "__init__.py" and path.parent.name == "tier1"):
+        if path == MODULE or path.name in allowed or (path.name == "__init__.py" and path.parent.name == "tier1"):
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         imports = {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)} | {

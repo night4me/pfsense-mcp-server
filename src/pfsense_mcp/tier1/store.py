@@ -25,7 +25,7 @@ from pfsense_mcp.capabilities import Capability
 from .anti_rollback import AnchorProvisioningStatus, AntiRollbackAnchor, HighWaterMark, ProvisioningRecord
 from .canonical import frame_bytes, frame_str
 from .confirmation import ConfirmationEvidence, ConfirmationVerifier
-from .contract import ProtectedArtifact, RecoveryContract
+from .contract import AuthorizationProvenance, ProtectedArtifact, RecoveryContract
 from .errors import (
     ConfirmationError,
     ContractConflictError,
@@ -42,7 +42,8 @@ from .reconciliation import (
 )
 from .state_machine import RecoveryState, require_transition
 
-_SCHEMA_VERSION = 6
+_SCHEMA_VERSION = 7
+_LEGACY_SCHEMA_VERSION = 6
 _STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _RESERVATION_STATES = frozenset(
     {
@@ -87,8 +88,10 @@ _CONTRACT_FIELDS = frozenset(
         "target_fingerprint",
         "target_identity_digest",
         "verified_target_fingerprint",
+        "authorization_provenance",
     }
 )
+_LEGACY_CONTRACT_FIELDS = _CONTRACT_FIELDS - {"authorization_provenance"}
 
 
 def _utc_now() -> datetime:
@@ -127,6 +130,54 @@ def _artifact_from_dict(value: object) -> ProtectedArtifact:
         raise ContractIntegrityError("Stored protected artifact is invalid.") from exc
 
 
+def _provenance_to_dict(provenance: AuthorizationProvenance | None) -> dict[str, object] | None:
+    if provenance is None:
+        return None
+    return {
+        "appliance_target_digest": provenance.appliance_target_digest,
+        "authority_id": provenance.authority_id,
+        "authorization_expires_at": provenance.authorization_expires_at.isoformat(),
+        "authorization_id": provenance.authorization_id,
+        "authorization_issued_at": provenance.authorization_issued_at.isoformat(),
+        "execution_intent_digest": provenance.execution_intent_digest,
+        "plan_authorization_schema_version": provenance.plan_authorization_schema_version,
+        "plan_digest": provenance.plan_digest,
+        "schema_version": provenance.schema_version,
+        "step_id": provenance.step_id,
+    }
+
+
+def _provenance_from_dict(value: object) -> AuthorizationProvenance | None:
+    if value is None:
+        return None
+    expected = {
+        "appliance_target_digest",
+        "authority_id",
+        "authorization_expires_at",
+        "authorization_id",
+        "authorization_issued_at",
+        "execution_intent_digest",
+        "plan_authorization_schema_version",
+        "plan_digest",
+        "schema_version",
+        "step_id",
+    }
+    if not isinstance(value, dict) or set(value) != expected:
+        raise ContractIntegrityError("Stored authorization provenance is invalid.")
+    return AuthorizationProvenance(
+        schema_version=value["schema_version"],
+        authorization_id=value["authorization_id"],
+        authority_id=value["authority_id"],
+        plan_authorization_schema_version=value["plan_authorization_schema_version"],
+        plan_digest=value["plan_digest"],
+        step_id=value["step_id"],
+        execution_intent_digest=value["execution_intent_digest"],
+        authorization_issued_at=datetime.fromisoformat(value["authorization_issued_at"]),
+        authorization_expires_at=datetime.fromisoformat(value["authorization_expires_at"]),
+        appliance_target_digest=value["appliance_target_digest"],
+    )
+
+
 def _contract_payload(contract: RecoveryContract) -> bytes:
     payload = {
         "capability": contract.capability.name,
@@ -151,6 +202,7 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
         "target_fingerprint": contract.target_fingerprint,
         "target_identity_digest": contract.target_identity_digest,
         "verified_target_fingerprint": contract.verified_target_fingerprint,
+        "authorization_provenance": _provenance_to_dict(contract.authorization_provenance),
     }
     return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -158,7 +210,7 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
 def _contract_from_payload(payload: bytes) -> RecoveryContract:
     try:
         value = json.loads(payload, object_pairs_hook=_strict_object)
-        if not isinstance(value, dict) or set(value) != _CONTRACT_FIELDS:
+        if not isinstance(value, dict) or set(value) not in {_CONTRACT_FIELDS, _LEGACY_CONTRACT_FIELDS}:
             raise ContractIntegrityError("Stored Recovery Contract fields are invalid.")
         return RecoveryContract(
             contract_id=value["contract_id"],
@@ -183,6 +235,7 @@ def _contract_from_payload(payload: bytes) -> RecoveryContract:
             confirmation_digest=value["confirmation_digest"],
             confirmed_at=datetime.fromisoformat(value["confirmed_at"]) if value["confirmed_at"] else None,
             verified_target_fingerprint=value["verified_target_fingerprint"],
+            authorization_provenance=_provenance_from_dict(value.get("authorization_provenance")),
         )
     except (KeyError, TypeError, ValueError, UnicodeDecodeError, ContractValidationError) as exc:
         raise ContractIntegrityError("Stored Recovery Contract is invalid.") from exc
@@ -396,6 +449,19 @@ class SqliteRecoveryContractStore:
             self._verify_schema(connection)
             existing = dict(connection.execute("SELECT key, value FROM metadata"))
             expected = {"schema_version": str(_SCHEMA_VERSION), "store_id": self._store_id}
+            legacy = {"schema_version": str(_LEGACY_SCHEMA_VERSION), "store_id": self._store_id}
+            if existing == legacy:
+                try:
+                    connection.execute("BEGIN IMMEDIATE")
+                    self._migrate_v6_contract_payloads(connection)
+                    connection.execute(
+                        "UPDATE metadata SET value = ? WHERE key = 'schema_version'", (str(_SCHEMA_VERSION),)
+                    )
+                    connection.commit()
+                except Exception:
+                    connection.rollback()
+                    raise
+                existing = expected
             if existing and existing != expected:
                 raise ContractIntegrityError("Recovery store metadata does not match this build or store identity.")
             if not existing:
@@ -406,6 +472,28 @@ class SqliteRecoveryContractStore:
                     raise ContractIntegrityError("Recovery store metadata is missing from a non-empty store.")
                 connection.executemany("INSERT INTO metadata(key, value) VALUES (?, ?)", expected.items())
         os.chmod(self._path, 0o600)
+
+    def _migrate_v6_contract_payloads(self, connection: sqlite3.Connection) -> None:
+        """Add explicit null provenance; never infer authorization lineage."""
+
+        rows = connection.execute("SELECT contract_id, payload, mac FROM contracts").fetchall()
+        for contract_id, payload, supplied_mac in rows:
+            if not isinstance(payload, bytes) or not hmac.compare_digest(str(supplied_mac), self._mac(payload)):
+                raise ContractIntegrityError("Legacy Recovery Contract failed integrity verification.")
+            try:
+                legacy_value = json.loads(payload, object_pairs_hook=_strict_object)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                raise ContractIntegrityError("Legacy Recovery Contract is invalid.") from None
+            if not isinstance(legacy_value, dict) or set(legacy_value) != _LEGACY_CONTRACT_FIELDS:
+                raise ContractIntegrityError("Legacy Recovery Contract fields are invalid.")
+            contract = _contract_from_payload(payload)
+            if contract.authorization_provenance is not None:
+                raise ContractIntegrityError("Legacy Recovery Contract contains unexpected authorization provenance.")
+            migrated = _contract_payload(contract)
+            connection.execute(
+                "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
+                (migrated, self._mac(migrated), contract_id),
+            )
 
     def _mac(self, *components: bytes) -> str:
         """Length-frame the store ID and every component before HMAC'ing,
@@ -526,6 +614,14 @@ class SqliteRecoveryContractStore:
             self._fault_hook(point)
 
     def create(self, contract: RecoveryContract) -> None:
+        """Persist an inert/legacy contract.
+
+        Production W1 creation must use :meth:`create_authorized`; this
+        compatibility entry point remains for existing recovery tests and the
+        disposable-lab evidence harness and cannot establish authorization
+        provenance by inference.
+        """
+
         if contract.state != RecoveryState.PREPARING or contract.state_version != 0 or contract.is_confirmed:
             raise ContractValidationError("New Recovery Contract must start unconfirmed at PREPARING version zero.")
         now = self._now()
@@ -564,6 +660,13 @@ class SqliteRecoveryContractStore:
                 connection.rollback()
                 raise ContractConflictError("Recovery Contract identity or idempotency key already exists.") from exc
         self._invoke_fault("after_commit")
+
+    def create_authorized(self, contract: RecoveryContract) -> None:
+        """Create one new coordinator-originated, V2-provenance contract."""
+
+        if contract.authorization_provenance is None:
+            raise ContractValidationError("Authorized Recovery Contract provenance is required.")
+        self.create(contract)
 
     def load(self, contract_id: str) -> RecoveryContract:
         with self._connect() as connection:

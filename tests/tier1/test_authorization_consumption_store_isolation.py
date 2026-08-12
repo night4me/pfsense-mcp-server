@@ -73,7 +73,7 @@ def test_no_production_module_imports_the_consumption_store():
     no-production-importer proof that the coordinator itself remains
     unwired/unconstructed by any production entry point."""
 
-    _ALLOWED_IMPORTERS = {"execution_coordinator.py"}
+    _ALLOWED_IMPORTERS = {"alias_description_execution.py", "execution_coordinator.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:

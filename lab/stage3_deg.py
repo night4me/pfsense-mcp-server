@@ -505,7 +505,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         EvidenceStage.G,
         "legacy-malformed-state",
         start=RecoveryState.RECONCILIATION,
-        reconciliation="schema-v6-and-HMAC-fail-closed",
+        reconciliation="schema-v7-and-HMAC-fail-closed",
         repetitions=1,
         status=LiveStatus.OFFLINE_ONLY,
         attestation=False,

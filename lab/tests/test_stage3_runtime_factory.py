@@ -314,7 +314,7 @@ def test_missing_blank_symlink_wrong_id_and_schema_store_fail_closed(tmp_path, m
         build_fixed_lab_stage3_runtime()
 
     paths["store"].touch(mode=0o600)
-    with pytest.raises(LabStage3RuntimeError, match="initialized schema-v6"):
+    with pytest.raises(LabStage3RuntimeError, match="initialized schema-v7"):
         build_fixed_lab_stage3_runtime()
 
     paths["store"].unlink()
