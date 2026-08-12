@@ -1,9 +1,81 @@
 # ADR-025: Authorization-to-RecoveryContract binding
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-08-12, owner)
 - **Date:** 2026-08-11
 - **Scope:** Architecture only. This ADR authorizes no schema, code, test,
   production-construction, MCP, capability, or WRITE change.
+
+## Owner convergence decision
+
+The owner accepted Alternative F and the first-WRITE-specific decisions in
+this ADR on 2026-08-12. Acceptance fixes the authorization-to-contract
+architecture; it does not authorize W1 implementation, production
+construction, endpoint/capability activation, MCP WRITE registration, or live
+execution.
+
+The first production path uses `PlanAuthorizationV2` exclusively:
+
+```text
+authoritative preparation
+→ PreparedExecutionIntentV1 (or its explicit successor version)
+→ exact execution-intent digest beside the exact plan step
+→ pinned signature/currentness/plan-freshness verification
+→ authoritative intent reconstruction and exact digest comparison
+→ durable one-time authorization consumption
+→ one provenance-bound authenticated RecoveryContract
+→ exact-contract confirmation
+→ one MutationExecutor handoff
+```
+
+PlanAuthorization v1 and legacy contracts are never execution-eligible by
+inference. `MutationExecutor` remains authorization-unaware and the sole owner
+of reads at send boundaries, locator/fingerprint validation, sends, post-write
+verification, retry suppression, rollback, and recovery transitions.
+
+Authorization must still be current when the executable contract is created
+and confirmed. Contract expiry is bounded by authorization expiry; the
+authenticated provenance records the authorization expiry/currentness facts
+needed to reject a stale conversion. Once a legitimate send has occurred,
+authenticated RecoveryContract/state-machine recovery, reconciliation, and
+rollback remain available according to their existing safety rules: expiry
+cannot strand an already-mutated target or demand a new authorization merely
+to restore safety.
+
+One-time consumption precedes creation. All non-mutating feasibility checks
+must complete first; after consumption the coordinator may create exactly one
+matching contract and may hand exactly that contract to the executor once. A
+crash or create failure burns the authorization and grants no retry. W1 must
+make the consume→create ordering deterministic and fail closed using the
+existing stores; it must stop for owner review if that narrow race cannot be
+closed without a new authority or a generic distributed transaction mechanism.
+
+### Appliance target binding
+
+First-WRITE authorization is appliance-specific. The strongest existing
+repository-native material is composed rather than replaced:
+
+- normalized configured `PFSENSE_API_URL` and its enforced TLS configuration;
+- one fresh persistent installation identifier already modeled by the READ
+  layer: `SystemStatus.netgate_id`, with `SystemHaSync.pfhostid` as the
+  repository-modeled alternative;
+- a domain-separated appliance-target binding included in the prepared
+  execution authorization/provenance chain and checked again by fixed
+  production construction.
+
+These identifiers are ordinary TLS-authenticated appliance data, not hardware
+attestation, and remain privacy-sensitive. The production WRITE path may read
+them only for this protected binding and must not log or expose them. If neither
+identifier is available, or if the configured target/TLS binding or observed
+identifier changes, WRITE preparation/execution fails closed. No
+base-URL-only, hostname-only, nullable “unknown appliance,” or caller-supplied
+identity fallback is accepted. The exact additive field/schema placement is a
+narrow W1 implementation detail; it must be covered by the same canonical
+intent/provenance integrity and must not alter PlanDigest v1 retrospectively.
+
+Pinned Ed25519 authorities verify authorization, confirmation, and
+reconciliation in their existing separate domains. Production contains no
+signing private key, accepts no authority material from MCP input, and cannot
+self-authorize, self-confirm, or fabricate reconciliation evidence.
 
 ## Implementation status
 
@@ -32,7 +104,8 @@ closed; there is no V0/legacy inference.
 
 B1 remains synthetic and production-unreachable. It does not implement B2's
 PlanAuthorization v2 binding, B3's preparer, B4's RecoveryContract provenance,
-B5's freshness composition, or B6/E3. ADR-025 remains Proposed; public MCP
+B5's freshness composition, or B6/E3. ADR-025 is Accepted but unimplemented
+beyond B1/B2; public MCP
 remains 42 READ / 0 WRITE and WRITE remains 0/3 active.
 
 **Slice B2 — PlanAuthorization v2 signed per-step binding — implemented
@@ -56,7 +129,7 @@ not import a prepared intent, prepare or recompute an execution-intent digest,
 claim freshness/consumption, or create a RecoveryContract. A same-shaped digest
 from another domain cannot be distinguished structurally at B2; B3/B5 must
 authoritatively recompute the B1 domain and compare it. B3–B6/E3 remain
-unimplemented and unauthorized. ADR-025 remains Proposed; public MCP remains
+unimplemented and unauthorized. ADR-025 is Accepted; public MCP remains
 42 READ / 0 WRITE and WRITE remains 0/3 active.
 
 ## Context
@@ -73,8 +146,8 @@ plan digest describes security-posture policy and ordering. A
 executor may send. Neither an ID copied between the objects nor a caller's
 assertion proves that these meanings correspond.
 
-This ADR designs the smallest safe bridge. Appliance-level authorization
-target identity remains a separate unresolved concern.
+This ADR designs the smallest safe bridge, including the accepted additive
+appliance-target binding defined above.
 
 ## Problem statement
 
@@ -148,8 +221,9 @@ provenance. No caller may supply or replace a preconstructed contract or any
 parallel execution-critical value after that check.
 
 Confirmation then binds the exact contract, and the existing executor consumes
-only that contract's sealed execution facts. This is a transitive binding; it
-does not make the authorization appliance-specific.
+only that contract's sealed execution facts. This is a transitive binding. The
+accepted appliance-target binding above also makes the prepared authorization
+and contract provenance specific to the configured appliance.
 
 ## Field-by-field binding matrix
 
@@ -188,7 +262,7 @@ identifies whether an unclosed substitution surface exists.
 | overall status / `safe_to_proceed` | P | planner-derived | SC gate; not execution mapping |
 | findings/notes | not all P | planner-derived | descriptive/audit; must not become hidden execution authority |
 | ordered steps | selected fields P | planner-derived | SC scope/order, but current steps are provisioning policy actions |
-| appliance target identity | absent | unavailable by privacy-default design | separate unresolved authorization portability gap |
+| appliance target identity | absent from current v1 plan | configured target/TLS plus protected `netgate_id` or `pfhostid` | additive first-WRITE intent/provenance binding required by W1; absence fails closed |
 
 ### PlanStep
 
@@ -483,9 +557,10 @@ capability and passes only the ID of the contract it created to confirmation
 and execution. Any conflict is a uniform pre-consumption denial.
 
 Generated IDs, timestamps, contract expiry, encryption, and idempotency are
-derived internally under existing policy. Contract expiry must not outlive an
-applicable authorization/confirmation policy bound; the exact policy is an
-owner decision before implementation.
+derived internally under existing policy. Contract creation and confirmation
+require current authorization, and contract expiry must not outlive that
+authorization. Post-send recovery remains governed by authenticated lifecycle
+state rather than being disabled by authorization expiry.
 
 ## Canonicalization and digest design
 
@@ -581,16 +656,12 @@ not by a language-level authorization check inside the executor.
 
 ## Target-identity separation
 
-Structural plan-to-contract binding does not require appliance identity. It
-does require the existing operation/resource target identity and fingerprint
-because they are part of the exact execution tuple.
-
-Even after this ADR is implemented, ordinary PlanAuthorization remains
-portable across appliances if the same signed plan and prepared resource
-execution digest can be reproduced there. The design therefore does not prove
-“this authority approved appliance X.” It must not substitute endpoint URLs,
-`netgate_id`, `pfhostid`, or identifying-metadata privacy overrides for a
-future appliance identity decision.
+Resource identity and appliance identity remain distinct fields with distinct
+purposes. Alias natural identity/fingerprint protects which resource may be
+changed; the accepted appliance-target binding protects which configured
+pfSense installation may execute the authorization. Neither substitutes for
+the other. W1 must bind both into the protected authorization/contract lineage
+without changing PlanDigest v1 or exposing identifying metadata.
 
 ## Caller influence analysis
 
@@ -632,7 +703,7 @@ reconstruction make it an untrusted carrier, not an authority.
 | confirmation for A applied to B | prevented by existing evidence contract/operation bindings |
 | response lost after execution | existing durable contract state is authoritative; no automatic replay |
 | direct executor invocation bypass | not solved cryptographically; production isolation/construction remains the boundary |
-| authorization reused on another appliance | not solved; separate appliance-identity decision |
+| authorization reused on another appliance | prevented by the accepted configured-target/TLS plus stable installation-identifier binding; missing/changed identity refuses WRITE |
 
 ## Versioning and migration
 
@@ -674,21 +745,21 @@ migration plan before implementation.
 
 ## Deferred work
 
-- Appliance-level target identity and its privacy/lifecycle policy.
 - DeprovisionAuthorization verification and destructive-target binding.
 - Two-phase authorization consumption.
-- Concrete capability adapter/preparer implementation. ADR-026 now specifies
-  the Proposed, lab-gated firewall-alias description-only semantic unit; its
-  empirical evidence and owner decisions remain prerequisites to B3b.
-- Numeric authorization/contract expiry policy.
+- Concrete capability adapter/preparer implementation. Accepted ADR-026
+  specifies the lab-gated firewall-alias description-only semantic unit; its
+  first-WRITE mandatory evidence matrix remains the W1/W3 gate.
 - Production construction, MCP WRITE registration, allow-list population, and
   all three WRITE activation milestones.
 
 Public MCP remains 42 READ / 0 WRITE; WRITE remains 0/3 active.
 
-## Proposed implementation slices
+## Historical implementation slices
 
-Every slice below requires separate authorization. None is started by this ADR.
+These slices describe the accepted binding components. B1/B2 are implemented;
+B3-B6 are consolidated into separately authorized W1 by the definitive
+roadmap. Acceptance starts no implementation.
 
 ### B1 — execution-intent model and canonical digest
 
@@ -799,23 +870,21 @@ Implementation must stop if:
 - state-machine semantics must be bypassed;
 - production construction or MCP WRITE exposure is required.
 
-## Owner decisions required
+## Resolved owner decisions
 
-| Decision | Recommended option | Alternatives | Consequences | Blocks implementation? |
-|---|---|---|---|---:|
-| Binding architecture | Alternative F: prepared intent + signed per-step digest + contract provenance | A, bare B/C/D, E | strongest substitution resistance with singular derivation; more explicit schema work | yes |
-| Authorization versioning | PlanAuthorization v2; v1 never execution-eligible | mutate v1 or infer binding | fail-closed migration versus unsafe ambiguity | yes |
-| Plan integration | keep PlanDigest/PlanStep v1; bind execution in authorization v2 | embed intent in plan/digest v2 | avoids planner/Tier 1 coupling; preserves E1 semantics | yes |
-| Contract persistence | authenticated v2 provenance fields and store migration | separate binding record or no persistence | durable audit/transitive proof versus atomicity/duplication risk | yes |
-| Prepared snapshot scope | include snapshot and rollback-plan version in execution digest | bind only mutation tuple | stronger recovery-policy authorization; requires preparation before signing | yes |
-| Legacy contracts | existing recovery only; never coordinator-authorized | migrate by assertion | fail-closed, no invented provenance | yes |
-| Adapter selection | sealed registry from bound capability/endpoint/method | caller-provided adapter | removes post-authorization substitution | yes |
-| Expiry relationship | generated contract lifetime bounded by authorization and confirmation policy | independent contract expiry | reduces authority extension; exact rule needs specification | yes |
-| Appliance identity | remain separate and unresolved | solve in later ADR | structural binding closes substitution but not cross-appliance portability | no for inert B1/B2; required before production WRITE if owner so decides |
+| Decision | Accepted option | Consequences | Status |
+|---|---|---|---|
+| Binding architecture | Alternative F: prepared intent + signed per-step digest + contract provenance | singular derivation and durable transitive proof | Resolved |
+| Authorization versioning | PlanAuthorization v2 only; v1 never execution-eligible | fail-closed migration | Resolved |
+| Plan integration | keep PlanDigest/PlanStep v1; bind execution in authorization v2 | preserves E1 and avoids planner duplication | Resolved |
+| Contract persistence | authenticated provenance fields and the minimum schema-v6 migration | durable tuple proof; no inferred legacy data | Resolved |
+| Prepared snapshot scope | include snapshot and rollback-plan version in execution digest | recovery policy is authorized with mutation | Resolved |
+| Legacy contracts | existing recovery only; never coordinator-authorized | no invented provenance | Resolved |
+| Adapter selection | sealed exact first-WRITE registry entry | removes post-authorization substitution | Resolved |
+| Expiry relationship | contract creation/confirmation currentness; contract bounded by authorization; post-send safety recovery remains available | prevents stale conversion without stranding recovery | Resolved |
+| Appliance identity | configured target/TLS plus observed `netgate_id` or `pfhostid`; absence/change fails closed | closes cross-appliance substitution for enabled deployments | Resolved |
 
-No implementation slice may begin until the owner accepts or revises the
-blocking decisions for that slice. Acceptance of this Proposed ADR alone is
-not production WRITE authorization.
+Acceptance starts no implementation. W1 requires separate owner authorization.
 
 ## Consequences
 

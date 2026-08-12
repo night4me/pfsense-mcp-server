@@ -133,80 +133,79 @@ test-only adapter — never a real capability adapter, since none exists
 yet. `test_isolation.py`-style checks confirm `executor.py` remains
 unimported by production.
 
-## Phase 4 — Disposable-lab validation
+## First production WRITE convergence sequence
 
-**Produces:** the harness specified in
-[`disposable_lab_execution_model.md`](specs/disposable_lab_execution_model.md),
-implemented and tested offline, **and then** — only under separate,
-explicit command-level approval per `TIER1_ROADMAP.md` Milestone 8 — run
-against a real disposable lab VM to produce evidence for the alias
-candidate (or whichever candidate ADR-016 ultimately authorizes).
+Owner-accepted ADR-025/ADR-026 supersede the former Phase 4-6 sequencing for
+the first WRITE. Existing valid LAB and offline evidence is retained and
+reused; exhaustive evidence outside the description-only semantic scope is
+not a prerequisite. Every W slice requires separate authorization and stops
+before the next.
 
-This phase has two distinct gates because implementing/testing the
-harness offline is architecture-adjacent implementation work, while
-running it against a live (even if disposable, non-production) appliance
-is exactly the kind of action this project's approval boundaries treat as
-requiring explicit, separate sign-off every time.
+### W1 — Bound semantic execution core
 
-**Entry gate (harness implementation):** Phase 3 complete (the harness
-constructs a real `MutationExecutor`). ADR-016 accepted (which candidate).
+**Produces:** the production `set_firewall_alias_description_v1` typed request,
+adapter and authoritative preparer; exact `PlanAuthorizationV2` intent/step/
+digest verification; one-time consumption; appliance-specific authenticated
+RecoveryContract provenance; confirmation/currentness/expiry binding; and one
+MutationExecutor handoff. W1 includes focused offline adversarial tests and no
+production construction or MCP reachability.
 
-**Entry gate (live lab execution):** harness implementation's own exit
-gate met, **plus** separate explicit command-level approval to actually
-run it against the provisioned lab VM — this roadmap does not itself
-grant that approval.
+**Entry gate:** ADR-025 and ADR-026 Accepted; separate explicit W1 owner
+authorization.
 
-**Exit gate:** a complete `AcceptanceReport` covering every scenario in
-`TIER1_LAB_PLAN.md`, informing final numeric values for `ADR-015`'s
-rate/blast-radius defaults and confirming or disqualifying the candidate's
-assumptions (partial-PATCH field scope, implicit reload behavior,
-read-back/rollback semantics).
+**Exit/STOP gate:** the complete tuple and appliance binding are derived from
+one authoritative preparation; v1/legacy/caller substitution refuses; the
+consume→create ordering is deterministic and fail closed; exactly one created
+contract can reach the executor once. Stop if this needs a new security owner,
+generic transaction framework, executor authorization awareness, or unchecked
+caller fact. Stop after W1.
 
-## Phase 5 — First adapter
+### W2 — Fixed production runtime
 
-**Produces:** exactly one concrete `CapabilityAdapter` implementation
-(the alias-description adapter, or whichever candidate Phase 4 validated)
-per [`capability_adapter_contract.md`](specs/capability_adapter_contract.md),
-plus the one new `WriteEndpoints` entry, one new `*_WRITE` capability
-addition, and the MCP tool registration wiring described in
-`TIER1_ROADMAP.md` Milestones 6/9 — **this is the first phase in this
-roadmap that touches production-adjacent code** (`WriteEndpoints`,
-`capabilities.py`, `profiles.py`, `ToolRegistry`) and therefore the first
-phase requiring the kind of milestone-by-milestone acceptance evidence
-`TIER1_ROADMAP.md` already specifies in full (Milestones 6 and 7).
+**Produces:** secure production bootstrap; authenticated store; pinned
+authorization, confirmation and reconciliation verification authorities;
+fixed alias adapter/policy and appliance-target binding; and restart/
+reconciliation construction. No MCP WRITE exposure.
 
-**Entry gate:** Phase 4's live lab evidence supports the candidate
-(no disqualifying finding). Separate, explicit authorization naming the
-exact capability/endpoint/method, per `TIER1_ROADMAP.md` Milestone 0's
-existing requirement — this roadmap does not grant that authorization
-either.
+**Entry gate:** W1 complete and separately authorized W2.
 
-**Exit gate:** `TIER1_ROADMAP.md` Milestone 7's full offline acceptance
-criteria met (all existing READ tests and security gates green, existing
-41-tool contract unchanged, exactly the new WRITE tool registers only in
-the approved profile, empty-allow-list checks replaced with precise
-manifest checks per that milestone's existing acceptance criteria).
+**Exit/STOP gate:** disabled/default construction remains READ-only; enabled
+construction has no private signing keys or caller-selected components;
+missing/malformed authority, store, TLS, or stable appliance identity fails
+closed; restart trusts only authenticated state and fresh authoritative reads.
+Stop after W2.
 
-## Phase 6 — Production readiness review
+### W3 — First product surface
 
-**Produces:** the go/no-go decision described in `TIER1_ROADMAP.md`
-Milestone 9 — explicit approval naming capability, endpoint, profile, and
-release; accepted Recovery Contract/crash/rollback evidence; security and
-compatibility review; updated public security/API/operations
-documentation.
+**Produces:** exactly one `WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION` entry;
+one explicit protected `ALIAS_WRITE` profile posture while the default remains
+READ-only; and one `set_firewall_alias_description` MCP tool whose model-facing
+inputs are only `alias_name` and `description`. W3 completes focused
+acceptance, owner-selected remaining live evidence, operations/security docs,
+and the owner enablement review.
 
-**Entry gate:** Phase 5 complete, including Milestone 8's private
-test-appliance acceptance (a *second*, distinct disposable-appliance run
-— this one exercising the real adapter end-to-end against a live but
-non-production target, per `TIER1_ROADMAP.md`'s existing Milestone 8
-sequence, distinct from Phase 4's earlier candidate-validation lab run).
+**Entry gate:** W2 complete, every ADR-026 **MUST COMPLETE** acceptance row
+closed, and separately authorized W3/live commands.
 
-**Exit gate:** the same commit/tag/push/release approval sequence already
-governing every prior release in this project (`AGENTS.md`'s Owner
-Approval Gate), applied to a WRITE-capable release for the first time.
-Until this gate passes, `WriteEndpoints` remains empty, WRITE
-capabilities remain inactive, and zero WRITE tools register — exactly as
-today.
+**Exit/STOP gate:** exactly one endpoint/capability/tool is reachable only in
+the explicit protected posture; authorization, sealed execution, verification,
+recovery and reconciliation remain intact; all validation passes. Stop for the
+Owner Approval Gate before any release/tag/production enablement.
+
+No W4 is planned before first WRITE.
+
+### Deferred or cancelled before first WRITE
+
+- Defer ADR-027 Slices 3-5, D6 standalone orchestration, complete D/E/G
+  matrices, Stage 3F, broader alias mutation and a generic WRITE framework.
+- Cancel ADR-027 Slice 6 / generic complete `ClosedStage3ExecutionPort` as a
+  first-WRITE prerequisite.
+- Retain useful existing evidence/code; do not promote LAB architecture into
+  production merely because it exists.
+- Add no ADR, abstraction, harness, service locator, generic framework or new
+  security owner unless a concrete mandatory first-WRITE invariant cannot be
+  enforced by existing architecture. Stop and obtain owner review before such
+  an addition.
 
 ## Phase-completion tracking
 
@@ -215,16 +214,15 @@ today.
 | 1. Inert corrections | — | None (implementation-only) | **Complete** — MAC framing length-prefixed (`store.py::_mac`/`_audit_mac`, reusing `canonical.py::frame_str`/`frame_bytes`); `VERIFIED`-state reservation-release behavior documented in `TIER1_ARCHITECTURE.md` and tested (`test_verified_releases_target_and_later_rollback_refuses_on_conflict`). `make quick` 9/9, `make validate` 18/18. |
 | 2. Architecture implementation | Phase 1 | ADR-009, 010, 011, 012, 013, 015 accepted | **Core subsystems complete** — key_lifecycle, protected_artifact_encryption, confirmation_authority, reconciliation_authority, rate_blast_radius_policy fully implemented and tested; whole_store_anti_rollback's protocol and store wiring implemented and tested, concrete backend intentionally not implemented (blocked on ADR-011's TPM-availability confirmation — a genuine owner/infrastructure decision, not an implementation gap). capability_adapter_contract/adapter_restrictions have no standalone Phase 2 code deliverable — the `CapabilityAdapter` Protocol they describe is defined in Phase 3's `executor.py`, and `adapter_restrictions.md`'s isolation tests need a `tier1/adapters/` package to scan, which does not exist until a capability is authorized (Phase 5). `make quick` 9/9, `make validate` 18/18 after every commit in this phase; 280 Tier1 tests (was 179 at Phase 1 exit). |
 | 3. Sealed executor | Phase 2 | ADR-014 accepted | **Complete** — `src/pfsense_mcp/tier1/executor.py` implements `MutationExecutor`/`CapabilityAdapter` per `sealed_executor.md`, composing all Phase 2 subsystems plus a new, additive `WriteApiClient.send_for_tier1()` chokepoint and `Transport.request(body=...)` support (both existing-behavior-preserving; see `sealed_executor.md`'s Implementation notes for the three concrete design gaps the original pseudocode left open — `read_target(read_client, natural_identity)`, the `intent["raw_target_hint"]` dict shape, and 2xx/4xx/other response classification — each resolved, tested, and reconciled back into `capability_adapter_contract.md`/`adapter_restrictions.md`). `tests/tier1/test_executor.py` (19 tests) covers the full `execute()`/`rollback()` happy paths, policy/binding/fingerprint-drift refusals, every `EffectKnowledge` outcome, and audit-trail completeness, against `MockTransport` with a synthetic test-only adapter — never a real capability adapter. Not yet exercised: anchor refusal (no concrete `AntiRollbackAnchor` backend exists until ADR-011; ADR pending, as in Phase 2) and an executor-level concurrency test (the underlying `store.transition()` CAS race is already covered by `tests/tier1/test_store.py`'s threaded tests; the executor adds no new concurrency behavior on top of it). `test_isolation.py` extended with a single, narrow exception: `executor.py` alone may import `pfsense_mcp.write_api_client`/`pfsense_mcp.pfsense_client`; every other `tier1/*.py` module remains as restricted as before. `make quick` 9/9, `make validate` 18/18; 299 Tier1 tests (was 280 at Phase 2 exit). |
-| 4. Disposable-lab validation | Phase 3 | ADR-016 accepted (2026-08-08); separate live-run approval still required | **Harness implemented offline** — `lab/` (`config.py`/`fault_proxy.py`/`harness.py`) implements `LabConfig`/`load_lab_config()`, `FaultProxy` (12 `FaultScenario` members covering all 10 `TIER1_LAB_PLAN.md` list items), and `run_scenario()`/`run_full_acceptance()`, offline-tested against `MockTransport` with a synthetic test-only adapter (44 tests); excluded from packaging (no config change needed — existing include-lists never name it) and from `pytest`'s default collection (`pyproject.toml` `addopts = "--ignore=lab"`). One implementation-note gap resolved: no production PREPARE-construction function exists yet in `pfsense_mcp.tier1` (that is Phase 5's job); `lab/harness.py::prepare_contract()` is a lab-scoped equivalent, not a claim it becomes the production implementation verbatim. **Live execution against a real lab VM remains unauthorized** — needs a real candidate adapter (Phase 5, not started) plus separate command-level approval per `TIER1_ROADMAP.md` Milestone 8. `make quick` 9/9, `make validate` 18/18; full suite unchanged at 1519/42 (lab/ tests intentionally excluded from that count, run separately: 44/44). |
-| 5. First adapter | Phase 4 | Milestone 0 capability/endpoint authorization | Not started |
-| 6. Production readiness review | Phase 5 | Milestone 9 activation decision; Owner Approval Gate | Not started |
+| 4. Semantic-scope evidence | Phase 3 | ADR-016 and ADR-026 accepted; live commands separately approved | **Partially complete and converged** — 25 clean A→B→A cycles, Stage 3A and Stage 3B evidence are accepted. ADR-026's matrix is authoritative for remaining first-WRITE evidence. Broader Stage 3F and exhaustive D/E/G matrices are deferred, not PASS. |
+| W1. Bound semantic execution core | accepted ADR-025/026 | separate W1 authorization | Not started |
+| W2. Fixed production runtime | W1 | separate W2 authorization | Not started |
+| W3. First product surface | W2 plus completed ADR-026 mandatory matrix | separate W3/live authorization and Owner Approval Gate | Not started |
 
 ## What this roadmap deliberately does not resolve
 
-- The exact numeric rate/blast-radius values remain provisional until
-  Phase 4 produces lab evidence (`ADR-015`).
-- Whether the alias or system-tunable candidate ultimately proceeds
-  remains conditional on Phase 4's findings (`ADR-016`).
+- Exact production rate/blast-radius values remain a W2/W3 deployment-policy
+  decision under ADR-015; no generic framework is introduced for them.
 - Hardware availability (TPM) for the anti-rollback anchor
   (`ADR-011`) remains to be confirmed against the actual production host
   before Phase 2's anti-rollback work can select its concrete backend.
@@ -244,7 +242,6 @@ when every subsystem an implementation agent would need to build Phases
 ownership, concrete interfaces, failure modes, recovery behavior,
 non-goals, required tests, activation requirements, and four checklists
 (implementation/review/security/test) — verified present in every file
-under `docs/tier1/specs/`. It does **not** mean Phases 4–6 are
-risk-free or automatic; those phases still require lab evidence, separate
-authorization, and the existing Owner Approval Gate, exactly as
-`TIER1_ROADMAP.md` already specified before this blueprint existed.
+under `docs/tier1/specs/`. It does **not** mean W1-W3 are risk-free or
+automatic; each still requires separate authorization, ADR-026's remaining
+mandatory evidence, and the existing Owner Approval Gate.

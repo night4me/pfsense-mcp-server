@@ -1,10 +1,101 @@
 # ADR-026: First WRITE capability adapter semantic unit
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-08-12, owner)
 - **Date:** 2026-08-11
 - **Scope:** Architecture and disposable-lab evidence design only. This ADR
   does not authorize an adapter, preparer, endpoint allow-list entry, live
   mutation, WRITE activation, MCP tool, or production construction.
+
+## Owner convergence decision
+
+The owner accepted this description-only semantic unit and its
+semantic-scope-specific acceptance policy on 2026-08-12. Acceptance authorizes
+no implementation, capability/endpoint activation, MCP tool, production
+construction, or live execution. W1 remains separately authorization-gated.
+
+Evidence is mandatory before first WRITE only when it protects behavior the
+exact semantic unit can exercise. Broader alias mutations, generic scenario
+machinery, and exhaustive permutations are not promoted into product
+prerequisites merely because they appear in the evidence catalogue below.
+Existing valid evidence is reused and unperformed deferred evidence is never
+reported as PASS.
+
+### First-WRITE acceptance matrix
+
+Status meanings: **ESTABLISHED** is accepted existing evidence;
+**MUST COMPLETE** remains a W1/W2/W3 acceptance gate; **DEFERRED** is outside
+the first-WRITE semantic scope and is not PASS.
+
+| First-WRITE invariant | Status at acceptance | Accepted evidence / remaining requirement |
+|---|---|---|
+| exact target identity and singular resolution | ESTABLISHED | clean campaign and Stage 3A authoritative exact-name reads; production adapter retains zero/multiple refusal |
+| complete authoritative pre-mutation READ | ESTABLISHED | name/type/description/ordered address/ordered detail captured authoritatively |
+| complete protected fingerprint | ESTABLISHED | the exact five-field semantic fingerprint and ordering were exercised; production tests must preserve it unchanged |
+| fresh lifecycle locator and continuity | ESTABLISHED | locator `0` remained stable in 25 clean cycles and all completed description cases; executor refusal on drift is already tested |
+| omitted-field/protected-sibling preservation | ESTABLISHED | protected fields and ordering remained unchanged throughout clean and description evidence |
+| explicit apply/reload suppression contract | MUST COMPLETE | explicit `apply=false` and omitted/default behavior are characterized; W3 must close any operationally material reload/service uncertainty without inferring absence from HTTP success |
+| deterministic authoritative postcondition | ESTABLISHED | 25/25 verified B reads plus exact normalization/boundary evidence |
+| description-field concurrent-change/conflict refusal | MUST COMPLETE | executor fingerprint refusal is established offline; production-bound D1-D5-equivalent focused tests and any owner-selected live evidence must prove the exact adapter path |
+| stale expected-state refusal | MUST COMPLETE | existing executor behavior is reusable; prove it through the production-bound adapter/coordinator path |
+| conflict-safe rollback from verified/reconciled B | MUST COMPLETE | sealed rollback and reconciliation architecture are established; prove post-B description drift refusal through the production-bound path |
+| exact authoritative A restoration | ESTABLISHED | 25/25 clean restorations and every accepted Stage 3A/3B case restored exact A |
+| at-most-one-send | ESTABLISHED | clean live send accounting plus MutationExecutor/FaultProxy offline tests exercise the same send owner; production wiring must not add a send path |
+| no blind retry after uncertainty | MUST COMPLETE | executor/offline fault and reconciliation tests establish the security owner; confirm W1/W2 composition adds no retry; additional live permutations only if production introduces materially different behavior |
+| authoritative uncertainty classification | MUST COMPLETE | ADR-027 observation and closed offline classifiers exist; integrate and test applied/not-applied/ambiguous in fixed production composition |
+| fail-closed reconciliation | MUST COMPLETE | signed reconciliation architecture is established offline; fixed production verifier/resume construction and refusal tests remain |
+| authenticated recovery across restart | MUST COMPLETE | schema-v6 encrypted/HMAC restart evidence is established offline; W2 must prove fixed production reconstruction and no resend |
+| least privilege for exact endpoint/capability | MUST COMPLETE | prove the enabled production/test identity needs only the one alias-description endpoint/capability and no broader permission |
+| sufficient authoritative side-effect evidence | MUST COMPLETE | deterministic config read-back and apply behavior are known; any unknown reload/service/config-history effect capable of invalidating verification or recovery remains blocking |
+
+### Concurrency boundary
+
+Description or protected-fingerprint change between preparation and the
+forward/rollback precondition must fail closed. Unrelated-resource concurrency
+does not require exhaustive empirical orchestration: the executor authorizes
+from the selected alias's complete fingerprint and lifecycle locator, never a
+global config revision, and the adapter builds a request only for the freshly
+resolved exact alias locator. An unrelated change therefore cannot satisfy a
+stale target fingerprint, change the resolved locator without refusal, or
+redirect the request. If W1 review discovers shared appliance behavior that
+breaks this separation, that concrete case becomes mandatory again.
+
+### Response-loss and timeout boundary
+
+The mandatory property is one send maximum, no blind retry, fresh
+authoritative observation, the closed `DEFINITELY_APPLIED` /
+`DEFINITELY_NOT_APPLIED` / `AMBIGUOUS` classification, and fail-closed signed
+reconciliation where needed. Existing tests are acceptable where they execute
+the same `MutationExecutor`, store, observation, and reconciliation owners.
+Every live transport-fault permutation is not independently mandatory. New
+live evidence is required only for material behavior introduced by the fixed
+production composition.
+
+### Side-effect boundary
+
+HTTP success alone never proves absence of side effects. First-WRITE evidence
+must establish deterministic authoritative configuration read-back, required
+apply suppression, and that correctness/recovery needs no broader state
+transition. Exhaustive filter/service/API/webConfigurator/config-history
+instrumentation is not automatically required when existing authoritative
+evidence and pinned endpoint behavior establish that contract. A genuinely
+unknown effect that could invalidate deterministic verification, recovery, or
+the description-only blast radius remains a blocker.
+
+### Deferred / outside first-WRITE semantic scope
+
+The following are retained as useful future evidence but do not block the
+description-only first WRITE unless implementation review shows that they
+affect a mandatory invariant above:
+
+- address/member or detail mutation;
+- alias create, delete, recreate, duplicate-name creation, or byte-identical
+  recreation;
+- forced numeric-locator manipulation outside normal description execution;
+- full Stage 3F;
+- D6 as a standalone empirical race;
+- complete D/E/G permutation matrices and repeated cosmetic fault variants;
+- generic ScenarioId orchestration or complete Stage3 execution-port work;
+- exhaustive broader-resource mutation evidence.
 
 ## Context
 
@@ -18,7 +109,7 @@ disposable-lab research on firewall-alias description-only mutation, and
 ADR-020 names that operation as the Milestone 0 first candidate. Neither
 decision proves appliance behavior or authorizes implementation. This ADR
 turns the named candidate into one reviewable semantic specification and
-defines the evidence required before a later B3b implementation decision.
+defines the evidence required before separately authorized W1 implementation.
 
 The API is the community-maintained pfSense REST API package, not a
 Netgate-supported interface. Source review is useful design evidence, but the
@@ -112,7 +203,7 @@ or invoke `/api/v2/firewall/apply`.
 - Partial-PATCH semantics are source-documented but must be proven against the
   pinned lab package. Whole-object replacement is unacceptable.
 - `apply`, `async`, `placement`, `append`, and `remove` controls are forbidden
-  as caller inputs. The request must explicitly keep `apply=false`; B3b must
+  as caller inputs. The request must explicitly keep `apply=false`; W1 must
   stop if the lab schema cannot express that without an implicit reload.
 
 The upstream model at the reviewed commit declares alias `name` unique and
@@ -229,14 +320,14 @@ The future typed planning input is conceptually:
 ```text
 AliasDescriptionChangeV1
   alias_name: constrained alias-name string
-  new_description: NFC-normalized string, 0..N UTF-8 bytes
+  description: NFC-normalized string, 0..1024 evidenced units
 ```
 
-`N` must equal the maximum in the pinned lab-generated OpenAPI schema. If that
-schema has no finite safe limit, owner approval must choose a smaller explicit
-bound before B3b. Embedded NUL/control characters and invalid Unicode scalar
-values are rejected. Exact acceptance of newline/tab requires lab schema
-evidence and an owner decision; the conservative default is to reject them.
+The evidenced boundary accepts 1024 and rejects 1025. Embedded NUL, rejected
+control characters (including U+0001), malformed/non-string values, and invalid
+Unicode scalar values are refused. The established whitespace, tab, newline,
+Unicode and NFD-to-NFC behavior is preserved by the typed boundary rather than
+reinterpreted during implementation.
 
 Unknown fields are forbidden. Empty description is an explicit value, not
 missing/null. A requested description equal to the authoritative current value
@@ -276,7 +367,7 @@ therefore `{id: resolved_id, descr: new_description, apply: false}`. This is a
 OpenAPI document must confirm field location, types, and whether explicit
 `apply=false` is accepted. If ID is a query parameter, if unrelated fields are
 required, if omitted fields reset, or if apply/reload cannot be suppressed,
-this candidate fails and B3b must not proceed.
+this candidate fails and W3 must not enable the capability.
 
 No unrelated field is round-tripped into the PATCH. The reason for selecting
 PATCH is precisely to avoid whole-object replacement. If the lab disproves
@@ -302,9 +393,10 @@ forbidden-field difference fails semantic verification. Timeout or lost
 response never causes automatic replay; authoritative read-back determines
 verified success versus reconciliation.
 
-The lab must also prove whether a config write marks aliases dirty, triggers a
-filter reload, or changes runtime tables. Any unexpected apply/reload or policy
-effect is disqualifying for this first semantic unit.
+First-WRITE acceptance must establish the side-effect boundary in the matrix
+above. Any apply/reload or policy effect that broadens the operational contract
+or invalidates deterministic verification/recovery is disqualifying; absence
+is never inferred solely from HTTP success.
 
 ## Rollback snapshot
 
@@ -361,12 +453,13 @@ durable expected-post-forward fingerprint boundary and focused synthetic
 regression coverage. Confirmed-applied reconciliation evidence also signs this
 fingerprint before it can produce a rollback-eligible VERIFIED contract. This
 is architecture validation only: no alias adapter, public endpoint, capability
-activation, production construction, or lab PATCH is introduced. ADR-026
-remains Proposed and its disposable-lab evidence gates remain outstanding.
+activation, production construction, or lab PATCH is introduced. ADR-026 is
+Accepted; the matrix above records which first-WRITE evidence remains.
 
-The lab must prove that description rollback is exact and that neither forward
-nor rollback PATCH changes members, details, type, ordering, runtime tables, or
-unrelated configuration.
+First-WRITE acceptance must prove exact description rollback and preservation
+of members, details, type, and ordering. Runtime/unrelated effects are governed
+by the explicit side-effect and concurrency boundaries above rather than by an
+exhaustive broader-mutation campaign.
 
 ## Adapter and preparer version
 
@@ -390,15 +483,15 @@ software that cannot reproduce the exact B1 intent/digest fails closed.
 
 | B1 field | Exact source and representation | Live/caller influence | Remaining prerequisite |
 |---|---|---|---|
-| `capability` | immutable registry entry `Capability.ALIAS_WRITE` | no caller choice | owner approves B3b registry entry |
+| `capability` | immutable registry entry `Capability.ALIAS_WRITE` | no caller choice | W1 adds the inert binding; W3 activates it |
 | `endpoint_symbol` | immutable registry value `FIREWALL_ALIAS_DESCRIPTION` | no caller choice | exact symbol/allow-list remains unimplemented |
 | `http_method` | immutable `PATCH` | no caller choice | pinned lab OpenAPI confirms |
-| `adapter_version` | immutable `firewall-alias-description/v1` | no caller choice | owner approves compatibility/version policy |
-| `resource_target` | `{"alias_name": normalized exact typed plan input}` | caller originally requests name, but plan binds it; live READ proves unique match | typed planner input and lab uniqueness proof |
-| `target_precondition` | full live semantic object: name/type/descr/address/detail | authoritative live READ; caller cannot replace | internal identifying READ and lab completeness proof |
-| `normalized_mutation_intent` | fixed operation + bound target + normalized new description | typed plan input only; no raw JSON | typed planner extension and exact description bound |
-| `rollback_snapshot` | same full live semantic object | authoritative live READ | lab proves sufficient/exact restoration |
-| `rollback_plan_version` | immutable `firewall-alias-description-rollback/v1` | no caller choice | owner approves policy and lab proves it |
+| `adapter_version` | immutable `firewall-alias-description/v1` | no caller choice | accepted; W1 pins evidenced compatibility |
+| `resource_target` | `{"alias_name": normalized exact typed input}` | caller requests name; signed V2 binding and live READ prove exact unique match | W1 typed request/binding |
+| `target_precondition` | full live semantic object: name/type/descr/address/detail | authoritative live READ; caller cannot replace | established evidence; W1 production type |
+| `normalized_mutation_intent` | fixed operation + bound target + normalized description | typed input only; no raw JSON | W1 exact intent binding |
+| `rollback_snapshot` | same full live semantic object | authoritative live READ | established evidence; W1 production type |
+| `rollback_plan_version` | immutable `firewall-alias-description-rollback/v1` | no caller choice | accepted |
 
 All fields are deterministic given the exact typed plan input, one complete
 authoritative read, and fixed registry/version. Live state is intentionally
@@ -406,26 +499,13 @@ load-bearing; later B5 must re-read/reprepare before consumption.
 
 ## Planner relationship
 
-Current PlanStep cannot select this semantic unit or its parameters. No current
-posture step means “change alias description,” and action/description text must
-never be parsed.
-
-B3b therefore has a typed-plan prerequisite. The recommended option is an
-explicit versioned execution-request association owned by the planner domain:
-
-```text
-PlanExecutionRequestV1
-  step_id
-  semantic_unit = "firewall-alias-description/v1"
-  request = AliasDescriptionChangeV1(alias_name, new_description)
-```
-
-The association must be part of a new plan/planning-input version and its
-canonical plan identity, or otherwise be cryptographically bound before the
-signer reviews the prepared digest. It must have one exact entry for the chosen
-step and no prose inference. The exact PlanStep/PlanDigest versioning design is
-an owner decision and a prerequisite to B3b; this ADR does not implement or
-silently choose it.
+Current PlanStep prose does not select this semantic unit and must never be
+parsed as authority. PlanDigest/PlanStep v1 remains unchanged. The typed
+`AliasDescriptionChangeV1(alias_name, description)` is authoritatively
+prepared, and `PlanAuthorizationV2` signs its exact execution-intent digest
+beside the exact authorized step ID and plan digest. This is the accepted
+cryptographic association; W1 must not create a second planning schema or
+infer mutation facts from action/description text.
 
 This is not a second policy engine: the planner decides that the typed request
 belongs in the reviewed plan; the adapter only translates the closed request
@@ -464,7 +544,7 @@ signed pair before consumption.
 | direct API use outside coordinator | deferred operational threat; production construction/isolation remains separate |
 | malformed canonical values | prevented by typed model and B1 canonical validation |
 | planner/adapter version mismatch | detected by semantic discriminator, adapter version, and digest mismatch |
-| appliance substitution | deferred; appliance-level target identity remains unresolved |
+| appliance substitution | prevented by ADR-025's accepted configured-target/TLS plus stable installation-identifier binding; unavailable or changed identity fails closed |
 
 No threat marked as an empirical acceptance gate may be treated as prevented
 until the lab evidence exists.
@@ -528,34 +608,25 @@ malformed bodies, wrong method, insufficient privilege, authentication failure,
 dry-run, apply controls, async behavior, response schemas, config locking,
 config-history failure, restart, and external/manual edits.
 
-Run at least 25 clean forward/rollback cycles across fresh VM clones, plus each
-fault case at least three times. Any nondeterministic semantic result or
-unexplained side effect rejects the candidate.
+The completed 25 clean cycles and completed representative repetitions are not
+repeated merely to increase counts. Additional repetitions apply only to a
+remaining mandatory case where they add independent evidence. Any
+nondeterministic semantic result or operationally material unexplained side
+effect rejects the candidate.
 
 ## Evidence acceptance criteria
 
-B3b implementation may be proposed only after an owner-reviewed evidence
-package proves all of the following on the pinned disposable appliance:
-
-- generated OpenAPI exact selector/body/control semantics;
-- stable unique exact-name identity and fail-closed lifecycle numeric-ID
-  continuity;
-- complete authoritative READ including name/type/descr/address/detail;
-- partial PATCH preserves every omitted field and ordering;
-- explicit apply suppression produces no filter reload or service-wide effect;
-- closed request rejects unknown fields and invalid values;
-- authoritative post-condition distinguishes success/failure/ambiguity;
-- snapshot is sufficient and rollback restores exact semantic equality;
-- precondition catches every target-field concurrent change;
-- unrelated-resource concurrency behavior is characterized;
-- timeout/response-loss causes no automatic replay;
-- least-privilege permission is sufficient and no broader permission is used;
-- all B1 fields in this ADR are derivable without caller-trusted parallel facts;
-- logs/results contain no credentials or unnecessary appliance-identifying data.
+The first-WRITE acceptance matrix at the top of this ADR is authoritative.
+Every **MUST COMPLETE** row must be established before W3 owner enablement;
+**DEFERRED** evidence is not PASS and is not a description-only prerequisite.
+All B1 fields must remain derivable without caller-trusted parallel facts, and
+logs/results must contain no credentials, stable appliance identifiers, or
+unnecessary identifying data.
 
 Failure of identity uniqueness, omitted-field preservation, apply suppression,
-exact rollback, deterministic read-back, or side-effect containment rejects the
-candidate rather than weakening the design.
+exact rollback, deterministic read-back, least privilege, retry suppression,
+or operationally material side-effect containment rejects the candidate rather
+than weakening the design.
 
 ## Rejected candidates
 
@@ -576,45 +647,48 @@ candidate rather than weakening the design.
   expands mutation shape, and complicates rollback/references.
 - **Bulk endpoints:** omission means replacement/deletion; unacceptable.
 
-## Required owner decisions
+## Resolved owner decisions
 
-Before B3b, the owner must explicitly approve or revise:
+The owner accepts:
 
-1. `Capability.ALIAS_WRITE` description-only semantic unit;
-2. singular `PATCH /api/v2/firewall/alias` and proposed endpoint symbol;
-3. exact normalized alias-name natural identity and transient ID policy;
-4. full name/type/descr/address/detail fingerprint;
-5. `AliasDescriptionChangeV1` fields, normalization, and exact length/control
-   bounds from lab OpenAPI;
-6. full semantic rollback snapshot;
-7. `firewall-alias-description-rollback/v1` policy;
-8. `firewall-alias-description/v1` adapter/preparer version and pinned upstream
-   compatibility range;
-9. the lab plan and acceptance thresholds above, after reviewing actual results;
-10. the required typed plan/planner association and PlanStep/PlanDigest version
-    boundary.
+1. `Capability.ALIAS_WRITE` for description only;
+2. singular `PATCH /api/v2/firewall/alias` and endpoint symbol
+   `FIREWALL_ALIAS_DESCRIPTION`;
+3. normalized exact alias name as natural identity and numeric ID only as a
+   fresh protected lifecycle locator;
+4. the complete name/type/description/ordered-address/ordered-detail
+   fingerprint;
+5. model-facing `AliasDescriptionChangeV1` inputs `alias_name` and
+   `description`, with existing evidence-derived normalization and bounds:
+   NFC intent, maximum 1024 accepted units, 1025 rejected, malformed/non-string
+   and U+0001 control input rejected, and empirically accepted whitespace/
+   Unicode behavior retained exactly rather than re-guessed;
+6. the full semantic rollback snapshot;
+7. rollback policy `firewall-alias-description-rollback/v1`;
+8. adapter/preparer version `firewall-alias-description/v1`, pinned to the
+   evidenced upstream compatibility range;
+9. the semantic-scope-specific evidence matrix above;
+10. PlanDigest/PlanStep v1 unchanged, with the exact step-to-intent association
+    signed by `PlanAuthorizationV2` as accepted in ADR-025.
 
-Approval of this Proposed ADR alone is not approval of any item above.
+## W1 implementation boundary
 
-## Future B3b implementation boundary
-
-After lab evidence and all owner decisions, a separately authorized B3b may add
-one inert, capability-specific preparer/adapter plus typed models and tests. It
-may read the synthetic/authoritative alias state and compute B1 intent/digest.
-
-B3b must not populate `WriteEndpoints`, activate `ALIAS_WRITE`, register an MCP
-tool, mutate an appliance, accept PlanAuthorization, consume authorization,
-create a RecoveryContract, or wire coordinator/executor/state-machine paths.
-B4/B5/B6/E3 remain separate authorizations.
+A separately authorized W1 may add the production capability-specific typed
+request, adapter and authoritative preparer, then compose the accepted ADR-025
+PlanAuthorizationV2-to-provenance-bound-RecoveryContract chain through one
+MutationExecutor handoff. W1 must remain production-unreachable from MCP and
+must not populate `WriteEndpoints`, activate `ALIAS_WRITE`, register a tool, or
+perform live mutation. W2 owns fixed production construction; W3 alone owns
+the endpoint/capability/tool surface and selected live acceptance.
 
 ## STOP conditions
 
-Stop before B3b if lab evidence does not prove exact request semantics,
-identity uniqueness, complete READ, omitted-field preservation, apply/reload
-suppression, deterministic post-condition, conflict-safe exact rollback, and
-all B1 field sources. Also stop if typed planner binding remains unresolved,
-caller-selected raw JSON is required, appliance identity becomes load-bearing,
-or implementation would require WRITE reachability.
+Stop W1/W2/W3 at the applicable boundary if a **MUST COMPLETE** matrix row
+cannot be established, if exact request semantics or B1 sources diverge from
+the accepted evidence, if caller-selected raw JSON is required, or if the
+PlanAuthorizationV2/appliance-target binding cannot be carried through the
+authenticated contract. W3 must not enable WRITE with an unresolved
+operationally material side effect or candidate uncertainty.
 
 Public MCP remains 42 READ / 0 WRITE. `WriteEndpoints` remains empty and WRITE
 capabilities remain 0/3 active.
