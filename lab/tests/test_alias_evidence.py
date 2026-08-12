@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from lab.alias_evidence import AliasDescriptionAdapter, AliasDescriptionRequest, AliasState
+from lab.alias_evidence import _DESCRIPTION_CASES, AliasDescriptionAdapter, AliasDescriptionRequest, AliasState
 from pfsense_mcp.tier1.executor import ResolvedTransportTarget
 
 
@@ -32,6 +32,14 @@ def test_request_is_closed_frozen_and_defaults_apply_false() -> None:
 def test_request_rejects_ambiguous_locator_type(locator: object) -> None:
     with pytest.raises(ValidationError):
         AliasDescriptionRequest(id=locator, descr="after")  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("field,value", [("descr", 1), ("apply", "false"), ("id", "0")])
+def test_request_rejects_malformed_field_types(field: str, value: object) -> None:
+    payload: dict[str, object] = {"id": 0, "descr": "after", "apply": False}
+    payload[field] = value
+    with pytest.raises(ValidationError):
+        AliasDescriptionRequest.model_validate(payload)
 
 
 def test_fingerprint_binds_complete_ordered_adr026_tuple() -> None:
@@ -96,3 +104,16 @@ def test_rollback_verification_requires_exact_original_fingerprint() -> None:
 
     assert adapter.is_rollback_verified(original.fingerprint(), original)
     assert not adapter.is_rollback_verified(original.fingerprint(), _state(descr="not-restored"))
+
+
+def test_stage3_cases_are_closed_named_values() -> None:
+    assert len(_DESCRIPTION_CASES) == 25
+    assert _DESCRIPTION_CASES["empty"] == ""
+    assert len(_DESCRIPTION_CASES["length-1024"]) == 1024
+    assert len(_DESCRIPTION_CASES["length-1025"]) == 1025
+    assert len(_DESCRIPTION_CASES["length-4096"]) == 4096
+
+
+def test_decomposed_case_is_distinct_before_the_canonical_boundary() -> None:
+    assert _DESCRIPTION_CASES["nfd"] != _DESCRIPTION_CASES["nfc"]
+    assert len(_DESCRIPTION_CASES["nfd"]) == len(_DESCRIPTION_CASES["nfc"]) + 1

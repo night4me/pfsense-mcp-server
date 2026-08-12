@@ -22,7 +22,7 @@ from pfsense_mcp.capabilities import Capability
 from pfsense_mcp.models.firewall_alias import FirewallAlias
 from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.rest_api_client import RestApiClient
-from pfsense_mcp.tier1.canonical import CanonicalValue, DigestPurpose, digest_value
+from pfsense_mcp.tier1.canonical import CanonicalValue, DigestPurpose, canonical_json, digest_value
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.contract import RecoveryContract
 from pfsense_mcp.tier1.executor import MutationExecutor, ResolvedTransportTarget
@@ -42,6 +42,34 @@ ENDPOINT_SYMBOL = "FIREWALL_ALIAS_DESCRIPTION"
 HTTP_METHOD = "PATCH"
 ROLLBACK_VERSION = "firewall-alias-description-rollback-v1"
 _LAB_PROOF = b"lab-b3a-owner-authorized-proof"
+
+_DESCRIPTION_CASES: dict[str, str] = {
+    "ascii": "ADR026 Stage3 ASCII",
+    "leading-space": "  ADR026 leading",
+    "trailing-space": "ADR026 trailing  ",
+    "internal-spaces": "ADR026  multiple   spaces",
+    "tab": "ADR026\ttab",
+    "unicode": "ADR026 café Ω",
+    "nfc": "ADR026 café",
+    "nfd": "ADR026 cafe\u0301",
+    "emoji": "ADR026 🧪",
+    "punctuation": "ADR026 !?.,;:-_()[]{}",
+    "quotes": "ADR026 'single' \"double\"",
+    "backslash": "ADR026 \\ path",
+    "ampersand": "ADR026 A&B",
+    "angles": "ADR026 <lab>",
+    "percent": "ADR026 100%",
+    "json-sensitive": 'ADR026 {"key":"value"}',
+    "newline": "ADR026\nnewline",
+    "carriage-return": "ADR026\rcarriage",
+    "crlf": "ADR026\r\ncrlf",
+    "control": "ADR026\u0001control",
+    "empty": "",
+    "single-character": "x",
+    "length-1024": "x" * 1024,
+    "length-1025": "x" * 1025,
+    "length-4096": "x" * 4096,
+}
 
 
 class AliasDescriptionRequest(BaseModel):
@@ -209,14 +237,13 @@ def _preflight() -> tuple[LabConfig, str, HttpTransport, PfSenseClient, LabPrefl
     return config, key, transport, client, report
 
 
-def run_clean_cycle(cycle: int) -> dict[str, object]:
+def run_description_cycle(*, case_id: str, replacement: str, rollback: bool = True) -> dict[str, object]:
     config, _key, transport, read_client, gate = _preflight()
     adapter = AliasDescriptionAdapter()
     original = adapter.read_target(read_client, {"alias_name": config.candidate})
     if original.numeric_locator != gate.candidate.numeric_locator:
         transport.close()
         raise RuntimeError("candidate locator changed after safety gate")
-    replacement = f"ADR026 B3a clean cycle {cycle:02d}"
     setup = ScenarioSetup(
         raw_target_hint={
             "name": original.name,
@@ -234,7 +261,7 @@ def run_clean_cycle(cycle: int) -> dict[str, object]:
         store = SqliteRecoveryContractStore(
             Path(directory) / "contracts.sqlite3",
             integrity_key=os.urandom(32),
-            store_id=f"lab-b3a-{cycle:02d}",
+            store_id=f"lab-b3a-{case_id}",
             confirmation_verifier=_LabVerifier(),
         )
         encryption_key = os.urandom(32)
@@ -242,8 +269,8 @@ def run_clean_cycle(cycle: int) -> dict[str, object]:
             adapter=adapter,
             setup=setup,
             encryption_key=encryption_key,
-            contract_id=f"b3a-cycle-{cycle:02d}",
-            operation_id=f"b3a-operation-{cycle:02d}",
+            contract_id=f"b3a-{case_id}",
+            operation_id=f"b3a-operation-{case_id}",
         )
         store.create(contract)
         _confirm(store, contract)
@@ -270,26 +297,47 @@ def run_clean_cycle(cycle: int) -> dict[str, object]:
             )
             forward = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
             if forward.state is not RecoveryState.VERIFIED:
-                raise RuntimeError(f"forward did not verify: {forward.state.value}")
+                observed = adapter.read_target(read_client, original.identity())
+                if observed != original:
+                    raise RuntimeError("forward failed verification after changing authoritative state")
+                return {
+                    "case": case_id,
+                    "gate": "PASS",
+                    "forward": forward.state.value,
+                    "restored": True,
+                    "result": "REJECTED_NO_STATE_CHANGE",
+                    "a": original.sanitized(),
+                }
             verified_b = adapter.read_target(read_client, original.identity())
+            canonical_replacement = json.loads(canonical_json({"descr": replacement}))["descr"]
             expected_b = AliasState(
                 original.name,
                 original.numeric_locator,
                 original.alias_type,
-                replacement,
+                canonical_replacement,
                 original.address,
                 original.detail,
             )
             if verified_b != expected_b:
                 raise RuntimeError("authoritative post-forward state did not equal expected B")
-            rollback = executor.rollback(contract.contract_id, adapter=adapter)
-            if rollback.state is not RecoveryState.ROLLED_BACK:
-                raise RuntimeError(f"rollback did not verify: {rollback.state.value}")
+            if not rollback:
+                return {
+                    "case": case_id,
+                    "gate": "PASS",
+                    "forward": "VERIFIED",
+                    "rollback": "NOT_REQUESTED",
+                    "restored": True,
+                    "a": original.sanitized(),
+                    "b": verified_b.sanitized(),
+                }
+            rollback_outcome = executor.rollback(contract.contract_id, adapter=adapter)
+            if rollback_outcome.state is not RecoveryState.ROLLED_BACK:
+                raise RuntimeError(f"rollback did not verify: {rollback_outcome.state.value}")
             restored = adapter.read_target(read_client, original.identity())
             if restored != original:
                 raise RuntimeError("authoritative post-rollback state did not equal original A")
             return {
-                "cycle": cycle,
+                "case": case_id,
                 "gate": "PASS",
                 "forward": "VERIFIED",
                 "rollback": "VERIFIED",
@@ -302,14 +350,33 @@ def run_clean_cycle(cycle: int) -> dict[str, object]:
             transport.close()
 
 
+def run_clean_cycle(cycle: int) -> dict[str, object]:
+    return run_description_cycle(case_id=f"clean-{cycle:02d}", replacement=f"ADR026 B3a clean cycle {cycle:02d}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ADR-026 lab-only evidence runner")
-    parser.add_argument("command", choices=("stage-one", "clean-cycles"))
+    parser.add_argument("command", choices=("stage-one", "clean-cycles", "description-case", "restore-original"))
     parser.add_argument("--start", type=int, default=1)
     parser.add_argument("--count", type=int, default=1)
+    parser.add_argument("--case", choices=tuple(_DESCRIPTION_CASES))
     args = parser.parse_args(argv)
     if args.command == "stage-one" and (args.start != 1 or args.count != 1):
         parser.error("stage-one is exactly cycle 1")
+    if args.command == "description-case":
+        if args.case is None:
+            parser.error("description-case requires --case")
+        report = run_description_cycle(case_id=args.case, replacement=_DESCRIPTION_CASES[args.case])
+        print(json.dumps({"semantic_unit": SEMANTIC_UNIT, "cases": [report]}, sort_keys=True, separators=(",", ":")))
+        return 0
+    if args.command == "restore-original":
+        report = run_description_cycle(
+            case_id="restore-original",
+            replacement="Disposable LAB-T1 synthetic test alias",
+            rollback=False,
+        )
+        print(json.dumps({"semantic_unit": SEMANTIC_UNIT, "recovery": report}, sort_keys=True, separators=(",", ":")))
+        return 0
     if args.start < 1 or args.count < 1 or args.start + args.count - 1 > 25:
         parser.error("clean-cycle range must stay within 1..25")
     reports = [run_clean_cycle(cycle) for cycle in range(args.start, args.start + args.count)]
