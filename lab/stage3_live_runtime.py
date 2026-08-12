@@ -12,9 +12,13 @@ from .stage3_deg import ScenarioId
 from .stage3_live_binding import LiveBindingError, LiveExecutionReport
 
 
-def execute_live_scenario(scenario_id: ScenarioId) -> LiveExecutionReport:
+def execute_live_scenario(scenario_value: str) -> LiveExecutionReport:
     """Refuse until the existing signed reconciliation input is wired."""
 
-    if not isinstance(scenario_id, ScenarioId):
+    if not isinstance(scenario_value, str):
         raise LiveBindingError("scenario selector is not a closed ScenarioId")
+    try:
+        ScenarioId(scenario_value)
+    except ValueError:
+        raise LiveBindingError("scenario selector is not a closed ScenarioId") from None
     raise LiveBindingError("live Stage 3D/E/G backend is not configured: owner-signed reconciliation input is required")

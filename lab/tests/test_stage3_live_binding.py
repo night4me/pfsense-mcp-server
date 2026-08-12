@@ -19,6 +19,7 @@ from lab.stage3_live_binding import (
     TransportOutcome,
     required_attestation_time,
 )
+from lab.stage3_live_runtime import execute_live_scenario
 from pfsense_mcp.tier1.state_machine import RecoveryState
 
 _NOW = datetime(2026, 8, 12, 12, 0, tzinfo=timezone.utc)
@@ -92,6 +93,16 @@ def test_unknown_non_enum_scenario_is_refused_before_gates():
     with pytest.raises(LiveBindingError, match="closed ScenarioId"):
         ClosedLiveBinding(backend).execute("d1-stale-description-before-forward", now=_NOW)
     assert backend.gate_calls == []
+
+
+def test_cli_runtime_normalizes_closed_string_selector_before_fail_closed_stop():
+    with pytest.raises(LiveBindingError, match="owner-signed reconciliation"):
+        execute_live_scenario(ScenarioId.D1.value)
+
+
+def test_cli_runtime_refuses_unknown_string_selector():
+    with pytest.raises(LiveBindingError, match="closed ScenarioId"):
+        execute_live_scenario("unknown-scenario")
 
 
 @pytest.mark.parametrize("attribute", ["endpoint", "payload", "candidate", "locator", "http_method"])

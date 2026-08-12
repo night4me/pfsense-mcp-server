@@ -537,7 +537,7 @@ def main(argv: list[str] | None = None) -> int:
         # module.  Importing list/plan/describe never imports live machinery.
         from .stage3_live_runtime import execute_live_scenario
 
-        report = execute_live_scenario(ScenarioId(args.scenario))
+        report = execute_live_scenario(args.scenario)
         print(json.dumps(report.sanitized(), sort_keys=True, separators=(",", ":")))
         return 0
     selected = (
