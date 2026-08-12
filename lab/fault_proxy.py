@@ -64,25 +64,25 @@ class FaultProxy:
         self._inner = inner
         self._scenario = FaultScenario.CLEAN_PASSTHROUGH
         self._triggered = False
+        self._send_attempts = 0
+
+    @property
+    def send_attempts(self) -> int:
+        return self._send_attempts
 
     def install(self, scenario: FaultScenario) -> None:
         self._scenario = scenario
         self._triggered = False
 
     def request(self, method: str, path: str, *, body: bytes | None = None) -> TransportResponse:
+        self._send_attempts += 1
         if not self._triggered and self._scenario in NETWORK_INJECTABLE_SCENARIOS:
             self._triggered = True
             if self._scenario is FaultScenario.CONNECTION_RESET_DURING_UPLOAD:
                 raise TransportConnectionError("synthetic connection reset (lab fault injection)")
-            if self._scenario is FaultScenario.TIMEOUT_DURING_RESPONSE:
-                raise TransportTimeoutError("synthetic timeout during response (lab fault injection)")
+            if self._scenario in {FaultScenario.TIMEOUT_DURING_RESPONSE, FaultScenario.RESPONSE_DROPPED_AFTER_COMMIT}:
+                self._inner.request(method, path, body=body)
+                raise TransportTimeoutError("synthetic response unavailable after send (lab fault injection)")
             if self._scenario is FaultScenario.TIMEOUT_DURING_READBACK:
                 raise TransportTimeoutError("synthetic timeout during read-back (lab fault injection)")
-            if self._scenario is FaultScenario.RESPONSE_DROPPED_AFTER_COMMIT:
-                # The upstream request may have committed, but the
-                # response itself never arrived — indistinguishable from
-                # a timeout at the transport boundary. That is exactly
-                # the point: it must classify as AMBIGUOUS, never as a
-                # confident success or failure.
-                raise TransportTimeoutError("synthetic response drop after commit (lab fault injection)")
         return self._inner.request(method, path, body=body)

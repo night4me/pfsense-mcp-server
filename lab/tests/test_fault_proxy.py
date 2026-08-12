@@ -31,15 +31,26 @@ def test_connection_reset_scenario_raises_before_reaching_inner_transport():
     assert transport.calls == []
 
 
-@pytest.mark.parametrize("scenario", [FaultScenario.TIMEOUT_DURING_RESPONSE, FaultScenario.TIMEOUT_DURING_READBACK])
-def test_timeout_scenarios_raise_transport_timeout_error(scenario):
+def test_timeout_during_response_occurs_after_one_inner_send():
     proxy, transport = _proxy()
-    proxy.install(scenario)
+    proxy.install(FaultScenario.TIMEOUT_DURING_RESPONSE)
+
+    with pytest.raises(TransportTimeoutError):
+        proxy.request("PATCH", "/api/v2/synthetic", body=b"{}")
+
+    assert transport.calls == [("PATCH", "/api/v2/synthetic")]
+    assert proxy.send_attempts == 1
+
+
+def test_timeout_during_readback_raises_before_inner_transport():
+    proxy, transport = _proxy()
+    proxy.install(FaultScenario.TIMEOUT_DURING_READBACK)
 
     with pytest.raises(TransportTimeoutError):
         proxy.request("PATCH", "/api/v2/synthetic", body=b"{}")
 
     assert transport.calls == []
+    assert proxy.send_attempts == 1
 
 
 def test_response_dropped_after_commit_raises_transport_timeout_error():
@@ -54,7 +65,8 @@ def test_response_dropped_after_commit_raises_transport_timeout_error():
     with pytest.raises(TransportTimeoutError):
         proxy.request("PATCH", "/api/v2/synthetic", body=b"{}")
 
-    assert transport.calls == []
+    assert transport.calls == [("PATCH", "/api/v2/synthetic")]
+    assert proxy.send_attempts == 1
 
 
 def test_fault_only_triggers_once_per_install():
