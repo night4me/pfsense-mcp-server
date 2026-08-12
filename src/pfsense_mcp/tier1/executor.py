@@ -103,6 +103,23 @@ class RollbackOutcome:
     detail: str
 
 
+@dataclass(frozen=True)
+class AuthoritativeReconciliationObservation:
+    """Fresh executor-validated target evidence for one unresolved operation.
+
+    This is deliberately digest/locator-only: raw target state, clients,
+    adapters, requests and transport projections never cross the executor
+    boundary.
+    """
+
+    contract_id: str
+    operation_id: str
+    state_version: int
+    uncertainty_origin: RecoveryState
+    target_fingerprint: str
+    lifecycle_locator: int
+
+
 class MutationExecutor:
     """Owns every I/O operation and every security-relevant decision
     (docs/tier1/specs/sealed_executor.md's "Executor responsibilities").
@@ -129,6 +146,58 @@ class MutationExecutor:
         # A newly-constructed executor never serves a call against an
         # unreconciled store (sealed_executor.md Lifecycle step 4).
         self._store.reconcile_interrupted()
+
+    def observe_reconciliation_target(
+        self, contract_id: str, *, adapter: CapabilityAdapter
+    ) -> AuthoritativeReconciliationObservation:
+        """Read and validate one unresolved target without changing state.
+
+        The method owns the same semantic-identity, fingerprint and lifecycle-
+        locator checks as execution. It neither infers an outcome nor invokes
+        the write client, store transitions, or reconciliation resolution.
+        """
+
+        contract = self._store.load(contract_id)
+        if contract.state is not RecoveryState.RECONCILIATION:
+            raise ContractConflictError("Recovery Contract is not in RECONCILIATION.")
+        if (
+            adapter.capability is not contract.capability
+            or adapter.endpoint_symbol != contract.endpoint_symbol
+            or adapter.http_method != contract.http_method
+        ):
+            raise ContractValidationError("Reconciliation adapter does not match the protected contract.")
+
+        events = self._store.audit_events(contract.contract_id)
+        if not events:
+            raise ContractValidationError("Reconciliation history is missing.")
+        latest = events[-1]
+        try:
+            origin = RecoveryState(latest["previous_state"])
+        except (KeyError, TypeError, ValueError):
+            raise ContractValidationError("Reconciliation history is malformed.") from None
+        if (
+            latest.get("current_state") != RecoveryState.RECONCILIATION.value
+            or latest.get("state_version") != contract.state_version
+            or origin not in {RecoveryState.EXECUTING, RecoveryState.ROLLING_BACK}
+        ):
+            raise ContractValidationError("Reconciliation history does not match the protected contract.")
+
+        try:
+            target_identity = self._decrypt(contract, contract.protected_target_identity, ArtifactRole.TARGET_IDENTITY)
+            raw_target = adapter.read_target(self._read_client, target_identity)
+            resolved_target = self._resolve_transport_target(contract, adapter, raw_target)
+            target_fingerprint = self._fingerprint_digest(contract, adapter.fingerprint(raw_target))
+        except Exception:
+            raise ContractValidationError("Authoritative reconciliation target observation failed.") from None
+
+        return AuthoritativeReconciliationObservation(
+            contract_id=contract.contract_id,
+            operation_id=contract.operation_id,
+            state_version=contract.state_version,
+            uncertainty_origin=origin,
+            target_fingerprint=target_fingerprint,
+            lifecycle_locator=resolved_target.numeric_locator,
+        )
 
     # -- execute ------------------------------------------------------
 

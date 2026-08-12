@@ -13,7 +13,12 @@ from pfsense_mcp.tier1.canonical import DigestPurpose, canonical_json, digest_va
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from pfsense_mcp.tier1.crypto import ArtifactRole, build_nonce, encrypt_artifact
-from pfsense_mcp.tier1.errors import ContractBindingError, ContractConflictError
+from pfsense_mcp.tier1.errors import (
+    ContractBindingError,
+    ContractConflictError,
+    ContractNotFoundError,
+    ContractValidationError,
+)
 from pfsense_mcp.tier1.executor import MutationExecutor, ResolvedTransportTarget
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationPolicyError, MutationRule
 from pfsense_mcp.tier1.state_machine import RecoveryState
@@ -250,6 +255,38 @@ def _verified(store: SqliteRecoveryContractStore, contract: RecoveryContract) ->
     )
 
 
+def _forward_reconciliation(store: SqliteRecoveryContractStore, contract: RecoveryContract) -> RecoveryContract:
+    confirmed = _confirm(store, contract)
+    executing = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    return store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.EXECUTING,
+        expected_version=executing.state_version,
+        target_state=RecoveryState.RECONCILIATION,
+    )
+
+
+def _rollback_reconciliation(store: SqliteRecoveryContractStore, contract: RecoveryContract) -> RecoveryContract:
+    verified = _verified(store, contract)
+    rolling_back = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.VERIFIED,
+        expected_version=verified.state_version,
+        target_state=RecoveryState.ROLLING_BACK,
+    )
+    return store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.ROLLING_BACK,
+        expected_version=rolling_back.state_version,
+        target_state=RecoveryState.RECONCILIATION,
+    )
+
+
 def _policy() -> MutationPolicy:
     return MutationPolicy(frozenset({MutationRule(_CAPABILITY, _ENDPOINT_SYMBOL, _HTTP_METHOD)}))
 
@@ -282,6 +319,218 @@ def _executor(store, write_client) -> MutationExecutor:
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
     )
+
+
+def test_reconciliation_observation_is_fresh_read_only_and_minimal(tmp_path):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    reconciled = _forward_reconciliation(store, contract)
+    write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
+    executor = _executor(store, write_client)
+    adapter = _SyntheticAdapter(
+        reads=[
+            {
+                "name": "synthetic-target.invalid",
+                "revision": "synthetic-1",
+                "descr": "updated-description",
+            }
+        ]
+    )
+    events_before = store.audit_events(contract.contract_id)
+
+    observed = executor.observe_reconciliation_target(contract.contract_id, adapter=adapter)
+
+    assert observed.contract_id == contract.contract_id
+    assert observed.operation_id == contract.operation_id
+    assert observed.state_version == reconciled.state_version
+    assert observed.uncertainty_origin is RecoveryState.EXECUTING
+    assert observed.target_fingerprint == digest_value(
+        DigestPurpose.TARGET_FINGERPRINT,
+        {"descr": "updated-description", "revision": "synthetic-1"},
+        context=_CONTEXT,
+    )
+    assert observed.lifecycle_locator == 7
+    assert adapter.read_calls == [_identity_source()]
+    assert write_client.calls == 0
+    assert store.load(contract.contract_id) == reconciled
+    assert store.audit_events(contract.contract_id) == events_before
+    assert set(observed.__dataclass_fields__) == {
+        "contract_id",
+        "operation_id",
+        "state_version",
+        "uncertainty_origin",
+        "target_fingerprint",
+        "lifecycle_locator",
+    }
+
+
+def test_reconciliation_observation_preserves_rollback_origin(tmp_path):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    reconciled = _rollback_reconciliation(store, contract)
+    write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
+    executor = _executor(store, write_client)
+
+    observed = executor.observe_reconciliation_target(
+        contract.contract_id,
+        adapter=_SyntheticAdapter(
+            reads=[
+                {
+                    "name": "synthetic-target.invalid",
+                    "revision": "synthetic-1",
+                    "descr": "updated-description",
+                }
+            ]
+        ),
+    )
+
+    assert observed.uncertainty_origin is RecoveryState.ROLLING_BACK
+    assert observed.state_version == reconciled.state_version
+    assert write_client.calls == 0
+
+
+@pytest.mark.parametrize(
+    ("raw_target", "read_error"),
+    [
+        pytest.param(
+            None,
+            LookupError("missing authoritative target"),
+            id="missing-target",
+        ),
+        pytest.param(
+            None,
+            LookupError("ambiguous authoritative target"),
+            id="ambiguous-target",
+        ),
+        pytest.param(
+            {"name": "substituted.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+            None,
+            id="identity-mismatch",
+        ),
+        pytest.param(
+            {
+                "name": "synthetic-target.invalid",
+                "revision": "synthetic-1",
+                "descr": "updated-description",
+                "id": 8,
+            },
+            None,
+            id="locator-drift",
+        ),
+        pytest.param(
+            {"name": "synthetic-target.invalid", "descr": "updated-description"},
+            None,
+            id="malformed-fingerprint",
+        ),
+        pytest.param(None, RuntimeError("sensitive transport detail"), id="read-transport-failure"),
+    ],
+)
+def test_reconciliation_observation_failures_are_zero_send_zero_transition(tmp_path, raw_target, read_error):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    reconciled = _forward_reconciliation(store, contract)
+    write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
+    executor = _executor(store, write_client)
+    adapter = _SyntheticAdapter(
+        reads=[] if raw_target is None else [raw_target],
+        read_error=read_error,
+    )
+    events_before = store.audit_events(contract.contract_id)
+
+    with pytest.raises(
+        ContractValidationError,
+        match="Authoritative reconciliation target observation failed",
+    ) as caught:
+        executor.observe_reconciliation_target(contract.contract_id, adapter=adapter)
+
+    assert "sensitive transport detail" not in str(caught.value)
+    assert len(adapter.read_calls) == 1
+    assert write_client.calls == 0
+    assert store.load(contract.contract_id) == reconciled
+    assert store.audit_events(contract.contract_id) == events_before
+
+
+def test_reconciliation_observation_refuses_wrong_state_and_binding(tmp_path):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    store.create(contract)
+    write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
+    executor = _executor(store, write_client)
+    adapter = _SyntheticAdapter(reads=[])
+
+    with pytest.raises(ContractConflictError, match="not in RECONCILIATION"):
+        executor.observe_reconciliation_target(contract.contract_id, adapter=adapter)
+    with pytest.raises(ContractNotFoundError):
+        executor.observe_reconciliation_target("unknown-contract", adapter=adapter)
+
+    class _WrongEndpointAdapter(_SyntheticAdapter):
+        endpoint_symbol = "OTHER_ENDPOINT"
+
+    binding_store = _store(tmp_path / "binding")
+    binding_contract, _intent = _build_contract(contract_id="contract-binding")
+    reconciled = _forward_reconciliation(binding_store, binding_contract)
+    binding_executor = _executor(binding_store, write_client)
+    events_before = binding_store.audit_events(binding_contract.contract_id)
+    with pytest.raises(ContractValidationError, match="adapter does not match"):
+        binding_executor.observe_reconciliation_target(
+            binding_contract.contract_id, adapter=_WrongEndpointAdapter(reads=[])
+        )
+
+    assert adapter.read_calls == []
+    assert write_client.calls == 0
+    assert binding_store.load(binding_contract.contract_id) == reconciled
+    assert binding_store.audit_events(binding_contract.contract_id) == events_before
+
+
+def test_reconciliation_observation_requires_matching_authenticated_history(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    reconciled = _forward_reconciliation(store, contract)
+    write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
+    executor = _executor(store, write_client)
+    events_before = store.audit_events(contract.contract_id)
+    malformed_events = (*events_before[:-1], {**events_before[-1], "state_version": 999})
+    monkeypatch.setattr(store, "audit_events", lambda _contract_id: malformed_events)
+
+    with pytest.raises(ContractValidationError, match="history does not match"):
+        executor.observe_reconciliation_target(contract.contract_id, adapter=_SyntheticAdapter(reads=[]))
+
+    assert write_client.calls == 0
+    assert store.load(contract.contract_id) == reconciled
+
+
+def test_reconciliation_observation_after_executor_reconstruction_is_fresh(tmp_path):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    confirmed = _confirm(store, contract)
+    store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+    write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
+
+    reconstructed = _executor(store, write_client)
+    adapter = _SyntheticAdapter(
+        reads=[
+            {
+                "name": "synthetic-target.invalid",
+                "revision": "synthetic-1",
+                "descr": "updated-after-restart",
+            }
+        ]
+    )
+    observed = reconstructed.observe_reconciliation_target(contract.contract_id, adapter=adapter)
+
+    assert observed.uncertainty_origin is RecoveryState.EXECUTING
+    assert observed.target_fingerprint == digest_value(
+        DigestPurpose.TARGET_FINGERPRINT,
+        {"descr": "updated-after-restart", "revision": "synthetic-1"},
+        context=_CONTEXT,
+    )
+    assert adapter.read_calls == [_identity_source()]
+    assert write_client.calls == 0
 
 
 def test_execute_happy_path_reaches_verified(tmp_path, monkeypatch):

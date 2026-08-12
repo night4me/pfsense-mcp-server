@@ -65,13 +65,13 @@ class AuthoritativeReconciliationObservation:
     target_fingerprint: str
     lifecycle_locator: int
 
+
 def observe_reconciliation_target(
     self,
     contract_id: str,
     *,
     adapter: CapabilityAdapter,
-) -> AuthoritativeReconciliationObservation:
-    ...
+) -> AuthoritativeReconciliationObservation: ...
 ```
 
 The exact repository-native name may differ. The method:
