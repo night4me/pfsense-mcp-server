@@ -1,4 +1,4 @@
-"""Fail-closed integration point for a future owner-authorized live backend.
+"""Fail-closed construction point for the closed LAB-T1 Stage 3 backend.
 
 The closed CLI imports this module only for ``execute``.  The repository has no
 configured owner reconciliation verifier/evidence input in LAB-T1, so an
@@ -8,12 +8,19 @@ here preserves the accepted signed-human boundary without weakening any gate.
 
 from __future__ import annotations
 
+from .stage3_backend import ClosedStage3Backend, ClosedStage3ExecutionPort
 from .stage3_deg import ScenarioId
-from .stage3_live_binding import LiveBindingError, LiveExecutionReport
+from .stage3_live_binding import ClosedLiveBinding, LiveBindingError, LiveExecutionReport
+
+
+def _execute_with_port(scenario_id: ScenarioId, port: ClosedStage3ExecutionPort) -> LiveExecutionReport:
+    """Internal test/construction seam; never exposed through the CLI."""
+
+    return ClosedLiveBinding(ClosedStage3Backend(port)).execute(scenario_id)
 
 
 def execute_live_scenario(scenario_value: str) -> LiveExecutionReport:
-    """Refuse until the existing signed reconciliation input is wired."""
+    """Validate one closed ID and fail closed until its fixed port exists."""
 
     if not isinstance(scenario_value, str):
         raise LiveBindingError("scenario selector is not a closed ScenarioId")
@@ -21,4 +28,4 @@ def execute_live_scenario(scenario_value: str) -> LiveExecutionReport:
         ScenarioId(scenario_value)
     except ValueError:
         raise LiveBindingError("scenario selector is not a closed ScenarioId") from None
-    raise LiveBindingError("live Stage 3D/E/G backend is not configured: owner-signed reconciliation input is required")
+    raise LiveBindingError("live Stage 3D/E/G execution port is not configured")

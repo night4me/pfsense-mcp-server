@@ -224,7 +224,7 @@ def test_offline_cli_emits_only_closed_plan(capsys):
 
 
 def test_offline_cli_has_no_execute_command():
-    with pytest.raises(RuntimeError, match="owner-signed reconciliation"):
+    with pytest.raises(RuntimeError, match="execution port"):
         main(["execute", "--scenario", ScenarioId.D1.value])
 
 

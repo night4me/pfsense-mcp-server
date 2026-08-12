@@ -22,6 +22,7 @@ from .stage3_deg import (
     LiveStatus,
     ReadBackClassification,
     ScenarioDefinition,
+    ScenarioFinalRequirement,
     ScenarioId,
     classify_read_back,
     scenario_plan,
@@ -97,6 +98,7 @@ class BackendResult:
     resulting_state: RecoveryState
     retry_suppressed: bool
     owner_reconciliation_evidence_used: bool = False
+    pending_evidence_authenticated: bool = False
 
 
 @dataclass(frozen=True)
@@ -124,6 +126,7 @@ class LiveExecutionReport:
             "orchestration_sends": self.orchestration_sends,
             "forward_sends": self.forward_sends,
             "rollback_sends": self.rollback_sends,
+            "pending_evidence_authenticated": self.final_state_policy is FinalStatePolicy.RECONCILIATION_STOP,
         }
 
 
@@ -189,12 +192,16 @@ class ClosedLiveBinding:
 
         classification = ClosedLiveBinding._classification(definition, result)
         exact_a = ClosedLiveBinding._exact_final_a(result)
-        if classification is ReadBackClassification.AMBIGUOUS:
+        if result.resulting_state is RecoveryState.RECONCILIATION:
             if result.owner_reconciliation_evidence_used:
                 raise LiveBindingError("runner may not fabricate or self-supply owner reconciliation evidence")
-            if result.resulting_state is not RecoveryState.RECONCILIATION:
-                raise LiveBindingError("ambiguous result must remain in reconciliation")
+            if definition.final_requirement is not ScenarioFinalRequirement.RECONCILIATION_REQUIRED:
+                raise LiveBindingError("scenario unexpectedly stopped in reconciliation")
+            if not result.pending_evidence_authenticated:
+                raise LiveBindingError("reconciliation stop lacks authenticated pending evidence")
             policy = FinalStatePolicy.RECONCILIATION_STOP
+        elif definition.final_requirement is ScenarioFinalRequirement.RECONCILIATION_REQUIRED:
+            raise LiveBindingError("reconciliation-required scenario auto-progressed")
         elif classification is ReadBackClassification.DEFINITELY_NOT_APPLIED:
             if not exact_a:
                 raise LiveBindingError("definitely-not-applied result did not verify exact A")

@@ -85,6 +85,7 @@ def _result(
         state or definition.expected_state,
         not retried,
         owner_evidence,
+        (state or definition.expected_state) is RecoveryState.RECONCILIATION,
     )
 
 
@@ -96,7 +97,7 @@ def test_unknown_non_enum_scenario_is_refused_before_gates():
 
 
 def test_cli_runtime_normalizes_closed_string_selector_before_fail_closed_stop():
-    with pytest.raises(LiveBindingError, match="owner-signed reconciliation"):
+    with pytest.raises(LiveBindingError, match="execution port"):
         execute_live_scenario(ScenarioId.D1.value)
 
 
@@ -160,10 +161,10 @@ def test_transport_result_cannot_contradict_declared_delivery():
         ClosedLiveBinding(_Backend(result)).execute(ScenarioId.E1, now=_NOW)
 
 
-def test_definitely_applied_requires_later_exact_a_restoration():
+def test_definitely_applied_uncertainty_stops_with_authenticated_pending_evidence():
     report = ClosedLiveBinding(_Backend(_result(ScenarioId.E1, live=_B))).execute(ScenarioId.E1, now=_NOW)
     assert report.read_back_classification is ReadBackClassification.DEFINITELY_APPLIED
-    assert report.final_state_policy is FinalStatePolicy.EXACT_A
+    assert report.final_state_policy is FinalStatePolicy.RECONCILIATION_STOP
 
 
 def test_definitely_not_applied_requires_exact_a():
@@ -194,7 +195,7 @@ def test_ambiguous_cannot_fabricate_owner_reconciliation():
 
 def test_ambiguous_cannot_auto_progress():
     result = _result(ScenarioId.E2, live=_C, exact_a=False, state=RecoveryState.VERIFIED)
-    with pytest.raises(LiveBindingError, match="remain in reconciliation"):
+    with pytest.raises(LiveBindingError, match="auto-progressed"):
         ClosedLiveBinding(_Backend(result)).execute(ScenarioId.E2, now=_NOW)
 
 
@@ -206,7 +207,8 @@ def test_any_retry_is_refused():
 @pytest.mark.parametrize("scenario_id", [ScenarioId.G1, ScenarioId.G2, ScenarioId.G3, ScenarioId.G4, ScenarioId.G5])
 def test_g_restart_binding_uses_only_closed_definition(scenario_id):
     definition = scenario_plan(scenario_id)
-    result = _result(scenario_id, live=_C, exact_a=False, state=RecoveryState.RECONCILIATION)
+    state = RecoveryState.RECONCILIATION if definition.final_requirement.value == "reconciliation_required" else None
+    result = _result(scenario_id, live=_C, exact_a=state is None, state=state)
     if not definition.authoritative_read_back_required:
         result = _result(scenario_id)
     report = ClosedLiveBinding(_Backend(result)).execute(scenario_id, now=_NOW)
@@ -252,5 +254,6 @@ def test_gate_receipt_rejects_dry_run_send():
 
 
 def test_exact_a_is_mandatory_for_non_ambiguous_completion():
+    result = _result(ScenarioId.D1, exact_a=False, state=RecoveryState.FAILED)
     with pytest.raises(LiveBindingError, match="exact A"):
-        ClosedLiveBinding(_Backend(_result(ScenarioId.E1, live=_B, exact_a=False))).execute(ScenarioId.E1, now=_NOW)
+        ClosedLiveBinding(_Backend(result)).execute(ScenarioId.D1, now=_NOW)

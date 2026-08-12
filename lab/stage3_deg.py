@@ -46,6 +46,11 @@ class ReadBackClassification(str, Enum):
     AMBIGUOUS = "ambiguous"
 
 
+class ScenarioFinalRequirement(str, Enum):
+    EXACT_A_REQUIRED = "exact_a_required"
+    RECONCILIATION_REQUIRED = "reconciliation_required"
+
+
 class ScenarioId(str, Enum):
     D1 = "d1-stale-description-before-forward"
     D2 = "d2-preparation-to-send-drift"
@@ -90,6 +95,7 @@ class ScenarioDefinition:
     expected_state: RecoveryState
     expected_reconciliation: str
     exact_final_state_requirement: str
+    final_requirement: ScenarioFinalRequirement
     repetition_target: int
     live_status: LiveStatus
     requires_fresh_attestation: bool
@@ -98,7 +104,7 @@ class ScenarioDefinition:
         if not self.fault_class or not self.orchestration_action or not self.expected_reconciliation:
             raise ValueError("scenario semantics must be explicit")
         if self.exact_final_state_requirement != "exact-authoritative-A":
-            raise ValueError("every scenario must require exact authoritative A restoration")
+            raise ValueError("every scenario must retain exact authoritative A as the recovery target")
         counts = (self.expected_orchestration_sends, self.expected_forward_sends, self.expected_rollback_sends)
         if any(type(value) is not int or value < 0 or value > 2 for value in counts):
             raise ValueError("scenario send counts are invalid")
@@ -220,6 +226,7 @@ def _definition(
     repetitions: int = 3,
     status: LiveStatus = LiveStatus.READY,
     attestation: bool = True,
+    final_requirement: ScenarioFinalRequirement = ScenarioFinalRequirement.EXACT_A_REQUIRED,
 ) -> ScenarioDefinition:
     return ScenarioDefinition(
         scenario_id,
@@ -235,6 +242,7 @@ def _definition(
         result,
         reconciliation,
         "exact-authoritative-A",
+        final_requirement,
         repetitions,
         status,
         attestation,
@@ -318,6 +326,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         start=RecoveryState.PREPARED,
         forward_sends=1,
         delivery=UpstreamDelivery.PROVEN_DELIVERED,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.E2: _definition(
         ScenarioId.E2,
@@ -326,6 +335,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         start=RecoveryState.PREPARED,
         forward_sends=1,
         delivery=UpstreamDelivery.POSSIBLY_DELIVERED,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.E3: _definition(
         ScenarioId.E3,
@@ -345,6 +355,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         forward_sends=1,
         rollback_sends=1,
         delivery=UpstreamDelivery.POSSIBLY_DELIVERED,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.E5: _definition(
         ScenarioId.E5,
@@ -354,6 +365,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         forward_sends=1,
         rollback_sends=1,
         delivery=UpstreamDelivery.POSSIBLY_DELIVERED,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.E6: _definition(
         ScenarioId.E6,
@@ -362,6 +374,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         start=RecoveryState.PREPARED,
         forward_sends=1,
         delivery=UpstreamDelivery.POSSIBLY_DELIVERED,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.E7: _definition(
         ScenarioId.E7,
@@ -370,12 +383,14 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         start=RecoveryState.EXECUTING,
         forward_sends=1,
         delivery=UpstreamDelivery.POSSIBLY_DELIVERED,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.E8: _definition(
         ScenarioId.E8,
         EvidenceStage.E,
         "applied-reconciliation",
         start=RecoveryState.RECONCILIATION,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
         reconciliation="signed-exact-B-and-locator-binding; no-resend",
     ),
     ScenarioId.E9: _definition(
@@ -383,6 +398,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         EvidenceStage.E,
         "not-applied-reconciliation",
         start=RecoveryState.RECONCILIATION,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
         result=RecoveryState.FAILED,
         reconciliation="signed-not-applied-with-no-applied-only-bindings; no-resend",
     ),
@@ -391,6 +407,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         EvidenceStage.E,
         "ambiguous-human-boundary",
         start=RecoveryState.RECONCILIATION,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
         reconciliation="remain-reconciliation-without-valid-human-signature",
     ),
     ScenarioId.G1: _definition(
@@ -402,6 +419,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         repetitions=1,
         status=LiveStatus.OFFLINE_ONLY,
         attestation=False,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.G2: _definition(
         ScenarioId.G2,
@@ -422,12 +440,14 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         repetitions=1,
         status=LiveStatus.OFFLINE_ONLY,
         attestation=False,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
     ),
     ScenarioId.G4: _definition(
         ScenarioId.G4,
         EvidenceStage.G,
         "uncertain-forward-restart",
         start=RecoveryState.RECONCILIATION,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
         reconciliation="authoritative-read-and-signed-resolution; no-resend",
         repetitions=1,
     ),
@@ -436,6 +456,7 @@ SCENARIOS: dict[ScenarioId, ScenarioDefinition] = {
         EvidenceStage.G,
         "uncertain-rollback-restart",
         start=RecoveryState.RECONCILIATION,
+        final_requirement=ScenarioFinalRequirement.RECONCILIATION_REQUIRED,
         reconciliation="authoritative-read-and-signed-resolution; no-resend",
         repetitions=1,
     ),
@@ -516,6 +537,7 @@ def sanitized_plan(definition: ScenarioDefinition) -> dict[str, object]:
         "owner_reconciliation_may_be_required": "signed" in definition.expected_reconciliation
         or "reconciliation" in definition.expected_reconciliation,
         "exact_final_state_requirement": definition.exact_final_state_requirement,
+        "final_requirement": definition.final_requirement.value,
         "repetition_target": definition.repetition_target,
         "live_status": definition.live_status.value,
         "requires_fresh_attestation": definition.requires_fresh_attestation,
