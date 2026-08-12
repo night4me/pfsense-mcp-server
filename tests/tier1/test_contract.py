@@ -144,3 +144,23 @@ def test_idempotency_key_is_derived_from_all_mutation_bindings(contract_factory)
 def test_protected_artifact_rejects_unsafe_or_unbounded_values(artifact):
     with pytest.raises(ContractValidationError):
         artifact()
+
+
+def test_verified_target_fingerprint_is_optional_but_structurally_validated(contract_factory):
+    contract = contract_factory()
+    assert contract.verified_target_fingerprint is None
+    verified = replace(
+        contract,
+        state=RecoveryState.VERIFIED,
+        verified_target_fingerprint="a" * 64,
+    )
+    assert verified.verified_target_fingerprint == "a" * 64
+    with pytest.raises(ContractValidationError, match="Verified target fingerprint"):
+        replace(contract, state=RecoveryState.VERIFIED, verified_target_fingerprint="not-a-digest")
+
+
+def test_verified_target_fingerprint_cannot_be_injected_before_execution(contract_factory):
+    with pytest.raises(ContractValidationError, match="state and verified target fingerprint"):
+        replace(contract_factory(), verified_target_fingerprint="a" * 64)
+    with pytest.raises(ContractValidationError, match="state and verified target fingerprint"):
+        replace(contract_factory(), state=RecoveryState.VERIFIED)

@@ -440,7 +440,8 @@ execute(contract_id, adapter, intent):
   if knowledge == AMBIGUOUS: store.transition(... -> RECONCILIATION); return
   post = adapter.read_target(read_client, target_identity)
   if adapter.is_semantically_verified(pre, post, plaintext_intent) and knowledge == VERIFIED_SUCCESS:
-      store.transition(... -> VERIFIED)
+      verified_target_fingerprint = digest(adapter.fingerprint(post))
+      store.mark_execution_verified(..., verified_target_fingerprint)  # atomically seals value + VERIFIED
   elif knowledge in {PROVEN_NONE, VERIFIED_FAILURE}:
       store.transition(... -> FAILED)
   else:
@@ -456,11 +457,11 @@ boundaries (who calls what) that the pseudocode left implicit.
 ```text
 rollback(contract_id, adapter):
   contract = store.load(contract_id)
-  require contract.state == VERIFIED
+  require contract.state == VERIFIED and contract.verified_target_fingerprint is present
   rolling_back = store.transition(contract_id, VERIFIED -> ROLLING_BACK)  # re-acquires target reservation; may raise ContractConflictError if the target was claimed by unrelated work in the interim (see whole_store_anti_rollback.md / state-machine ADR for the accepted decision on this window)
   target_identity = crypto.decrypt_artifact(key, contract.protected_target_identity, ...)  # rollback() takes no intent argument, so this is the only source
   pre = adapter.read_target(read_client, target_identity)
-  require exactly one match; detect unrelated changes via adapter.fingerprint(pre) vs. contract.target_fingerprint at VERIFIED time — conflict is a refusal (ROLLBACK_FAILED), never a forced overwrite
+  require exactly one match; detect unrelated changes via adapter.fingerprint(pre) vs. contract.verified_target_fingerprint sealed at VERIFIED time — conflict is a refusal (ROLLBACK_FAILED), never a forced overwrite
   plaintext_snapshot = crypto.decrypt_artifact(key, contract.protected_snapshot, ...)
   rollback_request = adapter.build_rollback_request(plaintext_snapshot)
   outcome = write_client.send(...)   # the one rollback send
@@ -471,6 +472,15 @@ rollback(contract_id, adapter):
   else:
       store.transition(... -> ROLLBACK_FAILED)  # or RECONCILIATION if ambiguous
 ```
+
+The original `target_fingerprint` is the complete pre-forward condition and is
+never weakened or overwritten. The distinct verified fingerprint is derived
+only after the authoritative post-read satisfies the capability's semantic
+post-condition. This distinction is required whenever the authorized mutation
+itself changes a fingerprinted field. A generic transition may not create
+`VERIFIED` without the post-forward binding. Authenticated reconciliation of a
+confirmed-applied ambiguous outcome must likewise bind the signed observed
+post-forward fingerprint; otherwise rollback remains unavailable.
 
 ## Audit flow
 

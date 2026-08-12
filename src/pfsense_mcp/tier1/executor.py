@@ -185,15 +185,28 @@ class MutationExecutor:
             post = adapter.read_target(self._read_client, target_identity)
             outcome = adapter.parse_response(raw_response)
             verified = adapter.is_semantically_verified(pre, post, plaintext_intent)
+            verified_target_fingerprint = (
+                self._fingerprint_digest(executing, adapter.fingerprint(post)) if verified else None
+            )
         except Exception as exc:
             return self._finish_execute(
                 executing, RecoveryState.RECONCILIATION, f"post-send verification failed: {exc!r}"
             )
 
-        final_knowledge = EffectKnowledge.VERIFIED_SUCCESS if verified else EffectKnowledge.VERIFIED_FAILURE
-        decision = classify_fault(MutationBoundary.AFTER_SEND, final_knowledge)
-        detail = f"parsed response: {outcome!r}" if verified else "response received but not semantically verified"
-        return self._finish_execute(executing, decision.target_state, detail)
+        if verified_target_fingerprint is not None:
+            updated = self._store.mark_execution_verified(
+                executing.contract_id,
+                expected_version=executing.state_version,
+                verified_target_fingerprint=verified_target_fingerprint,
+            )
+            return ExecutionOutcome(
+                contract_id=executing.contract_id,
+                state=updated.state,
+                detail=f"parsed response: {outcome!r}",
+            )
+
+        decision = classify_fault(MutationBoundary.AFTER_SEND, EffectKnowledge.VERIFIED_FAILURE)
+        return self._finish_execute(executing, decision.target_state, "response received but not semantically verified")
 
     def _finish_execute(self, contract: RecoveryContract, target_state: RecoveryState, detail: str) -> ExecutionOutcome:
         updated = self._store.transition(
@@ -210,6 +223,8 @@ class MutationExecutor:
         contract = self._store.load(contract_id)
         if contract.state != RecoveryState.VERIFIED:
             raise ContractConflictError("Recovery Contract is not VERIFIED.")
+        if contract.verified_target_fingerprint is None:
+            raise ContractConflictError("Recovery Contract has no verified post-forward fingerprint.")
 
         rolling_back = self._store.transition(
             contract_id,
@@ -232,7 +247,7 @@ class MutationExecutor:
                 rolling_back, RecoveryState.ROLLBACK_FAILED, f"pre-rollback target read failed: {exc!r}"
             )
 
-        if self._fingerprint_digest(rolling_back, adapter.fingerprint(pre)) != rolling_back.target_fingerprint:
+        if self._fingerprint_digest(rolling_back, adapter.fingerprint(pre)) != rolling_back.verified_target_fingerprint:
             # An unrelated change since VERIFIED is a conflict, never a
             # forced overwrite (sealed_executor.md Rollback flow).
             return self._finish_rollback(rolling_back, RecoveryState.ROLLBACK_FAILED, "unrelated change detected")

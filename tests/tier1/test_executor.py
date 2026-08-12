@@ -75,7 +75,7 @@ class _SyntheticAdapter:
         return {"name": raw_target["name"]}
 
     def fingerprint(self, raw_target):
-        return {"revision": raw_target["revision"]}
+        return {"descr": raw_target["descr"], "revision": raw_target["revision"]}
 
     def build_request(self, intent):
         return _SyntheticRequest(descr=intent["descr"])
@@ -84,13 +84,16 @@ class _SyntheticAdapter:
         return {"status_code": raw_response.status_code}
 
     def is_semantically_verified(self, pre, post, intent):
-        return self._semantically_verified
+        return self._semantically_verified and post["descr"] == intent["descr"] and post["revision"] == pre["revision"]
 
     def build_rollback_request(self, pre):
         return _SyntheticRequest(descr=pre["descr"])
 
     def is_rollback_verified(self, pre, post_rollback):
-        return self._rollback_verified
+        return self._rollback_verified and pre == {
+            "descr": post_rollback["descr"],
+            "revision": post_rollback["revision"],
+        }
 
 
 class _RaisingWriteClient:
@@ -135,8 +138,8 @@ def _encrypt(payload: object, *, contract_id: str, role: ArtifactRole, counter: 
     )
 
 
-def _identity_source(*, revision: str = "synthetic-1") -> dict:
-    return {"name": "synthetic-target.invalid", "revision": revision}
+def _identity_source(*, revision: str = "synthetic-1", descr: str = "original-description") -> dict:
+    return {"name": "synthetic-target.invalid", "revision": revision, "descr": descr}
 
 
 def _build_contract(
@@ -148,12 +151,12 @@ def _build_contract(
     original_descr: str = "original-description",
 ) -> tuple[RecoveryContract, dict]:
     created = now or datetime.now(timezone.utc)
-    identity_source = _identity_source(revision=revision)
+    identity_source = _identity_source(revision=revision, descr=original_descr)
     identity = {"name": identity_source["name"]}
-    precondition = {"revision": identity_source["revision"]}
+    precondition = {"descr": identity_source["descr"], "revision": identity_source["revision"]}
     intent = {"raw_target_hint": identity_source, "descr": descr}
     intent_payload = {"descr": descr}
-    snapshot_payload = {"descr": original_descr}
+    snapshot_payload = {"descr": original_descr, "revision": revision}
 
     target_digest = digest_value(DigestPurpose.TARGET_IDENTITY, identity, context=(_CAPABILITY.name,))
     fingerprint_digest = digest_value(DigestPurpose.TARGET_FINGERPRINT, precondition, context=_CONTEXT)
@@ -227,11 +230,15 @@ def _verified(store: SqliteRecoveryContractStore, contract: RecoveryContract) ->
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
     )
-    return store.transition(
+    verified_fingerprint = digest_value(
+        DigestPurpose.TARGET_FINGERPRINT,
+        {"descr": "updated-description", "revision": "synthetic-1"},
+        context=_CONTEXT,
+    )
+    return store.mark_execution_verified(
         contract.contract_id,
-        expected_state=RecoveryState.EXECUTING,
         expected_version=executing.state_version,
-        target_state=RecoveryState.VERIFIED,
+        verified_target_fingerprint=verified_fingerprint,
     )
 
 
@@ -286,8 +293,34 @@ def test_execute_happy_path_reaches_verified(tmp_path, monkeypatch):
     outcome = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
 
     assert outcome.state == RecoveryState.VERIFIED
+    loaded = store.load(contract.contract_id)
+    assert loaded.verified_target_fingerprint == digest_value(
+        DigestPurpose.TARGET_FINGERPRINT,
+        {"descr": "updated-description", "revision": "synthetic-1"},
+        context=_CONTEXT,
+    )
     assert transport.calls == [("PATCH", "/api/v2/synthetic")]
     assert transport.request_bodies == [b'{"descr":"updated-description"}']
+
+
+def test_generic_verified_transition_cannot_omit_post_forward_fingerprint(tmp_path):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    confirmed = _confirm(store, contract)
+    executing = store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=confirmed.state_version,
+        target_state=RecoveryState.EXECUTING,
+    )
+
+    with pytest.raises(ContractConflictError, match="post-forward fingerprint"):
+        store.transition(
+            contract.contract_id,
+            expected_state=RecoveryState.EXECUTING,
+            expected_version=executing.state_version,
+            target_state=RecoveryState.VERIFIED,
+        )
 
 
 def test_execute_requires_prepared_state(tmp_path, monkeypatch):
@@ -571,6 +604,44 @@ def test_rollback_fails_on_unrelated_change_conflict(tmp_path, monkeypatch):
     assert outcome.state == RecoveryState.ROLLBACK_FAILED
     assert "unrelated change" in outcome.detail
     assert transport.calls == []
+
+
+def test_rollback_rejects_concurrent_description_change(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    _verified(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    adapter = _SyntheticAdapter(
+        reads=[{"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "concurrent-description"}]
+    )
+    executor = _executor(store, write_client)
+
+    outcome = executor.rollback(contract.contract_id, adapter=adapter)
+
+    assert outcome.state == RecoveryState.ROLLBACK_FAILED
+    assert "unrelated change" in outcome.detail
+    assert transport.calls == []
+
+
+def test_execute_postcondition_mismatch_does_not_seal_verified_fingerprint(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _SyntheticAdapter(
+        reads=[
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "unexpected-description"},
+        ],
+        semantically_verified=False,
+    )
+    executor = _executor(store, write_client)
+
+    outcome = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.FAILED
+    assert store.load(contract.contract_id).verified_target_fingerprint is None
 
 
 def test_rollback_reaches_reconciliation_on_ambiguous_send(tmp_path):

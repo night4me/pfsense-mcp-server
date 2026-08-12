@@ -23,6 +23,7 @@ def _evidence(**overrides):
         "outcome": ReconciliationOutcome.CONFIRMED_APPLIED,
         "issued_at": datetime.now(timezone.utc),
         "proof": b"synthetic-proof",
+        "verified_target_fingerprint": "a" * 64,
     }
     fields.update(overrides)
     return ReconciliationEvidence(**fields)
@@ -31,6 +32,16 @@ def _evidence(**overrides):
 def test_valid_evidence_constructs():
     evidence = _evidence()
     assert evidence.outcome == ReconciliationOutcome.CONFIRMED_APPLIED
+
+
+def test_confirmed_applied_requires_verified_target_fingerprint():
+    with pytest.raises(ConfirmationError, match="verified target fingerprint"):
+        _evidence(verified_target_fingerprint=None)
+
+
+def test_non_applied_outcome_rejects_verified_target_fingerprint():
+    with pytest.raises(ConfirmationError, match="verified target fingerprint"):
+        _evidence(outcome=ReconciliationOutcome.CONFIRMED_NOT_APPLIED)
 
 
 @pytest.mark.parametrize(

@@ -25,6 +25,7 @@ def _keypair():
 
 
 def _evidence(private_key, *, algorithm=ACCEPTED_ALGORITHM, outcome=ReconciliationOutcome.CONFIRMED_APPLIED):
+    verified_target_fingerprint = "d" * 64 if outcome is ReconciliationOutcome.CONFIRMED_APPLIED else None
     unsigned = ReconciliationEvidence(
         authority_id="synthetic-owner",
         algorithm=algorithm,
@@ -34,6 +35,7 @@ def _evidence(private_key, *, algorithm=ACCEPTED_ALGORITHM, outcome=Reconciliati
         outcome=outcome,
         issued_at=datetime.now(timezone.utc),
         proof=b"placeholder-proof-bytes",
+        verified_target_fingerprint=verified_target_fingerprint,
     )
     signature = private_key.sign(signing_payload(unsigned))
     return ReconciliationEvidence(
@@ -45,6 +47,7 @@ def _evidence(private_key, *, algorithm=ACCEPTED_ALGORITHM, outcome=Reconciliati
         outcome=unsigned.outcome,
         issued_at=unsigned.issued_at,
         proof=signature,
+        verified_target_fingerprint=unsigned.verified_target_fingerprint,
     )
 
 
@@ -55,6 +58,16 @@ def test_valid_reconciliation_signature_is_accepted():
     )
 
     assert verifier.verify(_evidence(private_key)) is True
+
+
+def test_verified_target_fingerprint_is_covered_by_signature():
+    private_key, public_bytes = _keypair()
+    verifier = Ed25519ReconciliationVerifier(
+        (PinnedAuthority(authority_id="synthetic-owner", public_key=public_bytes),)
+    )
+    evidence = _evidence(private_key)
+
+    assert verifier.verify(dc_replace(evidence, verified_target_fingerprint="e" * 64)) is False
 
 
 def test_algorithm_downgrade_is_refused():

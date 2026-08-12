@@ -119,6 +119,14 @@ or RECONCILIATION. Appliance configuration history may be captured as a
 protected artifact, but capture failure blocks mutation and a global revision
 must never overwrite unrelated changes automatically.
 
+The rollback conflict check uses an integrity-protected expected post-forward
+fingerprint sealed atomically with the successful `VERIFIED` transition. It
+does not compare the live post-forward state to the original pre-forward
+fingerprint, because the authorized mutation may intentionally change a field
+covered by that complete fingerprint. The original fingerprint and protected
+snapshot remain unchanged and define exact restoration; the sealed
+post-forward fingerprint defines whether rollback may begin.
+
 `VERIFIED` is not a reservation state: the canonical target reservation is
 released the instant a contract reaches `VERIFIED`, so an unrelated contract
 may acquire that same target before any rollback decision is made. This is a

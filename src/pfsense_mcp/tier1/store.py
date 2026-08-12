@@ -34,10 +34,15 @@ from .errors import (
     ContractValidationError,
 )
 from .rate_policy import RatePolicy, is_cooldown_state
-from .reconciliation import OUTCOME_TARGET_STATE, ReconciliationEvidence, ReconciliationVerifier
+from .reconciliation import (
+    OUTCOME_TARGET_STATE,
+    ReconciliationEvidence,
+    ReconciliationOutcome,
+    ReconciliationVerifier,
+)
 from .state_machine import RecoveryState, require_transition
 
-_SCHEMA_VERSION = 4
+_SCHEMA_VERSION = 5
 _STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _RESERVATION_STATES = frozenset(
     {
@@ -80,6 +85,7 @@ _CONTRACT_FIELDS = frozenset(
         "state_version",
         "target_fingerprint",
         "target_identity_digest",
+        "verified_target_fingerprint",
     }
 )
 
@@ -142,6 +148,7 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
         "state_version": contract.state_version,
         "target_fingerprint": contract.target_fingerprint,
         "target_identity_digest": contract.target_identity_digest,
+        "verified_target_fingerprint": contract.verified_target_fingerprint,
     }
     return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -172,6 +179,7 @@ def _contract_from_payload(payload: bytes) -> RecoveryContract:
             protected_snapshot=_artifact_from_dict(value["protected_snapshot"]),
             confirmation_digest=value["confirmation_digest"],
             confirmed_at=datetime.fromisoformat(value["confirmed_at"]) if value["confirmed_at"] else None,
+            verified_target_fingerprint=value["verified_target_fingerprint"],
         )
     except (KeyError, TypeError, ValueError, UnicodeDecodeError, ContractValidationError) as exc:
         raise ContractIntegrityError("Stored Recovery Contract is invalid.") from exc
@@ -617,7 +625,16 @@ class SqliteRecoveryContractStore:
             raise ConfirmationError("Reconciliation evidence was refused.")
         target_state = OUTCOME_TARGET_STATE[evidence.outcome]
         require_transition(current.state, target_state, manual=True)
-        updated = replace(current, state=target_state, state_version=current.state_version + 1)
+        updated = replace(
+            current,
+            state=target_state,
+            state_version=current.state_version + 1,
+            verified_target_fingerprint=(
+                evidence.verified_target_fingerprint
+                if evidence.outcome is ReconciliationOutcome.CONFIRMED_APPLIED
+                else current.verified_target_fingerprint
+            ),
+        )
         return self._replace(current, updated, event_type="reconciliation_resolved")
 
     def rotate_artifacts(
@@ -733,6 +750,8 @@ class SqliteRecoveryContractStore:
         target_state: RecoveryState,
     ) -> RecoveryContract:
         require_transition(expected_state, target_state)
+        if target_state == RecoveryState.VERIFIED:
+            raise ContractConflictError("VERIFIED requires an atomically sealed post-forward fingerprint.")
         current = self.load(contract_id)
         if current.state != expected_state or current.state_version != expected_version:
             raise ContractConflictError("Recovery Contract state changed before atomic transition.")
@@ -755,6 +774,32 @@ class SqliteRecoveryContractStore:
                         self._rate_policy.check_execute_allowed(connection, now=instant)
                     connection.commit()
         updated = replace(current, state=target_state, state_version=current.state_version + 1)
+        return self._replace(current, updated, event_type="state_transition")
+
+    def mark_execution_verified(
+        self,
+        contract_id: str,
+        *,
+        expected_version: int,
+        verified_target_fingerprint: str,
+    ) -> RecoveryContract:
+        """Atomically seal the verified post-forward fingerprint and state.
+
+        The value is supplied only by MutationExecutor after its authoritative
+        read-back and semantic post-condition check.  Keeping it in the
+        integrity-protected contract payload makes it the rollback concurrency
+        precondition without replacing the original recovery snapshot.
+        """
+
+        current = self.load(contract_id)
+        if current.state != RecoveryState.EXECUTING or current.state_version != expected_version:
+            raise ContractConflictError("Recovery Contract state changed before verified transition.")
+        updated = replace(
+            current,
+            state=RecoveryState.VERIFIED,
+            state_version=current.state_version + 1,
+            verified_target_fingerprint=verified_target_fingerprint,
+        )
         return self._replace(current, updated, event_type="state_transition")
 
     def _replace(self, current: RecoveryContract, updated: RecoveryContract, *, event_type: str) -> RecoveryContract:

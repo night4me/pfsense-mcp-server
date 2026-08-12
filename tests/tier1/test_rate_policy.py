@@ -178,11 +178,10 @@ def test_cooldown_blocks_immediate_reprepare_and_expires(tmp_path, contract_fact
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
     )
-    store.transition(
+    store.mark_execution_verified(
         executing.contract_id,
-        expected_state=RecoveryState.EXECUTING,
         expected_version=executing.state_version,
-        target_state=RecoveryState.VERIFIED,
+        verified_target_fingerprint=executing.target_fingerprint,
     )
 
     same_target_new_contract = contract_factory(

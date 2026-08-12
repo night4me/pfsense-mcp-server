@@ -329,6 +329,26 @@ concurrent change, ambiguous send, missing/multiple resource, reload effect, or
 verification failure stops automatic compensation. There is no generic retry,
 create-on-missing behavior, or global config restore.
 
+The full pre-forward fingerprint remains unchanged and includes the original
+description. On successful authoritative forward read-back, the executor must
+derive and integrity-seal a distinct expected post-forward fingerprint covering
+the same complete tuple, including the new description, atomically with the
+`VERIFIED` transition. The immediate pre-rollback READ must match that sealed
+post-forward fingerprint exactly. Rollback then restores and verifies the
+original snapshot/fingerprint. This corrects the pre-evidence finding that a
+comparison against the original fingerprint would reject every successful
+description mutation. It does not weaken any fingerprint field.
+
+## Architecture-remediation implementation status
+
+The inert Tier 1 contract/store/executor path now implements the distinct,
+durable expected-post-forward fingerprint boundary and focused synthetic
+regression coverage. Confirmed-applied reconciliation evidence also signs this
+fingerprint before it can produce a rollback-eligible VERIFIED contract. This
+is architecture validation only: no alias adapter, public endpoint, capability
+activation, production construction, or lab PATCH is introduced. ADR-026
+remains Proposed and its disposable-lab evidence gates remain outstanding.
+
 The lab must prove that description rollback is exact and that neither forward
 nor rollback PATCH changes members, details, type, ordering, runtime tables, or
 unrelated configuration.

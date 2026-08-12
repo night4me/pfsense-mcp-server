@@ -89,6 +89,7 @@ class RecoveryContract:
     protected_snapshot: ProtectedArtifact
     confirmation_digest: str | None = None
     confirmed_at: datetime | None = None
+    verified_target_fingerprint: str | None = None
 
     def __post_init__(self) -> None:
         identifiers = (self.contract_id, self.operation_id, self.endpoint_symbol, self.rollback_plan_version)
@@ -111,6 +112,21 @@ class RecoveryContract:
             not isinstance(self.confirmation_digest, str) or not _HEX_64.fullmatch(self.confirmation_digest)
         ):
             raise ContractValidationError("Recovery Contract confirmation digest is invalid.")
+        if self.verified_target_fingerprint is not None and (
+            not isinstance(self.verified_target_fingerprint, str)
+            or not _HEX_64.fullmatch(self.verified_target_fingerprint)
+        ):
+            raise ContractValidationError("Verified target fingerprint is invalid.")
+        forbids_verified_fingerprint = self.state in {
+            RecoveryState.PREPARING,
+            RecoveryState.PREPARED,
+            RecoveryState.EXECUTING,
+        }
+        requires_verified_fingerprint = self.state in {RecoveryState.VERIFIED, RecoveryState.ROLLING_BACK}
+        if (forbids_verified_fingerprint and self.verified_target_fingerprint is not None) or (
+            requires_verified_fingerprint and self.verified_target_fingerprint is None
+        ):
+            raise ContractValidationError("Recovery Contract state and verified target fingerprint are inconsistent.")
         if not isinstance(self.created_at, datetime) or not isinstance(self.expires_at, datetime):
             raise ContractValidationError("Recovery Contract timestamps must be UTC.")
         if not _is_utc(self.created_at) or not _is_utc(self.expires_at):

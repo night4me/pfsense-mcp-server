@@ -37,6 +37,7 @@ def signing_payload(evidence: ReconciliationEvidence) -> bytes:
             "observed_state_version": evidence.observed_state_version,
             "operation_id": evidence.operation_id,
             "outcome": evidence.outcome.value,
+            "verified_target_fingerprint": evidence.verified_target_fingerprint,
         }
     )
 

@@ -21,6 +21,7 @@ and remaining activation blockers are in
 | `target_identity_digest` | SHA-256 | canonical natural identity | no | no | yes |
 | locator hint | optional protected upstream ID | authoritative READ | refreshable | yes | no |
 | `target_fingerprint` | SHA-256 | capability target projection | no | no | yes |
+| `verified_target_fingerprint` | optional SHA-256 | authoritative post-forward READ | once, with VERIFIED | no | HMAC record |
 | protected normalized intent | ciphertext | typed caller request | no | yes | yes |
 | `intent_digest` | SHA-256 | capability/endpoint/method/intent | no | no | yes |
 | protected snapshot | ciphertext | authoritative READ | no | yes | yes |
@@ -57,6 +58,15 @@ Preparation and execution require exactly one matching target. Numeric IDs are
 transient locator hints. Immediately after PREPARED -> EXECUTING commits, the
 target is re-read by natural identity and its refreshed ID and fingerprint must
 match. Missing, duplicate, swapped, or drifted targets refuse before send.
+
+`target_fingerprint` always remains the complete original pre-forward
+precondition. After a successful mutation, the executor derives
+`verified_target_fingerprint` from the authoritative post-forward READ and
+persists it atomically with `EXECUTING -> VERIFIED`. Rollback compares its fresh
+pre-rollback READ to that verified post-forward fingerprint, not to the
+original fingerprint. This permits an authorized mutation to change a
+fingerprinted field while still refusing any later unrelated change. The
+protected snapshot and original fingerprint remain the recovery target.
 
 ## Confirmation contract
 
@@ -127,13 +137,19 @@ execute(contract_id, request):
   send exactly one bounded typed request; never retry
   require exact accepted status and response shape
   authoritative_read_after_write()
-  if semantic intent verified: EXECUTING -> VERIFIED
+  if semantic intent verified:
+      atomically seal authoritative post-forward fingerprint and transition EXECUTING -> VERIFIED
   elif no effect/failure proven: EXECUTING -> FAILED
   else: EXECUTING -> RECONCILIATION
 ```
 
 No generic execute tool is permitted. Every request/response rule is
 capability-specific.
+
+A reconciliation authority declaring `CONFIRMED_APPLIED` must sign the exact
+verified post-forward fingerprint. Other reconciliation outcomes must not
+carry it. This prevents an ambiguous-send resolution from creating a VERIFIED
+contract whose rollback precondition was never authenticated.
 
 ## Fault decisions
 

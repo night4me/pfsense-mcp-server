@@ -724,11 +724,10 @@ def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
     )
-    verified = store.transition(
+    verified = store.mark_execution_verified(
         executing.contract_id,
-        expected_state=RecoveryState.EXECUTING,
         expected_version=executing.state_version,
-        target_state=RecoveryState.VERIFIED,
+        verified_target_fingerprint=executing.target_fingerprint,
     )
     rolling_back = store.transition(
         verified.contract_id,
@@ -771,11 +770,10 @@ def test_verified_releases_target_and_later_rollback_refuses_on_conflict(tmp_pat
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
     )
-    verified = store.transition(
+    verified = store.mark_execution_verified(
         executing.contract_id,
-        expected_state=RecoveryState.EXECUTING,
         expected_version=executing.state_version,
-        target_state=RecoveryState.VERIFIED,
+        verified_target_fingerprint=executing.target_fingerprint,
     )
 
     competing = _confirmed(
@@ -808,11 +806,10 @@ def test_failed_rollback_keeps_target_locked(tmp_path, contract_factory):
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
     )
-    verified = store.transition(
+    verified = store.mark_execution_verified(
         executing.contract_id,
-        expected_state=RecoveryState.EXECUTING,
         expected_version=executing.state_version,
-        target_state=RecoveryState.VERIFIED,
+        verified_target_fingerprint=executing.target_fingerprint,
     )
     rolling_back = store.transition(
         verified.contract_id,

@@ -95,6 +95,9 @@ def _reconciliation_evidence(contract, *, outcome, proof=_VALID_RECONCILIATION_P
         outcome=outcome,
         issued_at=datetime.now(timezone.utc),
         proof=proof,
+        verified_target_fingerprint=(
+            contract.target_fingerprint if outcome is ReconciliationOutcome.CONFIRMED_APPLIED else None
+        ),
     )
 
 
@@ -116,6 +119,8 @@ def test_each_outcome_resolves_to_its_declared_target_state(tmp_path, contract_f
     )
     assert resolved.state == expected_state
     assert store.load(contract.contract_id).state == expected_state
+    if outcome is ReconciliationOutcome.CONFIRMED_APPLIED:
+        assert resolved.verified_target_fingerprint == contract.target_fingerprint
 
 
 def test_stale_observed_state_version_is_refused(tmp_path, contract_factory):

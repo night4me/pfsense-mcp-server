@@ -24,6 +24,7 @@ from .errors import ConfirmationError
 from .state_machine import RecoveryState
 
 _SAFE_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
+_HEX_64 = re.compile(r"[0-9a-f]{64}")
 MAX_RECONCILIATION_PROOF_BYTES = 65_536
 
 
@@ -66,6 +67,7 @@ class ReconciliationEvidence:
     outcome: ReconciliationOutcome
     issued_at: datetime
     proof: bytes
+    verified_target_fingerprint: str | None = None
 
     def __post_init__(self) -> None:
         tokens = (self.authority_id, self.algorithm, self.contract_id, self.operation_id)
@@ -83,6 +85,14 @@ class ReconciliationEvidence:
             raise ConfirmationError("Reconciliation evidence timestamp must be UTC.")
         if not isinstance(self.proof, bytes) or not self.proof or len(self.proof) > MAX_RECONCILIATION_PROOF_BYTES:
             raise ConfirmationError("Reconciliation evidence proof is invalid or oversized.")
+        applied = self.outcome is ReconciliationOutcome.CONFIRMED_APPLIED
+        valid_fingerprint = isinstance(self.verified_target_fingerprint, str) and bool(
+            _HEX_64.fullmatch(self.verified_target_fingerprint)
+        )
+        if applied != valid_fingerprint:
+            raise ConfirmationError(
+                "Confirmed-applied reconciliation evidence requires exactly one verified target fingerprint."
+            )
 
     @property
     def evidence_digest(self) -> str:
@@ -103,6 +113,7 @@ class ReconciliationEvidence:
                 "operation_id": self.operation_id,
                 "outcome": self.outcome.value,
                 "proof_digest": proof_digest,
+                "verified_target_fingerprint": self.verified_target_fingerprint,
             },
         )
 
