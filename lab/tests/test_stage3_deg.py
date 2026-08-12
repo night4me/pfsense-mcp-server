@@ -210,7 +210,8 @@ def test_sanitized_plan_is_explicitly_not_live_verified():
     report = sanitized_plan(scenario_plan(ScenarioId.E1))
     assert report["empirical_status"] == "NOT_YET_LIVE_VERIFIED"
     assert "orchestration_action" not in report
-    assert "expected_reconciliation" not in report
+    assert "expected_recovery_path" in report
+    assert "owner_reconciliation_may_be_required" in report
 
 
 def test_offline_cli_emits_only_closed_plan(capsys):
@@ -223,8 +224,14 @@ def test_offline_cli_emits_only_closed_plan(capsys):
 
 
 def test_offline_cli_has_no_execute_command():
-    with pytest.raises(SystemExit):
+    with pytest.raises(RuntimeError, match="owner-signed reconciliation"):
         main(["execute", "--scenario", ScenarioId.D1.value])
+
+
+@pytest.mark.parametrize("argument", ["--payload", "--endpoint", "--candidate", "--locator", "--method"])
+def test_cli_rejects_arbitrary_execution_inputs(argument):
+    with pytest.raises(SystemExit):
+        main(["execute", "--scenario", ScenarioId.D1.value, argument, "forbidden"])
 
 
 def test_restart_harness_reconstructs_no_process_local_projection(tmp_path):

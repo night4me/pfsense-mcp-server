@@ -512,6 +512,9 @@ def sanitized_plan(definition: ScenarioDefinition) -> dict[str, object]:
         "upstream_delivery": definition.upstream_delivery.value if definition.upstream_delivery else None,
         "authoritative_read_back_required": definition.authoritative_read_back_required,
         "expected_state": definition.expected_state.value,
+        "expected_recovery_path": definition.expected_reconciliation,
+        "owner_reconciliation_may_be_required": "signed" in definition.expected_reconciliation
+        or "reconciliation" in definition.expected_reconciliation,
         "exact_final_state_requirement": definition.exact_final_state_requirement,
         "repetition_target": definition.repetition_target,
         "live_status": definition.live_status.value,
@@ -521,14 +524,22 @@ def sanitized_plan(definition: ScenarioDefinition) -> dict[str, object]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Inspect closed plans offline; intentionally contains no execute command."""
+    """Inspect plans or invoke the separately wired closed live binding."""
 
     parser = argparse.ArgumentParser(description="Inspect closed ADR-026 Stage 3D/E/G plans")
-    parser.add_argument("command", choices=("list", "plan"))
+    parser.add_argument("command", choices=("list", "plan", "describe", "execute"))
     parser.add_argument("--scenario", choices=tuple(item.value for item in ScenarioId))
     args = parser.parse_args(argv)
-    if args.command == "plan" and args.scenario is None:
-        parser.error("plan requires --scenario")
+    if args.command in {"plan", "describe", "execute"} and args.scenario is None:
+        parser.error(f"{args.command} requires --scenario")
+    if args.command == "execute":
+        # The concrete backend is intentionally isolated in a separate lab-only
+        # module.  Importing list/plan/describe never imports live machinery.
+        from .stage3_live_runtime import execute_live_scenario
+
+        report = execute_live_scenario(ScenarioId(args.scenario))
+        print(json.dumps(report.sanitized(), sort_keys=True, separators=(",", ":")))
+        return 0
     selected = (
         [scenario_plan(ScenarioId(args.scenario))]
         if args.scenario is not None
