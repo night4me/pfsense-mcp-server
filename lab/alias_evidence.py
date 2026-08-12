@@ -81,6 +81,14 @@ class AliasDescriptionRequest(BaseModel):
     apply: StrictBool = False
 
 
+class AliasDescriptionOmittedApplyRequest(BaseModel):
+    """Closed Stage 3B request whose sole distinction is absent `apply`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    id: StrictInt
+    descr: StrictStr
+
+
 @dataclass(frozen=True)
 class AliasState:
     name: str
@@ -200,6 +208,13 @@ class AliasDescriptionAdapter:
         )
 
 
+class AliasDescriptionOmittedApplyAdapter(AliasDescriptionAdapter):
+    def build_request(self, intent: object, target: ResolvedTransportTarget) -> BaseModel:
+        if not isinstance(intent, dict) or set(intent) != {"descr"} or not isinstance(intent["descr"], str):
+            raise RuntimeError("protected alias-description intent is malformed")
+        return AliasDescriptionOmittedApplyRequest(id=target.numeric_locator, descr=intent["descr"])
+
+
 class _LabVerifier:
     def verify(self, evidence: ConfirmationEvidence) -> bool:
         return evidence.algorithm == "lab-b3a-owner-authorization-v1" and evidence.proof == _LAB_PROOF
@@ -237,9 +252,11 @@ def _preflight() -> tuple[LabConfig, str, HttpTransport, PfSenseClient, LabPrefl
     return config, key, transport, client, report
 
 
-def run_description_cycle(*, case_id: str, replacement: str, rollback: bool = True) -> dict[str, object]:
+def run_description_cycle(
+    *, case_id: str, replacement: str, rollback: bool = True, omit_forward_apply: bool = False
+) -> dict[str, object]:
     config, _key, transport, read_client, gate = _preflight()
-    adapter = AliasDescriptionAdapter()
+    adapter = AliasDescriptionOmittedApplyAdapter() if omit_forward_apply else AliasDescriptionAdapter()
     original = adapter.read_target(read_client, {"alias_name": config.candidate})
     if original.numeric_locator != gate.candidate.numeric_locator:
         transport.close()
@@ -356,7 +373,9 @@ def run_clean_cycle(cycle: int) -> dict[str, object]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ADR-026 lab-only evidence runner")
-    parser.add_argument("command", choices=("stage-one", "clean-cycles", "description-case", "restore-original"))
+    parser.add_argument(
+        "command", choices=("stage-one", "clean-cycles", "description-case", "restore-original", "omitted-apply")
+    )
     parser.add_argument("--start", type=int, default=1)
     parser.add_argument("--count", type=int, default=1)
     parser.add_argument("--case", choices=tuple(_DESCRIPTION_CASES))
@@ -376,6 +395,14 @@ def main(argv: list[str] | None = None) -> int:
             rollback=False,
         )
         print(json.dumps({"semantic_unit": SEMANTIC_UNIT, "recovery": report}, sort_keys=True, separators=(",", ":")))
+        return 0
+    if args.command == "omitted-apply":
+        report = run_description_cycle(
+            case_id="omitted-apply",
+            replacement="ADR026 Stage3 omitted apply",
+            omit_forward_apply=True,
+        )
+        print(json.dumps({"semantic_unit": SEMANTIC_UNIT, "cases": [report]}, sort_keys=True, separators=(",", ":")))
         return 0
     if args.start < 1 or args.count < 1 or args.start + args.count - 1 > 25:
         parser.error("clean-cycle range must stay within 1..25")

@@ -3,7 +3,13 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from lab.alias_evidence import _DESCRIPTION_CASES, AliasDescriptionAdapter, AliasDescriptionRequest, AliasState
+from lab.alias_evidence import (
+    _DESCRIPTION_CASES,
+    AliasDescriptionAdapter,
+    AliasDescriptionOmittedApplyRequest,
+    AliasDescriptionRequest,
+    AliasState,
+)
 from pfsense_mcp.tier1.executor import ResolvedTransportTarget
 
 
@@ -26,6 +32,14 @@ def test_request_is_closed_frozen_and_defaults_apply_false() -> None:
         request.descr = "substituted"
     with pytest.raises(ValidationError):
         AliasDescriptionRequest(id=7, descr="after", payload={})  # type: ignore[call-arg]
+
+
+def test_omitted_apply_request_has_no_apply_field() -> None:
+    request = AliasDescriptionOmittedApplyRequest(id=0, descr="after")
+
+    assert request.model_dump() == {"id": 0, "descr": "after"}
+    with pytest.raises(ValidationError):
+        AliasDescriptionOmittedApplyRequest(id=0, descr="after", apply=False)  # type: ignore[call-arg]
 
 
 @pytest.mark.parametrize("locator", [True, "7"])
