@@ -19,7 +19,7 @@ and remaining activation blockers are in
 | `http_method` | POST/PUT/PATCH/DELETE | endpoint policy | no | no | yes |
 | protected target identity | ciphertext | authoritative READ | no | yes | yes |
 | `target_identity_digest` | SHA-256 | canonical natural identity | no | no | yes |
-| locator hint | optional protected upstream ID | authoritative READ | refreshable | yes | no |
+| `lifecycle_locator` | non-negative integer | authoritative READ at protection time | no | no | idempotency + HMAC record |
 | `target_fingerprint` | SHA-256 | capability target projection | no | no | yes |
 | `verified_target_fingerprint` | optional SHA-256 | authoritative post-forward READ | once, with VERIFIED | no | HMAC record |
 | protected normalized intent | ciphertext | typed caller request | no | yes | yes |
@@ -50,14 +50,24 @@ contract object. The service loads the record by ID and validates all bindings.
   are signed 64-bit; booleans are not integers. Invalid Unicode scalars fail.
 - Target identity, target fingerprint, intent, snapshot, confirmation, and
   idempotency use separate domains.
+- The lifecycle locator is security-relevant contract state and participates in
+  the idempotency digest and authenticated store record. The fresh
+  `ResolvedTransportTarget` is an ephemeral request projection: it is not
+  persisted and does not alter semantic intent, target-identity, fingerprint,
+  snapshot, or confirmation digest domains.
 
 ## Target contract
 
 Each capability defines one natural identity and one fingerprint projection.
 Preparation and execution require exactly one matching target. Numeric IDs are
-transient locator hints. Immediately after PREPARED -> EXECUTING commits, the
-target is re-read by natural identity and its refreshed ID and fingerprint must
-match. Missing, duplicate, swapped, or drifted targets refuse before send.
+transport locators, never semantic resource identity. Where a capability has no
+independent incarnation marker, the locator captured at protection time is an
+immutable lifecycle continuity guard. Immediately after PREPARED -> EXECUTING
+commits, the target is re-read by natural identity; its fingerprint and current
+locator must match the protected contract. Missing, duplicate, substituted,
+drifted, or renumbered targets refuse before send. A locator change does not
+prove recreation, but it prevents proving non-recreation and therefore requires
+a new lifecycle.
 
 `target_fingerprint` always remains the complete original pre-forward
 precondition. After a successful mutation, the executor derives
@@ -106,6 +116,8 @@ must authenticate evidence and record the conclusion before using one.
   intent, payload, snapshot, credential, or response.
 - HMAC binds the complete canonical record to one store ID. The key is supplied
   externally, is at least 256 bits, and is never stored in the database.
+- Store schema v6 requires `lifecycle_locator`; legacy v5 records fail closed
+  rather than inferring a guard.
 - SQLite uses durable transactions and owner-only directory/file permissions.
 - Duplicated operation/idempotency identities and conflicting target
   reservations fail closed.

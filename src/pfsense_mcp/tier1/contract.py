@@ -49,6 +49,7 @@ def derive_idempotency_key(
     http_method: str,
     target_identity_digest: str,
     target_fingerprint: str,
+    lifecycle_locator: int,
     intent_digest: str,
     snapshot_digest: str,
     rollback_plan_version: str,
@@ -58,6 +59,7 @@ def derive_idempotency_key(
         DigestPurpose.IDEMPOTENCY,
         {
             "intent_digest": intent_digest,
+            "lifecycle_locator": lifecycle_locator,
             "rollback_plan_version": rollback_plan_version,
             "snapshot_digest": snapshot_digest,
             "target_fingerprint": target_fingerprint,
@@ -77,6 +79,7 @@ class RecoveryContract:
     http_method: str
     target_identity_digest: str
     target_fingerprint: str
+    lifecycle_locator: int
     intent_digest: str
     snapshot_digest: str
     rollback_plan_version: str
@@ -108,6 +111,8 @@ class RecoveryContract:
         )
         if not all(isinstance(value, str) and _HEX_64.fullmatch(value) for value in digests):
             raise ContractValidationError("Recovery Contract digest is invalid.")
+        if type(self.lifecycle_locator) is not int or not 0 <= self.lifecycle_locator <= 2_147_483_647:
+            raise ContractValidationError("Recovery Contract lifecycle locator is invalid.")
         if self.confirmation_digest is not None and (
             not isinstance(self.confirmation_digest, str) or not _HEX_64.fullmatch(self.confirmation_digest)
         ):
@@ -149,6 +154,7 @@ class RecoveryContract:
             http_method=self.http_method,
             target_identity_digest=self.target_identity_digest,
             target_fingerprint=self.target_fingerprint,
+            lifecycle_locator=self.lifecycle_locator,
             intent_digest=self.intent_digest,
             snapshot_digest=self.snapshot_digest,
             rollback_plan_version=self.rollback_plan_version,

@@ -19,6 +19,7 @@ def contract_factory():
         state: RecoveryState = RecoveryState.PREPARING,
         target_identity: object = None,
         target_precondition: object = None,
+        lifecycle_locator: int = 7,
         intent: object = None,
         now: datetime | None = None,
     ) -> RecoveryContract:
@@ -41,6 +42,7 @@ def contract_factory():
             http_method="PATCH",
             target_identity_digest=target_digest,
             target_fingerprint=fingerprint,
+            lifecycle_locator=lifecycle_locator,
             intent_digest=intent_digest,
             snapshot_digest=snapshot_digest,
             rollback_plan_version="synthetic-v1",
@@ -55,6 +57,7 @@ def contract_factory():
             http_method="PATCH",
             target_identity_digest=target_digest,
             target_fingerprint=fingerprint,
+            lifecycle_locator=lifecycle_locator,
             intent_digest=intent_digest,
             snapshot_digest=snapshot_digest,
             rollback_plan_version="synthetic-v1",

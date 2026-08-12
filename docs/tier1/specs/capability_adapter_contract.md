@@ -158,8 +158,14 @@ class _ExampleAdapter:
         }
 
     @staticmethod
-    def build_request(intent: _ExampleIntent) -> _ExampleWriteRequest:
-        return _ExampleWriteRequest(projected_field=intent.projected_field)
+    def transport_locator(raw_target: RawReadModel) -> int:
+        # Transport-only value from this authoritative read. The executor
+        # validates lifecycle continuity before constructing the projection.
+        return raw_target.id
+
+    @staticmethod
+    def build_request(intent: _ExampleIntent, target: ResolvedTransportTarget) -> _ExampleWriteRequest:
+        return _ExampleWriteRequest(id=target.numeric_locator, projected_field=intent.projected_field)
 
     @staticmethod
     def is_semantically_verified(pre: RawReadModel, post: RawReadModel, intent: _ExampleIntent) -> bool:
@@ -175,6 +181,7 @@ class _ExampleAdapter:
 | Failure | Detection | Resulting state | Automatic retry |
 |---|---|---|---|
 | Adapter's `build_request()` raises (invalid intent shape) | Exception propagates to executor before any send | Executor treats as pre-send refusal, `FAILED`, zero sends | No |
+| Fresh locator differs from protected lifecycle guard | Executor cannot prove incarnation continuity | `FAILED` before forward or `ROLLBACK_FAILED` before rollback; zero sends | New lifecycle only |
 | Adapter's `fingerprint()` omits a field that later changes unexpectedly | **Not detectable by the framework** — this is exactly why I3 requires explicit, reviewed field enumeration; a code-review gap here is a real residual risk this contract cannot fully close by itself | Silent drift undetected until a human notices | N/A — this is a review discipline requirement, not a runtime check |
 | `is_semantically_verified()` returns `True` for a case it shouldn't (bug) | Not detectable by the framework at runtime | Contract incorrectly reaches `VERIFIED` | N/A — required-tests below are the mitigation |
 

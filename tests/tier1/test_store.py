@@ -221,6 +221,54 @@ def test_store_rejects_schema_without_required_constraints(tmp_path):
         SqliteRecoveryContractStore(malformed, integrity_key=_KEY, store_id="synthetic-store")
 
 
+def test_legacy_v5_store_fails_closed_without_lifecycle_locator_schema(tmp_path):
+    _store(tmp_path)
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        connection.execute("UPDATE metadata SET value = '5' WHERE key = 'schema_version'")
+
+    with pytest.raises(ContractIntegrityError, match="metadata"):
+        _store(tmp_path)
+
+
+def test_stored_contract_without_lifecycle_locator_fails_closed(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contract = contract_factory()
+    store.create(contract)
+    path = tmp_path / "contracts.sqlite3"
+    with sqlite3.connect(path) as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (contract.contract_id,)
+        ).fetchone()[0]
+        value = json.loads(payload)
+        del value["lifecycle_locator"]
+        legacy_payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        connection.execute(
+            "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
+            (legacy_payload, store._mac(legacy_payload), contract.contract_id),
+        )
+
+    with pytest.raises(ContractIntegrityError, match="field"):
+        store.load(contract.contract_id)
+
+
+def test_lifecycle_locator_tampering_is_detected_by_record_hmac(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contract = contract_factory()
+    store.create(contract)
+    path = tmp_path / "contracts.sqlite3"
+    with sqlite3.connect(path) as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (contract.contract_id,)
+        ).fetchone()[0]
+        value = json.loads(payload)
+        value["lifecycle_locator"] = 9
+        tampered = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        connection.execute("UPDATE contracts SET payload = ? WHERE contract_id = ?", (tampered, contract.contract_id))
+
+    with pytest.raises(ContractIntegrityError, match="integrity"):
+        store.load(contract.contract_id)
+
+
 def test_wrong_integrity_key_or_store_identity_cannot_replay_database(tmp_path, contract_factory):
     store = _store(tmp_path)
     contract = contract_factory()

@@ -134,10 +134,20 @@ and non-editable. Matching is exact and case-sensitive after NFC normalization;
 no prefix, wildcard, case-folding, or numeric-ID identity is allowed. The lab
 must confirm the API and pfSense configuration enforce those properties.
 
-The numeric `id` returned by READ is a transient request locator. Every prepare,
-execute, and rollback read resolves the exact natural name to exactly one row
-and uses that row's current ID only for the immediate API call. ID is not in
-`resource_target`, is not authorization identity, and cannot be caller supplied.
+The numeric `id` returned by READ is a transport locator, not semantic identity.
+The current pfSense API exposes no independent stable generation/incarnation
+marker. Therefore the ID observed at lifecycle protection time is also sealed
+as an incarnation-continuity guard. Every execute and rollback read resolves
+the exact natural name to exactly one row, requires the current ID to equal that
+guard, and only then projects the freshly read ID into request construction.
+
+Any ID change during the protected lifecycle fails closed. This does not prove
+that the alias was deleted and recreated; it means non-recreation cannot be
+proved. A benign renumbering is consequently an accepted false-positive that
+requires re-prepare/operator retry. Automatic continuation across a locator
+change is forbidden. The ID remains outside `resource_target` and semantic
+identity, cannot be caller supplied, and is never cached by the stateless
+adapter.
 
 Rename is outside this capability. Deletion/recreation under the same name is
 treated as a replacement unless the complete precondition remains identical;
@@ -438,7 +448,7 @@ signed pair before consumption.
 | omitted field resets or hidden default | lab acceptance gate; any unrelated change rejects candidate |
 | body parameter injection | prevented by closed typed request and `extra=forbid` |
 | endpoint/method substitution | prevented by immutable registry and B1 digest/contract binding |
-| delete/recreate | detected when semantic precondition changes; same-semantics recreation remains a locator ambiguity to characterize in lab |
+| delete/recreate | changed locator fails closed even when name and full fingerprint are byte-identical; the API cannot prove incarnation continuity |
 | rollback overwrites legitimate edit | prevented by full pre-rollback conflict check; conflict enters reconciliation |
 | partial success / timeout after server success | detected by read-back; no automatic replay; ambiguous state enters reconciliation |
 | duplicate request/retry | prevented by sealed one-send semantics; direct out-of-band API use remains outside coordinator |

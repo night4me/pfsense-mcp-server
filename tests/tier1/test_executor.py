@@ -14,7 +14,7 @@ from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from pfsense_mcp.tier1.crypto import ArtifactRole, build_nonce, encrypt_artifact
 from pfsense_mcp.tier1.errors import ContractBindingError, ContractConflictError
-from pfsense_mcp.tier1.executor import MutationExecutor
+from pfsense_mcp.tier1.executor import MutationExecutor, ResolvedTransportTarget
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationPolicyError, MutationRule
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
@@ -31,6 +31,7 @@ _CONTEXT = (_CAPABILITY.name, _ENDPOINT_SYMBOL, _HTTP_METHOD)
 
 
 class _SyntheticRequest(BaseModel):
+    id: int
     descr: str
 
 
@@ -67,7 +68,8 @@ class _SyntheticAdapter:
         if self._read_error is not None and call_index == self._read_error_on_call:
             raise self._read_error
         index = min(self._read_index, len(self._reads) - 1)
-        value = self._reads[index]
+        value = dict(self._reads[index])
+        value.setdefault("id", 7)
         self._read_index += 1
         return value
 
@@ -77,8 +79,11 @@ class _SyntheticAdapter:
     def fingerprint(self, raw_target):
         return {"descr": raw_target["descr"], "revision": raw_target["revision"]}
 
-    def build_request(self, intent):
-        return _SyntheticRequest(descr=intent["descr"])
+    def transport_locator(self, raw_target):
+        return raw_target["id"]
+
+    def build_request(self, intent, target):
+        return _SyntheticRequest(id=target.numeric_locator, descr=intent["descr"])
 
     def parse_response(self, raw_response):
         return {"status_code": raw_response.status_code}
@@ -86,8 +91,8 @@ class _SyntheticAdapter:
     def is_semantically_verified(self, pre, post, intent):
         return self._semantically_verified and post["descr"] == intent["descr"] and post["revision"] == pre["revision"]
 
-    def build_rollback_request(self, pre):
-        return _SyntheticRequest(descr=pre["descr"])
+    def build_rollback_request(self, pre, target):
+        return _SyntheticRequest(id=target.numeric_locator, descr=pre["descr"])
 
     def is_rollback_verified(self, pre, post_rollback):
         return self._rollback_verified and pre == {
@@ -168,6 +173,7 @@ def _build_contract(
         http_method=_HTTP_METHOD,
         target_identity_digest=target_digest,
         target_fingerprint=fingerprint_digest,
+        lifecycle_locator=7,
         intent_digest=intent_digest,
         snapshot_digest=snapshot_digest,
         rollback_plan_version="synthetic-v1",
@@ -182,6 +188,7 @@ def _build_contract(
         http_method=_HTTP_METHOD,
         target_identity_digest=target_digest,
         target_fingerprint=fingerprint_digest,
+        lifecycle_locator=7,
         intent_digest=intent_digest,
         snapshot_digest=snapshot_digest,
         rollback_plan_version="synthetic-v1",
@@ -300,7 +307,7 @@ def test_execute_happy_path_reaches_verified(tmp_path, monkeypatch):
         context=_CONTEXT,
     )
     assert transport.calls == [("PATCH", "/api/v2/synthetic")]
-    assert transport.request_bodies == [b'{"descr":"updated-description"}']
+    assert transport.request_bodies == [b'{"id":7,"descr":"updated-description"}']
 
 
 def test_generic_verified_transition_cannot_omit_post_forward_fingerprint(tmp_path):
@@ -586,7 +593,98 @@ def test_rollback_happy_path_reaches_rolled_back(tmp_path, monkeypatch):
 
     assert outcome.state == RecoveryState.ROLLED_BACK
     assert transport.calls == [("PATCH", "/api/v2/synthetic")]
-    assert transport.request_bodies == [b'{"descr":"original-description"}']
+    assert transport.request_bodies == [b'{"id":7,"descr":"original-description"}']
+
+
+def test_execute_uses_fresh_stable_lifecycle_locator(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _SyntheticAdapter(
+        reads=[
+            {"id": 7, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"id": 7, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+        ]
+    )
+
+    outcome = _executor(store, write_client).execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.VERIFIED
+    assert transport.request_bodies == [b'{"id":7,"descr":"updated-description"}']
+
+
+@pytest.mark.parametrize("new_locator", [9, 10])
+def test_execute_rejects_unproven_incarnation_continuity_even_with_identical_fingerprint(
+    tmp_path, monkeypatch, new_locator
+):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    adapter = _SyntheticAdapter(
+        reads=[
+            {
+                "id": new_locator,
+                "name": "synthetic-target.invalid",
+                "revision": "synthetic-1",
+                "descr": "original-description",
+            }
+        ]
+    )
+
+    outcome = _executor(store, write_client).execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.FAILED
+    assert outcome.detail == "target incarnation continuity unproven before send"
+    assert transport.calls == []
+
+
+def test_execute_rejects_transport_projection_for_another_semantic_target(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    adapter = _SyntheticAdapter(
+        reads=[{"id": 7, "name": "other.invalid", "revision": "synthetic-1", "descr": "original-description"}]
+    )
+
+    outcome = _executor(store, write_client).execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.FAILED
+    assert outcome.detail == "target incarnation continuity unproven before send"
+    assert transport.calls == []
+
+
+def test_adapter_request_projection_is_stateless_and_caller_cannot_inject_locator():
+    adapter = _SyntheticAdapter(reads=[])
+    identity_digest = "a" * 64
+    first = adapter.build_request(
+        {"descr": "first"}, ResolvedTransportTarget(numeric_locator=7, target_identity_digest=identity_digest)
+    )
+    second = adapter.build_request(
+        {"descr": "second"}, ResolvedTransportTarget(numeric_locator=9, target_identity_digest=identity_digest)
+    )
+
+    assert (first.id, second.id) == (7, 9)
+    assert "locator" not in MutationExecutor.execute.__annotations__
+
+
+def test_rollback_rejects_changed_lifecycle_locator_after_verified_b(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, _intent = _build_contract()
+    _verified(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    adapter = _SyntheticAdapter(
+        reads=[{"id": 9, "name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"}]
+    )
+
+    outcome = _executor(store, write_client).rollback(contract.contract_id, adapter=adapter)
+
+    assert outcome.state == RecoveryState.ROLLBACK_FAILED
+    assert outcome.detail == "target incarnation continuity unproven before rollback"
+    assert transport.calls == []
 
 
 def test_rollback_fails_on_unrelated_change_conflict(tmp_path, monkeypatch):

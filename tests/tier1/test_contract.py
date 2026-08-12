@@ -94,6 +94,8 @@ def test_confirmation_authority_identifier_is_bounded_and_safe(contract_factory,
         {"created_at": datetime.now()},
         {"expires_at": datetime.now(timezone.utc) - timedelta(minutes=1)},
         {"state_version": -1},
+        {"lifecycle_locator": -1},
+        {"lifecycle_locator": True},
         {"confirmation_digest": "a" * 64},
     ],
 )
@@ -126,8 +128,15 @@ def test_idempotency_key_is_derived_from_all_mutation_bindings(contract_factory)
         "intent_digest",
         "snapshot_digest",
         "rollback_plan_version",
+        "lifecycle_locator",
     ):
-        changed = "f" * 64 if field.endswith("digest") or field == "target_fingerprint" else "other-v1"
+        changed = (
+            "f" * 64
+            if field.endswith("digest") or field == "target_fingerprint"
+            else 9
+            if field == "lifecycle_locator"
+            else "other-v1"
+        )
         with pytest.raises(ContractValidationError, match="idempotency binding"):
             replace(contract, **{field: changed})
 

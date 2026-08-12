@@ -12,7 +12,9 @@ specification this module implements, and docs/adr/ADR-014.
 
 from __future__ import annotations
 
+import hmac
 import json
+import re
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -32,6 +34,8 @@ from .faults import EffectKnowledge, MutationBoundary, classify_fault
 from .policy import MutationPolicy
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
+
+_HEX_64 = re.compile(r"[0-9a-f]{64}")
 
 
 class CapabilityAdapter(Protocol):
@@ -63,11 +67,26 @@ class CapabilityAdapter(Protocol):
 
     def natural_identity(self, raw_target: object) -> CanonicalValue: ...
     def fingerprint(self, raw_target: object) -> CanonicalValue: ...
-    def build_request(self, intent: object) -> BaseModel: ...
+    def transport_locator(self, raw_target: object) -> int: ...
+    def build_request(self, intent: object, target: ResolvedTransportTarget) -> BaseModel: ...
     def parse_response(self, raw_response: object) -> object: ...
     def is_semantically_verified(self, pre: object, post: object, intent: object) -> bool: ...
-    def build_rollback_request(self, pre: object) -> BaseModel: ...
+    def build_rollback_request(self, pre: object, target: ResolvedTransportTarget) -> BaseModel: ...
     def is_rollback_verified(self, pre: object, post_rollback: object) -> bool: ...
+
+
+@dataclass(frozen=True)
+class ResolvedTransportTarget:
+    """Fresh executor-owned transport projection for one exact semantic target."""
+
+    numeric_locator: int
+    target_identity_digest: str
+
+    def __post_init__(self) -> None:
+        if type(self.numeric_locator) is not int or not 0 <= self.numeric_locator <= 2_147_483_647:
+            raise ContractValidationError("Resolved transport locator is invalid.")
+        if not isinstance(self.target_identity_digest, str) or not _HEX_64.fullmatch(self.target_identity_digest):
+            raise ContractValidationError("Resolved transport target identity is invalid.")
 
 
 @dataclass(frozen=True)
@@ -162,8 +181,15 @@ class MutationExecutor:
             return self._finish_execute(executing, RecoveryState.FAILED, "target fingerprint drift before send")
 
         try:
+            transport_target = self._resolve_transport_target(executing, adapter, pre)
+        except Exception:
+            return self._finish_execute(
+                executing, RecoveryState.FAILED, "target incarnation continuity unproven before send"
+            )
+
+        try:
             plaintext_intent = self._decrypt(executing, executing.protected_intent, ArtifactRole.INTENT)
-            request = adapter.build_request(plaintext_intent)
+            request = adapter.build_request(plaintext_intent, transport_target)
         except Exception as exc:
             return self._finish_execute(executing, RecoveryState.FAILED, f"request construction failed: {exc!r}")
 
@@ -253,8 +279,17 @@ class MutationExecutor:
             return self._finish_rollback(rolling_back, RecoveryState.ROLLBACK_FAILED, "unrelated change detected")
 
         try:
+            transport_target = self._resolve_transport_target(rolling_back, adapter, pre)
+        except Exception:
+            return self._finish_rollback(
+                rolling_back,
+                RecoveryState.ROLLBACK_FAILED,
+                "target incarnation continuity unproven before rollback",
+            )
+
+        try:
             plaintext_snapshot = self._decrypt(rolling_back, rolling_back.protected_snapshot, ArtifactRole.SNAPSHOT)
-            request = adapter.build_rollback_request(plaintext_snapshot)
+            request = adapter.build_rollback_request(plaintext_snapshot, transport_target)
         except Exception as exc:
             return self._finish_rollback(
                 rolling_back, RecoveryState.ROLLBACK_FAILED, f"rollback request construction failed: {exc!r}"
@@ -316,6 +351,18 @@ class MutationExecutor:
 
         context = (contract.capability.name, contract.endpoint_symbol, contract.http_method)
         return digest_value(DigestPurpose.TARGET_FINGERPRINT, raw_fingerprint, context=context)
+
+    def _resolve_transport_target(
+        self, contract: RecoveryContract, adapter: CapabilityAdapter, raw_target: object
+    ) -> ResolvedTransportTarget:
+        identity = adapter.natural_identity(raw_target)
+        identity_digest = digest_value(DigestPurpose.TARGET_IDENTITY, identity, context=(contract.capability.name,))
+        if not hmac.compare_digest(identity_digest, contract.target_identity_digest):
+            raise ContractValidationError("Resolved transport target does not match the protected semantic target.")
+        locator = adapter.transport_locator(raw_target)
+        if locator != contract.lifecycle_locator:
+            raise ContractValidationError("Target incarnation continuity cannot be proven.")
+        return ResolvedTransportTarget(numeric_locator=locator, target_identity_digest=identity_digest)
 
     def _decrypt(self, contract: RecoveryContract, artifact: object, role: ArtifactRole) -> CanonicalValue:
         # Not an `assert`: assertions are stripped under -O, and this

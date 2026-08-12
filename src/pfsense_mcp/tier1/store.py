@@ -42,7 +42,7 @@ from .reconciliation import (
 )
 from .state_machine import RecoveryState, require_transition
 
-_SCHEMA_VERSION = 5
+_SCHEMA_VERSION = 6
 _STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _RESERVATION_STATES = frozenset(
     {
@@ -75,6 +75,7 @@ _CONTRACT_FIELDS = frozenset(
         "http_method",
         "idempotency_key",
         "intent_digest",
+        "lifecycle_locator",
         "operation_id",
         "protected_intent",
         "protected_snapshot",
@@ -138,6 +139,7 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
         "http_method": contract.http_method,
         "idempotency_key": contract.idempotency_key,
         "intent_digest": contract.intent_digest,
+        "lifecycle_locator": contract.lifecycle_locator,
         "operation_id": contract.operation_id,
         "protected_intent": _artifact_to_dict(contract.protected_intent),
         "protected_snapshot": _artifact_to_dict(contract.protected_snapshot),
@@ -168,6 +170,7 @@ def _contract_from_payload(payload: bytes) -> RecoveryContract:
             target_identity_digest=value["target_identity_digest"],
             target_fingerprint=value["target_fingerprint"],
             intent_digest=value["intent_digest"],
+            lifecycle_locator=value["lifecycle_locator"],
             snapshot_digest=value["snapshot_digest"],
             rollback_plan_version=value["rollback_plan_version"],
             created_at=datetime.fromisoformat(value["created_at"]),

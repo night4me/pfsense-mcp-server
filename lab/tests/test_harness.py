@@ -32,6 +32,7 @@ _HTTP_METHOD = "PATCH"
 
 
 class _SyntheticRequest(BaseModel):
+    id: int
     descr: str
 
 
@@ -43,7 +44,7 @@ class _SyntheticAdapter:
     http_method = _HTTP_METHOD
 
     def read_target(self, read_client, natural_identity):
-        return {"name": "lab-synthetic-target.invalid", "revision": "lab-1", "descr": "updated-description"}
+        return {"id": 7, "name": "lab-synthetic-target.invalid", "revision": "lab-1", "descr": "updated-description"}
 
     def natural_identity(self, raw_target):
         return {"name": raw_target["name"]}
@@ -51,8 +52,11 @@ class _SyntheticAdapter:
     def fingerprint(self, raw_target):
         return {"revision": raw_target["revision"]}
 
-    def build_request(self, intent):
-        return _SyntheticRequest(descr=intent["descr"])
+    def transport_locator(self, raw_target):
+        return raw_target["id"]
+
+    def build_request(self, intent, target):
+        return _SyntheticRequest(id=target.numeric_locator, descr=intent["descr"])
 
     def parse_response(self, raw_response):
         return {"status_code": raw_response.status_code}
@@ -60,8 +64,8 @@ class _SyntheticAdapter:
     def is_semantically_verified(self, pre, post, intent):
         return True
 
-    def build_rollback_request(self, pre):
-        return _SyntheticRequest(descr=pre["descr"])
+    def build_rollback_request(self, pre, target):
+        return _SyntheticRequest(id=target.numeric_locator, descr=pre["descr"])
 
     def is_rollback_verified(self, pre, post_rollback):
         return True
@@ -119,7 +123,7 @@ def _executor(store, write_client):
 
 def _setup():
     return ScenarioSetup(
-        raw_target_hint={"name": "lab-synthetic-target.invalid", "revision": "lab-1"},
+        raw_target_hint={"id": 7, "name": "lab-synthetic-target.invalid", "revision": "lab-1"},
         intent_payload={"descr": "updated-description"},
         snapshot_payload={"descr": "original-description"},
     )

@@ -219,10 +219,11 @@ class CapabilityAdapter(Protocol):
     def read_target(self, read_client: PfSenseClient, natural_identity: CanonicalValue) -> object: ...
     def natural_identity(self, raw_target: object) -> CanonicalValue: ...
     def fingerprint(self, raw_target: object) -> CanonicalValue: ...
-    def build_request(self, intent: object) -> TypedWriteRequest: ...
+    def transport_locator(self, raw_target: object) -> int: ...
+    def build_request(self, intent: object, target: ResolvedTransportTarget) -> TypedWriteRequest: ...
     def parse_response(self, raw_response: object) -> TypedWriteOutcome: ...
     def is_semantically_verified(self, pre: object, post: object, intent: object) -> bool: ...
-    def build_rollback_request(self, pre: object) -> TypedWriteRequest: ...
+    def build_rollback_request(self, pre: object, target: ResolvedTransportTarget) -> TypedWriteRequest: ...
     def is_rollback_verified(self, pre: object, post_rollback: object) -> bool: ...
 
 
@@ -433,8 +434,11 @@ execute(contract_id, adapter, intent):
   executing = store.transition(contract_id, PREPARED -> EXECUTING)   # atomic acquire
   pre = adapter.read_target(read_client, target_identity)
   require exactly one match (adapter.read_target raises on 0 or multiple); require pre.fingerprint == executing.target_fingerprint
+  resolved_target = immutable projection from pre
+  require resolved_target semantic identity == contract target identity
+  require resolved_target numeric locator == contract lifecycle locator
   plaintext_intent = crypto.decrypt_artifact(key, executing.protected_intent, ...)
-  request = adapter.build_request(plaintext_intent)
+  request = adapter.build_request(plaintext_intent, resolved_target)
   outcome = write_client.send(executing.endpoint_symbol, executing.http_method, request)  # the one send
   classify boundary/knowledge from what actually happened during send()
   if knowledge == AMBIGUOUS: store.transition(... -> RECONCILIATION); return
@@ -462,8 +466,11 @@ rollback(contract_id, adapter):
   target_identity = crypto.decrypt_artifact(key, contract.protected_target_identity, ...)  # rollback() takes no intent argument, so this is the only source
   pre = adapter.read_target(read_client, target_identity)
   require exactly one match; detect unrelated changes via adapter.fingerprint(pre) vs. contract.verified_target_fingerprint sealed at VERIFIED time — conflict is a refusal (ROLLBACK_FAILED), never a forced overwrite
+  resolved_target = a new immutable projection from this pre-rollback read
+  require resolved_target semantic identity == contract target identity
+  require resolved_target numeric locator == contract lifecycle locator
   plaintext_snapshot = crypto.decrypt_artifact(key, contract.protected_snapshot, ...)
-  rollback_request = adapter.build_rollback_request(plaintext_snapshot)
+  rollback_request = adapter.build_rollback_request(plaintext_snapshot, resolved_target)
   outcome = write_client.send(...)   # the one rollback send
   classify boundary/knowledge (MutationBoundary.DURING_ROLLBACK)
   post = adapter.read_target(read_client, target_identity)

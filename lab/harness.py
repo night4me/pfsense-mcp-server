@@ -107,6 +107,7 @@ def prepare_contract(
     context = (adapter.capability.name, adapter.endpoint_symbol, adapter.http_method)
     identity = adapter.natural_identity(setup.raw_target_hint)
     fingerprint = adapter.fingerprint(setup.raw_target_hint)
+    lifecycle_locator = adapter.transport_locator(setup.raw_target_hint)
     intent: dict[str, CanonicalValue] = {"raw_target_hint": setup.raw_target_hint, **setup.intent_payload}
 
     target_digest = digest_value(DigestPurpose.TARGET_IDENTITY, identity, context=(adapter.capability.name,))
@@ -119,6 +120,7 @@ def prepare_contract(
         http_method=adapter.http_method,
         target_identity_digest=target_digest,
         target_fingerprint=fingerprint_digest,
+        lifecycle_locator=lifecycle_locator,
         intent_digest=intent_digest,
         snapshot_digest=snapshot_digest,
         rollback_plan_version=setup.rollback_plan_version,
@@ -133,6 +135,7 @@ def prepare_contract(
         http_method=adapter.http_method,
         target_identity_digest=target_digest,
         target_fingerprint=fingerprint_digest,
+        lifecycle_locator=lifecycle_locator,
         intent_digest=intent_digest,
         snapshot_digest=snapshot_digest,
         rollback_plan_version=setup.rollback_plan_version,
