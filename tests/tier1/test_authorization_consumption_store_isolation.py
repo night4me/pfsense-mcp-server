@@ -65,15 +65,26 @@ def test_no_production_module_imports_the_consumption_store():
     module except the one reviewed exception below -- Phase D's
     persistence primitive has no other wired-in consumer, by design.
 
-    `tier1/execution_coordinator.py` is the one reviewed exception
-    (ADR-022 Phase E, Slice E2, 2026-08-11): it holds the consumption
-    store as an injected dependency and calls `try_consume()` as the
-    last gate before returning success -- see
+    `tier1/execution_coordinator.py` is one reviewed exception (ADR-022
+    Phase E, Slice E2, 2026-08-11): it holds the consumption store as an
+    injected dependency and calls `try_consume()` as the last gate
+    before returning success -- see
     `tests/tier1/test_execution_coordinator_isolation.py`'s own
     no-production-importer proof that the coordinator itself remains
-    unwired/unconstructed by any production entry point."""
+    unwired/unconstructed by any production entry point.
 
-    _ALLOWED_IMPORTERS = {"alias_description_execution.py", "execution_coordinator.py"}
+    `tier1/alias_description_execution.py` (W1) and
+    `tier1/production_runtime.py` (W2, 2026-08-14) are the other two
+    reviewed exceptions: the former composes the consumption store
+    directly as part of the inert, production-unreachable
+    authorization-to-contract core; the latter constructs a real
+    `SqliteAuthorizationConsumptionStore` from environment-derived
+    configuration as part of the fixed production runtime -- itself
+    still not imported by any `application.py`/`factory.py`/`server.py`
+    entry point, see
+    `tests/tier1/test_production_runtime.py::test_no_production_module_imports_production_runtime`."""
+
+    _ALLOWED_IMPORTERS = {"alias_description_execution.py", "execution_coordinator.py", "production_runtime.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:

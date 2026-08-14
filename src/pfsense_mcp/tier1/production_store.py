@@ -46,9 +46,11 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from .anti_rollback import AnchorProvisioningStatus, HighWaterMark, ProvisioningRecord
+from .anti_rollback import AnchorProvisioningStatus, AntiRollbackAnchor, HighWaterMark, ProvisioningRecord
+from .confirmation import ConfirmationVerifier
 from .errors import ContractIntegrityError, Tier1ConfigurationError
 from .key_lifecycle import KeyPurpose, load_key_material
+from .reconciliation import ReconciliationVerifier
 from .store import SqliteRecoveryContractStore
 
 _STORE_PATH_VAR = "PFSENSE_TIER1_STORE_PATH"
@@ -121,18 +123,38 @@ def load_production_store_config(env: dict[str, str] | None = None) -> Productio
     return ProductionStoreConfig(store_path=store_path, key_file=key_file)
 
 
-def open_production_store(config: ProductionStoreConfig) -> SqliteRecoveryContractStore:
+def open_production_store(
+    config: ProductionStoreConfig,
+    *,
+    confirmation_verifier: ConfirmationVerifier | None = None,
+    reconciliation_verifier: ReconciliationVerifier | None = None,
+    anti_rollback_anchor: AntiRollbackAnchor | None = None,
+) -> SqliteRecoveryContractStore:
     """Loads the real integrity key and constructs the real store against
     `config`'s validated location. The first filesystem-touching step --
     calling this against a path that has never held a store creates one,
     atomically, with the same safety `SqliteRecoveryContractStore`
-    already guarantees for every other caller (production or test)."""
+    already guarantees for every other caller (production or test).
+
+    The three optional keyword arguments are forwarded to
+    `SqliteRecoveryContractStore` unchanged -- this function does not
+    interpret, default, or validate them beyond what the store's own
+    constructor already does. Every existing caller (`tier1_anchor_check.py`'s
+    read-only startup check, `provision_production_anchor_baseline()`)
+    continues to call this with none of them set, exactly as before --
+    an unconfigured/omitted keyword here is not new behavior. See
+    `tier1/production_runtime.py` for the one caller that supplies all
+    three, composing this store into a fully enabled W2 production
+    runtime."""
 
     key_record = load_key_material(config.key_file, purpose=KeyPurpose.INTEGRITY)
     return SqliteRecoveryContractStore(
         config.store_path,
         integrity_key=key_record.material,
         store_id=config.store_id,
+        confirmation_verifier=confirmation_verifier,
+        reconciliation_verifier=reconciliation_verifier,
+        anti_rollback_anchor=anti_rollback_anchor,
     )
 
 
