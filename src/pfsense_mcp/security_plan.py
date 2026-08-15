@@ -62,10 +62,22 @@ _PLAN_IS_NOT_AUTHORIZATION_NOTE = (
     "plan, and none are performed by generating or reading it."
 )
 
-_NO_WRITE_TOOL_IMPLEMENTATION_NOTE = (
-    "src/pfsense_mcp/tools/write/ is a deliberately empty placeholder and "
-    "SUPPORTED_CAPABILITIES_THIS_BUILD excludes every *_WRITE Capability in this build -- no WRITE "
-    "tool implementation exists to register, regardless of configuration or authorization state."
+#: W3 Slice 5B correction: prior text ("tools/write/ is a deliberately empty
+#: placeholder... no WRITE tool implementation exists") described the
+#: pre-Slice-4 repository and became false the moment Slice 4 shipped
+#: `set_firewall_alias_description_v1`. This note now states the current,
+#: accurate reason this step is always shown as requiring its own separate
+#: decision: it names the recurring, PER-OPERATION authorization gate a
+#: signed `PlanAuthorizationV2` satisfies -- never something this read-only
+#: planning module performs, and never satisfied merely by the deployment's
+#: own capability posture already being `write_protected` (see
+#: `_milestone_9_activation_step()`'s own docstring for the full reasoning).
+_MILESTONE_9_ACTIVATION_NOTE = (
+    "This step is the recurring, per-operation Milestone-9-class WRITE activation decision -- "
+    "a signed PlanAuthorizationV2, independently required and freshness-checked for every "
+    "individual WRITE execution. It is never satisfied merely by this deployment's capability "
+    "posture already being write_protected, and this read-only planning module never performs "
+    "it; see docs/adr/ADR-028-first-write-product-surface-and-delivery.md."
 )
 
 #: The single first-WRITE product surface's (`set_firewall_alias_description_v1`,
@@ -483,6 +495,78 @@ def _anchor_assurance_steps(
     return tuple(steps), order
 
 
+def _milestone_9_activation_step(
+    *, order: int, anchor_ready_now: bool, anchor_target: AnchorAssurance, current: SecurityPostureDiscovery
+) -> PlanStep:
+    """The one step `ALIAS_DESCRIPTION_WRITE_STEP_ID` names -- the
+    recurring, per-operation Milestone-9-class WRITE activation gate a
+    signed `PlanAuthorizationV2` satisfies. Shared by every call site in
+    `_capability_posture_steps()` that can reach `target is
+    CapabilityPosture.WRITE_PROTECTED` (both the `UPGRADE` and, since W3
+    Slice 5B, `NO_CHANGE` branches), so this step's digest-participating
+    fields (`step_id`/`axis`/`mutation_class`/`authorization_required` --
+    see `security_plan_digest.py`'s own participates-list) can never
+    accidentally diverge between call sites; only presentation fields
+    (`blocked_reason`, which does not participate in the digest) differ
+    by caller.
+
+    **W3 Slice 5B correction, the reason this helper exists at all**:
+    this step's meaning is deliberately NOT "the deployment still needs
+    to become write_protected" -- that is exactly what the axis's own
+    transition (`UPGRADE` vs. `NO_CHANGE`) already, correctly,
+    distinguishes, via the earlier `populate_write_endpoints`/
+    `set_profile_engineer` steps (`UPGRADE`-only, genuine one-time
+    provisioning actions, unaffected by this change). This step means
+    "the specific execution this plan is being generated for still needs
+    its own signed authorization" -- a per-operation requirement that
+    remains true forever, including, and especially, once the deployment
+    is already write_protected, because ADR-024's authorization/
+    freshness design requires a fresh, independently verified
+    `PlanAuthorizationV2` for every individual mutation, never a
+    one-time deployment-level activation that, once done, silently
+    authorizes all future executions. Before this correction,
+    `generate_security_posture_plan()` omitted this step entirely once
+    `capability_posture` reached `NO_CHANGE` -- exactly the one
+    deployment state in which the WRITE tool is actually reachable --
+    making it structurally impossible for an off-host signer to both
+    match production's own freshness check (which necessarily runs
+    against the live, already-write_protected environment) and bind this
+    step. `blocked=True` and `authorization_required=
+    MILESTONE_9_ACTIVATION_DECISION` remain unconditional in both
+    branches -- this step always requires its own separate, per-instance
+    decision this read-only planning function never performs itself,
+    regardless of whether the axis transition is otherwise trivial."""
+
+    blocked_reason_parts = [_MILESTONE_9_ACTIVATION_NOTE]
+    if not anchor_ready_now:
+        blocked_reason_parts.append(
+            f"Anchor-assurance axis has not yet reached the target ({anchor_target.value}) -- current: "
+            f"{current.anchor_assurance.value.value}/{current.anchor_assurance.evidence_state.value}. "
+            "Complete the anchor_assurance steps above first."
+        )
+    return PlanStep(
+        step_id=ALIAS_DESCRIPTION_WRITE_STEP_ID,
+        order=order,
+        axis="capability_posture",
+        action="Obtain Milestone-9-class WRITE activation decision",
+        description=(
+            "Obtain the Milestone-9-class WRITE activation decision (TIER1_ROADMAP.md) -- its own "
+            "explicit approval, separate from every PROVISIONING step's confirmation above, and "
+            "required independently for every individual WRITE execution via a signed "
+            "PlanAuthorizationV2, never satisfied once for the whole deployment."
+        ),
+        mutation_class=MutationClass.ACTIVATION,
+        authorization_required=AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION,
+        implementation_available=True,
+        reversible=None,
+        security_impact=SecurityImpact.ENABLES_MUTATION_CAPABILITY,
+        prerequisite_satisfied=anchor_ready_now,
+        blocked=True,
+        blocked_reason=" ".join(blocked_reason_parts),
+        evidence=(),
+    )
+
+
 def _capability_posture_steps(
     current: SecurityPostureDiscovery,
     target: CapabilityPosture,
@@ -513,7 +597,20 @@ def _capability_posture_steps(
                 evidence=current.capability_posture.evidence,
             )
         )
-        return tuple(steps), order + 1
+        order += 1
+        # W3 Slice 5B correction: even though the DEPLOYMENT's capability
+        # posture already equals the target (nothing to provision), each
+        # individual WRITE execution still needs its own, freshly signed
+        # PlanAuthorizationV2 -- see _milestone_9_activation_step()'s own
+        # docstring for the full reasoning this branch previously missed.
+        if target is CapabilityPosture.WRITE_PROTECTED:
+            steps.append(
+                _milestone_9_activation_step(
+                    order=order, anchor_ready_now=anchor_ready_now, anchor_target=anchor_target, current=current
+                )
+            )
+            order += 1
+        return tuple(steps), order
 
     if transition is AxisTransitionKind.DOWNGRADE:
         steps.append(
@@ -591,29 +688,9 @@ def _capability_posture_steps(
         )
     )
     order += 1
-    activation_reason_parts = [_NO_WRITE_TOOL_IMPLEMENTATION_NOTE]
-    if not anchor_ready_now:
-        activation_reason_parts.append(blocked_reason or "")
     steps.append(
-        PlanStep(
-            step_id=ALIAS_DESCRIPTION_WRITE_STEP_ID,
-            order=order,
-            axis="capability_posture",
-            action="Obtain Milestone-9-class WRITE activation decision",
-            description=(
-                "Obtain the Milestone-9-class WRITE activation decision (TIER1_ROADMAP.md) -- its own "
-                "explicit approval, separate from every PROVISIONING step's confirmation above -- then "
-                "register the corresponding WRITE tool(s)."
-            ),
-            mutation_class=MutationClass.ACTIVATION,
-            authorization_required=AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION,
-            implementation_available=False,
-            reversible=None,
-            security_impact=SecurityImpact.ENABLES_MUTATION_CAPABILITY,
-            prerequisite_satisfied=anchor_ready_now,
-            blocked=True,
-            blocked_reason=" ".join(p for p in activation_reason_parts if p),
-            evidence=(),
+        _milestone_9_activation_step(
+            order=order, anchor_ready_now=anchor_ready_now, anchor_target=anchor_target, current=current
         )
     )
     order += 1

@@ -275,12 +275,17 @@ def test_none_to_write_protected_hardware_witness_orders_anchor_before_capabilit
     assert sorted(s.order for s in plan.steps) == list(range(1, len(plan.steps) + 1))
 
 
-def test_write_tool_registration_step_is_always_unimplemented_in_this_build(monkeypatch, tmp_path):
+def test_write_tool_activation_step_is_always_blocked_pending_its_own_decision(monkeypatch, tmp_path):
     """Even when the anchor axis is already fully satisfied, the final
-    WRITE-activation step must honestly report that no *_WRITE tool
-    implementation exists in this build (src/pfsense_mcp/tools/write/ is
-    an empty placeholder) -- a real, currently-true implementation gap
-    this module found by reading the actual code, not asserted blindly."""
+    WRITE-activation step must always remain `blocked=True` -- it names a
+    recurring, per-operation authorization decision (a signed
+    PlanAuthorizationV2) this read-only planning module never performs
+    itself, never a one-time deployment gap. W3 Slice 5B correction: the
+    step's `implementation_available` is now `True` (the WRITE tool
+    implementation has existed since W3 Slice 4) and its `blocked_reason`
+    no longer claims otherwise -- the prior text describing
+    `tools/write/` as "a deliberately empty placeholder" became false the
+    moment Slice 4 shipped `set_firewall_alias_description_v1`."""
 
     env = {**_provisioned_store_env(tmp_path, value=2, handle="0x01500000"), **_WITNESS_ENV}
     _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
@@ -288,11 +293,14 @@ def test_write_tool_registration_step_is_always_unimplemented_in_this_build(monk
     plan = generate_security_posture_plan(CapabilityPosture.WRITE_PROTECTED, AnchorAssurance.HARDWARE_WITNESS, env)
 
     activation_step = next(s for s in plan.steps if s.step_id == "capability_posture.milestone_9_activation")
-    assert activation_step.implementation_available is False
+    assert activation_step.implementation_available is True
     assert activation_step.blocked is True
-    assert "tools/write/" in activation_step.blocked_reason
+    assert activation_step.prerequisite_satisfied is True
+    assert "tools/write/" not in activation_step.blocked_reason
+    assert "per-operation" in activation_step.blocked_reason
     # But the earlier, mechanically-real config steps are NOT blocked by this --
-    # the anchor is already satisfied, so only the final activation step is gated.
+    # the anchor is already satisfied, so only the final activation step is
+    # (permanently, by design) gated behind its own separate decision.
     earlier_steps = [
         s
         for s in plan.steps
@@ -300,6 +308,146 @@ def test_write_tool_registration_step_is_always_unimplemented_in_this_build(monk
     ]
     assert all(not s.blocked for s in earlier_steps)
     assert all(s.implementation_available for s in earlier_steps)
+
+
+# ---------------------------------------------------------------------------
+# 5b. W3 Slice 5B regression: write_protected + NO_CHANGE must still expose
+# the milestone-9 activation step, never silently drop it
+# ---------------------------------------------------------------------------
+
+
+def test_write_protected_no_change_still_requires_milestone_9_activation_REGRESSION(monkeypatch, tmp_path):
+    """The exact defect W3 Slice 5 found and reproduced: when the
+    deployment's OWN capability posture already equals the WRITE_PROTECTED
+    target (e.g. `PFSENSE_PROFILE=write_protected` -- precisely the
+    configuration required for the WRITE MCP tool to be reachable at
+    all), `generate_security_posture_plan()` must still emit the
+    `capability_posture.milestone_9_activation` step -- never silently
+    collapse the capability_posture axis to a bare `no_change` step that
+    omits it. Before the fix, this exact scenario produced a plan with
+    `capability_posture.no_change` and NOTHING else on that axis --
+    making it structurally impossible for an off-host signer to ever
+    bind the step production's own freshness check requires."""
+
+    env = {
+        **_provisioned_store_env(tmp_path, value=2, handle="0x01500000"),
+        **_WITNESS_ENV,
+        "PFSENSE_PROFILE": "write_protected",
+    }
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
+
+    plan = generate_security_posture_plan(CapabilityPosture.WRITE_PROTECTED, AnchorAssurance.HARDWARE_WITNESS, env)
+
+    assert plan.capability_posture_transition is AxisTransitionKind.NO_CHANGE
+    step_ids = {s.step_id for s in plan.steps}
+    assert "capability_posture.no_change" in step_ids
+    assert "capability_posture.milestone_9_activation" in step_ids  # the regression
+    activation_step = next(s for s in plan.steps if s.step_id == "capability_posture.milestone_9_activation")
+    assert activation_step.axis == "capability_posture"
+    assert activation_step.mutation_class is MutationClass.ACTIVATION
+    assert activation_step.authorization_required is AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION
+    assert activation_step.blocked is True
+    assert activation_step.prerequisite_satisfied is True  # anchor is ready in this scenario
+
+
+def test_read_only_target_no_change_never_gains_the_activation_step(monkeypatch, tmp_path):
+    """Confirms the fix is scoped exactly to `target is WRITE_PROTECTED`
+    -- READ-only/default behavior must not be accidentally broadened.
+    A READ_ONLY target, even when current posture is already read_only
+    (the default, unconfigured case), must never emit
+    `capability_posture.milestone_9_activation` -- that step's very
+    existence would incorrectly imply a WRITE-activation decision is
+    relevant to a READ-only target."""
+
+    plan = generate_security_posture_plan(CapabilityPosture.READ_ONLY, AnchorAssurance.NONE, {})
+
+    assert plan.capability_posture_transition is AxisTransitionKind.NO_CHANGE
+    step_ids = {s.step_id for s in plan.steps}
+    assert step_ids == {"anchor_assurance.no_change", "capability_posture.no_change"}
+    assert "capability_posture.milestone_9_activation" not in step_ids
+
+
+def test_downgrade_transition_never_gains_the_activation_step(monkeypatch, tmp_path):
+    """The fix is scoped to the NO_CHANGE branch only -- DOWNGRADE
+    (write_protected -> read_only) must remain exactly as before, never
+    gaining an activation step of its own (there is nothing to
+    "activate" when moving away from write_protected)."""
+
+    env = {
+        **_provisioned_store_env(tmp_path, value=2, handle="0x01500000"),
+        **_WITNESS_ENV,
+        "PFSENSE_PROFILE": "write_protected",
+    }
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
+
+    plan = generate_security_posture_plan(CapabilityPosture.READ_ONLY, AnchorAssurance.HARDWARE_WITNESS, env)
+
+    assert plan.capability_posture_transition is AxisTransitionKind.DOWNGRADE
+    step_ids = {s.step_id for s in plan.steps}
+    assert "capability_posture.milestone_9_activation" not in step_ids
+    assert "capability_posture.deactivate_write_protection" in step_ids
+
+
+def test_production_and_signer_processes_agree_on_the_activation_plan_digest(monkeypatch, tmp_path):
+    """Simulates two independent processes (production's own
+    `tier1_write_bridge.py` at request time, and an off-host signer at
+    signing time) each independently calling `generate_security_posture_plan()`
+    against the SAME live evidence -- both must derive the identical
+    plan, and therefore the identical digest, with `PFSENSE_PROFILE=
+    write_protected` active in both (the actual live-deployment
+    configuration this fix targets)."""
+
+    env = {
+        **_provisioned_store_env(tmp_path, value=2, handle="0x01500000"),
+        **_WITNESS_ENV,
+        "PFSENSE_PROFILE": "write_protected",
+    }
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
+
+    production_plan = generate_security_posture_plan(
+        security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE,
+        security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE,
+        env,
+    )
+    signer_plan = generate_security_posture_plan(
+        security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE,
+        security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE,
+        env,
+    )
+
+    from pfsense_mcp.security_plan_digest import compute_plan_digest
+
+    assert compute_plan_digest(production_plan) == compute_plan_digest(signer_plan)
+    assert security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID in {s.step_id for s in production_plan.steps}
+
+
+def test_changed_witness_evidence_changes_the_digest_even_when_no_change_transition(monkeypatch, tmp_path):
+    """Freshness must not be weakened by this fix: even in the newly-fixed
+    NO_CHANGE+write_protected scenario, a change in the live witness
+    evidence (e.g. the anchor value drifting from what was persisted)
+    still changes the plan digest -- the exact mechanism
+    `plan_authorization_is_fresh()` relies on to invalidate a stale
+    authorization when the security posture changes between signing and
+    consumption."""
+
+    env = {
+        **_provisioned_store_env(tmp_path, value=2, handle="0x01500000"),
+        **_WITNESS_ENV,
+        "PFSENSE_PROFILE": "write_protected",
+    }
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
+    matching_plan = generate_security_posture_plan(
+        CapabilityPosture.WRITE_PROTECTED, AnchorAssurance.HARDWARE_WITNESS, env
+    )
+
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(7))  # drifted from the persisted baseline (2)
+    mismatched_plan = generate_security_posture_plan(
+        CapabilityPosture.WRITE_PROTECTED, AnchorAssurance.HARDWARE_WITNESS, env
+    )
+
+    from pfsense_mcp.security_plan_digest import compute_plan_digest
+
+    assert compute_plan_digest(matching_plan) != compute_plan_digest(mismatched_plan)
 
 
 def test_alias_description_write_constants_are_the_single_source_of_the_activation_step(monkeypatch, tmp_path):
