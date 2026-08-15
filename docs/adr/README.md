@@ -33,6 +33,7 @@ silently rewrite earlier context.
 | [025](ADR-025-authorization-recovery-contract-binding.md) | Authorization-to-RecoveryContract binding | Accepted (2026-08-12, owner) — PlanAuthorizationV2-to-provenance-bound-contract architecture; W1 implementation remains separately gated |
 | [026](ADR-026-first-write-capability-adapter.md) | First WRITE capability adapter semantic unit | Accepted (2026-08-12, owner) — description-only alias semantic unit and scope-specific evidence matrix; W1/W2/W3 remain separately gated |
 | [027](ADR-027-closed-stage3-execution-port.md) | Closed LAB-T1 Stage 3 execution-port composition | Accepted — thin composition design and narrow reconciliation-observation interface; implementation and live authority remain separate |
+| [028](ADR-028-first-write-product-surface-and-delivery.md) | First-WRITE product surface and delivery architecture | Proposed — records owner-accepted delivery seam (W3-D1), capability/profile activation model (W3-D2), and signing-side CLI trust boundary; W3 implementation remains separately gated slice by slice |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
