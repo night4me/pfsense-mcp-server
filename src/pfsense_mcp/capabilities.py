@@ -48,7 +48,12 @@ class Capability(Enum):
     SERVICE_WRITE = auto()
 
 
-SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
+# The complete READ capability set this build implements. Separated from
+# SUPPORTED_CAPABILITIES_THIS_BUILD (below) so the two concepts -- "read
+# capabilities that exist" and "capabilities implemented by this build" --
+# can never again be conflated with "capabilities granted by a profile"
+# (see profiles.py). Referencing this constant never implies a grant.
+READ_CAPABILITIES: frozenset[Capability] = frozenset(
     {
         Capability.SYSTEM_READ,
         Capability.INTERFACE_READ,
@@ -87,3 +92,12 @@ SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = frozenset(
         Capability.SERVER_INFO_READ,
     }
 )
+
+# "Implemented by this build" only -- never a grant. Distinct from
+# READ_CAPABILITIES so a future capability can be added here (marking it
+# implemented) without that alone making it reachable from any profile;
+# only an explicit profile grant (profiles.py) and, for a WRITE capability,
+# the full three-condition registration gate (ADR-028 W3-D2) can do that.
+# Equal to READ_CAPABILITIES today because no WRITE capability is
+# implemented yet.
+SUPPORTED_CAPABILITIES_THIS_BUILD: frozenset[Capability] = READ_CAPABILITIES
