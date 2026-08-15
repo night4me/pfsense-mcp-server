@@ -252,6 +252,116 @@ class AliasDescriptionExecutionCoreV1:
         except Exception:
             raise BoundExecutionError(_DENIED) from None
 
+    def resume_prepared(
+        self,
+        contract_id: str,
+        *,
+        request: AliasDescriptionChangeV1,
+        now: datetime,
+    ) -> AuthorizedAliasDescriptionExecution:
+        """Reconstruct a fresh, process-local handle for an already-durable
+        `PREPARED` execution, so `confirm_and_handoff()` can complete it
+        after the original `authorize_and_create()` call's in-process
+        `self._pending` entry is gone -- a fresh `AliasDescriptionExecutionCoreV1`
+        instance (this codebase's own `build_production_runtime()` convention
+        constructs entirely fresh objects "across calls", not only across
+        process restarts), a genuine restart, or simply a second, later call
+        once a human operator has had time to review and sign a confirmation.
+
+        Trusts nothing from the vanished prior process. Every value used to
+        reconstruct the executor's required intent is re-derived from (a) a
+        FRESH authoritative preparation of `request` via the existing,
+        unchanged preparer/adapter, and (b) the durable, already-integrity-
+        and-reservation-verified `RecoveryContract` loaded via
+        `self._store.load()` (unchanged, unmodified). The reconstruction is
+        accepted only if the resulting digests match the contract's own
+        already-authenticated fields exactly, mirroring the exact
+        derivation `_create_contract()` performed at authorization time --
+        never decrypted, inferred, or taken on faith from the caller. A
+        mismatch (drifted target, wrong request, tampered contract, wrong
+        semantic unit) is refused identically to every other fail-closed
+        gate in this class -- one uniform `BoundExecutionError`, no detail
+        leaked about which check failed.
+
+        Never consumes an authorization and never creates a contract --
+        both remain `authorize_and_create()`'s exclusive responsibility,
+        untouched here. A resumed handle is subject to every one of
+        `confirm_and_handoff()`'s existing checks (state, confirmation,
+        provenance, validity window) exactly as if it had come from
+        `authorize_and_create()` in the same call -- this method performs
+        no confirmation-phase work of its own."""
+
+        try:
+            self._validate_resume_inputs(contract_id=contract_id, request=request, now=now)
+            contract = self._store.load(contract_id)
+            provenance = contract.authorization_provenance
+            if (
+                contract.state is not RecoveryState.PREPARED
+                or provenance is None
+                or not provenance.authorization_issued_at <= now < provenance.authorization_expires_at
+                or contract.is_expired(now=now)
+            ):
+                raise BoundExecutionError(_DENIED)
+
+            fresh = self._preparer.prepare(request)
+            if (
+                fresh.intent.capability != contract.capability
+                or fresh.intent.endpoint_symbol != contract.endpoint_symbol
+                or fresh.intent.http_method != contract.http_method
+                or fresh.appliance_target_digest != provenance.appliance_target_digest
+            ):
+                raise BoundExecutionError(_DENIED)
+
+            fresh_execution_intent_digest = compute_execution_intent_digest(fresh.intent)
+            if not hmac.compare_digest(fresh_execution_intent_digest, provenance.execution_intent_digest):
+                raise BoundExecutionError(_DENIED)
+            if fresh.authoritative_a.numeric_locator != contract.lifecycle_locator:
+                raise BoundExecutionError(_DENIED)
+
+            context = (fresh.intent.capability.name, fresh.intent.endpoint_symbol, fresh.intent.http_method)
+            raw_target = self._raw_target(fresh.authoritative_a)
+            executor_intent: dict[str, CanonicalValue] = {
+                **fresh.intent.normalized_mutation_intent,
+                "raw_target_hint": raw_target,
+            }
+            target_digest = digest_value(
+                DigestPurpose.TARGET_IDENTITY, fresh.intent.resource_target, context=(fresh.intent.capability.name,)
+            )
+            fingerprint_digest = digest_value(
+                DigestPurpose.TARGET_FINGERPRINT, fresh.intent.target_precondition, context=context
+            )
+            intent_digest = digest_value(DigestPurpose.INTENT, executor_intent, context=context)
+            snapshot_digest = digest_value(DigestPurpose.SNAPSHOT, fresh.intent.rollback_snapshot, context=context)
+
+            if (
+                not hmac.compare_digest(target_digest, contract.target_identity_digest)
+                or not hmac.compare_digest(fingerprint_digest, contract.target_fingerprint)
+                or not hmac.compare_digest(intent_digest, contract.intent_digest)
+                or not hmac.compare_digest(snapshot_digest, contract.snapshot_digest)
+                or fresh.intent.rollback_plan_version != contract.rollback_plan_version
+            ):
+                raise BoundExecutionError(_DENIED)
+        except BoundExecutionError:
+            raise
+        except Exception:
+            raise BoundExecutionError(_DENIED) from None
+
+        pending = _PendingExecution(contract.contract_id, executor_intent, provenance)
+        self._pending[contract.contract_id] = pending
+        return AuthorizedAliasDescriptionExecution(contract_id=contract.contract_id, owner_token=self._owner_token)
+
+    @staticmethod
+    def _validate_resume_inputs(*, contract_id: object, request: object, now: object) -> None:
+        if (
+            not isinstance(contract_id, str)
+            or not contract_id
+            or not isinstance(request, AliasDescriptionChangeV1)
+            or not isinstance(now, datetime)
+            or now.tzinfo is None
+            or now.utcoffset() != timezone.utc.utcoffset(now)
+        ):
+            raise BoundExecutionError(_DENIED)
+
     @staticmethod
     def _plan_is_fresh(
         *,

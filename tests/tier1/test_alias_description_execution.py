@@ -39,7 +39,10 @@ from pfsense_mcp.tier1.alias_description import (
     AliasDescriptionPreparerV1,
     ConfiguredApplianceTargetV1,
 )
-from pfsense_mcp.tier1.alias_description_execution import AliasDescriptionExecutionCoreV1
+from pfsense_mcp.tier1.alias_description_execution import (
+    AliasDescriptionExecutionCoreV1,
+    AuthorizedAliasDescriptionExecution,
+)
 from pfsense_mcp.tier1.authorization_consumption_store import AuthorizationConsumptionStore
 from pfsense_mcp.tier1.canonical import DigestPurpose, digest_value, frame_bytes, frame_str
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
@@ -370,6 +373,177 @@ def test_valid_v2_consumes_creates_confirms_and_hands_off_once(tmp_path: Path, m
     with pytest.raises(BoundExecutionError):
         core.confirm_and_handoff(handle, confirmation=_confirmation(contract), now=NOW)
     executor.execute.assert_called_once()
+
+
+def test_resume_prepared_reconstructs_handle_after_fresh_core_and_completes_once(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, _store, consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract_id = handle.contract_id
+
+    # Simulate the original process/runtime disappearing: build a
+    # completely fresh execution core (fresh _pending, fresh owner
+    # token, fresh executor) against the same durable store -- exactly
+    # what a later, separate call (or a real restart) produces.
+    fresh_core, _fresh_private, fresh_store, fresh_consumption, fresh_executor = _core(tmp_path, client)
+    assert fresh_core is not core
+    assert fresh_store.load(contract_id).state is RecoveryState.PREPARED
+
+    resumed = fresh_core.resume_prepared(contract_id, request=request, now=NOW)
+    assert resumed.contract_id == contract_id
+    assert isinstance(resumed, AuthorizedAliasDescriptionExecution)
+
+    contract = fresh_store.load(contract_id)
+    result = fresh_core.confirm_and_handoff(resumed, confirmation=_confirmation(contract), now=NOW)
+    assert result.state is RecoveryState.VERIFIED
+    fresh_executor.execute.assert_called_once()
+
+    # Only one executor handoff is possible: neither the original core's
+    # executor nor its consumption store were touched by the resumed
+    # completion, and the resumed core's own consumption store (a fresh,
+    # unrelated instance) was never invoked -- resume never consumes.
+    executor.execute.assert_not_called()
+    assert consumption.calls == 1
+    assert fresh_consumption.calls == 0
+
+    # A second confirmation attempt through the same resumed handle
+    # never produces a second handoff.
+    with pytest.raises(BoundExecutionError):
+        fresh_core.confirm_and_handoff(resumed, confirmation=_confirmation(contract), now=NOW)
+    fresh_executor.execute.assert_called_once()
+
+
+def test_resume_prepared_never_consumes_or_creates_and_duplicate_resume_is_safe(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract_id = handle.contract_id
+    before = tuple(contract.contract_id for contract in store.all_contracts())
+
+    fresh_core, _p, fresh_store, fresh_consumption, _e = _core(tmp_path, client)
+    first_resume = fresh_core.resume_prepared(contract_id, request=request, now=NOW)
+    second_resume = fresh_core.resume_prepared(contract_id, request=request, now=NOW)
+
+    assert first_resume.contract_id == second_resume.contract_id == contract_id
+    # Restart/re-invocation never creates a new authorization
+    # consumption or a second contract -- resume_prepared() does not
+    # call try_consume()/create_authorized() at all.
+    assert consumption.calls == 1  # the one real consumption from _authorize() above
+    assert fresh_consumption.calls == 0
+    after = tuple(contract.contract_id for contract in fresh_store.all_contracts())
+    assert after == before
+
+
+def test_resume_prepared_refuses_null_provenance_contract(tmp_path: Path, contract_factory, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, _private, store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    # store.create() (never create_authorized()) is the only way to
+    # persist a contract with null authorization_provenance -- create()
+    # itself only accepts state=PREPARING, version=0, so reach PREPARED
+    # via the same legal PREPARING->PREPARED transition production uses.
+    # Resume must refuse the resulting null-provenance contract before
+    # ever calling the preparer.
+    contract = contract_factory(state=RecoveryState.PREPARING, now=NOW)
+    assert contract.authorization_provenance is None
+    store.create(contract)
+    store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+
+    with pytest.raises(BoundExecutionError):
+        core.resume_prepared(contract.contract_id, request=request, now=NOW)
+
+
+def test_resume_prepared_refuses_tampered_contract(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, _store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (handle.contract_id,)
+        ).fetchone()[0]
+        value = json.loads(payload)
+        value["authorization_provenance"]["appliance_target_digest"] = "0" * 64
+        connection.execute(
+            "UPDATE contracts SET payload = ? WHERE contract_id = ?",
+            (json.dumps(value, sort_keys=True, separators=(",", ":")).encode(), handle.contract_id),
+        )
+
+    fresh_core, _p, _fs, _c, _e = _core(tmp_path, client)
+    with pytest.raises(BoundExecutionError):
+        fresh_core.resume_prepared(handle.contract_id, request=request, now=NOW)
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["unknown-contract", "not-prepared", "wrong-request", "locator-drift", "appliance-drift", "expired"],
+)
+def test_resume_prepared_negative_cases_refuse_closed(tmp_path: Path, monkeypatch, case: str):
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract_id = handle.contract_id
+
+    resume_request = request
+    resume_now = NOW
+    resume_contract_id = contract_id
+
+    if case == "unknown-contract":
+        resume_contract_id = "aliasdescr-does-not-exist"
+    elif case == "not-prepared":
+        # PREPARED -> EXECUTING requires prior confirmation (unrelated to
+        # this test); PREPARED -> FAILED needs none and is equally
+        # sufficient to prove resume refuses a non-PREPARED contract.
+        store.transition(
+            contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=store.load(contract_id).state_version,
+            target_state=RecoveryState.FAILED,
+        )
+    elif case == "wrong-request":
+        resume_request = AliasDescriptionChangeV1(
+            alias_name="LAB_ALIAS_TEST", description="a completely different value"
+        )
+    elif case == "locator-drift":
+        client.aliases[0] = client.aliases[0].model_copy(update={"id": 999})
+    elif case == "appliance-drift":
+        client.netgate_id = "a-different-netgate-id"
+    elif case == "expired":
+        resume_now = NOW + timedelta(minutes=10)
+
+    fresh_core, _p, _fs, _c, _e = _core(tmp_path, client)
+    with pytest.raises(BoundExecutionError):
+        fresh_core.resume_prepared(resume_contract_id, request=resume_request, now=resume_now)
+
+
+def test_resume_prepared_rejects_malformed_inputs(tmp_path: Path):
+    client = _ReadClient()
+    core, _private, _store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    with pytest.raises(BoundExecutionError):
+        core.resume_prepared("", request=request, now=NOW)
+    with pytest.raises(BoundExecutionError):
+        core.resume_prepared("contract-1", request="not-a-request", now=NOW)  # type: ignore[arg-type]
+    with pytest.raises(BoundExecutionError):
+        core.resume_prepared("contract-1", request=request, now=datetime.now())  # naive, not UTC
 
 
 def test_replay_is_refused_before_second_contract_or_handoff(tmp_path: Path, monkeypatch):
