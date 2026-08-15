@@ -17,11 +17,14 @@ independently:
 
   - capability posture (`read_only` / `write_protected`) --
     `ADR-004`'s capability-profile mechanism plus the WRITE
-    allow-list/capability state, reusing the exact same primitives
-    `scripts/write_capability_check.py`/`write_allow_list_check.py`
-    already use (`Capability`, `SUPPORTED_CAPABILITIES_THIS_BUILD`,
-    `AuditorProfile`/`EngineerProfile`, `WriteEndpoints`) -- none of
-    which are `pfsense_mcp.tier1` imports.
+    allow-list/capability state. Resolves the actually-configured profile
+    via `profiles.get_profile()` and reads *its own* `.capabilities` for
+    `*_WRITE` membership (W3 Slice 4: a static union across
+    `AuditorProfile`/`EngineerProfile` alone stopped being an accurate
+    proxy once a real, selectable profile started granting a `*_WRITE`
+    capability), combined with `WriteEndpoints.active_entries()` --
+    neither `Capability`/`profiles.get_profile()`/`WriteEndpoints` are
+    `pfsense_mcp.tier1` imports.
   - anchor assurance (`none` / `software` / `hardware_witness`) --
     reuses `load_production_store_config()` (the same config loader
     `tier1_anchor_check.py` uses) and
@@ -64,9 +67,9 @@ from enum import Enum
 
 import httpx
 
-from .capabilities import SUPPORTED_CAPABILITIES_THIS_BUILD, Capability
+from .capabilities import Capability
 from .errors import ConfigurationError
-from .profiles import AuditorProfile, EngineerProfile, get_profile
+from .profiles import get_profile
 from .tier1.anti_rollback import AnchorProvisioningStatus
 from .tier1.anti_rollback_tpm_witness import TpmHostWitnessAnchor
 from .tier1.errors import AnchorUnavailableError, Tier1ConfigurationError, Tier1Error
@@ -177,28 +180,59 @@ def discover_capability_posture(env: dict[str, str] | None = None) -> Capability
             "the server itself would fail closed at startup with this configuration."
         )
 
-    active_write_capabilities = [
-        member
-        for member in _WRITE_CAPABILITIES
-        if member in SUPPORTED_CAPABILITIES_THIS_BUILD
-        or member in AuditorProfile.capabilities
-        or member in EngineerProfile.capabilities
-    ]
+    # Evidence source: the ACTUALLY CONFIGURED profile's own granted
+    # capabilities -- not a static union across every known profile.
+    # Before W3 Slice 4, AuditorProfile/EngineerProfile alone (neither of
+    # which ever grants a *_WRITE capability) made a static OR-across-
+    # fixed-profiles check an accurate-enough proxy in practice; that
+    # stopped being true the moment a real, selectable profile
+    # (WriteProtectedProfile, W3 Slice 1) started granting one, and
+    # `WriteEndpoints.active_entries()` stopped being an always-empty
+    # signal (W3 Slice 4) -- a static, profile-independent OR-check would
+    # now report write_protected for every deployment, including the
+    # unconfigured default. Resolving `configured_profile_name` through
+    # `get_profile()` and reading *its own* `.capabilities` answers the
+    # actually meaningful question: does the profile this deployment has
+    # actually selected grant a *_WRITE capability right now.
+    if configured_profile_valid:
+        resolved_profile_capabilities = get_profile(configured_profile_name).capabilities
+    else:
+        resolved_profile_capabilities = frozenset()
+    active_write_capabilities = [member for member in _WRITE_CAPABILITIES if member in resolved_profile_capabilities]
     allow_list_entries = tuple(WriteEndpoints.active_entries())
 
-    if active_write_capabilities or allow_list_entries:
+    # Both must hold for WRITE to be evidence-backed: a granting profile
+    # with no allow-listed endpoint, or an allow-listed endpoint under a
+    # non-granting profile, each leave WRITE structurally unreachable
+    # (mirrors two of ADR-028's own three activation-gate conditions;
+    # this read-only discovery function does not attempt the third --
+    # constructing the full production runtime -- itself).
+    if active_write_capabilities and allow_list_entries:
         value = CapabilityPosture.WRITE_PROTECTED
         evidence.append(
-            f"{len(active_write_capabilities)} of {len(_WRITE_CAPABILITIES)} *_WRITE capabilities active and "
-            f"{len(allow_list_entries)} WriteEndpoints entrie(s) found -- resolved write_protected from evidence."
+            f"{len(active_write_capabilities)} of {len(_WRITE_CAPABILITIES)} *_WRITE capabilities granted by the "
+            f"configured profile ({configured_profile_name!r}) and {len(allow_list_entries)} WriteEndpoints "
+            "entrie(s) found -- resolved write_protected from evidence."
         )
     else:
         value = CapabilityPosture.READ_ONLY
         if configured_profile_valid and configured_profile_name == "engineer":
             evidence.append(
-                "PFSENSE_PROFILE is configured as 'engineer', but 0 WRITE capabilities are active and the "
-                "WriteEndpoints allow-list is empty -- resolved posture is still read_only from evidence, "
-                "not the configured profile name alone."
+                "PFSENSE_PROFILE is configured as 'engineer', but the configured profile grants 0 WRITE "
+                "capabilities -- resolved posture is still read_only from evidence, not the configured profile "
+                "name alone."
+            )
+        elif allow_list_entries and not active_write_capabilities:
+            evidence.append(
+                f"PFSENSE_PROFILE={configured_profile_name!r} grants 0 WRITE capabilities even though "
+                f"{len(allow_list_entries)} WriteEndpoints entrie(s) exist -- resolved posture is read_only "
+                "from evidence; the allow-list alone never grants anything."
+            )
+        elif active_write_capabilities and not allow_list_entries:
+            evidence.append(
+                f"PFSENSE_PROFILE={configured_profile_name!r} grants {len(active_write_capabilities)} *_WRITE "
+                "capabilities, but the WriteEndpoints allow-list is empty -- resolved posture is read_only from "
+                "evidence; a granting profile alone never reaches an endpoint that is not allow-listed."
             )
         else:
             evidence.append(f"PFSENSE_PROFILE={configured_profile_name!r}, 0 WRITE capabilities active. ")

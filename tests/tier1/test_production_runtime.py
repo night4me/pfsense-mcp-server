@@ -40,7 +40,7 @@ from pfsense_mcp.tier1.reconciliation import ReconciliationEvidence, Reconciliat
 from pfsense_mcp.tier1.reconciliation_providers import signing_payload as reconciliation_signing_payload
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
-from pfsense_mcp.write_endpoints import WriteEndpointInfo, WriteEndpoints
+from pfsense_mcp.write_endpoints import WriteEndpoints
 
 # NOTE: every pfsense_mcp.tier1 import this file needs is collected here,
 # at module top level -- never deferred inside a test/helper function
@@ -189,8 +189,13 @@ def test_completely_unconfigured_returns_none():
 
 
 def test_completely_unconfigured_leaves_public_state_unchanged():
+    # "Unchanged" means construction does not itself alter WriteEndpoints
+    # -- not that WriteEndpoints must be empty (W3 Slice 4 added its one
+    # accepted entry as a fixed, non-caller-selectable source-code fact,
+    # unrelated to whether a runtime happens to construct).
+    before = dict(vars(WriteEndpoints))
     build_production_runtime({})
-    assert not any(isinstance(value, WriteEndpointInfo) for value in vars(WriteEndpoints).values())
+    assert dict(vars(WriteEndpoints)) == before
 
 
 @pytest.mark.parametrize("dropped", list(module._REQUIRED_VARS))
@@ -598,8 +603,9 @@ def test_reconciliation_requires_pinned_authority_and_wrong_signature_fails_clos
 
 def test_public_mcp_contract_unaffected_by_construction(tmp_path):
     env = _full_env(tmp_path)
+    before = dict(vars(WriteEndpoints))
     build_production_runtime(env)
-    assert not any(isinstance(value, WriteEndpointInfo) for value in vars(WriteEndpoints).values())
+    assert dict(vars(WriteEndpoints)) == before
     assert EngineerProfile.capabilities == frozenset()
 
 

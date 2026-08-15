@@ -1,15 +1,35 @@
 """Mutation allow-list — the single source of truth for which
 (path, HTTP method) pairs this server is ever permitted to write to.
 
-Empty in this build. WriteApiClient.execute() refuses any MutationPlan
-whose endpoint_symbol is not an attribute of WriteEndpoints here, before
-any network call is made. scripts/write_allow_list_check.py mechanically
-enforces that this class has zero WriteEndpointInfo entries until a
-future, separately authorized tier adds the first one.
+Through W3 Slice 3, empty in this build. W3 Slice 4 (ADR-028) adds the
+single accepted first-WRITE entry, `FIREWALL_ALIAS_DESCRIPTION` — the
+description-only firewall-alias PATCH ADR-026 selected and ADR-028's
+three-condition activation gate governs. WriteApiClient.execute()/
+send_for_tier1() refuse any MutationPlan/Tier-1 send whose endpoint_symbol
+is not an attribute of WriteEndpoints here, before any network call is
+made. scripts/write_allow_list_check.py mechanically enforces that this
+class has *exactly* this one entry and no more — matching the durable
+owner roadmap ceiling (`reports-ai/AI_CONTEXT.md`): any further
+WriteEndpoints entry is explicitly post-v0.4.0 work requiring a new,
+separate, explicit owner decision.
 
-Every future entry requires: independent live verification (verified=True,
-the same bar Endpoints.verified already sets), an explicit RollbackPlan if
-reversible=True, and dry_run_supported=True.
+`FIREWALL_ALIAS_DESCRIPTION.verified` is deliberately `False`: no live
+verification of this specific write path has occurred yet (ADR-026's
+own acceptance matrix rows 6/17/18 remain the outstanding live-evidence
+gap, tracked separately from W3 Slice 4). `WriteApiClient` refuses any
+send/execute against an endpoint whose `verified` is not `True` — so
+this entry existing, and even the full W3 Slice 4 three-condition
+activation gate being satisfied, still cannot reach a live pfSense
+mutation until that separately-tracked live-evidence work completes and
+sets `verified=True` as its own, separately authorized change. This is
+an intentional, additional layer of protection beyond the activation
+gate, not an oversight.
+
+Every entry requires: independent live verification before `verified` is
+set `True` (the same bar `Endpoints.verified` already sets), an explicit
+RollbackPlan if `reversible=True` (this entry's rollback is the existing
+alias-description execution core's own snapshot/restore mechanism, not a
+new one), and `dry_run_supported=True`.
 """
 
 from __future__ import annotations
@@ -30,7 +50,20 @@ class WriteEndpointInfo:
 
 
 class WriteEndpoints:
-    """Deliberately empty in this build. See module docstring."""
+    """Exactly one entry in this build. See module docstring."""
+
+    #: ADR-026's selected, narrowest evidenced first-WRITE candidate:
+    #: `PATCH /api/v2/firewall/alias`, description field only. `verified`
+    #: is `False` until the separately-tracked live-evidence work sets it
+    #: `True` -- see module docstring.
+    FIREWALL_ALIAS_DESCRIPTION = WriteEndpointInfo(
+        path_suffix="/firewall/alias",
+        http_method="PATCH",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+        reversible=True,
+        dry_run_supported=True,
+    )
 
     @classmethod
     def active_entries(cls) -> list[str]:

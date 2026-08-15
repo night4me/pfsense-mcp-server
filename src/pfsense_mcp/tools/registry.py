@@ -12,11 +12,12 @@ from typing import Callable
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
+from .. import tier1_write_bridge
 from ..capabilities import Capability
 from ..errors import ConfigurationError
 from ..models.server_introspection import ServerIntrospection
 from ..pfsense_client import PfSenseClient
-from ..write_endpoints import WriteEndpoints
+from ..write_endpoints import WriteEndpointInfo, WriteEndpoints
 from .audit import audit_logged
 from .read import (
     acme_settings,
@@ -62,6 +63,7 @@ from .read import (
     user_groups,
     users,
 )
+from .write import set_firewall_alias_description
 
 
 @dataclass(frozen=True)
@@ -126,6 +128,19 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
     }
 )
 
+#: W3 Slice 4's single accepted first-WRITE MCP tool. `destructiveHint`
+#: is False and `idempotentHint` is True to match this operation's own
+#: accepted properties (ADR-026: description-only, reversible via the
+#: existing snapshot/restore mechanism; repeat calls with the same
+#: alias_name/description are recognized as the same request via the
+#: underlying runtime's own idempotency-key dedup, not a fresh mutation
+#: each time).
+WRITE_TOOL_ANNOTATION_POLICY = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=True
+)
+
+KNOWN_WRITE_TOOL_NAMES: frozenset[str] = frozenset({"set_firewall_alias_description_v1"})
+
 
 class ToolRegistry:
     def __init__(
@@ -138,7 +153,11 @@ class ToolRegistry:
         allowed_tools: frozenset[str] | None = None,
         profile_name: str = "unknown",
     ) -> None:
-        unknown_tools = allowed_tools - KNOWN_READ_TOOL_NAMES if allowed_tools is not None else frozenset()
+        unknown_tools = (
+            allowed_tools - (KNOWN_READ_TOOL_NAMES | KNOWN_WRITE_TOOL_NAMES)
+            if allowed_tools is not None
+            else frozenset()
+        )
         if unknown_tools:
             names = ", ".join(sorted(unknown_tools))
             raise ConfigurationError(f"PFSENSE_ALLOWED_TOOLS contains unknown tool name(s): {names}")
@@ -231,14 +250,54 @@ class ToolRegistry:
         self.register_all_write()
 
     def register_all_write(self) -> None:
-        """Write-capability registration dispatch point. Empty in this
-        build — no *_WRITE capability is ever present in self._capabilities
-        (independently enforced by scripts/write_capability_check.py).
-        Each future write capability adds one
-        `if Capability.X_WRITE in self._capabilities:
-        self._register_x_write()` branch here, mirroring register_all()'s
-        existing per-capability dispatch pattern above, under a
-        separately authorized tier."""
+        """Write-capability registration dispatch point. W3 Slice 4 adds
+        the single accepted first-WRITE branch below; no other
+        `Capability.X_WRITE` is ever present in `self._capabilities` for
+        any selectable profile (independently enforced by
+        `scripts/write_capability_check.py`), so no other branch is ever
+        reachable. Any additional write capability would add its own
+        `if Capability.X_WRITE in self._capabilities: self._register_x_write()`
+        branch here, mirroring `register_all()`'s existing per-capability
+        dispatch pattern above -- under its own separately authorized
+        tier; the durable owner roadmap ceiling forbids adding one
+        without a new, separate, explicit owner decision."""
+
+        if Capability.ALIAS_WRITE in self._capabilities:
+            self._register_alias_write()
+
+    def _register_alias_write(self) -> None:
+        """The ADR-028 three-condition activation gate, all three
+        independently required: (A) `Capability.ALIAS_WRITE` in the
+        active profile's capability set -- already proven true by the
+        sole caller, `register_all_write()`'s `if` guard above; (B) the
+        exact alias-description endpoint is present in `WriteEndpoints`;
+        (C) the complete, fail-closed production runtime successfully
+        constructs. Any single condition failing means the tool is
+        simply absent -- never degraded, never partially available."""
+
+        endpoint = getattr(WriteEndpoints, "FIREWALL_ALIAS_DESCRIPTION", None)
+        if not isinstance(endpoint, WriteEndpointInfo):
+            return
+        if not tier1_write_bridge.can_construct_write_runtime():
+            return
+
+        fn = set_firewall_alias_description.build()
+        wrapped = audit_logged("set_firewall_alias_description_v1", self._identity)(fn)
+        self._register_write_tool(wrapped)
+
+    def _register_write_tool(self, wrapped: Callable[..., object]) -> None:
+        """Mirrors `_register_read_tool()` exactly: `PFSENSE_ALLOWED_TOOLS`
+        may only narrow an already-gate-satisfied registration, never
+        grant one -- this method is reached only after
+        `_register_alias_write()`'s own three-condition gate has already
+        held; `allowed_tools` can suppress the tool from here, but cannot
+        cause it to appear when the gate above did not hold, since this
+        method is never called at all in that case."""
+
+        if self._allowed_tools is not None and wrapped.__name__ not in self._allowed_tools:
+            return
+        self._mcp.tool(annotations=WRITE_TOOL_ANNOTATION_POLICY)(wrapped)
+        self._registered_write_names.append(wrapped.__name__)
 
     def _register_read_tool(
         self,

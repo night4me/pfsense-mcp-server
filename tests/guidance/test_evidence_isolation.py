@@ -115,7 +115,7 @@ def test_using_evidence_primitives_does_not_change_write_state() -> None:
     write_capabilities = [c for c in Capability if c.name.endswith("_WRITE")]
     assert all(c not in SUPPORTED_CAPABILITIES_THIS_BUILD for c in write_capabilities)
     assert EngineerProfile.capabilities == frozenset()
-    assert WriteEndpoints.active_entries() == []
+    assert WriteEndpoints.active_entries() == ["FIREWALL_ALIAS_DESCRIPTION"]  # W3 Slice 4's accepted entry
 
 
 def test_pfsense_mcp_info_remains_zero_pfsense_call_after_step_2() -> None:

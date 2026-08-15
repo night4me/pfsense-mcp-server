@@ -102,7 +102,12 @@ def test_default_environment_is_read_only_with_no_anchor(monkeypatch):
     assert discovery.capability_posture.value is CapabilityPosture.READ_ONLY
     assert discovery.capability_posture.configured_profile_name == "auditor"
     assert discovery.capability_posture.write_capabilities_active == 0
-    assert discovery.capability_posture.allow_list_entries == ()
+    # W3 Slice 4 added the one accepted WriteEndpoints entry -- present
+    # regardless of profile; READ_ONLY posture still correctly resolves
+    # here because the default "auditor" profile grants 0 *_WRITE
+    # capabilities (see test_capability_posture_resolves_from_evidence_not_configured_name_alone
+    # below for the profile-granting case).
+    assert discovery.capability_posture.allow_list_entries == ("FIREWALL_ALIAS_DESCRIPTION",)
 
     assert discovery.anchor_assurance.value is AnchorAssurance.NONE
     assert discovery.anchor_assurance.evidence_state is AnchorEvidenceState.UNCONFIGURED
@@ -110,10 +115,11 @@ def test_default_environment_is_read_only_with_no_anchor(monkeypatch):
 
 
 def test_capability_posture_resolves_from_evidence_not_configured_name_alone():
-    """PFSENSE_PROFILE=engineer with zero active WRITE capabilities and
-    an empty allow-list (this build's actual, permanent state) must
-    still resolve to read_only -- the configured name is evidence, not
-    the answer."""
+    """PFSENSE_PROFILE=engineer, whose EngineerProfile grants zero
+    *_WRITE capabilities (this build's actual, permanent state, W3
+    Slice 1), must still resolve to read_only regardless of
+    WriteEndpoints' own content -- the configured name is evidence, not
+    the answer, and the allow-list alone never grants anything."""
 
     discovery = discover_capability_posture({"PFSENSE_PROFILE": "engineer"})
 
@@ -121,6 +127,42 @@ def test_capability_posture_resolves_from_evidence_not_configured_name_alone():
     assert discovery.configured_profile_name == "engineer"
     assert discovery.configured_profile_valid is True
     assert any("resolved posture is still read_only" in line for line in discovery.evidence)
+
+
+def test_capability_posture_resolves_write_protected_from_the_configured_profile():
+    """W3 Slice 4 regression coverage: PFSENSE_PROFILE=write_protected
+    grants ALIAS_WRITE (W3 Slice 1) and this build's WriteEndpoints has
+    exactly one entry (W3 Slice 4) -- together, evidence-based discovery
+    must resolve write_protected. Before the W3 Slice 4 fix, this
+    function resolved write_protected for *every* profile the moment
+    WriteEndpoints gained its first entry, including the default
+    auditor profile -- this test guards against that regression
+    directly, not just via the read_only default-environment test above."""
+
+    discovery = discover_capability_posture({"PFSENSE_PROFILE": "write_protected"})
+
+    assert discovery.value is CapabilityPosture.WRITE_PROTECTED
+    assert discovery.configured_profile_name == "write_protected"
+    assert discovery.write_capabilities_active == 1
+    assert discovery.allow_list_entries == ("FIREWALL_ALIAS_DESCRIPTION",)
+    assert any("resolved write_protected from evidence" in line for line in discovery.evidence)
+
+
+def test_capability_posture_requires_both_profile_grant_and_allow_list_entry(monkeypatch):
+    """Neither factor alone is sufficient -- mirrors two of ADR-028's
+    three activation-gate conditions. A granting profile with no
+    allow-listed endpoint must still resolve read_only."""
+
+    import pfsense_mcp.security_discovery as security_discovery_module
+
+    monkeypatch.setattr(security_discovery_module.WriteEndpoints, "active_entries", staticmethod(lambda: []))
+
+    discovery = discover_capability_posture({"PFSENSE_PROFILE": "write_protected"})
+
+    assert discovery.value is CapabilityPosture.READ_ONLY
+    assert discovery.write_capabilities_active == 1
+    assert discovery.allow_list_entries == ()
+    assert any("allow-list is empty" in line for line in discovery.evidence)
 
 
 def test_invalid_configured_profile_name_is_reported_not_hidden():

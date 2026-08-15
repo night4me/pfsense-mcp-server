@@ -78,7 +78,7 @@ get-only-check: test
 	@echo "  OK"
 
 tools-write-check:
-	@echo "[ 9/20] tools/write/ import absence ............"
+	@echo "[ 9/20] tools/write/ import scope ............."
 	@$(PYTHON) scripts/tools_write_check.py
 	@echo "  OK"
 
@@ -114,7 +114,7 @@ write-infrastructure-check: test
 	@echo "  OK"
 
 write-allow-list-check:
-	@echo "[16/20] Write allow-list emptiness .............."
+	@echo "[16/20] Write allow-list scope .................."
 	@$(PYTHON) scripts/write_allow_list_check.py
 	@echo "  OK"
 
@@ -169,7 +169,7 @@ quick:
 	@echo "[5/11] GET-only static enforcement ............................"
 	@$(PYTHON) scripts/get_only_check.py
 	@echo "  OK"
-	@echo "[6/11] tools/write/ import absence ............................"
+	@echo "[6/11] tools/write/ import scope ............................."
 	@$(PYTHON) scripts/tools_write_check.py
 	@echo "  OK"
 	@echo "[7/11] Full repository security scan .........................."
@@ -181,7 +181,7 @@ quick:
 	@echo "[9/11] Static security analysis (bandit) ......................"
 	@$(MAKE) --no-print-directory security-static
 	@echo "  OK"
-	@echo "[10/11] Write allow-list emptiness .............................."
+	@echo "[10/11] Write allow-list scope .................................."
 	@$(PYTHON) scripts/write_allow_list_check.py
 	@echo "  OK"
 	@echo "[11/11] Write-capability inactivity ............................"

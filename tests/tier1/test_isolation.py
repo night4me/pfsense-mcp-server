@@ -87,12 +87,26 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # matching stronger, dedicated tests, including that this is the
     # *only* pfsense_mcp.tier1 submodule this file ever imports and that
     # no production module ever imports this file.
+    #
+    # tier1_write_bridge.py is the sixth such exception (2026-08-15, W3
+    # Slice 4: the accepted first-WRITE product surface's only connection
+    # to pfsense_mcp.tier1). Imports
+    # `tier1.alias_description.AliasDescriptionChangeV1` and
+    # `tier1.production_runtime.{ProductOutcomeState, build_production_runtime}`
+    # only -- constructs no lower-level Tier-1 object of its own, performs
+    # no authorization/confirmation/execution logic of its own. Neither
+    # `tools/registry.py` nor `tools/write/set_firewall_alias_description.py`
+    # import `pfsense_mcp.tier1` at all; they only call this module's own
+    # two exposed functions. See
+    # tests/test_tier1_write_bridge_isolation.py for the matching
+    # stronger, dedicated tests.
     exempt = {
         "tier1_anchor_check.py",
         "security_discovery.py",
         "security_plan_digest.py",
         "security_authorization.py",
         "security_authorization_verifier.py",
+        "tier1_write_bridge.py",
     }
     production = ROOT / "src/pfsense_mcp"
     offenders = [
@@ -156,4 +170,10 @@ def test_tier1_domain_has_no_transport_or_tool_registration_dependency():
 def test_all_production_write_surfaces_remain_inactive():
     assert EngineerProfile.capabilities == frozenset()
     assert INACTIVE_TIER1_POLICY.rules == frozenset()
-    assert not any(isinstance(value, WriteEndpointInfo) for value in vars(WriteEndpoints).values())
+    # Through W3 Slice 3, WriteEndpoints was empty. W3 Slice 4 added
+    # exactly the one accepted first-WRITE entry, governed by ADR-028's
+    # own three-condition activation gate (proved reachable-only-when-
+    # all-three-hold by tests/test_tool_registry_write.py) -- this test's
+    # own job is narrower: prove no *unreviewed additional* entry exists.
+    active = {name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)}
+    assert active == {"FIREWALL_ALIAS_DESCRIPTION"}
