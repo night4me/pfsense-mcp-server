@@ -1,6 +1,6 @@
 # ADR-028: First-WRITE product surface and delivery architecture
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-08-15, owner)
 - **Date:** 2026-08-15
 - **Scope:** Architecture only. This ADR authorizes no code, test,
   capability, endpoint, tool, or live change. It records three decisions the
