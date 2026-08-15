@@ -94,3 +94,13 @@ class PreparedExecutionIntentError(Tier1Error):
 
 class BoundExecutionError(Tier1Error):
     """The closed first-WRITE authorization/contract binding was refused."""
+
+
+class ArtifactExchangeError(Tier1Error):
+    """A signed or pending artifact-exchange file (PlanAuthorizationV2,
+    ConfirmationEvidence, or a pending confirmation request) could not be
+    safely read or written -- malformed, oversized, wrong permissions, a
+    symlink, or integrity-verification failure. Never raised for a
+    runtime-authorization-validity judgment (expired, consumed, wrong
+    authority) -- that remains verify_plan_authorization_v2_signature()/
+    ConfirmationVerifier.verify()'s responsibility, not this module's."""
