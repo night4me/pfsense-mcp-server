@@ -31,11 +31,11 @@ _ruff-check:
 	@$(PYTHON) -m ruff check .
 
 _mypy:
-	@$(PYTHON) -m mypy src/pfsense_mcp scripts lab witness_daemon
+	@$(PYTHON) -m mypy src/pfsense_mcp scripts lab witness_daemon signing
 
 syntax-check:
 	@echo "[ 1/20] Syntax/import validation ............."
-	@$(PYTHON) -m compileall -q src scripts tests lab witness_daemon
+	@$(PYTHON) -m compileall -q src scripts tests lab witness_daemon signing
 	@$(PYTHON) -c "import pfsense_mcp"
 	@echo "  OK"
 
@@ -194,7 +194,7 @@ coverage:
 	@$(PYTHON) -m pytest --cov=pfsense_mcp --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
 
 security-static:
-	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts witness_daemon
+	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts witness_daemon signing
 
 package-check:
 	@$(PYTHON) -m build --no-isolation --sdist --wheel

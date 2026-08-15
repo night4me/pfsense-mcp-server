@@ -77,7 +77,10 @@ pythonpath = ["scripts"]
 # (docs/tier1/specs/anti_rollback_tpm_host_witness.md) -- a different
 # deployable entirely, never shipped in this package; run its offline
 # tests explicitly via `pytest witness_daemon/`.
-addopts = "--ignore=lab --ignore=witness_daemon"
+# signing/ is the separate, off-host, operator-only ADR-028 signing tool
+# (W3 Slice 5) -- a different deployable entirely, never shipped in this
+# package; run its offline tests explicitly via `pytest signing/`.
+addopts = "--ignore=lab --ignore=witness_daemon --ignore=signing"
 markers = [
     "live: makes a real network call to a live pfSense instance; skipped unless PFSENSE_RUN_LIVE_TESTS=true is set explicitly.",
 ]
