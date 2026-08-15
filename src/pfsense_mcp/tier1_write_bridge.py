@@ -43,7 +43,7 @@ remains exactly the already-composed
 (W3 Slice 3, unmodified) responsibility. No private signing key is
 loaded, accepted, or even referenced anywhere in this module.
 
-## Plan/step expectation -- a Slice 4 design decision, flagged for owner review
+## Plan/step expectation -- one shared, security-owned constant source
 
 `request_alias_description_change()` requires `requested_plan_digest`/
 `requested_step_id` as CALLER-supplied parameters, deliberately distinct
@@ -57,21 +57,27 @@ restriction), this module derives them itself, deterministically, from
 `security_plan.py`'s own EXISTING, unmodified step-generation logic --
 never a caller-selectable or model-supplied value:
 
-  - `target_capability_posture = CapabilityPosture.WRITE_PROTECTED` and
-    `target_anchor_assurance = AnchorAssurance.HARDWARE_WITNESS` are
-    fixed constants: there is exactly one way this operation is ever
-    meant to run.
-  - `requested_step_id = "capability_posture.milestone_9_activation"` --
-    `security_plan.py`'s own existing step, named for exactly this
-    purpose ("Obtain the Milestone-9-class WRITE activation decision
-    (TIER1_ROADMAP.md) ... then register the corresponding WRITE
-    tool(s)"). No new `security_plan.py` step is introduced; this module
-    only references the existing one. That step's `blocked=True`/
-    `implementation_available=False` markers are `security_plan.py`'s own
-    discovery-layer advisories (informing an operator/CLI what is not yet
-    available) -- `build_plan_authorization_v2_payload()` does not itself
-    consult either field, only `authorization_required`, so referencing
-    this step in an authorization request is not a bypass of anything.
+  - `target_capability_posture`/`target_anchor_assurance` are
+    `security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE`/
+    `security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE` --
+    imported, not locally re-declared: there is exactly one way this
+    operation is ever meant to run, and exactly one place (`security_plan.py`)
+    that names what that is.
+  - `requested_step_id` is `security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID`
+    (value: `"capability_posture.milestone_9_activation"`) -- also
+    imported, not locally re-declared. `security_plan.py`'s own existing
+    step, named for exactly this purpose ("Obtain the Milestone-9-class
+    WRITE activation decision (TIER1_ROADMAP.md) ... then register the
+    corresponding WRITE tool(s)"), and now also the value
+    `security_plan.py`'s own step-emission code constructs its `PlanStep`
+    with -- one constant, two consumers, never two independently-typed
+    literals that could drift. No new `security_plan.py` step is
+    introduced. That step's `blocked=True`/`implementation_available=False`
+    markers are `security_plan.py`'s own discovery-layer advisories
+    (informing an operator/CLI what is not yet available) --
+    `build_plan_authorization_v2_payload()` does not itself consult either
+    field, only `authorization_required`, so referencing this step in an
+    authorization request is not a bypass of anything.
   - `requested_plan_digest = compute_plan_digest(generate_security_posture_plan(
     target_capability_posture, target_anchor_assurance))` -- computed
     fresh, every call, via the exact same deterministic, already-existing
@@ -80,11 +86,17 @@ never a caller-selectable or model-supplied value:
     not yet built) must derive this identical `(plan_digest, step_id)`
     pair the same way for its signed `PlanAuthorizationV2` to ever
     satisfy `plan_authorization_v2_authorizes_execution()`'s check
-    against what this module independently expects.
+    against what this module independently expects -- it should import
+    the three `security_plan.ALIAS_DESCRIPTION_WRITE_*` constants above
+    rather than re-typing matching literals a third time.
 
-This is a genuine design decision made during Slice 4's implementation,
-not a pre-existing, owner-reviewed constant -- flagged prominently here,
-and in this slice's own handoff report, for explicit owner review.
+W3 Slice 4 originally declared these three values as this module's own
+private constants -- a genuine design decision flagged for owner review at
+the time. A dedicated review
+(`reports-ai/handoff/20260815T-w3-slice4-plan-digest-derivation-review.md`)
+confirmed the derivation itself is correct and endorsed exactly this
+change (verdict B): the values are unchanged, only their ownership moved
+to `security_plan.py`, the module that already emits the step they name.
 """
 
 from __future__ import annotations
@@ -93,17 +105,21 @@ from datetime import datetime, timezone
 from enum import Enum
 
 from .models.write_outcome import AliasDescriptionWriteResult
-from .security_discovery import AnchorAssurance, CapabilityPosture
-from .security_plan import generate_security_posture_plan
+from .security_plan import (
+    ALIAS_DESCRIPTION_WRITE_STEP_ID,
+    ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE,
+    ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE,
+    generate_security_posture_plan,
+)
 from .security_plan_digest import compute_plan_digest
 from .tier1.alias_description import AliasDescriptionChangeV1
 from .tier1.production_runtime import ProductOutcomeState, build_production_runtime
 
 __all__ = ["can_construct_write_runtime", "request_alias_description_change"]
 
-_TARGET_CAPABILITY_POSTURE = CapabilityPosture.WRITE_PROTECTED
-_TARGET_ANCHOR_ASSURANCE = AnchorAssurance.HARDWARE_WITNESS
-_REQUESTED_STEP_ID = "capability_posture.milestone_9_activation"
+_TARGET_CAPABILITY_POSTURE = ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE
+_TARGET_ANCHOR_ASSURANCE = ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE
+_REQUESTED_STEP_ID = ALIAS_DESCRIPTION_WRITE_STEP_ID
 
 
 class _WriteProductState(str, Enum):

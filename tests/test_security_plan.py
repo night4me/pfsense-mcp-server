@@ -302,6 +302,30 @@ def test_write_tool_registration_step_is_always_unimplemented_in_this_build(monk
     assert all(s.implementation_available for s in earlier_steps)
 
 
+def test_alias_description_write_constants_are_the_single_source_of_the_activation_step(monkeypatch, tmp_path):
+    """`ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE`/
+    `ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE`/
+    `ALIAS_DESCRIPTION_WRITE_STEP_ID` are public, security_plan-owned
+    constants (pre-Slice-5 duplication-removal refactor); the emitted
+    `capability_posture` activation step's `step_id` is literally the same
+    object/value as `ALIAS_DESCRIPTION_WRITE_STEP_ID`, never a second,
+    independently-typed copy of the string."""
+
+    assert security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE is CapabilityPosture.WRITE_PROTECTED
+    assert security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE is AnchorAssurance.HARDWARE_WITNESS
+    assert security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID == "capability_posture.milestone_9_activation"
+
+    env = {**_provisioned_store_env(tmp_path, value=2, handle="0x01500000"), **_WITNESS_ENV}
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
+    plan = generate_security_posture_plan(
+        security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE,
+        security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE,
+        env,
+    )
+    activation_step = next(s for s in plan.steps if s.step_id == security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID)
+    assert activation_step.step_id == security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID
+
+
 # ---------------------------------------------------------------------------
 # 6. Downgrade: DEACTIVATE, never DEPROVISION; retain-not-delete
 # ---------------------------------------------------------------------------

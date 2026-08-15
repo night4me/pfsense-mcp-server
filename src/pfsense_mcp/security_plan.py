@@ -68,6 +68,28 @@ _NO_WRITE_TOOL_IMPLEMENTATION_NOTE = (
     "tool implementation exists to register, regardless of configuration or authorization state."
 )
 
+#: The single first-WRITE product surface's (`set_firewall_alias_description_v1`,
+#: W3 Slice 4) plan-target identity -- the exact `(target_capability_posture,
+#: target_anchor_assurance)` pair that step `ALIAS_DESCRIPTION_WRITE_STEP_ID`
+#: below is generated under. Public and importable so that every consumer
+#: needing this operation's plan/step identity (currently
+#: `tier1_write_bridge.py`; a future, separately-authorized Slice 5 signing
+#: tool will need the identical values) shares one definition instead of
+#: independently re-typing matching literals. Values are unchanged from what
+#: W3 Slice 4 already used -- this is a duplication-removal refactor only, not
+#: a new derivation and not a new target.
+ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE = CapabilityPosture.WRITE_PROTECTED
+ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE = AnchorAssurance.HARDWARE_WITNESS
+
+#: The one existing plan step (emitted below by `_capability_posture_steps()`)
+#: whose semantics match the first-WRITE product surface: "obtain the
+#: Milestone-9-class WRITE activation decision, then register the
+#: corresponding WRITE tool(s)". Not a new step and not alias-description-
+#: specific on its own -- per-operation specificity is carried by the
+#: separate `execution_intent_digest` binding (ADR-025 B2), not by this
+#: step_id.
+ALIAS_DESCRIPTION_WRITE_STEP_ID = "capability_posture.milestone_9_activation"
+
 
 class TargetValidity(str, Enum):
     """Whether a requested (capability_posture, anchor_assurance) target
@@ -574,7 +596,7 @@ def _capability_posture_steps(
         activation_reason_parts.append(blocked_reason or "")
     steps.append(
         PlanStep(
-            step_id="capability_posture.milestone_9_activation",
+            step_id=ALIAS_DESCRIPTION_WRITE_STEP_ID,
             order=order,
             axis="capability_posture",
             action="Obtain Milestone-9-class WRITE activation decision",

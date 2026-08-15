@@ -26,6 +26,7 @@ from unittest.mock import Mock
 import pytest
 from pydantic import ValidationError
 
+import pfsense_mcp.security_plan as security_plan
 from pfsense_mcp import tier1_write_bridge
 from pfsense_mcp.models.write_outcome import AliasDescriptionWriteResult
 from pfsense_mcp.security_discovery import AnchorAssurance, CapabilityPosture
@@ -157,3 +158,15 @@ def test_plan_expectation_matches_the_documented_derivation():
     expected_digest = compute_plan_digest(plan)
     assert tier1_write_bridge._requested_plan_digest() == expected_digest
     assert tier1_write_bridge._REQUESTED_STEP_ID == "capability_posture.milestone_9_activation"
+
+
+def test_bridge_constants_are_sourced_from_security_plan_not_private_duplicates():
+    """Pre-Slice-5 duplication-removal refactor: the bridge's plan/step
+    expectation must be the exact same object `security_plan.py` exports,
+    never a second, independently-typed literal."""
+
+    assert (
+        tier1_write_bridge._TARGET_CAPABILITY_POSTURE is security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE
+    )
+    assert tier1_write_bridge._TARGET_ANCHOR_ASSURANCE is security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE
+    assert tier1_write_bridge._REQUESTED_STEP_ID is security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID
