@@ -55,6 +55,21 @@ class _PendingExecution:
     provenance: AuthorizationProvenance
 
 
+@dataclass(frozen=True, slots=True)
+class _IdempotencyDerivation:
+    """Every digest `_create_contract()` derives from a prepared intent,
+    computed in exactly one place (`_derive_idempotency()`) and reused by
+    both `_create_contract()` and the read-only `compute_idempotency_key()`
+    -- never duplicated a second way."""
+
+    target_identity_digest: str
+    target_fingerprint_digest: str
+    intent_digest: str
+    snapshot_digest: str
+    idempotency_key: str
+    executor_intent: dict[str, CanonicalValue]
+
+
 class AuthorizedAliasDescriptionExecution:
     """Opaque process-local reference to one coordinator-created contract."""
 
@@ -423,26 +438,35 @@ class AliasDescriptionExecutionCoreV1:
             raise BoundExecutionError(_DENIED)
         return prepared, created_at, expires_at, provenance
 
-    def _create_contract(
-        self,
-        material: tuple[PreparedAliasDescriptionExecutionV1, datetime, datetime, AuthorizationProvenance],
-    ) -> tuple[RecoveryContract, dict[str, CanonicalValue]]:
-        prepared, created_at, expires_at, provenance = material
+    def compute_idempotency_key(self, prepared: PreparedAliasDescriptionExecutionV1) -> str:
+        """Read-only: the exact idempotency key `_create_contract()` would
+        derive for this prepared intent, without creating anything --
+        `_create_contract()` itself calls the same shared derivation
+        (`_derive_idempotency()`) this delegates to, so the two can never
+        drift apart. Exposed so a composition layer (W3 Slice 3) can
+        discover whether a matching contract already exists via the
+        store's own durable state (ADR-028's re-invocation/deduplication
+        requirement) before deciding whether to attempt
+        `authorize_and_create()` -- never a second identity concept."""
+
+        return self._derive_idempotency(prepared).idempotency_key
+
+    @staticmethod
+    def _derive_idempotency(prepared: PreparedAliasDescriptionExecutionV1) -> _IdempotencyDerivation:
         intent = prepared.intent
         state = prepared.authoritative_a
-        contract_id = f"aliasdescr-{uuid.uuid4().hex}"
-        operation_id = f"aliasdescr-op-{uuid.uuid4().hex}"
         context = (intent.capability.name, intent.endpoint_symbol, intent.http_method)
-        identity = intent.resource_target
-        fingerprint = intent.target_precondition
-        semantic_intent = intent.normalized_mutation_intent
-        snapshot = intent.rollback_snapshot
-        raw_target = self._raw_target(state)
-        executor_intent: dict[str, CanonicalValue] = {**semantic_intent, "raw_target_hint": raw_target}
-        target_digest = digest_value(DigestPurpose.TARGET_IDENTITY, identity, context=(intent.capability.name,))
-        fingerprint_digest = digest_value(DigestPurpose.TARGET_FINGERPRINT, fingerprint, context=context)
+        raw_target = AliasDescriptionExecutionCoreV1._raw_target(state)
+        executor_intent: dict[str, CanonicalValue] = {
+            **intent.normalized_mutation_intent,
+            "raw_target_hint": raw_target,
+        }
+        target_digest = digest_value(
+            DigestPurpose.TARGET_IDENTITY, intent.resource_target, context=(intent.capability.name,)
+        )
+        fingerprint_digest = digest_value(DigestPurpose.TARGET_FINGERPRINT, intent.target_precondition, context=context)
         intent_digest = digest_value(DigestPurpose.INTENT, executor_intent, context=context)
-        snapshot_digest = digest_value(DigestPurpose.SNAPSHOT, snapshot, context=context)
+        snapshot_digest = digest_value(DigestPurpose.SNAPSHOT, intent.rollback_snapshot, context=context)
         idempotency_key = derive_idempotency_key(
             capability=intent.capability,
             endpoint_symbol=intent.endpoint_symbol,
@@ -454,18 +478,40 @@ class AliasDescriptionExecutionCoreV1:
             snapshot_digest=snapshot_digest,
             rollback_plan_version=intent.rollback_plan_version,
         )
+        return _IdempotencyDerivation(
+            target_identity_digest=target_digest,
+            target_fingerprint_digest=fingerprint_digest,
+            intent_digest=intent_digest,
+            snapshot_digest=snapshot_digest,
+            idempotency_key=idempotency_key,
+            executor_intent=executor_intent,
+        )
+
+    def _create_contract(
+        self,
+        material: tuple[PreparedAliasDescriptionExecutionV1, datetime, datetime, AuthorizationProvenance],
+    ) -> tuple[RecoveryContract, dict[str, CanonicalValue]]:
+        prepared, created_at, expires_at, provenance = material
+        intent = prepared.intent
+        state = prepared.authoritative_a
+        contract_id = f"aliasdescr-{uuid.uuid4().hex}"
+        operation_id = f"aliasdescr-op-{uuid.uuid4().hex}"
+        identity = intent.resource_target
+        semantic_intent = intent.normalized_mutation_intent
+        snapshot = intent.rollback_snapshot
+        derived = self._derive_idempotency(prepared)
         contract = RecoveryContract(
             contract_id=contract_id,
             operation_id=operation_id,
-            idempotency_key=idempotency_key,
+            idempotency_key=derived.idempotency_key,
             capability=intent.capability,
             endpoint_symbol=intent.endpoint_symbol,
             http_method=intent.http_method,
-            target_identity_digest=target_digest,
-            target_fingerprint=fingerprint_digest,
+            target_identity_digest=derived.target_identity_digest,
+            target_fingerprint=derived.target_fingerprint_digest,
             lifecycle_locator=state.numeric_locator,
-            intent_digest=intent_digest,
-            snapshot_digest=snapshot_digest,
+            intent_digest=derived.intent_digest,
+            snapshot_digest=derived.snapshot_digest,
             rollback_plan_version=intent.rollback_plan_version,
             created_at=created_at,
             expires_at=expires_at,
@@ -476,7 +522,7 @@ class AliasDescriptionExecutionCoreV1:
             protected_snapshot=self._encrypt(contract_id, ArtifactRole.SNAPSHOT, snapshot),
             authorization_provenance=provenance,
         )
-        return contract, executor_intent
+        return contract, derived.executor_intent
 
     def _encrypt(self, contract_id: str, role: ArtifactRole, value: CanonicalValue) -> ProtectedArtifact:
         nonce = build_nonce(epoch=self._encryption_key.epoch, counter=self._nonce_counter.next())

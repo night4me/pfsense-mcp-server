@@ -375,6 +375,28 @@ def test_valid_v2_consumes_creates_confirms_and_hands_off_once(tmp_path: Path, m
     executor.execute.assert_called_once()
 
 
+def test_compute_idempotency_key_matches_what_create_contract_actually_persists(tmp_path: Path, monkeypatch):
+    """W3 Slice 3's read-only idempotency-key exposure
+    (`compute_idempotency_key()`) must be the exact same value
+    `_create_contract()` derives and persists -- proving the two share
+    one derivation (`_derive_idempotency()`), never two independently
+    computed values that could drift apart."""
+
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+
+    computed_before_creation = core.compute_idempotency_key(prepared)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+
+    assert contract.idempotency_key == computed_before_creation
+    # Read-only: computing it never creates, consumes, or mutates anything.
+    assert core.compute_idempotency_key(prepared) == computed_before_creation
+
+
 def test_resume_prepared_reconstructs_handle_after_fresh_core_and_completes_once(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
     client = _ReadClient()

@@ -64,6 +64,10 @@ _SELECT_ALL_CONTRACTS = (
     "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
     "target_identity_digest, state, state_version FROM contracts ORDER BY contract_id"
 )
+_SELECT_CONTRACT_BY_IDEMPOTENCY_KEY = (
+    "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
+    "target_identity_digest, state, state_version FROM contracts WHERE idempotency_key = ?"
+)
 _CONTRACT_FIELDS = frozenset(
     {
         "capability",
@@ -675,6 +679,37 @@ class SqliteRecoveryContractStore:
                 raise ContractNotFoundError("Authoritative Recovery Contract was not found.")
             contract = self._decode_row(row)
             if contract.contract_id != contract_id:
+                raise ContractIntegrityError("Stored Recovery Contract identity does not match its index.")
+            self._verify_related_state(connection, contract)
+        return contract
+
+    def find_by_idempotency_key(self, idempotency_key: str) -> RecoveryContract | None:
+        """Authoritative lookup keyed by `idempotency_key` (`NOT NULL
+        UNIQUE` in the schema -- at most one contract can ever exist for a
+        given key) rather than `contract_id`. The minimum store seam W3
+        Slice 3 needs to discover an already-existing contract for the
+        same prepared intent (ADR-028's re-invocation/deduplication
+        requirement) without a new persistent store, workflow database, or
+        identity concept -- `idempotency_key` already is the durable
+        identity `_create_contract()` derives and the schema already
+        indexes uniquely.
+
+        Returns `None`, never raises, when no contract exists for this
+        key -- "no match" is a legitimate outcome here, not a fault. A
+        contract that *is* found is fully verified exactly like `load()`
+        -- integrity MAC, target reservation, and audit-trail continuity
+        -- before being returned. Read-only: performs no repair, infers no
+        authority, and creates no entitlement. Draws no conclusion about
+        the returned contract's *state* -- a caller must still check
+        `.state` itself; this method cannot turn a `FAILED`, terminal, or
+        `RECONCILIATION` contract into `PREPARED`."""
+
+        with self._connect() as connection:
+            row = connection.execute(_SELECT_CONTRACT_BY_IDEMPOTENCY_KEY, (idempotency_key,)).fetchone()
+            if row is None:
+                return None
+            contract = self._decode_row(row)
+            if contract.idempotency_key != idempotency_key:
                 raise ContractIntegrityError("Stored Recovery Contract identity does not match its index.")
             self._verify_related_state(connection, contract)
         return contract

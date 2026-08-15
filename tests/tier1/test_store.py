@@ -86,6 +86,43 @@ def test_create_load_and_restart_preserve_authoritative_contract(tmp_path, contr
     assert (tmp_path / "contracts.sqlite3").stat().st_mode & 0o777 == 0o600
 
 
+def test_find_by_idempotency_key_returns_none_when_absent(tmp_path):
+    store = _store(tmp_path)
+    assert store.find_by_idempotency_key("a" * 64) is None
+
+
+def test_find_by_idempotency_key_returns_the_matching_verified_contract(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contract = contract_factory()
+    store.create(contract)
+
+    found = store.find_by_idempotency_key(contract.idempotency_key)
+
+    assert found == contract
+    # A restarted store (fresh Python object, same on-disk file) finds it
+    # identically -- W3 Slice 3's re-invocation/restart requirement.
+    restarted = _store(tmp_path)
+    assert restarted.find_by_idempotency_key(contract.idempotency_key) == contract
+
+
+def test_find_by_idempotency_key_does_not_match_a_different_key(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    store.create(contract_factory())
+    assert store.find_by_idempotency_key("b" * 64) is None
+
+
+def test_find_by_idempotency_key_detects_tampering(tmp_path, contract_factory):
+    store = _store(tmp_path)
+    contract = contract_factory()
+    store.create(contract)
+
+    with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
+        connection.execute("UPDATE contracts SET state = ? WHERE contract_id = ?", ("verified", contract.contract_id))
+
+    with pytest.raises(ContractIntegrityError):
+        store.find_by_idempotency_key(contract.idempotency_key)
+
+
 def test_mac_framing_is_unambiguous_across_component_boundaries(tmp_path):
     store = _store(tmp_path)
 

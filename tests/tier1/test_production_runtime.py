@@ -145,6 +145,12 @@ def _full_env(tmp_path: Path, *, tls_mode: str = "strict") -> dict[str, str]:
 
     cert_path, key_path = _self_signed_cert(tmp_path)
 
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir(mode=0o700, exist_ok=True)
+    authorization_inbox_file = artifacts_dir / "authorization-inbox.json"
+    confirmation_pending_file = artifacts_dir / "confirmation-pending.json"
+    confirmation_signed_file = artifacts_dir / "confirmation-signed.json"
+
     provision_production_anchor_baseline(
         ProductionStoreConfig(store_path=store_path, key_file=store_key_file), value=2, handle="0x01500000"
     )
@@ -167,6 +173,9 @@ def _full_env(tmp_path: Path, *, tls_mode: str = "strict") -> dict[str, str]:
         "PFSENSE_TIER1_WITNESS_CLIENT_CERT_FILE": str(cert_path),
         "PFSENSE_TIER1_WITNESS_CLIENT_KEY_FILE": str(key_path),
         "PFSENSE_TIER1_WITNESS_SERVER_CA_FILE": str(cert_path),
+        "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE": str(authorization_inbox_file),
+        "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE": str(confirmation_pending_file),
+        "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE": str(confirmation_signed_file),
     }
 
 
@@ -264,6 +273,8 @@ def test_unprovisioned_anti_rollback_anchor_fails_closed(tmp_path):
     reconcile_file = tmp_path / "authorities" / "reconciliation.json"
     _authority_file(reconcile_file, authority_id="c", public_key=reconcile_pub)
     cert_path, key_path = _self_signed_cert(tmp_path)
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir(mode=0o700, exist_ok=True)
 
     store_path = store_dir / "recovery.sqlite3"
     # Creates the store file/schema without seeding or completing anchor
@@ -288,6 +299,9 @@ def test_unprovisioned_anti_rollback_anchor_fails_closed(tmp_path):
         "PFSENSE_TIER1_WITNESS_CLIENT_CERT_FILE": str(cert_path),
         "PFSENSE_TIER1_WITNESS_CLIENT_KEY_FILE": str(key_path),
         "PFSENSE_TIER1_WITNESS_SERVER_CA_FILE": str(cert_path),
+        "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE": str(artifacts_dir / "authorization-inbox.json"),
+        "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE": str(artifacts_dir / "confirmation-pending.json"),
+        "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE": str(artifacts_dir / "confirmation-signed.json"),
     }
     # Deliberately no provision_production_anchor_baseline() call.
     with pytest.raises(Tier1ConfigurationError, match="not fully provisioned"):
@@ -344,9 +358,15 @@ def test_module_loads_no_private_signing_key_material():
 
 def test_runtime_exposes_no_lower_level_component():
     """The only public attribute is execution_core -- no store, executor,
-    write client, or transport is reachable from outside construction."""
+    write client, transport, preparer, or artifact-exchange path is
+    reachable from outside construction. New W3 Slice 3 implementation
+    details are expected to grow this slot list over time; the invariant
+    this test enforces is that every one of them stays private."""
 
-    assert set(ProductionAliasDescriptionRuntime.__slots__) == {"execution_core", "_store"}
+    slots = set(ProductionAliasDescriptionRuntime.__slots__)
+    assert "execution_core" in slots
+    public = {name for name in slots if not name.startswith("_")}
+    assert public == {"execution_core"}
 
 
 # ---------------------------------------------------------------------------

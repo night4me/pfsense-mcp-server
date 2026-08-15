@@ -58,16 +58,35 @@ uncertainty classification: `DEFINITELY_APPLIED`/`DEFINITELY_NOT_APPLIED`/
 remains exactly `store.resolve_reconciliation()`, gated by the same pinned
 reconciliation authority configured here -- `ProductionAliasDescriptionRuntime.resolve_reconciliation()`
 below is a one-line forwarding call, not a second implementation.
+
+W3 Slice 3 (ADR-028 product composition): `request_alias_description_change()`
+is the single composed operation tying Slice 2's artifact-exchange
+primitives (`artifact_exchange.py`), Slice 3A's `resume_prepared()` seam
+(`alias_description_execution.py`), and this existing, completely
+unmodified W1/W2 authorization/confirmation/execution chain into ADR-028's
+five-state asynchronous product model (`ProductOutcome`). Three additional
+fixed, environment-derived, all-or-nothing file paths (never
+caller-selectable) are required alongside the existing set: the signed
+authorization inbox, the unsigned pending-confirmation outbox, and the
+signed confirmation inbox -- exactly three fixed single files, matching
+`lab/reconciliation_authority.py`'s own accepted pattern; no directory
+scanning, no wildcard discovery. **Not yet MCP-exposed** -- no tool,
+endpoint, or product registration imports this method; it remains
+reachable only from this module and its own tests, exactly like every
+other W1/W2/W3 slice before product activation (Slice 4).
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
 import re
 import ssl
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
 
 import httpx
@@ -75,6 +94,7 @@ import httpx
 from pfsense_mcp.capabilities import Capability
 from pfsense_mcp.config import PfSenseConfig, load_api_key, load_config
 from pfsense_mcp.factory import build_pfsense_client, build_write_client
+from pfsense_mcp.security_discovery import AnchorAssurance, CapabilityPosture
 from pfsense_mcp.tls import TLSMode
 
 from ..secure_file import open_nofollow, validate_descriptor
@@ -82,16 +102,30 @@ from .alias_description import (
     ADAPTER_VERSION,
     ENDPOINT_SYMBOL,
     HTTP_METHOD,
+    AliasDescriptionChangeV1,
     AliasDescriptionPreparerV1,
     ConfiguredApplianceTargetV1,
 )
 from .alias_description_execution import AliasDescriptionExecutionCoreV1
 from .anti_rollback_tpm_witness import TpmHostWitnessAnchor
+from .artifact_exchange import (
+    load_signed_confirmation_evidence,
+    load_signed_plan_authorization_v2,
+    pending_confirmation_request_from_contract,
+    pending_confirmation_request_to_bytes,
+    write_secure_new,
+)
 from .authorization_consumption_store import SqliteAuthorizationConsumptionStore
 from .confirmation_providers import Ed25519ConfirmationVerifier
 from .contract import RecoveryContract
 from .ed25519_authority import PinnedAuthority, PinnedAuthoritySet
-from .errors import PreparedExecutionIntentError, Tier1ConfigurationError, Tier1Error
+from .errors import (
+    ArtifactExchangeError,
+    BoundExecutionError,
+    PreparedExecutionIntentError,
+    Tier1ConfigurationError,
+    Tier1Error,
+)
 from .executor import MutationExecutor
 from .key_lifecycle import KeyPurpose, NonceCounter, load_key_material
 from .policy import MutationPolicy, MutationRule
@@ -103,6 +137,7 @@ from .production_store import (
 )
 from .reconciliation import ReconciliationEvidence
 from .reconciliation_providers import Ed25519ReconciliationVerifier
+from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
 _CONSUMPTION_STORE_PATH_VAR = "PFSENSE_TIER1_CONSUMPTION_STORE_PATH"
@@ -122,6 +157,13 @@ _WITNESS_BASE_URL_VAR = "PFSENSE_TIER1_WITNESS_BASE_URL"
 _WITNESS_CLIENT_CERT_VAR = "PFSENSE_TIER1_WITNESS_CLIENT_CERT_FILE"
 _WITNESS_CLIENT_KEY_VAR = "PFSENSE_TIER1_WITNESS_CLIENT_KEY_FILE"
 _WITNESS_SERVER_CA_VAR = "PFSENSE_TIER1_WITNESS_SERVER_CA_FILE"
+
+# W3 Slice 3 (ADR-028 W3-D1): exactly three fixed, non-caller-selectable
+# single files -- matching lab/reconciliation_authority.py's own accepted
+# pattern exactly, never a directory to scan.
+_AUTHORIZATION_INBOX_FILE_VAR = "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE"
+_CONFIRMATION_PENDING_FILE_VAR = "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE"
+_CONFIRMATION_SIGNED_FILE_VAR = "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE"
 
 # A fixed, non-configurable identifier -- mirrors production_store.py's own
 # PRODUCTION_STORE_ID exactly. Not sourced from env: there is exactly one
@@ -146,24 +188,107 @@ _REQUIRED_VARS = (
     _WITNESS_CLIENT_CERT_VAR,
     _WITNESS_CLIENT_KEY_VAR,
     _WITNESS_SERVER_CA_VAR,
+    _AUTHORIZATION_INBOX_FILE_VAR,
+    _CONFIRMATION_PENDING_FILE_VAR,
+    _CONFIRMATION_SIGNED_FILE_VAR,
 )
 
 
+class ProductOutcomeState(str, Enum):
+    """ADR-028's five product-facing states -- an intentionally coarse
+    projection of the richer internal `RecoveryContract`/`MutationExecutor`
+    state machine, never a 1:1 rename of every internal state (owner
+    decision, 2026-08-15). Mapping principle, applied uniformly by
+    `_project_recovery_state()` below: `VERIFIED` and `RECONCILIATION`
+    project to their own like-named states; every other internal outcome
+    (`FAILED`, `ROLLING_BACK`, `ROLLED_BACK`, `ROLLBACK_FAILED`, and any
+    fail-closed denial before a contract exists) projects to the uniform
+    `REFUSED` -- it never reveals which specific internal state or gate
+    produced it. No `RecoveryState` is added, removed, or reinterpreted to
+    make this mapping neater; the durable internal record is never hidden,
+    only additionally projected."""
+
+    REQUESTED = "requested"
+    AWAITING_CONFIRMATION = "awaiting_confirmation"
+    VERIFIED = "verified"
+    RECONCILIATION_REQUIRED = "reconciliation_required"
+    REFUSED = "refused"
+
+
+@dataclass(frozen=True)
+class ProductOutcome:
+    """The W3 Slice 3 composed operation's return value. `contract_id` is
+    populated whenever a durable `RecoveryContract` exists for this
+    request (including on `REFUSED`, if refusal happened after the
+    contract was created) -- exposing an opaque identifier is not itself
+    "which gate refused" detail; it is `None` only for `REQUESTED` and for
+    a `REFUSED` that occurred before any contract could exist."""
+
+    state: ProductOutcomeState
+    contract_id: str | None = None
+
+
+def _project_recovery_state(state: RecoveryState) -> ProductOutcomeState:
+    if state is RecoveryState.VERIFIED:
+        return ProductOutcomeState.VERIFIED
+    if state is RecoveryState.RECONCILIATION:
+        return ProductOutcomeState.RECONCILIATION_REQUIRED
+    return ProductOutcomeState.REFUSED
+
+
+def _artifact_present(path: Path) -> bool:
+    """`lexists`-equivalent presence check: a broken symlink (target
+    missing) still counts as "something is here" -- it must be refused by
+    the existing secure-file discipline when read, never silently treated
+    as REQUESTED/AWAITING_CONFIRMATION's "nothing here yet" case (ADR-028:
+    "never silently treated as absent")."""
+
+    return path.is_symlink() or path.exists()
+
+
 class ProductionAliasDescriptionRuntime:
-    """The complete, fixed, environment-derived W2 runtime. Exposes
-    exactly two operations -- the W1 execution core
-    (`authorize_and_create`/`confirm_and_handoff`) and manual signed
-    reconciliation resolution -- and nothing else. Holding this object
-    gives no direct access to the underlying store, executor, write
-    client, or any other lower-level primitive; every other composed
-    component is a private implementation detail of construction, never
-    a public attribute a caller could substitute or bypass through."""
+    """The complete, fixed, environment-derived W2/W3 runtime. Exposes
+    the W1 execution core (`authorize_and_create`/`confirm_and_handoff`/
+    `resume_prepared`), manual signed reconciliation resolution, and the
+    single composed W3 Slice 3 product operation
+    (`request_alias_description_change`) -- nothing else. Holding this
+    object gives no direct access to the underlying store, executor,
+    write client, artifact-exchange paths, or any other lower-level
+    primitive; every other composed component is a private implementation
+    detail of construction, never a public attribute a caller could
+    substitute or bypass through."""
 
-    __slots__ = ("_store", "execution_core")
+    __slots__ = (
+        "_artifact_integrity_key",
+        "_authorization_inbox_file",
+        "_confirmation_authority_id",
+        "_confirmation_pending_file",
+        "_confirmation_signed_file",
+        "_preparer",
+        "_store",
+        "execution_core",
+    )
 
-    def __init__(self, *, execution_core: AliasDescriptionExecutionCoreV1, store: SqliteRecoveryContractStore) -> None:
+    def __init__(
+        self,
+        *,
+        execution_core: AliasDescriptionExecutionCoreV1,
+        store: SqliteRecoveryContractStore,
+        preparer: AliasDescriptionPreparerV1,
+        authorization_inbox_file: Path,
+        confirmation_pending_file: Path,
+        confirmation_signed_file: Path,
+        confirmation_authority_id: str,
+        artifact_integrity_key: bytes,
+    ) -> None:
         self.execution_core = execution_core
         self._store = store
+        self._preparer = preparer
+        self._authorization_inbox_file = authorization_inbox_file
+        self._confirmation_pending_file = confirmation_pending_file
+        self._confirmation_signed_file = confirmation_signed_file
+        self._confirmation_authority_id = confirmation_authority_id
+        self._artifact_integrity_key = artifact_integrity_key
 
     def resolve_reconciliation(self, contract_id: str, *, evidence: ReconciliationEvidence) -> RecoveryContract:
         """Forwards to the store's own, already-hardened
@@ -173,6 +298,137 @@ class ProductionAliasDescriptionRuntime:
         reconciliation verifier all raise before any state changes."""
 
         return self._store.resolve_reconciliation(contract_id, evidence=evidence)
+
+    def request_alias_description_change(
+        self,
+        request: AliasDescriptionChangeV1,
+        *,
+        requested_plan_digest: str,
+        requested_step_id: str,
+        target_capability_posture: CapabilityPosture,
+        target_anchor_assurance: AnchorAssurance,
+        now: datetime,
+        freshness_env: dict[str, str] | None = None,
+    ) -> ProductOutcome:
+        """The single W3 Slice 3 composed operation (ADR-028). Not yet
+        MCP-exposed -- no tool, endpoint, or product registration calls
+        this method anywhere in this repository.
+
+        Re-invocation/deduplication (ADR-028): a fresh, authoritative
+        preparation of `request` is always performed first (needed to
+        derive the exact idempotency key either way), then the store's own
+        durable `PREPARED` state -- never a new persistent store or
+        identity concept -- decides the path: an existing contract not
+        already `PREPARED` (already completed or in flight through the
+        existing, unmodified executor/reconciliation machinery) is
+        projected via `_project_recovery_state()` and never re-authorized
+        or re-confirmed by this method; an existing `PREPARED` contract is
+        resumed via Slice 3A's `resume_prepared()`; only when no contract
+        exists at all is a fresh `authorize_and_create()` attempted, and
+        only after finding a signed authorization artifact -- no artifact
+        present is `REQUESTED`, with zero consumption and zero contract
+        creation, never an error.
+
+        Confirmation delivery: the fixed, non-caller-selectable
+        confirmation-pending outbox is populated (idempotently -- never
+        overwriting an existing artifact) once a `PREPARED` contract
+        exists either way, then the fixed confirmation-signed inbox is
+        checked; absent is `AWAITING_CONFIRMATION` (including the
+        pre-positioned case, where a signed confirmation was already
+        waiting before the contract even existed -- ADR-028's accepted
+        special case of the same mechanism); present-and-invalid is
+        `REFUSED`; present-and-valid proceeds through the existing,
+        unmodified `confirm_and_handoff()` exactly once, and its resulting
+        `RecoveryState` is projected via `_project_recovery_state()`.
+
+        Every fail-closed denial along the way -- preparer failure,
+        malformed/unsafe/stale/mismatched/wrong-authority authorization or
+        confirmation artifact, any `BoundExecutionError` from the
+        unmodified W1 core -- returns the uniform `ProductOutcome(REFUSED,
+        ...)`, never leaking which specific check failed."""
+
+        try:
+            authorized_preparation = self._preparer.prepare(request)
+            idempotency_key = self.execution_core.compute_idempotency_key(authorized_preparation)
+            existing = self._store.find_by_idempotency_key(idempotency_key)
+        except Exception:
+            return ProductOutcome(ProductOutcomeState.REFUSED)
+
+        if existing is not None and existing.state is not RecoveryState.PREPARED:
+            return ProductOutcome(_project_recovery_state(existing.state), contract_id=existing.contract_id)
+
+        if existing is not None:
+            try:
+                handle = self.execution_core.resume_prepared(existing.contract_id, request=request, now=now)
+            except BoundExecutionError:
+                return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=existing.contract_id)
+            contract = existing
+        else:
+            if not _artifact_present(self._authorization_inbox_file):
+                return ProductOutcome(ProductOutcomeState.REQUESTED)
+            try:
+                authorization = load_signed_plan_authorization_v2(self._authorization_inbox_file)
+            except ArtifactExchangeError:
+                return ProductOutcome(ProductOutcomeState.REFUSED)
+            try:
+                handle = self.execution_core.authorize_and_create(
+                    request,
+                    authorized_preparation=authorized_preparation,
+                    authorization=authorization,
+                    requested_plan_digest=requested_plan_digest,
+                    requested_step_id=requested_step_id,
+                    target_capability_posture=target_capability_posture,
+                    target_anchor_assurance=target_anchor_assurance,
+                    now=now,
+                    freshness_env=freshness_env,
+                )
+            except BoundExecutionError:
+                return ProductOutcome(ProductOutcomeState.REFUSED)
+            try:
+                contract = self._store.load(handle.contract_id)
+            except Exception:
+                # The contract was already durably created by
+                # authorize_and_create() above; a failure reading it back
+                # here only prevents emitting the pending-confirmation
+                # artifact this round -- it must never be reported as a
+                # refusal of an operation that already succeeded up to
+                # this point. A later re-invocation finds it via the
+                # dedup path above and retries emission.
+                return ProductOutcome(ProductOutcomeState.AWAITING_CONFIRMATION, contract_id=handle.contract_id)
+
+        self._ensure_pending_confirmation_request(contract)
+
+        if not _artifact_present(self._confirmation_signed_file):
+            return ProductOutcome(ProductOutcomeState.AWAITING_CONFIRMATION, contract_id=handle.contract_id)
+        try:
+            confirmation = load_signed_confirmation_evidence(self._confirmation_signed_file)
+        except ArtifactExchangeError:
+            return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=handle.contract_id)
+        try:
+            outcome = self.execution_core.confirm_and_handoff(handle, confirmation=confirmation, now=now)
+        except BoundExecutionError:
+            return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=handle.contract_id)
+        return ProductOutcome(_project_recovery_state(outcome.state), contract_id=handle.contract_id)
+
+    def _ensure_pending_confirmation_request(self, contract: RecoveryContract) -> None:
+        """Idempotent, fail-closed emission: never overwrites an existing
+        pending-confirmation artifact (ADR-028: leftover/conflicting
+        artifacts are never auto-deleted or overwritten -- cleanup is an
+        explicit operator action). A write failure (a stale, unrelated
+        artifact already occupying the fixed path) never affects the
+        already-durable `PREPARED` contract; it only means this round
+        does not (re-)emit a fresh pending request."""
+
+        if _artifact_present(self._confirmation_pending_file):
+            return
+        pending = pending_confirmation_request_from_contract(
+            contract, expected_authority_id=self._confirmation_authority_id
+        )
+        with contextlib.suppress(ArtifactExchangeError):
+            write_secure_new(
+                self._confirmation_pending_file,
+                pending_confirmation_request_to_bytes(pending, integrity_key=self._artifact_integrity_key),
+            )
 
 
 def _missing_required_vars(source: dict[str, str] | os._Environ[str]) -> list[str]:
@@ -225,6 +481,13 @@ def _load_pinned_authority(path: Path) -> PinnedAuthority:
         raise Tier1ConfigurationError(f"Pinned authority file failed domain validation: {path}") from exc
 
 
+def _require_absolute_path(raw: str, var_name: str) -> Path:
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        raise Tier1ConfigurationError(f"{var_name} must be an absolute path (got {raw!r}).")
+    return path
+
+
 @dataclass(frozen=True)
 class _WitnessClientConfig:
     base_url: str
@@ -242,17 +505,11 @@ def _load_witness_client_config(source: dict[str, str] | os._Environ[str]) -> _W
     if not base_url.startswith("https://"):
         raise Tier1ConfigurationError(f"{_WITNESS_BASE_URL_VAR} must use https (got {base_url!r}).")
 
-    def _require_absolute(raw: str, var_name: str) -> Path:
-        path = Path(raw).expanduser()
-        if not path.is_absolute():
-            raise Tier1ConfigurationError(f"{var_name} must be an absolute path (got {raw!r}).")
-        return path
-
     return _WitnessClientConfig(
         base_url=base_url,
-        client_cert_file=_require_absolute(client_cert, _WITNESS_CLIENT_CERT_VAR),
-        client_key_file=_require_absolute(client_key, _WITNESS_CLIENT_KEY_VAR),
-        server_ca_file=_require_absolute(server_ca, _WITNESS_SERVER_CA_VAR),
+        client_cert_file=_require_absolute_path(client_cert, _WITNESS_CLIENT_CERT_VAR),
+        client_key_file=_require_absolute_path(client_key, _WITNESS_CLIENT_KEY_VAR),
+        server_ca_file=_require_absolute_path(server_ca, _WITNESS_SERVER_CA_VAR),
     )
 
 
@@ -326,9 +583,8 @@ def build_production_runtime(env: dict[str, str] | None = None) -> ProductionAli
     authorization_authorities = PinnedAuthoritySet(
         (_load_pinned_authority(Path(source[_AUTHORIZATION_AUTHORITY_FILE_VAR])),)
     )
-    confirmation_verifier = Ed25519ConfirmationVerifier(
-        (_load_pinned_authority(Path(source[_CONFIRMATION_AUTHORITY_FILE_VAR])),)
-    )
+    confirmation_authority = _load_pinned_authority(Path(source[_CONFIRMATION_AUTHORITY_FILE_VAR]))
+    confirmation_verifier = Ed25519ConfirmationVerifier((confirmation_authority,))
     reconciliation_verifier = Ed25519ReconciliationVerifier(
         (_load_pinned_authority(Path(source[_RECONCILIATION_AUTHORITY_FILE_VAR])),)
     )
@@ -341,17 +597,38 @@ def build_production_runtime(env: dict[str, str] | None = None) -> ProductionAli
     witness_config = _load_witness_client_config(source)
     anchor = _build_witness_anchor(witness_config)
 
+    # W3 Slice 3 (ADR-028 W3-D1): three fixed, non-caller-selectable
+    # single artifact-exchange files, all-or-nothing with every other
+    # required var above (see _REQUIRED_VARS).
+    authorization_inbox_file = _require_absolute_path(
+        source[_AUTHORIZATION_INBOX_FILE_VAR], _AUTHORIZATION_INBOX_FILE_VAR
+    )
+    confirmation_pending_file = _require_absolute_path(
+        source[_CONFIRMATION_PENDING_FILE_VAR], _CONFIRMATION_PENDING_FILE_VAR
+    )
+    confirmation_signed_file = _require_absolute_path(
+        source[_CONFIRMATION_SIGNED_FILE_VAR], _CONFIRMATION_SIGNED_FILE_VAR
+    )
+
     store = open_production_store(
         store_config,
         confirmation_verifier=confirmation_verifier,
         reconciliation_verifier=reconciliation_verifier,
         anti_rollback_anchor=anchor,
     )
+    # The same integrity-only key material protects both the consumption
+    # store's own rows and the pending-confirmation-request artifact's
+    # MAC: both are local-tamper-detection-only, same trust boundary
+    # (this production process/host), never an authorization or
+    # confirmation authority in themselves -- a second, dedicated key
+    # would add required-configuration surface without a corresponding
+    # security separation need.
+    consumption_integrity_key = load_key_material(
+        Path(source[_CONSUMPTION_STORE_KEY_FILE_VAR]), purpose=KeyPurpose.INTEGRITY
+    ).material
     consumption_store = SqliteAuthorizationConsumptionStore(
         Path(source[_CONSUMPTION_STORE_PATH_VAR]),
-        integrity_key=load_key_material(
-            Path(source[_CONSUMPTION_STORE_KEY_FILE_VAR]), purpose=KeyPurpose.INTEGRITY
-        ).material,
+        integrity_key=consumption_integrity_key,
         store_id=CONSUMPTION_STORE_ID,
     )
 
@@ -376,12 +653,23 @@ def build_production_runtime(env: dict[str, str] | None = None) -> ProductionAli
         encryption_key=encryption_key_record,
         nonce_counter=nonce_counter,
     )
-    return ProductionAliasDescriptionRuntime(execution_core=execution_core, store=store)
+    return ProductionAliasDescriptionRuntime(
+        execution_core=execution_core,
+        store=store,
+        preparer=preparer,
+        authorization_inbox_file=authorization_inbox_file,
+        confirmation_pending_file=confirmation_pending_file,
+        confirmation_signed_file=confirmation_signed_file,
+        confirmation_authority_id=confirmation_authority.authority_id,
+        artifact_integrity_key=consumption_integrity_key,
+    )
 
 
 __all__ = [
     "ADAPTER_VERSION",
     "CONSUMPTION_STORE_ID",
+    "ProductOutcome",
+    "ProductOutcomeState",
     "ProductionAliasDescriptionRuntime",
     "ProductionStoreConfig",
     "build_production_runtime",
