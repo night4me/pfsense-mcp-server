@@ -111,7 +111,15 @@ def test_digest_function_hard_codes_execution_domain_not_caller_input():
 
 
 def test_module_is_not_imported_by_production_construction_sites():
-    allowed = {"alias_description.py", "alias_description_execution.py"}
+    # W3 Slice 5A: artifact_exchange.py's AuthorizationPreview builder
+    # calls the existing compute_execution_intent_digest() on an
+    # already-constructed PreparedExecutionIntentV1 it never builds
+    # itself -- reuse of the one canonical digest function, not a new
+    # construction site or a second implementation (see
+    # authorization_preview_from_preparation()'s own docstring and
+    # ADR-028's explicit "do not create a second execution-intent
+    # canonicalization implementation" instruction).
+    allowed = {"alias_description.py", "alias_description_execution.py", "artifact_exchange.py"}
     offenders: list[str] = []
     production = ROOT / "src/pfsense_mcp"
     for path in production.rglob("*.py"):

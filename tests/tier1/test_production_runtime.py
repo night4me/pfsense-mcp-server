@@ -150,6 +150,7 @@ def _full_env(tmp_path: Path, *, tls_mode: str = "strict") -> dict[str, str]:
     authorization_inbox_file = artifacts_dir / "authorization-inbox.json"
     confirmation_pending_file = artifacts_dir / "confirmation-pending.json"
     confirmation_signed_file = artifacts_dir / "confirmation-signed.json"
+    authorization_preview_file = artifacts_dir / "authorization-preview.json"
 
     provision_production_anchor_baseline(
         ProductionStoreConfig(store_path=store_path, key_file=store_key_file), value=2, handle="0x01500000"
@@ -176,6 +177,7 @@ def _full_env(tmp_path: Path, *, tls_mode: str = "strict") -> dict[str, str]:
         "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE": str(authorization_inbox_file),
         "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE": str(confirmation_pending_file),
         "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE": str(confirmation_signed_file),
+        "PFSENSE_TIER1_AUTHORIZATION_PREVIEW_FILE": str(authorization_preview_file),
     }
 
 
@@ -307,6 +309,7 @@ def test_unprovisioned_anti_rollback_anchor_fails_closed(tmp_path):
         "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE": str(artifacts_dir / "authorization-inbox.json"),
         "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE": str(artifacts_dir / "confirmation-pending.json"),
         "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE": str(artifacts_dir / "confirmation-signed.json"),
+        "PFSENSE_TIER1_AUTHORIZATION_PREVIEW_FILE": str(artifacts_dir / "authorization-preview.json"),
     }
     # Deliberately no provision_production_anchor_baseline() call.
     with pytest.raises(Tier1ConfigurationError, match="not fully provisioned"):

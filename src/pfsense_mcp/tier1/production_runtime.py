@@ -64,16 +64,30 @@ is the single composed operation tying Slice 2's artifact-exchange
 primitives (`artifact_exchange.py`), Slice 3A's `resume_prepared()` seam
 (`alias_description_execution.py`), and this existing, completely
 unmodified W1/W2 authorization/confirmation/execution chain into ADR-028's
-five-state asynchronous product model (`ProductOutcome`). Three additional
-fixed, environment-derived, all-or-nothing file paths (never
-caller-selectable) are required alongside the existing set: the signed
-authorization inbox, the unsigned pending-confirmation outbox, and the
-signed confirmation inbox -- exactly three fixed single files, matching
-`lab/reconciliation_authority.py`'s own accepted pattern; no directory
-scanning, no wildcard discovery. **Not yet MCP-exposed** -- no tool,
-endpoint, or product registration imports this method; it remains
-reachable only from this module and its own tests, exactly like every
-other W1/W2/W3 slice before product activation (Slice 4).
+five-state asynchronous product model (`ProductOutcome`). Four fixed,
+environment-derived, all-or-nothing file paths (never caller-selectable)
+are required alongside the existing set: the signed authorization inbox,
+the unsigned pending-confirmation outbox, the signed confirmation inbox,
+and (W3 Slice 5A) the non-authorizing authorization-preview outbox --
+exactly four fixed single files, matching `lab/reconciliation_authority.py`'s
+own accepted pattern; no directory scanning, no wildcard discovery.
+**Not yet MCP-exposed** -- no tool, endpoint, or product registration
+imports this method; it remains reachable only from this module and its
+own tests, exactly like every other W1/W2/W3 slice before product
+activation (Slice 4).
+
+W3 Slice 5A also extends `PendingConfirmationRequest` (schema version 2)
+with plaintext G5 review fields and adds the new, purely additive,
+non-authorizing `AuthorizationPreview` artifact -- both emitted
+idempotently (never overwriting an existing artifact) alongside the
+existing pending-confirmation emission, from the SAME fresh, authoritative
+`AliasDescriptionPreparerV1.prepare()` output this module's own
+security-critical authorization path already computes. Neither artifact
+participates in any signature, verification, or binding check; both exist
+solely so an off-host signer (still unimplemented -- see
+`reports-ai/handoff/20260815T-w3-slice4-plan-digest-derivation-review.md`
+and the Slice 5 stop report) can perform semantic review without pfSense
+network access of its own.
 """
 
 from __future__ import annotations
@@ -105,10 +119,13 @@ from .alias_description import (
     AliasDescriptionChangeV1,
     AliasDescriptionPreparerV1,
     ConfiguredApplianceTargetV1,
+    PreparedAliasDescriptionExecutionV1,
 )
 from .alias_description_execution import AliasDescriptionExecutionCoreV1
 from .anti_rollback_tpm_witness import TpmHostWitnessAnchor
 from .artifact_exchange import (
+    authorization_preview_from_preparation,
+    authorization_preview_to_bytes,
     load_signed_confirmation_evidence,
     load_signed_plan_authorization_v2,
     pending_confirmation_request_from_contract,
@@ -165,6 +182,13 @@ _AUTHORIZATION_INBOX_FILE_VAR = "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE"
 _CONFIRMATION_PENDING_FILE_VAR = "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE"
 _CONFIRMATION_SIGNED_FILE_VAR = "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE"
 
+# W3 Slice 5A (ADR-028 signing-side CLI trust boundary): a fourth fixed,
+# non-caller-selectable single file -- the non-authorizing, human-readable
+# authorization preview an off-host signer reads before constructing a
+# PlanAuthorizationV2. Same all-or-nothing/fixed-path discipline as the
+# three artifact-exchange files above.
+_AUTHORIZATION_PREVIEW_FILE_VAR = "PFSENSE_TIER1_AUTHORIZATION_PREVIEW_FILE"
+
 # A fixed, non-configurable identifier -- mirrors production_store.py's own
 # PRODUCTION_STORE_ID exactly. Not sourced from env: there is exactly one
 # consumption store for exactly one production deployment of this one
@@ -191,6 +215,7 @@ _REQUIRED_VARS = (
     _AUTHORIZATION_INBOX_FILE_VAR,
     _CONFIRMATION_PENDING_FILE_VAR,
     _CONFIRMATION_SIGNED_FILE_VAR,
+    _AUTHORIZATION_PREVIEW_FILE_VAR,
 )
 
 
@@ -261,6 +286,7 @@ class ProductionAliasDescriptionRuntime:
     __slots__ = (
         "_artifact_integrity_key",
         "_authorization_inbox_file",
+        "_authorization_preview_file",
         "_confirmation_authority_id",
         "_confirmation_pending_file",
         "_confirmation_signed_file",
@@ -278,6 +304,7 @@ class ProductionAliasDescriptionRuntime:
         authorization_inbox_file: Path,
         confirmation_pending_file: Path,
         confirmation_signed_file: Path,
+        authorization_preview_file: Path,
         confirmation_authority_id: str,
         artifact_integrity_key: bytes,
     ) -> None:
@@ -287,6 +314,7 @@ class ProductionAliasDescriptionRuntime:
         self._authorization_inbox_file = authorization_inbox_file
         self._confirmation_pending_file = confirmation_pending_file
         self._confirmation_signed_file = confirmation_signed_file
+        self._authorization_preview_file = authorization_preview_file
         self._confirmation_authority_id = confirmation_authority_id
         self._artifact_integrity_key = artifact_integrity_key
 
@@ -364,6 +392,15 @@ class ProductionAliasDescriptionRuntime:
                 return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=existing.contract_id)
             contract = existing
         else:
+            self._ensure_authorization_preview(
+                request,
+                authorized_preparation,
+                requested_plan_digest=requested_plan_digest,
+                requested_step_id=requested_step_id,
+                target_capability_posture=target_capability_posture,
+                target_anchor_assurance=target_anchor_assurance,
+                now=now,
+            )
             if not _artifact_present(self._authorization_inbox_file):
                 return ProductOutcome(ProductOutcomeState.REQUESTED)
             try:
@@ -396,7 +433,9 @@ class ProductionAliasDescriptionRuntime:
                 # dedup path above and retries emission.
                 return ProductOutcome(ProductOutcomeState.AWAITING_CONFIRMATION, contract_id=handle.contract_id)
 
-        self._ensure_pending_confirmation_request(contract)
+        self._ensure_pending_confirmation_request(
+            contract, request=request, authorized_preparation=authorized_preparation
+        )
 
         if not _artifact_present(self._confirmation_signed_file):
             return ProductOutcome(ProductOutcomeState.AWAITING_CONFIRMATION, contract_id=handle.contract_id)
@@ -410,24 +449,86 @@ class ProductionAliasDescriptionRuntime:
             return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=handle.contract_id)
         return ProductOutcome(_project_recovery_state(outcome.state), contract_id=handle.contract_id)
 
-    def _ensure_pending_confirmation_request(self, contract: RecoveryContract) -> None:
+    def _ensure_pending_confirmation_request(
+        self,
+        contract: RecoveryContract,
+        *,
+        request: AliasDescriptionChangeV1,
+        authorized_preparation: PreparedAliasDescriptionExecutionV1,
+    ) -> None:
         """Idempotent, fail-closed emission: never overwrites an existing
         pending-confirmation artifact (ADR-028: leftover/conflicting
         artifacts are never auto-deleted or overwritten -- cleanup is an
         explicit operator action). A write failure (a stale, unrelated
         artifact already occupying the fixed path) never affects the
         already-durable `PREPARED` contract; it only means this round
-        does not (re-)emit a fresh pending request."""
+        does not (re-)emit a fresh pending request.
+
+        W3 Slice 5A: the semantic G5 review fields (`alias_name`/
+        `previous_description`/`requested_description`) are read from
+        `request`/`authorized_preparation` -- the SAME fresh,
+        authoritative preparation this call's own caller already
+        computed at the top of `request_alias_description_change()`,
+        never re-derived a second way here. Both construction and write
+        are covered by the same suppression as the write alone
+        previously was: a preview is best-effort and must never affect
+        the already-durable `PREPARED` contract, matching
+        `_ensure_authorization_preview()`'s identical discipline below."""
 
         if _artifact_present(self._confirmation_pending_file):
             return
-        pending = pending_confirmation_request_from_contract(
-            contract, expected_authority_id=self._confirmation_authority_id
-        )
         with contextlib.suppress(ArtifactExchangeError):
+            pending = pending_confirmation_request_from_contract(
+                contract,
+                alias_name=request.alias_name,
+                previous_description=authorized_preparation.authoritative_a.descr,
+                requested_description=request.description,
+                expected_authority_id=self._confirmation_authority_id,
+            )
             write_secure_new(
                 self._confirmation_pending_file,
                 pending_confirmation_request_to_bytes(pending, integrity_key=self._artifact_integrity_key),
+            )
+
+    def _ensure_authorization_preview(
+        self,
+        request: AliasDescriptionChangeV1,
+        authorized_preparation: PreparedAliasDescriptionExecutionV1,
+        *,
+        requested_plan_digest: str,
+        requested_step_id: str,
+        target_capability_posture: CapabilityPosture,
+        target_anchor_assurance: AnchorAssurance,
+        now: datetime,
+    ) -> None:
+        """Idempotent, fail-closed emission mirroring
+        `_ensure_pending_confirmation_request()` exactly: never
+        overwrites an existing authorization-preview artifact. Grants no
+        authority by itself -- `execution_intent_digest` is computed by
+        `authorization_preview_from_preparation()` from the SAME fresh
+        `authorized_preparation` this method's caller already produced,
+        via the existing, unmodified `compute_execution_intent_digest()`;
+        `requested_plan_digest`/`requested_step_id` are the SAME values
+        this call's own caller already received as its own parameters
+        (derived upstream from the shared `security_plan.
+        ALIAS_DESCRIPTION_WRITE_*` constants), never re-derived or
+        substituted here."""
+
+        if _artifact_present(self._authorization_preview_file):
+            return
+        with contextlib.suppress(ArtifactExchangeError):
+            preview = authorization_preview_from_preparation(
+                request,
+                authorized_preparation,
+                requested_plan_digest=requested_plan_digest,
+                requested_step_id=requested_step_id,
+                target_capability_posture=target_capability_posture,
+                target_anchor_assurance=target_anchor_assurance,
+                generated_at=now,
+            )
+            write_secure_new(
+                self._authorization_preview_file,
+                authorization_preview_to_bytes(preview, integrity_key=self._artifact_integrity_key),
             )
 
 
@@ -609,6 +710,12 @@ def build_production_runtime(env: dict[str, str] | None = None) -> ProductionAli
     confirmation_signed_file = _require_absolute_path(
         source[_CONFIRMATION_SIGNED_FILE_VAR], _CONFIRMATION_SIGNED_FILE_VAR
     )
+    # W3 Slice 5A (ADR-028 signing-side CLI trust boundary): a fourth
+    # fixed, non-caller-selectable single file, same discipline as the
+    # three above.
+    authorization_preview_file = _require_absolute_path(
+        source[_AUTHORIZATION_PREVIEW_FILE_VAR], _AUTHORIZATION_PREVIEW_FILE_VAR
+    )
 
     store = open_production_store(
         store_config,
@@ -660,6 +767,7 @@ def build_production_runtime(env: dict[str, str] | None = None) -> ProductionAli
         authorization_inbox_file=authorization_inbox_file,
         confirmation_pending_file=confirmation_pending_file,
         confirmation_signed_file=confirmation_signed_file,
+        authorization_preview_file=authorization_preview_file,
         confirmation_authority_id=confirmation_authority.authority_id,
         artifact_integrity_key=consumption_integrity_key,
     )

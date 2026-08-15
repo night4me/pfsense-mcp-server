@@ -1,4 +1,5 @@
-"""Production artifact-exchange primitives (ADR-028 W3-D1, W3 Slice 2).
+"""Production artifact-exchange primitives (ADR-028 W3-D1, W3 Slice 2;
+extended by W3 Slice 5A).
 
 Generalizes `lab/reconciliation_authority.py`'s already-accepted
 pending/signed secure-file pattern to the two artifact kinds the
@@ -10,6 +11,31 @@ mirroring `lab/reconciliation_authority.py`'s `PendingReconciliation`'s
 role, since a `ConfirmationEvidence.contract_id` does not exist until
 `AliasDescriptionExecutionCoreV1.authorize_and_create()` creates it and
 therefore cannot be pre-signed (see that module's docstring).
+
+**W3 Slice 5A** adds one further, purely additive artifact kind,
+`AuthorizationPreview`, plus three new plaintext fields on
+`PendingConfirmationRequest` (schema version 2). Both close the exact gap
+a prior W3 Slice 5 investigation found and stopped on
+(`reports-ai/handoff/20260815T-w3-slice5-stop-missing-review-seam.md`):
+neither an off-host signer's `execution_intent_digest` derivation nor the
+required G5 human-readable confirmation review (alias name, previous
+description, requested description) had any artifact to draw from --
+`RecoveryContract` itself never stores plaintext content, only digests
+and encrypted `ProtectedArtifact` ciphertext (`store.py`'s own documented
+invariant). Both new artifact kinds are **non-authorizing**: they exist
+solely so a signer can perform semantic review without live pfSense
+network access of its own; they participate in no signature, no
+`ConfirmationEvidence.verify_bindings()` check, and no
+`PlanAuthorizationV2` verification path. If a preview's content and the
+canonical/digest content it was generated from ever disagreed, that
+would be a bug in this module -- not a condition any consumer needs to
+reconcile, since a signer's own trust never rests on the preview at all,
+only on independently re-deriving what it needs from the same shared,
+security-owned constants and canonical functions production itself uses
+(`security_plan.ALIAS_DESCRIPTION_WRITE_*`, `compute_plan_digest()`,
+`compute_execution_intent_digest()`). The signing-side CLI itself
+remains unimplemented -- this slice only closes the artifact-schema
+gap that blocked it.
 
 **Not yet wired into `production_runtime.py`, `execution_core`, or any
 execution path.** This module is pure encode/decode/secure-file-I/O --
@@ -75,17 +101,24 @@ from pfsense_mcp.security_authorization import (
     PlanAuthorizationV2,
     SecurityAuthorizationError,
 )
+from pfsense_mcp.security_discovery import AnchorAssurance, CapabilityPosture
 from pfsense_mcp.security_plan import AuthorizationLevel
 
 from ..secure_file import open_nofollow, validate_descriptor
+from .alias_description import SEMANTIC_UNIT, AliasDescriptionChangeV1, PreparedAliasDescriptionExecutionV1
 from .confirmation import ConfirmationEvidence
 from .confirmation_providers import ACCEPTED_ALGORITHM as ACCEPTED_CONFIRMATION_ALGORITHM
 from .contract import RecoveryContract
 from .errors import ArtifactExchangeError, ConfirmationError
+from .prepared_execution_intent import compute_execution_intent_digest
 
 __all__ = [
+    "AuthorizationPreview",
     "PendingConfirmationRequest",
+    "authorization_preview_from_preparation",
+    "authorization_preview_to_bytes",
     "confirmation_evidence_to_bytes",
+    "load_authorization_preview",
     "load_pending_confirmation_request",
     "load_signed_confirmation_evidence",
     "load_signed_plan_authorization_v2",
@@ -102,9 +135,19 @@ _HEX_64 = re.compile(r"[0-9a-f]{64}")
 #: kind here is a small, fixed-shape JSON document, never a bulk payload.
 _MAX_FILE = 16 * 1024
 
-_PENDING_CONFIRMATION_SCHEMA_VERSION = 1
-_PENDING_CONFIRMATION_MAC_DOMAIN = b"tier1-pending-confirmation-request-v1\0"
+#: W3 Slice 5A (ADR-028 signing-side CLI trust boundary): bumped from 1 to
+#: 2 to add the plaintext G5 review fields (`alias_name`/
+#: `previous_description`/`requested_description`) no artifact previously
+#: carried. No live artifact of schema 1 was ever produced or consumed
+#: (the signing-side CLI was never built), so this is a clean version
+#: bump, not a migration.
+_PENDING_CONFIRMATION_SCHEMA_VERSION = 2
+_PENDING_CONFIRMATION_MAC_DOMAIN = b"tier1-pending-confirmation-request-v2\0"
 _CONFIRMATION_EVIDENCE_ARTIFACT_SCHEMA_VERSION = 1
+_AUTHORIZATION_PREVIEW_SCHEMA_VERSION = 1
+_AUTHORIZATION_PREVIEW_MAC_DOMAIN = b"tier1-authorization-preview-v1\0"
+_MAX_ALIAS_NAME_LENGTH = 32
+_MAX_DESCRIPTION_LENGTH = 1024
 
 
 def _is_utc(value: datetime) -> bool:
@@ -254,6 +297,189 @@ def load_signed_plan_authorization_v2(path: Path) -> PlanAuthorizationV2:
 
 
 # --------------------------------------------------------------------------
+# AuthorizationPreview -- W3 Slice 5A (ADR-028 signing-side CLI trust
+# boundary): a non-authorizing, human-readable preview of exactly what a
+# PlanAuthorizationV2 for the alias-description first-WRITE operation
+# would authorize, so an off-host signer can perform the required G5
+# semantic review without any pfSense network access of its own.
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AuthorizationPreview:
+    """Non-authorizing, human-readable preview of exactly what a
+    `PlanAuthorizationV2` for the alias-description first-WRITE
+    operation would authorize -- generated by production from the SAME
+    fresh, authoritative preparation (`AliasDescriptionPreparerV1.prepare()`)
+    the security-critical authorization path itself uses, via the same
+    unmodified `compute_execution_intent_digest()`. Possessing, reading,
+    or tampering with this artifact proves and authorizes nothing: the
+    actual authorization decision remains exclusively
+    `verify_plan_authorization_v2_signature()`/
+    `plan_authorization_v2_authorizes_execution()`/
+    `plan_authorization_is_fresh()`'s responsibility, entirely unchanged
+    by this artifact's existence. `target_capability_posture`/
+    `target_anchor_assurance`/`requested_plan_digest`/`requested_step_id`
+    are shown for operator review and cross-check only -- a signer must
+    still independently derive its own expectation via
+    `security_plan.ALIAS_DESCRIPTION_WRITE_*` (the shared, security-owned
+    constants) and the existing canonical plan-digest computation, never
+    trust this preview's copy of them as authoritative."""
+
+    operation: str
+    alias_name: str
+    previous_description: str
+    requested_description: str
+    execution_intent_digest: str
+    requested_plan_digest: str
+    requested_step_id: str
+    target_capability_posture: CapabilityPosture
+    target_anchor_assurance: AnchorAssurance
+    generated_at: datetime
+
+    def __post_init__(self) -> None:
+        if self.operation != SEMANTIC_UNIT:
+            raise ArtifactExchangeError("authorization preview operation identity is invalid")
+        if not isinstance(self.alias_name, str) or not self.alias_name or len(self.alias_name) > _MAX_ALIAS_NAME_LENGTH:
+            raise ArtifactExchangeError("authorization preview alias_name is invalid")
+        for value in (self.previous_description, self.requested_description):
+            if not isinstance(value, str) or len(value) > _MAX_DESCRIPTION_LENGTH:
+                raise ArtifactExchangeError("authorization preview description is invalid")
+        digests = (self.execution_intent_digest, self.requested_plan_digest)
+        if not all(isinstance(value, str) and _HEX_64.fullmatch(value) for value in digests):
+            raise ArtifactExchangeError("authorization preview digest is invalid")
+        if not isinstance(self.requested_step_id, str) or not _SAFE_TOKEN.fullmatch(self.requested_step_id):
+            raise ArtifactExchangeError("authorization preview step_id is invalid")
+        if not isinstance(self.target_capability_posture, CapabilityPosture):
+            raise ArtifactExchangeError("authorization preview target capability posture is invalid")
+        if not isinstance(self.target_anchor_assurance, AnchorAssurance):
+            raise ArtifactExchangeError("authorization preview target anchor assurance is invalid")
+        if not _is_utc(self.generated_at):
+            raise ArtifactExchangeError("authorization preview generated_at must be a UTC datetime")
+
+
+def authorization_preview_from_preparation(
+    request: AliasDescriptionChangeV1,
+    prepared: PreparedAliasDescriptionExecutionV1,
+    *,
+    requested_plan_digest: str,
+    requested_step_id: str,
+    target_capability_posture: CapabilityPosture,
+    target_anchor_assurance: AnchorAssurance,
+    generated_at: datetime,
+) -> AuthorizationPreview:
+    """The one place an `AuthorizationPreview`'s fields are read from the
+    same fresh, authoritative preparation production's own
+    security-critical path uses. `execution_intent_digest` is always
+    computed here, via the existing, unmodified
+    `compute_execution_intent_digest()` -- never accepted as a
+    parameter, so a caller cannot substitute a digest that does not
+    correspond to `prepared.intent`, and cannot reuse a digest computed
+    for a different alias/description pair."""
+
+    if not isinstance(request, AliasDescriptionChangeV1) or not isinstance(
+        prepared, PreparedAliasDescriptionExecutionV1
+    ):
+        raise ArtifactExchangeError("Expected AliasDescriptionChangeV1 and PreparedAliasDescriptionExecutionV1.")
+    return AuthorizationPreview(
+        operation=SEMANTIC_UNIT,
+        alias_name=request.alias_name,
+        previous_description=prepared.authoritative_a.descr,
+        requested_description=request.description,
+        execution_intent_digest=compute_execution_intent_digest(prepared.intent),
+        requested_plan_digest=requested_plan_digest,
+        requested_step_id=requested_step_id,
+        target_capability_posture=CapabilityPosture(target_capability_posture),
+        target_anchor_assurance=AnchorAssurance(target_anchor_assurance),
+        generated_at=generated_at,
+    )
+
+
+def _authorization_preview_payload(preview: AuthorizationPreview) -> dict[str, object]:
+    return {
+        "schema_version": _AUTHORIZATION_PREVIEW_SCHEMA_VERSION,
+        "operation": preview.operation,
+        "alias_name": preview.alias_name,
+        "previous_description": preview.previous_description,
+        "requested_description": preview.requested_description,
+        "execution_intent_digest": preview.execution_intent_digest,
+        "requested_plan_digest": preview.requested_plan_digest,
+        "requested_step_id": preview.requested_step_id,
+        "target_capability_posture": preview.target_capability_posture.value,
+        "target_anchor_assurance": preview.target_anchor_assurance.value,
+        "generated_at": preview.generated_at.isoformat(),
+    }
+
+
+def _authorization_preview_mac(preview: AuthorizationPreview, integrity_key: bytes) -> str:
+    if not isinstance(integrity_key, bytes) or len(integrity_key) < 32:
+        raise ArtifactExchangeError("authorization preview integrity key is invalid")
+    canonical = json.dumps(_authorization_preview_payload(preview), sort_keys=True, separators=(",", ":")).encode()
+    return hmac.new(integrity_key, _AUTHORIZATION_PREVIEW_MAC_DOMAIN + canonical, hashlib.sha256).hexdigest()
+
+
+def authorization_preview_to_bytes(preview: AuthorizationPreview, *, integrity_key: bytes) -> bytes:
+    if not isinstance(preview, AuthorizationPreview):
+        raise ArtifactExchangeError("Expected AuthorizationPreview.")
+    payload = _authorization_preview_payload(preview)
+    payload["integrity_mac"] = _authorization_preview_mac(preview, integrity_key)
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+
+
+def load_authorization_preview(path: Path, *, integrity_key: bytes) -> AuthorizationPreview:
+    """Decode and integrity-verify an authorization preview written by
+    `authorization_preview_to_bytes()`. Grants no authority by itself --
+    a value this function successfully decodes is a structurally valid,
+    untampered PREVIEW, never an authorization; the real authorization
+    decision remains exclusively the pinned `PlanAuthorizationV2`
+    signature verifier's responsibility, entirely independent of this
+    function's existence."""
+
+    try:
+        raw = json.loads(_read_secure(path))
+        expected_keys = {
+            "schema_version",
+            "operation",
+            "alias_name",
+            "previous_description",
+            "requested_description",
+            "execution_intent_digest",
+            "requested_plan_digest",
+            "requested_step_id",
+            "target_capability_posture",
+            "target_anchor_assurance",
+            "generated_at",
+            "integrity_mac",
+        }
+        if set(raw) != expected_keys or raw["schema_version"] != _AUTHORIZATION_PREVIEW_SCHEMA_VERSION:
+            raise ValueError
+        generated_at = datetime.fromisoformat(raw["generated_at"])
+        if not _is_utc(generated_at):
+            raise ValueError
+        preview = AuthorizationPreview(
+            operation=raw["operation"],
+            alias_name=raw["alias_name"],
+            previous_description=raw["previous_description"],
+            requested_description=raw["requested_description"],
+            execution_intent_digest=raw["execution_intent_digest"],
+            requested_plan_digest=raw["requested_plan_digest"],
+            requested_step_id=raw["requested_step_id"],
+            target_capability_posture=CapabilityPosture(raw["target_capability_posture"]),
+            target_anchor_assurance=AnchorAssurance(raw["target_anchor_assurance"]),
+            generated_at=generated_at,
+        )
+        mac = raw["integrity_mac"]
+        if not isinstance(mac, str):
+            raise ValueError
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError, UnicodeDecodeError, ArtifactExchangeError):
+        raise ArtifactExchangeError(f"authorization preview is malformed: {path}") from None
+
+    if not hmac.compare_digest(mac, _authorization_preview_mac(preview, integrity_key)):
+        raise ArtifactExchangeError(f"authorization preview failed integrity verification: {path}")
+    return preview
+
+
+# --------------------------------------------------------------------------
 # ConfirmationEvidence -- pending (unsigned) request emission, plus
 # signed-evidence decode.
 # --------------------------------------------------------------------------
@@ -266,10 +492,27 @@ class PendingConfirmationRequest:
     `ConfirmationEvidence` -- never itself an authorization or a bearer
     of any authority; possessing or tampering with one proves nothing
     and authorizes nothing. Mirrors `lab/reconciliation_authority.py`'s
-    `PendingReconciliation`'s role for the confirmation artifact kind."""
+    `PendingReconciliation`'s role for the confirmation artifact kind.
 
+    W3 Slice 5A (ADR-028 signing-side CLI trust boundary, schema version
+    2): `alias_name`/`previous_description`/`requested_description` are
+    the plaintext G5 review fields no earlier schema carried -- the only
+    human-readable content anywhere in the confirmation artifact chain,
+    since `RecoveryContract` itself never stores plaintext (only digests
+    and encrypted `ProtectedArtifact` content, per `store.py`'s own
+    documented invariant). These fields are for review only: they never
+    participate in `ConfirmationEvidence`'s own signed payload or
+    `verify_bindings()`'s contract-correspondence check, and disagreement
+    between this preview and the authoritative contract is never
+    possible to smuggle past verification -- the digest fields below
+    remain the sole binding target."""
+
+    operation: str
     contract_id: str
     operation_id: str
+    alias_name: str
+    previous_description: str
+    requested_description: str
     target_identity_digest: str
     target_fingerprint: str
     intent_digest: str
@@ -278,9 +521,16 @@ class PendingConfirmationRequest:
     expected_algorithm: str
 
     def __post_init__(self) -> None:
+        if self.operation != SEMANTIC_UNIT:
+            raise ArtifactExchangeError("pending confirmation request operation identity is invalid")
         tokens = (self.contract_id, self.operation_id, self.expected_authority_id, self.expected_algorithm)
         if not all(isinstance(value, str) and _SAFE_TOKEN.fullmatch(value) for value in tokens):
             raise ArtifactExchangeError("pending confirmation request identity is invalid")
+        if not isinstance(self.alias_name, str) or not self.alias_name or len(self.alias_name) > _MAX_ALIAS_NAME_LENGTH:
+            raise ArtifactExchangeError("pending confirmation request alias_name is invalid")
+        for value in (self.previous_description, self.requested_description):
+            if not isinstance(value, str) or len(value) > _MAX_DESCRIPTION_LENGTH:
+                raise ArtifactExchangeError("pending confirmation request description is invalid")
         digests = (self.target_identity_digest, self.target_fingerprint, self.intent_digest)
         if not all(isinstance(value, str) and _HEX_64.fullmatch(value) for value in digests):
             raise ArtifactExchangeError("pending confirmation request digest is invalid")
@@ -291,16 +541,30 @@ class PendingConfirmationRequest:
 def pending_confirmation_request_from_contract(
     contract: RecoveryContract,
     *,
+    alias_name: str,
+    previous_description: str,
+    requested_description: str,
     expected_authority_id: str,
     expected_algorithm: str = ACCEPTED_CONFIRMATION_ALGORITHM,
 ) -> PendingConfirmationRequest:
     """The one place a `PendingConfirmationRequest`'s binding facts are
     read from an authoritative `RecoveryContract` -- never re-derived a
-    second, possibly-inconsistent way elsewhere in this module."""
+    second, possibly-inconsistent way elsewhere in this module. The
+    semantic review fields (`alias_name`/`previous_description`/
+    `requested_description`) are supplied by the caller from the SAME
+    fresh, authoritative preparation that created `contract` in the
+    first place (`production_runtime.py`'s own
+    `request_alias_description_change()`) -- this function does not,
+    and cannot, independently re-derive them; it only assembles what it
+    is given, exactly like every other field here."""
 
     return PendingConfirmationRequest(
+        operation=SEMANTIC_UNIT,
         contract_id=contract.contract_id,
         operation_id=contract.operation_id,
+        alias_name=alias_name,
+        previous_description=previous_description,
+        requested_description=requested_description,
         target_identity_digest=contract.target_identity_digest,
         target_fingerprint=contract.target_fingerprint,
         intent_digest=contract.intent_digest,
@@ -313,8 +577,12 @@ def pending_confirmation_request_from_contract(
 def _pending_confirmation_payload(pending: PendingConfirmationRequest) -> dict[str, object]:
     return {
         "schema_version": _PENDING_CONFIRMATION_SCHEMA_VERSION,
+        "operation": pending.operation,
         "contract_id": pending.contract_id,
         "operation_id": pending.operation_id,
+        "alias_name": pending.alias_name,
+        "previous_description": pending.previous_description,
+        "requested_description": pending.requested_description,
         "target_identity_digest": pending.target_identity_digest,
         "target_fingerprint": pending.target_fingerprint,
         "intent_digest": pending.intent_digest,
@@ -351,8 +619,12 @@ def load_pending_confirmation_request(path: Path, *, integrity_key: bytes) -> Pe
         raw = json.loads(_read_secure(path))
         expected_keys = {
             "schema_version",
+            "operation",
             "contract_id",
             "operation_id",
+            "alias_name",
+            "previous_description",
+            "requested_description",
             "target_identity_digest",
             "target_fingerprint",
             "intent_digest",
@@ -367,8 +639,12 @@ def load_pending_confirmation_request(path: Path, *, integrity_key: bytes) -> Pe
         if not _is_utc(expires_at):
             raise ValueError
         pending = PendingConfirmationRequest(
+            operation=raw["operation"],
             contract_id=raw["contract_id"],
             operation_id=raw["operation_id"],
+            alias_name=raw["alias_name"],
+            previous_description=raw["previous_description"],
+            requested_description=raw["requested_description"],
             target_identity_digest=raw["target_identity_digest"],
             target_fingerprint=raw["target_fingerprint"],
             intent_digest=raw["intent_digest"],

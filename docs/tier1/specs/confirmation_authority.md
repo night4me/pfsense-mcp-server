@@ -211,6 +211,14 @@ below.
       capability, endpoint, target identity, and intent in
       human-readable form, not just digests) before this module is wired
       into any executor. **Deferred to the signing-tool deliverable above.**
+      **W3 Slice 5A** (2026-08-15) closed the artifact-schema gap that
+      previously made this box unsatisfiable at all: `PendingConfirmationRequest`
+      (schema version 2, `tier1/artifact_exchange.py`) now carries the
+      plaintext `alias_name`/previous/requested description fields G5
+      requires, non-authorizing, alongside the digest fields it already
+      carried. The signing-tool deliverable itself — the actual
+      operator-facing rendering and signing workflow — **remains
+      unbuilt**; this box stays unchecked until it exists.
 - [x] `cryptography`'s Ed25519 support (already available once the
       dependency is added for `protected_artifact_encryption.md`; no
       second library needed) confirmed sufficient — no new dependency

@@ -42,6 +42,7 @@ from pfsense_mcp.tier1.alias_description import (
 from pfsense_mcp.tier1.alias_description_execution import AliasDescriptionExecutionCoreV1
 from pfsense_mcp.tier1.artifact_exchange import (
     confirmation_evidence_to_bytes,
+    load_authorization_preview,
     load_pending_confirmation_request,
     plan_authorization_v2_to_bytes,
     write_secure_new,
@@ -225,11 +226,12 @@ class _RuntimeHandles:
         self.executor = executor
 
 
-def _paths(tmp_path: Path) -> tuple[Path, Path, Path]:
+def _paths(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     return (
         tmp_path / "authorization-inbox.json",
         tmp_path / "confirmation-pending.json",
         tmp_path / "confirmation-signed.json",
+        tmp_path / "authorization-preview.json",
     )
 
 
@@ -268,7 +270,9 @@ def _new_runtime(
         encryption_key=KeyRecord("enc-w1", 0, b"e" * 32, KeyPurpose.ENCRYPTION),
         nonce_counter=counter,
     )
-    authorization_inbox_file, confirmation_pending_file, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, confirmation_pending_file, confirmation_signed_file, authorization_preview_file = _paths(
+        tmp_path
+    )
     runtime = ProductionAliasDescriptionRuntime(
         execution_core=execution_core,
         store=store,
@@ -276,6 +280,7 @@ def _new_runtime(
         authorization_inbox_file=authorization_inbox_file,
         confirmation_pending_file=confirmation_pending_file,
         confirmation_signed_file=confirmation_signed_file,
+        authorization_preview_file=authorization_preview_file,
         confirmation_authority_id=_CONFIRMATION_AUTHORITY_ID,
         artifact_integrity_key=_ARTIFACT_INTEGRITY_KEY,
     )
@@ -371,6 +376,103 @@ def test_no_authorization_artifact_returns_requested_zero_consumption(tmp_path):
 
 
 # --------------------------------------------------------------------------
+# AuthorizationPreview (W3 Slice 5A)
+# --------------------------------------------------------------------------
+
+
+def _call_requested_with_real_digest(handles: _RuntimeHandles, *, plan_digest: str = "a" * 64, now: datetime = NOW):
+    return handles.runtime.request_alias_description_change(
+        _request(),
+        requested_plan_digest=plan_digest,
+        requested_step_id="first.write.alias.description",
+        target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
+        target_anchor_assurance=AnchorAssurance.HARDWARE_WITNESS,
+        now=now,
+    )
+
+
+def test_authorization_preview_emitted_on_requested_state_matches_exact_fields(tmp_path):
+    client, _authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
+    handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
+    _authorization_inbox_file, _pending, _signed, preview_file = _paths(tmp_path)
+
+    outcome = _call_requested_with_real_digest(handles, plan_digest="c" * 64)
+
+    assert outcome.state is ProductOutcomeState.REQUESTED
+    assert preview_file.exists()
+    preview = load_authorization_preview(preview_file, integrity_key=_ARTIFACT_INTEGRITY_KEY)
+    assert preview.alias_name == "LAB_ALIAS_TEST"
+    assert preview.previous_description == "before"
+    assert preview.requested_description == "after"
+    assert preview.execution_intent_digest == _authorized_intent_digest(client)
+    assert preview.requested_plan_digest == "c" * 64
+    assert preview.requested_step_id == "first.write.alias.description"
+    assert preview.target_capability_posture is CapabilityPosture.WRITE_PROTECTED
+    assert preview.target_anchor_assurance is AnchorAssurance.HARDWARE_WITNESS
+
+
+def test_authorization_preview_grants_no_authority_by_itself(tmp_path):
+    """A preview existing on disk, with no signed PlanAuthorizationV2 in
+    the inbox, must never itself cause anything to be authorized --
+    the outcome remains REQUESTED, zero consumption, zero contract."""
+
+    client, _authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
+    handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
+
+    first = _call_requested_with_real_digest(handles)
+    assert first.state is ProductOutcomeState.REQUESTED
+    _authorization_inbox_file, _pending, _signed, preview_file = _paths(tmp_path)
+    assert preview_file.exists()
+
+    second = _call_requested_with_real_digest(handles)
+
+    assert second.state is ProductOutcomeState.REQUESTED
+    assert second.contract_id is None
+    assert handles.consumption.calls == 0
+    assert handles.store.all_contracts() == ()
+
+
+def test_authorization_preview_not_overwritten_if_already_present(tmp_path):
+    client, _authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
+    handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
+    _authorization_inbox_file, _pending, _signed, preview_file = _paths(tmp_path)
+    preview_file.parent.mkdir(parents=True, exist_ok=True)
+    write_secure_new(preview_file, b'{"unrelated": "leftover-artifact"}')
+
+    outcome = _call_requested_with_real_digest(handles)
+
+    assert outcome.state is ProductOutcomeState.REQUESTED
+    assert preview_file.read_bytes() == b'{"unrelated": "leftover-artifact"}'
+
+
+def test_authorization_preview_carries_no_sensitive_internal_fields():
+    """Structural: the artifact never exposes raw_target_hint, a numeric
+    lifecycle locator, a raw target fingerprint dict, credentials, keys,
+    or HMAC secrets -- only the fixed, narrow field set ADR-028's Slice
+    5A authorization anticipated."""
+
+    import dataclasses as _dc
+
+    from pfsense_mcp.tier1.artifact_exchange import AuthorizationPreview
+
+    field_names = {field.name for field in _dc.fields(AuthorizationPreview)}
+    forbidden = {
+        "raw_target_hint",
+        "numeric_locator",
+        "lifecycle_locator",
+        "target_fingerprint",
+        "api_key",
+        "encryption_key",
+        "integrity_key",
+        "hmac_secret",
+        "private_key",
+        "proof",
+        "signature",
+    }
+    assert field_names.isdisjoint(forbidden)
+
+
+# --------------------------------------------------------------------------
 # Invalid authorization artifact -> REFUSED, zero consumption
 # --------------------------------------------------------------------------
 
@@ -378,7 +480,7 @@ def test_no_authorization_artifact_returns_requested_zero_consumption(tmp_path):
 def test_malformed_authorization_artifact_refused_zero_consumption(tmp_path):
     client, _authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     authorization_inbox_file.parent.mkdir(parents=True, exist_ok=True)
     authorization_inbox_file.write_bytes(b"not json")
     os.chmod(authorization_inbox_file, 0o600)
@@ -395,7 +497,7 @@ def test_malformed_authorization_artifact_refused_zero_consumption(tmp_path):
 def test_unsafe_permission_authorization_artifact_refused(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     os.chmod(authorization_inbox_file, 0o644)
@@ -410,7 +512,7 @@ def test_unsafe_permission_authorization_artifact_refused(tmp_path):
 def test_symlinked_authorization_artifact_refused(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     real = tmp_path / "real-authorization.json"
     write_secure_new(real, plan_authorization_v2_to_bytes(authorization))
@@ -434,7 +536,7 @@ def test_authorization_binding_failures_refuse_before_handoff(tmp_path, case):
 
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     digest = _authorized_intent_digest(client)
 
     changes: dict[str, object] = {}
@@ -481,7 +583,7 @@ def test_authorization_binding_failures_refuse_before_handoff(tmp_path, case):
 def test_valid_authorization_creates_prepared_contract_and_awaits_confirmation(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, confirmation_pending_file, _signed = _paths(tmp_path)
+    authorization_inbox_file, confirmation_pending_file, _signed, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
 
@@ -501,6 +603,61 @@ def test_valid_authorization_creates_prepared_contract_and_awaits_confirmation(t
     pending = load_pending_confirmation_request(confirmation_pending_file, integrity_key=_ARTIFACT_INTEGRITY_KEY)
     assert pending.contract_id == outcome.contract_id
     assert pending.expected_authority_id == _CONFIRMATION_AUTHORITY_ID
+    assert pending.alias_name == "LAB_ALIAS_TEST"
+    assert pending.previous_description == "before"
+    assert pending.requested_description == "after"
+    assert pending.target_identity_digest == contracts[0].target_identity_digest
+    assert pending.target_fingerprint == contracts[0].target_fingerprint
+    assert pending.intent_digest == contracts[0].intent_digest
+
+
+def test_confirmation_preview_grants_no_confirmation_authority_by_itself(tmp_path):
+    """A pending-confirmation preview existing on disk, with no signed
+    ConfirmationEvidence yet, must never itself advance the operation --
+    the outcome remains AWAITING_CONFIRMATION until a real, verified
+    signature arrives."""
+
+    client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
+    handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
+    authorization_inbox_file, confirmation_pending_file, _signed, _preview = _paths(tmp_path)
+    authorization = _authorization(authz_private, _authorized_intent_digest(client))
+    write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
+
+    first = _call_with_plan_digest(handles, authorization)
+    assert first.state is ProductOutcomeState.AWAITING_CONFIRMATION
+    assert confirmation_pending_file.exists()
+
+    second = _call_with_plan_digest(handles, authorization)
+
+    assert second.state is ProductOutcomeState.AWAITING_CONFIRMATION
+    assert second.contract_id == first.contract_id
+    assert len(handles.store.all_contracts()) == 1
+    handles.executor.execute.assert_not_called()
+
+
+def test_pending_confirmation_request_carries_no_sensitive_internal_fields():
+    """Structural: no raw_target_hint, numeric lifecycle locator, raw
+    API payload, credentials, keys, or HMAC secrets -- only the fixed,
+    narrow field set ADR-028's Slice 5A authorization anticipated."""
+
+    import dataclasses as _dc
+
+    from pfsense_mcp.tier1.artifact_exchange import PendingConfirmationRequest
+
+    field_names = {field.name for field in _dc.fields(PendingConfirmationRequest)}
+    forbidden = {
+        "raw_target_hint",
+        "numeric_locator",
+        "lifecycle_locator",
+        "api_key",
+        "encryption_key",
+        "integrity_key",
+        "hmac_secret",
+        "private_key",
+        "proof",
+        "signature",
+    }
+    assert field_names.isdisjoint(forbidden)
 
 
 def test_valid_authorization_and_prepositioned_confirmation_completes_in_one_call(tmp_path):
@@ -516,7 +673,7 @@ def test_valid_authorization_and_prepositioned_confirmation_completes_in_one_cal
 
     client, authz_private, authorities, confirm_public, confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
 
@@ -543,7 +700,7 @@ def test_valid_authorization_and_prepositioned_confirmation_completes_in_one_cal
 def test_reinvocation_with_prepared_contract_does_not_reconsume_or_recreate(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     first_handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
 
@@ -566,7 +723,7 @@ def test_reinvocation_with_prepared_contract_does_not_reconsume_or_recreate(tmp_
 def test_reinvocation_after_confirmation_present_completes_via_resume(tmp_path):
     client, authz_private, authorities, confirm_public, confirm_private = _fixture(tmp_path)
     first_handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(first_handles, authorization)
@@ -593,7 +750,7 @@ def test_reinvocation_after_confirmation_present_completes_via_resume(tmp_path):
 def test_existing_non_prepared_contract_refuses_without_reauthorizing(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     first_handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(first_handles, authorization)
@@ -630,7 +787,7 @@ def test_existing_non_prepared_contract_refuses_without_reauthorizing(tmp_path):
 def test_malformed_confirmation_refused_no_handoff(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(handles, authorization)
@@ -647,7 +804,7 @@ def test_malformed_confirmation_refused_no_handoff(tmp_path):
 def test_wrong_authority_confirmation_refused_no_handoff(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(handles, authorization)
@@ -666,7 +823,7 @@ def test_wrong_authority_confirmation_refused_no_handoff(tmp_path):
 def test_wrong_contract_binding_confirmation_refused(tmp_path):
     client, authz_private, authorities, confirm_public, confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(handles, authorization)
@@ -684,7 +841,7 @@ def test_wrong_contract_binding_confirmation_refused(tmp_path):
 def test_duplicate_confirmation_cannot_produce_duplicate_handoff(tmp_path):
     client, authz_private, authorities, confirm_public, confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(handles, authorization)
@@ -712,7 +869,7 @@ def test_duplicate_confirmation_cannot_produce_duplicate_handoff(tmp_path):
 
 def test_restart_sequence_creates_exactly_one_contract_and_one_send(tmp_path):
     client, authz_private, authorities, confirm_public, confirm_private = _fixture(tmp_path)
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
 
@@ -762,7 +919,7 @@ def test_reconciliation_outcome_projects_to_reconciliation_required(tmp_path):
         confirm_public=confirm_public,
         verified_outcome=RecoveryState.RECONCILIATION,
     )
-    authorization_inbox_file, _pending, confirmation_signed_file = _paths(tmp_path)
+    authorization_inbox_file, _pending, confirmation_signed_file, _preview = _paths(tmp_path)
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
     write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(authorization))
     first = _call_with_plan_digest(handles, authorization)
@@ -784,7 +941,7 @@ def test_reconciliation_outcome_projects_to_reconciliation_required(tmp_path):
 def test_pending_confirmation_request_not_overwritten_if_already_present(tmp_path):
     client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, confirmation_pending_file, _signed = _paths(tmp_path)
+    authorization_inbox_file, confirmation_pending_file, _signed, _preview = _paths(tmp_path)
     confirmation_pending_file.parent.mkdir(parents=True, exist_ok=True)
     write_secure_new(confirmation_pending_file, b'{"unrelated": "leftover-artifact"}')
     authorization = _authorization(authz_private, _authorized_intent_digest(client))
@@ -800,7 +957,7 @@ def test_pending_confirmation_request_not_overwritten_if_already_present(tmp_pat
 def test_fixed_artifact_paths_are_never_selected_by_request_content(tmp_path):
     client, _authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
     handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
-    authorization_inbox_file, _pending, _signed = _paths(tmp_path)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
     assert handles.runtime._authorization_inbox_file == authorization_inbox_file
     other_request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="a different description")
     outcome = _call(handles, other_request)
