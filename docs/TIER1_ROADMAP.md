@@ -1,7 +1,7 @@
 # Tier 1 Recovery Contract roadmap
 
 Status: inert framework implemented; capability activation blocked
-Current production state: 41 READ tools, 0 WRITE tools  
+Current production state: 42 READ tools, 0 WRITE tools  
 Activation authorized by this document: none
 
 The implementation-independent field, canonicalization, transition, fault,
@@ -419,12 +419,12 @@ part of this milestone.
   reconciliation.
 - Negative schema/output/log/error/fixture scans using sentinel values.
 - Package/entry-point and Python-version CI matrix.
-- Existing complete READ regression suite and 41-tool enumeration.
+- Existing complete READ regression suite and 42-tool enumeration.
 
 ### Acceptance criteria
 
 - All existing READ tests and security gates remain green.
-- Existing 41 READ tool schemas are unchanged unless separately approved.
+- Existing 42 READ tool schemas are unchanged unless separately approved.
 - Exactly the separately authorized WRITE tools register only in the approved
   profile.
 - Empty-allow-list/inactive-capability checks are replaced with precise

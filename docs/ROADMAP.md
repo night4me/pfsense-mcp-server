@@ -11,14 +11,14 @@ capability or authorizes a production change.
   v0.2.2, plus the Tier 1 architecture and inert safety framework as
   implemented, tested, and structurally isolated code. Production
   mutation remains separately blocked.
-- Production MCP surface: 41 READ tools, 0 WRITE tools.
+- Production MCP surface: 42 READ tools, 0 WRITE tools.
 - Tier 0 WRITE infrastructure: present, tested, and inert.
 
 ## v0.2.x — hardening and public-project readiness
 
 ### Committed
 
-- Preserve the existing 41-tool READ API and GET-only production path.
+- Preserve the existing 42-tool READ API and GET-only production path.
 - Establish public CI for Python 3.11–3.13, CodeQL, Bandit, branch coverage,
   package build/install checks, and credential-free architecture checks.
 - Complete security, threat-model, architecture, API, contribution, and release

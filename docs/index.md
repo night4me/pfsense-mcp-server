@@ -4,7 +4,7 @@
 strongly typed, read-only visibility into one pfSense appliance — without
 exposing raw shell access or a way to mutate the appliance by accident.
 
-**Current production contract: 41 READ tools. 0 WRITE tools.** That split
+**Current production contract: 42 READ tools. 0 WRITE tools.** That split
 is deliberate: this project treats mutation as a safety-engineering
 problem, not a feature flag — the maintainer's own reasoning is in the
 README's
@@ -43,7 +43,7 @@ itself:
   has inventoried and *not yet* authorized. Start here if you're deciding
   whether to trust this project with appliance credentials.
 - **API reference** — the full MCP tool catalog this server currently
-  registers (41 READ tools, zero WRITE tools).
+  registers (42 READ tools, zero WRITE tools).
 - **Architecture (current production)** — how the active READ path is
   built: transport, typed response mapping, capability gating, tool
   registration.
@@ -64,7 +64,7 @@ itself:
 
 ## Project status
 
-The production server is READ-only: 41 tools, zero WRITE tools, an empty
+The production server is READ-only: 42 tools, zero WRITE tools, an empty
 WRITE endpoint allow-list. v0.3.0 is the current immutable, published
 release. It ships the Tier 1 safety framework — every new module remains
 structurally unreachable from production until an explicit, separately

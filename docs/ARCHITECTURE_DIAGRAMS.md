@@ -11,7 +11,7 @@ explicitly labeled.
 flowchart LR
     Caller[Trusted local MCP client] -->|stdio| App[Application / FastMCP]
     App --> Registry[ToolRegistry]
-    Registry --> Tools[41 thin READ tools]
+    Registry --> Tools[42 thin READ tools]
     Tools --> Domain[PfSenseClient]
     Domain --> Rest[RestApiClient\nGET-only]
     Rest --> Transport[HttpTransport]
@@ -72,7 +72,7 @@ flowchart TD
     Registry --> WriteDispatch[register_all_write]
     WriteDispatch --> Empty[No branches / no WRITE registration]
 
-    Tests[Registry and profile tests] -. assert 41 READ / 0 WRITE .-> MCP
+    Tests[Registry and profile tests] -. assert 42 READ / 0 WRITE .-> MCP
 ```
 
 ## Configuration loading

@@ -13,7 +13,7 @@ requires explicit owner approval.
 - Build from a clean, reviewed commit on the intended release branch.
 - Require Python 3.11–3.13 CI, CodeQL, and all local offline gates to pass.
 - Confirm the MIT `LICENSE` and `License-Expression: MIT` package metadata.
-- Confirm 41 READ tools, zero WRITE tools, an empty WRITE allow-list, and no
+- Confirm 42 READ tools, zero WRITE tools, an empty WRITE allow-list, and no
   capability or endpoint expansion unless separately approved.
 
 ## Clean build

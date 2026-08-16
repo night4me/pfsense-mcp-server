@@ -39,7 +39,7 @@ enterprise controls.
 ## Expected behaviour
 
 Claude Desktop starts the process on demand and displays the pfSense tools. The
-auditor profile exposes 41 READ tools and no WRITE tools. Tool invocations can
+auditor profile exposes 42 READ tools and no WRITE tools. Tool invocations can
 query the configured appliance but cannot mutate it.
 
 ## Troubleshooting
