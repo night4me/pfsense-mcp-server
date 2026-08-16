@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml)
 [![PyPI](https://img.shields.io/pypi/v/pfsense-mcp-server.svg)](https://pypi.org/project/pfsense-mcp-server/)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/night4me/pfsense-mcp-server/blob/main/LICENSE)
 
 **A security-first [MCP](https://modelcontextprotocol.io/) server for pfSense,
 featuring cryptographically authorized, recoverable WRITE operations and
@@ -45,18 +45,18 @@ install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 ```
 
 Point your MCP client at that command (the exact configuration key varies by
-client — see [verified client examples](examples/README.md)), confirm it
+client — see [verified client examples](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md)), confirm it
 shows 42 READ tools and no WRITE tools, then try one of the
 [example prompts](#example-prompts) below. Full configuration reference,
 troubleshooting, and every environment variable:
-[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md).
+[`docs/CONFIGURATION.md`](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/).
 
 `pfsense-mcp-server` is published on
 [PyPI](https://pypi.org/project/pfsense-mcp-server/) with
 [PEP 740](https://peps.python.org/pep-0740/) digital attestations verifiable
 back to this repository and the exact release commit — no long-lived upload
 token exists. To build from source instead, see
-[`CONTRIBUTING.md`](CONTRIBUTING.md#local-setup).
+[`CONTRIBUTING.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md#local-setup).
 
 ## Example prompts
 
@@ -72,7 +72,7 @@ Ask your MCP client things like:
 - *"What DNS resolver overrides are configured, and do any look wrong?"*
 
 Each maps to one typed, capability-gated tool — see the
-[full tool reference](docs/API.md) for the complete 41-tool catalog.
+[full tool reference](https://night4me.github.io/pfsense-mcp-server/API/) for the complete 42-tool catalog.
 
 ## Why this project exists
 
@@ -162,9 +162,9 @@ operator to explicitly select `PFSENSE_PROFILE=write_protected` and then
 personally drive a real, owner-approved signing ceremony for each
 individual mutation; nothing about it is automatic or AI-triggerable on
 its own. See
-[the Tier 1 architecture](docs/TIER1_ARCHITECTURE.md) and the
-[public roadmap](docs/ROADMAP.md) for the complete picture, and
-[the security model](docs/SECURITY_MODEL.md) for what's actually enforced,
+[the Tier 1 architecture](https://night4me.github.io/pfsense-mcp-server/TIER1_ARCHITECTURE/) and the
+[public roadmap](https://night4me.github.io/pfsense-mcp-server/ROADMAP/) for the complete picture, and
+[the security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/) for what's actually enforced,
 not just designed.
 
 **Different priorities.** Other pfSense MCP projects may prioritize
@@ -188,12 +188,12 @@ repository.
   is in the selected profile's accepted set.
 - The supported transport is local stdio; the process controlling that
   channel is the trust boundary — see
-  [the threat model](docs/THREAT_MODEL.md) for exactly what that does and
+  [the threat model](https://night4me.github.io/pfsense-mcp-server/THREAT_MODEL/) for exactly what that does and
   does not cover.
 
 Every claim above is backed by a specific test class, listed with the tests
-that enforce it in [`SECURITY.md`](SECURITY.md#security-guarantees). Report
-vulnerabilities privately through [`SECURITY.md`](SECURITY.md) — never in a
+that enforce it in [`SECURITY.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md#security-guarantees). Report
+vulnerabilities privately through [`SECURITY.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md) — never in a
 public issue.
 
 ## Security-first by design
@@ -249,7 +249,7 @@ The protected WRITE path has been exercised end-to-end against a real
 LAB pfSense appliance — never the owner's production/home pfSense —
 including least-privilege execution, authoritative read-back,
 `RecoveryContract` lifecycle, and TPM witness advancement. See
-[`docs/adr/ADR-026-first-write-capability-adapter.md`](docs/adr/ADR-026-first-write-capability-adapter.md)
+[`docs/adr/ADR-026-first-write-capability-adapter.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/docs/adr/ADR-026-first-write-capability-adapter.md)
 for the complete evidence chain.
 
 ## Documentation
@@ -257,15 +257,15 @@ for the complete evidence chain.
 A browsable version of the full documentation set below is published at
 [night4me.github.io/pfsense-mcp-server](https://night4me.github.io/pfsense-mcp-server/)
 (built with `make docs-serve` for a local preview); see
-[`docs/index.md`](docs/index.md) for the same map.
+[`docs/index.md`](https://night4me.github.io/pfsense-mcp-server/) for the same map.
 
-- [MCP tool reference](docs/API.md)
-- [Configuration reference](docs/CONFIGURATION.md)
-- [Client setup examples](examples/README.md)
-- [Security model](docs/SECURITY_MODEL.md) · [Threat model](docs/THREAT_MODEL.md)
-- [Architecture diagrams](docs/ARCHITECTURE_DIAGRAMS.md) · [Architecture decisions](docs/adr/README.md)
-- [Tier 1 safety architecture](docs/TIER1_ARCHITECTURE.md) · [Public roadmap](docs/ROADMAP.md)
-- [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security policy](SECURITY.md)
+- [MCP tool reference](https://night4me.github.io/pfsense-mcp-server/API/)
+- [Configuration reference](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/)
+- [Client setup examples](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md)
+- [Security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/) · [Threat model](https://night4me.github.io/pfsense-mcp-server/THREAT_MODEL/)
+- [Architecture diagrams](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/) · [Architecture decisions](https://night4me.github.io/pfsense-mcp-server/adr/)
+- [Tier 1 safety architecture](https://night4me.github.io/pfsense-mcp-server/TIER1_ARCHITECTURE/) · [Public roadmap](https://night4me.github.io/pfsense-mcp-server/ROADMAP/)
+- [Contributing](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md) · [Support](https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md) · [Security policy](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md)
 
 ## Status
 
@@ -279,7 +279,7 @@ independently-verified live evidence (`ADR-026`), but remains
 unreachable under the default profile, requires an operator to
 explicitly opt into `write_protected`, and still requires a real,
 owner-driven signing ceremony for every individual mutation — see [the
-security model](docs/SECURITY_MODEL.md)'s "Recovery and WRITE status"
+security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/)'s "Recovery and WRITE status"
 section for the precise, current description. The Tier 1 safety
 framework described above remains implemented, tested, structurally
 isolated code. v0.3.0 remains the prior published release.
@@ -296,13 +296,13 @@ fix ships as this new version rather than editing that one. Separately,
 `v0.3.1` was prepared (version bumped, changelog entry written) but its
 tag/Release/PyPI publish were never actually carried out — an
 inaccuracy that had stood in this file since 2026-08-09, corrected here.
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
+See [`docs/ROADMAP.md`](https://night4me.github.io/pfsense-mcp-server/ROADMAP/) for what's next.
 
 ## Contributing
 
 Contributions are welcome within the documented security and approval
-boundaries. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change.
+boundaries. Read [CONTRIBUTING.md](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md) before opening a change.
 
 ## License
 
-Licensed under the [MIT License](LICENSE).
+Licensed under the [MIT License](https://github.com/night4me/pfsense-mcp-server/blob/main/LICENSE).

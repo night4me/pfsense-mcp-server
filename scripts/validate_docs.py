@@ -132,9 +132,29 @@ def validate_document(path: Path) -> list[str]:
     return errors
 
 
+def readme_portability_errors(path: Path) -> list[str]:
+    """README.md is also rendered as the PyPI long_description, outside any
+    repository checkout -- a repo-relative link (e.g. `docs/API.md`,
+    `LICENSE`) that resolves fine on GitHub silently 404s there. Every
+    README link must be an absolute URL or a same-document `#anchor`."""
+
+    text = path.read_text(encoding="utf-8")
+    errors: list[str] = []
+    for match in (*LINK_PATTERN.finditer(text), *REFERENCE_PATTERN.finditer(text)):
+        raw_target = match.group("target").strip().strip("<>")
+        if not raw_target or raw_target.startswith(("http://", "https://", "mailto:", "#")):
+            continue
+        errors.append(
+            f"{_display_path(path)}: repo-relative link {raw_target!r} breaks on PyPI "
+            "long_description rendering -- use an absolute URL"
+        )
+    return errors
+
+
 def main() -> int:
     documents = markdown_files()
     errors = [error for path in documents for error in validate_document(path)]
+    errors += readme_portability_errors(ROOT / "README.md")
     if errors:
         for error in errors:
             print(error)

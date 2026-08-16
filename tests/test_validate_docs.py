@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from validate_docs import _heading_slugs, main, validate_document
+from validate_docs import _heading_slugs, main, readme_portability_errors, validate_document
 
 
 def test_repository_documentation_is_consistent():
@@ -71,3 +71,29 @@ def test_heading_slug_strips_inline_code_and_punctuation_like_github():
     slugs = _heading_slugs("## Configuration (missing/invalid values fail closed)\n\n### `pfsense_get_system_status`\n")
 
     assert slugs == {"configuration-missinginvalid-values-fail-closed", "pfsense_get_system_status"}
+
+
+def test_readme_repo_relative_link_is_rejected(tmp_path):
+    """README.md is also rendered as the PyPI long_description, outside any
+    repository checkout -- a repo-relative link that resolves fine on
+    GitHub silently 404s there (see docs/adr for the ADR-026 case this
+    caught). Only absolute URLs and same-document anchors are portable."""
+
+    readme = tmp_path / "README.md"
+    readme.write_text("[bad](docs/API.md)\n[also bad](LICENSE)\n", encoding="utf-8")
+
+    errors = readme_portability_errors(readme)
+
+    assert len(errors) == 2
+    assert "docs/API.md" in errors[0]
+    assert "LICENSE" in errors[1]
+
+
+def test_readme_absolute_url_and_anchor_links_are_accepted(tmp_path):
+    readme = tmp_path / "README.md"
+    readme.write_text(
+        "[ok](https://example.com/page)\n[ok anchor](#some-section)\n[ok mail](mailto:security@example.com)\n",
+        encoding="utf-8",
+    )
+
+    assert readme_portability_errors(readme) == []
