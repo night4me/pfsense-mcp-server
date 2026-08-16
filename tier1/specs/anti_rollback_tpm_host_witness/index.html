@@ -1,0 +1,5034 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/tier1/specs/anti_rollback_tpm_host_witness/">
+      
+      
+        <link rel="prev" href="../whole_store_anti_rollback/">
+      
+      
+        <link rel="next" href="../production_store_bootstrap/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Anti-rollback TPM host-witness backend - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tier-1-tpm-backed-host-witness-anti-rollback-anchor-concrete-adr-011-backend" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Anti-rollback TPM host-witness backend
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#owner-decision-this-document-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Owner decision this document records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provisioning-strategy-nv-index-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning strategy — NV index selection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nv-index-type-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NV index type and attributes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchy-authorization-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchy / authorization model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#secret-storage-and-rotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret storage and rotation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#host-service-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host service protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guest-side-integration-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guest-side integration design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replay-protection-and-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replay protection and concurrency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fail-closed-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fail-closed behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-privilege-separation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service privilege separation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#systemd-hardening-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        systemd hardening requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-model-owner-decision-2026-08-10-see-adr-011s-deployment-model-decision-section-the-authoritative-record-this-section-restates-only-the-operational-specifics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment model (owner decision 2026-08-10 — see ADR-011's "Deployment model decision" section, the authoritative record; this section restates only the operational specifics)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#firewall-requirements-not-applied-by-this-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Firewall requirements (not applied by this document)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backup-restore-physical-host-replacement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backup / restore / physical-host replacement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#initial-baseline-a-real-correctness-finding-not-a-formality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial baseline — a real correctness finding, not a formality
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provisioning-state-machine-2026-08-10-addendum-adversarial-review-no-mutation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning state machine (2026-08-10 addendum — adversarial review, no mutation)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provisioning state machine (2026-08-10 addendum — adversarial review, no mutation)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-choice-state-is-derived-not-logged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design choice: state is derived, not logged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        States
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behavior-after-interruption-at-every-step-the-full-failure-injection-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behavior after interruption at every step (the full failure-injection list)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handle-selection-rule-rule-proposed-no-candidate-selected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handle-selection rule (rule proposed; no candidate selected)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nv-attributes-auth-model-reconfirmed-against-authoritative-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NV attributes / auth model — reconfirmed against authoritative sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secret-generation-and-storage-reconfirmed-with-a-concrete-process-argument-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret generation and storage — reconfirmed, with a concrete process-argument fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provisioning-procedure-commands-listed-not-executed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning procedure (commands listed, NOT executed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup-recovery-procedure-for-every-partial-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup / recovery procedure for every partial state
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#activation-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activation requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#smallest-safe-first-mutating-slice-2026-08-10-addendum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smallest safe first mutating slice (2026-08-10 addendum)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#owner-decision-this-document-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Owner decision this document records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provisioning-strategy-nv-index-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning strategy — NV index selection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nv-index-type-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NV index type and attributes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchy-authorization-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchy / authorization model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#secret-storage-and-rotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret storage and rotation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#host-service-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host service protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guest-side-integration-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guest-side integration design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replay-protection-and-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replay protection and concurrency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fail-closed-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fail-closed behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-privilege-separation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service privilege separation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#systemd-hardening-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        systemd hardening requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-model-owner-decision-2026-08-10-see-adr-011s-deployment-model-decision-section-the-authoritative-record-this-section-restates-only-the-operational-specifics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment model (owner decision 2026-08-10 — see ADR-011's "Deployment model decision" section, the authoritative record; this section restates only the operational specifics)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#firewall-requirements-not-applied-by-this-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Firewall requirements (not applied by this document)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backup-restore-physical-host-replacement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backup / restore / physical-host replacement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#initial-baseline-a-real-correctness-finding-not-a-formality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial baseline — a real correctness finding, not a formality
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provisioning-state-machine-2026-08-10-addendum-adversarial-review-no-mutation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning state machine (2026-08-10 addendum — adversarial review, no mutation)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provisioning state machine (2026-08-10 addendum — adversarial review, no mutation)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-choice-state-is-derived-not-logged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design choice: state is derived, not logged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        States
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behavior-after-interruption-at-every-step-the-full-failure-injection-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behavior after interruption at every step (the full failure-injection list)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handle-selection-rule-rule-proposed-no-candidate-selected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handle-selection rule (rule proposed; no candidate selected)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nv-attributes-auth-model-reconfirmed-against-authoritative-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NV attributes / auth model — reconfirmed against authoritative sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secret-generation-and-storage-reconfirmed-with-a-concrete-process-argument-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret generation and storage — reconfirmed, with a concrete process-argument fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provisioning-procedure-commands-listed-not-executed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning procedure (commands listed, NOT executed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup-recovery-procedure-for-every-partial-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup / recovery procedure for every partial state
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#activation-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activation requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#smallest-safe-first-mutating-slice-2026-08-10-addendum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smallest safe first mutating slice (2026-08-10 addendum)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/tier1/specs/anti_rollback_tpm_host_witness.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tier-1-tpm-backed-host-witness-anti-rollback-anchor-concrete-adr-011-backend">Tier 1 — TPM-backed host-witness anti-rollback anchor (concrete <code>ADR-011</code> backend)<a class="headerlink" href="#tier-1-tpm-backed-host-witness-anti-rollback-anchor-concrete-adr-011-backend" title="Permanent link">&para;</a></h1>
+<p>Status: provisioning, guest-side integration, and the host-witness
+daemon are implemented and <strong>deployed as a persistent <code>systemd</code>
+service, functionally verified 2026-08-10</strong> (see "Activation
+requirements" below); fail-closed activation in <code>store.py</code> is not.
+Deployment model (persistent systemd service as the production
+default) decided 2026-08-10 — see this document's "Deployment model"
+section and <code>ADR-011</code>'s "Deployment model decision" section
+(authoritative). One optional configuration convergence item is open
+(<code>ConfigurationDirectoryMode</code>, not yet remediated) — see
+<code>reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md</code>.
+Activation gate (still applies to fail-closed enforcement/WRITE, not to
+already-completed provisioning/deployment steps): <code>ADR-011</code>'s backend
+decision (below) plus Milestone 3 (anti-rollback activation) and,
+separately, explicit provisioning authorization before any further
+TPM-mutating command runs.
+Related: <a href="../whole_store_anti_rollback/">whole_store_anti_rollback.md</a>
+(the generic <code>AntiRollbackAnchor</code> protocol this backend implements —
+this document does not redefine it), <a href="../../../adr/ADR-011-whole-store-anti-rollback-anchor/">ADR-011</a>.</p>
+<h2 id="owner-decision-this-document-records">Owner decision this document records<a class="headerlink" href="#owner-decision-this-document-records" title="Permanent link">&para;</a></h2>
+<p>2026-08-10: the physical TPM 2.0 on the Proxmox host (Dell OptiPlex
+3000) is the chosen <code>AntiRollbackAnchor</code> backend, accessed through a
+narrowly-scoped host-side witness service — never through direct TPM
+passthrough or a software vTPM to the guest (<code>ADR-011</code>'s topology review,
+<code>reports-ai/reviews/ADR_011_TOPOLOGY_REVIEW_2026-08-10.md</code>, established
+why: Proxmox's <code>tpmstate0</code> is an ordinary disk volume, included in the
+same snapshot/backup/restore/clone lifecycle as the rest of the VM, and
+does not provide rollback independence; physical passthrough is
+unsupported by Proxmox and discouraged by QEMU's own documentation).</p>
+<p>Verified hardware evidence (owner-supplied, from the Proxmox host):
+<code>TPM2_PT_NV_COUNTERS = 3</code>, <code>TPM2_PT_NV_COUNTERS_AVAIL = 10</code>, 14 total NV
+indices currently defined, of which 3 are counter type (<code>nt=0x1</code>) — 10
+counter-type slots remain available; capacity for one dedicated project
+counter is confirmed. All 14 existing indices are foreign/vendor/OS-owned
+and must never be modified, reused, undefined, or otherwise touched by
+this project.</p>
+<p><strong>Update (2026-08-10): provisioning steps 1–7 below have since been
+executed (owner, manually, on the real Proxmox console) under their own
+explicit, separately granted authorization — see "Activation
+requirements" for exactly which steps are done vs. still pending. This
+document's design itself is unchanged; only its implementation status
+has progressed.</strong></p>
+<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>Implement the <code>AntiRollbackAnchor</code> protocol (<code>anti_rollback.py</code>, already
+implemented and tested, backend-agnostic) using a TPM2 NV counter on the
+Proxmox host as the durable, tamper-evident monotonic value, reached by
+the <code>pfsense-mcp-server</code> guest (VM 106, <code>192.0.2.27</code>) only through a
+narrow, purpose-built RPC exposed by a dedicated witness daemon on the
+Proxmox host (<code>192.0.2.39</code>) — never direct TPM device access, never a
+software vTPM.</p>
+<h2 id="security-goals">Security goals<a class="headerlink" href="#security-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>G1 (inherited from <code>whole_store_anti_rollback.md</code>): the anchor's
+  durable state must live outside the blast radius of anything an
+  attacker who can restore/replace/modify the guest's filesystem could
+  also reach. Satisfied structurally here: the counter's actual value
+  lives in physical TPM hardware on a different machine, reachable from
+  the guest only through one narrow network operation.</li>
+<li>G2: the guest never holds, transmits, or requires the TPM NV index's
+  own authorization secret. The TPM authorization boundary never crosses
+  the network.</li>
+<li>G3: the witness daemon's network-facing surface exposes exactly the
+  two operations <code>AntiRollbackAnchor</code> needs (<code>read</code>, <code>advance</code>) and
+  nothing else — no generic TPM command forwarding, no access to any
+  other NV index, no TPM ownership/hierarchy operations.</li>
+<li>G4: none of the 14 existing, foreign-owned NV indices are read,
+  written, enumerated destructively, or otherwise put at risk by this
+  design or its provisioning procedure.</li>
+<li>G5: a lost or corrupted witness-daemon secret must be recoverable via
+  an explicit, documented re-provisioning procedure that starts from "no
+  prior anchor" (matching <code>ADR-011</code>'s own stated safe default), never by
+  silently weakening the index's auth model to work around the loss.</li>
+</ul>
+<h2 id="provisioning-strategy-nv-index-selection">Provisioning strategy — NV index selection<a class="headerlink" href="#provisioning-strategy-nv-index-selection" title="Permanent link">&para;</a></h2>
+<p><strong>Selection is enumerate-first, not range-guessed.</strong> The safe strategy
+is: (1) run <code>tpm2_getcap handles-nv-index</code> to obtain the exact list of
+all 14 existing handles (owner-supplied counts confirm the number, not
+yet the exact handle values); (2) choose one unused handle inside the
+conventional owner/application-usable sub-range
+(<code>0x01000000</code>–<code>0x01bfffff</code>), explicitly avoiding the TCG-reserved
+platform-certificate range (<code>0x01c00000</code>–<code>0x01ffffff</code>) — the primary TCG
+Registry of Reserved TPM 2.0 Handles and Localities document could not be
+fetched directly during this review (HTTP 403); this range convention is
+corroborated by tpm2-tools' own community documentation and examples
+(which conventionally use handles like <code>0x1500016</code> for owner/application
+NV indices) but should be re-confirmed against the primary TCG registry
+before the handle is finalized, not assumed from secondary sources alone;
+(3) confirm the chosen handle does not collide with any of the 14
+enumerated handles from step 1 — collision avoidance by direct
+enumeration, not by trusting a numeric range alone.</p>
+<p>No specific handle number is finalized by this document — that is the
+first concrete output of running the (not-yet-executed) enumeration
+command in "Provisioning procedure" below.</p>
+<h2 id="nv-index-type-and-attributes">NV index type and attributes<a class="headerlink" href="#nv-index-type-and-attributes" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Type</strong>: <code>TPM_NT_COUNTER</code> (<code>nt=1</code>), matching the existing 3
+  counter-type indices' own convention and the semantics
+  <code>AntiRollbackAnchor.advance()</code> needs (<code>TPM2_NV_Increment</code>-only
+  modification, per the TPM2 spec's own definition of the Counter type).</li>
+<li><strong>Size</strong>: 8 bytes (the fixed size of a TPM2 NV counter value).</li>
+<li><strong>Hierarchy</strong>: owner (<code>-C o</code>), not platform — this project's counter is
+  an application-level index, not a platform/firmware-level one.</li>
+<li><strong>Attributes</strong>: <code>authread|authwrite|nt=1</code> — <strong>deliberately omitting</strong>
+  <code>ownerread</code>/<code>ownerwrite</code>. Only the index's own dedicated authorization
+  secret (never the TPM's owner-hierarchy password) can read or increment
+  it. This is the narrowest available access model and does not sacrifice
+  recoverability: <code>TPM2_NV_UndefineSpace</code> (destroying and allowing
+  re-provisioning of the index) is a hierarchy-level operation gated by
+  owner/platform authorization regardless of the index's own
+  <code>AUTHREAD</code>/<code>AUTHWRITE</code> bits — so losing the index's own secret is
+  recoverable via owner-hierarchy undefine-and-reprovision (G5), without
+  ever needing to grant the owner hierarchy standing read/write access to
+  the live counter value.</li>
+<li><strong><code>no_da</code></strong>: <strong>not set</strong> (dictionary-attack protection stays active).
+  The TPM authorization boundary never crosses the network (G2) — the
+  daemon is the only entity that ever presents the index's auth value,
+  and it always presents the correct one in normal operation, so DA
+  lockout risk from this index specifically is not a normal-operation
+  concern. Leaving DA protection on is the more conservative choice
+  against a scenario where a compromised host attempts to brute-force
+  the secret. <strong>Open item for provisioning time</strong>: confirm via
+  <code>tpm2_getcap properties-variable</code> (<code>TPM2_PT_LOCKOUT_COUNTER</code>,
+  <code>TPM2_PT_MAX_AUTH_FAIL</code>) whether this TPM's dictionary-attack lockout
+  counter is shared across all auth-protected objects/indices or scoped
+  per-object — if shared, a lockout event on this index could also block
+  other legitimate host TPM consumers, which changes the risk calculus
+  and may argue for <code>no_da</code> after all. Not resolved by this design pass;
+  flagged for the provisioning step, not assumed either way.</li>
+</ul>
+<h2 id="hierarchy-authorization-model">Hierarchy / authorization model<a class="headerlink" href="#hierarchy-authorization-model" title="Permanent link">&para;</a></h2>
+<p>Owner hierarchy defines the index (requires the Proxmox host's TPM owner
+authorization once, at provisioning time only — the witness daemon never
+needs or stores the owner-hierarchy password after provisioning
+completes). Ongoing <code>read</code>/<code>advance</code> operations use only the index's own
+dedicated authorization secret (<code>authread</code>/<code>authwrite</code>), generated
+specifically for this index and never reused elsewhere. Policy-based
+auth (<code>tpm2_policy*</code>, e.g., binding to PCR state or a policy secret) was
+considered and <strong>not recommended for the initial design</strong> — it adds real
+protocol complexity (a policy session per operation) for marginal benefit
+here, since the actual trust boundary being protected is "who can reach
+the daemon's narrow RPC," not "who can present TPM-level authorization"
+(the daemon always presents the correct secret locally, regardless of
+caller). Recorded as a possible future hardening, not required now.</p>
+<h2 id="secret-storage-and-rotation">Secret storage and rotation<a class="headerlink" href="#secret-storage-and-rotation" title="Permanent link">&para;</a></h2>
+<p>The index's own authorization secret is generated once at provisioning
+time (e.g., via <code>tpm2_getrandom</code> or <code>openssl rand</code>, never a
+human-chosen password) and delivered to the witness daemon via <code>systemd</code>
+credentials (<code>LoadCredential=</code>/<code>SetCredential=</code>, tmpfs-backed, not a
+plaintext file on persistent storage) — reusing the exact key-delivery
+mechanism <code>TIER1_ACTIVATION_DECISIONS.md</code> already evaluated favorably
+("systemd credential: Strong service-time delivery, tmpfs-backed,
+unattended Linux startup") for the analogous encryption-key problem
+elsewhere in this project, rather than inventing a new delivery
+mechanism. <strong>Rotation</strong>: TPM2 NV index authorization values do not have
+a simple in-place "rotate without losing history" operation matching
+this project's needs — rotating this secret means <code>TPM2_NV_UndefineSpace</code>
++ re-provisioning a fresh index, i.e., the exact same procedure as
+disaster recovery (G5). This is deliberate, not a gap: it matches
+<code>HighWaterMark</code>'s own established "must be dedicated, explicitly
+provisioned to the correct baseline" discipline (see "Initial baseline"
+below) — a rotated/recovered counter is architecturally identical to a
+freshly-provisioned one, and both need the identical explicit
+baseline-seeding step.</p>
+<p>The mTLS private key material for the guest↔host channel (below) is a
+<strong>second, independent</strong> secret — never the same value as the TPM index's
+own authorization secret, and never transmitted alongside it. Conflating
+the two would let a network-level compromise reach the TPM authorization
+boundary, breaking G2.</p>
+<h2 id="host-service-protocol">Host service protocol<a class="headerlink" href="#host-service-protocol" title="Permanent link">&para;</a></h2>
+<p>Minimal API, mirroring <code>AntiRollbackAnchor</code> exactly — no more, no fewer
+operations:</p>
+<div class="highlight"><pre><span></span><code>read() -&gt; { value: uint64 }
+    Raises AnchorUnavailable if the TPM/service is unreachable.
+
+advance(expected_current: uint64) -&gt; { value: uint64 }
+    Atomically: acquire a local lock serializing all TPM access (the
+    physical device only ever processes one command at a time regardless
+    of client concurrency); read the current counter value; if it does
+    not exactly equal expected_current, return AnchorConflict WITHOUT
+    touching the TPM at all (the CAS check happens in the daemon&#39;s own
+    logic — TPM2_NV_Increment itself takes no &quot;expected value&quot; parameter);
+    otherwise call TPM2_NV_Increment using the index&#39;s own stored
+    authorization, then return the new value.
+</code></pre></div>
+<p>Transport: mutual TLS (mTLS), using a small dedicated certificate pair
+generated specifically for this service (not a public CA) — pinned on
+both ends, matching this project's own established TLS-trust discipline
+(<code>TLSMode.STRICT</code>, never blanket-disabled verification) applied to a new
+boundary. The daemon binds only to the interface reachable from VM 106,
+or to all interfaces with host-level firewall restriction (see below) as
+defense in depth regardless of transport security. <strong>Open item,
+unconfirmed this session</strong>: whether the Proxmox host is itself a
+Tailscale node (the guest is; the addresses supplied,
+<code>192.0.2.27</code>/<code>192.0.2.39</code>, are plain LAN addresses, not Tailscale's
+own <code>the CGNAT range Tailscale documents for itself</code> range) — if the host is also on the tailnet, Tailscale
+ACLs scoping which peer may reach this port should be layered on top of
+mTLS as additional defense in depth, not as a replacement for it; if not,
+mTLS over the plain LAN path is the primary control and must not be
+weakened to compensate.</p>
+<p><strong>2026-08-16 update (Slice 6 signer read-only witness identity)</strong>: the
+client-certificate bundle (<code>WITNESS_CLIENT_CA_FILE</code>) may now trust more
+than one dedicated certificate -- e.g. VM106's original production
+identity alongside a separate off-host signer's identity, each with its
+own private key held only by its own owner. mTLS authentication alone no
+longer implies authorization for every operation this daemon exposes:
+<code>WITNESS_ADVANCE_CLIENT_FINGERPRINTS</code> (<code>config.py</code>) is a second, explicit,
+fail-closed allow-list naming exactly which bundle members' SHA-256
+fingerprints may call <code>/anchor/advance</code>. Every bundle member not listed
+there can still reach <code>/anchor/read</code> (the "who can reach the daemon's
+narrow RPC" model above is unchanged for the lower-risk operation) but is
+refused, before any TPM interaction, for <code>/anchor/advance</code>. This remains
+"a small dedicated certificate pair... not a public CA" per identity --
+still no real CA hierarchy, still no way to mint a new trusted identity
+without both ends explicitly agreeing to trust its specific certificate.</p>
+<h2 id="guest-side-integration-design">Guest-side integration design<a class="headerlink" href="#guest-side-integration-design" title="Permanent link">&para;</a></h2>
+<p>A new concrete <code>AntiRollbackAnchor</code> implementation
+(<code>anti_rollback_tpm_witness.py</code>, alongside the existing
+<code>anti_rollback.py</code>, per <code>whole_store_anti_rollback.md</code>'s own
+"Implementation checklist" — keep protocol and concrete backend in
+separate files) implementing <code>read()</code>/<code>advance()</code> as thin, typed HTTP(S)
+(mTLS) calls to the host witness service, translating
+<code>AnchorUnavailableError</code> from any connection/TLS/timeout failure and
+<code>AnchorConflictError</code> from the service's own conflict response — no new
+behavior in <code>store.py</code>, which already only depends on the protocol.</p>
+<h2 id="security-analysis">Security analysis<a class="headerlink" href="#security-analysis" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Rollback independence (the core property)</strong>: satisfied. The guest
+  has no local anchor state; an attacker who fully compromises/restores
+  the guest's filesystem gains no path to the TPM counter except through
+  the daemon's narrow, authenticated <code>advance()</code>, which only ever moves
+  the counter forward from whatever value it currently, actually holds —
+  there is no operation that decreases or resets it exposed to the
+  network at all.</li>
+<li><strong>Blast radius of a guest compromise</strong>: an attacker with full guest
+  control can call <code>read()</code>/<code>advance()</code> as many times as the mTLS
+  credential allows — meaning they can advance the counter (consuming
+  "history," forcing a future legitimate mutation into
+  <code>WholeStoreRollbackDetected</code> if the guest's own local high-water mark
+  wasn't also correspondingly advanced) but cannot roll it backward.
+  This matches the accepted threat model's framing that guidance/evidence
+  mechanisms (and, by extension, this anchor) can only ever remove
+  permission, never fabricate it — an attacker can deny service but
+  cannot forge a false "not rolled back" signal.</li>
+<li><strong>Blast radius of a Proxmox host compromise</strong>: out of scope for this
+  anchor specifically — a host-level compromise is a strictly larger
+  threat class than anything <code>ADR-011</code> claims to defend against (the host
+  already has unlimited access to the guest's disk images via the
+  hypervisor layer regardless of this design). Not a new gap introduced
+  by this design.</li>
+<li><strong>Network eavesdropping</strong>: mTLS prevents passive observation of
+  <code>advance()</code> values and prevents an unauthenticated third party from
+  issuing requests at all — the guest's own compromise (above) remains
+  the realistic threat model, not network interception.</li>
+<li><strong>Foreign NV index safety (G4)</strong>: the enumerate-then-select strategy
+  and the owner-hierarchy-only definition step are the two structural
+  protections; the provisioning commands below never reference any
+  existing handle.</li>
+</ul>
+<h2 id="replay-protection-and-concurrency">Replay protection and concurrency<a class="headerlink" href="#replay-protection-and-concurrency" title="Permanent link">&para;</a></h2>
+<p><code>advance()</code>'s own CAS semantics (compare <code>expected_current</code> against the
+actual current value before touching the TPM) defeat naive request
+replay by construction — a replayed old <code>advance</code> request carries a
+now-stale <code>expected_current</code> and is rejected as <code>AnchorConflict</code> without
+side effects. mTLS's own session framing provides transport-level replay
+resistance as well. The daemon should additionally rate-limit requests
+per source (defense against replay-flood/DoS noise, not a correctness
+requirement) — a concrete numeric limit is not set by this design pass,
+matching this project's own established "no numeric defaults without
+evidence" discipline for <code>rate_policy.py</code>. Concurrency: the daemon
+serializes all TPM access behind one local lock (the physical device
+processes one command at a time regardless); the guest is architecturally
+a single local process per this project's existing single-appliance
+design, so no cross-client concurrency scenario is expected in practice,
+but the daemon's serialization must not assume it.</p>
+<h2 id="fail-closed-behavior">Fail-closed behavior<a class="headerlink" href="#fail-closed-behavior" title="Permanent link">&para;</a></h2>
+<p>Unreachable TPM, unreachable service, or unreachable network all surface
+as <code>AnchorUnavailableError</code> to <code>HighWaterMark.before_executing_transition()</code>
+— already-implemented, already-tested behavior in the guest: <code>EXECUTING</code>
+transitions are refused; <code>PREPARED</code>, load, and audit-inspection paths are
+unaffected (G4 of the generic spec). No new fail-closed logic is needed
+on the guest side; the witness daemon itself must not cache or fabricate
+a value when the TPM is genuinely unreachable — a device error must
+propagate as unavailable, never as a stale last-known value.</p>
+<h2 id="service-privilege-separation">Service privilege separation<a class="headerlink" href="#service-privilege-separation" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Dedicated, non-root system user (not <code>root</code>, not any Proxmox-management
+  group <code>pveproxy</code>/<code>www-data</code>/etc.) with access to <code>/dev/tpmrm0</code> (the
+  kernel TPM Resource Manager device — not raw <code>/dev/tpm0</code>; the resource
+  manager safely serializes/multiplexes sessions for any other local TPM
+  consumer on the host, avoiding an exclusive-access conflict with, e.g.,
+  disk-encryption tooling that might also use the TPM). Access granted
+  via the conventional <code>tss</code>/<code>tpm</code> group membership or an explicit udev
+  rule, not broad device permissions.</li>
+<li>No other host privileges. Specifically not part of any group with
+  Proxmox VM/storage/network management capability — a compromise of this
+  daemon must not, by itself, grant any Proxmox administrative capability.</li>
+</ul>
+<h2 id="systemd-hardening-requirements">systemd hardening requirements<a class="headerlink" href="#systemd-hardening-requirements" title="Permanent link">&para;</a></h2>
+<p><code>User=</code>/<code>Group=</code> fixed to the dedicated account (or <code>DynamicUser=</code>),
+<code>NoNewPrivileges=true</code>, <code>ProtectSystem=strict</code>, <code>ProtectHome=true</code>,
+<code>PrivateTmp=true</code>, <code>ProtectKernelModules=true</code>, <code>ProtectKernelLogs=true</code>,
+<code>ProtectClock=true</code>, <code>RestrictRealtime=true</code>, <code>LockPersonality=true</code>,
+<code>MemoryDenyWriteExecute=true</code>, <code>RestrictAddressFamilies=AF_INET AF_INET6</code>
+(scoped to exactly what the mTLS listener needs), <code>CapabilityBoundingSet=</code>
+empty (device access via <code>DeviceAllow=/dev/tpmrm0 rw</code> in a scoped unit,
+not a capability), <code>SystemCallFilter=@system-service</code>,
+<code>LoadCredential=</code> for both the TPM index secret and the mTLS private key
+— never plaintext files on persistent storage.</p>
+<h2 id="deployment-model-owner-decision-2026-08-10-see-adr-011s-deployment-model-decision-section-the-authoritative-record-this-section-restates-only-the-operational-specifics">Deployment model (owner decision 2026-08-10 — see <code>ADR-011</code>'s "Deployment model decision" section, the authoritative record; this section restates only the operational specifics)<a class="headerlink" href="#deployment-model-owner-decision-2026-08-10-see-adr-011s-deployment-model-decision-section-the-authoritative-record-this-section-restates-only-the-operational-specifics" title="Permanent link">&para;</a></h2>
+<p><strong>The persistent, <code>systemd</code>-managed daemon
+(<code>witness_daemon/systemd/pfsense-mcp-tpm-witness.service</code>) is the
+intended production deployment shape for the hardened
+hardware-TPM-witness profile.</strong> <code>systemctl enable --now
+pfsense-mcp-tpm-witness.service</code> (or the deployer's equivalent) so the
+service starts automatically with the host and restarts automatically
+on failure (<code>Restart=on-failure</code> in the reference unit) — runtime Tier
+1 verification (<code>tier1_anchor_check.run_anchor_startup_check()</code>)
+depends on the daemon already being reachable when the guest process
+starts; it does not start, manage, or wait for the daemon itself.</p>
+<p><strong>Manually starting the daemon in the foreground
+(<code>python3 -m witness_daemon</code>, outside <code>systemd</code>) is a development,
+diagnostic, or recovery mode only</strong> — useful for the kind of read-only
+real-hardware verification this project's own Phase 2 already
+performed, or for troubleshooting a service that fails to start under
+<code>systemd</code>'s sandboxing. It is not a substitute for the systemd-managed
+deployment in normal operation and must not be left as the ongoing
+production configuration.</p>
+<p><strong>Persistence is an availability property, not a privilege change.</strong>
+Every security boundary in this document — service privilege
+separation, the full hardening directive list below, mTLS on both
+ends, the firewall restriction to VM 106 only, the fixed non-caller-
+supplied NV handle, and the two-operation-only wire protocol — applies
+identically whether the daemon is started by <code>systemd</code> or by hand.
+Running it continuously does not grant, imply, or shortcut <code>advance()</code>
+use beyond the CAS semantics already specified, TPM mutation beyond
+provisioning, fail-closed WRITE gating, WRITE capability activation,
+<code>WriteEndpoints</code> population, or pfSense mutation.</p>
+<p>The reference unit's <code>ConfigurationDirectoryMode=0750</code> (tighter than
+<code>systemd</code>'s own undeclared default of <code>0755</code>) remains the correct
+intended setting: <code>ConfigurationDirectory=</code> holds only the two public,
+non-secret TLS files (server certificate, pinned client CA), but
+scoping directory read/traverse access to the dedicated service
+account and its group only — rather than every local account on a
+shared Proxmox management host — is consistent with this project's
+existing least-exposure posture even where the individual files are
+not secret. This value should not be loosened without a specific
+reason recorded here.</p>
+<p>Any known or suspected difference between a real installed deployment
+and this reference unit is tracked as an operational drift item in
+<code>reports-ai/</code> (private, host-specific), not in this public
+specification — this document states the intended target state only.</p>
+<h2 id="firewall-requirements-not-applied-by-this-document">Firewall requirements (not applied by this document)<a class="headerlink" href="#firewall-requirements-not-applied-by-this-document" title="Permanent link">&para;</a></h2>
+<p>The daemon's listening port must be reachable only from VM 106's address
+(<code>192.0.2.27</code>), deny-by-default otherwise — whether enforced via
+Proxmox's own per-node firewall or host-level <code>nftables</code>. <strong>This is a
+requirement for eventual deployment, not performed here</strong> — "modifying
+Proxmox firewall/network configuration" is explicitly not authorized by
+this task.</p>
+<h2 id="backup-restore-physical-host-replacement">Backup / restore / physical-host replacement<a class="headerlink" href="#backup-restore-physical-host-replacement" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Guest-side</strong> VM backup/snapshot/restore/clone of VM 106: unaffected
+  by design — no local anchor state exists in the guest to roll back.</li>
+<li><strong>Host OS</strong> backup/restore/reinstall: the daemon's own bookkeeping may
+  need reinstallation/redeployment, but the counter's true value lives in
+  the TPM chip itself, not on any host disk image — restoring the host
+  OS from backup does not roll the physical counter back.</li>
+<li><strong>Physical host or TPM chip replacement</strong>: total, unavoidable loss of
+  the counter's history. Requires the same re-provisioning procedure as
+  initial setup, explicitly treated as "no prior anchor exists" — per
+  <code>ADR-011</code>'s own stated safe default, not silently continued as if nothing
+  happened. Whoever performs this must also reset the guest-side store's
+  persisted high-water mark to match the new counter's actual initial
+  value (see "Initial baseline" below) — skipping this step reopens
+  exactly the gap <code>ADR-011</code> exists to close.</li>
+</ul>
+<h2 id="initial-baseline-a-real-correctness-finding-not-a-formality">Initial baseline — a real correctness finding, not a formality<a class="headerlink" href="#initial-baseline-a-real-correctness-finding-not-a-formality" title="Permanent link">&para;</a></h2>
+<p><strong>A freshly-defined TPM2 NV counter does not initialize to 0 on its
+first increment.</strong> Per the TPM2 specification's own NV_Increment
+behavior (confirmed via tpm2-tools documentation research, not assumed):
+when a counter-type index's <code>TPMA_NV_WRITTEN</code> attribute is clear (never
+previously written), <code>TPM2_NV_Increment</code> initializes it to <strong>the TPM's
+own tracked largest-ever NV-counter value across the device's lifetime</strong>
+(a global monotonicity guarantee spanning counter deletion/recreation,
+specifically so a deleted-and-redefined counter can never restart low
+enough to be exploited) — then increments from there. Given this TPM
+already has 3 active counters, the new project counter's real first
+value is an <strong>unpredictable, non-zero</strong> number, not 1.</p>
+<p>This directly interacts with <code>HighWaterMark.read()</code>'s own documented
+default: it returns 0 when no local row exists yet, and its own
+docstring already anticipates exactly this class of problem ("The
+configured anchor must therefore be dedicated to the store and start at
+0, <strong>or be explicitly provisioned to the correct baseline</strong> by whoever
+sets up the concrete backend"). Without an explicit baseline-seeding
+step, the very first real <code>EXECUTING</code> attempt after provisioning would
+compare the TPM's true (large, non-zero) value against the store's
+default-0 persisted mark, mismatch, and incorrectly raise
+<code>WholeStoreRollbackDetected</code> on a perfectly legitimate first use — a
+real, blocking correctness bug if this step is skipped.</p>
+<p><strong>Required provisioning step, non-optional</strong>: immediately after the
+index's first <code>tpm2_nvincrement</code>, read the resulting value and seed the
+guest-side store's <code>anchor_state</code> row (the existing, already-implemented,
+HMAC-authenticated table <code>HighWaterMark._persist()</code> writes to) with
+exactly that value, before any real <code>EXECUTING</code> transition is ever
+attempted against this store. This is provisioning-time administrative
+work, not a code change to <code>HighWaterMark</code> itself. Full crash-safe
+procedure below.</p>
+<h2 id="provisioning-state-machine-2026-08-10-addendum-adversarial-review-no-mutation">Provisioning state machine (2026-08-10 addendum — adversarial review, no mutation)<a class="headerlink" href="#provisioning-state-machine-2026-08-10-addendum-adversarial-review-no-mutation" title="Permanent link">&para;</a></h2>
+<p><strong>Governing principle, applied to every state below without exception:
+this procedure never repairs an ambiguity by decrementing, resetting, or
+recreating the counter, and never silently trusts locally-cached
+progress notes over directly re-inspectable TPM/store state. Any state
+that cannot be proven from direct inspection halts for human review —
+it is never guessed.</strong></p>
+<h3 id="design-choice-state-is-derived-not-logged">Design choice: state is derived, not logged<a class="headerlink" href="#design-choice-state-is-derived-not-logged" title="Permanent link">&para;</a></h3>
+<p>The procedure does <strong>not</strong> rely on a separate "provisioning progress"
+log file as its source of truth (a log can itself drift from reality
+after a crash). Instead, every invocation — first attempt or resumed —
+begins with a <strong>state-discovery phase</strong> that re-derives exactly how far
+provisioning has progressed from three directly-inspectable, independently
+durable facts:</p>
+<ol>
+<li><strong>TPM state</strong>: does the candidate handle exist
+   (<code>tpm2_nvreadpublic &lt;handle&gt;</code>)? If so, is <code>TPMA_NV_WRITTEN</code> set? If so,
+   what does <code>tpm2_nvread</code> (with the correct index auth) currently return?</li>
+<li><strong>Store state</strong>: does <code>anchor_state</code> have a <code>high_water_mark</code> row?
+   What value, and does its HMAC verify?</li>
+<li><strong>Completion marker</strong>: does <code>anchor_state</code> have a <em>separate</em>,
+   dedicated <code>anchor_provisioning_complete</code> row (new key, same
+   HMAC-authenticated table and mechanism <code>HighWaterMark._persist()</code>
+   already uses — not the operational <code>high_water_mark</code> row itself) for
+   this exact handle? This is the explicit "provisioning finished, safe
+   for normal witness operation" gate the operational value's mere
+   presence does not, by itself, prove — it is written only after
+   TPM/store agreement is independently re-verified (state S8 below), not
+   assumed from seeding alone.</li>
+</ol>
+<p>This mirrors this project's own already-established discipline elsewhere
+(<code>store.py</code>'s <code>_verify_schema()</code>/<code>_check_registry_integrity()</code>: re-derive
+and re-verify from scratch on every load, never trust a cached belief
+about prior state).</p>
+<h3 id="states">States<a class="headerlink" href="#states" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Meaning</th>
+<th>How state-discovery detects it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S0 <code>NOT_STARTED</code></td>
+<td>No candidate handle chosen</td>
+<td>No new handle beyond the 14 known-foreign ones</td>
+</tr>
+<tr>
+<td>S1 <code>HANDLE_SELECTED</code></td>
+<td>A specific unused handle chosen (operator decision, not yet on the TPM)</td>
+<td>Purely local/operator record — not yet TPM-visible; see "accidentally rerun" below for why this state alone proves nothing</td>
+</tr>
+<tr>
+<td>S2 <code>SECRET_STORED</code></td>
+<td>Dedicated index-auth secret generated and durably stored (e.g., confirmed written to its systemd-credential-backed file)</td>
+<td>Local file/credential-store presence — must be confirmed <strong>durable</strong> before proceeding to S3, since Proxmox reboot before this point would lose an only-in-memory secret</td>
+</tr>
+<tr>
+<td>S3 <code>INDEX_DEFINED</code></td>
+<td><code>tpm2_nvdefine</code> succeeded; index exists, <code>TPMA_NV_WRITTEN</code> still clear</td>
+<td><code>tpm2_nvreadpublic &lt;handle&gt;</code> succeeds; <code>TPMA_NV_WRITTEN</code> clear</td>
+</tr>
+<tr>
+<td>S4 <code>INCREMENT_ISSUED</code></td>
+<td>First <code>tpm2_nvincrement</code> sent — <strong>ambiguous on its own</strong>, never trusted alone</td>
+<td>Not independently detectable — S4 is a transient sub-state of the S3→S5 attempt, resolved by re-checking <code>TPMA_NV_WRITTEN</code>, never assumed from "the command was sent"</td>
+</tr>
+<tr>
+<td>S5 <code>VALUE_READ</code></td>
+<td><code>TPMA_NV_WRITTEN</code> confirmed set; actual value V read via <code>tpm2_nvread</code></td>
+<td><code>tpm2_nvreadpublic</code> shows <code>TPMA_NV_WRITTEN</code> set; <code>tpm2_nvread</code> (idempotent, side-effect-free) returns V</td>
+</tr>
+<tr>
+<td>S7 <code>STORE_SEEDED</code></td>
+<td><code>anchor_state.high_water_mark</code> row written with value V</td>
+<td>Row present, HMAC verifies, value = V</td>
+</tr>
+<tr>
+<td>S8 <code>AGREEMENT_VERIFIED</code></td>
+<td>Fresh re-read of TPM value and store value confirmed <strong>exactly equal</strong></td>
+<td>Recomputed at verification time, not cached from S5/S7</td>
+</tr>
+<tr>
+<td>S9 <code>PROVISIONING_COMPLETE</code></td>
+<td>Dedicated <code>anchor_provisioning_complete</code> marker written (handle, timestamp, verified value)</td>
+<td>Row present, HMAC verifies</td>
+</tr>
+<tr>
+<td>S10 <code>WITNESS_OPERATIONAL</code></td>
+<td>Normal <code>read()</code>/<code>advance()</code> operation permitted</td>
+<td>S9 confirmed present for the configured handle</td>
+</tr>
+</tbody>
+</table>
+<p>(There is no separate "S6" — reading the TPM value (S5) is itself
+side-effect-free and always safely re-derivable at any later point, so no
+extra persisted checkpoint is needed between S5 and S7; an earlier draft
+of this design considered one and it was redundant.)</p>
+<h3 id="behavior-after-interruption-at-every-step-the-full-failure-injection-list">Behavior after interruption at every step (the full failure-injection list)<a class="headerlink" href="#behavior-after-interruption-at-every-step-the-full-failure-injection-list" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Process crash, at any point</strong>: re-run state discovery. Since every
+  underlying operation (<code>tpm2_nvdefine</code>, <code>tpm2_nvincrement</code>,
+  <code>_persist()</code>'s single SQL statement) is itself atomic at the
+  TPM/SQLite level, a crash always leaves the system in a well-defined
+  <em>prior completed</em> state — never a torn one. Resume from exactly what
+  discovery finds. Never assumed from memory of "what step was I on."</li>
+<li><strong>Proxmox reboot</strong>: TPM NV state (definedness, <code>TPMA_NV_WRITTEN</code>,
+  value) is non-volatile by definition and survives. The one real risk is
+  a reboot <strong>before S2's secret is confirmed durably written</strong> — if the
+  secret only ever existed in an interactive shell's memory, it is lost,
+  and the index (if already defined, S3+) becomes permanently
+  unreadable/unwritable except via owner-hierarchy undefine-and-restart.
+  This is exactly why S2 must be confirmed durable <em>before</em> S3 begins,
+  not treated as a formality.</li>
+<li><strong>Guest reboot</strong>: does not touch TPM state at all. Only affects S7 (an
+  uncommitted store write is simply absent after reboot, per SQLite's own
+  existing durability guarantees this project already relies on
+  elsewhere) — state discovery correctly reports "not yet seeded," safe
+  to resume.</li>
+<li><strong>Network interruption</strong>: provisioning steps 2–5 (define/increment/
+  read) are performed as a <strong>local, on-host operator session on the
+  Proxmox host itself</strong> — never through the eventual daemon's own network
+  RPC — specifically to remove network interruption as a hazard for these
+  steps entirely. Network interruption only affects S7 (seeding the
+  guest-side store, a separate, later, resumable step; see Guest reboot
+  above).</li>
+<li><strong>Index defined but local metadata not written</strong> (e.g., an operator's
+  own notes about "which handle did I pick" are lost): never a problem by
+  design — the <em>original</em> 14 foreign handles are recorded durably in this
+  project's own documentation/report <strong>before</strong> provisioning begins
+  (see "Handle-selection rule" below); the project's own handle is always
+  re-derivable as "whichever handle now exists beyond that recorded set
+  of 14," never dependent on fragile session/operator memory.</li>
+<li><strong>First increment succeeds but response is lost</strong>: never retry
+  <code>tpm2_nvincrement</code> blindly. Re-check <code>TPMA_NV_WRITTEN</code> via
+  <code>tpm2_nvreadpublic</code> first. If set, the increment already took effect —
+  proceed to read the actual value (S5) and use it, regardless of what
+  value might have been expected. If clear, it did not take effect —
+  safe to issue exactly one increment.</li>
+<li><strong>First increment succeeds, store seeding fails</strong>: discovery shows
+  <code>TPMA_NV_WRITTEN=true</code>, value V (re-readable, idempotent); no
+  <code>high_water_mark</code> row. Resume: re-read V, seed the store with V. No
+  re-increment, ever.</li>
+<li><strong>Store seeded, final marker not committed</strong>: discovery shows TPM value
+  V, store value V (agree), no <code>anchor_provisioning_complete</code> row. This
+  is S8-done/S9-not-done. Resume: re-verify agreement (idempotent), then
+  write the completion marker. No counter mutation needed.</li>
+<li><strong>Provisioning command accidentally rerun</strong>: state discovery's
+  completion-marker check (S9) is the primary guard — if present for this
+  handle, the procedure <strong>halts immediately</strong>, refusing to touch the TPM
+  at all, and reports "already provisioned." If rerun mid-sequence
+  (S1–S8), discovery correctly resumes from the true current state
+  (all steps above are individually idempotent/safely resumable by
+  design) rather than restarting blindly. <code>tpm2_nvdefine</code> against an
+  already-defined handle fails outright at the TPM level
+  (<code>TPM_RC_NV_DEFINED</code>) as a second, independent guard.</li>
+<li><strong>Existing project handle discovered from a prior partial attempt</strong>:
+  diff the current full handle list against the recorded 14 foreign
+  handles. If <strong>exactly one</strong> new handle is found, treat it as the likely
+  prior attempt, but do not assume — verify its public attributes
+  (owner-hierarchy, <code>nt=1</code>, 8-byte size) match this design's expected
+  shape before touching it. If attributes don't match, or <strong>more than
+  one</strong> unexpected new handle is found, halt for human review — never
+  guess which one is "ours."</li>
+<li><strong>Wrong auth material supplied</strong>: a single authorization failure
+  against a believed-to-be-ours index is a <strong>hard stop</strong>, not a retry
+  trigger — repeated automated retries risk triggering TPM dictionary-
+  attack lockout (see "NV index type and attributes," <code>no_da</code>, above).
+  Never fall back to a cached/guessed alternate secret; never fall back
+  to owner-hierarchy auth as a workaround (<code>ownerread</code>/<code>ownerwrite</code> were
+  deliberately not granted). If the secret is confirmed genuinely lost,
+  the only safe path is owner-hierarchy <code>tpm2_nvundefine</code> (its own,
+  separately authorized action) followed by re-provisioning from S0 —
+  never secret recovery/brute-force.</li>
+<li><strong>Concurrent provisioning attempt</strong>: <code>tpm2_nvdefine</code> against an
+  already-existing handle fails at the TPM level, providing natural
+  mutual exclusion for S3. Concurrent increments both succeed
+  sequentially (the TPM serializes commands) — safe, since S5 always
+  reads the actual resulting value rather than assuming a specific one.
+  Store-side, the one-time seeding write (S7) must use <strong>insert-only,
+  fail-if-exists</strong> semantics — deliberately <strong>not</strong> reusing
+  <code>HighWaterMark._persist()</code>'s existing <code>INSERT ... ON CONFLICT DO
+  UPDATE</code> pattern, which is correct for normal operational advancement
+  but wrong for a one-time provisioning seed, where a second concurrent
+  writer discovering a row already present must be a loud, visible
+  conflict, never a silent overwrite.</li>
+<li><strong>Counter value unexpectedly greater than any locally recorded value</strong>:
+  this is the <em>expected</em>, designed-for consequence of the "counters don't
+  start at 0" finding, not an anomaly to correct. During provisioning:
+  log it clearly for operator awareness, then seed the store with the
+  actual observed value — never adjusted, never rejected. During normal
+  post-provisioning operation, this is already the existing, already-
+  implemented, already-safe "anchor ahead of persisted" case
+  <code>whole_store_anti_rollback.md</code>'s own Failure modes table documents
+  ("Safe: this is the expected 'anchor ahead' case, not rollback").</li>
+</ul>
+<h3 id="handle-selection-rule-rule-proposed-no-candidate-selected">Handle-selection rule (rule proposed; no candidate selected)<a class="headerlink" href="#handle-selection-rule-rule-proposed-no-candidate-selected" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Record the exact 14 existing handle values (not merely the count)
+   durably in project documentation, <strong>before</strong> any provisioning
+   attempt — this durable record is what makes "which handle is newly
+   ours" always re-derivable later, independent of session/operator
+   memory (see "local metadata not written," above).</li>
+<li>Enumerate fresh via <code>tpm2_getcap handles-nv-index</code> at provisioning
+   time; confirm it still shows exactly the same 14.</li>
+<li>Select one unused handle in the conventional owner/application range
+   (<code>0x01000000</code>–<code>0x01bfffff</code>), avoiding the TCG-reserved
+   platform-certificate range (<code>0x01c00000</code>–<code>0x01ffffff</code>). <strong>This
+   document proposes the rule; it does not select or define the specific
+   candidate handle</strong> — that remains the first concrete output of
+   actually running step 2 against the real, current handle list, per
+   this task's explicit instruction not to define anything yet.</li>
+</ol>
+<h3 id="nv-attributes-auth-model-reconfirmed-against-authoritative-sources">NV attributes / auth model — reconfirmed against authoritative sources<a class="headerlink" href="#nv-attributes-auth-model-reconfirmed-against-authoritative-sources" title="Permanent link">&para;</a></h3>
+<p><code>authread|authwrite|nt=1</code> (<code>TPM_NT_COUNTER</code>), owner hierarchy, no
+<code>ownerread</code>/<code>ownerwrite</code>, no <code>policyread</code>/<code>policywrite</code>, <code>no_da</code> left
+<strong>unset</strong> (dictionary-attack protection active) — unchanged from the
+prior design pass, now re-confirmed with exact primary-source citations
+for the two questions this task asked to pin down precisely:</p>
+<ul>
+<li><strong>Creation</strong> is authorized by the hierarchy named in <code>tpm2_nvdefine -C</code>
+  (owner, <code>-C o</code>, this design's choice) — confirmed directly from
+  tpm2-tools' own documentation of <code>-C, --hierarchy</code>.</li>
+<li><strong>Deletion</strong> (<code>tpm2_nvundefine</code>) hierarchy default: <em>"owner"</em> hierarchy
+  when <code>TPMA_NV_POLICY_DELETE</code> is <strong>clear</strong>, <em>"platform"</em> when it is set
+  (<a href="https://github.com/tpm2-software/tpm2-tools/blob/master/man/tpm2_nvundefine.1.md">tpm2_nvundefine manual</a>).
+  This design never sets <code>TPMA_NV_POLICY_DELETE</code>, so deletion defaults to
+  <strong>owner</strong> hierarchy — confirming, with a direct citation rather than
+  inference, that G5's recovery path (owner-hierarchy undefine-and-
+  reprovision if the index's own secret is lost) is real and does not
+  require any attribute this design didn't already choose to set.</li>
+<li><strong>Normal <code>read()</code>/<code>advance()</code></strong> operations are protected by the
+  index's own dedicated authorization value (<code>authread</code>/<code>authwrite</code>)
+  only — never owner-hierarchy auth, never a policy session. Unchanged
+  from the prior pass; restated here because this task asked for it to
+  be reconfirmed precisely, not merely repeated.</li>
+</ul>
+<h3 id="secret-generation-and-storage-reconfirmed-with-a-concrete-process-argument-fix">Secret generation and storage — reconfirmed, with a concrete process-argument fix<a class="headerlink" href="#secret-generation-and-storage-reconfirmed-with-a-concrete-process-argument-fix" title="Permanent link">&para;</a></h3>
+<p>The prior draft's provisioning command listed <code>-p &lt;secret&gt;</code> as a literal
+command-line argument — on review, this is exactly the exposure this
+task's own instruction warns against ("must not appear... in process
+arguments if avoidable"). tpm2-tools' own authorization-formatting
+documentation directly addresses this: a <code>file:</code> prefix (or <code>file:-</code> for
+stdin) supplies an auth value from a file/pipe instead of a literal
+argument, "to prevent information leakage, [since] passwords passed as
+options can be read from the process list or common shell history
+features"
+(<a href="https://github.com/tpm2-software/tpm2-tools/blob/master/man/common/authorizations.md">tpm2-tools Authorization Formatting</a>).
+<strong>Corrected design</strong>: the secret is generated once (e.g., <code>tpm2_getrandom</code>
+piped directly into a credential file, never echoed to a terminal or
+captured in shell history), written directly to its final systemd-
+credential-backed location, and every subsequent <code>tpm2_nv*</code> invocation
+references it via <code>-p file:/path/to/credential</code> (or piped via <code>file:-</code>),
+never as a literal <code>-p &lt;value&gt;</code> argument. This satisfies every constraint
+in this task's list: never in Git (not a project file at all — lives only
+in the host's credential store); never in reports (this document names
+the mechanism, never the value); never in shell history (file-based, not
+typed); never in process arguments (file-based); never in logs (the
+daemon must never log the secret, and <code>tpm2_nv*</code> commands using <code>file:</code>
+don't place it in their own argv either); never in the guest (the secret
+never leaves the Proxmox host); never in ordinary VM backups (it isn't
+guest state — see "Backup / restore / physical-host replacement," above).</p>
+<h3 id="provisioning-procedure-commands-listed-not-executed">Provisioning procedure (commands listed, NOT executed)<a class="headerlink" href="#provisioning-procedure-commands-listed-not-executed" title="Permanent link">&para;</a></h3>
+<p>Read-only reconnaissance (safe to run, still not run by this session):</p>
+<div class="highlight"><pre><span></span><code>tpm2_getcap handles-nv-index                    # re-confirm exactly the 14 known-foreign handles
+tpm2_getcap properties-fixed                     # reconfirm NV_COUNTERS / NV_COUNTERS_AVAIL
+tpm2_getcap properties-variable                  # check DA lockout counter scope (see NV attributes, above)
+</code></pre></div>
+<p>Mutating (each requires its own separate authorization before execution
+— listed for design completeness only, per this task's explicit
+instruction, not pre-authorized; state-discovery per the state machine
+above must precede every one of these on every invocation, including the
+very first):</p>
+<div class="highlight"><pre><span></span><code># 0. State discovery (read-only; run before every step below, including on first attempt)
+tpm2_getcap handles-nv-index                                  # confirm still exactly 14 + [0 or 1] new
+tpm2_nvreadpublic &lt;candidate-handle&gt; 2&gt;/dev/null               # exists? TPMA_NV_WRITTEN set?
+
+# 1. Generate the index&#39;s dedicated authorization secret directly to its credential file (never echoed/logged)
+tpm2_getrandom 32 &gt; &lt;systemd-credential-path&gt;/nv-index-auth
+
+# 2. Define the index (handle from the enumerate-then-select rule above; NOT chosen by this document)
+tpm2_nvdefine -C o -s 8 -a &quot;authread|authwrite|nt=1&quot; -p file:&lt;systemd-credential-path&gt;/nv-index-auth 0x01XXXXXX
+
+# 3. First increment (establishes TPMA_NV_WRITTEN; initializes to the TPM&#39;s largest-ever counter value, NOT 0)
+tpm2_nvincrement -C 0x01XXXXXX -P file:&lt;systemd-credential-path&gt;/nv-index-auth 0x01XXXXXX
+
+# 4. Read the resulting actual value immediately (idempotent -- safe to re-run after any interruption)
+tpm2_nvread -C 0x01XXXXXX -P file:&lt;systemd-credential-path&gt;/nv-index-auth -s 8 0x01XXXXXX --print-yaml
+
+# 5. Seed the guest-side store (insert-only, fail-if-exists -- administrative operation, not a TPM command)
+#    with exactly the value from step 4.
+
+# 6. Re-read TPM value AND store value fresh; confirm exact equality (S8) -- administrative verification, not a TPM mutation.
+
+# 7. Write the anchor_provisioning_complete marker (S9) -- administrative operation, not a TPM command.
+</code></pre></div>
+<h3 id="cleanup-recovery-procedure-for-every-partial-state">Cleanup / recovery procedure for every partial state<a class="headerlink" href="#cleanup-recovery-procedure-for-every-partial-state" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Discovered state</th>
+<th>Safe action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S0 (nothing done)</td>
+<td>Proceed normally from step 0.</td>
+</tr>
+<tr>
+<td>S1/S2 only (handle chosen/secret stored, TPM untouched)</td>
+<td>Proceed; nothing to clean up — the TPM was never touched.</td>
+</tr>
+<tr>
+<td>S3 (defined, unwritten)</td>
+<td>Resume at step 3 (first increment). Not a failure state.</td>
+</tr>
+<tr>
+<td>S3 with <code>TPMA_NV_WRITTEN</code> set but store empty (S5 reached, S7 not)</td>
+<td>Resume at step 4 (read) then step 5 (seed) — never re-increment.</td>
+</tr>
+<tr>
+<td>S7 done, S9 marker missing</td>
+<td>Resume at step 6 (re-verify) then step 7 (mark complete) — no TPM interaction needed.</td>
+</tr>
+<tr>
+<td>S9 present for this handle</td>
+<td><strong>Halt.</strong> Already provisioned; report and stop, do not touch the TPM.</td>
+</tr>
+<tr>
+<td>Auth failure against believed-ours handle</td>
+<td><strong>Halt.</strong> Human review required; see "Wrong auth material," above — never retry automatically.</td>
+</tr>
+<tr>
+<td>Ambiguous handle discovery (0 or 2+ unexpected new handles)</td>
+<td><strong>Halt.</strong> Human review required; see "Existing project handle discovered," above.</td>
+</tr>
+<tr>
+<td>Confirmed-lost secret, index already defined</td>
+<td>Owner-hierarchy <code>tpm2_nvundefine</code> (its own, separately authorized action), then restart from S0. Never attempted automatically by this procedure.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="required-tests">Required tests<a class="headerlink" href="#required-tests" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Unit tests for the new <code>anti_rollback_tpm_witness.py</code> implementation
+  against a mocked witness-service transport (never a real TPM or network
+  call in offline tests, matching every other Tier 1 module's existing
+  <code>MockTransport</code>-equivalent convention) — covering the happy path,
+  <code>AnchorConflictError</code> on mismatch, <code>AnchorUnavailableError</code> on
+  connection/TLS/timeout failure.</li>
+<li>A dedicated test proving the CAS check happens in the daemon's own
+  logic before any TPM call, not after (matches the existing anti-
+  rollback spec's "confirm the check happens before, not after" review
+  discipline, applied to this backend specifically).</li>
+<li>An integration-style test (against a software TPM simulator, e.g.
+  <code>swtpm</code> running standalone for test purposes only — <strong>never</strong> as this
+  project's actual production anchor, a distinction worth stating
+  explicitly given §"Option 3" of the topology review) exercising a real
+  <code>tpm2_nvdefine</code>/<code>tpm2_nvincrement</code>/<code>tpm2_nvread</code> cycle offline, to prove
+  the daemon's TPM-interaction logic is correct before it ever touches
+  the real hardware.</li>
+<li>A specific regression test for the "Initial baseline" finding above:
+  simulate a freshly-provisioned counter whose first real value is
+  non-zero, and confirm the seeding step (not the store's own 0-default)
+  is what the first real <code>EXECUTING</code> transition compares against.</li>
+</ul>
+<p><strong>Provisioning-state-machine tests, required before any real deployment
+(offline, against the <code>swtpm</code> simulator above — never real hardware)</strong>:</p>
+<ul>
+<li>State-discovery correctness test for every state S0–S9: given a
+  simulator seeded into each state directly, discovery must report
+  exactly that state, not a neighboring one.</li>
+<li>Idempotent-resume test for every interruption point in the
+  failure-injection list above: run the full procedure, kill it after
+  each individual step, re-run from scratch, and assert the end state is
+  identical to an uninterrupted run — for every step, not just a sample.</li>
+<li>Rerun-after-complete test: run the full procedure to S9, then run it
+  again from scratch; assert it halts immediately at the discovery
+  phase and makes zero further TPM calls.</li>
+<li>Ambiguous-handle-discovery test: simulate two unexpected new handles
+  appearing; assert the procedure halts for human review rather than
+  guessing.</li>
+<li>Wrong-auth test: simulate an authorization failure on the believed-ours
+  handle; assert a single hard stop, zero automatic retries.</li>
+<li>Concurrent-seed test: two simulated concurrent provisioning attempts
+  racing on the store-seeding step; assert exactly one succeeds and the
+  other observes a loud conflict, never a silent second write.</li>
+<li>Secret-never-in-argv test: assert the actual subprocess argument lists
+  the provisioning script constructs never contain the raw secret value
+  — only <code>file:</code>-prefixed paths — closing the process-argument exposure
+  this task's own review caught in the prior draft.</li>
+</ul>
+<h2 id="activation-requirements">Activation requirements<a class="headerlink" href="#activation-requirements" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[x] <code>ADR-011</code> backend decision made (this document, 2026-08-10).</li>
+<li>[ ] Primary-source TCG registry confirmation of the exact safe NV-index
+      handle sub-range (this document's range guidance is corroborated by
+      secondary/community sources; the primary TCG PDF was not
+      successfully fetched during this review).</li>
+<li>[x] <code>tpm2-tools</code> installed on the Proxmox host, completed manually,
+      read-only, 2026-08-10 — confirmed by the owner: TPM operational,
+      <code>TPM2_PT_NV_COUNTERS = 3</code>, <code>TPM2_PT_NV_COUNTERS_AVAIL = 10</code>, all 14
+      existing indices enumerated and inspected via <code>tpm2_nvreadpublic</code>,
+      no project index created, no mutating command executed.</li>
+<li>[x] Read-only enumeration (<code>tpm2_getcap handles-nv-index</code>/
+      <code>properties-fixed</code>/<code>properties-variable</code>) run and reviewed — see
+      above.</li>
+<li>[x] NV index provisioned (2026-08-10, owner, manually, on the real
+      Proxmox console) — handle <code>0x01500000</code>, initial value <code>2</code>.</li>
+<li>[x] <code>anti_rollback_tpm_witness.py</code> implemented and tested offline
+      (Slice B).</li>
+<li>[x] Witness daemon implemented (Phase 1), real-hardware-verified
+      (Phase 2, 2026-08-10), and <strong>deployed as a persistent
+      <code>systemd</code>-managed production service — functionally verified,
+      2026-08-10</strong> (owner-supplied <code>systemctl</code>/process/certificate
+      output): <code>enabled</code>/<code>active</code>, survived an unplanned Proxmox reboot
+      with no manual intervention, correct dedicated service identity
+      (<code>User=pfsense-witness</code>, <code>tss</code> group, no Proxmox-management
+      privilege), correct TPM device access (<code>DeviceAllow=/dev/tpmrm0
+      rw</code>), deployed code confirmed to include both Phase 2 hardware
+      fixes, every hardening directive present matching the reference
+      unit exactly, and the full <code>2 == 2</code> read-only chain independently
+      reproduced post-reboot. <strong>One optional convergence item remains</strong>:
+      <code>ConfigurationDirectoryMode=0750</code> is declared in the repository
+      reference but absent from the live unit (falls back to
+      <code>systemd</code>'s <code>0755</code> default) — a declared-vs-actual hygiene item,
+      not a functional gap (the directory's two files are already
+      individually <code>644</code>). Full detail, classification, and the
+      proposed (not yet applied) one-line remediation:
+      <code>reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md</code>.</li>
+<li>[ ] Host firewall configured to restrict the daemon's port to VM 106
+      only — status not independently re-confirmed this session (no
+      SSH access; standing constraint).</li>
+<li>[x] Live baseline-seeding of the production store — confirmed
+      complete via a read-only status check (2026-08-10):
+      <code>seeded=True</code>, <code>complete=True</code>, <code>handle=0x01500000</code>,
+      <code>baseline=2</code>, <code>provisioned_at=2026-08-10T15:10:16.416050+00:00</code>.</li>
+<li>[ ] <code>store.py</code>'s <code>anti_rollback_anchor=None</code> default flipped to a hard
+      refusal at activation time (already flagged as pending, unchanged,
+      in <code>whole_store_anti_rollback.md</code>). <strong>Unaffected by the deployment
+      model decision</strong> — persistence of the daemon does not authorize
+      this.</li>
+<li>[ ] <code>ADR-011</code>'s own <code>Status:</code> field fully reconciled with end-to-end
+      production verification (partially updated 2026-08-10 to reflect
+      provisioning/deployment progress; still not "activated" — WRITE
+      remains 0/3, and this anchor's fail-closed enforcement in
+      <code>store.py</code> is still the pending item directly above).</li>
+</ul>
+<h2 id="smallest-safe-first-mutating-slice-2026-08-10-addendum">Smallest safe first mutating slice (2026-08-10 addendum)<a class="headerlink" href="#smallest-safe-first-mutating-slice-2026-08-10-addendum" title="Permanent link">&para;</a></h2>
+<p>The narrowest possible first authorization is <strong>provisioning steps 1–7
+of the state machine above, and nothing else</strong>: generate the secret,
+define the index, perform exactly one increment, read it back, seed the
+store, verify agreement, write the completion marker. This deliberately
+excludes — as separate, later, independently-authorized steps — witness
+daemon implementation or deployment, guest-side <code>AntiRollbackAnchor</code>
+integration code, <code>store.py</code>'s <code>anti_rollback_anchor=None</code> default being
+flipped to a hard refusal, host firewall changes, and anything related to
+WRITE, the ADR-019 catalogue, or pfSense lab work. Provisioning the
+counter is meaningful and independently verifiable on its own (the
+verification step, S8, proves TPM and a <em>test</em> seed agree) without any
+of those.</p>
+<p><strong>Owner authorization wording, copy/paste-ready:</strong></p>
+<blockquote>
+<p>"I authorize running provisioning steps 1–7 against the Proxmox host's
+physical TPM exactly as specified in
+<code>docs/tier1/specs/anti_rollback_tpm_host_witness.md</code>'s provisioning
+state machine: generate a dedicated index-authorization secret (stored
+only as a host-local credential file, never in Git/logs/process
+arguments), define exactly one new NV counter index at a handle chosen
+by first re-running <code>tpm2_getcap handles-nv-index</code> and selecting an
+unused handle outside the TCG-reserved range, perform exactly one
+<code>tpm2_nvincrement</code>, read back the actual resulting value, and verify
+TPM/store agreement. This does not authorize deploying the witness
+daemon, guest-side integration code, flipping <code>store.py</code>'s anchor
+default, firewall changes, WRITE activation, or any pfSense mutation —
+each remains its own separate, later authorization. If any state
+encountered during provisioning does not match what state-discovery
+expects (per the state machine's own halt conditions), stop and report
+back rather than proceeding."</p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,5721 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-026-first-write-capability-adapter/">
+      
+      
+        <link rel="prev" href="../ADR-025-authorization-recovery-contract-binding/">
+      
+      
+        <link rel="next" href="../ADR-027-closed-stage3-execution-port/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ADR-026 First WRITE capability adapter - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adr-026-first-write-capability-adapter-semantic-unit" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ADR-026 First WRITE capability adapter
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#owner-convergence-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Owner convergence decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Owner convergence decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-write-acceptance-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-WRITE acceptance matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrency-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w1-implementation-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W1 implementation evidence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response-loss-and-timeout-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response-loss and timeout boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#side-effect-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side-effect boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deferred-outside-first-write-semantic-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred / outside first-WRITE semantic scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-t1-prerequisite-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LAB-T1 prerequisite status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b3-blocker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B3 blocker
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-selection-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate selection criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selected-candidate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selected candidate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Selected candidate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#capability-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-natural-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource natural identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authoritative-read" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authoritative READ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fingerprint-and-precondition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fingerprint and precondition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typed-mutation-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typed mutation projection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-condition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-condition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollback-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback snapshot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollback-policy-and-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback policy and version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-remediation-implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture-remediation implementation status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapter-and-preparer-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adapter and preparer version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-b1-field-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete B1 field mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planner-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planner relationship
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b2-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B2 relationship
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threat-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threat analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disposable-lab-evidence-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disposable-lab evidence plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disposable-lab evidence plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mutation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mutation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrency-and-ambiguity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency and ambiguity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-behavior-and-repeatability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API behavior and repeatability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rejected-candidates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rejected candidates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolved-owner-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved owner decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#w1-implementation-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W1 implementation boundary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#live-first-write-evidence-2026-08-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live first-WRITE evidence (2026-08-16)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-026-acceptance-matrix-closure-evidence-2026-08-16-third-consolidation-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-026 acceptance-matrix closure evidence (2026-08-16, third consolidation pass)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#least-privilege-identity-design-and-provisioning-procedure-2026-08-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Least-privilege identity design and provisioning procedure (2026-08-16)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoped-credential-live-write-evidence-2026-08-16-restoration-ceremony" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scoped-credential live-WRITE evidence (2026-08-16, restoration ceremony)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stop-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STOP conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#owner-convergence-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Owner convergence decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Owner convergence decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-write-acceptance-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-WRITE acceptance matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrency-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#w1-implementation-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W1 implementation evidence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response-loss-and-timeout-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response-loss and timeout boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#side-effect-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side-effect boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deferred-outside-first-write-semantic-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred / outside first-WRITE semantic scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-t1-prerequisite-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LAB-T1 prerequisite status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b3-blocker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B3 blocker
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-selection-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate selection criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#candidate-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Candidate comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#selected-candidate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selected candidate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Selected candidate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#capability-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resource-natural-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource natural identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authoritative-read" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authoritative READ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fingerprint-and-precondition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fingerprint and precondition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typed-mutation-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typed mutation projection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-condition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-condition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollback-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback snapshot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollback-policy-and-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback policy and version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-remediation-implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture-remediation implementation status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapter-and-preparer-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adapter and preparer version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-b1-field-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete B1 field mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planner-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planner relationship
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b2-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B2 relationship
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threat-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threat analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disposable-lab-evidence-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disposable-lab evidence plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disposable-lab evidence plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mutation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mutation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concurrency-and-ambiguity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency and ambiguity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-behavior-and-repeatability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API behavior and repeatability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rejected-candidates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rejected candidates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolved-owner-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved owner decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#w1-implementation-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W1 implementation boundary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#live-first-write-evidence-2026-08-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live first-WRITE evidence (2026-08-16)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-026-acceptance-matrix-closure-evidence-2026-08-16-third-consolidation-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-026 acceptance-matrix closure evidence (2026-08-16, third consolidation pass)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#least-privilege-identity-design-and-provisioning-procedure-2026-08-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Least-privilege identity design and provisioning procedure (2026-08-16)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoped-credential-live-write-evidence-2026-08-16-restoration-ceremony" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scoped-credential live-WRITE evidence (2026-08-16, restoration ceremony)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stop-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STOP conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-026-first-write-capability-adapter.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="adr-026-first-write-capability-adapter-semantic-unit">ADR-026: First WRITE capability adapter semantic unit<a class="headerlink" href="#adr-026-first-write-capability-adapter-semantic-unit" title="Permanent link">&para;</a></h1>
+<ul>
+<li><strong>Status:</strong> Accepted (2026-08-12, owner)</li>
+<li><strong>Date:</strong> 2026-08-11</li>
+<li><strong>Scope:</strong> Architecture and disposable-lab evidence design only. This ADR
+  does not authorize an adapter, preparer, endpoint allow-list entry, live
+  mutation, WRITE activation, MCP tool, or production construction.</li>
+</ul>
+<h2 id="owner-convergence-decision">Owner convergence decision<a class="headerlink" href="#owner-convergence-decision" title="Permanent link">&para;</a></h2>
+<p>The owner accepted this description-only semantic unit and its
+semantic-scope-specific acceptance policy on 2026-08-12. Acceptance authorizes
+no implementation, capability/endpoint activation, MCP tool, production
+construction, or live execution. W1 remains separately authorization-gated.</p>
+<p>Evidence is mandatory before first WRITE only when it protects behavior the
+exact semantic unit can exercise. Broader alias mutations, generic scenario
+machinery, and exhaustive permutations are not promoted into product
+prerequisites merely because they appear in the evidence catalogue below.
+Existing valid evidence is reused and unperformed deferred evidence is never
+reported as PASS.</p>
+<h3 id="first-write-acceptance-matrix">First-WRITE acceptance matrix<a class="headerlink" href="#first-write-acceptance-matrix" title="Permanent link">&para;</a></h3>
+<p>Status meanings: <strong>ESTABLISHED</strong> is accepted existing evidence;
+<strong>MUST COMPLETE</strong> remains a W1/W2/W3 acceptance gate; <strong>DEFERRED</strong> is outside
+the first-WRITE semantic scope and is not PASS.</p>
+<table>
+<thead>
+<tr>
+<th>First-WRITE invariant</th>
+<th>Status at acceptance</th>
+<th>Accepted evidence / remaining requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>exact target identity and singular resolution</td>
+<td>ESTABLISHED</td>
+<td>clean campaign and Stage 3A authoritative exact-name reads; production adapter retains zero/multiple refusal</td>
+</tr>
+<tr>
+<td>complete authoritative pre-mutation READ</td>
+<td>ESTABLISHED</td>
+<td>name/type/description/ordered address/ordered detail captured authoritatively</td>
+</tr>
+<tr>
+<td>complete protected fingerprint</td>
+<td>ESTABLISHED</td>
+<td>the exact five-field semantic fingerprint and ordering were exercised; production tests must preserve it unchanged</td>
+</tr>
+<tr>
+<td>fresh lifecycle locator and continuity</td>
+<td>ESTABLISHED</td>
+<td>locator <code>0</code> remained stable in 25 clean cycles and all completed description cases; executor refusal on drift is already tested</td>
+</tr>
+<tr>
+<td>omitted-field/protected-sibling preservation</td>
+<td>ESTABLISHED</td>
+<td>protected fields and ordering remained unchanged throughout clean and description evidence</td>
+</tr>
+<tr>
+<td>explicit apply/reload suppression contract</td>
+<td>VERIFIED (2026-08-16)</td>
+<td>live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below</td>
+</tr>
+<tr>
+<td>deterministic authoritative postcondition</td>
+<td>ESTABLISHED</td>
+<td>25/25 verified B reads plus exact normalization/boundary evidence</td>
+</tr>
+<tr>
+<td>description-field concurrent-change/conflict refusal</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td><code>tests/tier1/test_alias_description_execution.py::test_production_adapter_drift_refuses_before_executor_send</code> drives the real <code>AliasDescriptionAdapterV1</code> + <code>MutationExecutor</code> (not <code>test_executor.py</code>'s generic <code>_SyntheticAdapter</code>) through a description change concurrent with a confirmed contract: zero sends, <code>FAILED</code>. See "ADR-026 acceptance-matrix closure evidence (2026-08-16)" below for the interpretation this reclassification rests on.</td>
+</tr>
+<tr>
+<td>stale expected-state refusal</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td>same test as above — the fingerprint drift <em>is</em> the staleness the executor detects before send, through the same real adapter path.</td>
+</tr>
+<tr>
+<td>conflict-safe rollback from verified/reconciled B</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td><code>test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_remains_available</code> drives a real <code>VERIFIED</code> contract through the real adapter, proves a concurrent post-B change refuses rollback (<code>ROLLBACK_FAILED</code>, zero sends), and separately proves a legitimate rollback succeeds and restores exact A after the <em>authorization</em>'s own expiry (proving rollback authority is the sealed VERIFIED/B precondition, not authorization freshness).</td>
+</tr>
+<tr>
+<td>exact authoritative A restoration</td>
+<td>ESTABLISHED</td>
+<td>25/25 clean restorations and every accepted Stage 3A/3B case restored exact A</td>
+</tr>
+<tr>
+<td>at-most-one-send</td>
+<td>ESTABLISHED</td>
+<td>clean live send accounting plus MutationExecutor/FaultProxy offline tests exercise the same send owner; production wiring must not add a send path</td>
+</tr>
+<tr>
+<td>no blind retry after uncertainty</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td><code>test_replay_is_refused_before_second_contract_or_handoff</code>, <code>test_all_preconsumption_failures_leave_auth_unconsumed_and_zero_handoff</code>, and <code>test_resume_prepared_never_consumes_or_creates_and_duplicate_resume_is_safe</code> (all in <code>test_alias_description_execution.py</code>) plus <code>test_restart_reconciles_interrupted_executing_contract</code> (<code>test_production_runtime.py</code>, using the real <code>build_production_runtime()</code>, not a test double) together prove zero resend across preconsumption failure, duplicate resume, and a simulated restart mid-<code>EXECUTING</code>.</td>
+</tr>
+<tr>
+<td>authoritative uncertainty classification</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td>Was the one genuine gap this pass found: <code>DEFINITELY_APPLIED</code>/<code>DEFINITELY_NOT_APPLIED</code>/<code>AMBIGUOUS</code> classification was previously proven only against <code>test_executor.py</code>'s generic <code>_SyntheticAdapter</code>, never the real alias adapter. Closed by a new test, <code>test_production_adapter_send_timeout_reaches_reconciliation_not_failed_or_resend</code>: a <code>TransportTimeoutError</code> on the real adapter's send lands in <code>RECONCILIATION</code> (never <code>FAILED</code>, which would license a resend), exactly one send attempted.</td>
+</tr>
+<tr>
+<td>fail-closed reconciliation</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td><code>test_reconciliation_requires_pinned_authority_and_wrong_signature_fails_closed</code> (<code>test_production_runtime.py</code>) proves the fixed production pinned reconciliation authority rejects a wrong signature; <code>test_restart_reconciles_interrupted_executing_contract</code> proves the fixed production verifier/resume construction reaches <code>RECONCILIATION</code>, not a resend, through <code>build_production_runtime()</code> itself.</td>
+</tr>
+<tr>
+<td>authenticated recovery across restart</td>
+<td>VERIFIED (offline, production-bound) (2026-08-16)</td>
+<td>Same <code>test_restart_reconciles_interrupted_executing_contract</code>: two independent <code>build_production_runtime()</code> calls against the same store file simulate a real process restart; the interrupted <code>EXECUTING</code> contract is reconciled, never resent, through the real fixed production construction (schema-v7, V2 provenance, no test-only wiring).</td>
+</tr>
+<tr>
+<td>least privilege for exact endpoint/capability</td>
+<td>VERIFIED (2026-08-16)</td>
+<td>live-provisioned scoped identity <code>pfsense_mcp_tier1_lab</code> performed the entire production Tier1 restoration WRITE end-to-end holding only the four minimum privileges — see "Scoped-credential live-WRITE evidence (2026-08-16, restoration ceremony)" below</td>
+</tr>
+<tr>
+<td>sufficient authoritative side-effect evidence</td>
+<td>VERIFIED (2026-08-16)</td>
+<td>live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below; the config-history clause that kept this PARTIALLY VERIFIED is now closed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="concurrency-boundary">Concurrency boundary<a class="headerlink" href="#concurrency-boundary" title="Permanent link">&para;</a></h3>
+<p>Description or protected-fingerprint change between preparation and the
+forward/rollback precondition must fail closed. Unrelated-resource concurrency
+does not require exhaustive empirical orchestration: the executor authorizes
+from the selected alias's complete fingerprint and lifecycle locator, never a
+global config revision, and the adapter builds a request only for the freshly
+resolved exact alias locator. An unrelated change therefore cannot satisfy a
+stale target fingerprint, change the resolved locator without refusal, or
+redirect the request. If W1 review discovers shared appliance behavior that
+breaks this separation, that concrete case becomes mandatory again.</p>
+<h3 id="w1-implementation-evidence">W1 implementation evidence<a class="headerlink" href="#w1-implementation-evidence" title="Permanent link">&para;</a></h3>
+<p>The separately authorized W1 implementation completed the production-inert
+parts of this matrix offline. The two-field request, exact-name preparer and
+production adapter now reuse the accepted five-field fingerprint and fresh
+numeric lifecycle locator. A second authoritative preparation before
+authorization consumption refuses description, protected-sibling, locator,
+configured-target or stable-appliance-identity drift. Focused tests also run
+the production adapter through <code>MutationExecutor</code> and prove zero forward send
+on stale A, zero rollback send when live B differs from the sealed verified B,
+one coordinator handoff maximum, and no retry right after consumption or
+handoff failure.</p>
+<p>This does not relabel remaining empirical/runtime rows as PASS. W2 still owns
+fixed production construction, authenticated restart/reconciliation wiring and
+authority configuration. W3 still owns endpoint/capability/tool activation,
+selected remaining live evidence, and the operational side-effect decision.</p>
+<h3 id="response-loss-and-timeout-boundary">Response-loss and timeout boundary<a class="headerlink" href="#response-loss-and-timeout-boundary" title="Permanent link">&para;</a></h3>
+<p>The mandatory property is one send maximum, no blind retry, fresh
+authoritative observation, the closed <code>DEFINITELY_APPLIED</code> /
+<code>DEFINITELY_NOT_APPLIED</code> / <code>AMBIGUOUS</code> classification, and fail-closed signed
+reconciliation where needed. Existing tests are acceptable where they execute
+the same <code>MutationExecutor</code>, store, observation, and reconciliation owners.
+Every live transport-fault permutation is not independently mandatory. New
+live evidence is required only for material behavior introduced by the fixed
+production composition.</p>
+<h3 id="side-effect-boundary">Side-effect boundary<a class="headerlink" href="#side-effect-boundary" title="Permanent link">&para;</a></h3>
+<p>HTTP success alone never proves absence of side effects. First-WRITE evidence
+must establish deterministic authoritative configuration read-back, required
+apply suppression, and that correctness/recovery needs no broader state
+transition. Exhaustive filter/service/API/webConfigurator/config-history
+instrumentation is not automatically required when existing authoritative
+evidence and pinned endpoint behavior establish that contract. A genuinely
+unknown effect that could invalidate deterministic verification, recovery, or
+the description-only blast radius remains a blocker.</p>
+<h3 id="deferred-outside-first-write-semantic-scope">Deferred / outside first-WRITE semantic scope<a class="headerlink" href="#deferred-outside-first-write-semantic-scope" title="Permanent link">&para;</a></h3>
+<p>The following are retained as useful future evidence but do not block the
+description-only first WRITE unless implementation review shows that they
+affect a mandatory invariant above:</p>
+<ul>
+<li>address/member or detail mutation;</li>
+<li>alias create, delete, recreate, duplicate-name creation, or byte-identical
+  recreation;</li>
+<li>forced numeric-locator manipulation outside normal description execution;</li>
+<li>full Stage 3F;</li>
+<li>D6 as a standalone empirical race;</li>
+<li>complete D/E/G permutation matrices and repeated cosmetic fault variants;</li>
+<li>generic ScenarioId orchestration or complete Stage3 execution-port work;</li>
+<li>exhaustive broader-resource mutation evidence.</li>
+</ul>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>ADR-025 B1 introduced the inert <code>PreparedExecutionIntentV1</code>; B2 introduced
+signed plan/step-to-execution-digest associations. B3 then stopped because no
+concrete capability adapter/preparer supplied authoritative values for the B1
+execution/recovery tuple.</p>
+<p>The repository already contains two narrower owner decisions. ADR-016 permits
+disposable-lab research on firewall-alias description-only mutation, and
+ADR-020 names that operation as the Milestone 0 first candidate. Neither
+decision proves appliance behavior or authorizes implementation. This ADR
+turns the named candidate into one reviewable semantic specification and
+defines the evidence required before separately authorized W1 implementation.</p>
+<p>The API is the community-maintained pfSense REST API package, not a
+Netgate-supported interface. Source review is useful design evidence, but the
+exact disposable appliance's generated OpenAPI document and observed behavior
+remain authoritative for acceptance.</p>
+<h3 id="lab-t1-prerequisite-status">LAB-T1 prerequisite status<a class="headerlink" href="#lab-t1-prerequisite-status" title="Permanent link">&para;</a></h3>
+<p>The read-only LAB-T1 harness uses a separately owner-approved, lab-only manual
+attestation gate for dependency surfaces that current APIs cannot enumerate
+completely. It still automatically checks available firewall-rule and NAT
+references, and positive, failed, malformed, or incomplete automatic evidence
+cannot be overridden by an attestation. Attestations bind the exact sanitized
+lab identity and normalized synthetic alias for at most ten minutes.</p>
+<p>This does not establish global absence of alias dependencies and is explicitly
+unacceptable as a production authorization, dependency, or target-identity
+mechanism. Completing LAB-T1 does not authorize or begin this ADR's mutation
+evidence matrix; a successful sanitized read-only preflight must return for
+owner review first.</p>
+<h2 id="b3-blocker">B3 blocker<a class="headerlink" href="#b3-blocker" title="Permanent link">&para;</a></h2>
+<p>Current <code>SecurityPosturePlan</code> steps are policy/provisioning actions. They do not
+carry a typed alias target or desired description. <code>WriteEndpoints</code> is empty,
+and no real adapter exists. Consequently B3 cannot derive capability, endpoint,
+method, adapter version, resource target, precondition, normalized mutation,
+snapshot, or rollback version without a separately approved semantic unit.</p>
+<p>This ADR specifies that unit. It does not remove the empirical lab gate and it
+does not solve the typed planner-input prerequisite described below.</p>
+<h2 id="candidate-selection-criteria">Candidate selection criteria<a class="headerlink" href="#candidate-selection-criteria" title="Permanent link">&para;</a></h2>
+<p>The first semantic unit should minimize blast radius while exercising all
+important prepared-intent properties: stable resource selection, complete
+precondition, one closed mutation projection, authoritative read-back, exact
+rollback, and ambiguous-outcome handling. It must avoid management addressing,
+routing, authentication, key material, broad service configuration, bulk
+replacement, create/delete, and apply/reload operations.</p>
+<p>Evaluation priorities, in order, are reversibility, blast radius,
+deterministic effect, exact identity, unique READ, complete fingerprint,
+closed typing, authoritative post-condition, exact rollback, API stability,
+least privilege, low appliance-wide coupling, lockout avoidance, absence of
+broad disruption, and disposable-lab testability.</p>
+<h2 id="candidate-comparison">Candidate comparison<a class="headerlink" href="#candidate-comparison" title="Permanent link">&para;</a></h2>
+<p>The 240-endpoint risk inventory found only two credible early candidates. A
+third representative object-level candidate is shown to make the rejection
+boundary explicit; it is not considered credible enough to enter the final
+ranking.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Rank</th>
+<th>Semantic unit</th>
+<th>READ / WRITE</th>
+<th>Identity</th>
+<th>Mutation and rollback</th>
+<th>Risk / decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td>firewall alias: replace <code>descr</code> only</td>
+<td><code>GET /api/v2/firewall/aliases</code>; <code>PATCH /api/v2/firewall/alias</code></td>
+<td>exact normalized unique alias <code>name</code>; numeric <code>id</code> is a fresh transport locator and protected lifecycle-continuity guard</td>
+<td>one bounded string; restore old string after full conflict check</td>
+<td>High<em> because aliases influence policy, but narrowest evidenced candidate; </em><em>selected, lab-gated</em>*</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td>system tunable: replace <code>descr</code> only</td>
+<td>existing tunables READ; <code>PATCH /api/v2/system/tunable</code></td>
+<td>exact tunable name; numeric ID locator</td>
+<td>one string; restore old string</td>
+<td>High* and system-wide; description/value coupling and runtime effects are less favorable; fallback only</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td>DNS resolver host-override metadata</td>
+<td><code>GET /api/v2/services/dns_resolver/host_overrides</code>; singular PATCH endpoint in upstream inventory</td>
+<td>compound host/domain key is mutable and duplicate/normalization behavior is unproven</td>
+<td>likely service-config write and resolver reload; exact rollback depends on full object</td>
+<td>High/service-wide; rejected for first adapter because identity, reload, and rollback are materially more complex</td>
+</tr>
+</tbody>
+</table>
+<p>Interfaces, DHCP mappings, certificates/ACME, firewall rules/NAT, routing,
+users/authentication, and bulk endpoints are rejected categorically for the
+first adapter due to lockout, credential, ordering, service, or replacement
+risk. No third candidate in the repository currently matches the top two's
+combination of READ coverage, non-numeric natural key, and narrow reversible
+field projection.</p>
+<h2 id="selected-candidate">Selected candidate<a class="headerlink" href="#selected-candidate" title="Permanent link">&para;</a></h2>
+<p><strong>Recommended first capability semantic unit: replace only the description of
+one existing ordinary firewall alias identified by its exact normalized alias
+name, using <code>PATCH /api/v2/firewall/alias</code>, while preserving name, type,
+members, member details, placement, and all apply controls.</strong></p>
+<p>This is an update-only operation. It cannot create, delete, rename, reorder,
+retag, change members, change member details, submit bulk data, request apply,
+or invoke <code>/api/v2/firewall/apply</code>.</p>
+<h3 id="capability-semantics">Capability semantics<a class="headerlink" href="#capability-semantics" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Capability: existing inactive <code>Capability.ALIAS_WRITE</code>.</li>
+<li>Conceptual operation: <code>set_firewall_alias_description_v1</code>.</li>
+<li>Risk class: High* at endpoint level; <code>CONFIGURATION_CHANGE</code> authorization.
+  The narrow projection lowers blast radius but does not relabel the broad
+  upstream endpoint as low-risk.</li>
+<li>Endpoint symbol proposed for later implementation:
+  <code>FIREWALL_ALIAS_DESCRIPTION</code>.</li>
+<li>HTTP method: <code>PATCH</code>.</li>
+<li>Endpoint: singular/item update endpoint <code>/api/v2/firewall/alias</code>.</li>
+<li>Collection replacement (<code>PUT /firewall/aliases</code>) is forbidden.</li>
+<li>Partial-PATCH semantics are source-documented but must be proven against the
+  pinned lab package. Whole-object replacement is unacceptable.</li>
+<li><code>apply</code>, <code>async</code>, <code>placement</code>, <code>append</code>, and <code>remove</code> controls are forbidden
+  as caller inputs. The request must explicitly keep <code>apply=false</code>; W1 must
+  stop if the lab schema cannot express that without an implicit reload.</li>
+</ul>
+<p>The upstream model at the reviewed commit declares alias <code>name</code> unique and
+non-editable, accepts an empty description, and supports singular PATCH. Its
+apply hook can reload the firewall filter. Whether description-only PATCH
+without apply performs any runtime reload or unrelated normalization is an
+empirical acceptance gate, not assumed here.</p>
+<h2 id="resource-natural-identity">Resource natural identity<a class="headerlink" href="#resource-natural-identity" title="Permanent link">&para;</a></h2>
+<p>The natural identity is:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="nt">&quot;alias_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;NFC-normalized exact alias name&gt;&quot;</span><span class="p">}</span>
+</code></pre></div>
+<p>Alias name is chosen because the reviewed upstream model declares it unique
+and non-editable. Matching is exact and case-sensitive after NFC normalization;
+no prefix, wildcard, case-folding, or numeric-ID identity is allowed. The lab
+must confirm the API and pfSense configuration enforce those properties.</p>
+<p>The numeric <code>id</code> returned by READ is a transport locator, not semantic identity.
+The current pfSense API exposes no independent stable generation/incarnation
+marker. Therefore the ID observed at lifecycle protection time is also sealed
+as an incarnation-continuity guard. Every execute and rollback read resolves
+the exact natural name to exactly one row, requires the current ID to equal that
+guard, and only then projects the freshly read ID into request construction.</p>
+<p>Any ID change during the protected lifecycle fails closed. This does not prove
+that the alias was deleted and recreated; it means non-recreation cannot be
+proved. A benign renumbering is consequently an accepted false-positive that
+requires re-prepare/operator retry. Automatic continuation across a locator
+change is forbidden. The ID remains outside <code>resource_target</code> and semantic
+identity, cannot be caller supplied, and is never cached by the stateless
+adapter.</p>
+<p>Rename is outside this capability. Deletion/recreation under the same name is
+treated as a replacement unless the complete precondition remains identical;
+the later execution gate must fail on any mismatch. Backup/restore and reboot
+stability of names and ID reassignment require lab characterization. Appliance
+identity remains separate and unresolved.</p>
+<p>System/built-in aliases, URL-table aliases, and other alias types not accepted
+by the pinned ordinary-alias model must fail closed. The initial lab resource
+must be a synthetic, ordinary <code>host</code>, <code>network</code>, or <code>port</code> alias with no role in
+management access or production-equivalent policy.</p>
+<h2 id="authoritative-read">Authoritative READ<a class="headerlink" href="#authoritative-read" title="Permanent link">&para;</a></h2>
+<p>The authoritative read operation is the existing verified
+<code>GET /api/v2/firewall/aliases</code>, requested with identifying metadata enabled and
+pagination sufficient to inspect the complete ordinary-alias collection.</p>
+<p>The future adapter must:</p>
+<ol>
+<li>normalize and validate the requested natural name;</li>
+<li>enumerate all pages, not rely on a default/partial limit;</li>
+<li>filter by exact normalized <code>name</code>;</li>
+<li>reject zero or more than one match;</li>
+<li>reject malformed or incomplete objects;</li>
+<li>return <code>id</code>, <code>name</code>, <code>type</code>, <code>descr</code>, ordered <code>address</code>, and ordered
+   <code>detail</code> from the same authoritative response.</li>
+</ol>
+<p>The current public READ model privacy-defaults <code>address</code> and <code>detail</code> to
+redacted. A future internal preparer read may request those identifying fields
+only for contract preparation and must not expose them through MCP output,
+logs, errors, or reports. This narrow internal use does not change the public
+privacy default.</p>
+<p>If the lab's singular <code>GET /api/v2/firewall/alias?id=...</code> is proven to return
+the same complete object, it may be used only after natural-name resolution;
+the plural exact-name scan remains the authority for uniqueness.</p>
+<h2 id="fingerprint-and-precondition">Fingerprint and precondition<a class="headerlink" href="#fingerprint-and-precondition" title="Permanent link">&para;</a></h2>
+<p>The canonical target precondition is the full semantic ordinary-alias object,
+excluding only the transient numeric locator:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;exact normalized name&gt;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;host|network|port&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;descr&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;current normalized description&gt;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;&lt;ordered member&gt;&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;detail&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;&lt;ordered member detail&gt;&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Every field is load-bearing:</p>
+<ul>
+<li><code>name</code> proves the natural target;</li>
+<li><code>type</code> prevents mutation after semantic retagging;</li>
+<li><code>descr</code> provides the expected pre-state and detects concurrent description
+  edits;</li>
+<li><code>address</code> protects policy-affecting members;</li>
+<li><code>detail</code> protects member-to-detail correspondence and detects server-side
+  regeneration or concurrent edits.</li>
+</ul>
+<p>List order is preserved because address/detail positions correspond. NFC string
+normalization follows B1 canonical rules; no sorting or case folding is added.
+Numeric ID, API envelope, pagination data, response timestamps, config-history
+revision numbers, runtime alias-table counters, and apply-status timing are
+excluded because they are locators/volatile metadata rather than object
+semantics. Config-history evidence may be retained as lab/audit evidence but is
+not the resource fingerprint or an automatic global rollback source.</p>
+<p>Any missing/redacted field, inconsistent address/detail cardinality, duplicate
+name, unsupported type, or noncanonical value fails preparation.</p>
+<h2 id="typed-mutation-projection">Typed mutation projection<a class="headerlink" href="#typed-mutation-projection" title="Permanent link">&para;</a></h2>
+<p>The future typed planning input is conceptually:</p>
+<div class="highlight"><pre><span></span><code>AliasDescriptionChangeV1
+  alias_name: constrained alias-name string
+  description: NFC-normalized string, 0..1024 evidenced units
+</code></pre></div>
+<p>The evidenced boundary accepts 1024 and rejects 1025. Embedded NUL, rejected
+control characters (including U+0001), malformed/non-string values, and invalid
+Unicode scalar values are refused. The established whitespace, tab, newline,
+Unicode and NFD-to-NFC behavior is preserved by the typed boundary rather than
+reinterpreted during implementation.</p>
+<p>Unknown fields are forbidden. Empty description is an explicit value, not
+missing/null. A requested description equal to the authoritative current value
+is a no-op and must not create an executable prepared intent. Arbitrary JSON,
+raw body, numeric ID, type, addresses, details, apply flags, placement, or
+endpoint/method cannot be supplied.</p>
+<p>The normalized B1 mutation intent is:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;operation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;set_firewall_alias_description_v1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;raw_target_hint&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;alias_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;normalized name&gt;&quot;</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;new_description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;normalized description&gt;&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>The operation discriminator prevents reinterpretation. There are no omitted
+optional keys and no alternate equivalent input form.</p>
+<h2 id="request-mapping">Request mapping<a class="headerlink" href="#request-mapping" title="Permanent link">&para;</a></h2>
+<p>The later adapter must build exactly one closed request from the resolved live
+locator and normalized intent:</p>
+<ul>
+<li>method: <code>PATCH</code>;</li>
+<li>path: <code>/api/v2/firewall/alias</code>;</li>
+<li>body: exact lab-verified selector plus <code>descr</code> and explicit <code>apply=false</code>;</li>
+<li>no query parameters;</li>
+<li>no <code>placement</code>, <code>append</code>, <code>remove</code>, <code>async</code>, <code>dry_run</code>, name, type, address,
+  detail, or additional field;</li>
+<li>content type: the repository's existing canonical JSON request mechanism.</li>
+</ul>
+<p>The expected source-backed selector is numeric <code>id</code>; the provisional body is
+therefore <code>{id: resolved_id, descr: new_description, apply: false}</code>. This is a
+<strong>lab acceptance hypothesis</strong>, not implementation authority. The exact pinned
+OpenAPI document must confirm field location, types, and whether explicit
+<code>apply=false</code> is accepted. If ID is a query parameter, if unrelated fields are
+required, if omitted fields reset, or if apply/reload cannot be suppressed,
+this candidate fails and W3 must not enable the capability.</p>
+<p>No unrelated field is round-tripped into the PATCH. The reason for selecting
+PATCH is precisely to avoid whole-object replacement. If the lab disproves
+partial preservation, the operation is rejected rather than changed into a
+full-object request.</p>
+<h2 id="post-condition">Post-condition<a class="headerlink" href="#post-condition" title="Permanent link">&para;</a></h2>
+<p>HTTP success is not sufficient. After a successful or ambiguous response, the
+adapter re-enumerates aliases through the authoritative READ and resolves the
+exact natural name again.</p>
+<p>Verified success requires exactly one match, <code>descr == new_description</code>, and
+<code>name</code>, <code>type</code>, ordered <code>address</code>, and ordered <code>detail</code> equal the pre-state.
+The numeric ID is not semantic identity, but the API exposes no independent
+incarnation marker. The ID captured when the lifecycle is protected is
+therefore a continuity guard: every authoritative read before or after a send
+must resolve the same ID. Any change means continuity is unproven and fails
+closed; the operation never infers safe renumbering or recreation.</p>
+<p>Zero/multiple matches, malformed data, a different description, or any
+forbidden-field difference fails semantic verification. Timeout or lost
+response never causes automatic replay; authoritative read-back determines
+verified success versus reconciliation.</p>
+<p>First-WRITE acceptance must establish the side-effect boundary in the matrix
+above. Any apply/reload or policy effect that broadens the operational contract
+or invalidates deterministic verification/recovery is disqualifying; absence
+is never inferred solely from HTTP success.</p>
+<h2 id="rollback-snapshot">Rollback snapshot<a class="headerlink" href="#rollback-snapshot" title="Permanent link">&para;</a></h2>
+<p>The rollback snapshot is the same complete canonical semantic object used for
+the precondition: <code>name</code>, <code>type</code>, old <code>descr</code>, ordered <code>address</code>, and ordered
+<code>detail</code>. It is a full semantic snapshot, not a serialized API envelope and not
+a global pfSense configuration revision. Numeric ID is intentionally excluded
+from this semantic snapshot, but is separately integrity-bound as the
+lifecycle-continuity guard and freshly resolved at every send boundary.</p>
+<p>The rollback mutation itself changes only <code>descr</code> back to the captured value.
+The full snapshot exists to prevent rollback from overwriting unrelated edits,
+not to send those fields back to the API.</p>
+<p>Delete/recreate, rename, duplicate name, type/member/detail change, or missing
+target stops automatic rollback and enters the existing failure/reconciliation
+path. Global config-history restore and resource recreation are forbidden.</p>
+<h2 id="rollback-policy-and-version">Rollback policy and version<a class="headerlink" href="#rollback-policy-and-version" title="Permanent link">&para;</a></h2>
+<p>Proposed rollback policy identifier:</p>
+<div class="highlight"><pre><span></span><code>firewall-alias-description-rollback/v1
+</code></pre></div>
+<p>Rollback is allowed only when the current exact-name read returns one object
+whose name/type/address/detail equal the snapshot, whose description equals the
+successfully written new description, and whose target reservation/state permits
+rollback. It resolves a fresh numeric ID, requires exact equality with the
+protected lifecycle guard, PATCHes only the original description with
+<code>apply=false</code>, and performs the full authoritative read-back plus continuity
+check again.</p>
+<p>Rollback succeeds only when all semantic fields equal the snapshot. Any
+concurrent change, ambiguous send, missing/multiple resource, reload effect, or
+verification failure stops automatic compensation. There is no generic retry,
+create-on-missing behavior, or global config restore.</p>
+<p>The full pre-forward fingerprint remains unchanged and includes the original
+description. On successful authoritative forward read-back, the executor must
+derive and integrity-seal a distinct expected post-forward fingerprint covering
+the same complete tuple, including the new description, atomically with the
+<code>VERIFIED</code> transition. The immediate pre-rollback READ must match that sealed
+post-forward fingerprint exactly. Rollback then restores and verifies the
+original snapshot/fingerprint. This corrects the pre-evidence finding that a
+comparison against the original fingerprint would reject every successful
+description mutation. It does not weaken any fingerprint field.</p>
+<h2 id="architecture-remediation-implementation-status">Architecture-remediation implementation status<a class="headerlink" href="#architecture-remediation-implementation-status" title="Permanent link">&para;</a></h2>
+<p>The inert Tier 1 contract/store/executor path now implements the distinct,
+durable expected-post-forward fingerprint boundary and focused synthetic
+regression coverage. Confirmed-applied reconciliation evidence also signs this
+fingerprint before it can produce a rollback-eligible VERIFIED contract. This
+is architecture validation only: no alias adapter, public endpoint, capability
+activation, production construction, or lab PATCH is introduced. ADR-026 is
+Accepted; the matrix above records which first-WRITE evidence remains.</p>
+<p>First-WRITE acceptance must prove exact description rollback and preservation
+of members, details, type, and ordering. Runtime/unrelated effects are governed
+by the explicit side-effect and concurrency boundaries above rather than by an
+exhaustive broader-mutation campaign.</p>
+<h2 id="adapter-and-preparer-version">Adapter and preparer version<a class="headerlink" href="#adapter-and-preparer-version" title="Permanent link">&para;</a></h2>
+<p>Proposed adapter/preparer identifier:</p>
+<div class="highlight"><pre><span></span><code>firewall-alias-description/v1
+</code></pre></div>
+<p>A version bump is required for any change to endpoint or method, selector
+location/type, request fields, description normalization/bounds, resource
+identity, fingerprint fields or ordering, mutation-intent shape, read-back or
+post-condition semantics, apply behavior, snapshot, rollback policy, or
+supported upstream pfSense/API package compatibility range.</p>
+<p>The pinned upstream package commit/version and generated OpenAPI fingerprint
+are compatibility evidence, not replacements for <code>adapter_version</code>. New
+software that cannot reproduce the exact B1 intent/digest fails closed.</p>
+<h2 id="complete-b1-field-mapping">Complete B1 field mapping<a class="headerlink" href="#complete-b1-field-mapping" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>B1 field</th>
+<th>Exact source and representation</th>
+<th>Live/caller influence</th>
+<th>Remaining prerequisite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>capability</code></td>
+<td>immutable registry entry <code>Capability.ALIAS_WRITE</code></td>
+<td>no caller choice</td>
+<td>W1 adds the inert binding; W3 activates it</td>
+</tr>
+<tr>
+<td><code>endpoint_symbol</code></td>
+<td>immutable registry value <code>FIREWALL_ALIAS_DESCRIPTION</code></td>
+<td>no caller choice</td>
+<td>exact symbol/allow-list remains unimplemented</td>
+</tr>
+<tr>
+<td><code>http_method</code></td>
+<td>immutable <code>PATCH</code></td>
+<td>no caller choice</td>
+<td>pinned lab OpenAPI confirms</td>
+</tr>
+<tr>
+<td><code>adapter_version</code></td>
+<td>immutable <code>firewall-alias-description/v1</code></td>
+<td>no caller choice</td>
+<td>accepted; W1 pins evidenced compatibility</td>
+</tr>
+<tr>
+<td><code>resource_target</code></td>
+<td><code>{"alias_name": normalized exact typed input}</code></td>
+<td>caller requests name; signed V2 binding and live READ prove exact unique match</td>
+<td>W1 typed request/binding</td>
+</tr>
+<tr>
+<td><code>target_precondition</code></td>
+<td>full live semantic object: name/type/descr/address/detail</td>
+<td>authoritative live READ; caller cannot replace</td>
+<td>established evidence; W1 production type</td>
+</tr>
+<tr>
+<td><code>normalized_mutation_intent</code></td>
+<td>fixed operation + bound target + normalized description</td>
+<td>typed input only; no raw JSON</td>
+<td>W1 exact intent binding</td>
+</tr>
+<tr>
+<td><code>rollback_snapshot</code></td>
+<td>same full live semantic object</td>
+<td>authoritative live READ</td>
+<td>established evidence; W1 production type</td>
+</tr>
+<tr>
+<td><code>rollback_plan_version</code></td>
+<td>immutable <code>firewall-alias-description-rollback/v1</code></td>
+<td>no caller choice</td>
+<td>accepted</td>
+</tr>
+</tbody>
+</table>
+<p>All fields are deterministic given the exact typed plan input, one complete
+authoritative read, and fixed registry/version. Live state is intentionally
+load-bearing; later B5 must re-read/reprepare before consumption.</p>
+<h2 id="planner-relationship">Planner relationship<a class="headerlink" href="#planner-relationship" title="Permanent link">&para;</a></h2>
+<p>Current PlanStep prose does not select this semantic unit and must never be
+parsed as authority. PlanDigest/PlanStep v1 remains unchanged. The typed
+<code>AliasDescriptionChangeV1(alias_name, description)</code> is authoritatively
+prepared, and <code>PlanAuthorizationV2</code> signs its exact execution-intent digest
+beside the exact authorized step ID and plan digest. This is the accepted
+cryptographic association; W1 must not create a second planning schema or
+infer mutation facts from action/description text.</p>
+<p>This is not a second policy engine: the planner decides that the typed request
+belongs in the reviewed plan; the adapter only translates the closed request
+and authoritative state into the fixed execution tuple.</p>
+<h2 id="b2-relationship">B2 relationship<a class="headerlink" href="#b2-relationship" title="Permanent link">&para;</a></h2>
+<p>The future B3 preparer remains authorization-independent. It selects the
+approved registry entry from the typed semantic-unit discriminator, performs
+the authoritative read, builds <code>PreparedExecutionIntentV1</code>, and invokes only
+<code>compute_execution_intent_digest()</code>.</p>
+<p>The signing workflow then places that recomputed digest beside the exact step
+ID in <code>PlanAuthorizationV2</code>. B3 does not verify signatures. Future B5 must
+reprepare from authoritative inputs and compare the exact B1 digest with B2's
+signed pair before consumption.</p>
+<h2 id="threat-analysis">Threat analysis<a class="headerlink" href="#threat-analysis" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Classification and treatment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wrong or changed numeric ID</td>
+<td>prevented: every fresh exact-name READ must match the integrity-bound lifecycle guard; mismatch fails closed and is never caller-overridable</td>
+</tr>
+<tr>
+<td>duplicate/mutable name</td>
+<td>lab must prove uniqueness/non-editability; zero/multiple fail closed; otherwise unacceptable</td>
+</tr>
+<tr>
+<td>stale precondition / change between read and send</td>
+<td>detected by executor re-read/fingerprint; fail closed before send</td>
+</tr>
+<tr>
+<td>omitted field resets or hidden default</td>
+<td>lab acceptance gate; any unrelated change rejects candidate</td>
+</tr>
+<tr>
+<td>body parameter injection</td>
+<td>prevented by closed typed request and <code>extra=forbid</code></td>
+</tr>
+<tr>
+<td>endpoint/method substitution</td>
+<td>prevented by immutable registry and B1 digest/contract binding</td>
+</tr>
+<tr>
+<td>delete/recreate</td>
+<td>changed locator fails closed even when name and full fingerprint are byte-identical; the API cannot prove incarnation continuity</td>
+</tr>
+<tr>
+<td>rollback overwrites legitimate edit</td>
+<td>prevented by full pre-rollback conflict check; conflict enters reconciliation</td>
+</tr>
+<tr>
+<td>partial success / timeout after server success</td>
+<td>detected by read-back; no automatic replay; ambiguous state enters reconciliation</td>
+</tr>
+<tr>
+<td>duplicate request/retry</td>
+<td>prevented by sealed one-send semantics; direct out-of-band API use remains outside coordinator</td>
+</tr>
+<tr>
+<td>filter reload/service effect</td>
+<td>lab acceptance gate; unexpected reload is unacceptable for first adapter</td>
+</tr>
+<tr>
+<td>post-condition ambiguity</td>
+<td>detected/fail-closed by exact full read-back</td>
+</tr>
+<tr>
+<td>rollback failure</td>
+<td>existing rollback-failed/reconciliation state; no repeated blind rollback</td>
+</tr>
+<tr>
+<td>privilege mismatch</td>
+<td>least-privilege lab identity must prove exact operation; denial fails before effect</td>
+</tr>
+<tr>
+<td>direct API use outside coordinator</td>
+<td>deferred operational threat; production construction/isolation remains separate</td>
+</tr>
+<tr>
+<td>malformed canonical values</td>
+<td>prevented by typed model and B1 canonical validation</td>
+</tr>
+<tr>
+<td>planner/adapter version mismatch</td>
+<td>detected by semantic discriminator, adapter version, and digest mismatch</td>
+</tr>
+<tr>
+<td>appliance substitution</td>
+<td>prevented by ADR-025's accepted configured-target/TLS plus stable installation-identifier binding; unavailable or changed identity fails closed</td>
+</tr>
+</tbody>
+</table>
+<p>No threat marked as an empirical acceptance gate may be treated as prevented
+until the lab evidence exists.</p>
+<h2 id="disposable-lab-evidence-plan">Disposable-lab evidence plan<a class="headerlink" href="#disposable-lab-evidence-plan" title="Permanent link">&para;</a></h2>
+<p>No production firewall, identity, address, certificate, credential, or packet
+capture may be used. The existing disposable-lab containment/reset plan is
+authoritative. The package version must be pinned, its generated OpenAPI
+retained by non-sensitive hash/version, and the synthetic alias must not be
+referenced by management or production-equivalent rules.</p>
+<h3 id="baseline">Baseline<a class="headerlink" href="#baseline" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Create one synthetic ordinary alias and a second control alias.</li>
+<li>Record full plural and singular READ responses without retaining secrets.</li>
+<li>prove exact name uniqueness and non-editability; test duplicate creation and
+   case/Unicode variants;</li>
+<li>reboot and restore to characterize name stability and numeric ID behavior;</li>
+<li>capture canonical semantic snapshot/fingerprint and config/runtime hashes
+   that exclude credentials and identifying data.</li>
+</ol>
+<h3 id="mutation">Mutation<a class="headerlink" href="#mutation" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Compare the generated OpenAPI schema with the pinned upstream source.</li>
+<li>Exercise dry-run if supported and prove no config/apply effect.</li>
+<li>PATCH only ID, description, and explicit <code>apply=false</code> as confirmed by the
+   schema; record method/path/status/timing, never credentials.</li>
+<li>Re-read and prove description equality plus byte-semantic equality of every
+   forbidden field and the control alias.</li>
+<li>Inspect config history, dirty/apply status, filter reload evidence, runtime
+   alias table, and service/process state for side effects.</li>
+</ol>
+<h3 id="rollback">Rollback<a class="headerlink" href="#rollback" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Resolve the target again by exact name and verify the forward-state
+   precondition.</li>
+<li>PATCH only the old description with apply disabled.</li>
+<li>Re-read and prove exact canonical snapshot restoration and unchanged control
+   resource/runtime state.</li>
+<li>Repeat after process and appliance restarts where safe.</li>
+</ol>
+<h3 id="concurrency-and-ambiguity">Concurrency and ambiguity<a class="headerlink" href="#concurrency-and-ambiguity" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Change description externally between prepare/read and send; expect refusal.</li>
+<li>Change name/type/member/detail externally; expect refusal.</li>
+<li>Change a separate alias; measure whether execution can safely proceed without
+  confusing global config revisions.</li>
+<li>Delete/recreate and reorder aliases; prove natural-name resolution and that
+  any lifecycle ID change refuses conservatively because incarnation continuity
+  cannot otherwise be proven.</li>
+<li>Drop connection during upload, drop response after commit, and timeout during
+  read-back; prove no automatic second PATCH and deterministic reconciliation.</li>
+<li>Conflict after forward verification but before rollback; prove rollback stops.</li>
+</ul>
+<h3 id="api-behavior-and-repeatability">API behavior and repeatability<a class="headerlink" href="#api-behavior-and-repeatability" title="Permanent link">&para;</a></h3>
+<p>Test unknown/extra fields, omitted fields, null/empty description, over-limit
+and invalid Unicode/control values, wrong ID, stale ID, duplicate names,
+malformed bodies, wrong method, insufficient privilege, authentication failure,
+dry-run, apply controls, async behavior, response schemas, config locking,
+config-history failure, restart, and external/manual edits.</p>
+<p>The completed 25 clean cycles and completed representative repetitions are not
+repeated merely to increase counts. Additional repetitions apply only to a
+remaining mandatory case where they add independent evidence. Any
+nondeterministic semantic result or operationally material unexplained side
+effect rejects the candidate.</p>
+<h2 id="evidence-acceptance-criteria">Evidence acceptance criteria<a class="headerlink" href="#evidence-acceptance-criteria" title="Permanent link">&para;</a></h2>
+<p>The first-WRITE acceptance matrix at the top of this ADR is authoritative.
+Every <strong>MUST COMPLETE</strong> row must be established before W3 owner enablement;
+<strong>DEFERRED</strong> evidence is not PASS and is not a description-only prerequisite.
+All B1 fields must remain derivable without caller-trusted parallel facts, and
+logs/results must contain no credentials, stable appliance identifiers, or
+unnecessary identifying data.</p>
+<p>Failure of identity uniqueness, omitted-field preservation, apply suppression,
+exact rollback, deterministic read-back, least privilege, retry suppression,
+or operationally material side-effect containment rejects the candidate rather
+than weakening the design.</p>
+<h2 id="rejected-candidates">Rejected candidates<a class="headerlink" href="#rejected-candidates" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>System-tunable description-only PATCH:</strong> the only credible fallback, but a
+  tunable is system/kernel configuration and value/description coupling or
+  runtime effects could be more severe. Consider only if alias evidence fails
+  for an alias-specific reason that does not also invalidate tunables.</li>
+<li><strong>DNS resolver host-override metadata:</strong> compound mutable identity,
+  service-reload coupling, full-object preservation, and rollback ambiguity.</li>
+<li><strong>DHCP static-mapping metadata:</strong> DHCP service/config coupling and compound
+  MAC/address identity make rollback and side effects higher risk.</li>
+<li><strong>Interface description:</strong> interface endpoint is critical and can affect
+  management/network configuration or apply semantics; unacceptable first
+  blast radius.</li>
+<li><strong>Certificate/ACME metadata:</strong> key/certificate lifecycle and external ACME
+  side effects; rollback and privilege impact are not local metadata concerns.</li>
+<li><strong>Alias members or create/delete:</strong> directly changes firewall policy inputs,
+  expands mutation shape, and complicates rollback/references.</li>
+<li><strong>Bulk endpoints:</strong> omission means replacement/deletion; unacceptable.</li>
+</ul>
+<h2 id="resolved-owner-decisions">Resolved owner decisions<a class="headerlink" href="#resolved-owner-decisions" title="Permanent link">&para;</a></h2>
+<p>The owner accepts:</p>
+<ol>
+<li><code>Capability.ALIAS_WRITE</code> for description only;</li>
+<li>singular <code>PATCH /api/v2/firewall/alias</code> and endpoint symbol
+   <code>FIREWALL_ALIAS_DESCRIPTION</code>;</li>
+<li>normalized exact alias name as natural identity and numeric ID only as a
+   fresh protected lifecycle locator;</li>
+<li>the complete name/type/description/ordered-address/ordered-detail
+   fingerprint;</li>
+<li>model-facing <code>AliasDescriptionChangeV1</code> inputs <code>alias_name</code> and
+   <code>description</code>, with existing evidence-derived normalization and bounds:
+   NFC intent, maximum 1024 accepted units, 1025 rejected, malformed/non-string
+   and U+0001 control input rejected, and empirically accepted whitespace/
+   Unicode behavior retained exactly rather than re-guessed;</li>
+<li>the full semantic rollback snapshot;</li>
+<li>rollback policy <code>firewall-alias-description-rollback/v1</code>;</li>
+<li>adapter/preparer version <code>firewall-alias-description/v1</code>, pinned to the
+   evidenced upstream compatibility range;</li>
+<li>the semantic-scope-specific evidence matrix above;</li>
+<li>PlanDigest/PlanStep v1 unchanged, with the exact step-to-intent association
+    signed by <code>PlanAuthorizationV2</code> as accepted in ADR-025.</li>
+</ol>
+<h2 id="w1-implementation-boundary">W1 implementation boundary<a class="headerlink" href="#w1-implementation-boundary" title="Permanent link">&para;</a></h2>
+<p>A separately authorized W1 may add the production capability-specific typed
+request, adapter and authoritative preparer, then compose the accepted ADR-025
+PlanAuthorizationV2-to-provenance-bound-RecoveryContract chain through one
+MutationExecutor handoff. W1 must remain production-unreachable from MCP and
+must not populate <code>WriteEndpoints</code>, activate <code>ALIAS_WRITE</code>, register a tool, or
+perform live mutation. W2 owns fixed production construction; W3 alone owns
+the endpoint/capability/tool surface and selected live acceptance.</p>
+<h2 id="live-first-write-evidence-2026-08-16">Live first-WRITE evidence (2026-08-16)<a class="headerlink" href="#live-first-write-evidence-2026-08-16" title="Permanent link">&para;</a></h2>
+<p>The first real pfSense mutation in this project's history occurred against
+the disposable LAB appliance (<code>LAB_ALIAS_TEST</code>) under full owner
+authorization, ceremony-by-ceremony, per-artifact independent verification
+(full detail:
+<code>reports-ai/reviews/SLICE6_PREVIEW_DESCRIPTION_TRUNCATION_INVESTIGATION_2026-08-16.md</code>,
+external/git-ignored). Evidence reconstructed independently from
+authoritative persisted state during this consolidation pass, not copied
+from that report.</p>
+<p><strong>Directly observed, not inferred:</strong></p>
+<ul>
+<li>Exactly one mutating pfSense request occurred:
+  <code>PATCH /api/v2/firewall/alias</code>, <code>apply=false</code> — confirmed both from the
+  executor's own log line at execution time and from
+  <code>AliasDescriptionPatchV1.apply</code> being hardcoded <code>False</code> at both call
+  sites in <code>tier1/alias_description.py</code> (never a caller-controlled value).</li>
+<li>Deterministic authoritative read-back: <code>LAB_ALIAS_TEST.descr</code> matched
+  the requested value exactly, both immediately after execution and again
+  independently during this later consolidation pass.</li>
+<li><code>RecoveryContract aliasdescr-68313213fc7c47a9b070d5e480d2ad70</code> reached
+  <code>VERIFIED</code>/<code>state_version=4</code>/<code>is_confirmed=True</code>. <code>store.load()</code>'s
+  internal <code>_verified_audit_rows()</code> (integrity MAC chain, ordering,
+  completeness, terminal-state agreement) succeeded without raising —
+  re-verified independently, not merely re-read — for this contract and
+  for both prior expired/dead contracts.</li>
+<li>Full audit chain: <code>contract_created(0) → prepared(1) →
+  contract_confirmed(2) → executing(3) → verified(4)</code>. No
+  <code>rollback</code>/<code>reconciliation</code> event type appears anywhere in
+  <code>audit_events</code>.</li>
+<li>Authorization consumed exactly once:
+  <code>authz-d9d846ec9c3b46095c81e97a4ff91402</code> present exactly once in
+  <code>AuthorizationConsumptionStore</code>; two earlier, unrelated authorizations
+  (from the two now-permanently-expired ceremonies) are also present,
+  each exactly once, confirming one-time consumption held across all
+  three attempts, not merely the successful one.</li>
+<li>Witness advanced exactly once: <code>2 → 3</code>, confirmed via a live
+  <code>TpmHostWitnessAnchor.read()</code>. The store's own independently-persisted
+  <code>anchor_state.high_water_mark</code> also reads <code>3</code> — no divergence between
+  physical witness and persisted record.</li>
+<li>No target-reservation or rate-cooldown residue: both tables read <code>0</code>
+  rows post-<code>VERIFIED</code>, consistent with <code>VERIFIED</code> not being a member of
+  <code>_RESERVATION_STATES</code> (<code>EXECUTING</code>/<code>RECONCILIATION</code>/<code>ROLLING_BACK</code>/
+  <code>ROLLBACK_FAILED</code> only) — the reservation held during <code>EXECUTING</code> was
+  correctly released on reaching the terminal state, not merely absent.</li>
+<li>No mutation occurred during the two earlier, expired ceremony attempts:
+  both dead contracts remain at <code>PREPARED</code>/<code>state_version=1</code>, never
+  reached <code>EXECUTING</code>, and the alias's description before this
+  consolidation pass's own investigation matched exactly what the
+  successful ceremony set it to — no unaccounted-for intermediate value
+  was ever observed.</li>
+<li>Fail-closed expiry, demonstrated separately from success: two real,
+  live attempts were correctly refused before execution purely on
+  freshness grounds (a <code>ConfirmationEvidence</code> past its own <code>expires_at</code>,
+  and — architecturally, via <code>resume_prepared()</code>'s own checks — two
+  contracts whose bound authorization window had elapsed), each
+  independently confirmed to have produced zero pfSense contact and zero
+  state mutation.</li>
+</ul>
+<p><strong><code>get_firewall_apply_status()</code> finding (2026-08-16, first consolidation
+pass)</strong>: the LAB appliance reports <code>applied=False</code>,
+<code>pending_subsystems=['aliases']</code> following the real WRITE. This is
+<code>apply=false</code>'s documented pfSense v2 API consequence, not a defect — the
+config.xml entry is written but the running ruleset is not regenerated.
+Since <code>descr</code> is pure metadata never compiled into the firewall ruleset,
+this has no live traffic-behavior effect, but it does mean the appliance
+carries a standing "pending changes" indicator this architecture's WRITE
+path does not clear (no explicit apply step exists by design). This
+directly, positively confirms row 6 (<code>apply=false</code> genuinely suppresses
+any reload/apply, observed on real hardware, not merely coded).</p>
+<p><strong>Row 18 (side-effect evidence) — config-history clause closed, 2026-08-16
+second consolidation pass</strong>: a new, narrowly-scoped read-only client
+method, <code>PfSenseClient.get_config_history_revisions()</code>
+(<code>/api/v2/diagnostics/config_history/revisions</code>, previously
+<code>DIAGNOSTICS_CONFIG_HISTORY_READ</code> in <code>docs/READ_BACKLOG.md</code> — planned but
+unimplemented), was added and used to read the LAB appliance's full
+config-history/backup revision list directly. Result: the most recent
+revision entry predates the entire Slice 6 ceremony workstream by several
+days; <strong>zero config-history revisions exist for the WRITE date</strong>. This is
+direct, authoritative, live-observed evidence — not inference — that this
+architecture's <code>apply=false</code> alias-description PATCH does not create any
+config-revision/backup entry at all (the backup-creation step appears
+bound to pfSense's own "apply" action, which this path never triggers by
+design). This closes the one item that kept row 18 at PARTIALLY VERIFIED:
+there is no unknown config-history/backup proliferation effect. Row 18 is
+now <strong>VERIFIED</strong>.</p>
+<p><strong>Row 17 (least privilege) — root-caused, now positively contradicted by
+live evidence, 2026-08-16 second consolidation pass</strong>: the original
+<code>get_users()</code> failure was root-caused, not merely logged for later. Exact
+cause: <code>PfSenseUser.expires</code> was typed as non-nullable <code>str</code>, but the real
+LAB appliance's single local user account (<code>admin</code>) legitimately returns
+<code>expires: null</code> (no expiration configured) — a genuine model/schema
+defect (the approved test fixture had only ever exercised the
+empty-string case), not a permissions issue, not API-version drift, not
+fixture-only drift. Fixed narrowly (<code>expires: str | None</code>), with a
+regression test and an approved-contract-snapshot update; no other field
+or code path was affected (confirmed via <code>git diff</code> against the public
+contract snapshot: only the <code>expires</code> field's schema changed).</p>
+<p>With <code>get_users()</code> now working, the evidence is materially worse than
+"unproven": <strong>the LAB appliance has exactly one local user, <code>admin</code>,
+<code>scope: system</code>, <code>priv: ['user-shell-access']</code></strong> — full administrative
+scope. <code>RestApiClient</code>'s <code>identity</code> parameter (<code>PFSENSE_IDENTITY</code>, e.g.
+<code>pfsense_lab1</code>) is confirmed, by direct code inspection, to be used only
+for local log-line correlation (<code>logger.warning(...)</code> call sites) and is
+never sent as an HTTP header or otherwise presented to pfSense —
+authentication is exclusively via the <code>X-API-Key</code> header. Since the
+appliance has no other local user for that key to be associated with, and
+the config-history revision descriptions independently corroborate this
+(<code>"admin@&lt;lab-ip&gt;: Modified Firewall Alias via API"</code> for every ceremony
+mutation, matching the live evidence above), <strong>the API credential used for
+the entire Slice 6 ceremony workstream, including the first real WRITE,
+authenticates as pfSense's full administrative account, not a
+capability-scoped identity</strong>. This is not caller discipline standing in
+for an enforced boundary — it is direct evidence that no least-privilege
+boundary exists at the appliance-identity level for this LAB at all, since
+only one (full-privilege) local user is provisioned. Row 17 remains <strong>MUST
+COMPLETE</strong>, now with an identified, concrete remediation path: provision a
+second, capability-scoped pfSense local user/API key (e.g. limited to the
+alias-write privilege class) and re-run the acceptance evidence against
+that identity. This requires live pfSense user/credential provisioning,
+which is explicitly outside any autonomous session's authority — an
+owner/security-policy action.</p>
+<h2 id="adr-026-acceptance-matrix-closure-evidence-2026-08-16-third-consolidation-pass">ADR-026 acceptance-matrix closure evidence (2026-08-16, third consolidation pass)<a class="headerlink" href="#adr-026-acceptance-matrix-closure-evidence-2026-08-16-third-consolidation-pass" title="Permanent link">&para;</a></h2>
+<p>Seven of the eight remaining MUST COMPLETE rows (concurrent-change
+refusal, stale-expected-state refusal, rollback-from-verified-B,
+no-blind-retry, uncertainty classification, fail-closed reconciliation,
+authenticated recovery across restart) were investigated for the first
+time this pass. For each, the question was: does <em>production-bound</em>
+offline test evidence (the real <code>AliasDescriptionAdapterV1</code>/
+<code>AliasDescriptionExecutionCoreV1</code>/<code>build_production_runtime()</code>
+composition, not a generic synthetic adapter) already exist, and does it
+genuinely prove the row's stated requirement?</p>
+<p><strong>Finding</strong>: six of the seven rows already had exactly this evidence —
+<code>test_alias_description_execution.py::test_production_adapter_drift_refuses_before_executor_send</code>
+and <code>test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_remains_available</code>
+were added 2026-08-12; <code>test_production_runtime.py::test_restart_reconciles_interrupted_executing_contract</code>
+and <code>test_reconciliation_requires_pinned_authority_and_wrong_signature_fails_closed</code>
+were added 2026-08-14 — both dates before this ADR's evidence sections
+were written, meaning this evidence existed and simply had not yet been
+cross-referenced against the acceptance matrix. The seventh
+(authoritative uncertainty classification) had a genuine, narrow gap: the
+<code>DEFINITELY_APPLIED</code>/<code>DEFINITELY_NOT_APPLIED</code>/<code>AMBIGUOUS</code> classification
+was proven only against <code>test_executor.py</code>'s generic <code>_SyntheticAdapter</code>,
+never the real alias adapter. Closed with one new test,
+<code>test_production_adapter_send_timeout_reaches_reconciliation_not_failed_or_resend</code>.</p>
+<p><strong>Interpretation flagged, not silently resolved</strong>: several of these rows'
+original wording (e.g. row 8's "production-bound D1-D5-equivalent focused
+tests <strong>and</strong> any owner-selected live evidence must prove the exact
+adapter path") is genuinely ambiguous about whether live evidence is
+strictly conjunctive-required or merely an owner-selectable option on top
+of sufficient offline evidence. This pass adopted the latter reading
+(offline production-bound evidence is sufficient absent an explicit
+owner request for additional live evidence) and reclassified these seven
+rows to <strong>VERIFIED (offline, production-bound)</strong> on that basis — a status
+distinct from live-observed <code>VERIFIED</code> rows (6, 18), which remain the
+only rows backed by real hardware/appliance observation. If the owner's
+intended reading was strictly conjunctive, these seven rows should be
+read as MUST COMPLETE pending owner-selected live evidence instead; no
+code or architecture decision depends on which reading is correct, so
+this is purely a documentation/acceptance-bar judgment call, reversible
+by editing this table alone.</p>
+<p><strong>Updated, 2026-08-16 (same day, later pass, after the scoped-credential
+restoration ceremony)</strong>: row 17 is now also VERIFIED — see "Scoped-credential
+live-WRITE evidence (2026-08-16, restoration ceremony)" below. Every row
+in the acceptance matrix now reads <code>ESTABLISHED</code> or some flavor of
+<code>VERIFIED</code>; none reads <code>MUST COMPLETE</code>.</p>
+<p><strong>Still not decided by this update, and still the sole remaining gate
+before <code>WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified</code> could be set
+<code>True</code></strong>: the interpretation question flagged immediately above. Seven
+rows carry the <code>VERIFIED (offline, production-bound)</code> status only under
+the reading that offline, production-bound evidence is conjunctively
+sufficient absent an explicit owner request for additional live
+evidence. That reading was proposed by this ADR's own documentation
+pass, not confirmed by the owner. An autonomous session choosing the
+more permissive reading itself, purely to unlock <code>verified=True</code>, would
+be exactly the "reinterpret acceptance criteria to force a yes" this
+project's standing discipline forbids — so this pass does <strong>not</strong> flip
+<code>verified=True</code> and does <strong>not</strong> resolve the interpretation itself. If
+the owner confirms the offline-evidence reading, <code>verified=True</code> becomes
+justified without further evidence-gathering. If the owner instead
+intends the strictly-conjunctive reading, those seven rows revert to
+<code>MUST COMPLETE</code> pending owner-selected live evidence, and <code>verified=True</code>
+remains blocked pending that live evidence. See
+<code>reports-ai/NEXT_TASKS.md</code> for the exact open decision packet.</p>
+<p><strong>Resolved, 2026-08-16 (same day, later pass) — owner confirmed the
+evidence-interpretation standard and a strict, non-grandfathering
+row-by-row re-check was performed against it before <code>verified=True</code> was
+touched.</strong> The owner's confirmed standard: production-bound evidence may
+satisfy a row only when (a) it exercises the real production
+implementation and security boundary — never a generic/synthetic test
+double, (b) only the external transport/appliance side is substituted or
+mocked, (c) the test proves every conjunctive requirement the row's own
+wording states, not a subset, (d) the behavior is tied directly to the
+relevant ADR invariant, not an incidental side effect, and (e) no
+contradictory live evidence exists anywhere in this project's history —
+explicitly <strong>not</strong> permission to reinterpret an explicit live-evidence
+requirement as an offline-test requirement.</p>
+<p>Each of the seven rows was re-checked against this standard from
+scratch, not grandfathered from the prior pass's classification:</p>
+<ul>
+<li>Re-read each row's exact wording directly in this table (not a
+  paraphrase from a prior pass).</li>
+<li>For the three tests underpinning the concurrent-change/stale-state
+  refusal, rollback-conflict, and uncertainty-classification rows, the
+  actual test source (<code>tests/tier1/test_alias_description_execution.py</code>)
+  was read directly, confirming each constructs the real
+  <code>AliasDescriptionAdapterV1</code>, the real <code>SqliteRecoveryContractStore</code>,
+  and the real <code>MutationExecutor</code> via <code>_sealed_executor()</code> — only the
+  transport-facing <code>_ReadClient</code>/<code>_WriteClient</code>/<code>_TimeoutWriteClient</code>
+  test doubles stand in for pfSense itself.</li>
+<li>For the reconciliation and restart-recovery rows, the underlying test
+  (<code>tests/tier1/test_production_runtime.py::test_restart_reconciles_
+  interrupted_executing_contract</code>) was confirmed to call
+  <code>build_production_runtime()</code> — the actual fixed production
+  composition itself — twice, simulating a real restart; the pinned
+  reconciliation-authority test was confirmed to use the real
+  <code>runtime.resolve_reconciliation()</code> path.</li>
+<li>All 19 tests underpinning the seven rows were re-run directly
+  (<code>2823 passed / 42 skipped</code>, full suite, zero regressions) as part of
+  this re-check, not merely cited from memory.</li>
+<li>Checked each row's own wording, and the ADR's own original acceptance
+  standard (see "Response-loss and timeout boundary" and "Side-effect
+  boundary" above: <em>"New live evidence is required only for material
+  behavior introduced by the fixed production composition"</em>) for any
+  explicit live-appliance requirement. None of the seven rows' wording
+  demands live-appliance observation specifically — they concern the
+  Tier1 security state machine's own internal behavior (refusal,
+  reconciliation, uncertainty classification, restart recovery), which
+  this ADR's own original standard already treats as legitimately
+  offline-provable through the real production composition; live
+  appliance behavior itself (side effects, config-history, apply
+  suppression) is exclusively rows 6/18's domain, already independently
+  live-verified.</li>
+<li>Checked for contradictory live evidence from either real WRITE (the
+  first WRITE and the scoped-credential restoration): neither exhibited
+  a rollback, reconciliation, replay, or uncertain outcome — both
+  completed cleanly in one send each — so there is no live observation
+  anywhere in this project's history that contradicts any of the seven
+  rows' offline-proven claims.</li>
+</ul>
+<p><strong>All seven rows independently survived the strict re-check.</strong> No row
+was reverted. <code>WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified</code> was
+therefore set <code>True</code> (commit <code>f70b9f18dd2c5107ef04bf2bdc249b02fddf2a76</code>).
+This does not change tool registration (governed separately by profile
+grant + <code>WriteEndpoints</code> entry + constructed runtime, none of which this
+change touches) or default MCP exposure — confirmed mechanically, not
+merely argued: <code>make quick</code>'s write-capability-inactivity check reports
+<code>0 of 3 *_WRITE capabilities are default-reachable</code>, and <code>make
+validate</code>'s public-contract snapshot reports <code>42 tools</code>, both unchanged
+from before this commit.</p>
+<h2 id="least-privilege-identity-design-and-provisioning-procedure-2026-08-16">Least-privilege identity design and provisioning procedure (2026-08-16)<a class="headerlink" href="#least-privilege-identity-design-and-provisioning-procedure-2026-08-16" title="Permanent link">&para;</a></h2>
+<p>Full design (exact pfSense endpoint/privilege mapping, proposed scoped
+identity, owner-run provisioning procedure, post-provisioning
+verification matrix) is maintained as a dedicated, git-ignored
+reports-ai document rather than duplicated into this ADR:
+<code>reports-ai/reviews/SLICE6_LEAST_PRIVILEGE_PROVISIONING_2026-08-16.md</code>.
+Summary: the production WRITE path needs exactly four pfSense API
+capabilities (<code>GET /api/v2/firewall/aliases</code>, <code>GET /api/v2/status/system</code>,
+conditionally <code>GET /api/v2/system/hasync</code>, and <code>PATCH /api/v2/firewall/alias</code>)
+— nothing else. <code>get_users()</code>/<code>get_firewall_apply_status()</code>/
+<code>get_config_history_revisions()</code> are evidence-gathering diagnostics, not
+production runtime dependencies, and the scoped identity does not need
+them. The exact pfSense native privilege identifier strings could not be
+enumerated via a safe read-only API call (this pfSense REST API build
+exposes no privilege-catalog endpoint); the provisioning procedure has
+the owner select privileges live via pfSense's own GUI picker against
+the documented capability list, then closes the loop by reading back the
+new user's actual <code>priv</code> list via <code>get_users()</code> for owner verification —
+never guessing an unverified privilege ID string.</p>
+<p><strong>Superseded, 2026-08-16 (same day, later pass)</strong>: the GUI-picker plan
+above was not what actually happened. Owner-authorized, source-level
+discovery of the exact pfSense REST API package privilege identifiers
+(<code>pfrest/pfSense-pkg-RESTAPI</code>, pinned to the exact installed tag
+<code>v2.10.0</code> — matches the live OpenAPI schema's reported version) replaced
+it: <code>Core/Endpoint.inc::get_method_priv_name()</code> computes a deterministic
+<code>api-v2-&lt;url-slug&gt;-&lt;method&gt;</code> privilege string per endpoint/method,
+entirely separate from the legacy <code>page-*</code> GUI privileges this ADR
+originally assumed would be used. Full derivation, per-privilege source
+citation, and the live provisioning transcript are in
+<code>reports-ai/reviews/SLICE6_LEAST_PRIVILEGE_PROVISIONING_2026-08-16.md</code>
+(external/git-ignored). No GUI privilege-picker step was ultimately
+needed.</p>
+<h2 id="scoped-credential-live-write-evidence-2026-08-16-restoration-ceremony">Scoped-credential live-WRITE evidence (2026-08-16, restoration ceremony)<a class="headerlink" href="#scoped-credential-live-write-evidence-2026-08-16-restoration-ceremony" title="Permanent link">&para;</a></h2>
+<p>The disposable-LAB <code>LAB_ALIAS_TEST</code> restoration (its description reverted
+from the Slice 6 temporary marker back to
+<code>'Disposable LAB-T1 synthetic test alias'</code>) was executed as the <strong>second</strong>
+real pfSense mutation in this project's history, entirely through the
+newly-provisioned scoped identity <code>pfsense_mcp_tier1_lab</code> — the admin
+credential was never used for this WRITE. Full ceremony detail:
+<code>reports-ai/reviews/SLICE6_PREVIEW_DESCRIPTION_TRUNCATION_INVESTIGATION_2026-08-16.md</code>
+(external/git-ignored). Evidence below reconstructed independently from
+authoritative persisted state, not copied from that report.</p>
+<p><strong>Row 17 evaluated against its own exact wording — "least privilege for
+exact endpoint/capability" — conjunctively, not as a single pass/fail:</strong></p>
+<ol>
+<li><em>A capability-scoped identity exists, distinct from admin.</em>
+   <code>pfsense_mcp_tier1_lab</code>, <code>scope=user</code> (pfSense-assigned, read-only
+   field — never <code>system</code>), independently re-read via the admin account
+   both before and after this ceremony.</li>
+<li><em>It holds only the minimum privilege the exact endpoint/capability
+   needs — nothing broader.</em> <code>priv</code> == exactly
+   <code>api-v2-firewall-aliases-get</code>, <code>api-v2-firewall-alias-patch</code>,
+   <code>api-v2-status-system-get</code>, <code>api-v2-system-hasync-get</code> — the complete
+   set derived in the "Least-privilege identity design" section above,
+   independently re-read (a separate <code>get_users()</code> call, not the
+   provisioning response echoed back) immediately before this ceremony.
+   <code>page-all</code> was never granted, even transiently during the credential's
+   own API-key bootstrap (which required one additional privilege,
+   <code>api-v2-auth-key-post</code>, granted narrowly and revoked again before this
+   ceremony — see the provisioning report for that sub-sequence).</li>
+<li><em>The identity actually performs the exact production capability under
+   that minimum grant — not a synthetic/raw-API stand-in for it.</em> The
+   restoration ran through the <strong>complete, unmodified production Tier1
+   ceremony</strong> (<code>build_production_runtime()</code>, real <code>RecoveryContract</code>,
+   real signed <code>PlanAuthorizationV2</code>/<code>ConfirmationEvidence</code>, real
+   <code>confirm_and_handoff()</code> → <code>MutationExecutor.execute()</code>), configured to
+   use the scoped credential for every pfSense contact this path makes —
+   not merely a one-off raw-API probe outside the security architecture.
+   The executor's own log line recorded exactly one mutating request,
+   <code>PATCH /api/v2/firewall/alias</code>, and <code>RecoveryContract
+   aliasdescr-4d8c2310ba0343698688166c56983c04</code> reached
+   <code>VERIFIED</code>/<code>state_version=4</code>/<code>is_confirmed=True</code>, independently
+   re-verified via <code>store.load()</code>'s internal
+   <code>_verified_audit_rows()</code> integrity-MAC-chain check, not merely re-read.</li>
+<li><em>No broader capability is available to the identity, including
+   immediately after performing the WRITE (no drift/escalation as a side
+   effect).</em> Negative checks performed during provisioning (denied:
+   <code>get_users()</code>, <code>get_system_packages()</code>, <code>get_system_certificates()</code>,
+   and a retry of the identity's own API-key-generation endpoint) were
+   not merely a point-in-time snapshot — the identity's <code>priv</code> list was
+   <strong>re-read a second time, independently, after this restoration WRITE
+   completed</strong>, and found unchanged from the pre-WRITE grant. Performing
+   the real mutation did not — and structurally cannot, since pfSense's
+   own privilege check is a static per-user grant, not something a
+   successful API call can itself widen — expand what the identity can
+   do.</li>
+</ol>
+<p>All four conjunctive parts of row 17's stated requirement are now
+satisfied by live, independently-verified evidence obtained through the
+real production execution path. <strong>Row 17 is VERIFIED.</strong></p>
+<p><strong>Distinct, unresolved follow-up (not part of row 17's own closure
+criteria, noted for completeness)</strong>: the scoped credential was used for
+this ceremony via a temporary environment override
+(<code>PFSENSE_API_KEY_FILE</code>); the persistent <code>tier1-lab.env</code> default still
+points at the admin key. Row 17 asks whether the <em>capability</em> can be
+proven under least privilege, which it now has been — it does not itself
+require the scoped credential to be the permanent runtime default going
+forward. Whether to switch the default is a separate, low-risk
+operational decision left open for the owner.</p>
+<p><strong>Corroborating evidence for already-accepted/verified rows</strong> (none of
+these change classification — the existing evidence was already
+sufficient — but the restoration independently reproduces the same
+result through a second live mutation, under a <em>different</em>, more
+narrowly-privileged identity than the first WRITE):</p>
+<ul>
+<li><em>Exact authoritative A restoration</em> (already ESTABLISHED via 25/25
+  offline campaign restorations): this ceremony is a genuine, live
+  restoration-to-exact-A through the real production path —
+  <code>LAB_ALIAS_TEST.descr</code> read back exactly
+  <code>'Disposable LAB-T1 synthetic test alias'</code>, byte-for-byte the
+  original value recorded before Slice 6's first WRITE.</li>
+<li><em>At-most-one-send</em> (already ESTABLISHED): a second real executor log
+  confirms exactly one mutating request for this contract, no more.</li>
+<li><em>Explicit apply/reload suppression</em> (row 6, already VERIFIED): the
+  same <code>apply=false</code> behavior was observed again, this time under the
+  scoped identity — corroborating that this is a property of the
+  endpoint/method itself, not an artifact of the admin account's broader
+  access.</li>
+<li><em>Sufficient authoritative side-effect evidence</em> (row 18, already
+  VERIFIED): likewise, a second independent data point that the
+  observed side-effect profile (deterministic read-back, no
+  config-history entry, no unrelated configuration change) holds
+  regardless of which identity performs the WRITE.</li>
+</ul>
+<p><strong>Witness/store state</strong>: advanced exactly once, <code>3 → 4</code>; persisted
+<code>anchor_state.high_water_mark</code> also reads <code>4</code> — no divergence. Consumption
+store holds the new authorization exactly once
+(<code>authz-63245f075962f5552802571b51a6f21e</code>), four rows total across the
+whole workstream, none replayed. <code>target_reservations</code>/<code>rate_cooldowns</code>:
+<code>0</code>/<code>0</code> post-<code>VERIFIED</code>, consistent with the same reservation-release
+behavior already documented for the first WRITE above.</p>
+<p><strong>A genuine operational finding surfaced mid-ceremony, root-caused and
+fixed, not merely worked around</strong>: the signer's independent safety check
+initially refused to sign (<code>"independently-derived security posture is
+not currently safe to proceed"</code>). Root cause: the signer's local
+<code>store.json</code> snapshot still carried <code>high_water_mark=2</code> from before the
+first WRITE, while the live witness (correctly) now read <code>3</code> —
+<code>evidence_state=provisioned_mismatch</code>. This was a stale local cache on
+the signer, not a security anomaly on the production side (whose own
+live store was already correctly <code>3</code>); refreshing the signer's snapshot
+from the current live store resolved it, and signing then succeeded
+against the correct, freshly-verified evidence. This is a durable
+operational lesson for any future ceremony after a witness advance: the
+signer's cached store snapshot needs refreshing whenever the live witness
+value changes, or the signer's own fail-closed check will (correctly)
+refuse to sign.</p>
+<h2 id="stop-conditions">STOP conditions<a class="headerlink" href="#stop-conditions" title="Permanent link">&para;</a></h2>
+<p>Stop W1/W2/W3 at the applicable boundary if a <strong>MUST COMPLETE</strong> matrix row
+cannot be established, if exact request semantics or B1 sources diverge from
+the accepted evidence, if caller-selected raw JSON is required, or if the
+PlanAuthorizationV2/appliance-target binding cannot be carried through the
+authenticated contract. W3 must not enable WRITE with an unresolved
+operationally material side effect or candidate uncertainty.</p>
+<p>Public MCP remains 42 READ / 0 WRITE. <code>WriteEndpoints</code> remains empty and WRITE
+capabilities remain 0/3 active.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../ADR-016-alias-candidate-lab-authorization/">ADR-016: Alias-candidate disposable-lab authorization</a></li>
+<li><a href="../ADR-020-milestone-0-first-write-capability-candidate/">ADR-020: First WRITE capability candidate</a></li>
+<li><a href="../ADR-025-authorization-recovery-contract-binding/">ADR-025: Authorization-to-RecoveryContract binding</a></li>
+<li><a href="../../WRITE_ENDPOINT_RISK_MATRIX/">Writable endpoint risk matrix</a></li>
+<li><a href="../../TIER1_ACTIVATION_DECISIONS/">Tier 1 activation decisions</a></li>
+<li><a href="../../tier1/specs/disposable_lab_execution_model/">Disposable lab execution model</a></li>
+<li><a href="../../tier1/specs/capability_adapter_contract/">Capability adapter contract</a></li>
+<li><a href="https://pfrest.org/ENDPOINT_TYPES/">pfrest endpoint-type documentation</a></li>
+<li><a href="https://pfrest.org/COMMON_CONTROL_PARAMETERS/">pfrest common control parameters</a></li>
+<li><a href="https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html">Netgate alias documentation</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

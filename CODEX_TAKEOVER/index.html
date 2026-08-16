@@ -1,0 +1,4893 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/CODEX_TAKEOVER/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Codex Project Takeover Guide - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#codex-project-takeover-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Codex Project Takeover Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-authoritative-repository-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Authoritative repository state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-project-purpose-and-security-posture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Project purpose and security posture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-chronological-architecture-history-adr-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Chronological architecture history (ADR map)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-phaseslice-status-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Phase/slice status ledger
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-security-invariants-codex-must-preserve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Security invariants Codex MUST preserve
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-component-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Component map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-isolation-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Isolation architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-authorization-lifecycle-implemented-vs-proposed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Authorization lifecycle — implemented vs. proposed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-consumption-semantics-and-crash-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Consumption semantics and crash behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-freshness-slice-e1-precise-recap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Freshness (Slice E1) — precise recap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-target-identity-gap-read-carefully-before-any-future-slice-touches-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Target identity gap — read carefully before any future slice touches it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-owner-decisions-fixed-not-proposals-do-not-re-litigate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Owner decisions (fixed, not proposals — do not re-litigate)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-threat-model-known-attack-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Threat model / known attack classes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-test-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Test map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-validation-commands-repository-standard-not-invented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Validation commands (repository-standard, not invented)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-current-deferred-work-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Current deferred-work register
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-next-recommended-slice-planning-only-not-authorization-to-implement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Next recommended slice (planning only — NOT authorization to implement)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-codex-bootstrap-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Codex bootstrap protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-mandatory-reading-order-for-codex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. Mandatory reading order for Codex
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20-historical-traps-non-obvious-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20. Historical traps / non-obvious findings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#change-log-for-this-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Change log for this document
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/CODEX_TAKEOVER.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="codex-project-takeover-guide">Codex Project Takeover Guide<a class="headerlink" href="#codex-project-takeover-guide" title="Permanent link">&para;</a></h1>
+<p><strong>Read this document completely before touching any code.</strong> It is the
+durable, repository-native handoff for continuing <code>pfsense-mcp-server</code>'s
+ADR-022 execution-authorization work. It is written to be self-contained:
+a fresh agent with no memory of the Claude Code session that produced it
+should be able to read this file plus the repository files it points to
+and arrive at an accurate, independently-verified understanding of the
+architecture, its security invariants, and what is safe to do next.</p>
+<p>This document separates <strong>facts</strong> (verifiable against the repository
+right now), <strong>decisions</strong> (explicit owner choices that constrain future
+work), <strong>proposals</strong> (architecture written down but not authorized to
+build), and <strong>future ideas</strong> (named, not designed, not decided). Do not
+blur these categories when extending this document.</p>
+<hr />
+<h2 id="1-authoritative-repository-state">1. Authoritative repository state<a class="headerlink" href="#1-authoritative-repository-state" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HANDOFF_SHA</strong> (last implementation commit)</td>
+<td><code>48a93862f95981c7c97b47ae94cc8467196b92c5</code></td>
+</tr>
+<tr>
+<td>Branch</td>
+<td><code>main</code></td>
+</tr>
+<tr>
+<td><code>origin/main == local HEAD</code></td>
+<td>Confirmed equal at <code>HANDOFF_SHA</code></td>
+</tr>
+<tr>
+<td>Working tree</td>
+<td>Clean (confirmed via <code>git status --short</code>, empty output)</td>
+</tr>
+<tr>
+<td>Full pytest</td>
+<td><strong>2288 passed, 42 skipped</strong>, 0 failed</td>
+</tr>
+<tr>
+<td>ruff format --check</td>
+<td>Clean (471 files formatted)</td>
+</tr>
+<tr>
+<td>ruff check</td>
+<td>Clean ("All checks passed!")</td>
+</tr>
+<tr>
+<td>mypy (<code>mypy src/pfsense_mcp scripts lab witness_daemon</code>)</td>
+<td>Clean — "Success: no issues found in 212 source files"</td>
+</tr>
+<tr>
+<td><code>mkdocs build --strict</code></td>
+<td>Clean — builds with only pre-existing, unrelated <code>nav</code>/relative-link INFO notices, no errors</td>
+</tr>
+<tr>
+<td><code>make quick</code></td>
+<td><strong>11/11 stages PASSED</strong></td>
+</tr>
+<tr>
+<td><code>make validate</code></td>
+<td><strong>20/20 stages PASSED</strong></td>
+</tr>
+<tr>
+<td>Public MCP contract</td>
+<td><strong>42 READ tools / 0 WRITE tools</strong> (<code>public_contract: OK (42 tools)</code>)</td>
+</tr>
+<tr>
+<td>WRITE milestone status</td>
+<td><strong>0 of 3</strong> <code>*_WRITE</code> capabilities active; <code>WriteEndpoints</code> has zero entries; <code>pfsense_mcp.tools.write</code> is never imported</td>
+</tr>
+<tr>
+<td>Last completed Phase E slice</td>
+<td><strong>Slice E2</strong> — <code>ExecutionCoordinator</code> skeleton, through one-time authorization consumption only</td>
+</tr>
+<tr>
+<td>First slice not started</td>
+<td><strong>Slice E3</strong> — wiring <code>store.create()</code>/<code>store.confirm()</code>/<code>executor.execute()</code> behind the coordinator</td>
+</tr>
+</tbody>
+</table>
+<p>This document itself, once committed, may add one more commit on top of
+<code>HANDOFF_SHA</code> (documentation-only). If so, that later commit is the
+<strong>final takeover SHA</strong>; <code>HANDOFF_SHA</code> above remains the authoritative
+<strong>last implementation</strong> commit. Codex should verify both independently
+via <code>git log --oneline -5</code> rather than trusting either SHA blindly — see
+§16.</p>
+<hr />
+<h2 id="2-project-purpose-and-security-posture">2. Project purpose and security posture<a class="headerlink" href="#2-project-purpose-and-security-posture" title="Permanent link">&para;</a></h2>
+<p><code>pfsense-mcp-server</code> is a Model Context Protocol (MCP) server that lets
+an AI client (Claude, or any MCP-speaking client) interact with a
+pfSense firewall appliance. Its foundational, still-true architectural
+decision (<code>ADR-001</code>, Accepted) is: <strong>the publicly exposed MCP tool
+surface is READ-only.</strong> Every one of the 42 public tools performs a GET
+against the pfSense REST API and nothing else — enforced structurally
+(<code>ADR-003</code>'s GET-only transport chokepoint) and by repository-wide
+tests, not merely by convention.</p>
+<p>Underneath that public surface, a substantial amount of <strong>inert</strong>
+WRITE-capable machinery exists — deliberately built ahead of activation,
+under a strict "architecture and tests first, activation last, always
+separately gated" discipline that spans more than twenty ADRs. This
+machinery falls into four layers, from lowest to highest:</p>
+<ol>
+<li><strong>Tier 1 mutation machinery</strong> (<code>src/pfsense_mcp/tier1/</code>): the sealed
+   executor (<code>executor.py</code>, <code>ADR-014</code>), a closed recovery state machine
+   (<code>state_machine.py</code>), a crash-recovering <code>RecoveryContract</code> store
+   (<code>store.py</code>, <code>contract.py</code>, <code>ADR-006</code>), owner <strong>confirmation</strong>
+   authority (<code>ADR-012</code>) and <strong>reconciliation</strong> authority (<code>ADR-013</code>),
+   rate/blast-radius limits (<code>ADR-015</code>), and canonicalization/digest
+   primitives (<code>canonical.py</code>) everything else in the security stack
+   reuses rather than reinventing.</li>
+<li><strong>Authorization</strong> (<code>src/pfsense_mcp/security_*.py</code>, <code>ADR-021</code>/<code>022</code>/
+   <code>023</code>/<code>024</code>): a separate, higher-level layer answering "did a human
+   operator actually review and sign off on this specific change,"
+   independent of and upstream from Tier 1's own execution machinery.
+   This is the layer this session's work (Slices E1 and E2) extended.</li>
+<li><strong>Execution</strong> (Tier 1's <code>MutationExecutor</code>): the <em>only</em> component
+   authorized to make a non-GET network call, and only ever exactly one
+   per <code>execute()</code>, against an allow-listed endpoint
+   (<code>write_endpoints.py</code>), through <code>write_api_client.py</code>.</li>
+<li><strong>Public exposure</strong> (MCP tool registration): the layer that would let
+   an AI client actually invoke any of the above. <strong>This layer remains
+   completely untouched by every ADR discussed in this document.</strong> No
+   WRITE tool has ever been registered. No milestone has been activated.</li>
+</ol>
+<p><strong>The critical fact for Codex to internalize: the presence of extensive,
+well-tested WRITE-capable code in this repository does not mean WRITE
+is enabled, reachable, or one step away from being enabled.</strong> Every
+layer above is independently inert — <code>MutationExecutor</code> is never
+constructed by production code; <code>WriteEndpoints</code> is an empty allow-list;
+<code>EngineerProfile.capabilities</code> (the profile every runtime request
+resolves against) is <code>frozenset()</code>; no MCP tool registration path leads
+to any of it. Activation is gated behind "Milestone 9," a distinct,
+separately-authorized, not-yet-made decision referenced throughout the
+ADRs but not itself part of this document's scope.</p>
+<hr />
+<h2 id="3-chronological-architecture-history-adr-map">3. Chronological architecture history (ADR map)<a class="headerlink" href="#3-chronological-architecture-history-adr-map" title="Permanent link">&para;</a></h2>
+<p>Full ADR index: <code>docs/adr/README.md</code>. Read the specific ADRs named below
+in full — do not rely on this table alone for their content, only for
+routing.</p>
+<table>
+<thead>
+<tr>
+<th>ADR</th>
+<th>Title</th>
+<th>Status</th>
+<th>What it decided</th>
+<th>What remains open</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>001–010</td>
+<td>READ-only architecture, typed boundaries, GET-only transport, capability profiles, inert Tier 0 WRITE, RecoveryContract philosophy, security-first schemas, fail-closed config, artifact encryption, key lifecycle</td>
+<td>Accepted (006 "prerequisites incomplete")</td>
+<td>Foundational Tier 0/1 architecture</td>
+<td>006's prerequisites — not this document's concern</td>
+</tr>
+<tr>
+<td>011</td>
+<td>Whole-store anti-rollback anchor</td>
+<td>Backend decided (TPM-backed host witness), design-ready</td>
+<td>The anchor mechanism itself</td>
+<td>Not yet provisioned in any real deployment</td>
+</tr>
+<tr>
+<td>012</td>
+<td>Confirmation authority</td>
+<td>Accepted</td>
+<td>Owner-signed, per-mutation <code>ConfirmationEvidence</code>, <code>PREPARED → EXECUTING</code> gate</td>
+<td>—</td>
+</tr>
+<tr>
+<td>013</td>
+<td>Reconciliation authority</td>
+<td>Accepted</td>
+<td>How an ambiguous/<code>AMBIGUOUS</code> mutation outcome gets manually resolved</td>
+<td>—</td>
+</tr>
+<tr>
+<td>014</td>
+<td>Sealed executor interface</td>
+<td>Accepted</td>
+<td><code>MutationExecutor</code>'s exact shape and authority boundaries — the precedent Slice E2's coordinator design reuses directly</td>
+<td>—</td>
+</tr>
+<tr>
+<td>015</td>
+<td>Rate and blast-radius defaults</td>
+<td>Accepted (mechanism); numeric defaults provisional</td>
+<td>—</td>
+<td>Exact numeric limits</td>
+</tr>
+<tr>
+<td>016</td>
+<td>Alias-candidate disposable-lab authorization</td>
+<td>Accepted</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>017</td>
+<td>Official guidance layer</td>
+<td>Accepted, architecture + inert scaffolding only</td>
+<td>—</td>
+<td>No consumer wired</td>
+</tr>
+<tr>
+<td>018</td>
+<td>Version-aware Official Guidance resolution</td>
+<td>Accepted, architecture/trust boundaries only</td>
+<td>—</td>
+<td>Nothing implemented</td>
+</tr>
+<tr>
+<td>019</td>
+<td>API Surface, Capability Discovery, and Extension Architecture</td>
+<td>Accepted, vocabulary/evaluation only</td>
+<td>—</td>
+<td>Individual mechanisms separately gated</td>
+</tr>
+<tr>
+<td>020</td>
+<td>Milestone 0 — first WRITE capability candidate</td>
+<td>Accepted, candidate naming only</td>
+<td>Which capability would be <em>first</em> if ever activated</td>
+<td>Implementation, lab run, allow-list population, activation all separately gated</td>
+</tr>
+<tr>
+<td>021</td>
+<td>Guided security-posture provisioning</td>
+<td>Accepted, architecture/design only</td>
+<td>The <code>CapabilityPosture</code> (<code>read_only</code>/<code>write_protected</code>) × <code>AnchorAssurance</code> (<code>none</code>/<code>hardware_witness</code>) two-axis model <code>SecurityPosturePlan</code> generation is built on</td>
+<td>No wizard, no posture, no WRITE, no fail-closed enforcement authorized</td>
+</tr>
+<tr>
+<td>022</td>
+<td>Execution-authorization boundary</td>
+<td><strong>Accepted</strong>, architecture/design only</td>
+<td>The <code>Plan → Authorize → Execute → Verify</code> model and its own internal phase lettering A–H (see §6)</td>
+<td>No authorization/execution code, no WRITE tool, no schema change authorized <em>by this ADR itself</em> — later ADRs authorized specific slices under it</td>
+</tr>
+<tr>
+<td>023</td>
+<td>Authorization-verification boundary (<code>ADR-022</code> Phase D)</td>
+<td>Proposed (architecture) — owner decisions made, <strong>Phase D implemented</strong></td>
+<td><code>PlanAuthorization</code>/<code>DeprovisionAuthorization</code> data model, signing, three independent pure verifiers, durable one-time consumption store</td>
+<td>Not a full ADR-021/022-style acceptance — still "Proposed"</td>
+</tr>
+<tr>
+<td>024</td>
+<td>Execution-authorization coordination boundary (<code>ADR-022</code> Phase E/F/G territory)</td>
+<td>Proposed (architecture) — <strong>Slice E1 and Slice E2 implemented</strong></td>
+<td>Freshness re-check primitive (E1) + <code>ExecutionCoordinator</code> skeleton through one-time consumption (E2)</td>
+<td>Slice E3 (wiring the coordinator to <code>RecoveryContract</code>/<code>MutationExecutor</code>) and everything past it — unauthorized</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Do not confuse "Accepted" with "implemented."</strong> <code>ADR-022</code> is Accepted
+as an architecture but authorizes zero code by itself — every line of
+authorization/execution code that exists was authorized by a <em>later</em>,
+narrower, explicitly-scoped instruction referencing it (<code>ADR-023</code> for
+Phase D, <code>ADR-024</code> for Phase E). <code>ADR-024</code> itself is still "Proposed,"
+not "Accepted," even though two of its slices are implemented — its own
+first line says so explicitly and this document does not change that.</p>
+<hr />
+<h2 id="4-phaseslice-status-ledger">4. Phase/slice status ledger<a class="headerlink" href="#4-phaseslice-status-ledger" title="Permanent link">&para;</a></h2>
+<p><code>ADR-022</code>'s own phase lettering (context in <code>ADR-022-execution-authorization-boundary.md</code>):
+<strong>A</strong> (acceptance) → <strong>B</strong> (<code>PlanDigest</code>) → <strong>C</strong> (<code>PlanAuthorization</code>/
+<code>DeprovisionAuthorization</code> data model + signing) → <strong>D</strong> (pure
+verification + consumption tracking) → <strong>E</strong> (freshness/precondition
+engine only) → <strong>F</strong> (execution coordinator for <code>CONFIGURATION</code>-class
+mechanism only) → <strong>G</strong> (execution coordinator around existing
+<code>RecoveryContract</code>/<code>MutationExecutor</code>) → <strong>H</strong> (MCP WRITE exposure,
+gated on Milestone 9).</p>
+<p><code>ADR-024</code>'s own "Naming note" explains it analyzes the <strong>combined</strong>
+E/F/G territory as one architecture document, but recommends —and this
+session followed — building it as separate, narrower, independently
+authorized <strong>slices</strong> (its own vocabulary, distinct from <code>ADR-022</code>'s
+phase letters): Slice 1 = E1, Slice 2 = E2, Slice 3 = E3.</p>
+<table>
+<thead>
+<tr>
+<th>Phase/Slice</th>
+<th>Objective</th>
+<th>Resulting invariant</th>
+<th>Modules introduced</th>
+<th>Key tests</th>
+<th>Deliberately untouched</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B</td>
+<td>Deterministic plan identity</td>
+<td><code>compute_plan_digest()</code>/<code>verify_plan_digest()</code> produce an exact, canonical identity over a <code>SecurityPosturePlan</code></td>
+<td><code>security_plan_digest.py</code></td>
+<td><code>tests/test_security_plan_digest*.py</code></td>
+<td>Signing, verification, execution</td>
+</tr>
+<tr>
+<td>C</td>
+<td>Signed authorization artifacts</td>
+<td>A <code>PlanAuthorization</code>/<code>DeprovisionAuthorization</code> is a frozen, fully self-validating dataclass; signing happens only on the operator side</td>
+<td><code>security_authorization.py</code></td>
+<td><code>tests/test_security_authorization*.py</code></td>
+<td>Verification, consumption, execution</td>
+</tr>
+<tr>
+<td>D</td>
+<td>Independent pure verification + one-time consumption</td>
+<td>Signature/expiry/scope are three <em>independent</em> checks; an <code>authorization_id</code> can be consumed at most once, durably, across restarts and concurrent races</td>
+<td><code>security_authorization_verifier.py</code>, <code>tier1/authorization_consumption_store.py</code></td>
+<td><code>tests/test_security_authorization_verifier*.py</code>, <code>tests/tier1/test_authorization_consumption_store*.py</code></td>
+<td>Composition of the four primitives with each other; execution wiring</td>
+</tr>
+<tr>
+<td>E1</td>
+<td>Freshness re-check</td>
+<td>"A previously authorized plan is fresh only when a newly discovered posture, run through the same deterministic planner and <code>compute_plan_digest()</code>, reproduces the exact authorized <code>plan_digest</code>" — <code>evidence_fingerprint</code> alone is explicitly insufficient</td>
+<td><code>security_plan_freshness.py</code></td>
+<td><code>tests/test_security_plan_freshness*.py</code></td>
+<td>Consumption, coordinator, execution</td>
+</tr>
+<tr>
+<td><strong>E2 (current HEAD)</strong></td>
+<td>Coordinator skeleton through consumption</td>
+<td>"An execution attempt may reach the consumed state only after signature validity, expiry/currentness, exact plan-digest + authorized-step membership, and full freshness re-check all succeed, in that order"</td>
+<td><code>tier1/execution_coordinator.py</code></td>
+<td><code>tests/tier1/test_execution_coordinator*.py</code></td>
+<td><code>RecoveryContract</code> creation, <code>MutationExecutor</code>, <code>state_machine.py</code>, <code>store.create()</code>/<code>confirm()</code></td>
+</tr>
+<tr>
+<td>E3 (not started)</td>
+<td>Wire <code>store.create()</code>/<code>confirm()</code>/<code>executor.execute()</code> behind the coordinator</td>
+<td>(not yet established — this is exactly what E3 would establish)</td>
+<td>Extends <code>execution_coordinator.py</code> only</td>
+<td>Not written</td>
+<td><code>executor.py</code>/<code>state_machine.py</code>'s own public behavior; still no MCP construction site</td>
+</tr>
+<tr>
+<td>F/G remainder, H</td>
+<td>Full execution path; MCP WRITE exposure</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Everything, until Milestone 9</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-security-invariants-codex-must-preserve">5. Security invariants Codex MUST preserve<a class="headerlink" href="#5-security-invariants-codex-must-preserve" title="Permanent link">&para;</a></h2>
+<p>These are architectural guarantees enforced by tests today, not
+aspirations. Treat a test that encodes one of these as <strong>load-bearing</strong>
+— see §12 for the explicit warning about not "fixing" a failing security
+test by weakening it.</p>
+<ul>
+<li><strong>Fail-closed, everywhere.</strong> An indeterminate outcome (I/O error,
+  ambiguous read, malformed stored state, unexpected exception) is
+  always treated as "not authorized to proceed." Never "proceed
+  anyway." This applies uniformly across discovery, planning, digesting,
+  verification, freshness, and consumption.</li>
+<li><strong>Canonicalization has exactly one implementation.</strong> <code>tier1/canonical.py</code>'s
+  <code>canonical_json()</code>/<code>digest_value()</code>/<code>DigestPurpose</code> domain separation
+  is the only hashing/canonicalization path in the entire security
+  stack. No module — including the new coordinator — defines a second
+  one; this is directly tested (<code>test_module_defines_no_second_digest_or_canonicalization_function</code>-style checks exist for the freshness module and should exist for any future module that touches digests).</li>
+<li><strong><code>PlanDigest</code> has exactly one implementation.</strong> <code>security_plan_digest.py</code>'s
+  <code>compute_plan_digest()</code>/<code>verify_plan_digest()</code> are the sole authority
+  for "does this plan match that digest." Nothing recomputes a digest a
+  different way.</li>
+<li><strong><code>PlanAuthorization</code> is a signed artifact, not a claim.</strong> A
+  <code>proof</code> is only meaningful once verified against a <code>PinnedAuthoritySet</code>
+  (<code>ADR-012</code>'s precedent, reused). Signer identity is pinned, not
+  inferred; an unknown or inactive <code>authority_id</code> fails closed.</li>
+<li><strong>Expiry is exact and independent.</strong> <code>plan_authorization_is_current()</code>
+  checks <code>now &lt; expires_at</code>, exclusive boundary, and deliberately does
+  <strong>not</strong> validate <code>issued_at</code>-side timing — this is documented,
+  intentional behavior, not a gap to "fix."</li>
+<li><strong>Plan binding is exact, not fuzzy.</strong> <code>plan_authorization_authorizes_step()</code>
+  requires exact <code>plan_digest</code> equality (via <code>hmac.compare_digest</code>) <em>and</em>
+  exact <code>step_id</code> membership. No wildcard, prefix, or partial matching
+  exists anywhere, by design and by test.</li>
+<li><strong>Freshness is exact <code>plan_digest</code> recomputation, never a proxy.</strong>
+  <code>evidence_fingerprint</code> comparison is <strong>not</strong> sufficient — it excludes
+  the <code>steps</code> list, which participates in <code>plan_digest</code> but not in
+  <code>evidence_fingerprint</code>'s six fields. This was a genuine finding of
+  this session's work (<code>ADR-024</code>'s "Freshness/precondition model," E4),
+  now enforced by <code>security_plan_freshness.py</code> never even reading
+  <code>evidence_fingerprint</code>.</li>
+<li><strong>Consumption is one-time, durable, and atomic.</strong> <code>try_consume()</code>
+  proves "at most one caller ever observes <code>True</code> for a given
+  <code>authorization_id</code>," across restarts and concurrent races (tested with
+  a real 8-thread barrier race in both the store's own tests and the
+  new coordinator's tests). The accepted semantic is <strong>"one attempt to
+  create a <code>RecoveryContract</code>,"</strong> not "one execution attempt" and
+  explicitly not "one successful execution" (see §7).</li>
+<li><strong><code>RecoveryContract</code>/<code>ConfirmationEvidence</code>/<code>MutationExecutor</code>
+  boundary is untouched and must stay that way.</strong> <code>MutationExecutor</code>
+  remains completely authorization-unaware — it operates purely on an
+  already-<code>PREPARED</code>, already-confirmed <code>RecoveryContract</code> loaded by
+  <code>contract_id</code>; nothing in its signature references a Plan, digest, or
+  authority. This is a hard requirement (<code>ADR-024</code>'s G2), not a
+  convenience default — see <code>ADR-024</code>'s "Rejected designs" for why
+  folding authorization into the executor was considered and refused.</li>
+<li><strong><code>tier1/state_machine.py</code>'s closed transition table is unaffected.</strong>
+  No new state, no new transition, for any authorization purpose.</li>
+<li><strong>Isolation boundaries are architectural controls.</strong> See §5 of this
+  document's own philosophy note and §12 below — do not relax an
+  isolation test to make an import "more convenient."</li>
+<li><strong>Public WRITE remains fully prohibited</strong> until a separate, explicit
+  Milestone 9 activation decision, itself gated behind its own future
+  authorization, not part of anything in this document.</li>
+<li><strong>Target-identity status is an open, intentionally unresolved gap</strong>
+  — not a bug, not an oversight. See §9.</li>
+</ul>
+<hr />
+<h2 id="6-component-map">6. Component map<a class="headerlink" href="#6-component-map" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Responsibility</th>
+<th>Allowed side effects</th>
+<th>Major dependencies</th>
+<th>Security significance</th>
+<th>Codex should normally...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/pfsense_mcp/tier1/canonical.py</code></td>
+<td>Canonical JSON + purpose-separated digesting</td>
+<td>None (pure)</td>
+<td>stdlib only</td>
+<td>Sole hashing/canonicalization authority</td>
+<td>Never modify without extreme care and full re-review of every dependent module</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/security_discovery.py</code></td>
+<td>Read-only discovery of live capability posture + anchor assurance</td>
+<td>One read-only I/O boundary (<code>discover_security_posture()</code>)</td>
+<td><code>httpx</code>, TPM witness client</td>
+<td>Feeds planning; must fail closed on I/O error</td>
+<td>Not modify without a separately authorized slice</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/security_plan.py</code></td>
+<td>Deterministic <code>SecurityPosturePlan</code> generation from discovery + a requested target</td>
+<td>None (pure over its input)</td>
+<td><code>security_discovery</code></td>
+<td>Enforces <code>ADR-021</code>'s two-axis validity constraint</td>
+<td>Not modify</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/security_plan_digest.py</code></td>
+<td><code>compute_plan_digest()</code>/<code>verify_plan_digest()</code></td>
+<td>None (pure)</td>
+<td><code>tier1.canonical</code></td>
+<td>Sole <code>PlanDigest</code> authority</td>
+<td>Not modify</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/security_authorization.py</code></td>
+<td><code>PlanAuthorization</code>/<code>DeprovisionAuthorization</code> data model, payload construction, operator-side signing</td>
+<td>None (pure)</td>
+<td><code>tier1.canonical</code> (digest only)</td>
+<td>Signed-artifact schema</td>
+<td>Not modify without a schema-change-level authorization</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/security_authorization_verifier.py</code></td>
+<td>Three independent pure verifiers (signature, expiry, scope)</td>
+<td>None (pure)</td>
+<td><code>security_authorization</code>, <code>tier1.ed25519_authority</code></td>
+<td>Phase D's verification core</td>
+<td>Not modify; compose, don't reimplement</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/security_plan_freshness.py</code></td>
+<td>Freshness re-check (<code>plan_authorization_is_fresh()</code>)</td>
+<td>One read-only I/O boundary (delegates to <code>security_discovery</code>)</td>
+<td><code>security_discovery</code>, <code>security_plan</code>, <code>security_plan_digest</code></td>
+<td>Slice E1's core invariant</td>
+<td>Not modify</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tier1/authorization_consumption_store.py</code></td>
+<td>Durable one-time <code>authorization_id</code> consumption</td>
+<td>Writes exactly one row per successful consumption</td>
+<td><code>tier1.canonical</code>, <code>tier1.errors</code>, SQLite</td>
+<td>Replay-prevention authority</td>
+<td>Not modify</td>
+</tr>
+<tr>
+<td><strong><code>src/pfsense_mcp/tier1/execution_coordinator.py</code></strong> (NEW, Slice E2)</td>
+<td>Composes the five gates above in fixed order; the <em>only</em> component permitted to call <code>try_consume()</code> in the authorization flow</td>
+<td>One state-changing call (<code>try_consume()</code>)</td>
+<td><code>security_authorization</code>, <code>security_authorization_verifier</code>, <code>security_discovery</code>, <code>security_plan_freshness</code>, <code>tier1.authorization_consumption_store</code>, <code>tier1.ed25519_authority</code></td>
+<td>This slice's entire deliverable</td>
+<td>Extend only under an explicitly authorized future slice (E3); do not add <code>store</code>/<code>executor</code> calls without that authorization</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tier1/store.py</code></td>
+<td><code>SqliteRecoveryContractStore</code> — crash-recovering, compare-and-set <code>RecoveryContract</code> persistence</td>
+<td>Writes/transitions contract rows</td>
+<td><code>tier1.canonical</code>, <code>tier1.contract</code>, <code>tier1.crypto</code></td>
+<td><code>ADR-006</code>/<code>ADR-009</code>/<code>ADR-010</code></td>
+<td>Not modify without a separately authorized slice</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tier1/contract.py</code></td>
+<td><code>RecoveryContract</code>, <code>ProtectedArtifact</code></td>
+<td>None directly (data + verification methods)</td>
+<td><code>tier1.canonical</code></td>
+<td>Binding-chain target/intent verification</td>
+<td>Not modify</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tier1/state_machine.py</code></td>
+<td>Closed <code>RecoveryState</code> transition table</td>
+<td>None (pure)</td>
+<td><code>tier1.errors</code></td>
+<td>Cannot be bypassed or extended informally</td>
+<td>Not modify without a separately authorized slice</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tier1/executor.py</code></td>
+<td><code>MutationExecutor</code> — the sole component authorized to send a non-GET request</td>
+<td>Exactly one non-GET send per <code>execute()</code></td>
+<td><code>write_api_client</code>, <code>pfsense_client</code>, <code>tier1.store</code>, others</td>
+<td><code>ADR-014</code>'s sealed executor</td>
+<td>Not modify without a separately authorized slice; must remain authorization-unaware (G2)</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/write_api_client.py</code></td>
+<td><code>send_for_tier1()</code> — the one chokepoint for any non-GET call</td>
+<td>The network call itself</td>
+<td>HTTP transport</td>
+<td><code>ADR-003</code>'s GET-only enforcement boundary</td>
+<td>Not modify</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/write_endpoints.py</code></td>
+<td>The sole mutation allow-list</td>
+<td>None (class-level data)</td>
+<td>—</td>
+<td>Currently <strong>empty</strong> — 0 endpoints active</td>
+<td>Not modify without an explicit, separately authorized allow-list-population decision</td>
+</tr>
+<tr>
+<td>MCP registration/exposure layer (<code>src/pfsense_mcp/tools/</code>, <code>application.py</code>, <code>factory.py</code>)</td>
+<td>Registers the 42 public READ tools</td>
+<td>Tool registration only</td>
+<td>—</td>
+<td>No WRITE tool registered anywhere; <code>tools/write</code> never imported</td>
+<td>Never register a WRITE tool without Milestone 9 authorization</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-isolation-architecture">7. Isolation architecture<a class="headerlink" href="#7-isolation-architecture" title="Permanent link">&para;</a></h2>
+<p>This project enforces dependency direction with <strong>AST-based structural
+tests</strong>, not just code review. <code>tests/tier1/test_isolation.py</code> is the
+central control:</p>
+<ul>
+<li><code>test_tier1_is_not_imported_outside_its_inert_package</code> — proves no
+  production module outside <code>tier1/</code> imports <code>pfsense_mcp.tier1</code>,
+  <strong>except</strong> a small, explicit, individually-justified <code>exempt</code> set:
+  <code>tier1_anchor_check.py</code>, <code>security_discovery.py</code>,
+  <code>security_plan_digest.py</code>, <code>security_authorization.py</code>,
+  <code>security_authorization_verifier.py</code>. Each entry has its own
+  paragraph explaining <em>why</em> it is safe (what it imports from <code>tier1</code>,
+  and what it structurally cannot do). This is the "outward-in"
+  direction.</li>
+<li><code>test_tier1_domain_has_no_transport_or_tool_registration_dependency</code>
+  — proves every <code>tier1/*.py</code> module is forbidden from importing
+  <code>rest_api_client</code>/<code>transport</code>/<code>tools</code> (universal), and forbidden from
+  importing <code>write_api_client</code>/<code>pfsense_client</code> <strong>except</strong>
+  <code>executor.py</code> (the one sealed exception, <code>ADR-014</code>'s Invariant I1).
+  This is the "inward-out" direction, i.e. tier1 reaching toward
+  pfSense.</li>
+</ul>
+<p><strong>Slice E2 added a third direction</strong>, which <code>ADR-024</code>'s own "E1 —
+Coordinator ownership and placement" section names explicitly: a
+<code>tier1/*.py</code> module (<code>execution_coordinator.py</code>) reaching <em>into</em> the
+<code>security_</code> family (<code>security_authorization</code>,
+<code>security_authorization_verifier</code>, <code>security_discovery</code>,
+<code>security_plan_freshness</code>) — the first time this has happened in this
+codebase. This was <strong>not</strong> structurally forbidden by either existing
+test above (neither test's forbidden-root list names the <code>security_</code>
+family at all), so no modification to the shared tests was needed.
+Instead, a dedicated <code>tests/tier1/test_execution_coordinator_isolation.py</code>
+locks down exactly this module's reviewed import set — mirroring the
+established per-module isolation-test pattern already used for
+<code>security_authorization_verifier.py</code>/<code>security_plan_freshness.py</code>
+(<code>tests/test_security_authorization_verifier_isolation.py</code>,
+<code>tests/test_security_plan_freshness_isolation.py</code>).</p>
+<p><strong>Four pre-existing "no production module imports this yet" tests</strong>
+(one each in <code>security_authorization</code>, <code>security_authorization_verifier</code>,
+<code>security_plan_freshness</code>, <code>authorization_consumption_store</code>'s own
+isolation test files) were each narrowly extended, in this session, to
+name <code>execution_coordinator.py</code> as their one reviewed consumer — the
+same pattern already established when <code>security_authorization_verifier.py</code>
+first became <code>security_authorization.py</code>'s own reviewed consumer. If a
+future slice (E3) needs a new consumer of any of these primitives, or a
+new outward-reaching import, follow this exact pattern: name the file
+explicitly, explain why in a docstring/comment, never loosen the check
+to a wildcard or a broad allowance.</p>
+<p><strong>Expected dependency direction, current state</strong>: <code>security_*</code> modules
+depend on <code>tier1.canonical</code>/<code>tier1.ed25519_authority</code> only (never on
+<code>tier1</code>'s stateful machinery). <code>tier1/execution_coordinator.py</code> depends
+on the <code>security_*</code> family plus its own tier1 siblings
+(<code>authorization_consumption_store</code>, <code>ed25519_authority</code>, <code>errors</code>) —
+and, as of this handoff, <strong>nothing else</strong>: it does not yet import
+<code>executor.py</code>, <code>store.py</code>, <code>contract.py</code>, or <code>state_machine.py</code>. That is
+exactly what Slice E3 would add, under its own future authorization.</p>
+<p><strong>Codex must treat every isolation test as an architectural control.</strong>
+See §12 for the explicit warning against "fixing" one by weakening it.</p>
+<hr />
+<h2 id="8-authorization-lifecycle-implemented-vs-proposed">8. Authorization lifecycle — implemented vs. proposed<a class="headerlink" href="#8-authorization-lifecycle-implemented-vs-proposed" title="Permanent link">&para;</a></h2>
+<p>Source of truth: <code>ADR-024</code>'s "Exact proposed verification/execution
+ordering (E2)" section, reproduced here with implementation status
+annotated. (<code>ADR-024</code>'s own numbering is steps 1–12; this table uses the
+same numbers.)</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Status at <code>HANDOFF_SHA</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Capability active (<code>ADR-004</code> profile check)</td>
+<td>Existing, unaffected by any authorization-boundary work</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Endpoint allow-listed (<code>WriteEndpoints</code>, <code>ADR-005</code>)</td>
+<td>Existing, unaffected; allow-list is empty</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>verify_plan_authorization_signature()</code></td>
+<td><strong>Implemented</strong> (Phase D) and <strong>composed</strong> by the coordinator (Slice E2)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>plan_authorization_is_current()</code></td>
+<td><strong>Implemented</strong> (Phase D) and <strong>composed</strong> (Slice E2)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>plan_authorization_authorizes_step()</code></td>
+<td><strong>Implemented</strong> (Phase D) and <strong>composed</strong> (Slice E2)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Freshness re-check</td>
+<td><strong>Implemented</strong> (Slice E1) and <strong>composed</strong> (Slice E2)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Anchor assurance appropriate for <code>authz.risk_class</code></td>
+<td><strong>Not separately implemented</strong> — <code>ADR-024</code> itself documents this as structurally subsumed by step 6 (an invalid target combination never reaches a valid fresh plan; any anchor regression changes the fresh plan's own digest), and Slice E2's own docstring/ADR update records this reasoning explicitly rather than adding a redundant check</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Authorization consumption (<code>try_consume()</code>)</td>
+<td><strong>Implemented</strong> (Phase D primitive) and <strong>wired as the coordinator's last gate</strong> (Slice E2) — this is where the current implementation boundary stops</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>store.create()</code></td>
+<td><strong>Not implemented, not wired.</strong> This is Slice E3's first task.</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>store.confirm()</code> with <code>ConfirmationEvidence</code></td>
+<td>Existing (<code>ADR-012</code>), <strong>not yet reachable</strong> from the authorization path</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>executor.execute(contract_id, ...)</code></td>
+<td>Existing (<code>ADR-014</code>), <strong>not yet reachable</strong> from the authorization path</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Post-condition verification, audit write</td>
+<td>Existing, <strong>not yet reachable</strong> from the authorization path</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The implementation boundary is unmistakable: steps 1–8 are fully
+implemented and composed by <code>ExecutionCoordinator.authorize_and_consume()</code>.
+Steps 9–12 do not exist in the authorization path at all yet</strong> —
+<code>ExecutionCoordinator</code> does not import <code>store.py</code>, <code>contract.py</code>, or
+<code>executor.py</code>. A successful <code>authorize_and_consume()</code> call today means
+<em>only</em> "every pre-execution gate passed and the authorization is now
+durably consumed" — nothing about a <code>RecoveryContract</code>, confirmation,
+or an actual mutation has happened, and nothing in the current code
+makes that happen.</p>
+<hr />
+<h2 id="9-consumption-semantics-and-crash-behavior">9. Consumption semantics and crash behavior<a class="headerlink" href="#9-consumption-semantics-and-crash-behavior" title="Permanent link">&para;</a></h2>
+<p><strong>Owner-decided, fixed semantic: "one authorization permits one attempt
+to create a <code>RecoveryContract</code>."</strong> Not "one execution attempt." Not "one
+successful execution."</p>
+<ul>
+<li><strong>"One successful execution only" was explicitly rejected</strong>
+  (<code>ADR-024</code>, "Consumption semantics," E3). If consumption happened
+  only after a successful <code>executor.execute()</code>, the authorization would
+  remain valid and reusable for the entire window between "checks
+  passed" and "execution confirmed" — during which it could gate
+  <strong>multiple concurrent <code>RecoveryContract</code>s</strong>, directly reopening the
+  replay exposure Phase D exists to close.</li>
+<li><strong>"One attempt" is precise and testable</strong>: <code>try_consume()</code> succeeding
+  means "this <code>authorization_id</code> will never again gate a
+  contract-creation attempt," full stop — regardless of what happens to
+  that (not-yet-existing) contract afterward.</li>
+<li><strong>Freshness failure does not consume.</strong> A <code>STALE</code> outcome at the
+  freshness gate is explicitly <em>not</em> a security anomaly
+  (<code>ADR-022</code>'s own <code>STALE</code>-vs-anomaly classification, reused unchanged)
+  — re-planning after a transient staleness produces a <em>different</em>
+  <code>plan_digest</code> anyway, so non-consumption costs nothing and preserves
+  the original authorization for a transient-flicker case.</li>
+<li><strong>Acknowledged, documented gap: the 8→9 crash window.</strong> If a crash
+  occurs between successful <code>try_consume()</code> (step 8) and <code>store.create()</code>
+  (step 9, not yet implemented), the authorization is permanently
+  consumed with no corresponding <code>RecoveryContract</code> ever created. This
+  is real, not hypothetical — <code>try_consume()</code> and a future
+  <code>store.create()</code> are two separate atomic operations against two
+  separate stores; no shared transaction exists or is proposed.
+  <strong><code>ADR-024</code>'s own assessment: this is an accepted, explicitly-named
+  v1 safety-over-availability tradeoff, not a silently-accepted gap.</strong>
+  An operator whose authorization is burned by a crash in this window
+  can simply re-review and re-sign a new one for the same still-valid
+  plan.</li>
+<li><strong>Two-phase claim/commit is named, not designed, not decided, and
+  Codex must not invent it.</strong> <code>ADR-024</code>'s "Recommended, explicitly
+  deferred future enhancement" names a hypothetical
+  <code>claim(authorization_id) -&gt; ClaimToken</code> / <code>commit(claim_token)</code>
+  extension purely for future reference — it would need its own design
+  pass, its own adversarial review, and its own owner authorization. Do
+  not build any part of it opportunistically while working on E3 or
+  anything else.</li>
+</ul>
+<hr />
+<h2 id="10-freshness-slice-e1-precise-recap">10. Freshness (Slice E1) — precise recap<a class="headerlink" href="#10-freshness-slice-e1-precise-recap" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Fresh discovery source</strong>: the same <code>discover_security_posture()</code>
+  path already used for planning — no new evidence source.</li>
+<li><strong>Deterministic plan regeneration</strong>: <code>generate_security_posture_plan()</code>
+  is re-run with the <em>same</em> target parameters
+  (<code>target_capability_posture</code>/<code>target_anchor_assurance</code>) the original
+  plan used.</li>
+<li><strong><code>compute_plan_digest()</code>/<code>verify_plan_digest()</code> ownership</strong>: these
+  remain <code>security_plan_digest.py</code>'s exclusive responsibility;
+  <code>security_plan_freshness.py</code> calls them, never reimplements them
+  (directly proven by
+  <code>test_module_defines_no_second_digest_or_canonicalization_function</code>).</li>
+<li><strong>Exact equality, always</strong>: freshness is <code>verify_plan_digest(fresh_plan, expected_plan_digest)</code>
+  — full byte-level canonical equality, never an approximate or partial
+  comparison.</li>
+<li><strong>Why <code>evidence_fingerprint</code> is insufficient</strong>: it excludes the
+  <code>steps</code> list. If <code>security_plan.py</code>'s step-generation logic ever
+  changed between authorization time and execution time,
+  <code>evidence_fingerprint</code> would show no difference even though
+  <code>plan_digest</code> would — proven directly by
+  <code>test_unchanged_evidence_fingerprint_but_added_step_is_stale</code> and
+  siblings in <code>tests/test_security_plan_freshness.py</code>.</li>
+<li><strong>Failure behavior</strong>: malformed/wrong-type <code>expected_plan_digest</code>
+  returns <code>False</code> (not an exception); an unexpected discovery/plan-
+  generation/digest-generation failure raises a sanitized
+  <code>PlanFreshnessError</code> — never silently returns <code>True</code>.</li>
+<li><strong>No side effects</strong>: <code>plan_authorization_is_fresh()</code> performs zero
+  authorization-consumption, zero <code>MutationExecutor</code>, zero state-machine
+  interaction — proven by <code>tests/test_security_plan_freshness_isolation.py</code>.</li>
+</ul>
+<p>Reference tests: <code>tests/test_security_plan_freshness.py</code> (regression/
+adversarial), <code>tests/test_security_plan_freshness_isolation.py</code> (AST-based).</p>
+<hr />
+<h2 id="11-target-identity-gap-read-carefully-before-any-future-slice-touches-it">11. Target identity gap — read carefully before any future slice touches it<a class="headerlink" href="#11-target-identity-gap-read-carefully-before-any-future-slice-touches-it" title="Permanent link">&para;</a></h2>
+<p><strong>This is the single most important open architectural question in the
+authorization boundary, and it is intentionally unresolved. Do not
+close it unilaterally.</strong></p>
+<p>Facts (verified against shipped code, <code>ADR-024</code>'s "<code>target_identity_digest</code>
+design," E5):</p>
+<ul>
+<li><strong>Ordinary <code>PlanAuthorization</code> has no <code>target_identity_digest</code>-shaped
+  field at all</strong> in its already-shipped, already-pushed schema. Adding
+  one would be a schema change to an already-shipped artifact type.</li>
+<li><strong><code>DeprovisionAuthorization</code> has a related, already-accepted field</strong>
+  (<code>target_identity_digest</code>), but its deferral is <em>already decided by
+  <code>ADR-022</code> itself</em> — no code path anywhere constructs a
+  <code>DeprovisionAuthorization</code> at all, because no destructive execution
+  mechanism exists yet. This is a <em>separate</em> question from the one
+  below and must not be conflated with it.</li>
+<li><strong><code>netgate_id</code></strong> (<code>src/pfsense_mcp/models/system.py</code>'s <code>SystemStatus</code>)
+  and <strong><code>pfhostid</code></strong> (<code>src/pfsense_mcp/models/system_ha_sync.py</code>'s
+  <code>SystemHaSync</code>) are real, already-modeled, pfSense-native,
+  per-installation identifiers — genuine candidate signals for a future
+  appliance-identity binding.</li>
+<li><strong>Both are deliberately null by default</strong>
+  (<code>include_identifying_metadata=False</code>) in every existing caller — this
+  codebase already treats them as privacy-sensitive, hidden-unless-
+  explicitly-requested data, a deliberate, pre-existing convention, not
+  something this session invented.</li>
+<li><strong>No target-binding mechanism has been authorized.</strong> Nothing in the
+  currently-accepted authorization chain cryptographically distinguishes
+  "this plan, reviewed and authorized for Appliance A" from "an
+  identical plan, by coincidence, on Appliance B" — a real, narrow gap,
+  bounded by the fact that this project's entire architecture currently
+  assumes exactly one pfSense appliance per deployment
+  (<code>PfSenseConfig</code>/<code>PFSENSE_API_URL</code> is a single, required, env-var-
+  driven target; there is no multi-appliance or multi-tenant concept
+  anywhere in <code>config.py</code>, the MCP transport, or the tool registry).</li>
+<li><strong>The desired architectural direction, per explicit owner instruction
+  during this session, is that the architecture must remain correct for
+  a future multi-appliance deployment without authorization becoming
+  implicitly portable between appliances</strong> — i.e., closing this gap
+  correctly matters, but must not be done by inventing a placeholder.</li>
+</ul>
+<p><strong>Unresolved prerequisites, named by <code>ADR-024</code>, not resolved by
+anything in this repository yet:</strong></p>
+<ol>
+<li>An explicit owner/product decision on whether this project's
+   deployment model is intended to remain permanently single-appliance-
+   per-process (if so, this gap may be judged acceptably low-value to
+   close at all).</li>
+<li>If closing it is judged worthwhile: an explicit owner decision on
+   whether to override the existing <code>include_identifying_metadata</code>
+   privacy default for this one purpose.</li>
+<li>A null-handling design for deployments with neither <code>netgate_id</code> nor
+   <code>pfhostid</code> available.</li>
+<li>A schema-placement decision — <code>ADR-024</code> recommends <em>against</em> folding
+   this into <code>plan_digest</code> itself (would require a schema-version bump
+   to an already-shipped, already-tested Phase B primitive), in favor of
+   a new, separate, additive field/digest at whatever future layer
+   consumes it.</li>
+<li>(Named by this document, not <code>ADR-024</code>, as a natural consequence of
+   #2–#4): lifecycle behavior across backup/restore/clone/HA/migration
+   scenarios, if and when a concrete design is proposed — pfSense
+   appliances can be cloned or restored from backup, which interacts
+   directly with any identity-binding scheme.</li>
+</ol>
+<p><strong>Codex MUST STOP and report, rather than inventing a substitute, if any
+future slice (including E3) turns out to require target-identity
+binding for correctness.</strong> <code>ADR-024</code>'s own "Explicit stop conditions for
+each future slice" names this directly: "Any slice that discovers
+<code>target_identity_digest</code> is load-bearing for correctness (not merely
+defense-in-depth) — stop, that reopens Question B and needs its own
+owner decision first."</p>
+<hr />
+<h2 id="12-owner-decisions-fixed-not-proposals-do-not-re-litigate">12. Owner decisions (fixed, not proposals — do not re-litigate)<a class="headerlink" href="#12-owner-decisions-fixed-not-proposals-do-not-re-litigate" title="Permanent link">&para;</a></h2>
+<p>These were explicit choices made by the project owner during this
+session's Phase E work, each narrowing an otherwise-open architecture
+question. Distinguish these from <code>ADR-024</code>'s own <em>proposals</em> (§ sections
+above) — a proposal is something <code>ADR-024</code> recommends; an owner decision
+is something already chosen and binding.</p>
+<ol>
+<li>The architecture must remain correct for a future multi-appliance
+   deployment without authorization becoming implicitly portable between
+   appliances (§11).</li>
+<li>Do not override the identifying-metadata privacy default, and do not
+   add <code>netgate_id</code>/<code>pfhostid</code> to <code>PlanAuthorization</code> or wire them into
+   runtime authorization, without a separate, explicit future decision.</li>
+<li>The coordinator's placement is <code>src/pfsense_mcp/tier1/execution_coordinator.py</code>
+   — tier1-native, sibling to <code>executor.py</code> — a fixed placement decision,
+   not merely <code>ADR-024</code>'s recommendation.</li>
+<li><code>MutationExecutor</code> remains authorization-unaware, permanently, not
+   merely for the current slice — folding authorization into the
+   executor was considered and rejected, not merely deferred.</li>
+<li>Two-phase authorization consumption (claim/commit) is deferred; the
+   v1 "one attempt to create a RecoveryContract" semantic, with its
+   acknowledged 8→9 crash-window tradeoff, is accepted as-is for now.</li>
+<li><code>DeprovisionAuthorization</code> verification remains deferred — no
+   parallel verifier, no shared machinery built ahead of an actual
+   destructive-execution mechanism existing.</li>
+<li>The appliance <code>target_identity_digest</code> gap (Question B in §11)
+   remains explicitly deferred — no substitute, no placeholder, no
+   weaker proxy field, ever, without a new owner decision resolving the
+   prerequisites in §11.</li>
+<li>Public MCP remains READ-only until a separate, explicit Milestone 9
+   activation decision — nothing in the E1/E2 work changes this, and
+   nothing in a hypothetical E3 would either, since E3's own scope (per
+   <code>ADR-024</code>'s "Explicit stop conditions") excludes any MCP construction
+   site.</li>
+</ol>
+<hr />
+<h2 id="13-threat-model-known-attack-classes">13. Threat model / known attack classes<a class="headerlink" href="#13-threat-model-known-attack-classes" title="Permanent link">&para;</a></h2>
+<p>Full authoritative threat model: <code>docs/THREAT_MODEL.md</code> (read in full —
+it frames this project's local-stdio trust model: defends against a
+malicious/compromised MCP client or AI model interacting with an
+already-deployed, already-reviewed server; explicitly does <strong>not</strong>
+defend against a malicious contributor modifying the server's own
+source). <code>ADR-024</code>'s own consolidated "Threat analysis (consolidated
+matrix)" table is the authoritative disposition list for the
+authorization-boundary-specific threats below — read it in full rather
+than relying solely on this summary.</p>
+<table>
+<thead>
+<tr>
+<th>Threat class</th>
+<th>Disposition at <code>HANDOFF_SHA</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Authorization forgery</td>
+<td>Closed — <code>PinnedAuthoritySet</code>, <code>ADR-012</code> precedent, reused unchanged</td>
+</tr>
+<tr>
+<td>Wrong signer / signer downgrade</td>
+<td>Closed — unknown/inactive authority fails closed; <code>algorithm</code> checked before any verification attempt</td>
+</tr>
+<tr>
+<td>Replay</td>
+<td>Closed — <code>try_consume()</code>'s atomic insert-once, now wired as the coordinator's last gate (Slice E2)</td>
+</tr>
+<tr>
+<td>Expired authorization</td>
+<td>Closed — <code>plan_authorization_is_current()</code>, independent check</td>
+</tr>
+<tr>
+<td>Plan / step substitution</td>
+<td>Closed — exact <code>plan_digest</code> match + exact <code>authorized_step_ids</code> membership, no wildcard matching</td>
+</tr>
+<tr>
+<td>Target substitution (appliance-level)</td>
+<td><strong>Open, intentionally</strong> — see §11</td>
+</tr>
+<tr>
+<td>Target substitution (resource-level, within one appliance)</td>
+<td>Closed at the <code>RecoveryContract</code> layer (existing <code>target_fingerprint</code> drift detection) — not yet reachable from the authorization path since E3 is not implemented</td>
+</tr>
+<tr>
+<td>Stale target state</td>
+<td>Closed — Slice E1's freshness re-check, now composed by the coordinator (Slice E2)</td>
+</tr>
+<tr>
+<td>TOCTOU (time-of-check/time-of-use)</td>
+<td>Bounded per-transition; the 8→9 crash window (§9) is the one acknowledged, documented gap</td>
+</tr>
+<tr>
+<td>Double execution / concurrent execution</td>
+<td>Closed at the consumption layer (proven via an 8-thread race in both the store's own tests and the coordinator's tests); the <code>RecoveryContract</code>-layer CAS defense is existing but not yet reachable from this path</td>
+</tr>
+<tr>
+<td>Consumption DB tampering / rollback / copy</td>
+<td>Closed for tampering (fails closed, tested); rollback/copy is an inherited, acknowledged limitation shared with every other Tier 1 store — not a gap introduced by this work</td>
+</tr>
+<tr>
+<td>Direct executor bypass</td>
+<td>Construction-site/process-review-level guarantee only, not language-level — explicitly documented as such in <code>ADR-024</code>'s E7 and in <code>execution_coordinator.py</code>'s own module docstring</td>
+</tr>
+<tr>
+<td>State-machine bypass</td>
+<td>Not possible — closed transition table unaffected</td>
+</tr>
+<tr>
+<td>Canonicalization / digest-domain disagreement</td>
+<td>Closed — single shared <code>tier1.canonical</code> primitive, <code>DigestPurpose</code> domain separation, reused everywhere</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="14-test-map">14. Test map<a class="headerlink" href="#14-test-map" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Security-semantics tests</strong> (encode the actual invariants, not just
+  code coverage): <code>tests/test_security_authorization*.py</code>,
+  <code>tests/test_security_plan_freshness.py</code>,
+  <code>tests/tier1/test_authorization_consumption_store.py</code>,
+  <code>tests/tier1/test_execution_coordinator.py</code>.</li>
+<li><strong>Isolation/AST tests</strong> (structural, dependency-direction proofs, not
+  ordinary unit tests): <code>tests/tier1/test_isolation.py</code> (the two shared,
+  central tests), plus one dedicated file per security-boundary module —
+  <code>tests/test_security_authorization_isolation.py</code>,
+  <code>tests/test_security_authorization_verifier_isolation.py</code>,
+  <code>tests/test_security_plan_freshness_isolation.py</code>,
+  <code>tests/tier1/test_authorization_consumption_store_isolation.py</code>,
+  <code>tests/tier1/test_execution_coordinator_isolation.py</code>.</li>
+<li><strong>Adversarial tests</strong>: embedded throughout the regression files above
+  (forged signatures, tampered fields, wrong scopes, malformed input,
+  algorithm downgrade attempts, "same step ID in a different plan," etc.)
+  — not a separate directory.</li>
+<li><strong>Concurrency tests</strong>: <code>threading.Barrier</code>-based races proving
+  exactly-one-success, in
+  <code>tests/tier1/test_authorization_consumption_store.py</code>
+  (<code>test_concurrent_double_consumption_yields_exactly_one_success</code>) and
+  <code>tests/tier1/test_execution_coordinator.py</code>
+  (<code>test_concurrent_attempts_yield_exactly_one_success</code>).</li>
+<li><strong>Persistence/tamper tests</strong>: <code>tests/tier1/test_authorization_consumption_store.py</code>'s
+  tampered-row/tampered-timestamp/malformed-schema/database-failure
+  tests — the pattern any future persistence-adjacent test should
+  follow.</li>
+<li><strong>Coordinator tests (Slice E2, new)</strong>:
+  <code>tests/tier1/test_execution_coordinator.py</code> (38 tests: happy path,
+  each gate's independent denial + non-consumption proof, exact
+  ordering proofs via monkeypatched "must not be called" spies,
+  concurrency, cross-cutting invariants) and
+  <code>tests/tier1/test_execution_coordinator_isolation.py</code> (10 AST-based
+  structural tests).</li>
+</ul>
+<p><strong>Explicit warning, repeated because it matters: a failing security or
+isolation test is not authorization to weaken the test. Assume you
+violated an invariant first, and re-read this document's §5 and the
+relevant ADR before considering any change to a test's assertions.</strong></p>
+<hr />
+<h2 id="15-validation-commands-repository-standard-not-invented">15. Validation commands (repository-standard, not invented)<a class="headerlink" href="#15-validation-commands-repository-standard-not-invented" title="Permanent link">&para;</a></h2>
+<p>Run from the repository root with <code>.venv</code> activated (<code>source .venv/bin/activate</code>).</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Targeted (fast, run first while iterating)</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/tier1/test_execution_coordinator.py<span class="w"> </span>tests/tier1/test_execution_coordinator_isolation.py<span class="w"> </span>-q
+
+<span class="c1"># Full suite</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q
+
+<span class="c1"># Formatting / lint</span>
+ruff<span class="w"> </span>format<span class="w"> </span>--check<span class="w"> </span>.
+ruff<span class="w"> </span>check<span class="w"> </span>.
+
+<span class="c1"># Types</span>
+mypy<span class="w"> </span>src/pfsense_mcp<span class="w"> </span>scripts<span class="w"> </span>lab<span class="w"> </span>witness_daemon
+
+<span class="c1"># Docs</span>
+mkdocs<span class="w"> </span>build<span class="w"> </span>--strict
+
+<span class="c1"># Repository-defined composite gates (see Makefile)</span>
+make<span class="w"> </span>quick<span class="w">      </span><span class="c1"># 11-stage fast gate: format/lint/type/test + GET-only + write-inactivity checks</span>
+make<span class="w"> </span>validate<span class="w">   </span><span class="c1"># 20-stage full gate: everything in quick + bandit + fixture/query-param safety +</span>
+<span class="w">                </span><span class="c1">#                     public-contract snapshot + doc consistency + git report</span>
+</code></pre></div>
+<p><code>make validate</code>'s stage 18 ("Public MCP contract snapshot") is the
+authoritative, automated check for "did I accidentally expose or grow
+the WRITE surface" — it must always report <code>public_contract: OK (42 tools)</code>
+with 0 WRITE. Treat any change to that number as a stop-and-report
+event, not something to silently accept.</p>
+<hr />
+<h2 id="16-current-deferred-work-register">16. Current deferred-work register<a class="headerlink" href="#16-current-deferred-work-register" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why deferred</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target-identity binding for ordinary <code>PlanAuthorization</code></td>
+<td>Requires an owner product decision (single- vs. multi-appliance), a privacy-default override decision, a null-handling design, and a schema-placement decision — none made yet (§11)</td>
+</tr>
+<tr>
+<td><code>DeprovisionAuthorization</code> verification</td>
+<td><code>ADR-022</code> itself defers it; no destructive execution mechanism exists yet to consume a verified one; building shared machinery now would be speculative</td>
+</tr>
+<tr>
+<td>Slice E3 (coordinator → <code>RecoveryContract</code>/<code>MutationExecutor</code> wiring)</td>
+<td>Not yet authorized — see §17 for what it would need</td>
+</tr>
+<tr>
+<td>Two-phase claim/commit consumption</td>
+<td>Named for future reference only, not designed, not decided — would need its own design pass and owner authorization</td>
+</tr>
+<tr>
+<td>Public MCP WRITE exposure (Phase H)</td>
+<td>Gated on Milestone 9, an entirely separate, not-yet-made activation decision</td>
+</tr>
+<tr>
+<td>WRITE milestone activation generally</td>
+<td>Same — 0 of 3 <code>*_WRITE</code> capabilities may become active without a dedicated future authorization</td>
+</tr>
+<tr>
+<td>Guided security-posture provisioning wizard (<code>ADR-021</code>)</td>
+<td>Accepted architecture only — no wizard, posture enforcement, or fail-closed runtime behavior authorized yet</td>
+</tr>
+<tr>
+<td>Official/version-aware guidance layer consumption (<code>ADR-017</code>/<code>018</code>)</td>
+<td>Accepted architecture + inert scaffolding only — no consumer wired</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="17-next-recommended-slice-planning-only-not-authorization-to-implement">17. Next recommended slice (planning only — NOT authorization to implement)<a class="headerlink" href="#17-next-recommended-slice-planning-only-not-authorization-to-implement" title="Permanent link">&para;</a></h2>
+<p>Per <code>HANDOFF_SHA</code>, the smallest safe next step is <strong><code>ADR-024</code>'s Slice
+3</strong>, exactly as that document specifies it (<code>docs/adr/ADR-024-execution-authorization-coordination.md</code>,
+"Implementation slices for a future authorized coding phase" → "Slice 3
+— wire <code>store.create()</code>/<code>confirm()</code>/<code>executor.execute()</code> behind the
+coordinator"):</p>
+<ul>
+<li><strong>Objective</strong>: extend <code>ExecutionCoordinator</code> so that a successful
+  Slice E2 outcome (consumption) is followed by <code>store.create()</code>,
+  <code>store.confirm()</code> with real <code>ConfirmationEvidence</code>, and
+  <code>executor.execute(contract_id, ...)</code> — completing ordering steps 9–12
+  from §8's table.</li>
+<li><strong>Invariant to establish</strong>: "the full authorization-to-execution chain
+  is provably correct end-to-end against synthetic dependencies, still
+  fully unreachable from any production entry point."</li>
+<li><strong>Expected files</strong>: <code>tier1/execution_coordinator.py</code> (extend only).</li>
+<li><strong>Forbidden files/behavior</strong>: <code>tier1/executor.py</code>,
+  <code>tier1/state_machine.py</code> (their existing public behavior must not
+  change — this slice calls their existing public APIs, never modifies
+  them); no MCP construction site; no target-identity mechanism unless
+  it turns out to be load-bearing (§11), in which case STOP.</li>
+<li><strong>Major tests required</strong>: full happy path against synthetic/mock
+  stores and a synthetic adapter (mirroring <code>test_executor.py</code>'s own
+  convention); a crash-simulation test between consumption and contract
+  creation (proving the acknowledged 8→9 gap's actual behavior, not
+  just its written description); a concurrency test proving two
+  coordinator calls racing the same authorization yield exactly one
+  <code>RecoveryContract</code>.</li>
+<li><strong>Major STOP conditions</strong>: any requirement to modify
+  <code>MutationExecutor</code>'s or <code>state_machine.py</code>'s existing public behavior;
+  any requirement to construct the coordinator from
+  <code>Application</code>/<code>factory.py</code>/the tool registry before Milestone 9's own
+  separate activation decision; any discovery that <code>target_identity_digest</code>
+  is load-bearing for correctness.</li>
+</ul>
+<p><strong>This section is planning information only. Do not begin Slice E3
+during bootstrap (§18) — a separate, explicit owner authorization,
+matching the narrow, scoped style of every prior slice in this project,
+is required first.</strong></p>
+<hr />
+<h2 id="18-codex-bootstrap-protocol">18. Codex bootstrap protocol<a class="headerlink" href="#18-codex-bootstrap-protocol" title="Permanent link">&para;</a></h2>
+<p>On first takeover, Codex must, in order:</p>
+<ol>
+<li><code>git fetch origin</code>.</li>
+<li>Verify the exact current <code>HEAD</code>/<code>origin/main</code> SHA — do not assume it
+   still equals <code>HANDOFF_SHA</code> above; a documentation-only commit may
+   have been added after it (see §1's note). Record whatever SHA is
+   actually current.</li>
+<li>Confirm the working tree is clean (<code>git status --short</code>, expect empty
+   output).</li>
+<li>Read <code>docs/CODEX_TAKEOVER.md</code> (this document) completely.</li>
+<li>Read the files listed in §19's mandatory reading order, in that
+   order.</li>
+<li><strong>Independently verify important claims against repository code and
+   tests</strong> — do not take this document's assertions on faith where they
+   are checkable (e.g., re-run <code>make validate</code>'s public-contract stage
+   yourself; grep for <code>target_identity_digest</code>/<code>netgate_id</code>/<code>pfhostid</code>
+   yourself; confirm <code>execution_coordinator.py</code> does not import
+   <code>executor</code>/<code>store</code>/<code>contract</code>/<code>state_machine</code> yourself).</li>
+<li>Run an appropriate baseline validation (§15) and record actual
+   results.</li>
+<li>Report understanding of: current architecture; security invariants
+   (§5); current implementation boundary (§8); unresolved gaps
+   (especially §11); next proposed slice (§17).</li>
+<li><strong>STOP.</strong> Do not modify code during this bootstrap. A separate owner
+   authorization, in the same narrow, explicitly-scoped style used for
+   every slice in this project's history, is required before any
+   implementation begins — including Slice E3.</li>
+</ol>
+<hr />
+<h2 id="19-mandatory-reading-order-for-codex">19. Mandatory reading order for Codex<a class="headerlink" href="#19-mandatory-reading-order-for-codex" title="Permanent link">&para;</a></h2>
+<p>Read each of these <strong>completely</strong>, not by snippet, in this order. This
+list is curated to minimize context use while preserving architectural
+understanding — do not read the entire repository.</p>
+<ol>
+<li><code>docs/CODEX_TAKEOVER.md</code> (this document)</li>
+<li><code>docs/adr/README.md</code> (ADR index)</li>
+<li><code>docs/adr/ADR-022-execution-authorization-boundary.md</code></li>
+<li><code>docs/adr/ADR-023-authorization-verification-boundary.md</code></li>
+<li><code>docs/adr/ADR-024-execution-authorization-coordination.md</code></li>
+<li><code>docs/adr/ADR-021-security-posture-provisioning.md</code></li>
+<li><code>docs/EXECUTION_AUTHORIZATION_BOUNDARY.md</code></li>
+<li><code>docs/tier1/specs/sealed_executor.md</code></li>
+<li><code>docs/THREAT_MODEL.md</code></li>
+<li><code>src/pfsense_mcp/security_discovery.py</code></li>
+<li><code>src/pfsense_mcp/security_plan.py</code></li>
+<li><code>src/pfsense_mcp/security_plan_digest.py</code></li>
+<li><code>src/pfsense_mcp/security_authorization.py</code></li>
+<li><code>src/pfsense_mcp/security_authorization_verifier.py</code></li>
+<li><code>src/pfsense_mcp/security_plan_freshness.py</code></li>
+<li><code>src/pfsense_mcp/tier1/authorization_consumption_store.py</code></li>
+<li><code>src/pfsense_mcp/tier1/execution_coordinator.py</code> (the newest module)</li>
+<li><code>src/pfsense_mcp/tier1/executor.py</code></li>
+<li><code>src/pfsense_mcp/tier1/state_machine.py</code></li>
+<li><code>tests/tier1/test_isolation.py</code></li>
+<li><code>tests/tier1/test_execution_coordinator.py</code> and
+    <code>tests/tier1/test_execution_coordinator_isolation.py</code></li>
+</ol>
+<p>Skim rather than fully read, only if time-constrained:
+<code>src/pfsense_mcp/tier1/store.py</code>, <code>src/pfsense_mcp/tier1/contract.py</code>
+(useful context for Slice E3 planning, not required for understanding
+the current boundary).</p>
+<hr />
+<h2 id="20-historical-traps-non-obvious-findings">20. Historical traps / non-obvious findings<a class="headerlink" href="#20-historical-traps-non-obvious-findings" title="Permanent link">&para;</a></h2>
+<p>Things a fresh agent could easily get wrong, learned the hard way during
+this project's history:</p>
+<ul>
+<li><strong>The canonicalization module lives at <code>src/pfsense_mcp/tier1/canonical.py</code></strong>,
+  not any path resembling <code>security_canonical.py</code> — an earlier task
+  instruction in this project's history named a non-existent path and
+  had to be corrected against the actual repository.</li>
+<li><strong><code>evidence_fingerprint</code> does not bind the complete plan.</strong> It
+  excludes the <code>steps</code> list. Never treat it as a substitute for full
+  <code>plan_digest</code> recomputation, for freshness or for anything else.</li>
+<li><strong>Ordinary <code>PlanAuthorization</code> has no target-identity field at all</strong>
+  — this is easy to assume exists (since <code>DeprovisionAuthorization</code>
+  has a related one) and is not the same question. See §11.</li>
+<li><strong>The presence of internal WRITE-related code does not mean MCP WRITE
+  is exposed.</strong> This project deliberately builds inert machinery years
+  ahead of activation. Always check the actual MCP tool registry and
+  <code>make validate</code>'s public-contract stage, never infer exposure from
+  the existence of <code>tier1/executor.py</code> or similar.</li>
+<li><strong>Python-level bypass resistance is a construction-site/AST-test-time
+  guarantee, not a language-level one.</strong> <code>ADR-024</code>'s E7 section states
+  this explicitly and Codex should not claim stronger bypass resistance
+  than actually exists in any future documentation or code comments.</li>
+<li><strong>Consumption semantics prioritize replay safety over retry
+  ergonomics</strong>, deliberately. The 8→9 crash window (§9) is a known,
+  accepted tradeoff — do not "fix" it by weakening consumption
+  atomicity or by silently building two-phase consumption without a
+  fresh, explicit authorization for exactly that.</li>
+<li><strong><code>plan_authorization_is_current()</code> deliberately does not check
+  <code>issued_at</code>.</strong> This is intentional, documented behavior in that
+  module's own docstring — not a gap.</li>
+<li><strong>The coordinator's <code>requested_plan_digest</code>/<code>requested_step_id</code>
+  parameters are deliberately separate from <code>authz.plan_digest</code>/the
+  step being checked.</strong> Passing <code>authz.plan_digest</code> back as its own
+  comparison target would be a tautology; the real check is "does what
+  the caller claims to be requesting match what <code>authz</code> actually
+  authorizes" — a confused-deputy defense, not redundant plumbing. Any
+  future slice that "simplifies" this by collapsing the two must not do
+  so without re-deriving why they were separate in the first place.</li>
+<li><strong><code>ruff format</code>/<code>ruff check --fix</code> may reformat files you just wrote</strong>,
+  including reordering imports — always re-run the full test suite after
+  auto-fixes, don't assume formatting-only changes are risk-free to skip
+  re-verifying.</li>
+</ul>
+<hr />
+<h2 id="change-log-for-this-document">Change log for this document<a class="headerlink" href="#change-log-for-this-document" title="Permanent link">&para;</a></h2>
+<ul>
+<li>2026-08-11 — Initial version, written at the conclusion of Slice E2
+  (<code>HANDOFF_SHA</code> = <code>48a93862f95981c7c97b47ae94cc8467196b92c5</code>), per an
+  explicit owner instruction to prepare a complete, lossless takeover
+  package for a fresh implementation agent ahead of a usage-limit
+  boundary.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

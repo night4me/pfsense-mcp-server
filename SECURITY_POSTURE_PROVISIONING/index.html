@@ -1,0 +1,4735 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/SECURITY_POSTURE_PROVISIONING/">
+      
+      
+        <link rel="prev" href="../API_SURFACE_ARCHITECTURE/">
+      
+      
+        <link rel="next" href="../EXECUTION_AUTHORIZATION_BOUNDARY/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Security posture provisioning (design only, ADR-021) - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#security-posture-provisioning-design-specification-pfsense-mcp-security-setup" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Security posture provisioning (design only, ADR-021)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (inert scaffolding, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (design only, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-two-axes-in-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two axes, in detail
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The two axes, in detail">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#capability-posture-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability posture axis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anchor-assurance-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anchor assurance axis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validity-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validity constraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fail-closed-enforcement-orthogonal-to-both-axes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fail-closed enforcement — orthogonal to both axes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-ux-presets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended UX presets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-machine-per-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State machine — per axis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#affected-code-areas-identified-for-future-scoping-none-modified-by-this-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Affected code areas (identified for future scoping — none modified by this document)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declarative-vs-interactive-provisioning-resolves-adr-021-question-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declarative vs. interactive provisioning (resolves ADR-021 question 5)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phased-implementation-plan-for-ifwhen-separately-authorized-not-scheduled-not-committed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phased implementation plan (for if/when separately authorized — not scheduled, not committed)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-implemented-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B — implemented (2026-08-10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase B — implemented (2026-08-10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-phase-b-deliberately-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Phase B deliberately does not do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planning-slice-implemented-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planning slice — implemented (2026-08-10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Planning slice — implemented (2026-08-10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#usage_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-guarantees_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-planning-slice-deliberately-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the planning slice deliberately does not do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-design-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open design questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-two-axes-in-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two axes, in detail
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The two axes, in detail">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#capability-posture-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability posture axis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anchor-assurance-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anchor assurance axis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validity-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validity constraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fail-closed-enforcement-orthogonal-to-both-axes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fail-closed enforcement — orthogonal to both axes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-ux-presets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended UX presets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-machine-per-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State machine — per axis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#affected-code-areas-identified-for-future-scoping-none-modified-by-this-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Affected code areas (identified for future scoping — none modified by this document)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declarative-vs-interactive-provisioning-resolves-adr-021-question-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declarative vs. interactive provisioning (resolves ADR-021 question 5)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phased-implementation-plan-for-ifwhen-separately-authorized-not-scheduled-not-committed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phased implementation plan (for if/when separately authorized — not scheduled, not committed)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-implemented-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B — implemented (2026-08-10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase B — implemented (2026-08-10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-phase-b-deliberately-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Phase B deliberately does not do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planning-slice-implemented-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planning slice — implemented (2026-08-10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Planning slice — implemented (2026-08-10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#usage_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-guarantees_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-planning-slice-deliberately-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the planning slice deliberately does not do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-design-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open design questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/SECURITY_POSTURE_PROVISIONING.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="security-posture-provisioning-design-specification-pfsense-mcp-security-setup">Security posture provisioning — design specification (<code>pfsense-mcp-security setup</code>)<a class="headerlink" href="#security-posture-provisioning-design-specification-pfsense-mcp-security-setup" title="Permanent link">&para;</a></h1>
+<p>Status: companion specification to
+<a href="../adr/ADR-021-security-posture-provisioning/"><code>ADR-021</code></a>, <strong>Accepted</strong>
+(2026-08-10, owner — see <code>ADR-021</code>'s "Acceptance note"). Read <code>ADR-021</code>
+first, including its "Revision note," "Second revision note," "Model
+comparison," and "Acceptance note" sections; this document expands the
+<strong>accepted two-axis model</strong>'s mechanics. <strong>Acceptance is architectural
+only — nothing here is implemented.</strong> No wizard code, no CLI
+entrypoint, no new environment variable, and no runtime behavior exists
+yet. Building any of it is a separate, future, explicitly-scoped
+authorization this document does not grant.</p>
+<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p><code>ADR-021</code> decided that a future <code>pfsense-mcp-security setup</code>
+CLI/wizard should be built around <strong>two independent axes</strong> — capability
+posture (<code>read_only</code>/<code>write_protected</code>) and anchor assurance
+(<code>none</code>/<code>software</code>/<code>hardware_witness</code>) — rather than one linear ladder,
+because the ladder cannot represent this project's own real deployment
+state (<code>read_only</code> capability with <code>hardware_witness</code> assurance
+already fully provisioned and verified). This document works out the
+mechanics: the full per-axis requirement set, the detailed state
+machine, which existing code areas a real implementation would
+eventually touch (for future scoping — <strong>none are modified by this
+document</strong>), and a phased implementation plan for if/when building the
+wizard is separately authorized.</p>
+<h2 id="the-two-axes-in-detail">The two axes, in detail<a class="headerlink" href="#the-two-axes-in-detail" title="Permanent link">&para;</a></h2>
+<h3 id="capability-posture-axis">Capability posture axis<a class="headerlink" href="#capability-posture-axis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Capability profile (<code>ADR-004</code>)</th>
+<th>Config</th>
+<th>WRITE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>read_only</code></td>
+<td><code>auditor</code></td>
+<td><code>PFSENSE_PROFILE=auditor</code> (today's default)</td>
+<td>Inactive</td>
+</tr>
+<tr>
+<td><code>write_protected</code></td>
+<td><code>engineer</code>, populated</td>
+<td><code>PFSENSE_PROFILE=engineer</code> + <code>WriteEndpoints</code> allow-list entries per the separately-governed WRITE endpoint risk process (<code>WRITE_ENDPOINT_RISK_MATRIX.md</code>, <code>ADR-020</code>)</td>
+<td>Active — requires anchor assurance <code>≠ none</code> (validity constraint) and its own Milestone-9-class activation decision (<code>TIER1_ROADMAP.md</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Recovery Contract machinery (authoritative contracts <code>ADR-006</code>,
+confirmation authority <code>ADR-012</code>, reconciliation authority <code>ADR-013</code>,
+sealed executor <code>ADR-014</code>, rate/blast-radius defaults <code>ADR-015</code>) is
+already implemented and tested, currently unreachable from production.
+<code>write_protected</code> posture is what would first make it reachable —
+identically, regardless of which anchor-assurance value accompanies it.</p>
+<h3 id="anchor-assurance-axis">Anchor assurance axis<a class="headerlink" href="#anchor-assurance-axis" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th><code>ADR-011</code> backend</th>
+<th>Config</th>
+<th>Daemon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>none</code></td>
+<td>No anchor</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td><code>software</code></td>
+<td>Remote append-only witness (non-hardware) — <code>ADR-011</code>'s own accepted "mandatory fallback" category</td>
+<td>Not yet designed in detail — no remote-witness implementation exists in this repository today, only the TPM-backed one</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td><code>hardware_witness</code></td>
+<td>TPM-backed host witness (<code>ADR-011</code>'s backend decision)</td>
+<td>The seven <code>PFSENSE_TIER1_*</code>/<code>WITNESS_*</code> variables already in real operational use (<code>PFSENSE_TIER1_STORE_PATH</code>, <code>PFSENSE_TIER1_STORE_KEY_FILE</code>, <code>PFSENSE_TIER1_EXPECTED_HANDLE</code>, <code>PFSENSE_TIER1_WITNESS_BASE_URL</code>, <code>PFSENSE_TIER1_WITNESS_CLIENT_CERT_FILE</code>, <code>PFSENSE_TIER1_WITNESS_CLIENT_KEY_FILE</code>, <code>PFSENSE_TIER1_WITNESS_SERVER_CA_FILE</code>)</td>
+<td>Persistent, <code>systemd</code>-managed (<code>ADR-011</code>'s "Deployment model decision") — not a manually-started process</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note</strong>: <code>software</code> (remote witness) is named in <code>ADR-011</code>'s own
+architecture as the mandatory fallback where no TPM exists, but no
+implementation of it exists in this codebase — only the TPM-backed
+witness has been built. A real <code>write_protected</code> + <code>software</code>
+combination is therefore currently <strong>designed but not implementable</strong>
+until that backend exists; this is a real, named implementation gap,
+not an oversight of this document.</p>
+<h3 id="validity-constraint">Validity constraint<a class="headerlink" href="#validity-constraint" title="Permanent link">&para;</a></h3>
+<p><strong><code>write_protected</code> requires anchor assurance <code>≠ none</code></strong> — directly
+sourced from <code>ADR-011</code>'s own accepted text ("if neither [TPM nor
+remote witness] is available, mutation must stay blocked"). This is
+the one rule a real implementation must enforce; see "State machine"
+below for exactly where.</p>
+<h3 id="fail-closed-enforcement-orthogonal-to-both-axes">Fail-closed enforcement — orthogonal to both axes<a class="headerlink" href="#fail-closed-enforcement-orthogonal-to-both-axes" title="Permanent link">&para;</a></h3>
+<p>Reaching <code>hardware_witness</code> anchor assurance's <code>ACTIVE</code> state means the
+anchor is provisioned, deployed, and read-verified — it does <strong>not</strong>
+mean <code>store.py</code>'s <code>anti_rollback_anchor=None</code> → hard-refusal fail-closed
+behavior is enabled. That remains its own, separate, future,
+explicitly-scoped decision, unaffected by either axis, exactly as
+<code>ADR-021</code>'s safety invariants state.</p>
+<h2 id="recommended-ux-presets">Recommended UX presets<a class="headerlink" href="#recommended-ux-presets" title="Permanent link">&para;</a></h2>
+<p>The wizard's default, simple front door (not the full grid):</p>
+<table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>Capability posture</th>
+<th>Anchor assurance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>READ-only (default)</td>
+<td><code>read_only</code></td>
+<td><code>none</code></td>
+</tr>
+<tr>
+<td>Software-protected WRITE</td>
+<td><code>write_protected</code></td>
+<td><code>software</code> <em>(blocked until the remote-witness backend exists — see note above)</em></td>
+</tr>
+<tr>
+<td>Hardened hardware TPM witness</td>
+<td><code>write_protected</code></td>
+<td><code>hardware_witness</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Advanced/staged path</strong> (not a default preset): pre-provision
+<code>hardware_witness</code> anchor assurance while remaining <code>read_only</code> —
+exactly this project's own real deployment history. Should be
+discoverable but not forced on operators who only want a simple
+three-choice front door.</p>
+<p><code>read_only</code> + <code>software</code> is deliberately <strong>not</strong> offered as a preset,
+and <strong>not offered behind the advanced path either</strong> —
+<code>ADR-021</code>'s question 6 resolved this as intentionally hidden until the
+<code>software</code> backend exists (Phase G) and a concrete operator need is
+identified. The advanced path therefore surfaces exactly one extra
+combination beyond the three presets: <code>read_only</code> + <code>hardware_witness</code>.</p>
+<h2 id="state-machine-per-axis">State machine — per axis<a class="headerlink" href="#state-machine-per-axis" title="Permanent link">&para;</a></h2>
+<p>Each axis runs its <strong>own independent instance</strong> of the six-state
+lifecycle (<code>DISCOVERED → SELECTED → PREREQUISITES_VERIFIED →
+PROVISIONING → ACTIVE</code>, plus <code>DOWNGRADING</code>). They are not
+synchronized — either can be at any state while the other is at any
+other state, and this is intentional, not an inconsistency to resolve.</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Capability-posture axis</th>
+<th>Anchor-assurance axis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DISCOVERED</code></td>
+<td>Current <code>PFSENSE_PROFILE</code> value, <code>WriteEndpoints</code> contents</td>
+<td>TPM device presence, existing Tier 1 store, existing daemon reachability</td>
+</tr>
+<tr>
+<td><code>SELECTED</code></td>
+<td>Operator names target (<code>read_only</code>/<code>write_protected</code>)</td>
+<td>Operator names target (<code>none</code>/<code>software</code>/<code>hardware_witness</code>)</td>
+</tr>
+<tr>
+<td><code>PREREQUISITES_VERIFIED</code></td>
+<td>If target is <code>write_protected</code>: <strong>re-check the anchor-assurance axis's current value here — this is where the validity constraint is enforced.</strong> If anchor assurance is <code>none</code>, halt and direct the operator to the anchor axis first (or accept a combined preset that provisions both)</td>
+<td>Re-derive TPM presence/store state fresh, never trust a prior <code>DISCOVERED</code> result without re-checking (mirrors the TPM provisioning spec's "state is derived, not logged" discipline)</td>
+</tr>
+<tr>
+<td><code>PROVISIONING</code></td>
+<td>Populate <code>WriteEndpoints</code>, set <code>PFSENSE_PROFILE=engineer</code> — each step individually confirmed</td>
+<td>For <code>hardware_witness</code>: the already-specified provisioning state machine in <code>anti_rollback_tpm_host_witness.md</code> (generate secret, define NV index, first increment, seed store, mark complete), reused not reinvented — each step individually confirmed</td>
+</tr>
+<tr>
+<td><code>ACTIVE</code></td>
+<td>Requires the Milestone-9-class activation decision (<code>TIER1_ROADMAP.md</code>) — its own explicit approval, separate from every <code>PROVISIONING</code> step's confirmation</td>
+<td>For <code>hardware_witness</code>: does <strong>not</strong> require the Milestone-9 decision — that gate is specific to WRITE activation, not anchor readiness. This is the axis independence's clearest consequence: this project already reached anchor-assurance <code>ACTIVE</code> without WRITE ever reaching it</td>
+</tr>
+<tr>
+<td><code>DOWNGRADING</code> (= DEACTIVATE, per <code>ADR-021</code> question 4 — never DEPROVISION)</td>
+<td>Deactivates WRITE; <strong>does not touch the anchor-assurance axis, including the daemon/service state, not only the abstract value</strong> — a provisioned anchor and a running-or-stopped daemon are both left exactly as they are</td>
+<td>Independent of capability posture; stops/disables the witness daemon but leaves TPM NV counter value and guest-side store/high-water-mark untouched (fully reversible: re-enable, resume); downgrading to <code>none</code> while capability posture is <code>write_protected</code> <code>ACTIVE</code> must itself be rejected or forced to jointly downgrade capability posture (never leave the disallowed combination reachable, even momentarily)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>DEPROVISION is explicitly not part of this table.</strong> TPM NV index
+deletion and guest-side store/integrity-key deletion are a separate,
+rare, manually-authorized procedure outside the routine per-axis
+lifecycle entirely — see <code>ADR-021</code>'s "Resolving open questions 3–6"
+(question 4) for the full DEACTIVATE-vs-DEPROVISION distinction and
+what must never happen automatically.</p>
+<p><strong>Interruption behavior</strong> (either axis): re-derive current state from
+the environment itself on the next invocation, never from a separate,
+potentially-stale progress log — matching the TPM provisioning state
+machine's own already-established discipline. Every ambiguous state
+halts for human review; none auto-resolves.</p>
+<h2 id="affected-code-areas-identified-for-future-scoping-none-modified-by-this-document">Affected code areas (identified for future scoping — none modified by this document)<a class="headerlink" href="#affected-code-areas-identified-for-future-scoping-none-modified-by-this-document" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Current state (verified by reading, not modified)</th>
+<th>Eventual relevance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/pfsense_mcp/profiles.py</code></td>
+<td><code>Profile</code>/<code>AuditorProfile</code>/<code>EngineerProfile</code>, <code>get_profile()</code> (<code>ADR-004</code>)</td>
+<td>Capability-posture axis maps 1:1 to this; wizard would set <code>PFSENSE_PROFILE</code> accordingly, not modify this module</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/config.py</code></td>
+<td>Loads <code>PFSENSE_PROFILE</code> (default <code>auditor</code>), fail-closed validation (<code>ADR-008</code>)</td>
+<td>Wizard-generated config must still pass this same validation unchanged — no bypass. Anchor-assurance axis config is currently read only by the inert <code>tier1_anchor_check.py</code> path, not <code>config.py</code> itself</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/write_endpoints.py</code></td>
+<td><code>WriteEndpoints</code>, currently zero entries</td>
+<td><code>write_protected</code> <code>PROVISIONING</code> would populate this per the separately-governed allow-list process — independent of which anchor-assurance value accompanies it</td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/application.py</code></td>
+<td>Calls only <code>tier1_anchor_check.run_anchor_startup_check()</code>; imports nothing else from <code>pfsense_mcp.tier1</code></td>
+<td>A real fail-closed enforcement wiring decision would be separate from, and later than, either axis reaching <code>ACTIVE</code></td>
+</tr>
+<tr>
+<td><code>src/pfsense_mcp/tier1/production_store.py</code>, <code>scripts/tier1_store_bootstrap.py</code></td>
+<td>Inert operator tooling, read-only status by default, <code>--provision</code> requires explicit flags</td>
+<td>The anchor-assurance axis's <code>hardware_witness</code> <code>PROVISIONING</code> state would invoke this existing tooling, not reimplement it — independently of capability-posture axis state</td>
+</tr>
+<tr>
+<td><code>witness_daemon/</code> + its <code>systemd</code> unit</td>
+<td>Implemented, real-hardware-verified, deployable</td>
+<td>An anchor-assurance-axis "install the daemon" provisioning step would automate what is today a manual deployment</td>
+</tr>
+<tr>
+<td><code>tests/tier1/test_isolation.py</code></td>
+<td>Narrow, named exemptions only (<code>tier1_anchor_check.py</code>, <code>anti_rollback_tpm_witness.py</code>)</td>
+<td>Any new wizard-side import of <code>pfsense_mcp.tier1</code> for provisioning would need its own narrow, reviewed exemption — same discipline, not relaxed</td>
+</tr>
+<tr>
+<td><code>docs/CONFIGURATION.md</code></td>
+<td>Documents only the currently-production-relevant env vars</td>
+<td>Would eventually need the <code>PFSENSE_TIER1_*</code>/<code>WITNESS_*</code> vars documented once the anchor-assurance axis is real — independent of whether the capability-posture axis has also advanced</td>
+</tr>
+<tr>
+<td><code>Makefile</code>'s <code>write-allow-list-check</code>/<code>write-capability-check</code></td>
+<td>Assert zero entries / 0-of-3 active</td>
+<td>Would need to evolve from "assert empty" to "assert matches the declared capability-posture axis state" — no equivalent check exists yet for anchor assurance and one would need designing</td>
+</tr>
+</tbody>
+</table>
+<h2 id="declarative-vs-interactive-provisioning-resolves-adr-021-question-5">Declarative vs. interactive provisioning (resolves <code>ADR-021</code> question 5)<a class="headerlink" href="#declarative-vs-interactive-provisioning-resolves-adr-021-question-5" title="Permanent link">&para;</a></h2>
+<p>Both modes are supported, but not symmetrically:</p>
+<table>
+<thead>
+<tr>
+<th>Axis / step</th>
+<th>Interactive</th>
+<th>Declarative/non-interactive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Either axis's <code>DISCOVERED</code>/<code>PREREQUISITES_VERIFIED</code> (read-only)</td>
+<td>Supported</td>
+<td>Supported freely — no consent needed beyond invoking the tool</td>
+</tr>
+<tr>
+<td>Capability-posture axis <code>PROVISIONING</code>/<code>DOWNGRADING</code> (<code>PFSENSE_PROFILE</code>, <code>WriteEndpoints</code> — software-only)</td>
+<td>Supported</td>
+<td>Supported, <strong>with itemized, named authorization</strong> (e.g. an explicit list of exactly which steps are authorized) — never a blanket <code>authorize: true</code> flag</td>
+</tr>
+<tr>
+<td>Anchor-assurance axis <code>PROVISIONING</code>/<code>DOWNGRADING</code> that touches physical TPM state</td>
+<td>Supported (the only mode)</td>
+<td><strong>Not supported</strong> — matches this project's standing practice of never automating TPM-facing commands (<code>CURRENT_MISSION.md</code>'s "Standing SSH constraint")</td>
+</tr>
+<tr>
+<td>Anchor-assurance DEPROVISION (TPM/store deletion)</td>
+<td>Supported, its own separate authorization, outside the routine lifecycle entirely</td>
+<td>Not supported</td>
+</tr>
+</tbody>
+</table>
+<p>A first declarative/non-interactive invocation should require a
+<code>--dry-run</code>/preview mode showing exactly what would be authorized and
+executed without executing it, matching this project's general
+practice of never running a live-host command without a prior
+read-only preview. A real implementation would need a declarative
+config format (new code area, not yet designed) capable of the same
+per-step itemization the interactive flow already requires — sketching
+that format is future implementation work, not part of this design
+phase.</p>
+<h2 id="phased-implementation-plan-for-ifwhen-separately-authorized-not-scheduled-not-committed">Phased implementation plan (for if/when separately authorized — not scheduled, not committed)<a class="headerlink" href="#phased-implementation-plan-for-ifwhen-separately-authorized-not-scheduled-not-committed" title="Permanent link">&para;</a></h2>
+<p>Ordering reflects the two axes' independence — anchor-assurance work is
+<strong>no longer gated behind capability-posture work</strong>, correcting this
+document's earlier draft (which had implicitly assumed hardware
+provisioning follows WRITE protection, contradicting this project's own
+actual history).</p>
+<ol>
+<li><strong>Phase A — design closure — complete, and accepted.</strong> <code>ADR-021</code>'s
+   open questions 3–6 (allow-list sharing, decommissioning path,
+   interactive-vs-declarative UX, whether to expose <code>read_only</code> +
+   <code>software</code>) are resolved; see <code>ADR-021</code>'s "Resolving open questions
+   3–6" section. <strong><code>ADR-021</code> is Status: Accepted</strong> (owner, 2026-08-10 —
+   see its "Acceptance note"). Acceptance is architectural only —
+   Phases B onward below each remain their own separate, future,
+   explicitly-scoped implementation authorization; none is granted by
+   acceptance.</li>
+<li><strong>Phase B — read-only discovery only — implemented (2026-08-10).</strong>
+   <code>DISCOVERED</code>, and where evidence allows <code>PREREQUISITES_VERIFIED</code>,
+   detail for both axes, independently: the <code>pfsense-mcp-security discover</code>
+   CLI reports current capability posture and anchor assurance, writes
+   nothing. See "Phase B — implemented" below for the actual commands,
+   example output, and exact files. <strong>No provisioning/setup subcommand
+   exists yet</strong> — Phase C onward remain future, separately-authorized work.
+2b. <strong>Planning slice — <code>SELECT TARGET → EVALUATE VALIDITY → ASSESS
+   PREREQUISITES → GENERATE PLAN</code>, stopping before <code>PROVISIONING</code> —
+   implemented (2026-08-10).</strong> Not itself one of Phases C–F below (none
+   of those are complete — no axis has moved past <code>DISCOVERED</code>/
+   <code>PREREQUISITES_VERIFIED</code> toward a real <code>PROVISIONING</code>/<code>ACTIVE</code>
+   transition). Instead, this is a read-only <strong>planning</strong> layer over
+   Phase B's own discovery evidence: <code>pfsense-mcp-security plan
+   --capability-posture &lt;value&gt; --anchor-assurance &lt;value&gt;</code> compares
+   current state against an explicit target, enforces <code>ADR-021</code>'s
+   validity constraint, and generates an ordered, structured,
+   never-executed description of what <em>would</em> need to happen — drawing
+   on the same requirement/state-machine detail Phases C–F describe
+   below, without performing any of it. See "Planning slice —
+   implemented" below for the actual commands, example output, exact
+   files, and the full mutation-free argument. <strong>A generated plan is
+   never authorization to execute it</strong> — selecting a target is intent,
+   not execution authorization; no <code>select</code>/<code>provision</code>/<code>apply</code>
+   subcommand exists yet.</li>
+<li><strong>Phase C — capability-posture axis, <code>read_only</code>.</strong> Trivial by
+   construction (already the default) but completes the
+   <code>SELECTED → ACTIVE</code> path end to end for the simplest case, proving
+   the state machine and confirmation UX.</li>
+<li><strong>Phase D — anchor-assurance axis, <code>hardware_witness</code>, independent
+   of capability posture.</strong> Automates what this project has already
+   done once by hand: TPM provisioning + persistent daemon deployment.
+   <strong>Not gated on Phase E</strong> — can run before, after, or without it, as
+   this project's own history already demonstrates.</li>
+<li><strong>Phase E — capability-posture axis, <code>write_protected</code>.</strong> Gated on
+   Milestone 9's own activation decision being separately reached, and
+   on the validity constraint (anchor assurance <code>≠ none</code>) already being
+   satisfied by prior Phase D work (or by provisioning it as part of
+   this phase, for an operator who skipped D).</li>
+<li><strong>Phase F — downgrade paths for both axes</strong>, built last, once
+   upgrade paths for each are proven independently.</li>
+<li><strong>Phase G — <code>software</code> anchor-assurance backend</strong>, if ever
+   prioritized: the remote append-only witness <code>ADR-011</code> names as the
+   mandatory non-TPM fallback has no implementation in this repository
+   today. Its own separate, future design/implementation effort,
+   unblocked by and independent of every phase above.</li>
+</ol>
+<p>Each phase is its own future authorization; nothing above is scheduled.</p>
+<h2 id="phase-b-implemented-2026-08-10">Phase B — implemented (2026-08-10)<a class="headerlink" href="#phase-b-implemented-2026-08-10" title="Permanent link">&para;</a></h2>
+<p>A real, installed <code>pfsense-mcp-security</code> CLI, registered the same way
+<code>pfsense-mcp-server</code> is (<code>[project.scripts]</code> in <code>pyproject.toml</code>) and
+shipped in the same wheel (it lives in <code>src/pfsense_mcp/</code>, unlike
+<code>witness_daemon/</code>/<code>scripts/tier1_store_bootstrap.py</code>, which are
+deliberately excluded from the package). One subcommand exists:
+<code>discover</code>. It is genuinely read-only — see "Read-only guarantees"
+below.</p>
+<h3 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>$ pfsense-mcp-security discover
+pfsense-mcp-security: security posture discovery (read-only)
+
+Capability posture: read_only
+  configured profile name:    auditor (valid=True)
+  write capabilities active:  0 of 3
+  allow-list entries:         0
+  - PFSENSE_PROFILE=&#39;auditor&#39;, 0 WRITE capabilities active.
+
+Anchor assurance:    hardware_witness
+  evidence state:              provisioned_verified
+  store configured:            True
+  store exists:                True
+  seeded / complete:           True / True
+  handle:                      0x01500000
+  baseline:                    2
+  provisioned_at:              2026-08-10T15:10:16.416050+00:00
+  witness configured:          True
+  witness reachable:           True
+  witness value:               2
+  witness matches baseline:    True
+  - Store provisioning record: handle=0x01500000 baseline=2 provisioned_at=2026-08-10T15:10:16.416050+00:00.
+  - Witness value (2) matches persisted high-water mark (2).
+
+Note: read_only + hardware_witness is a valid, representable combination
+in the accepted ADR-021 two-axis model -- not one of the three curated
+setup presets, but fully supported.
+This report is read-only discovery only (ADR-021 Phase B). No
+provisioning/setup subcommand exists yet.
+</code></pre></div>
+<p>The example above is real output, captured against this project's own
+real production environment (the seven <code>PFSENSE_TIER1_*</code>/<code>WITNESS_*</code>
+variables already in operational use) — proving Phase B's own
+requirement that <code>read_only</code> + <code>hardware_witness</code> be recognized
+accurately, not treated as a special case.</p>
+<p><code>pfsense-mcp-security discover --json</code> emits the same information as
+deterministic, sorted-key JSON (<code>capability_posture</code>, <code>anchor_assurance</code>,
+<code>notes</code>) for automation — verified byte-identical across repeated
+invocations of the same environment.</p>
+<p>Exit codes: <code>0</code> on a clean discovery result (including "nothing
+configured" — that is not a failure); <code>2</code> if the anchor-assurance axis's
+evidence state is <code>provisioned_mismatch</code> (a security-relevant anomaly:
+the live witness value disagrees with the persisted high-water mark) —
+signalling automation without conflating "just unconfigured" with
+"something is actually wrong."</p>
+<h3 id="read-only-guarantees">Read-only guarantees<a class="headerlink" href="#read-only-guarantees" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Never calls <code>provision_anchor_baseline()</code>, <code>TpmHostWitnessAnchor.advance()</code>,
+  or anything that constructs a <code>RecoveryContract</code>/<code>MutationExecutor</code>/
+  <code>WriteApiClient</code>. Proven structurally (AST inspection of the actual
+  shipped source, not the module's own docstring) by
+  <code>tests/test_security_discovery_isolation.py</code>, and behaviorally by
+  <code>tests/test_security_discovery.py</code>'s dedicated mutation-proof tests
+  (a fake anchor whose <code>advance()</code> raises if ever called; a monkeypatched
+  <code>provision_anchor_baseline</code> that raises if ever called — both tests
+  pass because discovery never reaches either).</li>
+<li>Never calls <code>open_production_store()</code> / constructs
+  <code>SqliteRecoveryContractStore</code> at all — its <code>__init__</code> always runs
+  <code>_initialize_schema()</code> (<code>CREATE TABLE IF NOT EXISTS ...</code>), which is
+  harmless for a healthy store but capable of creating missing tables
+  as a side effect of merely looking, against a legacy/partial/foreign
+  SQLite file. Instead calls the dedicated
+  <code>read_only_anchor_provisioning_status()</code>
+  (<code>src/pfsense_mcp/tier1/production_store.py</code>), which opens the store
+  via SQLite's own <code>mode=ro</code> URI — the database engine itself refuses
+  any DDL/DML attempt, a structural guarantee rather than a convention
+  this module's own code happens to follow. A missing/incomplete/
+  malformed schema surfaces as <code>store_error</code> evidence, never repaired.
+  Found via pre-commit call-graph review (the original Phase B
+  implementation went through <code>open_production_store()</code>) and fixed
+  before this feature was ever committed; proven by dedicated
+  regression tests asserting a foreign SQLite file (and a file with an
+  incomplete <code>anchor_state</code> table) is left byte-for-byte unchanged and
+  gains no new tables after discovery runs.</li>
+<li>Also never calls <code>read_only_anchor_provisioning_status()</code> (or
+  anything else) against a store path that has not already been
+  created on disk — SQLite's own <code>mode=ro</code> would refuse to create one,
+  but the existence check happens first anyway, to keep "not
+  provisioned" evidence accurate and avoid an avoidable error path.
+  Mirrors <code>scripts/tier1_store_bootstrap.py</code>'s own existence check
+  exactly; proven by a dedicated test asserting the store file (and its
+  parent directory) still does not exist after discovery runs against
+  an unconfigured-but-named path.</li>
+<li><code>security_discovery.py</code> is the second, narrow, explicit exception to
+  <code>pfsense_mcp.tier1</code> never being imported from outside its own package
+  (<code>tier1_anchor_check.py</code> remains the first) — the isolation exemption
+  list in <code>tests/tier1/test_isolation.py</code> now names both, and
+  <code>security_cli.py</code> itself does not import <code>pfsense_mcp.tier1</code> at all,
+  matching <code>application.py</code>'s own established pattern of only calling
+  the exempted module's public functions.</li>
+<li>Evidence strings (which flow directly into <code>--json</code> output, intended
+  for logging/automation) never embed a raw configured file path, URL,
+  or unaudited third-party exception message. Several <code>Tier1Error</code>/
+  <code>OSError</code>/<code>ssl.SSLError</code> messages from lower layers do embed absolute
+  filesystem paths (e.g. a failed <code>ssl.SSLContext.load_cert_chain()</code>);
+  discovery reports only the exception's <em>class name</em> in those cases,
+  never <code>str(exc)</code> verbatim. Found during pre-commit review and fixed
+  before this feature was ever committed; proven by dedicated
+  regression tests asserting the raw configured path/URL never appears
+  in evidence, for every failure state that could otherwise expose one.</li>
+</ul>
+<h3 id="files">Files<a class="headerlink" href="#files" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src/pfsense_mcp/security_discovery.py</code> (new) — the read-only
+  discovery data model and logic, structured dataclasses/enums, no
+  logging or other side effects.</li>
+<li><code>src/pfsense_mcp/security_cli.py</code> (new) — the actual
+  <code>pfsense-mcp-security</code> entrypoint: argument parsing, human/<code>--json</code>
+  formatting. Does not import <code>pfsense_mcp.tier1</code>.</li>
+<li><code>src/pfsense_mcp/tier1/production_store.py</code> (modified) — added
+  <code>read_only_anchor_provisioning_status()</code>, the genuinely read-only
+  primitive <code>security_discovery.py</code> uses instead of
+  <code>open_production_store()</code>. <code>open_production_store()</code> and
+  <code>SqliteRecoveryContractStore</code> themselves are unchanged and remain
+  the correct choice for every caller that needs a real,
+  schema-guaranteed store (<code>scripts/tier1_store_bootstrap.py</code>,
+  <code>tier1_anchor_check.py</code>).</li>
+<li><code>pyproject.toml</code> — new <code>pfsense-mcp-security</code> console-script entry.</li>
+<li><code>tests/test_security_discovery.py</code>, <code>tests/test_security_cli.py</code>,
+  <code>tests/test_security_discovery_isolation.py</code> (new).</li>
+<li><code>tests/tier1/test_isolation.py</code> — exemption list extended.</li>
+</ul>
+<h3 id="what-phase-b-deliberately-does-not-do">What Phase B deliberately does not do<a class="headerlink" href="#what-phase-b-deliberately-does-not-do" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No <code>select</code>/<code>provision</code>/<code>downgrade</code> subcommand — Phase C onward.</li>
+<li>No interactive prompting or confirmation flow — discovery needs none
+  (it performs no mutating action), and the granular per-step consent
+  model (<code>ADR-021</code>'s "User consent boundaries") only applies once a
+  mutating subcommand exists.</li>
+<li>No declarative/config-file input — <code>discover</code> takes no target to
+  authorize; the declarative-vs-interactive scoping table above applies
+  starting at Phase C/D.</li>
+<li><code>AnchorAssurance.SOFTWARE</code> is never resolved by Phase B — no
+  remote-witness backend exists in this repository (Phase G); Phase B
+  reports <code>unknown</code>/<code>none</code> rather than asserting a capability that
+  cannot currently be verified.</li>
+</ul>
+<h2 id="planning-slice-implemented-2026-08-10">Planning slice — implemented (2026-08-10)<a class="headerlink" href="#planning-slice-implemented-2026-08-10" title="Permanent link">&para;</a></h2>
+<p>A second <code>pfsense-mcp-security</code> subcommand, <code>plan</code>, layered entirely on
+top of Phase B's own <code>discover_security_posture()</code> — no new source of
+live evidence, no new <code>pfsense_mcp.tier1</code> isolation exemption (this
+module never imports <code>pfsense_mcp.tier1</code> at all; see "Read-only
+guarantees" below). Bridges "what state do I have?" to "what would need
+to happen to reach a selected target?" without performing any of it:
+<code>DISCOVER → SELECT TARGET → EVALUATE VALIDITY → ASSESS PREREQUISITES →
+GENERATE PLAN</code>, then stop, before <code>PROVISIONING</code>.</p>
+<h3 id="usage_1">Usage<a class="headerlink" href="#usage_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>$ pfsense-mcp-security plan --capability-posture write_protected --anchor-assurance hardware_witness
+pfsense-mcp-security: security posture plan (analysis only -- not authorization)
+
+Plan digest (schema v1): bff0326a38a3e8a3f8d2c9b72a6518c4129fef70b43282cabc70ca6f94f47f89  (plan identity only -- not authorization)
+Current:  capability_posture=read_only  anchor_assurance=hardware_witness (provisioned_verified)
+Target:   capability_posture=write_protected  anchor_assurance=hardware_witness
+Target validity:      valid
+Overall status:       plan_generated
+Safe to proceed:      True  (plan validity only -- not authorization or execution readiness; see notes below)
+capability_posture:   upgrade
+anchor_assurance:     no_change
+
+Steps (ordered; none executed):
+  [1] (anchor_assurance) No change required
+      ...
+  [2] (capability_posture) Populate WriteEndpoints allow-list
+      ...
+      blocked:                False
+  [3] (capability_posture) Set PFSENSE_PROFILE=engineer
+      ...
+      blocked:                False
+  [4] (capability_posture) Obtain Milestone-9-class WRITE activation decision
+      ...
+      implementation_available: False
+      blocked:                True
+      blocked_reason:         src/pfsense_mcp/tools/write/ is a deliberately empty placeholder and
+                               SUPPORTED_CAPABILITIES_THIS_BUILD excludes every *_WRITE Capability in
+                               this build -- no WRITE tool implementation exists to register, regardless
+                               of configuration or authorization state.
+
+This plan is analysis only. It is NOT authorization to execute any step listed below. [...]
+</code></pre></div>
+<p>The example above is abbreviated for length (<code>...</code>/<code>[...]</code> mark omitted
+lines; every value shown is drawn unaltered from a real, captured run
+against this project's own real production environment). It also
+demonstrates a finding this slice
+made by reading the actual code, not asserting it: even after every
+mechanically-real configuration step (<code>WriteEndpoints</code>, <code>PFSENSE_PROFILE</code>),
+the final activation step is honestly reported as <code>implementation_available:
+False</code> — <code>src/pfsense_mcp/tools/write/</code> is a deliberately empty
+placeholder and no <code>*_WRITE</code> <code>Capability</code> is active anywhere in this
+build, so there is currently no WRITE tool to register regardless of
+authorization. <strong>Valid design state is not the same as currently
+implementable target</strong> — the same distinction this slice also applies
+to <code>anchor_assurance=software</code> (<code>docs/SECURITY_POSTURE_PROVISIONING.md</code>'s
+own Phase G note), now shown to apply to WRITE activation itself.</p>
+<p><code>pfsense-mcp-security plan --json</code> emits the same information as
+deterministic, sorted-key JSON for automation. Exit codes: <code>0</code> whenever
+a plan was generated (including "already satisfied" and "valid target,
+backend not implemented" — neither is a usage error); <code>2</code> if the
+requested target combination is invalid per <code>ADR-021</code>, if the current
+state shows a store/witness mismatch, or if the current anchor-assurance
+state is indeterminate (e.g. a malformed/foreign file already at the
+configured store path) — reusing <code>discover</code>'s own exit-code-2 meaning
+rather than reinventing it.</p>
+<h3 id="read-only-guarantees_1">Read-only guarantees<a class="headerlink" href="#read-only-guarantees_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Never imports <code>pfsense_mcp.tier1</code> in any form — its only source of
+  live evidence is the one <code>discover_security_posture()</code> call at the
+  top of <code>generate_security_posture_plan()</code>; everything after that is
+  pure, deterministic computation over already-collected evidence.
+  Proven structurally (AST inspection) by
+  <code>tests/test_security_plan_isolation.py</code>, and behaviorally by a test
+  that replaces <code>sqlite3.connect</code>/<code>builtins.open</code> with functions that
+  raise <code>AssertionError</code> if called, then generates plans for every
+  target combination — passing only because plan generation performs
+  no I/O of its own.</li>
+<li><strong>A generated plan is never authorization to execute it</strong> — every
+  <code>SecurityPosturePlan</code> carries this statement in its own <code>notes</code> field
+  (machine-readable, not only documentation), proven present across
+  every reachable target combination by a dedicated test. No field in
+  the plan's schema could be mistaken for a "go ahead" signal: every
+  prospective mutating step declares its own
+  <code>authorization_required</code> value, and none is ever <code>none_required</code>.</li>
+<li><strong><code>safe_to_proceed</code> means only "the plan itself is safe to present/
+  continue reasoning about," never authorization.</strong> Clarified explicitly
+  (ADR-022 owner review, 2026-08-11; behavior and the published JSON
+  schema unchanged) with a <code>SecurityPosturePlan</code> class docstring, an
+  inline CLI caveat on the human-output line, and a <code>plan --help</code> epilog
+  sentence — <code>True</code> means only that the target is architecturally valid
+  and current evidence shows no detected anomaly; it does not mean
+  approved, executable, that mutation is permitted, or that every step
+  is unblocked or implemented.</li>
+<li><strong>Hardware witness never implies WRITE</strong>: selecting
+  <code>anchor_assurance=hardware_witness</code> never changes
+  <code>capability_posture_transition</code>; reaching <code>write_protected</code> always
+  requires its own explicit <code>--capability-posture write_protected</code>
+  target, proven by dedicated tests.</li>
+<li><strong>Unavailable/indeterminate evidence is never treated as a clean
+  slate.</strong> Found during this session's own adversarial self-review: an
+  early version of this slice, given a current anchor-assurance state
+  of <code>unknown</code> (evidence_state <code>store_error</code>/<code>configuration_invalid</code> --
+  e.g. a malformed/legacy/foreign file already at the configured store
+  path), silently generated an ordinary "provision from scratch" plan,
+  papering over the fact that <em>something</em> unexplained already occupies
+  that path. Fixed: an indeterminate current anchor-assurance value now
+  short-circuits to <code>PlanOverallStatus.BLOCKED_INDETERMINATE_CURRENT_STATE</code>
+  (<code>safe_to_proceed=False</code>, no steps generated) before any transition
+  logic runs, proven by dedicated regression tests.</li>
+<li><strong>Store/witness mismatch blocks progression, never treated as an
+  ordinary prerequisite gate.</strong> A detected mismatch forces
+  <code>PlanOverallStatus.BLOCKED_ANOMALY_DETECTED</code> and every prospective
+  mutating step to <code>blocked=True</code> with a mismatch-specific reason --
+  distinct from the ordinary "the anchor-assurance axis must reach its
+  target first" sequencing block an upgrade plan can otherwise show.</li>
+<li><strong>Raw string targets cannot bypass the validity constraint.</strong> Found
+  during adversarial self-review: <code>CapabilityPosture</code>/<code>AnchorAssurance</code>
+  are <code>(str, Enum)</code> hybrids, and this module's internal logic compares
+  them with <code>is</code>. A caller passing a plain, value-equal string instead
+  of the actual enum member would satisfy every <code>==</code> check but silently
+  fail every <code>is</code> check -- including the one guarding <code>write_protected</code></li>
+<li><code>none</code> -- without raising. Fixed: both targets are coerced through
+  their <code>Enum</code> constructor (idempotent for an already-correct member,
+  raises <code>ValueError</code> for anything invalid) at the very top of
+  <code>generate_security_posture_plan()</code>, closing this for every caller,
+  not only this slice's own CLI (which already only ever constructed
+  real enum members). Proven by a dedicated regression test.</li>
+<li><strong>Downgrade is DEACTIVATE, never DEPROVISION.</strong> Every downgrade step
+  this slice generates stops/disables the witness daemon only -- TPM NV
+  counter value and the guest-side store/high-water-mark are described
+  as untouched, and the step's own description states that TPM NV
+  index deletion and guest-side store/integrity-key deletion are not
+  included in this plan and would require their own separate
+  authorization (<code>ADR-021</code> question 4). <code>MutationClass.DESTRUCTIVE_DEPROVISIONING</code>/
+  <code>AuthorizationLevel.SEPARATE_DEPROVISION_AUTHORIZATION</code> are declared
+  in the schema for future forward-compatibility only and are never
+  emitted by this slice -- proven both statically (AST) and
+  behaviorally (a sweep over every reachable target combination and a
+  representative set of current states).</li>
+<li><strong>Joint downgrades never pass through the disallowed
+  <code>write_protected</code> + <code>none</code> combination, even momentarily.</strong> When both
+  axes downgrade at once, the capability-posture axis's steps are
+  ordered before the anchor-assurance axis's, so WRITE deactivates
+  first -- proven by a dedicated test.</li>
+<li>Evidence strings never introduce a new raw configured path/URL beyond
+  what <code>security_discovery.py</code> (already audited) supplies via
+  <code>current.*.evidence</code> -- this slice's own new text (step descriptions,
+  <code>blocking_findings</code>, <code>notes</code>) never embeds one either, proven by
+  dedicated regression tests against both an unreachable-witness and a
+  malformed-store-path scenario.</li>
+</ul>
+<h3 id="files_1">Files<a class="headerlink" href="#files_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src/pfsense_mcp/security_plan.py</code> (new) — the planning data model
+  and logic: target validity evaluation, per-axis transition
+  classification, ordered <code>PlanStep</code> generation, cross-axis ordering.
+  No <code>pfsense_mcp.tier1</code> import.</li>
+<li><code>src/pfsense_mcp/security_cli.py</code> (modified) — new <code>plan</code> subcommand:
+  argument parsing (<code>--capability-posture</code>/<code>--anchor-assurance</code> with
+  <code>choices=</code> excluding <code>unknown</code>), human/<code>--json</code> formatting, exit-code
+  handling.</li>
+<li><code>tests/test_security_plan.py</code>, <code>tests/test_security_plan_isolation.py</code>
+  (new); <code>tests/test_security_cli.py</code> (modified, <code>plan</code>-subcommand
+  coverage added).</li>
+</ul>
+<h3 id="what-the-planning-slice-deliberately-does-not-do">What the planning slice deliberately does not do<a class="headerlink" href="#what-the-planning-slice-deliberately-does-not-do" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No <code>select</code>/<code>apply</code>/<code>provision</code> subcommand — selecting a target here
+  is intent, not execution authorization; no later command in this
+  build turns a plan into action.</li>
+<li>No interactive prompting or confirmation flow, and no <code>--dry-run</code>
+  flag — deliberately: this entire slice already behaves as a mandatory
+  dry-run, and introducing <code>--dry-run</code> terminology without a
+  corresponding non-dry-run mode would wrongly imply one exists.</li>
+<li>No <code>AnchorAssurance.SOFTWARE</code> provisioning capability — a target
+  naming it is honestly reported as <code>TargetValidity.VALID_NOT_IMPLEMENTED</code>
+  (a valid design-state, not a currently implementable one), never
+  silently treated as invalid or silently treated as available.</li>
+<li>No repair/reconciliation of a detected mismatch or indeterminate
+  current state — both are reported as blocking findings, never acted
+  on.</li>
+</ul>
+<h2 id="open-design-questions">Open design questions<a class="headerlink" href="#open-design-questions" title="Permanent link">&para;</a></h2>
+<p><strong>All six of <code>ADR-021</code>'s original open questions are resolved</strong> — see
+its "Open design questions" and "Resolving open questions 3–6"
+sections. This document does not duplicate the decisions, only
+provides their mechanical grounding (the per-axis state-machine table,
+the declarative-vs-interactive scoping table, and the affected-code
+inventory above).</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../adr/ADR-021-security-posture-provisioning/"><code>ADR-021</code></a> —
+  authoritative decision record, including the ladder-vs-two-axis
+  comparison this document's structure follows</li>
+<li><a href="../adr/ADR-011-whole-store-anti-rollback-anchor/"><code>ADR-011</code></a> and
+  <a href="../tier1/specs/anti_rollback_tpm_host_witness/"><code>anti_rollback_tpm_host_witness.md</code></a> —
+  the anchor/daemon mechanics the <code>hardware_witness</code> anchor-assurance
+  value reuses</li>
+<li><a href="../TIER1_ROADMAP/"><code>TIER1_ROADMAP.md</code></a> — Milestone 9 activation gate
+  (capability-posture axis only)</li>
+<li><a href="../WRITE_ENDPOINT_RISK_MATRIX/"><code>WRITE_ENDPOINT_RISK_MATRIX.md</code></a>,
+  <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/"><code>ADR-020</code></a> —
+  the separately-governed WRITE endpoint allow-list process</li>
+<li><a href="../CONFIGURATION/"><code>CONFIGURATION.md</code></a> — current, unmodified
+  environment-variable reference</li>
+<li><code>reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md</code> —
+  independent evidence this document's <code>read_only</code> + <code>hardware_witness</code>
+  example state is grounded in</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
