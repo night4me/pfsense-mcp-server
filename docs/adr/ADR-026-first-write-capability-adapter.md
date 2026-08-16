@@ -44,7 +44,7 @@ the first-WRITE semantic scope and is not PASS.
 | authoritative uncertainty classification | VERIFIED (offline, production-bound) (2026-08-16) | Was the one genuine gap this pass found: `DEFINITELY_APPLIED`/`DEFINITELY_NOT_APPLIED`/`AMBIGUOUS` classification was previously proven only against `test_executor.py`'s generic `_SyntheticAdapter`, never the real alias adapter. Closed by a new test, `test_production_adapter_send_timeout_reaches_reconciliation_not_failed_or_resend`: a `TransportTimeoutError` on the real adapter's send lands in `RECONCILIATION` (never `FAILED`, which would license a resend), exactly one send attempted. |
 | fail-closed reconciliation | VERIFIED (offline, production-bound) (2026-08-16) | `test_reconciliation_requires_pinned_authority_and_wrong_signature_fails_closed` (`test_production_runtime.py`) proves the fixed production pinned reconciliation authority rejects a wrong signature; `test_restart_reconciles_interrupted_executing_contract` proves the fixed production verifier/resume construction reaches `RECONCILIATION`, not a resend, through `build_production_runtime()` itself. |
 | authenticated recovery across restart | VERIFIED (offline, production-bound) (2026-08-16) | Same `test_restart_reconciles_interrupted_executing_contract`: two independent `build_production_runtime()` calls against the same store file simulate a real process restart; the interrupted `EXECUTING` contract is reconciled, never resent, through the real fixed production construction (schema-v7, V2 provenance, no test-only wiring). |
-| least privilege for exact endpoint/capability | MUST COMPLETE — scoped identity designed, owner provisioning required | the live LAB identity is pfSense's full admin/system-scope account, not a scoped identity. A concrete minimum-privilege design and owner-run provisioning procedure now exist — see "Live first-WRITE evidence (2026-08-16)" and "Least-privilege identity design and provisioning procedure (2026-08-16)" below. Provisioning itself is a live pfSense action outside any autonomous session's authority. |
+| least privilege for exact endpoint/capability | VERIFIED (2026-08-16) | live-provisioned scoped identity `pfsense_mcp_tier1_lab` performed the entire production Tier1 restoration WRITE end-to-end holding only the four minimum privileges — see "Scoped-credential live-WRITE evidence (2026-08-16, restoration ceremony)" below |
 | sufficient authoritative side-effect evidence | VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below; the config-history clause that kept this PARTIALLY VERIFIED is now closed |
 
 ### Concurrency boundary
@@ -869,18 +869,30 @@ code or architecture decision depends on which reading is correct, so
 this is purely a documentation/acceptance-bar judgment call, reversible
 by editing this table alone.
 
-**Not decided by this evidence update**: whether this evidence — row 18
-VERIFIED, row 17 MUST COMPLETE with a designed remediation
-(least-privilege identity design + owner-run provisioning procedure,
-below) but not yet closed, and the seven rows above now VERIFIED
-(offline, production-bound) subject to the interpretation flagged
-immediately above — changes whether flipping
-`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` to `True` is
-justified. It is not: row 17 alone remains open, and closing it requires
-a live pfSense action (scoped credential provisioning) outside any
-autonomous session's authority. That remains a separate, explicit
-owner/security-policy decision — see `reports-ai/NEXT_TASKS.md` for the
-exact open decision packet.
+**Updated, 2026-08-16 (same day, later pass, after the scoped-credential
+restoration ceremony)**: row 17 is now also VERIFIED — see "Scoped-credential
+live-WRITE evidence (2026-08-16, restoration ceremony)" below. Every row
+in the acceptance matrix now reads `ESTABLISHED` or some flavor of
+`VERIFIED`; none reads `MUST COMPLETE`.
+
+**Still not decided by this update, and still the sole remaining gate
+before `WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` could be set
+`True`**: the interpretation question flagged immediately above. Seven
+rows carry the `VERIFIED (offline, production-bound)` status only under
+the reading that offline, production-bound evidence is conjunctively
+sufficient absent an explicit owner request for additional live
+evidence. That reading was proposed by this ADR's own documentation
+pass, not confirmed by the owner. An autonomous session choosing the
+more permissive reading itself, purely to unlock `verified=True`, would
+be exactly the "reinterpret acceptance criteria to force a yes" this
+project's standing discipline forbids — so this pass does **not** flip
+`verified=True` and does **not** resolve the interpretation itself. If
+the owner confirms the offline-evidence reading, `verified=True` becomes
+justified without further evidence-gathering. If the owner instead
+intends the strictly-conjunctive reading, those seven rows revert to
+`MUST COMPLETE` pending owner-selected live evidence, and `verified=True`
+remains blocked pending that live evidence. See
+`reports-ai/NEXT_TASKS.md` for the exact open decision packet.
 
 ## Least-privilege identity design and provisioning procedure (2026-08-16)
 
@@ -902,6 +914,140 @@ the owner select privileges live via pfSense's own GUI picker against
 the documented capability list, then closes the loop by reading back the
 new user's actual `priv` list via `get_users()` for owner verification —
 never guessing an unverified privilege ID string.
+
+**Superseded, 2026-08-16 (same day, later pass)**: the GUI-picker plan
+above was not what actually happened. Owner-authorized, source-level
+discovery of the exact pfSense REST API package privilege identifiers
+(`pfrest/pfSense-pkg-RESTAPI`, pinned to the exact installed tag
+`v2.10.0` — matches the live OpenAPI schema's reported version) replaced
+it: `Core/Endpoint.inc::get_method_priv_name()` computes a deterministic
+`api-v2-<url-slug>-<method>` privilege string per endpoint/method,
+entirely separate from the legacy `page-*` GUI privileges this ADR
+originally assumed would be used. Full derivation, per-privilege source
+citation, and the live provisioning transcript are in
+`reports-ai/reviews/SLICE6_LEAST_PRIVILEGE_PROVISIONING_2026-08-16.md`
+(external/git-ignored). No GUI privilege-picker step was ultimately
+needed.
+
+## Scoped-credential live-WRITE evidence (2026-08-16, restoration ceremony)
+
+The disposable-LAB `LAB_ALIAS_TEST` restoration (its description reverted
+from the Slice 6 temporary marker back to
+`'Disposable LAB-T1 synthetic test alias'`) was executed as the **second**
+real pfSense mutation in this project's history, entirely through the
+newly-provisioned scoped identity `pfsense_mcp_tier1_lab` — the admin
+credential was never used for this WRITE. Full ceremony detail:
+`reports-ai/reviews/SLICE6_PREVIEW_DESCRIPTION_TRUNCATION_INVESTIGATION_2026-08-16.md`
+(external/git-ignored). Evidence below reconstructed independently from
+authoritative persisted state, not copied from that report.
+
+**Row 17 evaluated against its own exact wording — "least privilege for
+exact endpoint/capability" — conjunctively, not as a single pass/fail:**
+
+1. *A capability-scoped identity exists, distinct from admin.*
+   `pfsense_mcp_tier1_lab`, `scope=user` (pfSense-assigned, read-only
+   field — never `system`), independently re-read via the admin account
+   both before and after this ceremony.
+2. *It holds only the minimum privilege the exact endpoint/capability
+   needs — nothing broader.* `priv` == exactly
+   `api-v2-firewall-aliases-get`, `api-v2-firewall-alias-patch`,
+   `api-v2-status-system-get`, `api-v2-system-hasync-get` — the complete
+   set derived in the "Least-privilege identity design" section above,
+   independently re-read (a separate `get_users()` call, not the
+   provisioning response echoed back) immediately before this ceremony.
+   `page-all` was never granted, even transiently during the credential's
+   own API-key bootstrap (which required one additional privilege,
+   `api-v2-auth-key-post`, granted narrowly and revoked again before this
+   ceremony — see the provisioning report for that sub-sequence).
+3. *The identity actually performs the exact production capability under
+   that minimum grant — not a synthetic/raw-API stand-in for it.* The
+   restoration ran through the **complete, unmodified production Tier1
+   ceremony** (`build_production_runtime()`, real `RecoveryContract`,
+   real signed `PlanAuthorizationV2`/`ConfirmationEvidence`, real
+   `confirm_and_handoff()` → `MutationExecutor.execute()`), configured to
+   use the scoped credential for every pfSense contact this path makes —
+   not merely a one-off raw-API probe outside the security architecture.
+   The executor's own log line recorded exactly one mutating request,
+   `PATCH /api/v2/firewall/alias`, and `RecoveryContract
+   aliasdescr-4d8c2310ba0343698688166c56983c04` reached
+   `VERIFIED`/`state_version=4`/`is_confirmed=True`, independently
+   re-verified via `store.load()`'s internal
+   `_verified_audit_rows()` integrity-MAC-chain check, not merely re-read.
+4. *No broader capability is available to the identity, including
+   immediately after performing the WRITE (no drift/escalation as a side
+   effect).* Negative checks performed during provisioning (denied:
+   `get_users()`, `get_system_packages()`, `get_system_certificates()`,
+   and a retry of the identity's own API-key-generation endpoint) were
+   not merely a point-in-time snapshot — the identity's `priv` list was
+   **re-read a second time, independently, after this restoration WRITE
+   completed**, and found unchanged from the pre-WRITE grant. Performing
+   the real mutation did not — and structurally cannot, since pfSense's
+   own privilege check is a static per-user grant, not something a
+   successful API call can itself widen — expand what the identity can
+   do.
+
+All four conjunctive parts of row 17's stated requirement are now
+satisfied by live, independently-verified evidence obtained through the
+real production execution path. **Row 17 is VERIFIED.**
+
+**Distinct, unresolved follow-up (not part of row 17's own closure
+criteria, noted for completeness)**: the scoped credential was used for
+this ceremony via a temporary environment override
+(`PFSENSE_API_KEY_FILE`); the persistent `tier1-lab.env` default still
+points at the admin key. Row 17 asks whether the *capability* can be
+proven under least privilege, which it now has been — it does not itself
+require the scoped credential to be the permanent runtime default going
+forward. Whether to switch the default is a separate, low-risk
+operational decision left open for the owner.
+
+**Corroborating evidence for already-accepted/verified rows** (none of
+these change classification — the existing evidence was already
+sufficient — but the restoration independently reproduces the same
+result through a second live mutation, under a *different*, more
+narrowly-privileged identity than the first WRITE):
+
+- *Exact authoritative A restoration* (already ESTABLISHED via 25/25
+  offline campaign restorations): this ceremony is a genuine, live
+  restoration-to-exact-A through the real production path —
+  `LAB_ALIAS_TEST.descr` read back exactly
+  `'Disposable LAB-T1 synthetic test alias'`, byte-for-byte the
+  original value recorded before Slice 6's first WRITE.
+- *At-most-one-send* (already ESTABLISHED): a second real executor log
+  confirms exactly one mutating request for this contract, no more.
+- *Explicit apply/reload suppression* (row 6, already VERIFIED): the
+  same `apply=false` behavior was observed again, this time under the
+  scoped identity — corroborating that this is a property of the
+  endpoint/method itself, not an artifact of the admin account's broader
+  access.
+- *Sufficient authoritative side-effect evidence* (row 18, already
+  VERIFIED): likewise, a second independent data point that the
+  observed side-effect profile (deterministic read-back, no
+  config-history entry, no unrelated configuration change) holds
+  regardless of which identity performs the WRITE.
+
+**Witness/store state**: advanced exactly once, `3 → 4`; persisted
+`anchor_state.high_water_mark` also reads `4` — no divergence. Consumption
+store holds the new authorization exactly once
+(`authz-63245f075962f5552802571b51a6f21e`), four rows total across the
+whole workstream, none replayed. `target_reservations`/`rate_cooldowns`:
+`0`/`0` post-`VERIFIED`, consistent with the same reservation-release
+behavior already documented for the first WRITE above.
+
+**A genuine operational finding surfaced mid-ceremony, root-caused and
+fixed, not merely worked around**: the signer's independent safety check
+initially refused to sign (`"independently-derived security posture is
+not currently safe to proceed"`). Root cause: the signer's local
+`store.json` snapshot still carried `high_water_mark=2` from before the
+first WRITE, while the live witness (correctly) now read `3` —
+`evidence_state=provisioned_mismatch`. This was a stale local cache on
+the signer, not a security anomaly on the production side (whose own
+live store was already correctly `3`); refreshing the signer's snapshot
+from the current live store resolved it, and signing then succeeded
+against the correct, freshly-verified evidence. This is a durable
+operational lesson for any future ceremony after a witness advance: the
+signer's cached store snapshot needs refreshing whenever the live witness
+value changes, or the signer's own fail-closed check will (correctly)
+refuse to sign.
 
 ## STOP conditions
 
