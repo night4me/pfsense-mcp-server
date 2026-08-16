@@ -23,6 +23,7 @@ own, keeping this file's own review surface to "does the routing/status
 
 from __future__ import annotations
 
+import hashlib
 import http.server
 import json
 from typing import Any, Protocol
@@ -31,6 +32,26 @@ from .errors import WitnessError
 from .service import AdvanceOutcome
 
 _MAX_BODY_BYTES = 4096
+
+
+def _peer_certificate_fingerprint(connection: object) -> str | None:
+    """SHA-256 hex digest of the already-mTLS-authenticated peer's DER
+    certificate, or `None` if unavailable. `connection` is the SSL-
+    wrapped socket `http.server` exposes as `self.connection` once
+    `main.py` has wrapped the listening socket -- `getpeercert(binary_form=True)`
+    is only meaningful there, never called against a plain socket, which
+    is why this only ever runs from the `/anchor/advance` handler after
+    a request has already completed a full mTLS handshake (`CERT_REQUIRED`
+    at the SSLContext level means an unauthenticated connection never
+    reaches handler code at all)."""
+
+    getpeercert = getattr(connection, "getpeercert", None)
+    if getpeercert is None:
+        return None
+    der = getpeercert(binary_form=True)
+    if not der:
+        return None
+    return hashlib.sha256(der).hexdigest()
 
 
 class WitnessServiceProtocol(Protocol):
@@ -86,6 +107,18 @@ class WitnessRequestHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not found"})
             return
 
+        # ADR-011/owner decision 2026-08-16: mTLS authentication alone no
+        # longer implies authorization to mutate TPM state -- the client
+        # bundle may now trust more than one identity (a read-only
+        # off-host signer alongside VM106's production identity). Checked
+        # before any request body is even read: an unauthorized caller
+        # gets a uniform 403 and zero TPM interaction, exactly like every
+        # other fail-closed gate in this daemon.
+        fingerprint = _peer_certificate_fingerprint(self.connection)
+        if fingerprint is None or fingerprint not in self.server.advance_allowed_fingerprints:
+            self._send_json(403, {"error": "forbidden"})
+            return
+
         length_header = self.headers.get("Content-Length")
         try:
             length = int(length_header) if length_header is not None else -1
@@ -129,8 +162,22 @@ class WitnessRequestHandler(http.server.BaseHTTPRequestHandler):
 class WitnessHTTPServer(http.server.HTTPServer):
     """Carries exactly one `WitnessService` for the lifetime of the
     process; `main.py` wraps this server's socket with an mTLS
-    `ssl.SSLContext` before calling `serve_forever()`."""
+    `ssl.SSLContext` before calling `serve_forever()`.
 
-    def __init__(self, server_address: tuple[str, int], witness_service: WitnessServiceProtocol) -> None:
+    `advance_allowed_fingerprints` defaults to an empty `frozenset` --
+    fail closed: a server constructed without an explicit allow-list
+    (e.g. an existing test double built before this parameter existed)
+    permits `/anchor/advance` for no one, rather than silently permitting
+    every mTLS-authenticated client the way the daemon behaved before
+    this owner decision. `main.py` always supplies the real, validated
+    set from `WitnessDaemonConfig`."""
+
+    def __init__(
+        self,
+        server_address: tuple[str, int],
+        witness_service: WitnessServiceProtocol,
+        advance_allowed_fingerprints: frozenset[str] = frozenset(),
+    ) -> None:
         super().__init__(server_address, WitnessRequestHandler)
         self.witness_service = witness_service
+        self.advance_allowed_fingerprints = advance_allowed_fingerprints

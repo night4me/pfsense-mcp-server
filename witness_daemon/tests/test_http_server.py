@@ -40,10 +40,29 @@ class _FakeService:
         return self._advance_outcome
 
 
+#: This module's server/client plumbing is plain, non-TLS
+#: `http.client.HTTPConnection` (see `_get`/`_post` below) -- it exists to
+#: test request routing, body validation, and service-outcome mapping,
+#: never authentication/authorization, which `test_mtls_integration.py`
+#: and `test_witness_client_authorization.py` cover with real mTLS
+#: instead. A plain socket has no `getpeercert()` at all, so
+#: `_peer_certificate_fingerprint()` is monkeypatched here to return this
+#: fixed, well-known value, and the server's allow-list is configured to
+#: accept exactly it -- the real authorization *comparison* still runs
+#: unmodified; only the lowest-level "how do we learn who's connected"
+#: step (meaningless without a real TLS layer) is faked.
+_FAKE_ADVANCE_FINGERPRINT = "f" * 64
+
+
 @pytest.fixture
-def running_server() -> Iterator[tuple[WitnessHTTPServer, _FakeService, int]]:
+def running_server(monkeypatch) -> Iterator[tuple[WitnessHTTPServer, _FakeService, int]]:
+    monkeypatch.setattr(
+        "witness_daemon.http_server._peer_certificate_fingerprint", lambda _connection: _FAKE_ADVANCE_FINGERPRINT
+    )
     service = _FakeService()
-    server = WitnessHTTPServer(("127.0.0.1", 0), service)
+    server = WitnessHTTPServer(
+        ("127.0.0.1", 0), service, advance_allowed_fingerprints=frozenset({_FAKE_ADVANCE_FINGERPRINT})
+    )
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

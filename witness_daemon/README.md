@@ -32,8 +32,12 @@ here ever shells out to a real `tpm2_nv*` command or touches a real TPM.
 python -m witness_daemon
 ```
 
-Requires the seven `WITNESS_*` environment variables documented in
-`config.py`'s module docstring, and `tpm2-tools` on `PATH`. See
+Requires the eight `WITNESS_*` environment variables documented in
+`config.py`'s module docstring (as of the 2026-08-16 read-only signer
+identity addition, `WITNESS_ADVANCE_CLIENT_FINGERPRINTS` joins the
+original seven -- the client-certificate bundle may now trust more than
+one identity, but only fingerprints listed here may call
+`/anchor/advance`), and `tpm2-tools` on `PATH`. See
 `systemd/pfsense-mcp-tpm-witness.service` for a reference (not
 installed/enabled by this repository) systemd unit implementing the
 accepted spec's full hardening requirements. `Ctrl+C` shuts the process

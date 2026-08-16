@@ -43,7 +43,9 @@ def build_ssl_context(config: WitnessDaemonConfig) -> ssl.SSLContext:
 def build_server(config: WitnessDaemonConfig) -> WitnessHTTPServer:
     tpm_client = Tpm2ToolsClient(nv_handle=config.nv_handle, auth_credential_path=config.auth_credential_path)
     service = WitnessService(tpm_client)
-    server = WitnessHTTPServer((config.bind_host, config.bind_port), service)
+    server = WitnessHTTPServer(
+        (config.bind_host, config.bind_port), service, advance_allowed_fingerprints=config.advance_client_fingerprints
+    )
     context = build_ssl_context(config)
     server.socket = context.wrap_socket(server.socket, server_side=True)
     return server

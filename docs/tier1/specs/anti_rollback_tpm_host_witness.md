@@ -218,6 +218,22 @@ mTLS as additional defense in depth, not as a replacement for it; if not,
 mTLS over the plain LAN path is the primary control and must not be
 weakened to compensate.
 
+**2026-08-16 update (Slice 6 signer read-only witness identity)**: the
+client-certificate bundle (`WITNESS_CLIENT_CA_FILE`) may now trust more
+than one dedicated certificate -- e.g. VM106's original production
+identity alongside a separate off-host signer's identity, each with its
+own private key held only by its own owner. mTLS authentication alone no
+longer implies authorization for every operation this daemon exposes:
+`WITNESS_ADVANCE_CLIENT_FINGERPRINTS` (`config.py`) is a second, explicit,
+fail-closed allow-list naming exactly which bundle members' SHA-256
+fingerprints may call `/anchor/advance`. Every bundle member not listed
+there can still reach `/anchor/read` (the "who can reach the daemon's
+narrow RPC" model above is unchanged for the lower-risk operation) but is
+refused, before any TPM interaction, for `/anchor/advance`. This remains
+"a small dedicated certificate pair... not a public CA" per identity --
+still no real CA hierarchy, still no way to mint a new trusted identity
+without both ends explicitly agreeing to trust its specific certificate.
+
 ## Guest-side integration design
 
 A new concrete `AntiRollbackAnchor` implementation

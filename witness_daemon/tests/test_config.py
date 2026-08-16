@@ -7,6 +7,9 @@ import pytest
 from witness_daemon.config import WitnessDaemonConfig, load_witness_daemon_config
 from witness_daemon.errors import WitnessConfigurationError
 
+_FINGERPRINT_A = "a" * 64
+_FINGERPRINT_B = "b" * 64
+
 _VALID_ENV = {
     "WITNESS_TPM_NV_HANDLE": "0x01500000",
     "WITNESS_TPM_AUTH_CREDENTIAL_FILE": "/run/credentials/witness/nv-index-auth",
@@ -15,6 +18,7 @@ _VALID_ENV = {
     "WITNESS_SERVER_CERT_FILE": "/etc/witness/server.crt",
     "WITNESS_SERVER_KEY_FILE": "/run/credentials/witness/witness-server-key",
     "WITNESS_CLIENT_CA_FILE": "/etc/witness/client-ca.crt",
+    "WITNESS_ADVANCE_CLIENT_FINGERPRINTS": f"{_FINGERPRINT_A},{_FINGERPRINT_B}",
 }
 
 
@@ -29,7 +33,34 @@ def test_valid_configuration_is_accepted():
         server_cert_path=Path("/etc/witness/server.crt"),
         server_key_path=Path("/run/credentials/witness/witness-server-key"),
         client_ca_path=Path("/etc/witness/client-ca.crt"),
+        advance_client_fingerprints=frozenset({_FINGERPRINT_A, _FINGERPRINT_B}),
     )
+
+
+@pytest.mark.parametrize(
+    "bad_value",
+    [
+        "",
+        "not-hex",
+        "a" * 63,
+        "a" * 65,
+        "A" * 64,  # uppercase refused -- must already be lowercase, never normalized silently
+        f"{_FINGERPRINT_A},",
+        f"{_FINGERPRINT_A},{_FINGERPRINT_A}",  # duplicate
+    ],
+)
+def test_invalid_advance_fingerprints_are_refused(bad_value):
+    env = dict(_VALID_ENV)
+    env["WITNESS_ADVANCE_CLIENT_FINGERPRINTS"] = bad_value
+    with pytest.raises(WitnessConfigurationError):
+        load_witness_daemon_config(env)
+
+
+def test_single_advance_fingerprint_is_accepted():
+    env = dict(_VALID_ENV)
+    env["WITNESS_ADVANCE_CLIENT_FINGERPRINTS"] = _FINGERPRINT_A
+    config = load_witness_daemon_config(env)
+    assert config.advance_client_fingerprints == frozenset({_FINGERPRINT_A})
 
 
 @pytest.mark.parametrize("missing", list(_VALID_ENV))

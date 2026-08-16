@@ -76,6 +76,14 @@ Environment=WITNESS_BIND_HOST=<<interface-reachable-from-vm-106-only>>
 Environment=WITNESS_BIND_PORT=<<port>>
 Environment=WITNESS_SERVER_CERT_FILE=%E/pfsense-mcp-tpm-witness/server.crt
 Environment=WITNESS_CLIENT_CA_FILE=%E/pfsense-mcp-tpm-witness/client-ca.crt
+# 2026-08-16: WITNESS_CLIENT_CA_FILE above may now be a bundle trusting
+# more than one client certificate (e.g. VM106's production identity
+# alongside an off-host signer's read-only identity) -- this variable is
+# the explicit, fail-closed allow-list of which of those identities'
+# SHA-256 fingerprints (lowercase hex, comma-separated, no colons) may
+# call /anchor/advance. Every bundle member not listed here can still
+# reach /anchor/read but is refused for /anchor/advance.
+Environment=WITNESS_ADVANCE_CLIENT_FINGERPRINTS=<<comma-separated-sha256-fingerprints-of-mutation-capable-clients>>
 Environment=WITNESS_TPM_AUTH_CREDENTIAL_FILE=%d/nv-index-auth
 Environment=WITNESS_SERVER_KEY_FILE=%d/witness-server-key
 

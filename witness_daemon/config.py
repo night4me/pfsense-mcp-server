@@ -25,6 +25,22 @@ _BIND_PORT_VAR = "WITNESS_BIND_PORT"
 _SERVER_CERT_VAR = "WITNESS_SERVER_CERT_FILE"
 _SERVER_KEY_VAR = "WITNESS_SERVER_KEY_FILE"
 _CLIENT_CA_VAR = "WITNESS_CLIENT_CA_FILE"
+#: Owner decision 2026-08-16 (Slice 6 signer read-only witness identity):
+#: `WITNESS_CLIENT_CA_FILE` may now name a bundle trusting more than one
+#: client certificate (an off-host signer's, alongside VM106's own
+#: production identity) -- mTLS authentication alone no longer implies
+#: authorization for every operation. This variable is the explicit,
+#: fail-closed allow-list for the one operation that mutates TPM state:
+#: a comma-separated list of SHA-256 fingerprints (lowercase hex, no
+#: colons) of the client certificates permitted to call
+#: `/anchor/advance`. `/anchor/read` remains available to any client the
+#: mTLS layer already trusts (bundle membership itself is the read
+#: allow-list) -- this project's own established "who can reach the
+#: daemon's narrow RPC" trust model, unchanged for the lower-risk
+#: operation; only `advance` gains a second, explicit gate.
+_ADVANCE_FINGERPRINTS_VAR = "WITNESS_ADVANCE_CLIENT_FINGERPRINTS"
+
+_FINGERPRINT_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 _REQUIRED_VARS = (
     _HANDLE_VAR,
@@ -34,6 +50,7 @@ _REQUIRED_VARS = (
     _SERVER_CERT_VAR,
     _SERVER_KEY_VAR,
     _CLIENT_CA_VAR,
+    _ADVANCE_FINGERPRINTS_VAR,
 )
 
 # TPM2 NV handle syntax: "0x01" + 6 hex digits. The conventional
@@ -57,6 +74,7 @@ class WitnessDaemonConfig:
     server_cert_path: Path
     server_key_path: Path
     client_ca_path: Path
+    advance_client_fingerprints: frozenset[str]
 
 
 def _validate_handle(raw: str) -> str:
@@ -89,8 +107,31 @@ def _validate_port(raw: str) -> int:
     return port
 
 
+def _validate_advance_fingerprints(raw: str) -> frozenset[str]:
+    # Deliberately no `.lower()`/case normalization: security-relevant
+    # identifiers in this codebase are never silently coerced (matching
+    # `ed25519_authority.py`'s own exact-lowercase-hex discipline) -- an
+    # operator-supplied fingerprint in the wrong case fails closed here
+    # rather than being quietly accepted as something it was not
+    # explicitly written as.
+    entries = tuple(entry.strip() for entry in raw.split(","))
+    if not entries or any(not entry for entry in entries):
+        raise WitnessConfigurationError(
+            f"{_ADVANCE_FINGERPRINTS_VAR} must be a comma-separated list of SHA-256 fingerprints with no empty entries."
+        )
+    for entry in entries:
+        if not _FINGERPRINT_PATTERN.fullmatch(entry):
+            raise WitnessConfigurationError(
+                f"{_ADVANCE_FINGERPRINTS_VAR} entry {entry!r} is not a 64-character lowercase hex SHA-256 fingerprint."
+            )
+    fingerprints = frozenset(entries)
+    if len(fingerprints) != len(entries):
+        raise WitnessConfigurationError(f"{_ADVANCE_FINGERPRINTS_VAR} must not contain duplicate fingerprints.")
+    return fingerprints
+
+
 def load_witness_daemon_config(env: dict[str, str] | None = None) -> WitnessDaemonConfig:
-    """All seven variables are required together -- no partial
+    """All eight variables are required together -- no partial
     configuration, no default that would let the daemon silently bind to
     an unintended interface or accept an unvalidated handle. Raises
     `WitnessConfigurationError` on any problem; touches no filesystem
@@ -110,6 +151,7 @@ def load_witness_daemon_config(env: dict[str, str] | None = None) -> WitnessDaem
     server_cert_path = _require_absolute_path(source[_SERVER_CERT_VAR], _SERVER_CERT_VAR)
     server_key_path = _require_absolute_path(source[_SERVER_KEY_VAR], _SERVER_KEY_VAR)
     client_ca_path = _require_absolute_path(source[_CLIENT_CA_VAR], _CLIENT_CA_VAR)
+    advance_client_fingerprints = _validate_advance_fingerprints(source[_ADVANCE_FINGERPRINTS_VAR])
 
     return WitnessDaemonConfig(
         nv_handle=nv_handle,
@@ -119,4 +161,5 @@ def load_witness_daemon_config(env: dict[str, str] | None = None) -> WitnessDaem
         server_cert_path=server_cert_path,
         server_key_path=server_key_path,
         client_ca_path=client_ca_path,
+        advance_client_fingerprints=advance_client_fingerprints,
     )
