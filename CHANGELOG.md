@@ -7,6 +7,48 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-08-16
+
+**Release repair — no functional or security-relevant change from
+v0.4.0.** v0.4.0 was tagged and its GitHub Release published, but the
+PyPI publish workflow failed before any upload was attempted (see
+"Fixed" below); this release corrects that and two documentation
+inaccuracies discovered while diagnosing it. All of v0.4.0's
+[0.4.0] entry below still applies unchanged — same public MCP contract
+(42 READ / 0 WRITE by default), same `verified=True` live-evidence
+chain, same Tier 1 architecture.
+
+### Fixed
+
+- **PyPI publish failure**: `publish.yml`'s build step failed
+  `twine check --strict` with `InvalidDistribution: Invalid distribution
+  metadata: '2.5' is not a valid metadata version`. Root cause: the
+  isolated build environment resolved a Hatchling release that emits
+  Core Metadata 2.5 by default, which the pinned `twine<7.0` does not
+  yet accept. Fixed by tightening `[build-system] requires` to
+  `hatchling>=1.25,<1.32` — 1.31.0 is the confirmed, directly-verified
+  ceiling that still emits Metadata-Version 2.4 (isolated-equivalent
+  build re-run, `Metadata-Version: 2.4` inspected directly in the built
+  wheel, `twine check --strict` passing on both artifacts). No PyPI
+  upload was ever attempted for v0.4.0 — confirmed via the publish
+  workflow's job status (`publish` job: `skipped`, never ran) and a
+  live query against the real PyPI API (latest published version
+  remained `0.3.0`).
+- **README/CHANGELOG incorrectly claimed v0.3.1 was published on
+  PyPI.** Investigated read-only from git tag history, GitHub Release
+  history, `publish.yml`'s run history, and the live PyPI API: **no
+  `v0.3.1` git tag, GitHub Release, publish-workflow run, or PyPI
+  upload has ever existed.** v0.3.1 was prepared only — version bumped
+  and `docs/ACCEPTANCE_v0.3.1.md`/this changelog's `[0.3.1]` entry
+  written — in commit `459262e` (2026-08-09), but the tag/release/
+  publish sequence was never carried out, and the "published on PyPI"
+  claim that crept into README's status paragraph afterward was false
+  for the entire time it stood. `docs/ACCEPTANCE_v0.3.1.md` itself made
+  no publication claim and needed no correction — only README and this
+  file's `[0.3.1]`/`[0.4.0]` footer links, which pointed at a
+  nonexistent tag/release, have been corrected to reference the real
+  commit instead.
+
 ## [0.4.0] - 2026-08-16
 
 **Public MCP contract is unchanged from v0.3.1: 42 READ tools, 0 WRITE
@@ -415,9 +457,11 @@ endpoint, or transport path is active.
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.1...v0.4.0
-[0.3.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.1
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.0...v0.4.0
+<!-- v0.3.1 was prepared (version bump + changelog entry) but never tagged, released, or published -- no v0.3.1 tag/release exists to link to; this points at the commit that bumped the version instead. See the [0.4.1] entry above for the full finding. -->
+[0.3.1]: https://github.com/night4me/pfsense-mcp-server/commit/459262e
 [0.3.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.0
 [0.2.2]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.2
 [0.2.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.1

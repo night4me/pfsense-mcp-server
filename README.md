@@ -6,7 +6,9 @@
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**A security-first [MCP](https://modelcontextprotocol.io/) server for pfSense.**
+**A security-first [MCP](https://modelcontextprotocol.io/) server for pfSense,
+featuring cryptographically authorized, recoverable WRITE operations and
+optional hardware-backed anti-rollback protection.**
 
 MCP (Model Context Protocol) is the open standard AI assistants use to call
 tools. This server implements it for pfSense: point an MCP client (Claude,
@@ -25,7 +27,7 @@ That split is deliberate, not incomplete. See
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.4.0'
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.3.0'
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```
@@ -194,6 +196,62 @@ that enforce it in [`SECURITY.md`](SECURITY.md#security-guarantees). Report
 vulnerabilities privately through [`SECURITY.md`](SECURITY.md) — never in a
 public issue.
 
+## Security-first by design
+
+pfSense MCP Server is built around a deliberately conservative security
+model: **READ by default, cryptographically controlled WRITE by explicit
+authorization.** State-changing operations are protected by a
+transaction-oriented security architecture designed for AI-initiated
+infrastructure changes — not simply an API credential placed behind an
+MCP tool.
+
+The security model assumes that an AI agent requesting a mutation is not,
+by itself, sufficient authority to perform it. The goal is not to make
+AI-generated infrastructure changes merely possible — it is to make them
+constrained, attributable, recoverable, and independently verifiable.
+
+### Protected WRITE architecture
+
+- Zero WRITE capabilities exposed by default — reaching the one accepted
+  WRITE tool requires an operator to explicitly select
+  `PFSENSE_PROFILE=write_protected`.
+- Least-privilege pfSense credentials, scoped to exactly the REST
+  endpoints the WRITE path needs — never a broad/administrative account.
+- Explicit capability/security-posture gates, independent of and
+  additional to profile selection.
+- Deterministic plan and execution-intent binding — the exact target
+  state is bound cryptographically before anything is authorized.
+- Ed25519-signed authorization, produced off-host by a human operator.
+- Short-lived, single-use authorization — consumed exactly once,
+  independently of confirmation.
+- Fresh-state revalidation before execution, with stale-state and
+  concurrent-change refusal.
+- A `RecoveryContract` state machine governing every mutation's full
+  lifecycle, durable and auditable.
+- Independently signed confirmation, using a separate confirmation
+  authority from the authorization signer.
+- Deterministic execution with authoritative read-back verification
+  after every mutation.
+- Fail-closed reconciliation on any ambiguous outcome — never a blind
+  retry.
+- Integrity-protected audit trail and state, MAC-authenticated
+  end-to-end.
+- Optional hardware-backed TPM monotonic witness for anti-rollback
+  protection.
+
+**`verified=True` does not mean WRITE is enabled by default.**
+Verification, profile/posture selection, authorization, confirmation,
+freshness, target state, and execution are separate, independently
+enforced gates — every one of them must hold for a given mutation, every
+time.
+
+The protected WRITE path has been exercised end-to-end against a real
+LAB pfSense appliance — never the owner's production/home pfSense —
+including least-privilege execution, authoritative read-back,
+`RecoveryContract` lifecycle, and TPM witness advancement. See
+[`docs/adr/ADR-026-first-write-capability-adapter.md`](docs/adr/ADR-026-first-write-capability-adapter.md)
+for the complete evidence chain.
+
 ## Documentation
 
 A browsable version of the full documentation set below is published at
@@ -211,19 +269,35 @@ A browsable version of the full documentation set below is published at
 
 ## Status
 
-v0.4.0 is the immutable production baseline, published on PyPI. Its only
-functional change from v0.3.1 is documentary/status, not new tool surface:
-the public MCP contract is unchanged (still 42 READ tools by default); the
-one WRITE capability this repository has ever added
-(`set_firewall_alias_description_v1`) is now `verified=True` following
-independently-verified live evidence (`ADR-026`), but remains unreachable
-under the default profile, requires an operator to explicitly opt into
-`write_protected`, and still requires a real, owner-driven signing
-ceremony for every individual mutation — see [the security
-model](docs/SECURITY_MODEL.md)'s "Recovery and WRITE status" section for
-the precise, current description. The Tier 1 safety framework described
-above remains implemented, tested, structurally isolated code; v0.3.1 and
-v0.3.0 remain the prior published releases. See
+**v0.3.0 is the immutable production baseline, published on PyPI** — the
+last release that completed a real PyPI upload. v0.4.1 is prepared,
+release-candidate quality, and not yet published; this paragraph will be
+updated to declare it the new baseline only at the moment the owner
+actually completes that publication.
+
+v0.4.1's only functional change from v0.3.0 is documentary/status, not
+new tool surface: the public MCP contract is unchanged (still 42 READ
+tools by default); the one WRITE capability this repository has ever
+added (`set_firewall_alias_description_v1`) is now `verified=True`
+following independently-verified live evidence (`ADR-026`), but remains
+unreachable under the default profile, requires an operator to
+explicitly opt into `write_protected`, and still requires a real,
+owner-driven signing ceremony for every individual mutation — see [the
+security model](docs/SECURITY_MODEL.md)'s "Recovery and WRITE status"
+section for the precise, current description. The Tier 1 safety
+framework described above remains implemented, tested, structurally
+isolated code.
+
+`v0.4.0` was tagged and its GitHub Release published, but PyPI
+publication itself failed before any upload was attempted (a build-tool
+metadata-version incompatibility, fixed in v0.4.1 — see `CHANGELOG.md`);
+per this project's own release policy, that tag/Release is preserved
+unmoved as an accurate historical record, and the fix ships as a new
+version rather than editing it. Separately, `v0.3.1` was prepared
+(version bumped, changelog entry written) but its tag/Release/PyPI
+publish were never actually carried out — an inaccuracy that had stood
+in this file since 2026-08-09, corrected here; see `CHANGELOG.md`'s
+`[0.4.1]` entry for the full, read-only-investigated finding. See
 [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
 
 ## Contributing

@@ -1,6 +1,6 @@
 [project]
 name = "pfsense-mcp-server"
-version = "0.4.0"
+version = "0.4.1"
 description = "Security-focused local MCP server exposing strongly typed READ tools for pfSense."
 readme = "README.md"
 license = "MIT"
@@ -192,7 +192,13 @@ exclude_dirs = [
 skips = ["*/tls.py", "src/pfsense_mcp/tls.py"]
 
 [build-system]
-requires = ["hatchling>=1.25,<2.0"]
+# Ceiling pinned below the release that switched Hatchling's default
+# Core Metadata output from 2.4 to 2.5 -- the pinned twine<7.0 release
+# does not yet accept 2.5 (see docs/PYPI_RELEASE.md's failure/rollback
+# section). 1.31.0 is the known-good, directly-verified ceiling: an
+# isolated build at that exact resolution was confirmed to emit
+# Metadata-Version: 2.4.
+requires = ["hatchling>=1.25,<1.32"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
@@ -213,6 +219,7 @@ include = [
     "/docs/ACCEPTANCE_v0.3.0.md",
     "/docs/ACCEPTANCE_v0.3.1.md",
     "/docs/ACCEPTANCE_v0.4.0.md",
+    "/docs/ACCEPTANCE_v0.4.1.md",
     "/docs/API.md",
     "/docs/PYPI_RELEASE.md",
     "/docs/RECOVERY_CONTRACT_SPEC.md",
