@@ -16,7 +16,7 @@ import hmac
 import json
 import re
 from dataclasses import dataclass
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel
 
@@ -34,6 +34,14 @@ from .faults import EffectKnowledge, MutationBoundary, classify_fault
 from .policy import MutationPolicy
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
+
+if TYPE_CHECKING:
+    # ADR-029: type-checking only -- see write_api_client.py's identical
+    # guard for why. executor.py is reachable from production_runtime.py,
+    # which tier1_write_bridge.py already imports; an unconditional import
+    # here would become MCP-reachable the moment application.py wires
+    # tier1_write_bridge.py in (Slice 4), even though it is not today.
+    from .acceptance import AcceptanceExecutionContext
 
 _HEX_64 = re.compile(r"[0-9a-f]{64}")
 
@@ -202,8 +210,23 @@ class MutationExecutor:
     # -- execute ------------------------------------------------------
 
     def execute(
-        self, contract_id: str, *, adapter: CapabilityAdapter, intent: dict[str, CanonicalValue]
+        self,
+        contract_id: str,
+        *,
+        adapter: CapabilityAdapter,
+        intent: dict[str, CanonicalValue],
+        acceptance_context: AcceptanceExecutionContext | None = None,
     ) -> ExecutionOutcome:
+        """`acceptance_context` (ADR-029): `None` for every normal caller
+        -- default, unchanged behavior, identical to before this ADR. When
+        supplied (only ever by the isolated first-live-acceptance runner,
+        never by any MCP-reachable path -- see tier1/acceptance.py), the
+        one difference is which WriteApiClient method `_send()` calls;
+        every check in this method (PREPARED/confirmed/unexpired, policy,
+        binding verification, fingerprint/target/lifecycle-locator
+        re-derivation, fault classification, post-send verification) is
+        identical either way."""
+
         contract = self._store.load(contract_id)
         if contract.state != RecoveryState.PREPARED:
             raise ContractConflictError("Recovery Contract is not PREPARED.")
@@ -273,7 +296,7 @@ class MutationExecutor:
         if not isinstance(request, BaseModel):
             return self._finish_execute(executing, RecoveryState.FAILED, "adapter did not return a typed request")
 
-        boundary, knowledge, raw_response = self._send(executing, request)
+        boundary, knowledge, raw_response = self._send(executing, request, acceptance_context=acceptance_context)
 
         if knowledge != EffectKnowledge.VERIFIED_SUCCESS:
             decision = classify_fault(boundary, knowledge)
@@ -480,17 +503,33 @@ class MutationExecutor:
         return validate_canonical_value(json.loads(plaintext_bytes))
 
     def _send(
-        self, contract: RecoveryContract, request: BaseModel
+        self,
+        contract: RecoveryContract,
+        request: BaseModel,
+        *,
+        acceptance_context: AcceptanceExecutionContext | None = None,
     ) -> tuple[MutationBoundary, EffectKnowledge, object | None]:
-        """Exactly one call to WriteApiClient.send_for_tier1() per
-        invocation (sealed_executor.md I5). Classifies what actually
-        happened -- never assumes success, never retries."""
+        """Exactly one call to WriteApiClient.send_for_tier1() -- or, when
+        `acceptance_context` is supplied (ADR-029, never by rollback()'s
+        own call site, which never passes one), send_for_tier1_acceptance()
+        -- per invocation (sealed_executor.md I5). Classifies what actually
+        happened -- never assumes success, never retries, identically
+        either way: this method's own logic below never branches on which
+        WriteApiClient method was used."""
 
         body = request.model_dump_json().encode("utf-8")
         try:
-            response = self._write_client.send_for_tier1(
-                endpoint_symbol=contract.endpoint_symbol, http_method=contract.http_method, body=body
-            )
+            if acceptance_context is None:
+                response = self._write_client.send_for_tier1(
+                    endpoint_symbol=contract.endpoint_symbol, http_method=contract.http_method, body=body
+                )
+            else:
+                response = self._write_client.send_for_tier1_acceptance(
+                    acceptance_context=acceptance_context,
+                    endpoint_symbol=contract.endpoint_symbol,
+                    http_method=contract.http_method,
+                    body=body,
+                )
         except WriteNotAllowedError:
             # Refused before any network call -- zero effect, provably.
             return MutationBoundary.BEFORE_SEND, EffectKnowledge.PROVEN_NONE, None

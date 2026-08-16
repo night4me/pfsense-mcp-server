@@ -1094,3 +1094,168 @@ def test_malformed_pre_rollback_fingerprint_fails_closed_with_zero_send(tmp_path
     assert outcome.state == RecoveryState.ROLLBACK_FAILED
     assert outcome.detail == "pre-rollback target validation failed"
     assert transport.calls == []
+
+
+# -- ADR-029: acceptance_context threading -------------------------------
+
+
+_ACCEPTANCE_IDENTITY = "pfsense_lab1"  # AcceptanceExecutionContext.__post_init__ pins this exact value
+
+
+def _acceptance_context():
+    from pfsense_mcp.tier1.acceptance import AcceptanceExecutionContext
+
+    return AcceptanceExecutionContext(
+        endpoint_symbol=_ENDPOINT_SYMBOL,
+        http_method=_HTTP_METHOD,
+        target_identity=_ACCEPTANCE_IDENTITY,  # must match _acceptance_write_client()'s identity below
+        issued_at=datetime.now(timezone.utc),
+    )
+
+
+def _acceptance_write_client(monkeypatch, *, verified: bool = False, acceptance_eligible: bool = True):
+    monkeypatch.setattr(
+        WriteEndpoints,
+        _ENDPOINT_SYMBOL,
+        WriteEndpointInfo(
+            path_suffix="/synthetic",
+            http_method=_HTTP_METHOD,
+            verified=verified,
+            min_api_version=ApiVersion.V2,
+            reversible=True,
+            dry_run_supported=True,
+            acceptance_eligible=acceptance_eligible,
+        ),
+        raising=False,
+    )
+    transport = MockTransport()
+    client = WriteApiClient(transport, identity=_ACCEPTANCE_IDENTITY, api_version=ApiVersion.V2)
+    return client, transport
+
+
+def test_execute_with_acceptance_context_reaches_verified_on_an_unverified_endpoint(tmp_path, monkeypatch):
+    """The core proof: an endpoint that is verified=False (so the normal
+    path refuses) can still reach VERIFIED when a valid acceptance_context
+    is supplied -- because acceptance_eligible=True routes _send() to
+    send_for_tier1_acceptance() instead, and every other executor check
+    (PREPARED/confirmed/unexpired, policy, bindings, fingerprint,
+    post-send verification) is the exact same code, unchanged."""
+
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _acceptance_write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _SyntheticAdapter(
+        reads=[
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+        ]
+    )
+    executor = _executor(store, write_client)
+
+    outcome = executor.execute(
+        contract.contract_id, adapter=adapter, intent=intent, acceptance_context=_acceptance_context()
+    )
+
+    assert outcome.state == RecoveryState.VERIFIED
+    assert transport.calls == [("PATCH", "/api/v2/synthetic")]
+
+
+def test_execute_without_acceptance_context_still_refuses_the_same_unverified_endpoint(tmp_path, monkeypatch):
+    """Regression: omitting acceptance_context (the default, every normal
+    caller) on the exact same acceptance_eligible-but-unverified endpoint
+    must still refuse -- acceptance_eligible alone grants nothing without
+    an explicit, valid context."""
+
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _acceptance_write_client(monkeypatch)
+    adapter = _SyntheticAdapter(
+        reads=[{"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"}]
+    )
+    executor = _executor(store, write_client)
+
+    outcome = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.FAILED
+    assert transport.calls == []
+
+
+def test_execute_with_acceptance_context_refuses_second_endpoint_not_acceptance_eligible(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _acceptance_write_client(monkeypatch, acceptance_eligible=False)
+    adapter = _SyntheticAdapter(
+        reads=[{"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"}]
+    )
+    executor = _executor(store, write_client)
+
+    outcome = executor.execute(
+        contract.contract_id, adapter=adapter, intent=intent, acceptance_context=_acceptance_context()
+    )
+
+    assert outcome.state == RecoveryState.FAILED
+    assert transport.calls == []
+
+
+def test_execute_with_acceptance_context_still_requires_prepared_state(tmp_path, monkeypatch):
+    """Proves acceptance mode cannot skip the earliest gate: a contract
+    that never reached PREPARED refuses identically regardless of
+    acceptance_context."""
+
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    store.create(contract)
+    write_client, transport = _acceptance_write_client(monkeypatch)
+    executor = _executor(store, write_client)
+
+    with pytest.raises(ContractConflictError):
+        executor.execute(
+            contract.contract_id,
+            adapter=_SyntheticAdapter(reads=[]),
+            intent=intent,
+            acceptance_context=_acceptance_context(),
+        )
+    assert transport.calls == []
+
+
+def test_execute_with_acceptance_context_still_requires_confirmation(tmp_path, monkeypatch):
+    """A PREPARED-but-unconfirmed contract refuses identically regardless
+    of acceptance_context -- confirmation is checked before this
+    parameter is ever consulted."""
+
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    store.create(contract)
+    store.transition(
+        contract.contract_id,
+        expected_state=RecoveryState.PREPARING,
+        expected_version=0,
+        target_state=RecoveryState.PREPARED,
+    )
+    write_client, transport = _acceptance_write_client(monkeypatch)
+    executor = _executor(store, write_client)
+
+    with pytest.raises(ContractConflictError):
+        executor.execute(
+            contract.contract_id,
+            adapter=_SyntheticAdapter(reads=[]),
+            intent=intent,
+            acceptance_context=_acceptance_context(),
+        )
+    assert transport.calls == []
+
+
+def test_rollback_never_accepts_an_acceptance_context():
+    """Structural proof: rollback()'s signature has no acceptance_context
+    parameter at all -- restoration via rollback() (not used by Slice 6's
+    design, which uses a fresh forward chain instead) cannot be routed
+    through the acceptance path even by mistake."""
+
+    import inspect
+
+    params = inspect.signature(MutationExecutor.rollback).parameters
+    assert "acceptance_context" not in params

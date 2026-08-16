@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 
 from pfsense_mcp.api_version import ApiVersion
@@ -8,6 +10,18 @@ from pfsense_mcp.transport.mock import MockTransport
 from pfsense_mcp.write_api_client import WriteApiClient
 from pfsense_mcp.write_endpoints import WriteEndpointInfo, WriteEndpoints
 from pfsense_mcp.write_types import ContractStatus, MutationPlan
+
+
+@dataclass(frozen=True)
+class _FakeAcceptanceContext:
+    """ADR-029: a minimal stand-in satisfying WriteApiClient's structural
+    `_AcceptanceExecutionProof` protocol -- deliberately not an import of
+    the real `tier1.acceptance.AcceptanceExecutionContext`, proving this
+    module genuinely needs no `tier1` dependency to be fully testable."""
+
+    endpoint_symbol: str
+    http_method: str
+    target_identity: str
 
 
 class _FakeRollbackPlan:
@@ -222,4 +236,180 @@ def test_send_for_tier1_refuses_method_mismatch(monkeypatch):
     with pytest.raises(WriteNotAllowedError, match="does not match the allow-listed method"):
         client.send_for_tier1(endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="DELETE", body=b"{}")
 
+    assert transport.calls == []
+
+
+# -- ADR-029: send_for_tier1_acceptance() --------------------------------
+
+
+def _acceptance_eligible_unverified_endpoint(**overrides):
+    defaults = {
+        "path_suffix": "/example",
+        "http_method": "PATCH",
+        "verified": False,
+        "min_api_version": ApiVersion.V2,
+        "reversible": True,
+        "dry_run_supported": True,
+        "acceptance_eligible": True,
+    }
+    defaults.update(overrides)
+    return WriteEndpointInfo(**defaults)
+
+
+def _register_test_endpoint(monkeypatch, **overrides):
+    monkeypatch.setattr(
+        WriteEndpoints, "TEST_ONLY_ENDPOINT", _acceptance_eligible_unverified_endpoint(**overrides), raising=False
+    )
+
+
+def test_send_for_tier1_acceptance_succeeds_for_an_eligible_unverified_endpoint(monkeypatch):
+    _register_test_endpoint(monkeypatch)
+    client, transport = _client()
+    transport.register("PATCH", "/api/v2/example", status_code=200, text='{"ok": true}')
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", target_identity="api-mcp-admin"
+    )
+
+    response = client.send_for_tier1_acceptance(
+        acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b'{"descr":"x"}'
+    )
+
+    assert response.status_code == 200
+    assert transport.calls == [("PATCH", "/api/v2/example")]
+    assert transport.request_bodies == [b'{"descr":"x"}']
+
+
+def test_send_for_tier1_acceptance_refuses_unknown_endpoint():
+    client, transport = _client()
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="NOT_ALLOW_LISTED", http_method="PATCH", target_identity="api-mcp-admin"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="not in the write allow-list"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="NOT_ALLOW_LISTED", http_method="PATCH", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_acceptance_refuses_endpoint_not_acceptance_eligible(monkeypatch):
+    """A second, unverified-but-NOT-acceptance_eligible endpoint (the
+    'second unverified endpoint' adversarial case) must be refused --
+    acceptance mode does not implicitly widen to every unverified entry."""
+
+    _register_test_endpoint(monkeypatch, acceptance_eligible=False)
+    client, transport = _client()
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", target_identity="api-mcp-admin"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="not acceptance_eligible=True"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_acceptance_refuses_already_verified_endpoint(monkeypatch):
+    """Once verified=True (a real, committed code change), acceptance mode
+    permanently refuses -- proves the one-time promotion gate."""
+
+    _register_test_endpoint(monkeypatch, verified=True)
+    client, transport = _client()
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", target_identity="api-mcp-admin"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="already verified=True"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_acceptance_refuses_method_mismatch(monkeypatch):
+    _register_test_endpoint(monkeypatch)
+    client, transport = _client()
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", target_identity="api-mcp-admin"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="does not match the allow-listed method"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="DELETE", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_acceptance_refuses_context_endpoint_mismatch(monkeypatch):
+    """The context's own endpoint_symbol must independently agree with the
+    call's endpoint_symbol -- a stale/mismatched context is refused, not
+    silently trusted."""
+
+    _register_test_endpoint(monkeypatch)
+    client, transport = _client()
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="SOME_OTHER_ENDPOINT", http_method="PATCH", target_identity="api-mcp-admin"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="endpoint_symbol does not match"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_acceptance_refuses_context_http_method_mismatch(monkeypatch):
+    _register_test_endpoint(monkeypatch)
+    client, transport = _client()
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="DELETE", target_identity="api-mcp-admin"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="http_method does not match"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_acceptance_refuses_context_identity_mismatch(monkeypatch):
+    """The context's target_identity must equal this WriteApiClient
+    instance's own bound identity -- a context issued for a different
+    identity (e.g. leaked from a different process/config) is refused."""
+
+    _register_test_endpoint(monkeypatch)
+    client, transport = _client()  # identity="api-mcp-admin"
+    context = _FakeAcceptanceContext(
+        endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", target_identity="pfsense_lab1"
+    )
+
+    with pytest.raises(WriteNotAllowedError, match="target identity does not match"):
+        client.send_for_tier1_acceptance(
+            acceptance_context=context, endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}"
+        )
+    assert transport.calls == []
+
+
+def test_send_for_tier1_never_accepts_an_acceptance_context():
+    """Structural proof, not just a policy statement: send_for_tier1()'s
+    signature has no acceptance_context parameter at all -- an acceptance
+    artifact cannot be supplied to the normal execution path even by
+    mistake, let alone used to grant it authority."""
+
+    import inspect
+
+    params = inspect.signature(WriteApiClient.send_for_tier1).parameters
+    assert "acceptance_context" not in params
+
+
+def test_send_for_tier1_still_refuses_unverified_endpoint_when_also_acceptance_eligible(monkeypatch):
+    """acceptance_eligible=True must not leak into send_for_tier1()'s own,
+    completely separate verified-only check."""
+
+    _register_test_endpoint(monkeypatch)  # acceptance_eligible=True, verified=False
+    client, transport = _client()
+
+    with pytest.raises(WriteNotAllowedError, match="not verified"):
+        client.send_for_tier1(endpoint_symbol="TEST_ONLY_ENDPOINT", http_method="PATCH", body=b"{}")
     assert transport.calls == []

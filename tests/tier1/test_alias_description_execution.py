@@ -904,3 +904,60 @@ def test_authorization_expiry_after_legitimate_send_does_not_expire_recovery_con
     # Recovery authorization is represented by the persisted contract state;
     # no coordinator method rechecks source authorization during rollback.
     assert "authorization" not in MutationExecutor.rollback.__code__.co_names
+
+
+# -- ADR-029: acceptance_context threading through confirm_and_handoff() --
+
+
+def test_confirm_and_handoff_threads_acceptance_context_to_the_executor(tmp_path: Path, monkeypatch):
+    """Proves confirm_and_handoff() passes acceptance_context straight
+    through to MutationExecutor.execute() unchanged -- every check above
+    the executor call (owner token, contract state, provenance match,
+    authorization/confirmation freshness, atomic confirm()) already ran
+    and is identical to test_valid_v2_consumes_creates_confirms_and_hands_off_once
+    above, which passes no acceptance_context at all."""
+
+    from pfsense_mcp.tier1.acceptance import AcceptanceExecutionContext
+
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+
+    fake_context = AcceptanceExecutionContext(
+        endpoint_symbol=ENDPOINT_SYMBOL,
+        http_method=HTTP_METHOD,
+        target_identity="pfsense_lab1",
+        issued_at=NOW,
+    )
+    result = core.confirm_and_handoff(
+        handle, confirmation=_confirmation(contract), now=NOW, acceptance_context=fake_context
+    )
+
+    assert result.state is RecoveryState.VERIFIED
+    executor.execute.assert_called_once()
+    _args, kwargs = executor.execute.call_args
+    assert kwargs["acceptance_context"] is fake_context
+
+
+def test_confirm_and_handoff_default_omits_acceptance_context(tmp_path: Path, monkeypatch):
+    """Regression: every existing/normal caller (this file's whole
+    existing suite) never passes acceptance_context -- confirm it reaches
+    the executor as None by default, unchanged from before ADR-029."""
+
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+
+    core.confirm_and_handoff(handle, confirmation=_confirmation(contract), now=NOW)
+
+    executor.execute.assert_called_once()
+    _args, kwargs = executor.execute.call_args
+    assert kwargs["acceptance_context"] is None

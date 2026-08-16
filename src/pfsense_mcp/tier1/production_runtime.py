@@ -102,8 +102,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import httpx
+
+if TYPE_CHECKING:
+    # ADR-029: type-checking only -- see write_api_client.py's identical
+    # guard for why.
+    from .acceptance import AcceptanceExecutionContext
 
 from pfsense_mcp.capabilities import Capability
 from pfsense_mcp.config import PfSenseConfig, load_api_key, load_config
@@ -337,10 +343,20 @@ class ProductionAliasDescriptionRuntime:
         target_anchor_assurance: AnchorAssurance,
         now: datetime,
         freshness_env: dict[str, str] | None = None,
+        acceptance_context: AcceptanceExecutionContext | None = None,
     ) -> ProductOutcome:
         """The single W3 Slice 3 composed operation (ADR-028). Not yet
         MCP-exposed -- no tool, endpoint, or product registration calls
         this method anywhere in this repository.
+
+        `acceptance_context` (ADR-029): `None` for every normal caller --
+        default, unchanged behavior. Threaded through unmodified to
+        `confirm_and_handoff()` only; every other branch above it
+        (preparation, idempotency dedup, authorization-artifact loading,
+        confirmation-artifact loading, every REFUSED/REQUESTED/
+        AWAITING_CONFIRMATION path) is identical either way. Only ever
+        supplied by the isolated first-live-acceptance runner
+        (tier1/acceptance.py), never by any MCP-reachable path.
 
         Re-invocation/deduplication (ADR-028): a fresh, authoritative
         preparation of `request` is always performed first (needed to
@@ -444,7 +460,9 @@ class ProductionAliasDescriptionRuntime:
         except ArtifactExchangeError:
             return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=handle.contract_id)
         try:
-            outcome = self.execution_core.confirm_and_handoff(handle, confirmation=confirmation, now=now)
+            outcome = self.execution_core.confirm_and_handoff(
+                handle, confirmation=confirmation, now=now, acceptance_context=acceptance_context
+            )
         except BoundExecutionError:
             return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=handle.contract_id)
         return ProductOutcome(_project_recovery_state(outcome.state), contract_id=handle.contract_id)

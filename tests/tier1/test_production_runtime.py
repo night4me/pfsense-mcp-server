@@ -634,3 +634,53 @@ def test_no_production_module_imports_production_runtime():
             ):
                 importers.append(path.relative_to(root).as_posix())
     assert importers == []
+
+
+# -- ADR-029: acceptance_context threading through request_alias_description_change() --
+
+
+def test_request_alias_description_change_default_omits_acceptance_context():
+    """Regression: every existing/normal caller (this whole file's suite,
+    and every current real caller since this method has no MCP-reachable
+    caller at all yet) never passes acceptance_context -- confirm the
+    default is None, unchanged from before ADR-029."""
+
+    import inspect
+
+    from pfsense_mcp.tier1.production_runtime import ProductionAliasDescriptionRuntime
+
+    params = inspect.signature(ProductionAliasDescriptionRuntime.request_alias_description_change).parameters
+    assert "acceptance_context" in params
+    assert params["acceptance_context"].default is None
+
+
+def test_request_alias_description_change_forwards_acceptance_context_verbatim():
+    """AST-level proof (not a deep mock reconstruction of the full
+    preparer/artifact-exchange chain, which test_alias_description_execution.py's
+    test_confirm_and_handoff_threads_acceptance_context_to_the_executor and
+    test_executor.py's acceptance-mode tests already exercise for real,
+    with a genuine MutationExecutor/WriteApiClient): the exact
+    confirm_and_handoff() call site inside this method passes
+    acceptance_context=acceptance_context, not a hardcoded None or any
+    other value."""
+
+    import ast
+    import inspect
+    import textwrap
+
+    from pfsense_mcp.tier1.production_runtime import ProductionAliasDescriptionRuntime
+
+    source = textwrap.dedent(inspect.getsource(ProductionAliasDescriptionRuntime.request_alias_description_change))
+    tree = ast.parse(source)
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "confirm_and_handoff"
+    ]
+    assert len(calls) == 1
+    kwargs = {kw.arg: kw.value for kw in calls[0].keywords}
+    assert "acceptance_context" in kwargs
+    forwarded = kwargs["acceptance_context"]
+    assert isinstance(forwarded, ast.Name) and forwarded.id == "acceptance_context"

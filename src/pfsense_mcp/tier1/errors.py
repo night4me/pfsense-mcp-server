@@ -104,3 +104,10 @@ class ArtifactExchangeError(Tier1Error):
     runtime-authorization-validity judgment (expired, consumed, wrong
     authority) -- that remains verify_plan_authorization_v2_signature()/
     ConfirmationVerifier.verify()'s responsibility, not this module's."""
+
+
+class AcceptanceError(Tier1Error):
+    """ADR-029's first-live-acceptance path (tier1/acceptance.py) refused
+    to issue or use an AcceptanceExecutionContext -- wrong/ambiguous
+    target, wrong endpoint, endpoint not acceptance_eligible, or endpoint
+    already verified=True. Fails closed; never inferred as success."""

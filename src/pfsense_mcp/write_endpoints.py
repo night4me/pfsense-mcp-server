@@ -47,6 +47,15 @@ class WriteEndpointInfo:
     min_api_version: ApiVersion
     reversible: bool
     dry_run_supported: bool
+    #: ADR-029: a distinct, independently-gated property from `verified`.
+    #: `True` only permits use through `WriteApiClient.send_for_tier1_
+    #: acceptance()` (tier1/acceptance.py) -- a separate, structurally
+    #: isolated, LAB-only path for gathering the live evidence that
+    #: justifies promoting `verified` to `True`. Never consulted by
+    #: `dry_run()`/`execute()`/`send_for_tier1()`, which remain gated on
+    #: `verified` alone, unchanged. Default `False` -- every entry must
+    #: opt in explicitly.
+    acceptance_eligible: bool = False
 
 
 class WriteEndpoints:
@@ -63,6 +72,11 @@ class WriteEndpoints:
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
+        # ADR-029: this is the one endpoint gathering its own promotion
+        # evidence via the acceptance-only path. Not a second WRITE
+        # capability -- normal exposure still requires verified=True,
+        # unchanged.
+        acceptance_eligible=True,
     )
 
     @classmethod

@@ -11,6 +11,7 @@ import hmac
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 from pfsense_mcp.security_authorization import PLAN_AUTHORIZATION_V2_SCHEMA_VERSION, PlanAuthorizationV2
 from pfsense_mcp.security_authorization_verifier import (
@@ -42,6 +43,11 @@ from .errors import BoundExecutionError
 from .executor import ExecutionOutcome, MutationExecutor
 from .key_lifecycle import KeyRecord, NonceCounter
 from .prepared_execution_intent import compute_execution_intent_digest
+
+if TYPE_CHECKING:
+    # ADR-029: type-checking only -- see write_api_client.py's identical
+    # guard for why.
+    from .acceptance import AcceptanceExecutionContext
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
@@ -218,8 +224,15 @@ class AliasDescriptionExecutionCoreV1:
         *,
         confirmation: ConfirmationEvidence,
         now: datetime,
+        acceptance_context: AcceptanceExecutionContext | None = None,
     ) -> ExecutionOutcome:
-        """Confirm the exact created contract and hand it to the executor once."""
+        """Confirm the exact created contract and hand it to the executor
+        once. `acceptance_context` (ADR-029): `None` for every normal
+        caller, threaded through to MutationExecutor.execute() unchanged --
+        every check above (owner token, contract state, provenance match,
+        authorization/confirmation freshness, atomic confirm()) is
+        identical either way and runs before this parameter is ever
+        consulted."""
 
         if (
             not isinstance(handle, AuthorizedAliasDescriptionExecution)
@@ -263,6 +276,7 @@ class AliasDescriptionExecutionCoreV1:
                 confirmed.contract_id,
                 adapter=self._preparer.adapter,
                 intent=dict(pending.executor_intent),
+                acceptance_context=acceptance_context,
             )
         except Exception:
             raise BoundExecutionError(_DENIED) from None
