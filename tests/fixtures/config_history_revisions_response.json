@@ -1,0 +1,22 @@
+{
+  "code": 200,
+  "status": "ok",
+  "response_id": "SUCCESS",
+  "message": "",
+  "data": [
+    {
+      "id": 0,
+      "time": 1786533245,
+      "description": "admin@192.0.2.3:  Modified Firewall Alias via API",
+      "version": "24.0",
+      "filesize": 32238
+    },
+    {
+      "id": 1,
+      "time": 1786533244,
+      "description": "admin@192.0.2.3:  Modified Firewall Alias via API",
+      "version": "24.0",
+      "filesize": 32238
+    }
+  ]
+}

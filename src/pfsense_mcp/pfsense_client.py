@@ -15,6 +15,7 @@ from .models.arp_table_entry import ArpTableEntry
 from .models.auth_key import AuthKey
 from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
+from .models.config_history_revision import ConfigHistoryRevision
 from .models.cron_job import CronJob
 from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
@@ -75,6 +76,10 @@ USERS_MAX_LIMIT = 100
 
 SYSTEM_CERTIFICATES_MIN_LIMIT = 1
 SYSTEM_CERTIFICATES_MAX_LIMIT = 100
+
+
+CONFIG_HISTORY_REVISIONS_MIN_LIMIT = 1
+CONFIG_HISTORY_REVISIONS_MAX_LIMIT = 100
 
 
 USER_GROUPS_MIN_LIMIT = 1
@@ -312,6 +317,23 @@ class PfSenseClient:
             "/users",
             lambda data: PfSenseUser.from_api(data, include_identifying_metadata=include_identifying_metadata),
         )
+
+    def get_config_history_revisions(self, *, limit: int = 100) -> list[ConfigHistoryRevision]:
+        """Read-only config-history/backup revision list. Added 2026-08-16
+        for ADR-026 row 18 side-effect evidence-gathering (previously
+        `DIAGNOSTICS_CONFIG_HISTORY_READ` in docs/READ_BACKLOG.md, planned
+        but unimplemented) -- confirms whether a given mutation created a
+        config-revision/backup entry, distinct from `get_firewall_apply_status()`'s
+        pending-subsystem/applied signal."""
+
+        if not (CONFIG_HISTORY_REVISIONS_MIN_LIMIT <= limit <= CONFIG_HISTORY_REVISIONS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {CONFIG_HISTORY_REVISIONS_MIN_LIMIT} and "
+                f"{CONFIG_HISTORY_REVISIONS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DIAGNOSTICS_CONFIG_HISTORY_REVISIONS, params={"limit": limit})
+        return _parse_list_response(raw, "/diagnostics/config_history/revisions", ConfigHistoryRevision.from_api)
 
     def get_system_certificates(self, *, limit: int = 100) -> list[SystemCertificate]:
         if not (SYSTEM_CERTIFICATES_MIN_LIMIT <= limit <= SYSTEM_CERTIFICATES_MAX_LIMIT):

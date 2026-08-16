@@ -107,6 +107,11 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    DIAGNOSTICS_CONFIG_HISTORY_REVISIONS = EndpointInfo(
+        path_suffix="/diagnostics/config_history/revisions",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     STATUS_DHCP_LEASES = EndpointInfo(
         path_suffix="/status/dhcp_server/leases",
         verified=True,

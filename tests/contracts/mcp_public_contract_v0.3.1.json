@@ -6299,8 +6299,15 @@
                 "type": "boolean"
               },
               "expires": {
-                "title": "Expires",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Expires"
               },
               "id": {
                 "title": "Id",

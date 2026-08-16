@@ -214,6 +214,18 @@ def test_user_groups_path_suffix_is_correct():
     assert Endpoints.USER_GROUPS.path_suffix == "/user/groups"
 
 
+def test_config_history_revisions_is_declared_verified():
+    assert Endpoints.DIAGNOSTICS_CONFIG_HISTORY_REVISIONS.verified is True
+
+
+def test_config_history_revisions_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DIAGNOSTICS_CONFIG_HISTORY_REVISIONS.path_suffix.startswith("/api")
+
+
+def test_config_history_revisions_path_suffix_is_correct():
+    assert Endpoints.DIAGNOSTICS_CONFIG_HISTORY_REVISIONS.path_suffix == "/diagnostics/config_history/revisions"
+
+
 def test_status_dhcp_leases_is_declared_verified():
     assert Endpoints.STATUS_DHCP_LEASES.verified is True
 

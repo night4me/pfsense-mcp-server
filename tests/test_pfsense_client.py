@@ -1576,6 +1576,19 @@ def test_get_users_maps_non_sensitive_fields():
     assert first.scope == "system"
 
 
+def test_get_users_accepts_null_expires():
+    """Regression: a real pfSense v2 LAB appliance returned `expires: null`
+    for the built-in admin account (2026-08-16 live evidence) -- the
+    original fixture only ever exercised `""`, and the model's original
+    non-nullable `str` typing raised PfSenseResponseShapeError for this
+    genuine, valid API response shape."""
+    body = _users_body()
+    body["data"][0]["expires"] = None
+    client, _ = _users_client(body)
+    users = client.get_users()
+    assert users[0].expires is None
+
+
 def test_get_users_only_calls_users_endpoint_with_default_limit():
     client, transport = _users_client()
     client.get_users()
@@ -1763,6 +1776,115 @@ def test_get_system_certificates_shape_error_does_not_leak_raw_field_values():
     client, _ = _system_certificates_client(body)
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_certificates()
+    assert sentinel not in str(excinfo.value)
+
+
+CONFIG_HISTORY_REVISIONS_FIXTURE = Path(__file__).parent / "fixtures" / "config_history_revisions_response.json"
+
+
+def _config_history_revisions_body() -> dict:
+    return json.loads(CONFIG_HISTORY_REVISIONS_FIXTURE.read_text())
+
+
+def _config_history_revisions_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _config_history_revisions_body()
+    transport.register(
+        "GET", "/api/v2/diagnostics/config_history/revisions?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_config_history_revisions_maps_fields():
+    client, _ = _config_history_revisions_client()
+    raw = _config_history_revisions_body()["data"]
+    revisions = client.get_config_history_revisions()
+    assert len(revisions) == 2
+    assert revisions[0].id == raw[0]["id"]
+    assert revisions[0].time == raw[0]["time"]
+    assert revisions[0].description == raw[0]["description"]
+    assert revisions[0].version == raw[0]["version"]
+    assert revisions[0].filesize == raw[0]["filesize"]
+
+
+def test_get_config_history_revisions_only_calls_endpoint_with_default_limit():
+    client, transport = _config_history_revisions_client()
+    client.get_config_history_revisions()
+    assert transport.calls == [("GET", "/api/v2/diagnostics/config_history/revisions?limit=100")]
+
+
+def test_get_config_history_revisions_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _config_history_revisions_body()
+    transport.register(
+        "GET", "/api/v2/diagnostics/config_history/revisions?limit=5", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_config_history_revisions(limit=5)
+    assert transport.calls == [("GET", "/api/v2/diagnostics/config_history/revisions?limit=5")]
+
+
+def test_get_config_history_revisions_rejects_zero_limit():
+    client, _ = _config_history_revisions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_config_history_revisions(limit=0)
+
+
+def test_get_config_history_revisions_rejects_limit_above_max():
+    client, _ = _config_history_revisions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_config_history_revisions(limit=101)
+
+
+def test_get_config_history_revisions_missing_data_key_raises_shape_error():
+    body = _config_history_revisions_body()
+    del body["data"]
+    client, _ = _config_history_revisions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_config_history_revisions()
+
+
+def test_get_config_history_revisions_data_wrong_type_raises_shape_error():
+    body = _config_history_revisions_body()
+    body["data"] = "not-a-list"
+    client, _ = _config_history_revisions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_config_history_revisions()
+
+
+def test_get_config_history_revisions_item_wrong_type_raises_shape_error():
+    body = _config_history_revisions_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _config_history_revisions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_config_history_revisions()
+
+
+def test_get_config_history_revisions_required_field_missing_raises_shape_error():
+    body = _config_history_revisions_body()
+    del body["data"][0]["description"]
+    client, _ = _config_history_revisions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_config_history_revisions()
+
+
+def test_get_config_history_revisions_invalid_field_type_raises_shape_error():
+    body = _config_history_revisions_body()
+    body["data"][0]["filesize"] = "not-an-int"
+    client, _ = _config_history_revisions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_config_history_revisions()
+
+
+def test_get_config_history_revisions_shape_error_does_not_leak_raw_field_values():
+    body = _config_history_revisions_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["description"] = [sentinel]
+    client, _ = _config_history_revisions_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_config_history_revisions()
     assert sentinel not in str(excinfo.value)
 
 

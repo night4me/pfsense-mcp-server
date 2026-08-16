@@ -44,8 +44,8 @@ the first-WRITE semantic scope and is not PASS.
 | authoritative uncertainty classification | MUST COMPLETE | ADR-027 observation and closed offline classifiers exist; integrate and test applied/not-applied/ambiguous in fixed production composition |
 | fail-closed reconciliation | MUST COMPLETE | signed reconciliation architecture is established offline; fixed production verifier/resume construction and refusal tests remain |
 | authenticated recovery across restart | MUST COMPLETE | schema-v6 encrypted/HMAC restart evidence is established offline; W1 migrated authenticated contracts to schema-v7 with explicit V2 provenance; W2 must prove fixed production reconstruction and no resend |
-| least privilege for exact endpoint/capability | MUST COMPLETE | still not independently proven against the live LAB identity — see "Live first-WRITE evidence (2026-08-16)" below |
-| sufficient authoritative side-effect evidence | PARTIALLY VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below; one residual open item (config-history effect) |
+| least privilege for exact endpoint/capability | MUST COMPLETE (evidence now shows active violation, not merely unproven) | the live LAB identity is pfSense's full admin/system-scope account, not a scoped identity — see "Live first-WRITE evidence (2026-08-16)" below |
+| sufficient authoritative side-effect evidence | VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below; the config-history clause that kept this PARTIALLY VERIFIED is now closed |
 
 ### Concurrency boundary
 
@@ -759,43 +759,86 @@ from that report.
   independently confirmed to have produced zero pfSense contact and zero
   state mutation.
 
-**New finding, not previously characterized against live hardware**: a
-read-only `get_firewall_apply_status()` check performed during this
-consolidation pass shows the LAB appliance currently reports
-`applied=False`, `pending_subsystems=['aliases']` following the real
-WRITE. This is `apply=false`'s documented pfSense v2 API consequence, not
-a defect — the config.xml entry is written but the running ruleset is not
-regenerated. Since `descr` is pure metadata never compiled into the
-firewall ruleset, this has no live traffic-behavior effect, but it does
-mean the appliance carries a standing "pending changes" indicator this
-architecture's WRITE path does not clear (no explicit apply step exists
-by design). This directly, positively confirms row 6 (`apply=false`
-genuinely suppresses any reload/apply, observed on real hardware, not
-merely coded) — but it also means row 18's "config-history effect"
-clause is only **partially** closed: we now know precisely what happens
-(a pending-subsystem marker, no reload), but this session did not
-independently verify the absence of an internal pfSense config-revision/
-backup proliferation effect (no read-only API exists in this codebase to
-inspect that). Recorded here explicitly rather than promoted to
-`VERIFIED`.
+**`get_firewall_apply_status()` finding (2026-08-16, first consolidation
+pass)**: the LAB appliance reports `applied=False`,
+`pending_subsystems=['aliases']` following the real WRITE. This is
+`apply=false`'s documented pfSense v2 API consequence, not a defect — the
+config.xml entry is written but the running ruleset is not regenerated.
+Since `descr` is pure metadata never compiled into the firewall ruleset,
+this has no live traffic-behavior effect, but it does mean the appliance
+carries a standing "pending changes" indicator this architecture's WRITE
+path does not clear (no explicit apply step exists by design). This
+directly, positively confirms row 6 (`apply=false` genuinely suppresses
+any reload/apply, observed on real hardware, not merely coded).
 
-**Row 17 (least privilege) still not independently established**: an
-attempted read of the LAB identity's own granted privileges
-(`get_users()`) failed with `PfSenseResponseShapeError` against the real
-appliance response (a genuine, separate finding — logged for follow-up
-in `reports-ai/CHANGELOG_AI.md`, not investigated further in this pass by
-design — `PfSenseResponseShapeError` deliberately never exposes the raw
-response content, and a deeper investigation was out of scope for this
-consolidation run). This row remains **MUST COMPLETE**; do not infer
-least-privilege from the fact that only the intended endpoint was ever
-called during this ceremony — that is caller discipline, not an
-enforced, independently-verified appliance-side permission boundary.
+**Row 18 (side-effect evidence) — config-history clause closed, 2026-08-16
+second consolidation pass**: a new, narrowly-scoped read-only client
+method, `PfSenseClient.get_config_history_revisions()`
+(`/api/v2/diagnostics/config_history/revisions`, previously
+`DIAGNOSTICS_CONFIG_HISTORY_READ` in `docs/READ_BACKLOG.md` — planned but
+unimplemented), was added and used to read the LAB appliance's full
+config-history/backup revision list directly. Result: the most recent
+revision entry predates the entire Slice 6 ceremony workstream by several
+days; **zero config-history revisions exist for the WRITE date**. This is
+direct, authoritative, live-observed evidence — not inference — that this
+architecture's `apply=false` alias-description PATCH does not create any
+config-revision/backup entry at all (the backup-creation step appears
+bound to pfSense's own "apply" action, which this path never triggers by
+design). This closes the one item that kept row 18 at PARTIALLY VERIFIED:
+there is no unknown config-history/backup proliferation effect. Row 18 is
+now **VERIFIED**.
 
-**Not decided by this evidence update**: whether this evidence is
-sufficient, in combination with row 17's continued gap, to flip
-`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` to `True`. That
-remains a separate, explicit owner/security-policy decision — see
-`reports-ai/NEXT_TASKS.md` for the exact open decision packet.
+**Row 17 (least privilege) — root-caused, now positively contradicted by
+live evidence, 2026-08-16 second consolidation pass**: the original
+`get_users()` failure was root-caused, not merely logged for later. Exact
+cause: `PfSenseUser.expires` was typed as non-nullable `str`, but the real
+LAB appliance's single local user account (`admin`) legitimately returns
+`expires: null` (no expiration configured) — a genuine model/schema
+defect (the approved test fixture had only ever exercised the
+empty-string case), not a permissions issue, not API-version drift, not
+fixture-only drift. Fixed narrowly (`expires: str | None`), with a
+regression test and an approved-contract-snapshot update; no other field
+or code path was affected (confirmed via `git diff` against the public
+contract snapshot: only the `expires` field's schema changed).
+
+With `get_users()` now working, the evidence is materially worse than
+"unproven": **the LAB appliance has exactly one local user, `admin`,
+`scope: system`, `priv: ['user-shell-access']`** — full administrative
+scope. `RestApiClient`'s `identity` parameter (`PFSENSE_IDENTITY`, e.g.
+`pfsense_lab1`) is confirmed, by direct code inspection, to be used only
+for local log-line correlation (`logger.warning(...)` call sites) and is
+never sent as an HTTP header or otherwise presented to pfSense —
+authentication is exclusively via the `X-API-Key` header. Since the
+appliance has no other local user for that key to be associated with, and
+the config-history revision descriptions independently corroborate this
+(`"admin@<lab-ip>: Modified Firewall Alias via API"` for every ceremony
+mutation, matching the live evidence above), **the API credential used for
+the entire Slice 6 ceremony workstream, including the first real WRITE,
+authenticates as pfSense's full administrative account, not a
+capability-scoped identity**. This is not caller discipline standing in
+for an enforced boundary — it is direct evidence that no least-privilege
+boundary exists at the appliance-identity level for this LAB at all, since
+only one (full-privilege) local user is provisioned. Row 17 remains **MUST
+COMPLETE**, now with an identified, concrete remediation path: provision a
+second, capability-scoped pfSense local user/API key (e.g. limited to the
+alias-write privilege class) and re-run the acceptance evidence against
+that identity. This requires live pfSense user/credential provisioning,
+which is explicitly outside any autonomous session's authority — an
+owner/security-policy action.
+
+**Not decided by this evidence update**: whether this evidence — row 18
+now VERIFIED, row 17 MUST COMPLETE with an identified privilege gap, and
+the several other rows in the acceptance matrix above still marked MUST
+COMPLETE (concurrent-change refusal, stale-expected-state refusal,
+rollback-from-verified-B, no-blind-retry confirmation, uncertainty
+classification, fail-closed reconciliation, authenticated-recovery
+reconstruction — none of which were in scope for this evidence-gathering
+pass) — changes whether flipping
+`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` to `True` is
+justified. It is not: multiple MUST COMPLETE rows remain open, only one of
+which (17) was investigated this pass. That remains a separate, explicit
+owner/security-policy decision — see `reports-ai/NEXT_TASKS.md` for the
+exact open decision packet.
 
 ## STOP conditions
 

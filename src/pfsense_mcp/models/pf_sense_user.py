@@ -8,6 +8,13 @@ from the public model entirely. name/descr/uid/priv/cert are ordinary object met
 and are always visible. authorizedkeys is public cryptographic material
 that remains redacted by default and opt-in only. ipsecpsk is a secret
 and is ignored unconditionally.
+
+`expires` is `str | None` (not `str`): a 2026-08-16 live-LAB read against a
+real pfSense v2 appliance observed `expires: null` for the built-in `admin`
+account (no expiration configured), which the original non-nullable typing
+rejected with a schema-validation error -- the approved fixture had only ever
+exercised the empty-string ("no expiration") case, never the null one. Both
+represent "no expiration" on real hardware.
 """
 
 from __future__ import annotations
@@ -23,7 +30,7 @@ class PfSenseUser(BaseModel):
     cert: list[str] | None
     descr: str
     disabled: bool
-    expires: str
+    expires: str | None
     id: int
     name: str
     priv: list[str] | None
