@@ -17,7 +17,11 @@ visibility into one pfSense appliance — system, network, firewall, services,
 users, certificates, and diagnostics — without exposing raw shell access, an
 unaudited scripting surface, or a way to mutate the appliance by accident.
 
-**Current production contract: 42 READ tools. 0 WRITE tools.**
+**Current production contract: 42 READ tools. 0 WRITE tools.** The one
+WRITE capability this project has ever built is not reachable without an
+operator explicitly opting in, and every individual mutation still
+requires a real, cryptographically authorized, human-driven approval
+ceremony — see [Security-first by design](#security-first-by-design).
 
 That split is deliberate, not incomplete. See
 [Why this project exists](#why-this-project-exists) below.
@@ -210,6 +214,14 @@ by itself, sufficient authority to perform it. The goal is not to make
 AI-generated infrastructure changes merely possible — it is to make them
 constrained, attributable, recoverable, and independently verifiable.
 
+Most MCP servers that expose a WRITE-capable API put an API credential
+behind a tool call and stop there: if the model calls the tool, the
+change happens. This project was built around a different question —
+how do you give an AI agent narrowly controlled mutation capability over
+critical network infrastructure without ever granting it unrestricted
+administrative authority? The answer implemented below is a multi-party
+approval pipeline, not a bigger prompt or a stricter system message.
+
 ### Protected WRITE architecture
 
 - Zero WRITE capabilities exposed by default — reaching the one accepted
@@ -245,10 +257,13 @@ freshness, target state, and execution are separate, independently
 enforced gates — every one of them must hold for a given mutation, every
 time.
 
-The protected WRITE path has been exercised end-to-end against a real
-LAB pfSense appliance — never the owner's production/home pfSense —
-including least-privilege execution, authoritative read-back,
-`RecoveryContract` lifecycle, and TPM witness advancement. See
+The protected WRITE path has been exercised end-to-end **twice**, each
+time independently verified, against a real disposable LAB pfSense
+appliance — never the owner's production/home pfSense — including
+least-privilege execution through a dedicated 4-privilege pfSense
+identity (never the administrative account), authoritative read-back,
+full `RecoveryContract` lifecycle, and TPM hardware witness advancement
+confirmed against the physical device both times. See
 [`docs/adr/ADR-026-first-write-capability-adapter.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/docs/adr/ADR-026-first-write-capability-adapter.md)
 for the complete evidence chain.
 
