@@ -9,20 +9,34 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **First real pfSense mutation performed and authoritatively verified**
-  (2026-08-16, disposable LAB appliance only): a full owner-authorized,
-  per-artifact-independently-verified ceremony (fresh authorization →
-  one-time consumption → `RecoveryContract` → confirmation → exactly one
+- **Two real pfSense mutations performed and authoritatively verified,
+  followed by `WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified=True`**
+  (2026-08-16, disposable LAB appliance only, never production/home
+  pfSense): a full owner-authorized, per-artifact-independently-verified
+  ceremony (fresh authorization → one-time consumption →
+  `RecoveryContract` → confirmation → exactly one
   `PATCH /api/v2/firewall/alias`) reached `RecoveryContract` state
   `VERIFIED` with a clean, MAC-authenticated audit trail and no
-  rollback/reconciliation event. TPM witness advanced `2 → 3`,
-  independently confirmed against the persisted high-water mark. See
-  `docs/adr/ADR-026-first-write-capability-adapter.md`'s "Live
-  first-WRITE evidence (2026-08-16)" section for the full evidence chain
-  and remaining open items (least-privilege row still `MUST COMPLETE`;
-  `verified=True` not yet decided). `LAB_ALIAS_TEST` still carries a
-  temporary marker description pending a separate, explicitly-authorized
-  restoration ceremony — not performed automatically.
+  rollback/reconciliation event, twice: once establishing the temporary
+  Slice 6 marker (TPM witness `2 → 3`), and a second time restoring the
+  alias's original description (`Disposable LAB-T1 synthetic test alias`,
+  TPM witness `3 → 4`) — the second WRITE performed entirely through a
+  newly-provisioned, independently-verified least-privilege pfSense
+  identity (`pfsense_mcp_tier1_lab`) holding only the four minimum
+  privileges the production path needs, never the admin credential. Both
+  witness advances independently confirmed against the persisted
+  high-water mark. ADR-026's acceptance-matrix rows 6, 17, and 18 (the
+  live-evidence gap) and the remaining seven offline-evidenced rows were
+  then re-checked, row by row, against an owner-confirmed strict
+  evidentiary standard; all survived, and
+  `FIREWALL_ALIAS_DESCRIPTION.verified` was set `True`. This does not
+  change the default public MCP contract — still 42 READ / 0 WRITE tools
+  under the default profile; reaching the WRITE path still requires an
+  operator to explicitly select `PFSENSE_PROFILE=write_protected` and
+  personally drive a real, owner-approved signing ceremony for each
+  individual mutation. See
+  `docs/adr/ADR-026-first-write-capability-adapter.md`'s live-evidence
+  and strict-re-check sections for the full chain.
 - `pfsense-mcp-security`: a new, separately-installed CLI (`ADR-021`,
   Accepted; Phase B of `docs/SECURITY_POSTURE_PROVISIONING.md`) offering
   one subcommand, `discover`, which reports the current capability-posture

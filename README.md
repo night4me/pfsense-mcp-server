@@ -107,16 +107,26 @@ Current production:
 - ✓ 42 READ tools
 - ✓ 0 WRITE tools
 
-Future WRITE requires, in order, before any of it can ever activate:
+**Update (2026-08-16):** every step below has now been exercised
+end-to-end, twice, against a disposable, isolated LAB appliance —
+never production or home pfSense — with independently-verified live
+evidence (see `docs/adr/ADR-026-first-write-capability-adapter.md`).
+The default production MCP contract above is still 0 WRITE tools: that
+remains an explicit operator choice (profile selection), not an
+architectural gap.
 
-- explicit capability authorization
-- Recovery Contracts
-- authenticated confirmation
-- sealed execution
-- reconciliation
-- anti-rollback
-- disposable-lab validation
-- explicit owner activation
+- explicit capability authorization — proven
+- Recovery Contracts — proven
+- authenticated confirmation — proven
+- sealed execution — proven
+- reconciliation — proven (offline, production-bound; no live fault
+  ever occurred to exercise it against the real appliance)
+- anti-rollback — proven (TPM witness genuinely advanced on both real
+  writes, independently verified against the physical hardware)
+- disposable-lab validation — proven
+- explicit owner activation — required for every individual mutation,
+  by design; still not something a default configuration or an AI
+  session can trigger on its own
 
 ```mermaid
 flowchart LR
@@ -127,7 +137,7 @@ flowchart LR
         A3 -->|HTTPS GET| A4[(pfSense)]
     end
 
-    subgraph future["Designed, tested, still inert — requires separate owner authorization to ever activate"]
+    subgraph future["Proven against a disposable LAB appliance — requires separate owner authorization for every mutation, never reachable via the default profile"]
         direction LR
         B1[Authorized intent] --> B2[Recovery Contract]
         B2 --> B3[Authenticated<br/>owner confirmation]
@@ -137,15 +147,19 @@ flowchart LR
     end
 ```
 
-Every box in the "designed, tested, still inert" half already exists as
-real, tested code — a canonical Recovery Contract bound to the exact target
-and intent; a closed state machine with crash-safe, atomic persistence;
-Ed25519-authenticated owner confirmation and reconciliation; a sealed
-executor that is the *only* component ever allowed to send one bounded
-mutating request and classify what actually happened, rather than assume
-success; and an offline-tested fault-injection harness for disposable-lab
-validation before any of it ever touches a real appliance. None of it is
-reachable today. See
+Every box in that second half exists as real, tested code and has now
+been exercised against a real disposable LAB appliance — a canonical
+Recovery Contract bound to the exact target and intent; a closed state
+machine with crash-safe, atomic persistence; Ed25519-authenticated owner
+confirmation and reconciliation; a sealed executor that is the *only*
+component ever allowed to send one bounded mutating request and classify
+what actually happened, rather than assume success. It has never touched
+production or home pfSense, and it is not reachable under the default
+profile shipped to every new installation — reaching it requires an
+operator to explicitly select `PFSENSE_PROFILE=write_protected` and then
+personally drive a real, owner-approved signing ceremony for each
+individual mutation; nothing about it is automatic or AI-triggerable on
+its own. See
 [the Tier 1 architecture](docs/TIER1_ARCHITECTURE.md) and the
 [public roadmap](docs/ROADMAP.md) for the complete picture, and
 [the security model](docs/SECURITY_MODEL.md) for what's actually enforced,

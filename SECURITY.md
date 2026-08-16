@@ -130,11 +130,18 @@ describes an explicitly accepted boundary, not an accidental gap:
   beyond basic bounded limits and timeouts. The local stdio deployment
   model assumes a single trusted caller process, not an adversarial one
   sharing the channel.
-- **No production WRITE capability exists to report a bypass of.** The
-  v0.3.0 Tier 1 framework is inert by construction — no executor, no
-  registered WRITE tool, no allow-listed endpoint. A report that assumes
-  WRITE is reachable is testing against a capability that doesn't exist
-  yet in any published version.
+- **The one allow-listed WRITE capability
+  (`set_firewall_alias_description_v1`) is not reachable under the
+  default profile.** As of 2026-08-16, the full Tier 1 framework
+  (executor, allow-listed endpoint, `verified=True`) is mechanically
+  complete and has been exercised twice against a disposable, isolated
+  LAB appliance — never production or home pfSense. It remains
+  unreachable unless an operator explicitly selects
+  `PFSENSE_PROFILE=write_protected` *and* personally drives a real,
+  owner-approved signing ceremony for each individual mutation; no
+  default configuration, AI session, or automated process can reach it
+  on its own. A report assuming WRITE is reachable under the default
+  profile is testing against a capability that isn't exposed there.
 
 ## Trust boundary
 
