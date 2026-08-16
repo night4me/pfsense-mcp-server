@@ -35,16 +35,16 @@ the first-WRITE semantic scope and is not PASS.
 | omitted-field/protected-sibling preservation | ESTABLISHED | protected fields and ordering remained unchanged throughout clean and description evidence |
 | explicit apply/reload suppression contract | VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below |
 | deterministic authoritative postcondition | ESTABLISHED | 25/25 verified B reads plus exact normalization/boundary evidence |
-| description-field concurrent-change/conflict refusal | MUST COMPLETE | executor fingerprint refusal is established offline; production-bound D1-D5-equivalent focused tests and any owner-selected live evidence must prove the exact adapter path |
-| stale expected-state refusal | MUST COMPLETE | existing executor behavior is reusable; prove it through the production-bound adapter/coordinator path |
-| conflict-safe rollback from verified/reconciled B | MUST COMPLETE | sealed rollback and reconciliation architecture are established; prove post-B description drift refusal through the production-bound path |
+| description-field concurrent-change/conflict refusal | VERIFIED (offline, production-bound) (2026-08-16) | `tests/tier1/test_alias_description_execution.py::test_production_adapter_drift_refuses_before_executor_send` drives the real `AliasDescriptionAdapterV1` + `MutationExecutor` (not `test_executor.py`'s generic `_SyntheticAdapter`) through a description change concurrent with a confirmed contract: zero sends, `FAILED`. See "ADR-026 acceptance-matrix closure evidence (2026-08-16)" below for the interpretation this reclassification rests on. |
+| stale expected-state refusal | VERIFIED (offline, production-bound) (2026-08-16) | same test as above — the fingerprint drift *is* the staleness the executor detects before send, through the same real adapter path. |
+| conflict-safe rollback from verified/reconciled B | VERIFIED (offline, production-bound) (2026-08-16) | `test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_remains_available` drives a real `VERIFIED` contract through the real adapter, proves a concurrent post-B change refuses rollback (`ROLLBACK_FAILED`, zero sends), and separately proves a legitimate rollback succeeds and restores exact A after the *authorization*'s own expiry (proving rollback authority is the sealed VERIFIED/B precondition, not authorization freshness). |
 | exact authoritative A restoration | ESTABLISHED | 25/25 clean restorations and every accepted Stage 3A/3B case restored exact A |
 | at-most-one-send | ESTABLISHED | clean live send accounting plus MutationExecutor/FaultProxy offline tests exercise the same send owner; production wiring must not add a send path |
-| no blind retry after uncertainty | MUST COMPLETE | executor/offline fault and reconciliation tests establish the security owner; confirm W1/W2 composition adds no retry; additional live permutations only if production introduces materially different behavior |
-| authoritative uncertainty classification | MUST COMPLETE | ADR-027 observation and closed offline classifiers exist; integrate and test applied/not-applied/ambiguous in fixed production composition |
-| fail-closed reconciliation | MUST COMPLETE | signed reconciliation architecture is established offline; fixed production verifier/resume construction and refusal tests remain |
-| authenticated recovery across restart | MUST COMPLETE | schema-v6 encrypted/HMAC restart evidence is established offline; W1 migrated authenticated contracts to schema-v7 with explicit V2 provenance; W2 must prove fixed production reconstruction and no resend |
-| least privilege for exact endpoint/capability | MUST COMPLETE (evidence now shows active violation, not merely unproven) | the live LAB identity is pfSense's full admin/system-scope account, not a scoped identity — see "Live first-WRITE evidence (2026-08-16)" below |
+| no blind retry after uncertainty | VERIFIED (offline, production-bound) (2026-08-16) | `test_replay_is_refused_before_second_contract_or_handoff`, `test_all_preconsumption_failures_leave_auth_unconsumed_and_zero_handoff`, and `test_resume_prepared_never_consumes_or_creates_and_duplicate_resume_is_safe` (all in `test_alias_description_execution.py`) plus `test_restart_reconciles_interrupted_executing_contract` (`test_production_runtime.py`, using the real `build_production_runtime()`, not a test double) together prove zero resend across preconsumption failure, duplicate resume, and a simulated restart mid-`EXECUTING`. |
+| authoritative uncertainty classification | VERIFIED (offline, production-bound) (2026-08-16) | Was the one genuine gap this pass found: `DEFINITELY_APPLIED`/`DEFINITELY_NOT_APPLIED`/`AMBIGUOUS` classification was previously proven only against `test_executor.py`'s generic `_SyntheticAdapter`, never the real alias adapter. Closed by a new test, `test_production_adapter_send_timeout_reaches_reconciliation_not_failed_or_resend`: a `TransportTimeoutError` on the real adapter's send lands in `RECONCILIATION` (never `FAILED`, which would license a resend), exactly one send attempted. |
+| fail-closed reconciliation | VERIFIED (offline, production-bound) (2026-08-16) | `test_reconciliation_requires_pinned_authority_and_wrong_signature_fails_closed` (`test_production_runtime.py`) proves the fixed production pinned reconciliation authority rejects a wrong signature; `test_restart_reconciles_interrupted_executing_contract` proves the fixed production verifier/resume construction reaches `RECONCILIATION`, not a resend, through `build_production_runtime()` itself. |
+| authenticated recovery across restart | VERIFIED (offline, production-bound) (2026-08-16) | Same `test_restart_reconciles_interrupted_executing_contract`: two independent `build_production_runtime()` calls against the same store file simulate a real process restart; the interrupted `EXECUTING` contract is reconciled, never resent, through the real fixed production construction (schema-v7, V2 provenance, no test-only wiring). |
+| least privilege for exact endpoint/capability | MUST COMPLETE — scoped identity designed, owner provisioning required | the live LAB identity is pfSense's full admin/system-scope account, not a scoped identity. A concrete minimum-privilege design and owner-run provisioning procedure now exist — see "Live first-WRITE evidence (2026-08-16)" and "Least-privilege identity design and provisioning procedure (2026-08-16)" below. Provisioning itself is a live pfSense action outside any autonomous session's authority. |
 | sufficient authoritative side-effect evidence | VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below; the config-history clause that kept this PARTIALLY VERIFIED is now closed |
 
 ### Concurrency boundary
@@ -826,19 +826,82 @@ that identity. This requires live pfSense user/credential provisioning,
 which is explicitly outside any autonomous session's authority — an
 owner/security-policy action.
 
+## ADR-026 acceptance-matrix closure evidence (2026-08-16, third consolidation pass)
+
+Seven of the eight remaining MUST COMPLETE rows (concurrent-change
+refusal, stale-expected-state refusal, rollback-from-verified-B,
+no-blind-retry, uncertainty classification, fail-closed reconciliation,
+authenticated recovery across restart) were investigated for the first
+time this pass. For each, the question was: does *production-bound*
+offline test evidence (the real `AliasDescriptionAdapterV1`/
+`AliasDescriptionExecutionCoreV1`/`build_production_runtime()`
+composition, not a generic synthetic adapter) already exist, and does it
+genuinely prove the row's stated requirement?
+
+**Finding**: six of the seven rows already had exactly this evidence —
+`test_alias_description_execution.py::test_production_adapter_drift_refuses_before_executor_send`
+and `test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_remains_available`
+were added 2026-08-12; `test_production_runtime.py::test_restart_reconciles_interrupted_executing_contract`
+and `test_reconciliation_requires_pinned_authority_and_wrong_signature_fails_closed`
+were added 2026-08-14 — both dates before this ADR's evidence sections
+were written, meaning this evidence existed and simply had not yet been
+cross-referenced against the acceptance matrix. The seventh
+(authoritative uncertainty classification) had a genuine, narrow gap: the
+`DEFINITELY_APPLIED`/`DEFINITELY_NOT_APPLIED`/`AMBIGUOUS` classification
+was proven only against `test_executor.py`'s generic `_SyntheticAdapter`,
+never the real alias adapter. Closed with one new test,
+`test_production_adapter_send_timeout_reaches_reconciliation_not_failed_or_resend`.
+
+**Interpretation flagged, not silently resolved**: several of these rows'
+original wording (e.g. row 8's "production-bound D1-D5-equivalent focused
+tests **and** any owner-selected live evidence must prove the exact
+adapter path") is genuinely ambiguous about whether live evidence is
+strictly conjunctive-required or merely an owner-selectable option on top
+of sufficient offline evidence. This pass adopted the latter reading
+(offline production-bound evidence is sufficient absent an explicit
+owner request for additional live evidence) and reclassified these seven
+rows to **VERIFIED (offline, production-bound)** on that basis — a status
+distinct from live-observed `VERIFIED` rows (6, 18), which remain the
+only rows backed by real hardware/appliance observation. If the owner's
+intended reading was strictly conjunctive, these seven rows should be
+read as MUST COMPLETE pending owner-selected live evidence instead; no
+code or architecture decision depends on which reading is correct, so
+this is purely a documentation/acceptance-bar judgment call, reversible
+by editing this table alone.
+
 **Not decided by this evidence update**: whether this evidence — row 18
-now VERIFIED, row 17 MUST COMPLETE with an identified privilege gap, and
-the several other rows in the acceptance matrix above still marked MUST
-COMPLETE (concurrent-change refusal, stale-expected-state refusal,
-rollback-from-verified-B, no-blind-retry confirmation, uncertainty
-classification, fail-closed reconciliation, authenticated-recovery
-reconstruction — none of which were in scope for this evidence-gathering
-pass) — changes whether flipping
+VERIFIED, row 17 MUST COMPLETE with a designed remediation
+(least-privilege identity design + owner-run provisioning procedure,
+below) but not yet closed, and the seven rows above now VERIFIED
+(offline, production-bound) subject to the interpretation flagged
+immediately above — changes whether flipping
 `WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` to `True` is
-justified. It is not: multiple MUST COMPLETE rows remain open, only one of
-which (17) was investigated this pass. That remains a separate, explicit
+justified. It is not: row 17 alone remains open, and closing it requires
+a live pfSense action (scoped credential provisioning) outside any
+autonomous session's authority. That remains a separate, explicit
 owner/security-policy decision — see `reports-ai/NEXT_TASKS.md` for the
 exact open decision packet.
+
+## Least-privilege identity design and provisioning procedure (2026-08-16)
+
+Full design (exact pfSense endpoint/privilege mapping, proposed scoped
+identity, owner-run provisioning procedure, post-provisioning
+verification matrix) is maintained as a dedicated, git-ignored
+reports-ai document rather than duplicated into this ADR:
+`reports-ai/reviews/SLICE6_LEAST_PRIVILEGE_PROVISIONING_2026-08-16.md`.
+Summary: the production WRITE path needs exactly four pfSense API
+capabilities (`GET /api/v2/firewall/aliases`, `GET /api/v2/status/system`,
+conditionally `GET /api/v2/system/hasync`, and `PATCH /api/v2/firewall/alias`)
+— nothing else. `get_users()`/`get_firewall_apply_status()`/
+`get_config_history_revisions()` are evidence-gathering diagnostics, not
+production runtime dependencies, and the scoped identity does not need
+them. The exact pfSense native privilege identifier strings could not be
+enumerated via a safe read-only API call (this pfSense REST API build
+exposes no privilege-catalog endpoint); the provisioning procedure has
+the owner select privileges live via pfSense's own GUI picker against
+the documented capability list, then closes the loop by reading back the
+new user's actual `priv` list via `get_users()` for owner verification —
+never guessing an unverified privilege ID string.
 
 ## STOP conditions
 

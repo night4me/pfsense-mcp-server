@@ -61,7 +61,7 @@ from pfsense_mcp.tier1.prepared_execution_intent import compute_execution_intent
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 from pfsense_mcp.tls import TLSMode
-from pfsense_mcp.transport.base import TransportResponse
+from pfsense_mcp.transport.base import TransportResponse, TransportTimeoutError
 from tests.test_security_plan_digest import _synthetic_plan, _synthetic_step
 
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -816,6 +816,51 @@ def test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_r
     )
     assert recovered.state is RecoveryState.ROLLED_BACK
     assert recovery_write.calls == 1
+
+
+class _TimeoutWriteClient:
+    """Raises TransportTimeoutError on the exact send call the production
+    adapter/executor composition makes -- proves the AMBIGUOUS/
+    RECONCILIATION uncertainty classification (ADR-026 row 14) through the
+    real AliasDescriptionAdapterV1, not only test_executor.py's
+    _SyntheticAdapter (the only production-bound gap this row had)."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def send_for_tier1(self, *, endpoint_symbol: str, http_method: str, body: bytes) -> TransportResponse:
+        assert endpoint_symbol == ENDPOINT_SYMBOL
+        assert http_method == HTTP_METHOD
+        assert body
+        self.calls += 1
+        raise TransportTimeoutError("synthetic timeout")
+
+
+def test_production_adapter_send_timeout_reaches_reconciliation_not_failed_or_resend(tmp_path: Path, monkeypatch):
+    """ADR-026 row 14 (authoritative uncertainty classification): a lost
+    response after the real PATCH may reach the server. This must never be
+    classified as a clean failure (which would license a resend) and must
+    never resend -- it must land in RECONCILIATION, exactly once sent,
+    through the real production adapter."""
+
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _mock_executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+    store.confirm(contract.contract_id, evidence=_confirmation(contract), expected_version=contract.state_version)
+    write_client = _TimeoutWriteClient()
+
+    outcome = _sealed_executor(store, client, write_client).execute(
+        contract.contract_id,
+        adapter=AliasDescriptionAdapterV1(),
+        intent=_executor_intent(prepared),
+    )
+
+    assert outcome.state is RecoveryState.RECONCILIATION
+    assert write_client.calls == 1
 
 
 def test_authorized_store_entry_requires_non_null_provenance(tmp_path: Path, contract_factory):
