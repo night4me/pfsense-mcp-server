@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import hmac
 import json
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
@@ -35,6 +34,14 @@ from .policy import MutationPolicy
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
+# Re-exported (explicit `as` form so mypy --strict treats it as a genuine
+# export, not an unused import) so every existing `from .executor import
+# ResolvedTransportTarget` / `from pfsense_mcp.tier1.executor import
+# ResolvedTransportTarget` caller is unaffected -- the class itself now
+# lives in transport_target.py so capability adapters can use it without
+# importing this file (see that module's docstring for why).
+from .transport_target import ResolvedTransportTarget as ResolvedTransportTarget
+
 if TYPE_CHECKING:
     # ADR-029: type-checking only -- see write_api_client.py's identical
     # guard for why. executor.py is reachable from production_runtime.py,
@@ -42,8 +49,6 @@ if TYPE_CHECKING:
     # here would become MCP-reachable the moment application.py wires
     # tier1_write_bridge.py in (Slice 4), even though it is not today.
     from .acceptance import AcceptanceExecutionContext
-
-_HEX_64 = re.compile(r"[0-9a-f]{64}")
 
 
 class CapabilityAdapter(Protocol):
@@ -81,20 +86,6 @@ class CapabilityAdapter(Protocol):
     def is_semantically_verified(self, pre: object, post: object, intent: object) -> bool: ...
     def build_rollback_request(self, pre: object, target: ResolvedTransportTarget) -> BaseModel: ...
     def is_rollback_verified(self, pre: object, post_rollback: object) -> bool: ...
-
-
-@dataclass(frozen=True)
-class ResolvedTransportTarget:
-    """Fresh executor-owned transport projection for one exact semantic target."""
-
-    numeric_locator: int
-    target_identity_digest: str
-
-    def __post_init__(self) -> None:
-        if type(self.numeric_locator) is not int or not 0 <= self.numeric_locator <= 2_147_483_647:
-            raise ContractValidationError("Resolved transport locator is invalid.")
-        if not isinstance(self.target_identity_digest, str) or not _HEX_64.fullmatch(self.target_identity_digest):
-            raise ContractValidationError("Resolved transport target identity is invalid.")
 
 
 @dataclass(frozen=True)

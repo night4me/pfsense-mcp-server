@@ -23,8 +23,8 @@ from pfsense_mcp.tls import TLSMode
 
 from .canonical import CanonicalValue, DigestPurpose, digest_value
 from .errors import PreparedExecutionIntentError
-from .executor import ResolvedTransportTarget
 from .prepared_execution_intent import PREPARED_EXECUTION_INTENT_SCHEMA_VERSION, PreparedExecutionIntentV1
+from .transport_target import ResolvedTransportTarget
 
 SEMANTIC_UNIT = "set_firewall_alias_description_v1"
 ENDPOINT_SYMBOL = "FIREWALL_ALIAS_DESCRIPTION"
