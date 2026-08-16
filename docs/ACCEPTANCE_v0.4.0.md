@@ -1,9 +1,9 @@
 # Acceptance — v0.4.0
 
-**Status: release-candidate quality, prepared, not yet tagged or
-published.** This document records what has been verified as of the
-release-preparation commit; the final "Acceptance boundary" section below
-states precisely what is, and is not, authorized by it.
+**Status: published — the `v0.4.0` tag and PyPI release point at this
+commit.** This document records what has been verified as of the release
+commit; the final "Acceptance boundary" section below states precisely
+what is, and is not, authorized by it.
 
 ## Release scope
 
