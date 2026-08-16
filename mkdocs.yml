@@ -87,6 +87,7 @@ nav:
       - Overview: TIER1_ARCHITECTURE.md
       - WRITE Tier 0 (inert infrastructure): WRITE_TIER0_SPEC.md
       - Public roadmap: ROADMAP.md
+      - Nexus compatibility matrix (research only, Phase A): NEXUS_COMPATIBILITY_MATRIX.md
       - v0.3.0 milestone: V0.3.0_MILESTONE.md
       - Tier 1 roadmap: TIER1_ROADMAP.md
       - Tier 1 implementation roadmap: tier1/IMPLEMENTATION_ROADMAP.md
@@ -125,6 +126,7 @@ nav:
           - ADR-027 Closed LAB-T1 Stage 3 execution-port composition: adr/ADR-027-closed-stage3-execution-port.md
           - ADR-028 First-WRITE product surface and delivery architecture: adr/ADR-028-first-write-product-surface-and-delivery.md
           - ADR-029 First-live-acceptance execution boundary: adr/ADR-029-first-live-acceptance-execution-boundary.md
+          - ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A): adr/ADR-030-dual-pfsense-api-backend-architecture.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md
