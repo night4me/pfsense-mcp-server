@@ -9,6 +9,20 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **First real pfSense mutation performed and authoritatively verified**
+  (2026-08-16, disposable LAB appliance only): a full owner-authorized,
+  per-artifact-independently-verified ceremony (fresh authorization →
+  one-time consumption → `RecoveryContract` → confirmation → exactly one
+  `PATCH /api/v2/firewall/alias`) reached `RecoveryContract` state
+  `VERIFIED` with a clean, MAC-authenticated audit trail and no
+  rollback/reconciliation event. TPM witness advanced `2 → 3`,
+  independently confirmed against the persisted high-water mark. See
+  `docs/adr/ADR-026-first-write-capability-adapter.md`'s "Live
+  first-WRITE evidence (2026-08-16)" section for the full evidence chain
+  and remaining open items (least-privilege row still `MUST COMPLETE`;
+  `verified=True` not yet decided). `LAB_ALIAS_TEST` still carries a
+  temporary marker description pending a separate, explicitly-authorized
+  restoration ceremony — not performed automatically.
 - `pfsense-mcp-security`: a new, separately-installed CLI (`ADR-021`,
   Accepted; Phase B of `docs/SECURITY_POSTURE_PROVISIONING.md`) offering
   one subcommand, `discover`, which reports the current capability-posture

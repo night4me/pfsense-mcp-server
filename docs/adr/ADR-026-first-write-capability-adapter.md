@@ -33,7 +33,7 @@ the first-WRITE semantic scope and is not PASS.
 | complete protected fingerprint | ESTABLISHED | the exact five-field semantic fingerprint and ordering were exercised; production tests must preserve it unchanged |
 | fresh lifecycle locator and continuity | ESTABLISHED | locator `0` remained stable in 25 clean cycles and all completed description cases; executor refusal on drift is already tested |
 | omitted-field/protected-sibling preservation | ESTABLISHED | protected fields and ordering remained unchanged throughout clean and description evidence |
-| explicit apply/reload suppression contract | MUST COMPLETE | explicit `apply=false` and omitted/default behavior are characterized; W3 must close any operationally material reload/service uncertainty without inferring absence from HTTP success |
+| explicit apply/reload suppression contract | VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below |
 | deterministic authoritative postcondition | ESTABLISHED | 25/25 verified B reads plus exact normalization/boundary evidence |
 | description-field concurrent-change/conflict refusal | MUST COMPLETE | executor fingerprint refusal is established offline; production-bound D1-D5-equivalent focused tests and any owner-selected live evidence must prove the exact adapter path |
 | stale expected-state refusal | MUST COMPLETE | existing executor behavior is reusable; prove it through the production-bound adapter/coordinator path |
@@ -44,8 +44,8 @@ the first-WRITE semantic scope and is not PASS.
 | authoritative uncertainty classification | MUST COMPLETE | ADR-027 observation and closed offline classifiers exist; integrate and test applied/not-applied/ambiguous in fixed production composition |
 | fail-closed reconciliation | MUST COMPLETE | signed reconciliation architecture is established offline; fixed production verifier/resume construction and refusal tests remain |
 | authenticated recovery across restart | MUST COMPLETE | schema-v6 encrypted/HMAC restart evidence is established offline; W1 migrated authenticated contracts to schema-v7 with explicit V2 provenance; W2 must prove fixed production reconstruction and no resend |
-| least privilege for exact endpoint/capability | MUST COMPLETE | prove the enabled production/test identity needs only the one alias-description endpoint/capability and no broader permission |
-| sufficient authoritative side-effect evidence | MUST COMPLETE | deterministic config read-back and apply behavior are known; any unknown reload/service/config-history effect capable of invalidating verification or recovery remains blocking |
+| least privilege for exact endpoint/capability | MUST COMPLETE | still not independently proven against the live LAB identity — see "Live first-WRITE evidence (2026-08-16)" below |
+| sufficient authoritative side-effect evidence | PARTIALLY VERIFIED (2026-08-16) | live first-WRITE evidence — see "Live first-WRITE evidence (2026-08-16)" below; one residual open item (config-history effect) |
 
 ### Concurrency boundary
 
@@ -698,6 +698,104 @@ MutationExecutor handoff. W1 must remain production-unreachable from MCP and
 must not populate `WriteEndpoints`, activate `ALIAS_WRITE`, register a tool, or
 perform live mutation. W2 owns fixed production construction; W3 alone owns
 the endpoint/capability/tool surface and selected live acceptance.
+
+## Live first-WRITE evidence (2026-08-16)
+
+The first real pfSense mutation in this project's history occurred against
+the disposable LAB appliance (`LAB_ALIAS_TEST`) under full owner
+authorization, ceremony-by-ceremony, per-artifact independent verification
+(full detail:
+`reports-ai/reviews/SLICE6_PREVIEW_DESCRIPTION_TRUNCATION_INVESTIGATION_2026-08-16.md`,
+external/git-ignored). Evidence reconstructed independently from
+authoritative persisted state during this consolidation pass, not copied
+from that report.
+
+**Directly observed, not inferred:**
+
+- Exactly one mutating pfSense request occurred:
+  `PATCH /api/v2/firewall/alias`, `apply=false` — confirmed both from the
+  executor's own log line at execution time and from
+  `AliasDescriptionPatchV1.apply` being hardcoded `False` at both call
+  sites in `tier1/alias_description.py` (never a caller-controlled value).
+- Deterministic authoritative read-back: `LAB_ALIAS_TEST.descr` matched
+  the requested value exactly, both immediately after execution and again
+  independently during this later consolidation pass.
+- `RecoveryContract aliasdescr-68313213fc7c47a9b070d5e480d2ad70` reached
+  `VERIFIED`/`state_version=4`/`is_confirmed=True`. `store.load()`'s
+  internal `_verified_audit_rows()` (integrity MAC chain, ordering,
+  completeness, terminal-state agreement) succeeded without raising —
+  re-verified independently, not merely re-read — for this contract and
+  for both prior expired/dead contracts.
+- Full audit chain: `contract_created(0) → prepared(1) →
+  contract_confirmed(2) → executing(3) → verified(4)`. No
+  `rollback`/`reconciliation` event type appears anywhere in
+  `audit_events`.
+- Authorization consumed exactly once:
+  `authz-d9d846ec9c3b46095c81e97a4ff91402` present exactly once in
+  `AuthorizationConsumptionStore`; two earlier, unrelated authorizations
+  (from the two now-permanently-expired ceremonies) are also present,
+  each exactly once, confirming one-time consumption held across all
+  three attempts, not merely the successful one.
+- Witness advanced exactly once: `2 → 3`, confirmed via a live
+  `TpmHostWitnessAnchor.read()`. The store's own independently-persisted
+  `anchor_state.high_water_mark` also reads `3` — no divergence between
+  physical witness and persisted record.
+- No target-reservation or rate-cooldown residue: both tables read `0`
+  rows post-`VERIFIED`, consistent with `VERIFIED` not being a member of
+  `_RESERVATION_STATES` (`EXECUTING`/`RECONCILIATION`/`ROLLING_BACK`/
+  `ROLLBACK_FAILED` only) — the reservation held during `EXECUTING` was
+  correctly released on reaching the terminal state, not merely absent.
+- No mutation occurred during the two earlier, expired ceremony attempts:
+  both dead contracts remain at `PREPARED`/`state_version=1`, never
+  reached `EXECUTING`, and the alias's description before this
+  consolidation pass's own investigation matched exactly what the
+  successful ceremony set it to — no unaccounted-for intermediate value
+  was ever observed.
+- Fail-closed expiry, demonstrated separately from success: two real,
+  live attempts were correctly refused before execution purely on
+  freshness grounds (a `ConfirmationEvidence` past its own `expires_at`,
+  and — architecturally, via `resume_prepared()`'s own checks — two
+  contracts whose bound authorization window had elapsed), each
+  independently confirmed to have produced zero pfSense contact and zero
+  state mutation.
+
+**New finding, not previously characterized against live hardware**: a
+read-only `get_firewall_apply_status()` check performed during this
+consolidation pass shows the LAB appliance currently reports
+`applied=False`, `pending_subsystems=['aliases']` following the real
+WRITE. This is `apply=false`'s documented pfSense v2 API consequence, not
+a defect — the config.xml entry is written but the running ruleset is not
+regenerated. Since `descr` is pure metadata never compiled into the
+firewall ruleset, this has no live traffic-behavior effect, but it does
+mean the appliance carries a standing "pending changes" indicator this
+architecture's WRITE path does not clear (no explicit apply step exists
+by design). This directly, positively confirms row 6 (`apply=false`
+genuinely suppresses any reload/apply, observed on real hardware, not
+merely coded) — but it also means row 18's "config-history effect"
+clause is only **partially** closed: we now know precisely what happens
+(a pending-subsystem marker, no reload), but this session did not
+independently verify the absence of an internal pfSense config-revision/
+backup proliferation effect (no read-only API exists in this codebase to
+inspect that). Recorded here explicitly rather than promoted to
+`VERIFIED`.
+
+**Row 17 (least privilege) still not independently established**: an
+attempted read of the LAB identity's own granted privileges
+(`get_users()`) failed with `PfSenseResponseShapeError` against the real
+appliance response (a genuine, separate finding — logged for follow-up
+in `reports-ai/CHANGELOG_AI.md`, not investigated further in this pass by
+design — `PfSenseResponseShapeError` deliberately never exposes the raw
+response content, and a deeper investigation was out of scope for this
+consolidation run). This row remains **MUST COMPLETE**; do not infer
+least-privilege from the fact that only the intended endpoint was ever
+called during this ceremony — that is caller discipline, not an
+enforced, independently-verified appliance-side permission boundary.
+
+**Not decided by this evidence update**: whether this evidence is
+sufficient, in combination with row 17's continued gap, to flip
+`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` to `True`. That
+remains a separate, explicit owner/security-policy decision — see
+`reports-ai/NEXT_TASKS.md` for the exact open decision packet.
 
 ## STOP conditions
 
