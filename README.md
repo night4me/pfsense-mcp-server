@@ -219,6 +219,24 @@ path, or MCP tool is active as part of it. v0.3.0 remains the prior
 published release. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's
 next.
 
+**v0.4.0 is prepared, release-candidate quality, and not yet published.**
+`pyproject.toml` and `CHANGELOG.md` already reflect it; this paragraph and
+`docs/ACCEPTANCE_v0.4.0.md` will be finalized to declare it the published
+baseline only at the moment the owner actually tags and publishes it —
+until then, **v0.3.1 above remains the real, currently-installable
+release**, and this line exists to avoid the version files and this
+paragraph silently disagreeing. v0.4.0's only functional change from
+v0.3.1 is documentary/status, not new tool surface: the public MCP
+contract is unchanged (still 42 READ tools by default); the one WRITE
+capability this repository has ever added
+(`set_firewall_alias_description_v1`) is now `verified=True` following
+independently-verified live evidence (`ADR-026`), but remains unreachable
+under the default profile, requires an operator to explicitly opt into
+`write_protected`, and still requires a real, owner-driven signing
+ceremony for every individual mutation — see [the security
+model](docs/SECURITY_MODEL.md)'s "Recovery and WRITE status" section for
+the precise, current description.
+
 ## Contributing
 
 Contributions are welcome within the documented security and approval

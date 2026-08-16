@@ -7,6 +7,39 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-16
+
+**Public MCP contract is unchanged from v0.3.1: 42 READ tools, 0 WRITE
+tools under the default profile.** This release's headline change is
+that the one accepted WRITE capability
+(`set_firewall_alias_description_v1`) is now `verified=True`, following
+two independently-verified live mutations against a disposable LAB
+appliance and a strict, owner-confirmed re-check of every ADR-026
+acceptance-matrix row. This does **not** enable WRITE by default:
+reaching the tool still requires an operator to explicitly select
+`PFSENSE_PROFILE=write_protected`, and every individual mutation still
+requires the operator to personally drive a real, off-host-signed
+authorization → one-time-consumption → `RecoveryContract` → confirmation
+→ sealed-executor ceremony — nothing about it is automatic or
+AI-triggerable. See `docs/adr/ADR-026-first-write-capability-adapter.md`
+for the complete evidence chain and `docs/SECURITY_MODEL.md`'s "Recovery
+and WRITE status" for the current, precise description of what is and
+is not exposed.
+
+### Migration / upgrade notes
+
+- No breaking change for any existing default (`auditor`/`engineer`)
+  deployment — the public contract, tool names, schemas, and behavior
+  are byte-identical to v0.3.1's.
+- Operators who have not opted into `write_protected` need to do
+  nothing.
+- Operators who intend to use the now-verified WRITE capability must
+  still independently provision the full Tier 1 security material
+  (pinned authorities, an encrypted `RecoveryContract` store, TPM witness
+  connectivity) — `verified=True` alone does not make the tool reachable
+  without it; `build_production_runtime()` returns `None` and no tool is
+  registered if any of that material is missing or misconfigured.
+
 ### Added
 
 - **Two real pfSense mutations performed and authoritatively verified,
@@ -382,7 +415,8 @@ endpoint, or transport path is active.
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.1
 [0.3.0]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.3.0
 [0.2.2]: https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.2.2

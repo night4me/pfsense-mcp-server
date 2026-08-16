@@ -15,7 +15,7 @@ body:
     attributes:
       label: Version
       description: Release, tag, or commit SHA where the problem occurs.
-      placeholder: v0.3.0
+      placeholder: v0.4.0
     validations:
       required: true
   - type: dropdown
