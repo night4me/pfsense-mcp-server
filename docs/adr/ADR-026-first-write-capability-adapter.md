@@ -894,6 +894,74 @@ intends the strictly-conjunctive reading, those seven rows revert to
 remains blocked pending that live evidence. See
 `reports-ai/NEXT_TASKS.md` for the exact open decision packet.
 
+**Resolved, 2026-08-16 (same day, later pass) — owner confirmed the
+evidence-interpretation standard and a strict, non-grandfathering
+row-by-row re-check was performed against it before `verified=True` was
+touched.** The owner's confirmed standard: production-bound evidence may
+satisfy a row only when (a) it exercises the real production
+implementation and security boundary — never a generic/synthetic test
+double, (b) only the external transport/appliance side is substituted or
+mocked, (c) the test proves every conjunctive requirement the row's own
+wording states, not a subset, (d) the behavior is tied directly to the
+relevant ADR invariant, not an incidental side effect, and (e) no
+contradictory live evidence exists anywhere in this project's history —
+explicitly **not** permission to reinterpret an explicit live-evidence
+requirement as an offline-test requirement.
+
+Each of the seven rows was re-checked against this standard from
+scratch, not grandfathered from the prior pass's classification:
+
+- Re-read each row's exact wording directly in this table (not a
+  paraphrase from a prior pass).
+- For the three tests underpinning the concurrent-change/stale-state
+  refusal, rollback-conflict, and uncertainty-classification rows, the
+  actual test source (`tests/tier1/test_alias_description_execution.py`)
+  was read directly, confirming each constructs the real
+  `AliasDescriptionAdapterV1`, the real `SqliteRecoveryContractStore`,
+  and the real `MutationExecutor` via `_sealed_executor()` — only the
+  transport-facing `_ReadClient`/`_WriteClient`/`_TimeoutWriteClient`
+  test doubles stand in for pfSense itself.
+- For the reconciliation and restart-recovery rows, the underlying test
+  (`tests/tier1/test_production_runtime.py::test_restart_reconciles_
+  interrupted_executing_contract`) was confirmed to call
+  `build_production_runtime()` — the actual fixed production
+  composition itself — twice, simulating a real restart; the pinned
+  reconciliation-authority test was confirmed to use the real
+  `runtime.resolve_reconciliation()` path.
+- All 19 tests underpinning the seven rows were re-run directly
+  (`2823 passed / 42 skipped`, full suite, zero regressions) as part of
+  this re-check, not merely cited from memory.
+- Checked each row's own wording, and the ADR's own original acceptance
+  standard (see "Response-loss and timeout boundary" and "Side-effect
+  boundary" above: *"New live evidence is required only for material
+  behavior introduced by the fixed production composition"*) for any
+  explicit live-appliance requirement. None of the seven rows' wording
+  demands live-appliance observation specifically — they concern the
+  Tier1 security state machine's own internal behavior (refusal,
+  reconciliation, uncertainty classification, restart recovery), which
+  this ADR's own original standard already treats as legitimately
+  offline-provable through the real production composition; live
+  appliance behavior itself (side effects, config-history, apply
+  suppression) is exclusively rows 6/18's domain, already independently
+  live-verified.
+- Checked for contradictory live evidence from either real WRITE (the
+  first WRITE and the scoped-credential restoration): neither exhibited
+  a rollback, reconciliation, replay, or uncertain outcome — both
+  completed cleanly in one send each — so there is no live observation
+  anywhere in this project's history that contradicts any of the seven
+  rows' offline-proven claims.
+
+**All seven rows independently survived the strict re-check.** No row
+was reverted. `WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified` was
+therefore set `True` (commit `f70b9f18dd2c5107ef04bf2bdc249b02fddf2a76`).
+This does not change tool registration (governed separately by profile
+grant + `WriteEndpoints` entry + constructed runtime, none of which this
+change touches) or default MCP exposure — confirmed mechanically, not
+merely argued: `make quick`'s write-capability-inactivity check reports
+`0 of 3 *_WRITE capabilities are default-reachable`, and `make
+validate`'s public-contract snapshot reports `42 tools`, both unchanged
+from before this commit.
+
 ## Least-privilege identity design and provisioning procedure (2026-08-16)
 
 Full design (exact pfSense endpoint/privilege mapping, proposed scoped
