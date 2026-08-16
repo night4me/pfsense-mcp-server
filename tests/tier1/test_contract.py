@@ -123,6 +123,50 @@ def test_contract_times_must_be_utc(contract_factory):
         contract.is_expired(now=datetime.now(non_utc))
 
 
+def test_is_permanently_unresumable_false_for_fresh_prepared_contract(contract_factory):
+    contract = contract_factory(state=RecoveryState.PREPARED)
+    assert contract.is_permanently_unresumable(now=contract.created_at) is False
+
+
+def test_is_permanently_unresumable_true_for_expired_prepared_contract(contract_factory):
+    contract = contract_factory(state=RecoveryState.PREPARED)
+    assert contract.is_permanently_unresumable(now=contract.expires_at) is True
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        RecoveryState.PREPARING,
+        RecoveryState.EXECUTING,
+        RecoveryState.ROLLBACK_FAILED,
+    ],
+)
+def test_is_permanently_unresumable_false_for_non_prepared_states_even_if_expired(contract_factory, state):
+    # This mirrors resume_prepared()'s own gate exactly: only a PREPARED
+    # contract is ever eligible for resumption at all, so expiry alone
+    # never marks a non-PREPARED contract "permanently unresumable" via
+    # this helper -- that concept only applies to the PREPARED state.
+    # (VERIFIED/ROLLING_BACK are exercised in
+    # test_is_permanently_unresumable_false_for_verified_even_if_expired
+    # below -- the factory can't build them without a
+    # verified_target_fingerprint.)
+    contract = contract_factory(state=state)
+    assert contract.is_permanently_unresumable(now=contract.expires_at) is False
+
+
+def test_is_permanently_unresumable_false_for_verified_even_if_expired(contract_factory):
+    contract = contract_factory(state=RecoveryState.PREPARED)
+    verified = replace(contract, state=RecoveryState.VERIFIED, verified_target_fingerprint="a" * 64)
+    assert verified.is_permanently_unresumable(now=verified.expires_at) is False
+
+
+def test_is_permanently_unresumable_requires_utc_now(contract_factory):
+    non_utc = timezone(timedelta(hours=1))
+    contract = contract_factory(state=RecoveryState.PREPARED)
+    with pytest.raises(ContractValidationError, match="comparison time must be UTC"):
+        contract.is_permanently_unresumable(now=datetime.now(non_utc))
+
+
 def test_idempotency_key_is_derived_from_all_mutation_bindings(contract_factory):
     contract = contract_factory()
     for field in (

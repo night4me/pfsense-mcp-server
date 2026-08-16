@@ -216,6 +216,24 @@ class RecoveryContract:
             raise ContractValidationError("Recovery Contract comparison time must be UTC.")
         return current >= self.expires_at
 
+    def is_permanently_unresumable(self, *, now: datetime | None = None) -> bool:
+        """Read-only observability helper, added 2026-08-16. `True` exactly
+        when `AliasDescriptionExecutionCoreV1.resume_prepared()` would
+        already refuse this contract purely on state/time grounds (never
+        on request-specific grounds, which this helper cannot see) --
+        `state is PREPARED` plus `is_expired(now=now)` is one of
+        `resume_prepared()`'s own `or`-chained refusal conditions, so this
+        mirrors that real gate exactly rather than approximating it.
+        Introduces no new persisted state, no state-machine transition,
+        and changes no security semantics -- a `False` result is not a
+        guarantee of resumability, only that time/state alone do not
+        already rule it out (a request-specific mismatch could still
+        refuse). Once `True`, a `PREPARED` contract can never legitimately
+        transition again; it remains only as a permanent, durable audit
+        record."""
+
+        return self.state is RecoveryState.PREPARED and self.is_expired(now=now)
+
     def with_confirmation(
         self, *, authority_id: str, evidence_digest: str, confirmed_at: datetime
     ) -> "RecoveryContract":
