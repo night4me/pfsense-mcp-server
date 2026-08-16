@@ -13,17 +13,28 @@ owner roadmap ceiling (`reports-ai/AI_CONTEXT.md`): any further
 WriteEndpoints entry is explicitly post-v0.4.0 work requiring a new,
 separate, explicit owner decision.
 
-`FIREWALL_ALIAS_DESCRIPTION.verified` is deliberately `False`: no live
-verification of this specific write path has occurred yet (ADR-026's
-own acceptance matrix rows 6/17/18 remain the outstanding live-evidence
-gap, tracked separately from W3 Slice 4). `WriteApiClient` refuses any
-send/execute against an endpoint whose `verified` is not `True` — so
-this entry existing, and even the full W3 Slice 4 three-condition
-activation gate being satisfied, still cannot reach a live pfSense
-mutation until that separately-tracked live-evidence work completes and
-sets `verified=True` as its own, separately authorized change. This is
-an intentional, additional layer of protection beyond the activation
-gate, not an oversight.
+`FIREWALL_ALIAS_DESCRIPTION.verified` is `True`, set 2026-08-16 after
+ADR-026's acceptance matrix rows 6, 17, and 18 (previously the
+outstanding live-evidence gap) were each independently satisfied by live
+evidence: the first real pfSense WRITE (rows 6/18), and a second real
+WRITE performed entirely through a dedicated, independently-verified
+least-privilege pfSense identity holding only the four minimum
+privileges the production path needs (row 17). Every other row in the
+acceptance matrix carries production-bound offline evidence exercising
+the real Tier1 composition (adapter, executor, `build_production_
+runtime()`) with only the external pfSense transport substituted — see
+ADR-026's evidence sections for the full row-by-row citation and the
+strict, owner-confirmed standard this reclassification was checked
+against. `WriteApiClient` still refuses any send/execute against an
+endpoint whose `verified` is not `True` — that refusal now no longer
+applies to this entry, but the check itself, and the full W3 Slice 4
+three-condition activation gate (profile grant + `WriteEndpoints` entry
++ a constructed production runtime), remain fully in force and unchanged
+for every other purpose. Setting `verified=True` does not itself expose
+this WRITE tool under the default profile: `AuditorProfile` (the
+default) still grants zero WRITE capabilities, so the tool is still
+unreachable unless an operator explicitly selects
+`PFSENSE_PROFILE=write_protected`.
 
 Every entry requires: independent live verification before `verified` is
 set `True` (the same bar `Endpoints.verified` already sets), an explicit
@@ -63,19 +74,22 @@ class WriteEndpoints:
 
     #: ADR-026's selected, narrowest evidenced first-WRITE candidate:
     #: `PATCH /api/v2/firewall/alias`, description field only. `verified`
-    #: is `False` until the separately-tracked live-evidence work sets it
-    #: `True` -- see module docstring.
+    #: is `True` -- see module docstring for the exact live-evidence
+    #: chain that justified it (2026-08-16).
     FIREWALL_ALIAS_DESCRIPTION = WriteEndpointInfo(
         path_suffix="/firewall/alias",
         http_method="PATCH",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
-        # ADR-029: this is the one endpoint gathering its own promotion
-        # evidence via the acceptance-only path. Not a second WRITE
-        # capability -- normal exposure still requires verified=True,
-        # unchanged.
+        # ADR-029: this entry gathered its own promotion evidence via the
+        # acceptance-only path prior to 2026-08-16. Left `True` even now
+        # that `verified=True` -- harmless, since `tier1/acceptance.py`'s
+        # own one-time gate already refuses `issue_acceptance_context()`
+        # permanently for any endpoint once `verified=True` holds, so this
+        # flag has no further effect. Not a second WRITE capability --
+        # normal exposure still requires verified=True, unchanged.
         acceptance_eligible=True,
     )
 

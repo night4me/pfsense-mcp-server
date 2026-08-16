@@ -7,7 +7,9 @@ def test_write_endpoints_has_exactly_the_accepted_entry_in_this_build():
     # mechanically enforces this stays exact, not merely non-empty.
     entries = [name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)]
     assert entries == ["FIREWALL_ALIAS_DESCRIPTION"]
-    assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is False
+    # verified=True since 2026-08-16 -- see write_endpoints.py's own module
+    # docstring for the exact live-evidence chain (ADR-026 rows 6/17/18).
+    assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is True
     assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.http_method == "PATCH"
     assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.path_suffix == "/firewall/alias"
 

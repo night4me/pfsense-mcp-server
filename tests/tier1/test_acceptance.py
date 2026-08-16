@@ -50,10 +50,20 @@ def _register_test_endpoint(monkeypatch, **overrides):
 # -- issue_acceptance_context() ------------------------------------------
 
 
-def test_issues_a_context_for_the_real_lab_target_and_endpoint():
-    context = issue_acceptance_context(_config())
+def test_issues_a_context_for_the_real_lab_target_and_an_eligible_endpoint(monkeypatch):
+    """Was `test_issues_a_context_for_the_real_lab_target_and_endpoint`,
+    issuing against the real FIREWALL_ALIAS_DESCRIPTION -- no longer
+    possible now that it is verified=True (see
+    test_real_endpoint_is_now_verified_and_acceptance_mode_is_permanently_retired).
+    The successful-issuance wiring this test actually proves (target/
+    endpoint/method/issued_at populated correctly) is identical for any
+    acceptance_eligible, unverified endpoint, so it now uses the same
+    synthetic fixture the refusal tests above already use."""
 
-    assert context.endpoint_symbol == "FIREWALL_ALIAS_DESCRIPTION"
+    _register_test_endpoint(monkeypatch)
+    context = issue_acceptance_context(_config(), endpoint_symbol="TEST_ONLY_ENDPOINT")
+
+    assert context.endpoint_symbol == "TEST_ONLY_ENDPOINT"
     assert context.http_method == "PATCH"
     assert context.target_identity == _LAB_IDENTITY
     assert context.issued_at.tzinfo is not None
@@ -86,14 +96,19 @@ def test_refuses_already_verified_endpoint(monkeypatch):
         issue_acceptance_context(_config(), endpoint_symbol="TEST_ONLY_ENDPOINT")
 
 
-def test_real_endpoint_is_still_unverified_today():
-    """Belt-and-braces: if this ever starts failing, it means
-    FIREWALL_ALIAS_DESCRIPTION.verified flipped to True without anyone
-    updating this test's assumption -- a signal worth surfacing loudly
-    rather than silently succeeding either way."""
+def test_real_endpoint_is_now_verified_and_acceptance_mode_is_permanently_retired():
+    """The tripwire this test replaces (`test_real_endpoint_is_still_
+    unverified_today`) fired as designed on 2026-08-16:
+    FIREWALL_ALIAS_DESCRIPTION.verified flipped to True after ADR-026
+    rows 6/17/18 were satisfied by live evidence (see write_endpoints.py's
+    module docstring). This is the mirror-image assertion for the real
+    endpoint, matching test_refuses_already_verified_endpoint's synthetic
+    case: issue_acceptance_context() now permanently refuses it, per
+    tier1/acceptance.py's own one-time gate."""
 
-    assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is False
-    issue_acceptance_context(_config())  # must not raise
+    assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is True
+    with pytest.raises(AcceptanceError, match="already verified=True"):
+        issue_acceptance_context(_config())
 
 
 # -- AcceptanceExecutionContext.__post_init__ ----------------------------
@@ -154,22 +169,36 @@ def test_rejects_non_utc_issued_at():
 # -- is_fresh() ------------------------------------------------------------
 
 
+def _direct_context(*, issued_at: datetime | None = None) -> AcceptanceExecutionContext:
+    """These `is_fresh()` tests exercise only the dataclass's own pure
+    method, independent of how a context was issued -- constructed
+    directly (matching test_rejects_empty_endpoint_symbol's own pattern
+    above), since routing through issue_acceptance_context() against the
+    real endpoint is no longer possible now that it is verified=True."""
+    return AcceptanceExecutionContext(
+        endpoint_symbol="FIREWALL_ALIAS_DESCRIPTION",
+        http_method="PATCH",
+        target_identity=_LAB_IDENTITY,
+        issued_at=issued_at if issued_at is not None else _now(),
+    )
+
+
 def test_is_fresh_true_immediately_after_issuance():
-    context = issue_acceptance_context(_config())
+    context = _direct_context()
     assert context.is_fresh(now=context.issued_at) is True
 
 
 def test_is_fresh_false_far_in_the_future():
-    context = issue_acceptance_context(_config())
+    context = _direct_context()
     assert context.is_fresh(now=context.issued_at + timedelta(hours=6)) is False
 
 
 def test_is_fresh_false_before_issuance():
-    context = issue_acceptance_context(_config())
+    context = _direct_context()
     assert context.is_fresh(now=context.issued_at - timedelta(minutes=1)) is False
 
 
 def test_is_fresh_requires_utc_now():
-    context = issue_acceptance_context(_config())
+    context = _direct_context()
     with pytest.raises(AcceptanceError):
         context.is_fresh(now=datetime.now())

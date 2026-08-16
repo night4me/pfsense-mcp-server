@@ -122,7 +122,13 @@ def test_acceptance_eligible_is_exactly_one_endpoint():
     assert eligible == ["FIREWALL_ALIAS_DESCRIPTION"]
 
 
-def test_acceptance_eligible_endpoint_is_not_yet_verified():
+def test_acceptance_eligible_endpoint_is_now_verified():
+    """Was `test_acceptance_eligible_endpoint_is_not_yet_verified` --
+    FIREWALL_ALIAS_DESCRIPTION.verified flipped to True on 2026-08-16
+    (see write_endpoints.py's module docstring); acceptance_eligible
+    remains True but is now permanently inert for this endpoint per
+    tier1/acceptance.py's own one-time gate (see test_acceptance.py's
+    test_real_endpoint_is_now_verified_and_acceptance_mode_is_permanently_retired)."""
     from pfsense_mcp.write_endpoints import WriteEndpoints
 
-    assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is False
+    assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is True
