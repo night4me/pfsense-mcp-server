@@ -27,7 +27,7 @@ That split is deliberate, not incomplete. See
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.3.0'
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.4.1'
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```
@@ -269,36 +269,34 @@ A browsable version of the full documentation set below is published at
 
 ## Status
 
-**v0.3.0 is the immutable production baseline, published on PyPI** — the
-last release that completed a real PyPI upload. v0.4.1 is prepared,
-release-candidate quality, and not yet published; this paragraph will be
-updated to declare it the new baseline only at the moment the owner
-actually completes that publication.
-
-v0.4.1's only functional change from v0.3.0 is documentary/status, not
-new tool surface: the public MCP contract is unchanged (still 42 READ
-tools by default); the one WRITE capability this repository has ever
-added (`set_firewall_alias_description_v1`) is now `verified=True`
-following independently-verified live evidence (`ADR-026`), but remains
+**v0.4.1 is the immutable production baseline, published on PyPI.** It is
+a packaging/documentation-only corrective release over v0.4.0 (see
+below) — no functional or security-relevant change. The public MCP
+contract is unchanged (still 42 READ tools by default); the one WRITE
+capability this repository has ever added
+(`set_firewall_alias_description_v1`) is `verified=True` following
+independently-verified live evidence (`ADR-026`), but remains
 unreachable under the default profile, requires an operator to
 explicitly opt into `write_protected`, and still requires a real,
 owner-driven signing ceremony for every individual mutation — see [the
 security model](docs/SECURITY_MODEL.md)'s "Recovery and WRITE status"
 section for the precise, current description. The Tier 1 safety
 framework described above remains implemented, tested, structurally
-isolated code.
+isolated code. v0.3.0 remains the prior published release.
 
-`v0.4.0` was tagged and its GitHub Release published, but PyPI
-publication itself failed before any upload was attempted (a build-tool
-metadata-version incompatibility, fixed in v0.4.1 — see `CHANGELOG.md`);
-per this project's own release policy, that tag/Release is preserved
-unmoved as an accurate historical record, and the fix ships as a new
-version rather than editing it. Separately, `v0.3.1` was prepared
-(version bumped, changelog entry written) but its tag/Release/PyPI
-publish were never actually carried out — an inaccuracy that had stood
-in this file since 2026-08-09, corrected here; see `CHANGELOG.md`'s
-`[0.4.1]` entry for the full, read-only-investigated finding. See
-[`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
+`v0.4.0` was tagged and its GitHub Release published, but **PyPI
+publication itself failed before any upload was attempted** — a
+build-tool metadata-version incompatibility (`twine` rejecting a
+Hatchling-emitted `Metadata-Version: 2.5`), fixed in v0.4.1 by tightening
+the `hatchling` build-system ceiling; see `CHANGELOG.md`'s `[0.4.1]`
+entry for the full root cause. Per this project's own release policy,
+`v0.4.0`'s tag/Release are preserved unmoved as an accurate historical
+record — **v0.4.0 was never successfully published to PyPI** — and the
+fix ships as this new version rather than editing that one. Separately,
+`v0.3.1` was prepared (version bumped, changelog entry written) but its
+tag/Release/PyPI publish were never actually carried out — an
+inaccuracy that had stood in this file since 2026-08-09, corrected here.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
 
 ## Contributing
 

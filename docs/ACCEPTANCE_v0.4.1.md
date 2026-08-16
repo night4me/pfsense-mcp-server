@@ -1,11 +1,12 @@
 # Acceptance — v0.4.1
 
-**Status: release-repair, prepared, not yet tagged or published.** This
-document records what changed since `docs/ACCEPTANCE_v0.4.0.md`, which
-remains the authoritative acceptance record for every functional and
-security claim unchanged by this release — nothing in the Tier 1
-architecture, `verified=True` gating, the scoped pfSense credential, or
-the live-evidence chain changed between v0.4.0 and v0.4.1.
+**Status: published — the `v0.4.1` tag and PyPI release point at this
+commit.** This document records what changed since
+`docs/ACCEPTANCE_v0.4.0.md`, which remains the authoritative acceptance
+record for every functional and security claim unchanged by this
+release — nothing in the Tier 1 architecture, `verified=True` gating,
+the scoped pfSense credential, or the live-evidence chain changed
+between v0.4.0 and v0.4.1.
 
 ## Release scope
 
