@@ -192,6 +192,91 @@ spec [`EXECUTION_AUTHORIZATION_BOUNDARY.md`](EXECUTION_AUTHORIZATION_BOUNDARY.md
 No authorization/execution code exists; building any part of it remains
 its own separate, future, explicitly-scoped authorization.
 
+**2026-08-16 update — the "Hardened hardware TPM witness" preset is now
+partially *realized*, not only designed.** The full authorization →
+one-time-consumption → `RecoveryContract` → confirmation → sealed-executor
+ceremony this preset describes has now been exercised end-to-end,
+live, twice, against a disposable LAB appliance
+(`docs/adr/ADR-026-first-write-capability-adapter.md`), for the one
+accepted `set_firewall_alias_description_v1` capability. The wizard
+itself — an interactive tool that *provisions* this state for an
+operator — remains unbuilt; everything provisioned for this workstream's
+own LAB deployment (witness daemon, off-host signer, pinned authorities,
+scoped pfSense credential) was done by hand, by the owner and an AI
+session working together across many narrow, individually-authorized
+steps, not by any wizard. That manual process is itself the best
+available specification for what the wizard needs to automate — the
+concrete open design/implementation items below, refined against that
+lived experience rather than only theory:
+
+- **Ceremony TTL/operator UX** — the live ceremonies surfaced concrete,
+  addressable friction, all fixable without touching the 5-minute
+  authorization/confirmation freshness window itself (which must stay
+  exactly as tight as it is — the window is a deliberate security
+  property, not a UX defect):
+  - **Reporting/documentation work must never happen inside a started
+    clock.** Every real timing failure this workstream hit was caused
+    by intermediate reports-ai synchronization or narration eating into
+    an already-running 5-minute window, never by the ceremony's own
+    steps being slow. A wizard (or any operator tooling) built on top of
+    this ceremony should structurally separate "prepare" (non-time-
+    sensitive: generate the preview, pre-stage the signer's authority/
+    witness-identity files, verify connectivity) from "execute"
+    (time-sensitive: sign → verify → deliver → consume → confirm →
+    execute, continuously, with zero pauses for anything else) as two
+    distinct, clearly-labeled modes — never one undifferentiated flow.
+  - **Stale artifact-exchange files caused two separate real
+    incidents** (a pre-positioned `confirmation-signed.bin` from a
+    prior completed ceremony; a signer with a stale local witness-store
+    snapshot reporting `provisioned_mismatch`). Both were caught by
+    read-only preflight checks and root-caused correctly, but a
+    dedicated `doctor`/preflight command that checks *all* fixed
+    artifact-exchange paths are empty and the signer's local evidence
+    snapshot is current *before* generating a fresh preview would catch
+    both automatically instead of relying on an operator noticing.
+  - **A visible remaining-validity countdown** (in the CLI review
+    output, refreshed live) would make the "how much time do I actually
+    have left" question — which this workstream repeatedly had to
+    answer by manually diffing timestamps — a glance instead of
+    arithmetic.
+  - **The signing tool should refuse up front, before rendering any
+    review, if the artifact it's about to review is already
+    unrecoverably close to expiry** (e.g. under some small fixed
+    margin), with a clear "re-prepare and try again" message — turning
+    a wasted review-then-refuse cycle into an immediate, actionable
+    refusal. This is a stricter refusal, not a relaxed one — it never
+    extends validity, only refuses earlier and more clearly than
+    reaching the existing `now < expires_at` check deeper in the flow.
+  - None of the above changes what is or isn't authorized, extends any
+    TTL, adds a grace period, or auto-approves anything — each is
+    purely about making the existing, unchanged freshness/confirmation
+    semantics easier for a human to operate correctly under.
+- **pfSense least-privilege bootstrap**, now that it has been done once
+  for real (`reports-ai/reviews/SLICE6_LEAST_PRIVILEGE_PROVISIONING_2026-08-16.md`):
+  the wizard's own version of this step should derive privilege IDs the
+  same way this workstream ultimately did — from the installed REST API
+  package's own source (`Core/Endpoint.inc::get_method_priv_name()`'s
+  deterministic per-endpoint-per-method naming), pinned to the actually
+  installed package version, never guessed or hardcoded — and should
+  separate account creation (needs a password field even for
+  API-key-only use) from API-key self-generation (requires a distinct,
+  narrow, revocable bootstrap privilege the target account does not
+  otherwise need).
+- **Doctor/preflight**: a genuinely safe, separable, read-only command
+  is a good, implementable-now candidate independent of the rest of the
+  wizard — but scoping and building it well deserves its own focused
+  pass rather than a rushed addition at the end of an already-long
+  release-preparation session; recorded here as the next concrete,
+  narrowly-scoped piece of this effort rather than implemented in this
+  pass.
+- **Signer separation, authority key generation, config/env generation,
+  validation, rollback, and explicit owner decision points** all remain
+  as originally scoped above — the live ceremony re-confirmed each of
+  these boundaries is load-bearing (in particular: the signer never
+  holding pfSense credentials, and the confirmation and authorization
+  authorities being genuinely separate keys) rather than surfacing any
+  reason to reconsider them.
+
 ## WebGUI Evidence Layer (idea, not committed — independent of the security-posture work above)
 
 Working name: **WebGUI Evidence Layer**. Idea-stage future direction
