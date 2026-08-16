@@ -1,7 +1,28 @@
 # Threat model
 
-Version: v0.3.0 production baseline (same active READ path as v0.2.2) with inert Tier 1 development framework and inert ADR-017 guidance-layer scaffolding
-Scope: current local stdio MCP server, 41 READ tools, unreachable WRITE infrastructure, and the unreachable official-documentation guidance layer
+Version: v0.3.0 production baseline text, retained below largely as
+originally written, with a 2026-08-16 update note wherever its own claims
+about WRITE being categorically inert/unauthorized are no longer accurate
+Scope: current local stdio MCP server, 42 READ tools (0 by default under
+`write_protected`/one gated `FIREWALL_ALIAS_DESCRIPTION` WRITE tool when
+an operator explicitly selects `write_protected` and the full Tier1
+security material is provisioned — see `docs/SECURITY_MODEL.md`'s
+"Recovery and WRITE status" for the current, accurate description), and
+the unreachable official-documentation guidance layer
+
+**2026-08-16 update**: the paragraph immediately below, and any other
+passage in this document asserting that "no WRITE capability, endpoint,
+executor, or tool is active or authorized," describes the state as of
+v0.3.0. As of this date, `FIREWALL_ALIAS_DESCRIPTION.verified=True` and
+this endpoint has been used for two independently-verified live pfSense
+mutations under a dedicated least-privilege credential, following
+`ADR-026`'s accepted evidence chain. This does **not** mean WRITE is now
+reachable by default — every gate described in the rest of this
+document's Tier 1 sections, plus the three-condition activation gate
+(explicit profile selection, allow-list entry, successfully constructed
+production runtime), remain fully in force. Passages below predating
+this update should be read as "was true and remains true for the
+*default* profile" rather than "remains true unconditionally."
 
 ## Purpose and scope
 
@@ -12,8 +33,11 @@ artifacts, and dormant Tier 0 WRITE modules.
 
 It does not claim that a compromised operating-system account or compromised
 pfSense appliance can be made trustworthy. The isolated Tier 1 domain framework
-is included in this analysis, but no WRITE capability, endpoint, executor, or
-tool is active or authorized by this document. The isolated official-
+is included in this analysis; as of 2026-08-16 one WRITE capability, endpoint,
+and executor path is active for `FIREWALL_ALIAS_DESCRIPTION` specifically
+(gated as described in the update note above) — this document's Tier 1
+sections describe the security properties that path is expected to uphold,
+not merely a hypothetical. The isolated official-
 documentation guidance layer (`ADR-017`) is included in this analysis on the
 same terms: it is inert scaffolding with no consumer, and this document does
 not authorize wiring it into any READ tool output or any Tier 1 PREPARE path.
@@ -83,6 +107,19 @@ of current production safety. They are separated by construction: no production
 construction, no WRITE profile capability, no endpoint allow-list entry, no
 registered WRITE tool, and static tests for each boundary.
 
+**2026-08-16 note**: this boundary description is still accurate for the
+*default* profile and for any WRITE capability beyond
+`FIREWALL_ALIAS_DESCRIPTION` — this project's own standing roadmap ceiling
+explicitly forbids a second WRITE capability before a new, separate owner
+decision. For `FIREWALL_ALIAS_DESCRIPTION` specifically, a WRITE profile
+capability, endpoint allow-list entry, and (under `write_protected` with a
+successfully constructed production runtime) a registered WRITE tool now
+do exist — the separation this boundary describes is upheld by the
+three-condition activation gate and `verified` flag instead of by the
+capability/allow-list/registration simply not existing at all. See
+`docs/SECURITY_MODEL.md`'s "Recovery and WRITE status" for the current,
+precise description.
+
 ### TB8 — inert Tier 1 records to future mutation execution
 
 The v0.3.0 framework accepts contract material only at creation, canonicalizes
@@ -90,6 +127,14 @@ and authenticates stored records, enforces compare-and-set legal transitions,
 and reserves one canonical target during execution. Protected intent and
 snapshot artifacts are opaque ciphertext supplied by a future key provider.
 There is currently no executor consuming those records.
+
+**2026-08-16 note**: the last sentence above is no longer accurate.
+`MutationExecutor` now consumes these records for the one accepted
+`FIREWALL_ALIAS_DESCRIPTION` capability, gated exactly as TB7 describes
+above; the encrypted-artifact/compare-and-set/target-reservation
+properties this section describes remain the security properties that
+path is required to uphold, independently verified live twice
+(`ADR-026`).
 
 ### TB9 — official documentation content to guidance output (inert, `ADR-017`)
 
@@ -249,6 +294,16 @@ TB-G3 and the guidance-layer adversarial-paths table below.
     prevent self-asserted confirmation, but no production authority/key is
     selected. Activation requires an owner/authentication decision.
 
+**2026-08-16 note on items 9-11**: for the accepted `FIREWALL_ALIAS_DESCRIPTION`
+capability specifically, all three prerequisites above have since been
+provisioned and live-verified: an external key/artifact-integrity provider
+(`tier1/key_lifecycle.md`), a durable monotonic anti-rollback anchor (the
+TPM host-witness daemon, `ADR-022`), and production authority/key
+selection via off-host Ed25519 signing (`signing/`, `ADR-023`/`ADR-024`).
+These remain accurate as open items for any *additional* WRITE capability,
+which this project's roadmap explicitly treats as out of scope before a
+new, separate owner decision.
+
 ## Future considerations
 
 - Evaluate dependency constraints, provenance/attestation, and advisory scanning
@@ -259,10 +314,15 @@ TB-G3 and the guidance-layer adversarial-paths table below.
 - Add resource/rate controls if observed workloads justify them.
 - Keep certificate fixtures wholly synthetic and reject private-key material.
 - Tier 1 contracts, canonical binding, legal transitions, record
-  authentication, target reservations, and restart reconciliation now exist as
-  inert domain controls. Before activation, add the approved key provider,
-  anti-rollback anchor, authenticated confirmation, capability-specific
-  payload/target logic, exact HTTP/read-back validation, and lab evidence.
+  authentication, target reservations, and restart reconciliation exist as
+  domain controls, active for the one accepted `FIREWALL_ALIAS_DESCRIPTION`
+  capability since 2026-08-16. The approved key provider, anti-rollback
+  anchor, authenticated confirmation, capability-specific payload/target
+  logic, exact HTTP/read-back validation, and LAB evidence this line
+  previously listed as prerequisites have all been provisioned and
+  independently live-verified (`ADR-026`) — the same list remains the
+  accepted checklist for any *additional* WRITE capability, which stays
+  out of scope pending a new, separate owner decision.
 
 See [Tier 1 roadmap](TIER1_ROADMAP.md) for future WRITE requirements and
 [security model](SECURITY_MODEL.md) for normative data classification.

@@ -44,10 +44,31 @@ the active READ capability profile.
 
 ## Authorization
 
-The default `auditor` profile exposes the accepted READ capability set.
-The `engineer` profile has zero capabilities. No WRITE endpoint is
-allow-listed, no WRITE tool is registered, and the production bootstrap
-does not construct a write client.
+The default `auditor` profile exposes the accepted READ capability set and
+grants zero WRITE capabilities. The `engineer` profile also has zero
+capabilities. Under these defaults no WRITE tool is registered and the
+production bootstrap does not construct a write client — the public MCP
+contract remains exactly the accepted READ-only tool set (42 tools, 0
+WRITE) unless an operator explicitly opts in (see below).
+
+As of 2026-08-16, one WRITE endpoint is allow-listed —
+`FIREWALL_ALIAS_DESCRIPTION` (`PATCH` on a single alias's `descr` field
+only) — and its `verified` flag is `True`, following independent live
+evidence (ADR-026). Neither fact by itself exposes anything: reaching this
+tool still requires every one of W3 Slice 4's three independent
+conditions simultaneously — (1) `PFSENSE_PROFILE=write_protected`
+explicitly selected (never the default), (2) the endpoint's allow-list
+entry (present, but inert without the other two), and (3) a successfully
+constructed production runtime, which itself requires the full Tier1
+security material (pinned authorities, TPM witness connectivity, a
+provisioned RecoveryContract store) to be configured — absent any one of
+these three, the tool is not registered at all. Even once registered,
+every actual mutation still passes through the full authorization →
+one-time-consumption → `RecoveryContract` → confirmation →
+`MutationExecutor` ceremony described in the Tier1 specs; `verified=True`
+only removed one additional, independent refusal inside `WriteApiClient`
+that existed on top of that ceremony — it does not replace or shortcut
+any part of it.
 
 `PFSENSE_ALLOWED_TOOLS` is an optional exact-name restriction applied as an
 intersection after profile authorization. An absent value preserves the
@@ -98,18 +119,66 @@ responses, exception messages, credential values, or raw pfSense bodies.
 
 ## Recovery and WRITE status
 
-Tier 0 WRITE infrastructure remains inert. The v0.3.0 release adds a
-separate `pfsense_mcp.tier1` domain package for immutable Recovery Contracts,
-canonical digests, a closed state machine, authenticated atomic persistence,
-an empty exact-match mutation policy, fault classification, and value-free
-audit events. Production bootstrap imports none of it; it contains no executor
-or pfSense transport and cannot register a tool.
+**Historical note**: this section originally (v0.3.0) described Tier 0/1
+WRITE infrastructure as entirely inert, listing a series of prerequisites
+("blocked on an external encryption/key provider, a durable monotonic
+anti-rollback strategy, operator-confirmation authentication...") that
+production activation depended on. As of 2026-08-16, every one of those
+prerequisites has been built and independently live-verified; the section
+below describes the current state.
 
-The local store authenticates individual records but deliberately treats
-payload and snapshot artifacts as already encrypted opaque bytes. It does not
-provide encryption at rest, key management, or protection against rollback of
-the entire database. Production activation therefore remains blocked on an
-external encryption/key provider, a durable monotonic anti-rollback strategy,
-operator-confirmation authentication, capability-specific target semantics,
-payload transmission, exact HTTP outcome validation, and accepted crash and
-reconciliation procedures.
+`pfsense_mcp.tier1` implements the full first-WRITE product surface for
+exactly one operation, `set_firewall_alias_description_v1`
+(`FIREWALL_ALIAS_DESCRIPTION`, `PATCH` on a single alias's `descr` field,
+`apply=false`). Every mutation this package can ever perform passes
+through, in order: a fresh authoritative preparation (re-reads the
+target's live state), a security-posture plan with a deterministic,
+independently-recomputable digest, an off-host-signed `PlanAuthorizationV2`
+(never signed by the same process that would execute it), atomic one-time
+authorization consumption (a dedicated, MAC-authenticated store distinct
+from the contract store — see ADR-023), an immutable, encrypted
+`RecoveryContract` in a closed state machine, an off-host-signed
+`ConfirmationEvidence` bound to the exact same contract/intent digests,
+and finally `MutationExecutor` — the only code path in this repository
+that ever sends a mutating HTTP request to pfSense.
+
+**Anti-rollback anchor**: a dedicated TPM host-witness daemon
+(`witness_daemon/`, a separate process on the Proxmox host, never imported
+by production bootstrap) provides a monotonic hardware counter that
+advances exactly once per successfully verified mutation and is checked
+for evidence-state consistency (`ADR-022`) before every authorization is
+considered fresh. A software-only anchor posture is also modeled
+(`AnchorAssurance.SOFTWARE`) but has no implemented backend in this
+codebase — `ADR-026`'s accepted candidate targets `hardware_witness`
+specifically. Production activation for a given deployment requires this
+witness to be reachable and its evidence-state resolved to
+`PROVISIONED_VERIFIED`; without it, security-posture discovery reports
+`AnchorAssurance.NONE`/`UNKNOWN` and the plan is not `safe_to_proceed`.
+
+**Off-host signing**: both signatures (`sign-authorization`,
+`sign-confirmation`) are produced by a separate CLI (`signing/`), run on a
+host that holds neither pfSense credentials nor production runtime code,
+and which independently re-derives the plan/intent digests it signs
+rather than trusting a caller-supplied copy (ADR-024's anti-tautology
+property). Optionally, a second, deliberately **read-only** witness
+identity may be provisioned for this signer (distinct pfSense-witness
+client certificate, explicitly excluded from the daemon's
+`/anchor/advance` allow-list) so the signer can independently verify
+witness evidence state without ever holding advance authority.
+
+**pfSense credential scoping**: the LAB acceptance evidence for this
+capability was gathered using a dedicated, least-privilege local pfSense
+API identity holding exactly the four privileges the production path
+needs (`GET` aliases, `PATCH` the one alias endpoint, `GET` system
+status, conditionally `GET` HA-sync status) — not the administrative
+account. This is a deployment-time credential-provisioning choice, not a
+code-level guarantee this repository enforces on every deployment; see
+`reports-ai` for the exact provisioning procedure used.
+
+**Production runtime construction remains the gate that matters most in
+practice**: `build_production_runtime()` requires the full Tier1 security
+material (pinned Ed25519 authorities, a provisioned encrypted store, live
+witness connectivity) to succeed at all — a deployment missing any of
+these does not get a partially-working WRITE path, it gets `None` back
+from that constructor and the tool is never registered, independent of
+profile selection or `verified`.

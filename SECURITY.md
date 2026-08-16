@@ -101,9 +101,15 @@ the complete, current list:
 - **Fail-closed configuration.** Missing or invalid configuration (a bad
   URL, an unreadable or unsafe key file, an invalid TLS setting) refuses
   to start rather than falling back to an insecure default.
-- **WRITE inactivity.** Every WRITE-shaped capability, endpoint, and MCP
-  tool is currently empty/absent — asserted by tests that fail if that
-  ever silently changes, not merely documented as a design intent.
+- **WRITE inactivity under the default profile.** Under the default
+  (`auditor`) profile, and under `engineer`, every WRITE-shaped
+  capability, endpoint, and MCP tool remains unreachable — asserted by
+  tests that fail if that ever silently changes, not merely documented as
+  a design intent. As of 2026-08-16 one WRITE capability
+  (`set_firewall_alias_description_v1`) is allow-listed and `verified`;
+  reaching it requires an operator to explicitly select
+  `PFSENSE_PROFILE=write_protected` — see the non-goal below for the
+  full detail on what that one gated capability can and cannot do.
 
 ## Non-goals
 

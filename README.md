@@ -132,12 +132,12 @@ architectural gap.
 flowchart LR
     subgraph today["Active today"]
         direction LR
-        A1[MCP client] -->|stdio| A2[41 capability-gated<br/>READ tools]
+        A1[MCP client] -->|stdio| A2[42 capability-gated<br/>READ tools]
         A2 --> A3[GET-only client]
         A3 -->|HTTPS GET| A4[(pfSense)]
     end
 
-    subgraph future["Proven against a disposable LAB appliance — requires separate owner authorization for every mutation, never reachable via the default profile"]
+    subgraph future["Proven twice against a disposable LAB appliance — requires separate owner authorization for every mutation, never reachable via the default profile"]
         direction LR
         B1[Authorized intent] --> B2[Recovery Contract]
         B2 --> B3[Authenticated<br/>owner confirmation]

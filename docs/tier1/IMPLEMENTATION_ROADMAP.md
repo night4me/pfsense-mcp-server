@@ -2,6 +2,17 @@
 
 Status: architecture blueprint; implementation not authorized to begin
 until each phase's own gate is satisfied.
+
+**2026-08-16 update**: this roadmap's phases have since been completed
+for the one accepted `FIREWALL_ALIAS_DESCRIPTION` capability —
+`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified=True`, following two
+independently-verified live pfSense mutations against a disposable LAB
+appliance (`ADR-026`). Table rows below describing "no endpoint/
+capability/tool activation" or similar reflect the state at time of
+writing this roadmap, not the current state — see
+`docs/SECURITY_MODEL.md`'s "Recovery and WRITE status" for the current,
+accurate description. This document is retained as the historical record
+of how that work was planned and sequenced.
 Supersedes, for sequencing purposes, `TIER1_ACTIVATION_DECISIONS.md`'s
 "Design decisions still required" list (that document's analysis remains
 valid background; this roadmap and the ADRs it names are the resolution).
