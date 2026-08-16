@@ -31,7 +31,7 @@ That split is deliberate, not incomplete. See
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.4.1'
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.4.2'
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```
@@ -284,34 +284,39 @@ A browsable version of the full documentation set below is published at
 
 ## Status
 
-**v0.4.1 is the immutable production baseline, published on PyPI.** It is
-a packaging/documentation-only corrective release over v0.4.0 (see
-below) — no functional or security-relevant change. The public MCP
-contract is unchanged (still 42 READ tools by default); the one WRITE
-capability this repository has ever added
-(`set_firewall_alias_description_v1`) is `verified=True` following
-independently-verified live evidence (`ADR-026`), but remains
+**v0.4.2 is the immutable production baseline, published on PyPI.** It
+is a documentation/packaging-presentation patch over v0.4.1 — no
+functional or security-relevant change, and no new security capability
+of any kind. It fixes README links that resolve on GitHub but silently
+broke when PyPI rendered the same file as the package's
+long_description, corrects a stale "41-tool" reference (the public
+contract has been 42 tools since v0.3.1), and publishes several
+documentation pages (newer ADRs, v0.3.x/v0.4.x acceptance records) that
+existed in the repository but were missing from the deployed
+documentation site's navigation — see `CHANGELOG.md`'s `[0.4.2]` entry
+for the complete list. The public MCP contract is unchanged (still 42
+READ tools by default); the one WRITE capability this repository has
+ever added (`set_firewall_alias_description_v1`) is `verified=True`
+following independently-verified live evidence (`ADR-026`), but remains
 unreachable under the default profile, requires an operator to
 explicitly opt into `write_protected`, and still requires a real,
 owner-driven signing ceremony for every individual mutation — see [the
 security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/)'s "Recovery and WRITE status"
 section for the precise, current description. The Tier 1 safety
 framework described above remains implemented, tested, structurally
-isolated code. v0.3.0 remains the prior published release.
+isolated code.
 
-`v0.4.0` was tagged and its GitHub Release published, but **PyPI
-publication itself failed before any upload was attempted** — a
-build-tool metadata-version incompatibility (`twine` rejecting a
-Hatchling-emitted `Metadata-Version: 2.5`), fixed in v0.4.1 by tightening
-the `hatchling` build-system ceiling; see `CHANGELOG.md`'s `[0.4.1]`
-entry for the full root cause. Per this project's own release policy,
-`v0.4.0`'s tag/Release are preserved unmoved as an accurate historical
-record — **v0.4.0 was never successfully published to PyPI** — and the
-fix ships as this new version rather than editing that one. Separately,
-`v0.3.1` was prepared (version bumped, changelog entry written) but its
-tag/Release/PyPI publish were never actually carried out — an
-inaccuracy that had stood in this file since 2026-08-09, corrected here.
-See [`docs/ROADMAP.md`](https://night4me.github.io/pfsense-mcp-server/ROADMAP/) for what's next.
+`v0.4.1` itself published to PyPI successfully and remains a valid,
+installable historical release. `v0.4.0` was tagged and its GitHub
+Release published, but its PyPI publication failed outright before any
+upload was attempted — a build-tool metadata-version incompatibility
+(`twine` rejecting a Hatchling-emitted `Metadata-Version: 2.5`), fixed
+in v0.4.1 by tightening the `hatchling` build-system ceiling; see
+`CHANGELOG.md`'s `[0.4.1]` entry for the full root cause. Per this
+project's own release policy, `v0.4.0`'s tag/Release are preserved
+unmoved as an accurate historical record — **v0.4.0 was never
+successfully published to PyPI**. See
+[`docs/ROADMAP.md`](https://night4me.github.io/pfsense-mcp-server/ROADMAP/) for what's next.
 
 ## Contributing
 

@@ -7,6 +7,62 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-16
+
+**Documentation/packaging presentation patch — no functional or
+security-relevant change, and no new security capability of any kind.**
+This release exists solely to make the already-reviewed README and
+documentation-site improvements below available through the PyPI
+long_description before wider community launch; `v0.4.1`'s own
+functional and security state is carried forward unchanged.
+
+### Fixed
+
+- **Portable README links for PyPI.** 29 README link occurrences across
+  11 distinct targets were repository-relative (`docs/API.md`,
+  `LICENSE`, `SECURITY.md`, etc.) — these resolve on GitHub but silently
+  404 when the same file is rendered as the PyPI long_description,
+  since PyPI's renderer has no repository filesystem context. Converted
+  to either the published MkDocs page (where one exists) or an absolute
+  GitHub blob URL, following the same convention `mkdocs.yml` already
+  used for its own non-MkDocs-published links. Added a small regression
+  check (`readme_portability_errors` in `scripts/validate_docs.py`,
+  wired into `make validate`) that fails the build if a repo-relative
+  link is ever reintroduced into README.
+- **Corrected a stale "41-tool catalog" reference** in README — the
+  public MCP contract has been 42 tools (0 WRITE by default) since
+  v0.3.1; every other reference in README, `docs/API.md`, and
+  `scripts/public_contract.py` already agreed on 42.
+- **`docs/ACCEPTANCE_v0.4.0.md`'s status line corrected.** It still read
+  "published — the v0.4.0 tag and PyPI release point at this commit,"
+  written before v0.4.0's PyPI publish failure was discovered. Corrected
+  to accurately describe the failed attempt and point to v0.4.1 as the
+  fix. The `v0.4.0` git tag/GitHub Release themselves were not touched.
+
+### Added
+
+- **7 documentation pages exposed in the deployed MkDocs navigation**
+  that existed in the repository but were never linked from `mkdocs.yml`'s
+  nav: the `v0.3.0`/`v0.3.1`/`v0.4.0`/`v0.4.1` acceptance records and
+  `ADR-027`/`ADR-028`/`ADR-029`. The deployed documentation site itself
+  was also stale (last built from a 2026-08-09 commit) and has been
+  redeployed from current `main`, publishing these plus everything else
+  added since then (`ADR-020` through `ADR-026`, the TPM host-witness
+  and production-store-bootstrap subsystem specs).
+- **Public-facing security description improvements** in README's
+  "Security-first by design" section: an added framing sentence
+  contrasting this project's multi-party WRITE-approval pipeline
+  against the common "API credential behind a tool call" pattern, and a
+  more concrete closing evidence paragraph (twice-exercised, each
+  independently verified, via a dedicated 4-privilege pfSense identity,
+  TPM witness confirmed against physical hardware both times) — every
+  claim traces directly to `docs/adr/ADR-026-first-write-capability-adapter.md`'s
+  existing evidence chain; nothing new is asserted beyond what that
+  document already substantiates. The "42 READ / 0 WRITE" line on the
+  first screen now states directly that the one WRITE capability
+  requires explicit operator opt-in and a per-mutation authorized
+  approval, rather than requiring a scroll to find that out.
+
 ## [0.4.1] - 2026-08-16
 
 **Release repair — no functional or security-relevant change from
@@ -457,7 +513,8 @@ endpoint, or transport path is active.
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.0...v0.4.0
 <!-- v0.3.1 was prepared (version bump + changelog entry) but never tagged, released, or published -- no v0.3.1 tag/release exists to link to; this points at the commit that bumped the version instead. See the [0.4.1] entry above for the full finding. -->
