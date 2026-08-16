@@ -1,9 +1,18 @@
 # Acceptance — v0.4.0
 
-**Status: published — the `v0.4.0` tag and PyPI release point at this
-commit.** This document records what has been verified as of the release
-commit; the final "Acceptance boundary" section below states precisely
-what is, and is not, authorized by it.
+**Status: tagged and released on GitHub, but never published to PyPI.**
+The `v0.4.0` git tag and GitHub Release point at this commit and remain
+a permanent, unmodified historical record. The PyPI publish attempt for
+this release failed (`twine check --strict` rejected the CI build's
+`Metadata-Version: 2.5`, a Hatchling/twine incompatibility) and was not
+retried under this version number, per this project's immutable-release
+policy (`docs/PYPI_RELEASE.md`). The fix and the corrective release are
+`v0.4.1` — see `docs/ACCEPTANCE_v0.4.1.md`. Everything else recorded
+below — the live-evidence chain, `verified=True`, the scoped credential,
+and every other functional/security claim — is accurate and unaffected;
+only this release's PyPI-publication status was corrected after the
+fact. The final "Acceptance boundary" section below states precisely
+what is, and is not, authorized by this document.
 
 ## Release scope
 
