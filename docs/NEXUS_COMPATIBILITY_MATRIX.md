@@ -1,7 +1,57 @@
 # Netgate Nexus / official API — READ-tool compatibility matrix
 
-**Status: research artifact, Phase A only. No code in this repository depends on
-this document. Nothing here is wired into the running server.**
+**Status: research artifact, through Phase B. No code in this repository
+depends on this document. Nothing here is wired into the running server.**
+
+## Phase B update (2026-08-17)
+
+Two things changed since Phase A; everything else in this document is
+Phase A's original, unmodified research.
+
+1. **Device routing: CONFIRMED.** Phase A's biggest open question — how a
+   request through Nexus authoritatively targets one specific managed
+   pfSense appliance — is resolved, directly from Netgate's own official
+   example source code in the `Netgate/pfsense-api` repository
+   (`helper_funcs.py`, `example.py`), not inferred from the OpenAPI schema
+   (which does not capture this at all — see why, below).
+
+   **Mechanism:** device targeting is a URL **base-path prefix**, not a
+   path parameter, header, or JWT claim:
+
+   ```
+   {CONTROLLER_URL}/api/device/{device_type}/{device_id}/api{operation_path}
+   ```
+
+   e.g. `{CONTROLLER_URL}/api/device/pfsense/{device_id}/api/system/status`.
+   `device_type` is literally the string `"pfsense"` in every example.
+   `device_id` is the string identifier from `ControlledDevice.device_id`
+   (confirming the string-not-integer identifier finding from ADR-030).
+   The same Controller-level JWT bearer token and refresh-token cookie
+   jar obtained from `POST /login` is reused unchanged across every
+   per-device client — `helper_funcs.py::RequestClient.createDeviceApiChild(device_id)`
+   constructs a new `AuthenticatedClient` with only the `base_url` changed,
+   not a new login. Every example explicitly checks `device.state ==
+   "online"` before issuing a per-device call and skips otherwise.
+
+   This also explains why Phase A's schema-only search found nothing: the
+   *same* `paths:` templates (e.g. `/system/status`) are used against
+   *two* different base URLs (the bare Controller base for `/mim/*`
+   operations, or a per-device base for everything else) — which base URL
+   is in play is a client-construction-time decision entirely outside
+   what the OpenAPI document's `paths`/`parameters` sections can express,
+   consistent with the schema's own `servers: null`.
+
+2. **`pfsense_get_gateway_status`: downgraded from ADAPTABLE to PARTIAL**
+   after a genuine field-by-field diff (Phase A only checked property
+   *names*, not `required[]` or exact types). See the dedicated section
+   below. The Phase 4 concrete adapter was **stopped, not implemented** —
+   a faithful, non-fabricating implementation is not achievable with the
+   current model. `docs/adr/ADR-031-backend-target-identity-boundary.md`
+   was added, independent of this outcome.
+
+No other row's classification changed this pass — the rest of Phase A's
+findings below were not re-verified this pass and should not be assumed
+current beyond what's stated.
 
 This matrix compares every one of the current 42 default-profile MCP READ
 tools against the *official* Netgate API schema (`Netgate/pfsense-api`,
@@ -34,18 +84,21 @@ Controller-mediated multi-instance API.
 
 ## Summary
 
-| Classification | Count |
-|---|---|
-| DIRECT | 0 |
-| ADAPTABLE | 32 |
-| PARTIAL | 3 |
-| UNSUPPORTED | 5 |
-| UNKNOWN | 1 |
-| LOCAL | 1 |
-| **Total** | **42** |
+Updated in Phase B: `pfsense_get_gateway_status` moved ADAPTABLE → PARTIAL.
 
-(`system_status` is counted under PARTIAL, not ADAPTABLE — see its row; the
-narrative below the table explains the reclassification.)
+| Classification | Count (Phase A) | Count (Phase B) |
+|---|---|---|
+| DIRECT | 0 | 0 |
+| ADAPTABLE | 32 | 31 |
+| PARTIAL | 3 | 4 |
+| UNSUPPORTED | 5 | 5 |
+| UNKNOWN | 1 | 1 |
+| LOCAL | 1 | 1 |
+| **Total** | **42** | **42** |
+
+(`system_status`, `firewall_rules`, `dhcp_static_mappings` are PARTIAL from
+Phase A; `gateway_status` is PARTIAL as of Phase B — see each row and the
+dedicated Phase B diff section below for why.)
 
 ## Full matrix
 
@@ -55,7 +108,7 @@ narrative below the table explains the reclassification.)
 | `pfsense_get_interface_configs` | `INTERFACES` (`/interfaces`) | GET | `/interfaces` | GET | ADAPTABLE | Medium | `InterfaceSimple` has `ipaddr`/`ipaddrv6`/`mac`/`descr`/`enable` — reasonable config-field overlap. Not schema-diffed field-by-field against the current `InterfaceConfig` model. |
 | `pfsense_get_interfaces` | `STATUS_INTERFACES` (`/status/interfaces`) | GET | none confirmed | — | **UNKNOWN** | — | This tool returns live link/status data (`InterfaceStatus`). The `/interfaces` schema found is configuration-shaped (no link/media/up-down field observed); `/system/status/ifstats` was found but not inspected. Insufficient evidence to classify. |
 | `pfsense_get_gateways` | `ROUTING_GATEWAYS` (`/routing/gateways`) | GET | `/system/gateways` | GET | ADAPTABLE | Medium | `Gateways.gateways` structure not diffed field-by-field against `GatewayConfig`'s ~20 required fields. |
-| `pfsense_get_gateway_status` | `STATUS_GATEWAYS` (`/status/gateways`) | GET | `/system/gateways/status` | GET | ADAPTABLE | Medium-High | `GatewayStatus` schema has `delay`/`stddev`/`loss`/`status` overlapping well with the current model, but has **no `id: int`** or `substatus` field — current model requires both. Gateways in Nexus appear to be identified by `name`/`gateway` (string), not an integer index. |
+| `pfsense_get_gateway_status` | `STATUS_GATEWAYS` (`/status/gateways`) | GET | `/system/gateways/status` (`operationId: GetGatewaysStatus`) | GET | **PARTIAL** (downgraded from ADAPTABLE in Phase B) | High | See the dedicated field-by-field diff below. 4 of 9 required community fields have zero source in Nexus; the 3 that exist conceptually are type-mismatched strings, not floats. Phase 4's concrete adapter was stopped rather than fabricate values. |
 | `pfsense_get_firewall_rules` | `FIREWALL_RULES` (`/firewall/rules`) | GET | `/firewall/rules/interface`, `/firewall/rules/interface/{interface}` | GET | **PARTIAL** | High | Structural mismatch: current tool returns one flat rule list; Nexus requires enumerating interfaces first, then one call per interface, then aggregating — a real multi-call transformation, not just field renaming. |
 | `pfsense_get_firewall_states` | `FIREWALL_STATES` (`/firewall/states`) | GET | `/diag/states` | GET (also DELETE — do not use) | ADAPTABLE | Low-Medium | Endpoint exists; response schema not inspected this pass. |
 | `pfsense_get_firewall_states_size` | `FIREWALL_STATES_SIZE` (`/firewall/states/size`) | GET | none found | — | UNSUPPORTED | High (positive search) | No state-table size/count endpoint found anywhere in the 486-path schema. |
@@ -123,3 +176,66 @@ narrative below the table explains the reclassification.)
    `PFSENSE_API_KEY_FILE` / static-credential model at all — a Nexus
    backend would need its own credential lifecycle (login + periodic
    refresh), not a drop-in swap of the API key file.
+
+## Phase B: `pfsense_get_gateway_status` field-by-field diff
+
+Current implementation traced end-to-end: `tools/read/gateway_status.py`
+→ `PfSenseClient.get_gateway_status()` → `RestApiClient.get(Endpoints.STATUS_GATEWAYS)`
+(`GET /api/v2/status/gateways`) → `_parse_list_response()` (requires a
+top-level `"data"` list key; any missing/malformed entry raises
+`PfSenseResponseShapeError`, fail-closed) → `GatewayStatus.from_api()`,
+which reads `data["id"]`, `data["name"]`, `data["delay"]`, `data["stddev"]`,
+`data["loss"]`, `data["status"]`, `data["substatus"]`, `data["srcip"]`,
+`data["monitorip"]` — **all nine as required dict keys, no `.get()`
+defaults** (`srcip`/`monitorip` are read unconditionally even when
+`include_identifying_metadata=False`; they're just nulled out afterward,
+not skipped). Any missing key raises `KeyError`, wrapped into
+`PfSenseResponseShapeError` by `_parse_list_response()`'s `except` clause.
+
+Nexus side: `GET /system/gateways/status` (`operationId: GetGatewaysStatus`)
+→ `GatewaysStatus.gateways: list[GatewayStatus]`. The Nexus `GatewayStatus`
+schema's own `required: [name, gateway]` — **only two of ten properties are
+required; everything else, including `delay`/`stddev`/`loss`/`status`, is
+optional.**
+
+| community field | required? | Nexus field | Nexus type | Nexus required? | equivalence | transformation needed | confidence | known difference |
+|---|---|---|---|---|---|---|---|---|
+| `id: int` | required key, no default | *(none)* | — | — | **NONE** | impossible without fabrication | — | No integer identifier anywhere in `GatewayStatus`, `GatewaysStatus`, or the adjacent `GroupStatus` schema (also checked — gateway *groups*/tiers, not per-gateway IDs). |
+| `name: str \| None` | required key (nullable value) | `name` | string | **required** | Direct | passthrough | High | Clean match. |
+| `delay: float` | required key, no default | `delay` | **string** | optional | Partial | strip units/parse; format undocumented | Low | Type mismatch (string vs. required float); unclear what a down/unmonitored gateway reports (may be absent entirely, since the field is optional). |
+| `stddev: float` | required key, no default | `stddev` | **string** | optional | Partial | same as `delay` | Low | Same issue. |
+| `loss: float` | required key, no default | `loss` | **string** | optional | Partial | same as `delay`, likely `"N%"`-formatted | Low | Same issue. |
+| `status: str \| None` | required key (nullable value) | `status` | string | optional | Partial | passthrough if present | Medium | Optional in Nexus vs. a required (if nullable) key in the community model; no enum values documented on either side to confirm value-set compatibility. |
+| `substatus: str \| None` | required key (nullable value) | *(none)* | — | — | **NONE** | impossible without fabrication | — | No `substatus` concept anywhere in the schema. |
+| `srcip: str \| None` (identifying) | required key even when unused | *(none confirmed)* | — | — | **NONE** | impossible without fabrication | — | No field observed corresponding to "the source IP used for monitoring." |
+| `monitorip: str \| None` (identifying) | required key even when unused | `monitor`? | string | optional | Unconfirmed | passthrough *if* `monitor` is confirmed to be the monitored target IP | Low | `monitor` exists and is plausibly the same concept, but this was not confirmed against a real response — could equally be a monitor *method* or *interface* name. |
+| *(none)* | — | `gateway` | string | required | — | — | — | Nexus-only field, likely the gateway's own IP/interface identifier — a better identity candidate than the missing `id`, but not what the current model expects. |
+| *(none)* | — | `defaultgw` | boolean | optional | — | — | — | Nexus-only; no direct community `GatewayStatus` counterpart (default-gateway-ness lives elsewhere in the community model). |
+| *(none)* | — | `descr`, `display` | string | optional | — | — | — | Nexus-only, no community counterpart needed. |
+
+**Conclusion: 4 of 9 required community fields (`id`, `substatus`,
+`srcip`, `monitorip`) have zero confirmed source in the Nexus response,
+full stop — not "different format," not present at all.** The 3 fields
+that do exist conceptually (`delay`/`stddev`/`loss`) require undocumented
+string parsing and are themselves optional on the Nexus side, unlike the
+community model's required floats. Only `name` is a clean, confident
+match. **A faithful, non-fabricating implementation of the current
+`GatewayStatus` model against this Nexus endpoint is not achievable as
+written.** `pfsense_get_gateway_status` is downgraded PARTIAL, and the
+Phase 4 concrete adapter was stopped rather than invent values for the
+missing fields — see `tests/backends/test_nexus_gateway_status_infeasibility.py`,
+which encodes this finding as a permanent regression guard.
+
+## Classification legend used in Phase B
+
+- **SCHEMA-MAPPED** — a candidate Nexus endpoint/schema was identified and
+  compared field-by-field against the current domain model.
+- **OFFLINE-TESTED** — a concrete adapter exists and has offline
+  fixture/adversarial test coverage. *(Not reached for gateway status —
+  no adapter was implemented.)*
+- **LIVE-READ-VERIFIED** — a concrete adapter's output was compared
+  against a real Nexus Controller/device. *(Not attempted — no Nexus
+  Controller/device/credential available; Phase 7 skipped per its own
+  stated conditions.)*
+
+`pfsense_get_gateway_status` reached **SCHEMA-MAPPED** only.

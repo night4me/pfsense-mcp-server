@@ -3,6 +3,18 @@
 **Status: research/architecture only. Nothing in this ADR is implemented,
 wired, or reachable. No production behavior changed.**
 
+**Update (Phase B, 2026-08-17):** this document is preserved unmodified as
+the historical Phase A record. Two of its findings were superseded, not
+retracted here — see `docs/NEXUS_COMPATIBILITY_MATRIX.md`'s "Phase B
+update" section for the full detail: (1) the device-routing question this
+ADR left UNKNOWN is now **CONFIRMED**, directly from Netgate's own example
+source code; (2) `pfsense_get_gateway_status`, listed below as one of the
+three ports this ADR's skeleton targeted, was field-by-field diffed in
+Phase B and downgraded from ADAPTABLE to PARTIAL — a faithful
+implementation was found not achievable, and no concrete adapter was
+built. `docs/adr/ADR-031-backend-target-identity-boundary.md` was added in
+Phase B, independent of that outcome.
+
 ## Motivation
 
 The existing backend talks exclusively to the community `pfSense-pkg-RESTAPI`
