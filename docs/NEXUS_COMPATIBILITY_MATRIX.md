@@ -1,7 +1,68 @@
 # Netgate Nexus / official API — READ-tool compatibility matrix
 
-**Status: research artifact, through Phase B. No code in this repository
+**Status: research artifact, through Phase C. No code in this repository
 depends on this document. Nothing here is wired into the running server.**
+
+## Phase C update (2026-08-17)
+
+`pfsense_get_firewall_aliases` was the owner-chosen replacement first-slice
+candidate after Phase B's gateway-status result. Traced end-to-end
+(`tools/read/firewall_aliases.py` → `PfSenseClient.get_firewall_aliases()`
+→ `RestApiClient.get(Endpoints.FIREWALL_ALIASES)`, `GET /api/v2/firewall/aliases?limit=N`
+→ `_parse_list_response()` → `FirewallAlias.from_api()`, which reads
+`data["descr"]`, `data["id"]`, `data["name"]`, `data["type"]`,
+`data["address"]`, `data["detail"]` — all six as required dict keys, no
+`.get()` defaults, identical fail-closed discipline to `GatewayStatus`).
+
+Compared field-by-field against Nexus `GET /aliases` (`operationId:
+FirewallGetAliases`, response schema `FWAliases` → `aliases:
+list[FWAlias]` + a **second, separately-shaped** `system_aliases:
+list[FWSystemAlias]` collection) and `GET /aliases/{id}` (single-alias
+lookup, `{id}` is `type: string` in the path — confirmed almost certainly
+the alias's own `name` used as an identifier, not a distinct numeric ID,
+consistent with `example-set-alias.py`'s own logic which checks aliases by
+`.name`, never by any numeric field).
+
+**Result: does not pass the owner's compatibility bar ("complete,
+deterministic, lossless enough for the existing contract, and
+fail-closed"). Classified PARTIAL. No adapter implemented**, per explicit
+owner instruction not to invent/default required fields to force a fit.
+
+| community field | required? | Nexus field (`FWAlias`) | Nexus type | Nexus required? | equivalence | transformation needed | confidence | known difference |
+|---|---|---|---|---|---|---|---|---|
+| `id: int` | required key, no default | *(none)* | — | — | **NONE** | impossible without fabrication | — | No integer identifier anywhere in `FWAlias` or `FWSystemAlias`. The `/aliases/{id}` path parameter is a string and is almost certainly `name`, not a numeric ID — third independent confirmation (after gateways in Phase B, packages checked this phase) that this project's domain models' `id: int` convention has no Nexus counterpart anywhere checked so far. |
+| `name: str` | required, no default | `name` | string | **required** | Direct | passthrough | High | Clean match — the one field that maps cleanly. |
+| `descr: str` | required, no default | `descr` | string | optional | Partial | passthrough if present | Medium | Community requires this key to exist; Nexus may omit it entirely (e.g. plausibly for `urltable`-type aliases with no free-text description). A real omission would `KeyError`. |
+| `type: str` | required, no default (community only ever produces `host`/`network`/`port` in practice, per `tier1/alias_description.py::_ALIAS_TYPES`) | `type` | string, documented enum `host, network, url, urltable, urltable_ports, port, or url_ports` | optional | Partial | passthrough if present | Medium | Nexus's enum is a **superset** with 4 values (`url`, `urltable`, `urltable_ports`, `url_ports`) this project's Tier1 WRITE side does not recognize at all (READ-side `type` itself is an unconstrained `str`, so it would not fail to parse — but a caller expecting only the 3 known types could be surprised). Also optional in Nexus vs. required in community. |
+| `address: list[str] \| None` | required key | `address` | **string** ("space separated list of addresses") | optional | Partial | split on whitespace | Low-Medium | Type mismatch: community wants an already-split list; Nexus provides one space-separated string requiring parsing, with unspecified behavior for multiple/leading/trailing spaces or an alias with zero members. Also optional — could be entirely absent. |
+| `detail: list[str] \| None` | required key | `detail` | **string** (singular, not a list) | optional | **Ambiguous** | unclear | Low | Structural mismatch, not just a type mismatch: community expects a list of per-member annotations parallel to `address`; Nexus's plain `detail` is one string. A better semantic match may be `targets: list[FWTarget]` (each with its own `name`+`descr`) — a *different field entirely*, requiring a genuine design decision (which source is authoritative?) rather than a mechanical rename, and the schema gives no guidance on whether `address`/`detail` and `targets` are populated consistently with each other. |
+| *(none)* | — | `system_aliases: list[FWSystemAlias]` | — | — | — | — | — | Structural difference: Nexus separates system-defined aliases from user aliases into two differently-shaped collections (`FWSystemAlias` has `url`/`table`/`if_ident`/`if_assigned_name` instead of `targets`). Whether the current community endpoint's flat list includes system aliases at all was not confirmed either way — a genuine ambiguity, not just an extra field to ignore. |
+
+**Routing/device semantics:** consistent with Phase B's confirmed finding
+— the same `{controller}/api/device/pfsense/{device_id}/api/aliases`
+base-path-prefix mechanism applies uniformly; no alias-specific routing
+behavior was found or expected.
+
+**Conclusion:** 1 required field (`id`) has zero source at all — the same
+severity as gateway_status's worst gap. 2 more (`descr`, `type`) are
+optional-in-Nexus vs. required-in-community, a real (if less severe) fail-
+closed risk. 2 more (`address`, `detail`) require non-trivial, genuinely
+ambiguous transformation rather than a mechanical rename. Only `name` is a
+confident, clean match. This does not meet the owner's explicit bar for
+implementation. See
+`tests/backends/test_nexus_firewall_alias_infeasibility.py` for the
+permanent regression guard encoding this finding.
+
+**Recommended next candidate (Phase D):** `pfsense_get_carp_status`
+(`CarpStatus`) — checked this phase specifically because the `id: int`
+pattern has now blocked two consecutive slices (gateways, aliases) and a
+third model (`SystemPackage`) was spot-checked and found to have the same
+required `id: int` with no Nexus source. `CarpStatus` is the simplest
+domain model in the entire 42-tool surface with **no `id` field at all** —
+exactly two required booleans (`enable`, `maintenance_mode`) — and Nexus
+has a plausibly-matching `GET /services/carp/status` endpoint (found in
+Phase A, not yet schema-diffed). This is a genuine structural reason to
+expect a better outcome, not just an untested guess.
 
 ## Phase B update (2026-08-17)
 
@@ -86,19 +147,20 @@ Controller-mediated multi-instance API.
 
 Updated in Phase B: `pfsense_get_gateway_status` moved ADAPTABLE → PARTIAL.
 
-| Classification | Count (Phase A) | Count (Phase B) |
-|---|---|---|
-| DIRECT | 0 | 0 |
-| ADAPTABLE | 32 | 31 |
-| PARTIAL | 3 | 4 |
-| UNSUPPORTED | 5 | 5 |
-| UNKNOWN | 1 | 1 |
-| LOCAL | 1 | 1 |
-| **Total** | **42** | **42** |
+| Classification | Count (Phase A) | Count (Phase B) | Count (Phase C) |
+|---|---|---|---|
+| DIRECT | 0 | 0 | 0 |
+| ADAPTABLE | 32 | 31 | 30 |
+| PARTIAL | 3 | 4 | 5 |
+| UNSUPPORTED | 5 | 5 | 5 |
+| UNKNOWN | 1 | 1 | 1 |
+| LOCAL | 1 | 1 | 1 |
+| **Total** | **42** | **42** | **42** |
 
 (`system_status`, `firewall_rules`, `dhcp_static_mappings` are PARTIAL from
-Phase A; `gateway_status` is PARTIAL as of Phase B — see each row and the
-dedicated Phase B diff section below for why.)
+Phase A; `gateway_status` is PARTIAL as of Phase B; `firewall_aliases` is
+PARTIAL as of Phase C — see each row and the dedicated diff sections
+below for why.)
 
 ## Full matrix
 
@@ -113,7 +175,7 @@ dedicated Phase B diff section below for why.)
 | `pfsense_get_firewall_states` | `FIREWALL_STATES` (`/firewall/states`) | GET | `/diag/states` | GET (also DELETE — do not use) | ADAPTABLE | Low-Medium | Endpoint exists; response schema not inspected this pass. |
 | `pfsense_get_firewall_states_size` | `FIREWALL_STATES_SIZE` (`/firewall/states/size`) | GET | none found | — | UNSUPPORTED | High (positive search) | No state-table size/count endpoint found anywhere in the 486-path schema. |
 | `pfsense_get_firewall_apply_status` | `FIREWALL_APPLY_STATUS` (`/firewall/apply`) | GET | `/system/config/dirty` | GET | ADAPTABLE | Medium | Real scope difference: Nexus's dirty-state check is system-wide across all "subsystems," not scoped to the firewall subsystem the way the current endpoint is. |
-| `pfsense_get_firewall_aliases` | `FIREWALL_ALIASES` (`/firewall/aliases`) | GET | `/aliases` | GET | ADAPTABLE | Medium | Endpoint exists (`maxvalues` query param caps values per alias); full field diff against `FirewallAlias` not completed. |
+| `pfsense_get_firewall_aliases` | `FIREWALL_ALIASES` (`/firewall/aliases`) | GET | `/aliases` (`operationId: FirewallGetAliases`) | GET | **PARTIAL** (downgraded from ADAPTABLE in Phase C) | High | See the dedicated field-by-field diff below. `id` has zero source (same pattern as gateway_status); `descr`/`type` optional-in-Nexus vs. required-in-community; `address`/`detail` have real type/structural mismatches. No adapter implemented. |
 | `pfsense_get_service_status` | `STATUS_SERVICES` (`/status/services`) | GET | `/services/status` | GET | ADAPTABLE | Low-Medium | Endpoint exists; response schema not inspected this pass. |
 | `pfsense_get_system_version` | `SYSTEM_VERSION` (`/system/version`) | GET | embedded in `/system/status` (`SystemStatus.rev`, `.osver`) | GET | ADAPTABLE | Medium | No standalone version endpoint; version-like fields exist but are untyped strings nested in the broader status object, requiring extraction. |
 | `pfsense_get_firewall_nat_port_forwards` | `FIREWALL_NAT_PORT_FORWARDS` | GET | `/firewall/nat/port-forward` | GET | ADAPTABLE | Low-Medium | Endpoint exists; not schema-diffed. |
@@ -238,4 +300,5 @@ which encodes this finding as a permanent regression guard.
   Controller/device/credential available; Phase 7 skipped per its own
   stated conditions.)*
 
-`pfsense_get_gateway_status` reached **SCHEMA-MAPPED** only.
+`pfsense_get_gateway_status` and `pfsense_get_firewall_aliases` both
+reached **SCHEMA-MAPPED** only.
