@@ -768,10 +768,19 @@ Even though Stage B's negative result means Stage C (controlled
 authentication) is correctly never reached, the regression gate itself
 was still run, since "is the isolated stack currently green and ready"
 is exactly what a genuine readiness assessment should answer: full
-pytest suite 2927 passed (0 failed); `tests/backends/` 102 passed,
-broken down — routing 21, session 28, transport 22 (includes the
-`_TokenProvider` Protocol fix from Phase F), CARP integration 5, CARP
-normalization (Phase D) 16, backend isolation 2; 42 tools; 0 of 3
+pytest suite 2927 passed (0 failed); `tests/backends/` (the entire
+package, community-adjacent tests included) 102 passed, broken down —
+routing 21, session 28, transport 22 (includes the `_TokenProvider`
+Protocol fix from Phase F), CARP integration 5, CARP normalization
+(Phase D) 16 = **92, exactly `tests/backends/nexus/` on its own** —
+plus 10 tests outside that subdirectory but still under
+`tests/backends/`: backend isolation 2, port-Protocol structural
+tests 4 (`test_ports.py`), and the Phase B/C infeasibility regression
+guards 2+2 (`test_nexus_gateway_status_infeasibility.py`,
+`test_nexus_firewall_alias_infeasibility.py`) = 102 total. Both "92"
+and "102" are correct simultaneously; they were never in conflict,
+only differently scoped (owner-requested reconciliation, Phase G
+follow-up, 2026-08-17). 42 tools; 0 of 3
 WRITE capabilities default-reachable; no file under `factory.py`,
 `tools/registry.py`, or `application.py` references `backends` at all;
 zero diff against `f76577c` under `tier1/` or
