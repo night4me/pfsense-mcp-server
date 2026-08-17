@@ -1,12 +1,22 @@
 # pfSense least-privilege matrix — READ and WRITE
 
-**Status: research/design evidence only. Does not authorize provisioning,
-user creation, or privilege assignment against any pfSense appliance.**
-Companion data to
+**Status: does not authorize provisioning, user creation, or privilege
+assignment against any pfSense appliance.** Companion data to
 [`ADR-033`](adr/ADR-033-pfsense-least-privilege-bootstrap-architecture.md),
-which covers the bootstrap architecture this matrix would feed. See that
-ADR for the full design; this document is the raw evidence table plus
-its derivation methodology.
+which covers the bootstrap architecture this matrix feeds. See that ADR
+for the full design; this document is the raw evidence table plus its
+derivation methodology.
+
+**Implementation Phase B (2026-08-17)**: every value below is now
+reproduced by real, tested, pure production code —
+`src/pfsense_mcp/security_privileges.py`'s
+`read_profile_requirements()`/`write_protected_profile_requirements()`
+plus `resolve_privilege()`'s schema+source cross-check — rather than
+being a hand-maintained table that could silently drift from the actual
+codebase. This document's own values remain the regression evidence
+those functions are tested against
+(`tests/test_security_privileges.py`), not a second, independent source
+of truth.
 
 ## Method (evidence tier 1 of 3 — see ADR-033 §"Evidence")
 

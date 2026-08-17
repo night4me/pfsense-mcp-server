@@ -1,15 +1,70 @@
-# ADR-033: pfSense least-privilege bootstrap architecture (setup-wizard phase, research/design only)
+# ADR-033: pfSense least-privilege bootstrap architecture (setup-wizard phase)
 
-- **Status:** Research/design only. Does **not** authorize implementing
-  privilege/user provisioning, any `pfsense-mcp-security setup`
-  subcommand, or any pfSense mutation. Owner-authorized 2026-08-17 as
-  "the next setup-wizard phase," explicitly scoped to architecture and
-  evidence, gating a later, separately-authorized implementation phase.
+- **Status:** §§1-2 (privilege derivation and drift detection) and §5
+  (transaction state model) are **implemented** as of Phase B
+  (2026-08-17) -- see "Implementation Phase B" below. §§3-4, 6-9
+  (the bootstrap security model, credential handling, `doctor`
+  integration, CLI flow) remain research/design only. **No phase to
+  date authorizes implementing privilege/user provisioning, any
+  `pfsense-mcp-security setup`/`bootstrap` subcommand, or any pfSense
+  mutation.** Owner-authorized 2026-08-17 (initial pass) and
+  2026-08-17 (Phase B), each explicitly scoped, each gating a later,
+  separately-authorized implementation phase.
 - **Scope:** Establishes the exact current minimum privilege
   requirements (READ and existing WRITE), the authoritative derivation
   mechanism, and the proposed bootstrap security/rollback model. Does
   not modify `pfsense-mcp-security doctor`, Tier 1, or `ADR-031`'s
   backend/target identity boundary in any way.
+
+## Implementation Phase B (2026-08-17)
+
+Owner-authorized as "privilege derivation and drift detection only" --
+explicitly excluding pfSense user creation, privilege mutation,
+API-key creation, and any other provisioning action. Implements §§1-2
+and §5 below as real, tested, pure production code:
+
+- **`src/pfsense_mcp/security_privileges.py`** (new): `compute_privilege_from_url()`
+  (the pure `get_method_priv_name()` reimplementation), `lookup_schema_privileges()`/
+  `resolve_privilege()` (the fail-closed schema+source combination §2/§3
+  describe), `read_profile_requirements()`/`write_protected_profile_requirements()`
+  (derived mechanically from `tools/read/*.py`'s own source via the same
+  AST technique `scripts/public_contract.py` already uses, plus
+  `WriteEndpoints.active_entries()` -- never a hand-maintained tool
+  list), `compute_account_drift()`/`check_package_version_support()`
+  (the §4 drift model, with the three evidence classes
+  `SCHEMA_DERIVED`/`SOURCE_CROSS_CHECKED`/`ACCOUNT_OBSERVED` this ADR's
+  own "clearly distinguish evidence classes" requirement named). No
+  network access anywhere in this module -- every function takes an
+  already-fetched schema dict; none fetches one.
+- **`src/pfsense_mcp/security_bootstrap_transaction.py`** (new): the §5
+  transaction state model -- `BootstrapState`'s six-state lifecycle,
+  `allowed_next_states()`/`is_legal_transition()` as the one source of
+  truth for legal transitions, and `check_invariants()` enforcing the
+  one invariant this phase was explicitly asked to make explicit: the
+  temporary `api-v2-auth-key-post` bootstrap privilege must never be
+  present once a transaction reaches `BOOTSTRAP_PRIVILEGE_REVOKED`/
+  `VERIFIED`. No HTTP operations, no pfSense contact -- a pure state
+  container an eventual, separately-authorized implementation would
+  drive.
+- **Regression-verified against real evidence**: both the 41-privilege
+  READ set and the 42-privilege `write_protected` set this document's
+  §1 states are reproduced exactly by the new code, cross-checked
+  against `tests/fixtures/pfsense_openapi_schema_trimmed.json` -- a
+  real, trimmed (42-path) subset of the actual live schema captured
+  during `ADR-026`'s provisioning work, not synthetic data.
+- **77 new tests** (`tests/test_security_privileges.py`,
+  `tests/test_security_bootstrap_transaction.py`,
+  `tests/test_security_privileges_isolation.py`) covering every case
+  §7's requirement list named: known-good schema, missing/malformed/
+  ambiguous/duplicate privilege metadata, endpoint/method mismatch,
+  schema/source agreement and disagreement, supported and unsupported
+  package versions, missing/unexpected/exact account-privilege drift,
+  multiple simultaneous findings, deterministic ordering, and every
+  transaction-state invariant.
+- **Not wired into `security_cli.py` or `security_doctor.py`** --
+  proven by a dedicated isolation test, not merely by omission. §6's
+  `doctor`-integration candidates remain undone, exactly as this
+  phase's own scope required.
 
 ## Summary
 
@@ -452,27 +507,48 @@ natural fit, not a new pattern.
    `pfsense-mcp-security setup` directly or a standalone subcommand** —
    §9's sketch is illustrative only.
 
-## GO / NO-GO recommendation
+## GO / NO-GO recommendation (original pass)
 
 **GO for a narrowly-scoped implementation phase**, conditional on:
 
 - Implementation phase begins with the derivation mechanism and its
   drift-guard test (§10, first bullet) — the lowest-risk, most
   mechanically verifiable piece, and the prerequisite for everything
-  else.
+  else. **Done, Phase B.**
 - The bootstrap transaction's state machine (§3) gets its exact schema
   designed and reviewed *before* any code that would call
-  `POST /api/v2/user` is written — not concurrently.
+  `POST /api/v2/user` is written — not concurrently. **Done, Phase B**
+  (`security_bootstrap_transaction.py`) — no HTTP code exists anywhere
+  in this project referencing `POST /api/v2/user`.
 - Live provisioning against a real appliance (even the disposable LAB
   one) remains its own separate, explicit owner authorization, exactly
   as every prior live action in this project's history has required —
   this ADR's evidence and design do not themselves authorize touching
-  pfSense.
+  pfSense. **Unchanged after Phase B** — Phase B performed zero pfSense
+  contact.
 
 **NO-GO on**: implementing `bootstrap`/`setup` provisioning code in the
-same pass as this research (correctly not attempted here); expanding
-`doctor` to make live pfSense calls (§6, correctly deferred); assuming
-any privilege value in this document is unconditionally guaranteed for
-package versions beyond `v2.10.0` without re-verification (§2/§3's
-drift-detection design exists specifically because this can't be
-assumed).
+same pass as this research (correctly not attempted here or in Phase
+B); expanding `doctor` to make live pfSense calls (§6, correctly
+deferred, still deferred after Phase B); assuming any privilege value
+in this document is unconditionally guaranteed for package versions
+beyond `v2.10.0` without re-verification (§2/§3's drift-detection
+design exists specifically because this can't be assumed).
+
+## GO / NO-GO recommendation (Phase C, post-Phase-B)
+
+**GO for a narrowly-scoped Phase C** implementing the actual HTTP
+provisioning operations (`POST /api/v2/user`, the bootstrap-privilege
+grant/revoke, `POST /api/v2/auth/key`), conditional on:
+
+- Phase C wires `security_privileges.py`'s derivation functions and
+  `security_bootstrap_transaction.py`'s state machine together with
+  real HTTP calls, rather than reimplementing either — both are now
+  tested, reviewed building blocks, not merely a design to re-derive.
+- Live provisioning remains its own separate, explicit owner
+  authorization for the specific target appliance, exactly as §3's
+  original conditional required — Phase C's own code existing does not
+  itself authorize running it against pfSense.
+- `doctor` integration (§6) remains a distinct, separately-scoped
+  decision — Phase C implementing provisioning does not by itself
+  authorize adding live pfSense calls to `doctor`.

@@ -1,0 +1,215 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v2/auth/keys": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing REST API Keys.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RESTAPIKey<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-auth-keys-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/diagnostics/arp_table": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing ARP Table Entries.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: ARPTable<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-diagnostics-arp-table-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/diagnostics/tables": {
+      "get": {
+        "description": "<h3>Description:</h3>Retrieves the entries from all tables. For systems with a large number of tables or entries, it is recommended to use pagination and/or querying to limit the amount of data returned.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Table<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-diagnostics-tables-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/advanced_settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Firewall Advanced Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FirewallAdvancedSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-advanced-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/alias": {
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing Firewall Alias.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FirewallAlias<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-alias-patch ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/aliases": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Firewall Aliases.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: FirewallAlias<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-aliases-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending firewall change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FirewallApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/nat/outbound/mode": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Outbound NAT Mode.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: OutboundNATMode<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-nat-outbound-mode-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/nat/port_forwards": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Port Forwards.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: PortForward<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-nat-port-forwards-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/rules": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Firewall Rules.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: FirewallRule<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-rules-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/states": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all current Firewall States. A normal firewall may have thousands, millions, or even billions of firewall states registered at a time. This can quickly become too much for this endpoint to handle. It is strongly recommended to limit the number of objects obtained by the API using the `limit` parameter or using a query to only target specific states you are looking for.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: FirewallState<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-states-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/states/size": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Firewall States Size.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FirewallStatesSize<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-states-size-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/traffic_shaper/limiters": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Traffic Shaper Limiters.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: TrafficShaperLimiter<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-traffic-shaper-limiters-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/interface/bridges": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Interface Bridges.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceBridge<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-bridges-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/interfaces": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Network Interfaces.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: NetworkInterface<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interfaces-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/routing/gateways": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Routing Gatewaies.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RoutingGateway<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-gateways-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/acme/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current ACME Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: ACMESettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-acme-settings-get ]<br>**Required packages**: [ pfSense-pkg-acme ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/bind/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current BIND Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: BINDSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-bind-settings-get ]<br>**Required packages**: [ pfSense-pkg-bind ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/cron/jobs": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Cron Jobs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: CronJob<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-cron-jobs-get ]<br>**Required packages**: [ pfSense-pkg-Cron ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dhcp_server/static_mappings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DHCP Server Static Mappings.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServerStaticMapping<br>**Parent model**: DHCPServer<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-server-static-mappings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dhcp_servers": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DHCP Servers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-servers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dns_resolver/host_overrides": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DNS Resolver Host Overrides.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DNSResolverHostOverride<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-resolver-host-overrides-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dns_resolver/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current DNS Resolver Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: DNSResolverSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-resolver-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/freeradius/eap": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current FreeRADIUS EAP.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FreeRADIUSEAP<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-freeradius-eap-get ]<br>**Required packages**: [ pfSense-pkg-freeradius3 ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/ntp/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current NTP Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: NTPSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-ntp-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/ntp/time_servers": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing NTP Time Servers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: NTPTimeServer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-ntp-time-servers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/ssh": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads the current SSH server settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SSH<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-ssh-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/carp": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current CARP.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: CARP<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-carp-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/dhcp_server/leases": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DHCP Server Leases.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServerLease<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-dhcp-server-leases-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/gateways": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Routing Gateway Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RoutingGatewayStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-gateways-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/interfaces": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Interface Statses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceStats<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-interfaces-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/services": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Services.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Service<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-services-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/system": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current System Status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-system-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/certificates": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Certificates.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Certificate<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-certificates-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/hasync": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads pfSense High Availability synchronization settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HASync<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-hasync-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/notifications/email_settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Email Notification Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: EmailNotificationSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-notifications-email-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/packages": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all installed Packages.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Package<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-packages-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/restapi/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current REST API Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: RESTAPISettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-restapi-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/tunables": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing System Tunables.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: SystemTunable<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-tunables-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/version": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current System Version.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemVersion<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-version-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/user/groups": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing User Groups.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: UserGroup<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-user-groups-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/users": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Users.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: User<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-users-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    }
+  }
+}
