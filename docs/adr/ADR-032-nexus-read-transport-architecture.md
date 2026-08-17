@@ -1,4 +1,4 @@
-# ADR-032: Nexus READ transport architecture (Phase E design, Phase F implemented offline)
+# ADR-032: Nexus READ transport architecture (Phase E design, Phase F implemented offline, Phase G stopped before live access)
 
 - **Status:** Phase E's design below is preserved unmodified as the
   historical record it was accepted as. **Update (Phase F, 2026-08-17):**
@@ -11,6 +11,14 @@
   in Phase E. See the "Phase F implementation notes" section appended
   at the end of this document for exactly what was built, what remains
   unresolved, and the GO/NO-GO recommendation for a future Phase G.
+  **Update (Phase G, 2026-08-17):** owner-authorized live-read
+  readiness check. No real Nexus Controller/device/credential is
+  available in this environment — Phase G correctly stopped after its
+  prerequisite check, exactly as its own instructions defined as a
+  successful outcome. No live access of any kind was attempted. See
+  the "Phase G readiness assessment" section appended at the end of
+  this document for the least-privilege/RBAC research findings
+  gathered before stopping.
 - **Scope:** Specifies the minimum transport required to move
   `NexusCarpStatusReader` (`src/pfsense_mcp/backends/nexus/carp_status.py`,
   Phase D) from OFFLINE-TESTED toward LIVE-READ-VERIFIED. Makes no change
@@ -645,3 +653,133 @@ least-privilege Nexus account rather than defaulting to a Controller
 admin credential out of convenience — this remains the one gap serious
 enough to gate live validation specifically, unchanged from Phase E's
 own recommendation.
+
+## Phase G readiness assessment (2026-08-17) — STOPPED before live access, as designed
+
+Owner-authorized "Nexus Phase G — live-read readiness and controlled
+validation." The mandatory sequence was A (pre-live security/readiness
+investigation) → B (prerequisite check) → C (controlled live auth) →
+D (controlled CARP READ) → E (evidence/report) → F (stop), with an
+explicit instruction not to advance past any stage that cannot be
+completed safely. **Stopped after stage B: no real Nexus Controller,
+device, or credential is available in this environment — the same
+finding as every prior phase in this track (A through F).** Per the
+owner's own explicit framing, this is "a successful Phase G outcome,"
+not a failure — Stages C through F (controlled authentication,
+controlled live READ, token-expiry finding against a real token) were
+correctly never attempted.
+
+### Least-privilege / RBAC findings (Stage A)
+
+Fetched `Netgate/pfsense-api`'s `py/pfapi/api/system/list_user_privileges.py`
+directly (`GET /system/users/privs`) — its docstring is itself
+authoritative (generated from the OpenAPI operation description, the
+same schema this entire track has treated as authoritative throughout):
+
+> "In pfSense, the user privileges are applied to the user's login to
+> the legacy user interface. When pfSense acts as a Multi-instance
+> Management Controller, MIM privileges are defined by the group's
+> name. When the Controller runs as a separate entity, group
+> privileges are used as roles in Multi-instance management and
+> define the entitlements of the user belonging to the group. Apart
+> from the superuser (or admin) role, all roles can be made granular
+> with read, modify and delete attributes. **A role without these
+> attributes is considered to be granted them all.**"
+
+And, separately, from the schema's SAML group-mapping documentation
+(`group_map` field description, `pfapi_openapi.yml`):
+
+> "a Nexus MIM administrator must belong to a 'mim_' role... for
+> example: `{"admins": "mim_superuser", "logging": "mim_logs"}`"
+
+and, from `nexus_group_prefix`'s own field description:
+
+> "LDAP group CN prefix for Nexus MIM roles (default 'mim_'). The
+> default group names used for Nexus MIM are defined as
+> `<prefix><role>_<permission>` names."
+
+**Answers to the six questions asked, each labeled FACT / INFERENCE /
+UNKNOWN:**
+
+1. **Can a read-only/restricted account authenticate through
+   `POST /login`? — FACT: yes.** Login is authentication only, gated
+   on valid Controller credentials; nothing in the schema or the
+   generated client conditions `/login` itself on any privilege level.
+   The role/group model then gates what an authenticated session can
+   subsequently do.
+2. **What privileges are required to read device CARP status? —
+   UNKNOWN, genuine gap.** The naming convention is confirmed
+   (`mim_<role>_<permission>`, e.g. `mim_superuser`, `mim_logs`), and
+   the general mechanism (roles other than superuser can be scoped to
+   read/modify/delete) is confirmed, but no full enumeration of valid
+   `<role>` segments exists in any source inspected — there is no
+   confirmed `mim_carp_read` or `mim_devices_read` (or equivalent)
+   string anywhere in the schema, docs, or example code. This gap is
+   documented rather than guessed, per the owner's explicit
+   instruction.
+3. **Does Controller-level authentication implicitly grant broader
+   device API capabilities? — INFERENCE, not confirmed either way.**
+   No schema field or documentation states whether a granted role's
+   entitlement is Controller-global (applies identically to every
+   managed device) or can be narrower. Given no per-device
+   role-assignment endpoint was found across this entire track's
+   research (Phases A, B, E), the more likely reading is that roles
+   are Controller-global rather than natively per-device-scoped — but
+   this is an inference from absence of evidence, not a confirmed fact.
+4. **Can permissions be scoped by device? — UNKNOWN, genuine gap.** No
+   supporting evidence found either way.
+5. **Can API access be restricted independently from UI access? —
+   INFERENCE, partially supported.** The docstring's own framing
+   (legacy pfSense privileges govern GUI login; MIM roles govern
+   Controller/API entitlements) suggests these are at least partially
+   separate privilege systems, but no explicit statement confirms full
+   independence.
+6. **Security implications of storing these credentials:** The role
+   model is coarse-grained (named roles/groups, not the community
+   REST API's fine-grained per-endpoint privilege strings such as
+   `api-v2-firewall-aliases-get` — ADR-026) and **defaults to full
+   read/modify/delete access unless a role is explicitly scoped
+   otherwise**. Combined with findings 2–4 above, a credential
+   provisioned for a future live validation would carry a materially
+   less precisely-bounded blast radius than the community backend's
+   already-proven 4-privilege scoped identity, unless a specific
+   narrowly-scoped `mim_*_read`-style role can be confirmed to exist
+   and be assignable — which this phase could not confirm. **No user,
+   group, or permission was created, modified, or even attempted this
+   phase**, per the owner's explicit instruction.
+
+### Prerequisite check (Stage B)
+
+Checked, narrowly, for legitimately-available Nexus-specific
+configuration: process environment (`env | grep -i nexus`, `grep -i
+controller` — no matches) and any obvious project-level config file
+naming pattern (none found; the one `.env`-shaped file present in this
+project, `.lab-t1.env`, is the pre-existing community-backend LAB
+credential file used throughout this project's Tier1 WRITE work — a
+different purpose, deliberately not opened, per the explicit
+instruction not to search broadly for secrets unrelated to this task).
+**No Controller URL, device_type, device_id, or credential of any kind
+is available.** Per the owner's own explicit closing instruction, this
+is where Phase G stops.
+
+### Pre-live regression gate (Stage C precondition — run anyway, as part of the readiness assessment)
+
+Even though Stage B's negative result means Stage C (controlled
+authentication) is correctly never reached, the regression gate itself
+was still run, since "is the isolated stack currently green and ready"
+is exactly what a genuine readiness assessment should answer: full
+pytest suite 2927 passed (0 failed); `tests/backends/` 102 passed,
+broken down — routing 21, session 28, transport 22 (includes the
+`_TokenProvider` Protocol fix from Phase F), CARP integration 5, CARP
+normalization (Phase D) 16, backend isolation 2; 42 tools; 0 of 3
+WRITE capabilities default-reachable; no file under `factory.py`,
+`tools/registry.py`, or `application.py` references `backends` at all;
+zero diff against `f76577c` under `tier1/` or
+`ADR-031-backend-target-identity-boundary.md`.
+
+### Stages D–F: not reached
+
+No controlled authentication, no live CARP READ, and no token-expiry
+finding against a real token were attempted, per Stage B's negative
+result and the owner's own explicit instruction not to simulate
+success or substitute another API.
