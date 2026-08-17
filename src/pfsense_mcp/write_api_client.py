@@ -1,7 +1,10 @@
-"""WriteApiClient — the second, and only other, module permitted to
-call a Transport's request() method directly (see
-scripts/get_only_check.py, whose allow-list names this file explicitly
-alongside rest_api_client.py).
+"""WriteApiClient — one of exactly three modules permitted to call a
+Transport's request() method directly (see scripts/get_only_check.py,
+whose allow-list names this file explicitly alongside
+rest_api_client.py and, since ADR-033 implementation Phase C,
+security_bootstrap_client.py — a separate, narrower surface for
+pfSense-identity provisioning, unrelated to this class's mutation
+chokepoint).
 
 dry_run() never issues a non-GET network call: it only validates a
 MutationPlan against the (empty, in this build) WriteEndpoints allow-list

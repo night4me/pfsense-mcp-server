@@ -2,14 +2,18 @@
 
 - **Status:** §§1-2 (privilege derivation and drift detection) and §5
   (transaction state model) are **implemented** as of Phase B
-  (2026-08-17) -- see "Implementation Phase B" below. §§3-4, 6-9
-  (the bootstrap security model, credential handling, `doctor`
-  integration, CLI flow) remain research/design only. **No phase to
-  date authorizes implementing privilege/user provisioning, any
-  `pfsense-mcp-security setup`/`bootstrap` subcommand, or any pfSense
-  mutation.** Owner-authorized 2026-08-17 (initial pass) and
-  2026-08-17 (Phase B), each explicitly scoped, each gating a later,
-  separately-authorized implementation phase.
+  (2026-08-17) -- see "Implementation Phase B" below. The actual HTTP
+  provisioning sequence (§3's read-before-write/partial-failure model,
+  §9's operation list) is **implemented, offline-tested only**, as of
+  Phase C (2026-08-17) -- see "Implementation Phase C" below. §4
+  (credential-handling design beyond what Phase C already implements),
+  §6 (`doctor` integration), and any CLI/live-validation flow remain
+  research/design only. **No phase to date authorizes live pfSense
+  provisioning, any `pfsense-mcp-security setup`/`bootstrap`
+  subcommand, or wiring this engine into normal application startup.**
+  Owner-authorized 2026-08-17 (initial research pass), 2026-08-17
+  (Phase B), and 2026-08-17 (Phase C), each explicitly scoped, each
+  gating a later, separately-authorized implementation phase.
 - **Scope:** Establishes the exact current minimum privilege
   requirements (READ and existing WRITE), the authoritative derivation
   mechanism, and the proposed bootstrap security/rollback model. Does
@@ -65,6 +69,95 @@ and §5 below as real, tested, pure production code:
   proven by a dedicated isolation test, not merely by omission. §6's
   `doctor`-integration candidates remain undone, exactly as this
   phase's own scope required.
+
+## Implementation Phase C (2026-08-17)
+
+Owner-authorized as "isolated provisioning engine, offline-tested
+only" -- authorizing production HTTP provisioning code for the first
+time, explicitly **not** authorizing live provisioning against any
+appliance and explicitly forbidding CLI/runtime wiring. Composes Phase
+B's primitives with a new, narrow HTTP surface:
+
+- **`src/pfsense_mcp/security_bootstrap_client.py`** (new): the third
+  module (alongside `rest_api_client.py`/`write_api_client.py`) ever
+  permitted to call a `Transport`'s `request()` directly
+  (`scripts/get_only_check.py`'s allow-list updated accordingly).
+  Exposes exactly four named operations, no generic dispatch:
+  `list_users()` (`GET /api/v2/users`), `create_user()`
+  (`POST /api/v2/user`), `update_user_privileges()`
+  (`PATCH /api/v2/user`, full-replace semantics), `create_auth_key()`
+  (`POST /api/v2/auth/key`, must be called on a Transport authenticated
+  as the target account itself). **Payload/response shapes are not
+  guessed** -- transcribed directly from the real, already-executed,
+  already-authorized live provisioning procedure `ADR-026`'s
+  acceptance-matrix work performed (2026-08-16, the
+  `pfsense_mcp_tier1_lab` identity's creation/key-generation/privilege
+  grant-revoke sequence). The returned `ProvisionedApiKey`'s secret is
+  reachable only via an explicit `reveal()` method -- never present in
+  `repr()`/`str()`/an ordinary exception message.
+- **`src/pfsense_mcp/security_bootstrap_engine.py`** (new):
+  `provision_service_account()`, the orchestrator. Read-before-write
+  throughout: every mutation is preceded by an observation and followed
+  by an independent re-read that confirms it (never trusts a mutating
+  call's own response echo). Derivation gate is **stricter** than
+  `doctor`'s advisory `DriftReport.clean` posture -- a missing schema,
+  any privilege not reaching `SOURCE_CROSS_CHECKED` confidence, or an
+  unsupported package version refuses the whole attempt before any HTTP
+  call. Three top-level paths: (1) account absent → full transaction
+  sequence (`NOT_STARTED → USER_CREATED → BOOTSTRAP_PRIVILEGE_GRANTED →
+  KEY_GENERATED → BOOTSTRAP_PRIVILEGE_REVOKED → VERIFIED`, driven
+  through `security_bootstrap_transaction.py`'s state machine exactly);
+  (2) account present and already exactly correct → no-op
+  (`ALREADY_SATISFIED`, mirroring `security_plan.py`'s `NO_CHANGE`
+  pattern); (3) account present but missing some expected privileges →
+  additive-only sync (adds exactly the missing privileges, never
+  touches an unrelated extra privilege already present, never
+  re-creates or re-keys the account). An account already holding the
+  temporary bootstrap privilege is treated as evidence of an
+  interrupted prior run and is refused (`BLOCKED_EXISTING_PARTIAL`) --
+  no automatic resume, matching §"Rollback/recovery"'s stated
+  discipline.
+- **No automatic compensating mutation on failure** -- if API-key
+  creation fails after the bootstrap privilege was already granted, or
+  revocation itself fails after a key was already issued, the engine
+  does not attempt to auto-revoke or auto-clean-up; it returns a
+  `FAILED` outcome whose `BootstrapTransaction.failure_detail` names
+  exactly which step failed and states plainly that the temporary
+  privilege is still present and requires manual/operator-reviewed
+  remediation.
+- **Self-service authentication is caller-supplied.** This codebase has
+  no Basic-Auth-capable `Transport` implementation yet
+  (`transport/http.py`'s `HttpTransport` is `X-API-Key`-only, matching
+  the normal 42-tool/WRITE-chokepoint traffic, which never needs Basic
+  Auth). `provision_service_account()` takes a
+  `self_service_transport_factory(username, password) -> Transport`
+  parameter rather than building one itself -- every test in this
+  repository supplies a factory returning an in-memory fake. Building a
+  real one is an explicit prerequisite for any future live-validation
+  phase (see "Unresolved blockers" below).
+- **CLI/runtime isolation, proven mechanically**: neither new module is
+  referenced by `server.py`, `application.py`, `factory.py`,
+  `security_cli.py`, `security_doctor.py`, or any file under
+  `tools/read/` -- a dedicated isolation test
+  (`tests/test_security_bootstrap_engine_isolation.py`) asserts this by
+  direct source inspection, not by omission. The only way to invoke
+  `provision_service_account()` in this build is a direct Python
+  import.
+- **45 new tests** (`tests/test_security_bootstrap_client.py`,
+  `tests/test_security_bootstrap_engine.py`,
+  `tests/test_security_bootstrap_engine_isolation.py`) covering every
+  case requirement 10 named: already-correct account, account absent,
+  wrong/missing expected privileges, unrelated additional privileges
+  preserved, both target profiles, unsupported package version,
+  schema/source disagreement, malformed evidence, each of the four
+  named HTTP operations, account-creation/privilege-update/API-key-
+  creation/revocation/final-verification failure at its own named
+  checkpoint, partial-state reporting, retry/re-entry/idempotency,
+  API-key secret redaction, no temporary privilege in the successful
+  steady state, and no Tier 1 interaction. Full suite: 3032 → 3077.
+- **Zero live pfSense calls made or possible in this build** -- neither
+  new module imports `httpx`/`requests`/`socket`/`urllib` (isolation
+  test); every test drives an in-memory fake `Transport`.
 
 ## Summary
 
@@ -498,14 +591,32 @@ natural fit, not a new pattern.
    package major version could in principle change the algorithm; §2's
    live-schema-first strategy is the designed mitigation, not a proof
    this can never happen.
-4. **The exact transaction/state-persistence mechanism (§3) is
-   sketched, not fully specified** — where the local transaction state
-   lives, its exact schema, and how it relates to (or deliberately
-   stays separate from) Tier 1's own `RecoveryContract` persistence are
-   open implementation questions for the next phase.
+4. **Local, cross-process transaction persistence is still not
+   implemented** — Phase C's `BootstrapTransaction` lives only in the
+   calling process's memory for the duration of one
+   `provision_service_account()` call; a crash mid-sequence loses the
+   in-memory record entirely (the *server-side* partial state is still
+   safely, precisely reported via re-reads on the next run — see
+   `BLOCKED_EXISTING_PARTIAL` — but there is no local file recording
+   which step was last attempted). Where such a record would live, its
+   exact schema, and its relationship to Tier 1's own `RecoveryContract`
+   persistence remain open questions for a future phase.
 5. **No decision has been made on whether `bootstrap` becomes part of
    `pfsense-mcp-security setup` directly or a standalone subcommand** —
    §9's sketch is illustrative only.
+6. **No Basic-Auth-capable `Transport` implementation exists yet** —
+   `provision_service_account()`'s `self_service_transport_factory` is
+   caller-supplied and untested against a real HTTP stack; a future
+   live-validation phase must add and test one before any live call to
+   `POST /api/v2/auth/key` is possible.
+7. **The "modify an existing, differently-provisioned account"
+   additive-sync path (Phase C's `PRIVILEGES_SYNCED` outcome) has never
+   been exercised against a real appliance** — offline-tested only,
+   same as the rest of Phase C; the payload shapes it reuses
+   (`PATCH /api/v2/user`) are the same live-evidenced shape the
+   create-path also uses, but the specific "existing account, partial
+   privilege set" scenario itself was never live-executed during
+   `ADR-026`.
 
 ## GO / NO-GO recommendation (original pass)
 
@@ -545,10 +656,49 @@ grant/revoke, `POST /api/v2/auth/key`), conditional on:
   `security_bootstrap_transaction.py`'s state machine together with
   real HTTP calls, rather than reimplementing either — both are now
   tested, reviewed building blocks, not merely a design to re-derive.
+  **Done, Phase C** (`security_bootstrap_engine.py`).
 - Live provisioning remains its own separate, explicit owner
   authorization for the specific target appliance, exactly as §3's
   original conditional required — Phase C's own code existing does not
-  itself authorize running it against pfSense.
+  itself authorize running it against pfSense. **Unchanged after
+  Phase C** — Phase C performed zero pfSense contact; every test uses
+  an in-memory fake `Transport`.
 - `doctor` integration (§6) remains a distinct, separately-scoped
   decision — Phase C implementing provisioning does not by itself
-  authorize adding live pfSense calls to `doctor`.
+  authorize adding live pfSense calls to `doctor`. **Unchanged** —
+  neither `security_bootstrap_client.py` nor
+  `security_bootstrap_engine.py` is referenced anywhere in
+  `security_doctor.py`.
+
+## GO / NO-GO recommendation (Phase D, post-Phase-C)
+
+**NO-GO on live provisioning today.** The engine is functionally
+complete and offline-verified, but three concrete prerequisites remain
+before a live-validation phase could responsibly be authorized (see
+"Unresolved blockers" #6 above, and the module docstrings' own stated
+gaps):
+
+1. A real Basic-Auth-capable `Transport` implementation for
+   `POST /api/v2/auth/key`'s self-service call does not exist in this
+   codebase yet.
+2. Every payload/response shape Phase C's client uses is transcribed
+   from `ADR-026`'s real live evidence (2026-08-16) *except* the
+   `PRIVILEGES_SYNCED` (existing-account additive-sync) path, which
+   reuses the same `PATCH /api/v2/user` shape but was never itself
+   live-exercised against that specific scenario.
+3. `provision_service_account()`'s dedicated-account username, the
+   exact `descr` text, and the target profile for a first live use are
+   all owner decisions this ADR does not make.
+
+**GO, conditional on all three being resolved first**, for a
+narrowly-scoped Phase D whose *only* addition is: (a) a tested
+Basic-Auth `Transport`, and (b) one single, explicitly-authorized,
+disposable-LAB-only live invocation of
+`provision_service_account()` — mirroring exactly the review discipline
+`ADR-026`'s own first live WRITE required (owner-authorized target
+identity, explicit hard stop, independent re-verification of every
+claim before and after). Wiring a CLI subcommand or normal-runtime
+integration remains a distinct, later, separately-authorized decision
+even after a successful Phase D — this ADR's own "CLI/runtime
+isolation" requirement (§9) does not expire just because live
+provisioning has been proven to work once.

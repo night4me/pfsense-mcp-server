@@ -18,6 +18,16 @@ those functions are tested against
 (`tests/test_security_privileges.py`), not a second, independent source
 of truth.
 
+**Implementation Phase C (2026-08-17)**: this document's values are now
+also the exact target privilege set `src/pfsense_mcp/
+security_bootstrap_engine.py`'s `provision_service_account()` grants —
+never a second, hard-coded copy; the engine calls the same
+`read_profile_requirements()`/`write_protected_profile_requirements()`
+functions this matrix's own regression tests exercise. Still
+offline-tested only; see `ADR-033`'s "Implementation Phase C" section
+for the full provisioning-sequence writeup and its GO/NO-GO for a
+future live-validation phase.
+
 ## Method (evidence tier 1 of 3 — see ADR-033 §"Evidence")
 
 Every privilege string below is the output of the installed pfSense REST

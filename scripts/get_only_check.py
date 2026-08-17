@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""get_only_check.py — static confirmation that only two named, audited
-files in src/pfsense_mcp ever call a Transport's request() method
-directly: rest_api_client.py (GET-only, enforced dynamically inside
-RestApiClient._request(), covered by test_post_is_rejected_as_unsupported
-and checked via validate_junit.py) and write_api_client.py (the write
-chokepoint — gated by the WriteEndpoints allow-list and a Recovery
-Contract, see recovery.py/write_endpoints.py; WriteEndpoints ships empty
-in this build, so every call through it currently refuses before any
-network call). This script guards the architectural invariant that no
-*other* module can bypass either gate by calling a Transport object's
-.request(...) itself.
+"""get_only_check.py — static confirmation that only three named,
+audited files in src/pfsense_mcp ever call a Transport's request()
+method directly: rest_api_client.py (GET-only, enforced dynamically
+inside RestApiClient._request(), covered by
+test_post_is_rejected_as_unsupported and checked via
+validate_junit.py), write_api_client.py (the write chokepoint — gated
+by the WriteEndpoints allow-list and a Recovery Contract, see
+recovery.py/write_endpoints.py; WriteEndpoints ships empty in this
+build, so every call through it currently refuses before any network
+call), and security_bootstrap_client.py (ADR-033 implementation
+Phase C's own narrow, four-operation pfSense-identity-provisioning
+surface — not reachable from any CLI/runtime/tool path this build ships,
+see tests/test_security_bootstrap_engine_isolation.py). This script
+guards the architectural invariant that no *other* module can bypass
+any of these three gates by calling a Transport object's .request(...)
+itself.
 
 Deliberately matches only receivers whose name contains "transport"
 (e.g. self._transport.request(...)) — NOT every ".request(" call in
@@ -28,7 +33,7 @@ import sys
 from pathlib import Path
 
 SRC_DIR = Path(__file__).resolve().parent.parent / "src" / "pfsense_mcp"
-_ALLOWED_CALLERS: tuple[str, ...] = ("rest_api_client.py", "write_api_client.py")
+_ALLOWED_CALLERS: tuple[str, ...] = ("rest_api_client.py", "write_api_client.py", "security_bootstrap_client.py")
 _REQUEST_CALL_RE = re.compile(r"\b\w*transport\w*\.request\(", re.IGNORECASE)
 
 

@@ -18,10 +18,11 @@ def test_passes_when_only_rest_api_client_calls_transport_request(tmp_path):
 def test_write_api_client_is_also_an_allowed_caller(tmp_path):
     (tmp_path / "rest_api_client.py").write_text("self._transport.request(method, path)\n")
     (tmp_path / "write_api_client.py").write_text("self._transport.request(method, path)\n")
+    (tmp_path / "security_bootstrap_client.py").write_text("self._transport.request(method, path)\n")
 
     hits = find_request_call_sites(tmp_path)
 
-    assert hits == {"rest_api_client.py": 1, "write_api_client.py": 1}
+    assert hits == {"rest_api_client.py": 1, "write_api_client.py": 1, "security_bootstrap_client.py": 1}
     assert set(hits) == set(_ALLOWED_CALLERS)
 
 

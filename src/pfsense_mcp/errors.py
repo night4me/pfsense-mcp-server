@@ -54,3 +54,12 @@ class WriteNotAllowedError(PfSenseMCPError):
     not present in the write allow-list (WriteEndpoints), or lacks a
     valid, open Recovery Contract. Never includes the rejected payload
     or any pre-state snapshot content in its message."""
+
+
+class BootstrapProvisioningError(PfSenseMCPError):
+    """Raised by `security_bootstrap_client.py` (`ADR-033` implementation
+    Phase C) for any non-2xx response from one of the four enumerated
+    bootstrap HTTP operations. Never includes the request payload
+    (which may contain a generated password), the response body, or any
+    API-key value -- only the HTTP status code and the named operation
+    that failed."""
