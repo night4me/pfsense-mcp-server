@@ -71,6 +71,7 @@ nav:
       - Threat model: THREAT_MODEL.md
       - Security test catalog: SECURITY_TEST_CATALOG.md
       - Writable-endpoint risk matrix: WRITE_ENDPOINT_RISK_MATRIX.md
+      - pfSense least-privilege matrix (READ + WRITE): PFSENSE_LEAST_PRIVILEGE_MATRIX.md
       - Vulnerability reporting (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md
   - API reference:
       - MCP tool reference: API.md
@@ -129,6 +130,7 @@ nav:
           - ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A): adr/ADR-030-dual-pfsense-api-backend-architecture.md
           - ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B): adr/ADR-031-backend-target-identity-boundary.md
           - ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live): adr/ADR-032-nexus-read-transport-architecture.md
+          - ADR-033 pfSense least-privilege bootstrap architecture (research/design only, not implemented): adr/ADR-033-pfsense-least-privilege-bootstrap-architecture.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

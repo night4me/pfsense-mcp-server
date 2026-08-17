@@ -1,0 +1,478 @@
+# ADR-033: pfSense least-privilege bootstrap architecture (setup-wizard phase, research/design only)
+
+- **Status:** Research/design only. Does **not** authorize implementing
+  privilege/user provisioning, any `pfsense-mcp-security setup`
+  subcommand, or any pfSense mutation. Owner-authorized 2026-08-17 as
+  "the next setup-wizard phase," explicitly scoped to architecture and
+  evidence, gating a later, separately-authorized implementation phase.
+- **Scope:** Establishes the exact current minimum privilege
+  requirements (READ and existing WRITE), the authoritative derivation
+  mechanism, and the proposed bootstrap security/rollback model. Does
+  not modify `pfsense-mcp-security doctor`, Tier 1, or `ADR-031`'s
+  backend/target identity boundary in any way.
+
+## Summary
+
+This project's Tier 1 architecture and its one live-verified WRITE
+capability already prove least-privilege pfSense credentials work in
+practice — a scoped identity with exactly 4 privileges executed two
+real mutations against a disposable LAB appliance
+([ADR-026](ADR-026-first-write-capability-adapter.md)). What has never
+existed is a **general, evidence-backed answer** to "what is the
+minimum privilege set for *any* current configuration of this
+project, and how would an operator safely reach it" — the WRITE
+matrix was derived once, by hand, for one capability. This ADR
+produces that general answer for the full 42-tool READ surface plus
+the existing WRITE capability, and designs (without implementing) how
+a future bootstrap operation would apply it safely.
+
+## 1. Current privilege requirements (evidence, not design)
+
+Full matrix, methodology, and live cross-validation:
+[`PFSENSE_LEAST_PRIVILEGE_MATRIX.md`](../PFSENSE_LEAST_PRIVILEGE_MATRIX.md).
+Summary:
+
+- **A. Default READ-only operation**: 41 distinct privileges, one per
+  tool (41 of the 42 registered tools call exactly one pfSense
+  endpoint each; the 42nd, `pfsense_mcp_info`, needs none). Zero
+  overlap between tools — each privilege is used by exactly one tool.
+- **B. Existing WRITE capability** (`set_firewall_alias_description_v1`):
+  4 privileges, re-derived independently this pass and found
+  **unchanged** from ADR-026's live-provisioned values — 3 of the 4
+  overlap with the READ set (`firewall-aliases-get`,
+  `status-system-get`, `system-hasync-get`); only
+  `api-v2-firewall-alias-patch` is WRITE-exclusive. Combined
+  READ+WRITE minimum: 42 distinct privileges.
+- **C. Setup/bootstrap-only privileges**: exactly one, already
+  discovered and live-tested during ADR-026's own provisioning:
+  `api-v2-auth-key-post` — required only because pfSense's REST API
+  key model (`RESTAPIKey`, confirmed from source) hardcodes
+  self-service key generation (`username = $this->client->username`),
+  so a brand-new identity cannot obtain its first API key without
+  briefly holding this one privilege. Confirmed **temporary and
+  revocable without invalidating the already-issued key** (live-tested
+  in ADR-026: the scoped credential kept working after this privilege
+  was revoked).
+
+**Do not assume previously documented privilege IDs remain correct**
+was honored literally: every value above was independently re-derived
+from the pinned package source and independently re-cross-checked
+against a real captured live OpenAPI schema this pass, not copied
+forward from ADR-026's prose. All matched.
+
+## 2. Derivation mechanism (evidence, not design)
+
+Full detail in the matrix document's "Method" section. Summary:
+
+- **Source**: `pfrest/pfSense-pkg-RESTAPI`'s `Core/Endpoint.inc::get_method_priv_name()` —
+  a deterministic slug of the endpoint's URL plus lowercase HTTP
+  method (`/` and `_` → `-`, strip leading `-`).
+- **Version stability**: confirmed **byte-identical** across `v2.7.7`
+  through `v2.10.0` (the current latest tag) — the algorithm has never
+  changed in this project's observed history. This is evidence, not a
+  guarantee for all future versions; see "Detecting privilege drift"
+  below for how a future implementation should treat this.
+- **A materially better live-verification path than re-deriving from
+  GitHub each time was found this pass**: the installed package's own
+  `Schemas/OpenAPISchema.inc` embeds every operation's exact allowed
+  privileges directly in the live OpenAPI schema's `description` text
+  (`"**Allowed privileges**: [ page-all, api-v2-status-system-get ]"`).
+  This project already fetches this schema for endpoint-catalogue
+  purposes — a future implementation should **parse this live text as
+  the primary, always-current source**, falling back to (or
+  cross-checking against) the pinned-source algorithm only for
+  privileges not yet observable live (e.g. planning a *new* capability
+  against a target appliance version not yet running).
+- **Ambiguous/renamed/missing detection**: an endpoint whose privilege
+  string cannot be found in a freshly-fetched live schema, or whose
+  live schema value disagrees with the pinned-source-derived value,
+  must be treated as **unresolved, not assumed** — see "Detecting
+  privilege drift" below.
+- **`requires_page_all_privilege`**: 1 of 268 endpoints package-wide
+  hard-codes `page-all` as the only accepted privilege (a POST-only
+  sync action this project doesn't use). None of the 41 READ
+  privileges or 4 WRITE privileges require it — reconfirmed this pass,
+  not assumed from ADR-026. A future implementation adding any *new*
+  capability must re-check this per endpoint; it is not a general
+  guarantee.
+- **Modifies nothing**: every fetch this pass was a plain HTTPS GET
+  against public GitHub source/tags, or a read of an already-locally-cached
+  live schema snapshot from a prior, separately-authorized session. No
+  installed package file was touched.
+
+## 3. Bootstrap security model (design, not implemented)
+
+### Existing user vs. dedicated service account
+
+**Always a dedicated service account, never the operator's own admin
+account or an existing shared account.** ADR-026's own live evidence
+already proves this pattern works end-to-end; nothing here changes it.
+A future bootstrap flow must refuse to proceed against an account it
+did not itself create and cannot uniquely identify as
+project-dedicated (e.g. by a recognizable, configurable username
+prefix/convention), to avoid silently altering an unrelated existing
+account's privileges.
+
+### READ-only vs. write_protected profile
+
+Directly follows §1: a `read_only`-profile deployment needs the 41 READ
+privileges only; a `write_protected`-profile deployment needs the
+combined 42. **The bootstrap flow must ask which profile the operator
+is provisioning for and grant exactly that profile's set — never both
+"just in case," never the WRITE set for a `read_only` deployment.**
+
+### Setup-specific elevated privileges are temporary, not incidental
+
+The one known case (`api-v2-auth-key-post`) must be modeled as a named,
+temporary, always-revoked-before-completion state in any future
+transaction design — not simply "one more privilege in the initial
+grant that happens to also get removed later." A bootstrap operation
+that crashes or is interrupted after granting this privilege but
+before revoking it must leave that fact **visibly reported**, not
+silently forgotten (see "Partial failure" below).
+
+### Preventing privilege escalation
+
+- The bootstrap identity that *performs* provisioning (the operator's
+  existing admin credential, used once, interactively, never stored)
+  is categorically different from the *provisioned* identity being
+  created — the design must never let the provisioned identity grant
+  privileges to itself or any other account. `POST /api/v2/user` and
+  `PATCH /api/v2/user` both require an authenticated admin-equivalent
+  caller in this package's model; the provisioned scoped identity is
+  never used to call them.
+- A future bootstrap must **compute the exact target privilege set
+  from §1's matrix (or its live-schema equivalent) and grant exactly
+  that set** — never a broader named pfSense role, never `page-all`,
+  never an administrative group, regardless of how convenient that
+  would be to implement.
+
+### Preserving existing unrelated privileges
+
+If a bootstrap operation ever *modifies* (rather than creates) an
+account — e.g. re-running setup after the tool's own privilege
+requirements grew — it must **read the account's current full
+privilege list first, compute the minimal additive diff, and apply
+only that diff**, exactly mirroring ADR-026's own live-executed
+pattern (`PATCH /api/v2/user` with the full desired list, always
+preceded by an independent `GET /api/v2/users` read, always followed
+by an independent re-read to confirm, never trusting the PATCH
+response's own echo). Never assume an account decided to be
+project-dedicated has *no* other privileges — verify before touching.
+
+### Privilege removal should never be automatic (except the one named bootstrap case)
+
+Beyond revoking the temporary `api-v2-auth-key-post` bootstrap
+privilege (a `pfsense-mcp-server`-added privilege being removed by the
+same operation that added it, on the same run), **no future bootstrap
+operation should ever remove a privilege automatically** — including
+privileges that appear to have become unused after a downgrade (e.g.
+`read_only` → nothing, or a future narrower READ tool set). Detected
+"privileges wider than currently needed" should be **reported**
+(a `doctor`-style finding — see §6), never silently pruned; removal
+is always an explicit, separate, owner-reviewed action.
+
+### Idempotency
+
+Re-running bootstrap against an already-correctly-provisioned identity
+must be a no-op that reports "already satisfied" — mirroring
+`security_plan.py`'s own established `AxisTransitionKind.NO_CHANGE`
+pattern exactly, not a new concept. Re-running against a
+*partially*-provisioned identity (see next) must resume/complete
+safely, never duplicate a step already done (e.g. never attempt to
+create a user that already exists; detect and continue).
+
+### Partial failure
+
+Every step of a future bootstrap transaction must be independently
+observable and re-verifiable by a fresh read — matching ADR-026's own
+executed discipline (never trust an API response's own echo; always
+follow with a separate read). A future design should define an
+explicit small state sequence for the transaction itself (e.g.
+`NOT_STARTED → USER_CREATED → BOOTSTRAP_PRIVILEGE_GRANTED →
+KEY_GENERATED → BOOTSTRAP_PRIVILEGE_REVOKED → VERIFIED`), persisted
+locally (not on the appliance) so a crash mid-sequence can be resumed
+or reported precisely — never guessed at from scratch.
+
+### Rollback/recovery
+
+If a bootstrap operation fails partway, the safe default is **leave
+the partial state in place and report it precisely** (which step
+completed, which didn't) rather than attempting automatic rollback —
+an automatic "undo" that itself fails partway is a worse state than a
+clearly-reported partial success. Full teardown (deleting the created
+account) should be an explicit, separate, operator-confirmed action,
+never automatic.
+
+### Re-running setup after package upgrades
+
+Directly enabled by §2's live-schema-first derivation strategy: if a
+future package version renames or restructures an endpoint, its
+privilege string changes, and re-running bootstrap against the new
+live schema naturally picks up the new name — **as long as the design
+re-fetches the live schema each run rather than caching a privilege
+list from install time.** A cached list must always be re-validated
+against a fresh live fetch before being trusted for a new bootstrap
+run.
+
+### Detecting privilege drift
+
+Three independent signals, all read-only:
+
+1. Live schema's own "Allowed privileges" text disagreeing with what
+   this project's matrix expects for a given endpoint.
+2. A provisioned identity's actual `priv` list (from `GET
+   /api/v2/users`) disagreeing with what this project's matrix says it
+   should hold — either broader (scope creep, possibly from manual GUI
+   changes) or narrower (accidental revocation, possibly breaking the
+   deployment).
+3. The installed REST API package's reported version (already visible
+   via the live OpenAPI schema's own version field, or
+   `pfsense_get_system_packages`) falling outside the range this
+   project has verified the algorithm against (`v2.7.7`–`v2.10.0`).
+
+All three map directly to future `doctor` checks — see §6.
+
+## 4. Credential handling (design, not implemented)
+
+- **No new secret store.** This project already has an established
+  pattern (`PFSENSE_API_KEY_FILE`, mode-600, exclusive-create,
+  descriptor-bound loading — the existing "Preserve descriptor-bound
+  API-key loading as a security invariant" roadmap commitment). A
+  future bootstrap must write the newly-generated scoped identity's
+  API key through this exact same mechanism, never a second one.
+- **No credential is ever logged, printed, or embedded in an
+  exception/evidence string** — matching `security_discovery.py`'s and
+  `security_doctor.py`'s already-audited discipline for this class of
+  problem.
+- **The bootstrap-performing admin credential is never persisted by
+  this tool** — supplied interactively for the duration of the
+  bootstrap operation only (matching how the actual ADR-026
+  provisioning was performed: the admin `X-API-Key` was used directly
+  by the owner's own session, never written to a file this project
+  manages).
+- **The provisioned identity's password field** (required by pfSense's
+  user model even for API-key-only use, per ADR-026's own finding)
+  should be a randomly generated value, held only transiently in
+  memory for the duration of account creation, never written to disk
+  at all — not even temporarily. (ADR-026's live procedure used a
+  mode-600 scratch file for this and deleted it afterward; a future
+  implementation should improve on this by never touching disk for
+  the password at all, since the API key — not the password — is the
+  credential this project actually uses afterward.)
+
+## 5. Relationship to `ADR-021`'s two-axis model
+
+Privilege assignment follows **capability requirements** (§1), never
+anchor assurance:
+
+| Preset | Capability posture | Anchor assurance | pfSense privilege set |
+|---|---|---|---|
+| READ-only | `read_only` | `none` | 41 READ privileges |
+| Software-protected WRITE | `write_protected` | `software` | 42 (READ+WRITE) — **identical to hardware-witness WRITE below**; the anchor backend affects how the *mutation is authorized*, never which pfSense privileges the identity holds |
+| Hardened hardware-witness WRITE | `write_protected` | `hardware_witness` | 42 (READ+WRITE) — this is what ADR-026 actually live-tested |
+
+**Stronger anchor assurance must never be treated as license for
+broader pfSense privileges.** The TPM witness protects the integrity
+of this project's own `RecoveryContract` store against rollback; it
+says nothing about, and must never be conflated with, what the
+pfSense-side identity is permitted to do. A `hardware_witness`
+deployment and a (currently unimplemented) `software`-anchor
+deployment need the *exact same* pfSense privilege set for the same
+capability posture — the two axes are independent by `ADR-021`'s own
+design, and this ADR's privilege model must not quietly break that
+independence.
+
+## 6. `doctor` integration opportunities (not implemented this phase)
+
+Four candidate future `pfsense-mcp-security doctor` checks, all
+READ-only, all directly justified by §3's "Detecting privilege drift":
+
+1. **Installed REST API package/version detected** — read
+   `pfsense_get_system_packages`'s existing data (or the live OpenAPI
+   schema's own version field) and report whether it falls within the
+   algorithm-verified range (`v2.7.7`–`v2.10.0`), flagging (not
+   failing) an out-of-range version as "unverified, re-confirm before
+   relying on the derived privilege set."
+2. **Required privilege definitions found** — for a given target
+   profile (READ-only or write_protected), fetch the live OpenAPI
+   schema and confirm every required privilege string actually appears
+   in some operation's "Allowed privileges" text; report any that
+   don't (renamed/removed upstream).
+3. **Configured service account has expected privileges** — given a
+   configured identity, `GET /api/v2/users`, compare its actual `priv`
+   list against the exact expected set for the configured profile;
+   report both over-grant and under-grant.
+4. **Privilege drift detected** — the combination of 1–3: a single
+   `doctor` verdict distinguishing "matches expected exactly," "broader
+   than expected" (flag, never auto-narrow), and "narrower than
+   expected" (flag, explains why the deployment may be failing).
+
+**Not implemented this phase.** All four require either a live pfSense
+connection (`doctor` today is 100% local-filesystem/witness-only, by
+design — see `ADR-033`'s own §"Safety constraints" below and
+`security_doctor.py`'s existing "known limitation" note) or new,
+not-yet-reviewed code to call `GET /api/v2/users`/parse the OpenAPI
+schema. Adding either is exactly the kind of change this ADR's own
+"do not expand `doctor` in this phase unless independently justified"
+instruction was written to gate — correctly deferred to the
+implementation phase this ADR is itself gating.
+
+## 7. Safety constraints (binding on any future implementation)
+
+The eventual bootstrap design must not:
+
+- Grant administrator-equivalent (`page-all` or any admin group)
+  access merely for convenience — §1/§3 establish that the narrow
+  privilege set is sufficient and sufficient is what must be granted.
+- Silently broaden privileges on re-run — §3's idempotency/drift
+  sections require any broadening to be an explicit, reported,
+  operator-confirmed action.
+- Remove unrelated existing privileges — §3's "preserving existing
+  unrelated privileges" requires reading before writing, always.
+- Derive permissions from untrusted remote text — §2's derivation
+  sources are exactly two: pinned package source at a specific tag,
+  and the live OpenAPI schema **of the appliance being provisioned
+  itself** (not a third party's report of what it should be).
+- Bypass WRITE authorization — nothing in this ADR touches Tier 1's
+  authorization/confirmation/execution chain; pfSense privilege
+  provisioning and Tier 1's cryptographic authorization remain
+  independent layers (see next bullet).
+- Make WRITE default-reachable — bootstrap provisions a pfSense-side
+  identity only; it has no relationship to, and cannot change,
+  `WriteEndpoints`/`Capability`/profile gating, which remain the only
+  things that make a WRITE tool reachable at all.
+- Weaken Tier 1 — zero files under `tier1/` are touched by this ADR or
+  would be touched by implementing it; pfSense privilege provisioning
+  is entirely orthogonal to the `RecoveryContract`/authorization chain.
+- Conflate pfSense RBAC with this project's cryptographic authorization
+  boundary — **stated explicitly, as required**: a pfSense privilege
+  answers "can this API credential technically call this endpoint,"
+  which is necessary but nowhere near sufficient for a mutation to
+  actually happen in this project — the full Tier 1 chain (plan →
+  authorization → `RecoveryContract` → confirmation → sealed
+  execution) is the layer that decides whether a *specific* mutation is
+  *authorized*, entirely independent of what the underlying pfSense
+  credential is technically capable of. These are two independent
+  defense layers by design, not one system with two names.
+
+## 8. Evidence
+
+In preference order, as required:
+
+1. **Installed REST API package source** — `Core/Endpoint.inc`
+   (`get_method_priv_name()`, `get_default_privs()`,
+   `requires_page_all_privilege`), `Core/Auth.inc` (`array_intersect()`
+   ANY-match), `Schemas/OpenAPISchema.inc` (live-schema privilege
+   embedding), `Caches/PrivilegesCache.inc` (confirms pfSense's own
+   `/etc/inc/priv/restapi.priv.inc` generation mechanism — noted as a
+   possible future on-appliance derivation source if this project ever
+   gains local file-read access to the appliance; not usable today).
+   All fetched from `pfrest/pfSense-pkg-RESTAPI` at the pinned tag
+   `v2.10.0` (confirmed the current latest tag) plus `v2.7.7` for the
+   stability cross-check.
+2. **Authoritative upstream documentation** — none consulted beyond
+   source directly, per this project's own established preference for
+   source over prose wherever both exist.
+3. **Existing independently verified LAB evidence** — the previously
+   captured live OpenAPI schema (`pfsense_openapi_schema.json`, fetched
+   during the ADR-026 provisioning work) used to cross-validate all 42
+   READ privileges plus the WRITE and bootstrap privileges against a
+   real running appliance, not merely computed values.
+
+No privilege semantics in this document were guessed. Where evidence
+was insufficient (the exact minimum-privilege guarantee for any *future*
+package version beyond `v2.10.0`), this document says so explicitly
+(§2, §3) rather than extrapolating.
+
+## 9. Proposed CLI/user flow (illustrative, not committed)
+
+Sketch only — exact naming/flags are a future implementation decision,
+not fixed here:
+
+```
+$ pfsense-mcp-security bootstrap --profile write_protected --dry-run
+[reads live OpenAPI schema; computes exact 42-privilege target set]
+[prompts for admin credential, interactively, never stored]
+[reports the exact proposed user/privilege grant; performs nothing]
+
+$ pfsense-mcp-security bootstrap --profile write_protected
+[same, but actually executes: create user -> grant 42 + bootstrap priv
+ -> generate key -> revoke bootstrap priv -> verify final state]
+[writes the resulting API key through the existing PFSENSE_API_KEY_FILE
+ mechanism; prints nothing sensitive]
+```
+
+A `--dry-run`/mandatory-confirmation split mirroring `security_plan.py`'s
+own established "a plan is never authorization" discipline is the
+natural fit, not a new pattern.
+
+## 10. Proposed deterministic test strategy (described, not implemented)
+
+- Golden-file test asserting the derivation function's output for every
+  URL in `PFSENSE_LEAST_PRIVILEGE_MATRIX.md` matches the documented
+  value exactly (mirrors `security_doctor.py`'s own
+  `test_artifact_path_env_var_names_match_production_runtime` drift-guard
+  pattern).
+- Fixture-based tests for the bootstrap transaction's state machine
+  (§3): each state transition, idempotent re-run, partial-failure
+  resume, using a fake/mock pfSense client — no live appliance.
+- Negative tests proving the design's own constraints (§7): the
+  computed grant never includes `page-all`; a diff-based re-grant never
+  drops an unrelated existing privilege from a synthetic "already has
+  extra privileges" fixture; the bootstrap privilege is always revoked
+  in the same transaction that added it, proven by a fault-injection
+  test that fails the key-generation step and confirms revocation still
+  occurs (or is clearly reported as pending, per §3's partial-failure
+  design).
+- Isolation test (mirroring `security_doctor.py`/`security_discovery.py`)
+  proving whatever future module implements this never imports
+  `pfsense_mcp.tier1` and never constructs a `WriteApiClient`/`RecoveryContract`.
+
+## 11. Unresolved blockers
+
+1. **No live privilege-catalog HTTP endpoint exists** — the derivation
+   still requires either pinned-source knowledge or a full OpenAPI
+   schema fetch/parse; there is no single lightweight "list valid
+   privileges" call.
+2. **`PrivilegesCache`'s on-appliance generated file
+   (`/etc/inc/priv/restapi.priv.inc`) is not reachable by this project**
+   — no SSH/local-file-read capability exists or is authorized; noted
+   as a possible future authoritative source, not usable today.
+3. **Version range verified is `v2.7.7`–`v2.10.0` only** — a future
+   package major version could in principle change the algorithm; §2's
+   live-schema-first strategy is the designed mitigation, not a proof
+   this can never happen.
+4. **The exact transaction/state-persistence mechanism (§3) is
+   sketched, not fully specified** — where the local transaction state
+   lives, its exact schema, and how it relates to (or deliberately
+   stays separate from) Tier 1's own `RecoveryContract` persistence are
+   open implementation questions for the next phase.
+5. **No decision has been made on whether `bootstrap` becomes part of
+   `pfsense-mcp-security setup` directly or a standalone subcommand** —
+   §9's sketch is illustrative only.
+
+## GO / NO-GO recommendation
+
+**GO for a narrowly-scoped implementation phase**, conditional on:
+
+- Implementation phase begins with the derivation mechanism and its
+  drift-guard test (§10, first bullet) — the lowest-risk, most
+  mechanically verifiable piece, and the prerequisite for everything
+  else.
+- The bootstrap transaction's state machine (§3) gets its exact schema
+  designed and reviewed *before* any code that would call
+  `POST /api/v2/user` is written — not concurrently.
+- Live provisioning against a real appliance (even the disposable LAB
+  one) remains its own separate, explicit owner authorization, exactly
+  as every prior live action in this project's history has required —
+  this ADR's evidence and design do not themselves authorize touching
+  pfSense.
+
+**NO-GO on**: implementing `bootstrap`/`setup` provisioning code in the
+same pass as this research (correctly not attempted here); expanding
+`doctor` to make live pfSense calls (§6, correctly deferred); assuming
+any privilege value in this document is unconditionally guaranteed for
+package versions beyond `v2.10.0` without re-verification (§2/§3's
+drift-detection design exists specifically because this can't be
+assumed).
