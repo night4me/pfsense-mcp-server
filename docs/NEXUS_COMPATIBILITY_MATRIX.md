@@ -432,11 +432,16 @@ which encodes this finding as a permanent regression guard.
 reached **SCHEMA-MAPPED** only (no adapter implemented — see their
 respective diff sections for why).
 
-`pfsense_get_carp_status` reached **OFFLINE-TESTED** (Phase D): a
-concrete `NexusCarpStatusReader` exists with 16 adversarial tests, but
-takes its raw response via dependency injection rather than a real HTTP
-call — no actual Nexus transport/login/device-routing code was built
-this phase (see the Phase D section above for the explicit scope
-decision), so it has never been exercised against anything but
-hand-constructed fixtures, and is not wired into `factory.py`/
-`tools/registry.py`/`application.py` in any way.
+`pfsense_get_carp_status` reached **OFFLINE-TESTED** (Phase D, deepened
+Phase F): `NexusCarpStatusReader` exists with 16 adversarial tests
+(Phase D), and as of Phase F a real `NexusSession`/`NexusTransport`
+also exist (`docs/adr/ADR-032-nexus-read-transport-architecture.md`'s
+"Phase F implementation notes"), with 97 further tests (session,
+transport, routing, and a 5-test CARP integration seam proving the
+full login → device-scoped GET → normalization chain) — all offline,
+`respx`-mocked, zero real network calls. **Still not LIVE-READ-VERIFIED**:
+no live Nexus Controller/device/credential is available in this
+environment (unchanged since Phase A), and this code is still not
+wired into `factory.py`/`tools/registry.py`/`application.py` in any
+way — that remains a deliberate, unauthorized-this-phase step for a
+future Phase G.

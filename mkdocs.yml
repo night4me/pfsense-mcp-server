@@ -128,7 +128,7 @@ nav:
           - ADR-029 First-live-acceptance execution boundary: adr/ADR-029-first-live-acceptance-execution-boundary.md
           - ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A): adr/ADR-030-dual-pfsense-api-backend-architecture.md
           - ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B): adr/ADR-031-backend-target-identity-boundary.md
-          - ADR-032 Nexus READ transport architecture (design only, Nexus Phase E): adr/ADR-032-nexus-read-transport-architecture.md
+          - ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live): adr/ADR-032-nexus-read-transport-architecture.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md
