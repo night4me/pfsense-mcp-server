@@ -499,3 +499,26 @@ def test_unrelated_existing_admin_account_is_never_touched():
     assert result.outcome is ProvisioningOutcome.COMPLETED
     # The pre-existing admin account's privileges are byte-for-byte unchanged.
     assert admin.users[0]["priv"] == ["page-all"]
+
+
+def test_ambiguous_username_match_fails_closed_instead_of_picking_one():
+    """Handover self-review finding: two accounts sharing the target
+    name must never be silently resolved to "the first one found" --
+    that would risk provisioning or reporting on the wrong account.
+    pfSense usernames are expected to be unique, so this can only
+    reflect an untrustworthy read; the engine must refuse rather than
+    guess."""
+
+    admin = _FakeAdminTransport()
+    admin.seed_user(user_id=7, name="pfsense_mcp_svc", priv=_EXPECTED_READ_PRIVS)
+    admin.seed_user(user_id=8, name="pfsense_mcp_svc", priv=frozenset())
+
+    result, self_transport = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert "ambiguous account state" in result.detail
+    assert self_transport.calls == []
+    # No mutation was attempted against either same-named account.
+    assert [c for c in admin.calls if c[0] in ("POST", "PATCH")] == []
+    assert admin.users[7]["priv"] == sorted(_EXPECTED_READ_PRIVS)
+    assert admin.users[8]["priv"] == []

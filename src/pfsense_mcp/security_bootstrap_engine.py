@@ -227,10 +227,21 @@ def _check_package_version(installed_package_version: tuple[int, int, int] | Non
 
 
 def _find_user(users: tuple[ObservedUser, ...], username: str) -> ObservedUser | None:
-    for user in users:
-        if user.name == username:
-            return user
-    return None
+    """Returns the single account named `username`, or `None` if
+    absent. Raises `BootstrapProvisioningError` if more than one
+    account shares this name -- pfSense usernames are expected to be
+    unique, so this can only mean the observed account list cannot be
+    trusted to identify the dedicated target account unambiguously.
+    Never silently picks one of several matches (handover self-review
+    finding, Phase C follow-up)."""
+
+    matches = [user for user in users if user.name == username]
+    if len(matches) > 1:
+        raise BootstrapProvisioningError(
+            f"ambiguous account state: {len(matches)} accounts share the name {username!r} -- "
+            "refusing to guess which one is the dedicated target account"
+        )
+    return matches[0] if matches else None
 
 
 def _sanitize_client_error(exc: BootstrapProvisioningError) -> str:
@@ -284,12 +295,11 @@ def provision_service_account(
 
     try:
         existing_users = admin_client.list_users()
+        existing = _find_user(existing_users, username)
     except BootstrapProvisioningError as exc:
         return ProvisioningResult(
             ProvisioningOutcome.FAILED, f"pre-flight observation failed: {_sanitize_client_error(exc)}"
         )
-
-    existing = _find_user(existing_users, username)
 
     if existing is not None:
         return _provision_against_existing_account(admin_client, existing, expected)
@@ -351,14 +361,13 @@ def _provision_against_existing_account(
 
     try:
         refreshed_users = admin_client.list_users()
+        refreshed = _find_user(refreshed_users, existing.name)
     except BootstrapProvisioningError as exc:
         return ProvisioningResult(
             ProvisioningOutcome.FAILED,
             f"post-sync verification read for {existing.name!r} failed: {_sanitize_client_error(exc)}",
             drift_before=drift_before,
         )
-
-    refreshed = _find_user(refreshed_users, existing.name)
     if refreshed is None:
         return ProvisioningResult(
             ProvisioningOutcome.FAILED,
@@ -503,9 +512,9 @@ def _reread_and_check(
 
     try:
         users = admin_client.list_users()
+        user = _find_user(users, username)
     except BootstrapProvisioningError:
         return None
-    user = _find_user(users, username)
     if user is None or user.priv != expected_priv:
         return None
     return user
