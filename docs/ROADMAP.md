@@ -7,12 +7,45 @@ capability or authorizes a production change.
 
 ## Current baseline
 
-- Immutable published baseline: v0.3.0 — the same READ-platform contract as
-  v0.2.2, plus the Tier 1 architecture and inert safety framework as
-  implemented, tested, and structurally isolated code. Production
-  mutation remains separately blocked.
-- Production MCP surface: 42 READ tools, 0 WRITE tools.
-- Tier 0 WRITE infrastructure: present, tested, and inert.
+**2026-08-17 update — current immutable published baseline is v0.4.2**
+(PyPI and GitHub; see `CHANGELOG.md`'s `[0.4.2]` entry). The `v0.2.x`/
+`v0.3.0` sections immediately below are kept exactly as originally
+written, as an accurate historical record of what shipped and when —
+not rewritten to look cleaner. Treat "v0.3.0" in their text as the
+baseline *at the time those sections were written*, not the current
+one.
+
+- Production MCP surface: **42 READ tools, 0 default-reachable WRITE
+  tools** — enforced mechanically on every CI run
+  (`scripts/write_capability_check.py`), not merely documented.
+- **One WRITE capability now exists and is `verified=True`**:
+  `set_firewall_alias_description_v1`
+  (`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION`). It is still
+  unreachable under the default profile — reaching it requires an
+  operator to explicitly select `write_protected` *and* a real,
+  owner-driven, per-mutation Ed25519 authorization/confirmation
+  signing ceremony every single time; `verified=True` does not itself
+  enable WRITE. This reflects **two independently-verified live
+  executions against a disposable LAB appliance** (never
+  production/home pfSense), including least-privilege execution
+  through a dedicated 4-privilege pfSense identity and TPM
+  anti-rollback witness advancement confirmed against physical
+  hardware both times — see
+  [ADR-026](adr/ADR-026-first-write-capability-adapter.md) for the
+  complete evidence chain. This is the "Tier 1 — first controlled
+  mutation" milestone described further below, now realized for this
+  one capability, not only planned.
+- Tier 0 WRITE infrastructure: present, tested, and — for this one
+  capability specifically — no longer only inert. The rest of the
+  Tier 1 framework (every other potential WRITE capability) remains
+  structurally isolated and unreachable pending a second, separately
+  owner-authorized capability (see "Tier 2" below).
+- **A second, fully offline-only backend now exists**: research into
+  using Netgate's official Nexus/pfSense Plus API as a second READ
+  transport (never a replacement for the existing community
+  `pfSense-pkg-RESTAPI` backend) ran through seven phases and is
+  currently paused at a stable, fully-isolated checkpoint — see
+  "Nexus — second backend research track" below.
 
 ## v0.2.x — hardening and public-project readiness
 
@@ -89,12 +122,29 @@ capability or authorizes a production change.
 
 ## Tier 1 — first controlled mutation
 
+**2026-08-16/17 update — this milestone is realized for exactly one
+capability, `set_firewall_alias_description_v1`.** The paragraph
+below ("the first capability and endpoint remain unnamed...") is kept
+as the original framing at the time this section was written; it is
+now historical, not current. The capability has been named, built,
+and independently live-verified twice — see the "Current baseline"
+section above and [ADR-026](adr/ADR-026-first-write-capability-adapter.md).
+Tier 1 activation for any *further* capability remains its own
+separate, explicitly authorized program — this milestone's completion
+for one capability does not carry over to any other.
+
 Tier 1 activation is a separately authorized security program. v0.3.0 may
 contain inert framework code, but the first capability and endpoint remain
 unnamed until threat, reversibility, upstream semantics, encryption, durable
 anti-rollback, and operator-authentication decisions are approved.
 
 ### Required before commitment
+
+All of the following are **satisfied, with live evidence, for the one
+accepted capability** (`set_firewall_alias_description_v1` —
+[ADR-026](adr/ADR-026-first-write-capability-adapter.md)). They remain
+the required bar for any *future* additional capability, each judged
+independently rather than inherited.
 
 - Authoritative Recovery Contracts loaded by ID and bound to capability,
   endpoint, method, target, intent, snapshot, and rollback plan.
@@ -106,8 +156,62 @@ anti-rollback, and operator-authentication decisions are approved.
 - Capability-specific least privilege, audit, tests, and private test-appliance
   acceptance.
 
-See [Tier 1 roadmap](TIER1_ROADMAP.md). Until every gate is accepted, zero
-WRITE tools register.
+See [Tier 1 roadmap](TIER1_ROADMAP.md). Zero WRITE tools register for any
+capability that has not individually cleared every gate above.
+
+## Nexus — second backend research track (paused, 2026-08-17)
+
+**Working name: Nexus dual-backend support.** Netgate publishes an
+official pfSense Plus API (`Netgate/pfsense-api`, "Nexus"), distinct
+from the community `pfSense-pkg-RESTAPI` package this project has
+always used. A seven-phase research/design/offline-implementation
+track (Phases A–G, 2026-08-16/17) investigated whether Nexus could
+become a **second, additive** READ backend — never a replacement for
+the existing community backend, and never authorized to touch WRITE.
+
+**Current state, precisely:**
+
+- **Nexus READ: OFFLINE-TESTED / LIVE-BLOCKED.** One capability
+  (`pfsense_get_carp_status`) was proven to map completely,
+  deterministically, and semantically to Nexus's schema (not merely
+  by field name) and has a real, offline-tested implementation
+  (`NexusSession` → `NexusTransport` → `NexusCarpStatusReader`,
+  102 tests under `tests/backends/`, 92 of them specifically under
+  `tests/backends/nexus/`). It has never been exercised against a
+  real Nexus Controller — no live Nexus access has ever occurred in
+  this project's history. Two other candidates
+  (`pfsense_get_gateway_status`, `pfsense_get_firewall_aliases`) were
+  diffed with equal rigor and correctly classified `PARTIAL` and left
+  unimplemented rather than forced, after their required fields
+  (an `id: int` domain-model convention this project uses, with no
+  Nexus counterpart) proved unmappable without fabricating data.
+- **Nexus WRITE: BLOCKED BY ADR-031.** [ADR-031](adr/ADR-031-backend-target-identity-boundary.md)
+  states a mandatory invariant — a mutation authorized for one backend/
+  appliance must never become executable through a different backend/
+  device merely because a normalized operation looks equivalent — and
+  is a prerequisite gate for any future Nexus WRITE work, not yet
+  implemented (deliberately: it is architecture/invariant documentation
+  only, no cryptographic binding exists yet, and none was authorized
+  to be built during this track).
+- **No runtime wiring exists.** `src/pfsense_mcp/backends/` (including
+  every Nexus file) is proven, by an AST-based test with no carve-outs,
+  to be imported by nothing outside itself — not `factory.py`, not
+  `tools/registry.py`, not `application.py`. It cannot currently affect
+  the running MCP server in any way.
+- **Resume conditions**, in order: a real Nexus Controller, a target
+  device, and appropriately least-privileged credentials become
+  available; the CARP-read RBAC/device-scoping questions
+  ([ADR-032](adr/ADR-032-nexus-read-transport-architecture.md)'s Phase
+  G section) are resolved *before* the first live authentication
+  attempt — explicitly not by defaulting to a Controller admin
+  credential to bypass that uncertainty.
+
+Full detail: [ADR-030](adr/ADR-030-dual-pfsense-api-backend-architecture.md)
+(architecture/compatibility), [ADR-031](adr/ADR-031-backend-target-identity-boundary.md)
+(backend/target identity boundary), [ADR-032](adr/ADR-032-nexus-read-transport-architecture.md)
+(transport design, implementation, and live-readiness assessment),
+[`NEXUS_COMPATIBILITY_MATRIX.md`](NEXUS_COMPATIBILITY_MATRIX.md) (the
+full 42-tool compatibility survey).
 
 ## Operator setup and security postures (architecture accepted, implementation not started)
 
@@ -262,13 +366,18 @@ lived experience rather than only theory:
   API-key-only use) from API-key self-generation (requires a distinct,
   narrow, revocable bootstrap privilege the target account does not
   otherwise need).
-- **Doctor/preflight**: a genuinely safe, separable, read-only command
-  is a good, implementable-now candidate independent of the rest of the
-  wizard — but scoping and building it well deserves its own focused
-  pass rather than a rushed addition at the end of an already-long
-  release-preparation session; recorded here as the next concrete,
-  narrowly-scoped piece of this effort rather than implemented in this
-  pass.
+- **Doctor/preflight** (`pfsense-mcp-security doctor`): a genuinely
+  safe, separable, read-only command is a good, implementable-now
+  candidate independent of the rest of the wizard. **2026-08-17
+  update — this is the currently recommended next implementation
+  candidate** (identified during a post-v0.4.2/post-Nexus-pause
+  roadmap review): narrowest, lowest-risk, most concretely-specified
+  unbuilt piece of this effort, and directly addresses two real
+  incidents already hit during this project's own live ceremonies
+  (a pre-positioned stale `confirmation-signed.bin`; a signer with a
+  stale local witness-store snapshot) rather than a hypothetical gap.
+  Not yet authorized to build — recorded here as the recommendation,
+  awaiting explicit owner go-ahead.
 - **Signer separation, authority key generation, config/env generation,
   validation, rollback, and explicit owner decision points** all remain
   as originally scoped above — the live ceremony re-confirmed each of
@@ -389,6 +498,17 @@ READ capability's answer is genuinely incomplete for the question
 asked — never as a general "browse the GUI" escape hatch.
 
 ## Tier 2 — additional controlled capabilities
+
+**2026-08-17 update — Tier 1 now has production evidence** (see
+"Current baseline" above), satisfying this section's own precondition
+for the first time. **Selecting a second WRITE capability remains
+explicitly pending a separate, future owner decision** — Tier 1's
+completion for one capability does not by itself authorize a second
+one. [`WRITE_ENDPOINT_RISK_MATRIX.md`](WRITE_ENDPOINT_RISK_MATRIX.md)
+already triages 240 upstream writable endpoint classes by risk,
+rollback strength, verification confidence, and blast radius, so this
+decision — whenever the owner chooses to make it — has a prepared,
+reviewed starting point rather than a blank one.
 
 ### Possible future direction
 

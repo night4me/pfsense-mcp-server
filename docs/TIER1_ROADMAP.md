@@ -1,5 +1,20 @@
 # Tier 1 Recovery Contract roadmap
 
+**2026-08-17 update — the status/state lines immediately below describe
+this document's original, fully-inert starting point and are kept
+as written for historical accuracy; they are no longer the current
+state.** Current state: `set_firewall_alias_description_v1` is
+activated for the `write_protected` profile only, `verified=True`,
+with two independently-verified live executions against a disposable
+LAB appliance ([ADR-026](adr/ADR-026-first-write-capability-adapter.md)).
+Milestones 7–9 below are satisfied, with live evidence, for that one
+capability — see the status notes added to each. The framework
+remains inert for every other potential capability; a second capability
+requires its own independent pass through every milestone below, not
+inherited from this one's completion. Current production state under
+the *default* profile remains **42 READ tools, 0 WRITE tools**,
+mechanically enforced.
+
 Status: inert framework implemented; capability activation blocked
 Current production state: 42 READ tools, 0 WRITE tools  
 Activation authorized by this document: none
@@ -38,8 +53,8 @@ through 6 are accepted.
 | State and concurrency | Closed transitions, CAS, idempotency identities, and target reservations implemented | Cross-process load evidence, target-scoped rate policy, executor boundary |
 | Persistence | Owner-only SQLite, durable transactions, record HMAC, restart reconciliation implemented | Encryption/key provider, whole-store anti-rollback anchor, retention/backup/deletion policy |
 | Policy and audit | Exact immutable empty policy and value-free event model implemented | Owner-authenticated confirmation, durable audit export/integrity decision |
-| Mutation outcome and rollback | Specification and fault classification only | All capability-specific transport, read-back, rollback, and reconciliation work |
-| MCP and production wiring | Intentionally absent | Separate owner approval after lab acceptance |
+| Mutation outcome and rollback | Specification and fault classification only, **except for `set_firewall_alias_description_v1`: fully implemented, live-verified twice** | All capability-specific transport, read-back, rollback, and reconciliation work for any *other* capability |
+| MCP and production wiring | Intentionally absent, **except for `set_firewall_alias_description_v1`: wired, gated behind `write_protected` + per-mutation signing ceremony, `verified=True`** | Separate owner approval after lab acceptance, for any *other* capability |
 
 The implementation is in `src/pfsense_mcp/tier1/` with offline tests under
 `tests/tier1/`. Legacy Tier 0 modules are retained for compatibility and are
@@ -137,12 +152,15 @@ description-only `PATCH` (`/api/v2/firewall/alias`, `descr` field only)
 is the named first candidate.** This section's original framing below is
 preserved as historical rationale for *why* this document does not
 pre-choose a capability itself; the naming decision it called for now
-exists as `ADR-020`, not here. The remaining deliverables below that are
-empirically lab-dependent (natural-identity uniqueness proof, upstream
-API semantics/idempotency/response-code/concurrency confirmation) remain
-**open**, pending Milestone 8's live lab evidence — naming the candidate
-does not itself satisfy them, per `ADR-016`'s own already-accepted
-position that code review cannot resolve these questions.
+exists as `ADR-020`, not here. **2026-08-17 update — the deliverables below that were lab-dependent
+are now closed, not open.** Milestone 8's live lab evidence
+(2026-08-16, twice — [ADR-026](adr/ADR-026-first-write-capability-adapter.md))
+supplied the natural-identity uniqueness proof and confirmed upstream
+API semantics/idempotency/response-code/concurrency behavior
+empirically, exactly as this section originally required rather than
+inferring them from code review alone (`ADR-016`'s position, still
+correct in general — it just no longer describes this specific
+candidate's current status).
 
 The roadmap does not choose the first capability. Owner approval must select it
 using objective criteria: smallest blast radius, a reliable verified READ
@@ -171,14 +189,17 @@ the decision record, but no specific capability is implied or preferred here.
 ### Acceptance criteria
 
 - Separate written authorization names the capability and test appliance.
-  **Capability named 2026-08-10 (`ADR-020`); the disposable test appliance
-  itself is not yet provisioned or named — that is part of Milestone 8's
-  own scope, not satisfied by `ADR-020` alone.**
+  **Capability named 2026-08-10 (`ADR-020`); the disposable LAB test
+  appliance was subsequently provisioned and used for two live
+  executions (2026-08-16) — see
+  [ADR-026](adr/ADR-026-first-write-capability-adapter.md).**
 - No ambiguity exists about target identity, pre-state capture, apply/read-back,
   and rollback operations. **Target identity (`descr` field, natural
   identity = alias `name`) is unambiguous per `ADR-020`; pre-state
-  capture, apply/read-back, and rollback operations remain to be proven
-  by Milestone 8's live lab run, not yet demonstrated.**
+  capture, apply/read-back, and rollback operations have since been
+  proven by Milestone 8's live lab run — twice, including a genuine
+  rollback (the second execution restored the first's temporary change)
+  — no longer merely planned.**
 
 ## Milestone 1 — authoritative contract model
 
@@ -434,6 +455,19 @@ part of this milestone.
 
 ## Milestone 8 — private test-appliance acceptance
 
+**STATUS: satisfied for `set_firewall_alias_description_v1`
+(2026-08-16), twice — see
+[ADR-026](adr/ADR-026-first-write-capability-adapter.md) for the
+complete evidence chain against both live executions.** The sequence
+below is kept as originally written (this milestone's acceptance
+criteria); it matches, in substance, what was actually executed
+against the disposable LAB appliance, including a dedicated
+least-privilege pfSense identity (never the admin account) and a
+genuine rollback step (the second execution restored the first
+execution's temporary change back to its original value through the
+same controlled ceremony). Any future *additional* capability must
+independently satisfy this milestone again — nothing here transfers.
+
 Requires a separate command-level approval and a disposable/non-production
 test target.
 
@@ -460,6 +494,19 @@ test target.
 
 ## Milestone 9 — activation decision
 
+**STATUS: this decision has been made for `set_firewall_alias_description_v1`
+only (2026-08-16), and shipped in the v0.4.0/v0.4.1/v0.4.2 release
+line.** Every requirement below was satisfied for that one capability:
+explicit owner authorization naming the capability/endpoint/profile
+across the ADR-026/028/029 chain; accepted live Recovery Contract/
+rollback evidence (two executions); extensive hostile/security review
+throughout; README/`SECURITY_MODEL.md`/`CHANGELOG.md` updated; normal
+commit/tag/release process followed. This is a **per-capability**
+decision — it authorizes exactly this one capability under
+`write_protected`, not Tier 1 in general, and does not lower the bar
+for any future second capability, which requires this same milestone
+satisfied independently.
+
 Activation is a separate release decision, not an automatic consequence of
 passing tests. It requires:
 
@@ -470,7 +517,11 @@ passing tests. It requires:
 - commit, tag, push, and release approval under normal project policy.
 
 Until that decision, `WriteEndpoints` remains empty, WRITE capabilities remain
-inactive, and zero WRITE tools register.
+inactive, and zero WRITE tools register. (Historical framing: `WriteEndpoints`
+is no longer empty — it contains exactly one entry,
+`FIREWALL_ALIAS_DESCRIPTION` — but zero WRITE tools still register under the
+*default* profile, which remains the actual invariant this project enforces
+mechanically on every CI run.)
 
 ## Principal risks
 
