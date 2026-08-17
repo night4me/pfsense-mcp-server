@@ -1,7 +1,125 @@
 # Netgate Nexus / official API — READ-tool compatibility matrix
 
-**Status: research artifact, through Phase C. No code in this repository
-depends on this document. Nothing here is wired into the running server.**
+**Status: research artifact, through Phase D. `pfsense_get_carp_status`
+now has a concrete, tested, but NOT runtime-wired Nexus adapter — see
+"Phase D update" below for exactly what that does and does not mean.
+Nothing else in this document is wired into the running server; no
+public MCP behavior changed.**
+
+## Phase D update (2026-08-17) — first passing slice
+
+`pfsense_get_carp_status` was the owner-chosen candidate after Phase C's
+`firewall_aliases` result, specifically because `CarpStatus` is this
+project's simplest domain model with **no `id: int` field** — the pattern
+that blocked both prior slices.
+
+Traced end-to-end: `tools/read/carp_status.py` →
+`PfSenseClient.get_carp_status()` → `RestApiClient.get(Endpoints.STATUS_CARP)`
+(`GET /api/v2/status/carp`) → `_parse_object_response()` (requires a
+top-level `"data"` object key) → `CarpStatus.from_api()`, which reads
+`data["enable"]` and `data["maintenance_mode"]` — two required boolean
+dict keys, no defaults.
+
+Compared against Nexus `GET /services/carp/status`
+(`operationId` not set; response schema `CARPStatus`) — and, critically,
+against **Netgate's own official generated Python client**
+(`py/pfapi/models/carp_status.py` in `Netgate/pfsense-api`), fetched and
+read directly rather than relying on the OpenAPI YAML alone, because the
+YAML's bare `type: boolean` with no `required[]` entry doesn't by itself
+say whether a field is reliably present:
+
+```python
+enabled: bool | Unset = UNSET
+maintenancemode_enabled: bool | Unset = UNSET
+```
+
+This is decisive, from source: Nexus's own client explicitly models both
+fields as possibly **absent entirely** (`Unset`), not merely nullable —
+confirming the same ambiguity the owner asked to check for
+("behavior when CARP is disabled, unavailable, partially configured, or
+absent").
+
+| community field | required? | Nexus field | Nexus type | Nexus required? | semantic equivalence | transformation | confidence |
+|---|---|---|---|---|---|---|---|
+| `enable: bool` | required key, no default | `enabled` | `bool \| Unset` | optional/possibly-absent | High — both represent "is the CARP service itself turned on for this appliance"; `/services/carp/enabled` (POST) is literally "Enable/Disable the CARP service," the same concept the GET status field reflects | direct rename, **when present** | High |
+| `maintenance_mode: bool` | required key, no default | `maintenancemode_enabled` | `bool \| Unset` | optional/possibly-absent | High — both represent the standard pfSense/CARP-protocol "persistent maintenance mode" concept (forces this node's VIPs to BACKUP); `/services/carp/maintenancemode` (POST) names the same concept | direct rename, **when present** | High |
+
+**Why this passes where gateway status/firewall aliases did not:** those
+two had required community fields with **zero possible source under any
+circumstance** (no `id` concept exists anywhere in their Nexus schemas).
+Here, both fields exist, are named unambiguously, and match the community
+concept with high confidence — domain knowledge (CARP enable/maintenance
+mode are standard, specific pfSense/CARP-protocol terms, not generic
+words like "status" that could mean several things) plus the paired
+POST-toggle-endpoint names (`/services/carp/enabled`,
+`/services/carp/maintenancemode`) corroborating the GET field semantics
+independently. The only open question is *reliability of presence*, which
+is a **fail-closed problem, not a fabrication problem**: unlike a field
+with no source at all, "sometimes absent" can be handled correctly by
+refusing to guess when it's missing, exactly as the community backend's
+own `_parse_object_response()` already refuses on any missing required
+key. That is what was implemented — see below.
+
+**One additional, pre-existing nuance found and left as-is, not a new
+gap:** `CarpStatus`'s plain Pydantic `bool` fields already perform lax
+coercion (`"true"`/`"false"` strings, `1`/`0`, etc. are accepted) — this
+is existing, shared behavior of the community backend's own model, not
+something this adapter adds or could avoid without diverging from how
+the community backend itself already behaves. Adversarial tests exercise
+genuinely non-coercible malformed values instead (a list, a nested
+object) to confirm real fail-closed behavior without asserting something
+false about the shared model's own pre-existing leniency.
+
+**Routing/device semantics:** consistent with Phase B's confirmed
+mechanism — same base-path-prefix scheme, no CARP-specific routing
+behavior found or expected.
+
+### What was implemented
+
+The **smallest isolated READ-only adapter**, per explicit owner scope:
+
+- `CarpStatusReader` added to `src/pfsense_mcp/backends/ports.py`.
+- `src/pfsense_mcp/backends/nexus/carp_status.py`: a pure
+  `normalize_carp_status(raw: dict) -> CarpStatus` function (fail-closed:
+  raises `PfSenseResponseShapeError` — the exact same exception type the
+  community backend's own `_parse_object_response()` raises — on any
+  missing key, `None`, or non-coercible type) plus
+  `NexusCarpStatusReader`, a thin class taking an **injected**
+  `fetch_raw: Callable[[], dict]` and calling
+  `normalize_carp_status(self._fetch_raw())`.
+
+**What was deliberately NOT built, and why:** any actual Nexus HTTP
+transport — login/JWT session handling, refresh-token lifecycle, or the
+`{controller}/api/device/pfsense/{device_id}/api/services/carp/status`
+base-path construction Phase B confirmed. That is separate, materially
+larger infrastructure work applicable to *every* future Nexus capability,
+not specific to CARP status — building it now would be exactly the
+"unrelated refactoring" the owner's Phase D authorization explicitly
+excluded. `NexusCarpStatusReader` takes a raw dict via injection
+precisely so this remains true: the reader is fully testable and
+review-complete today, and plugging in a real fetch function later is a
+separate, explicit, future decision — not a change to this code.
+
+**Not wired anywhere.** `factory.py`, `tools/registry.py`, and
+`application.py` are unaffected — `pfsense_mcp.backends` (including
+`nexus/`) remains structurally unreachable from any of them, enforced by
+`tests/backends/test_isolation.py`, generalized this phase to scan every
+file under `backends/`, not just `ports.py`.
+
+### Testing
+
+26 tests in `tests/backends/` (16 new this phase, in
+`tests/backends/nexus/test_carp_status.py`): both-true, both-false,
+mixed, extra Nexus-only fields ignored, missing `enabled`, missing
+`maintenancemode_enabled`, both missing, empty body, non-coercible wrong
+type for each field, explicit JSON `null` for each field, reader calls
+the injected fetch function and normalizes correctly, reader propagates
+the fail-closed error from a malformed fetch, reader satisfies
+`CarpStatusReader` structurally, and construction alone must not
+eagerly invoke `fetch_raw`.
+
+**No live validation performed.** No Nexus Controller/device/credential
+is available in this environment — same as every prior phase.
 
 ## Phase C update (2026-08-17)
 
@@ -53,7 +171,9 @@ implementation. See
 `tests/backends/test_nexus_firewall_alias_infeasibility.py` for the
 permanent regression guard encoding this finding.
 
-**Recommended next candidate (Phase D):** `pfsense_get_carp_status`
+**Recommended next candidate (Phase D):** *(acted on — see the "Phase D
+update" section above the Phase C section for the result: this
+recommendation passed.)* `pfsense_get_carp_status`
 (`CarpStatus`) — checked this phase specifically because the `id: int`
 pattern has now blocked two consecutive slices (gateways, aliases) and a
 third model (`SystemPackage`) was spot-checked and found to have the same
@@ -147,15 +267,22 @@ Controller-mediated multi-instance API.
 
 Updated in Phase B: `pfsense_get_gateway_status` moved ADAPTABLE → PARTIAL.
 
-| Classification | Count (Phase A) | Count (Phase B) | Count (Phase C) |
-|---|---|---|---|
-| DIRECT | 0 | 0 | 0 |
-| ADAPTABLE | 32 | 31 | 30 |
-| PARTIAL | 3 | 4 | 5 |
-| UNSUPPORTED | 5 | 5 | 5 |
-| UNKNOWN | 1 | 1 | 1 |
-| LOCAL | 1 | 1 | 1 |
-| **Total** | **42** | **42** | **42** |
+| Classification | Count (Phase A) | Count (Phase B) | Count (Phase C) | Count (Phase D) |
+|---|---|---|---|---|
+| DIRECT | 0 | 0 | 0 | 0 |
+| ADAPTABLE | 32 | 31 | 30 | 30 |
+| PARTIAL | 3 | 4 | 5 | 5 |
+| UNSUPPORTED | 5 | 5 | 5 | 5 |
+| UNKNOWN | 1 | 1 | 1 | 1 |
+| LOCAL | 1 | 1 | 1 | 1 |
+| **Total** | **42** | **42** | **42** | **42** |
+
+Phase D's totals are unchanged from Phase C: `carp_status` was already
+ADAPTABLE and stays ADAPTABLE — the DIRECT/ADAPTABLE/PARTIAL/etc. axis
+tracks *schema compatibility*, not *implementation status*, which is a
+separate fact recorded per-row and in the SCHEMA-MAPPED/OFFLINE-TESTED/
+LIVE-READ-VERIFIED legend below. `carp_status` is the only row that has
+reached OFFLINE-TESTED so far.
 
 (`system_status`, `firewall_rules`, `dhcp_static_mappings` are PARTIAL from
 Phase A; `gateway_status` is PARTIAL as of Phase B; `firewall_aliases` is
@@ -187,7 +314,7 @@ below for why.)
 | `pfsense_get_dhcp_static_mappings` | `DHCP_SERVER_STATIC_MAPPINGS` | GET | `/services/dhcp-server/{version}/static-mappings/{iface}` | GET | **PARTIAL** | High | Structural mismatch: requires iterating `{version}` (v4/v6) × `{iface}` and aggregating, vs. the current single flat list. |
 | `pfsense_get_dhcp_servers` | `DHCP_SERVERS` | GET | `/services/dhcp-server`, `/services/dhcp-server/{version}/interface` | GET | ADAPTABLE | Low-Medium | Endpoint exists; shape not diffed. |
 | `pfsense_get_interface_bridges` | `INTERFACE_BRIDGES` | GET | `/interfaces/bridge` | GET | ADAPTABLE | Low-Medium | Endpoint exists; not schema-diffed. |
-| `pfsense_get_carp_status` | `STATUS_CARP` | GET | `/services/carp/status` | GET | ADAPTABLE | Medium | Endpoint exists with a clear name match; not schema-diffed. |
+| `pfsense_get_carp_status` | `STATUS_CARP` (`/status/carp`) | GET | `/services/carp/status` (response schema `CARPStatus`) | GET | **ADAPTABLE — PASSED, adapter implemented** (Phase D) | High | Both required fields (`enable`/`maintenance_mode`) map cleanly to Nexus's `enabled`/`maintenancemode_enabled` with high-confidence semantic equivalence, confirmed against Netgate's own generated client. Not runtime-wired — see the dedicated Phase D section above. |
 | `pfsense_get_system_restapi_settings` | `SYSTEM_RESTAPI_SETTINGS` | GET | none | — | UNSUPPORTED | High | This tool exposes settings for the community `pfSense-pkg-RESTAPI` package specifically. That package/concept does not exist under Nexus's own, separate auth/API model. |
 | `pfsense_get_system_hasync` | `SYSTEM_HASYNC` | GET | none found | — | UNSUPPORTED | High (positive search) | Searched for `pfsync`/`hasync`/`sync peer`/`failover` — no match. CARP *status* exists (`/services/carp/status`, `/services/carp/enabled`) but the HA-sync *configuration* (sync interface, sync peer IP) this tool exposes was not found. This is also the exact endpoint whose privilege (`api-v2-system-hasync-get`) is one of the 4 privileges the existing Tier1 scoped credential holds — see the security note below. |
 | `pfsense_get_dns_resolver_host_overrides` | `DNS_RESOLVER_HOST_OVERRIDES` | GET | `/services/dnsresolver` (likely a sub-field) | GET | ADAPTABLE | Low | No standalone host-overrides endpoint found; likely nested inside the general resolver-settings object — not confirmed. |
@@ -288,17 +415,28 @@ Phase 4 concrete adapter was stopped rather than invent values for the
 missing fields — see `tests/backends/test_nexus_gateway_status_infeasibility.py`,
 which encodes this finding as a permanent regression guard.
 
-## Classification legend used in Phase B
+## Classification legend used from Phase B onward
 
 - **SCHEMA-MAPPED** — a candidate Nexus endpoint/schema was identified and
   compared field-by-field against the current domain model.
 - **OFFLINE-TESTED** — a concrete adapter exists and has offline
-  fixture/adversarial test coverage. *(Not reached for gateway status —
-  no adapter was implemented.)*
+  fixture/adversarial test coverage, but has never made a real network
+  call.
 - **LIVE-READ-VERIFIED** — a concrete adapter's output was compared
-  against a real Nexus Controller/device. *(Not attempted — no Nexus
-  Controller/device/credential available; Phase 7 skipped per its own
+  against a real Nexus Controller/device. *(Not attempted for any row —
+  no Nexus Controller/device/credential available in any phase so far;
+  the relevant live-validation phase was skipped each time per its own
   stated conditions.)*
 
 `pfsense_get_gateway_status` and `pfsense_get_firewall_aliases` both
-reached **SCHEMA-MAPPED** only.
+reached **SCHEMA-MAPPED** only (no adapter implemented — see their
+respective diff sections for why).
+
+`pfsense_get_carp_status` reached **OFFLINE-TESTED** (Phase D): a
+concrete `NexusCarpStatusReader` exists with 16 adversarial tests, but
+takes its raw response via dependency injection rather than a real HTTP
+call — no actual Nexus transport/login/device-routing code was built
+this phase (see the Phase D section above for the explicit scope
+decision), so it has never been exercised against anything but
+hand-constructed fixtures, and is not wired into `factory.py`/
+`tools/registry.py`/`application.py` in any way.

@@ -38,20 +38,22 @@ def test_backends_package_is_never_imported_outside_itself():
 
 
 def test_backends_package_defines_no_write_shaped_members():
-    """Every port must be a READ-only capability -- no method name
-    suggesting a mutation, and nothing importing write_api_client,
-    tier1, or the transport layer."""
-
-    ports_path = SRC / "backends" / "ports.py"
-    tree = ast.parse(ports_path.read_text(encoding="utf-8"), filename=str(ports_path))
+    """Every port and every concrete reader must be READ-only -- no
+    method name suggesting a mutation, and nothing importing
+    write_api_client, tier1, or the transport layer. Scans every file
+    under backends/, not just ports.py, so a future concrete adapter
+    (like nexus/carp_status.py, Phase D) is covered automatically."""
 
     forbidden_imports = {"write_api_client", "tier1", "transport"}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom):
-            module = (node.module or "").removeprefix("pfsense_mcp.").split(".")[0]
-            assert module not in forbidden_imports, f"backends/ports.py must not import {module!r}"
-
     write_shaped_prefixes = ("set_", "create_", "update_", "delete_", "patch_", "put_", "execute_", "apply_")
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
-            assert not node.name.startswith(write_shaped_prefixes), f"WRITE-shaped port method found: {node.name}"
+
+    for path in (SRC / "backends").rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                module = (node.module or "").removeprefix("pfsense_mcp.").split(".")[0]
+                assert module not in forbidden_imports, f"{path}: must not import {module!r}"
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                assert not node.name.startswith(write_shaped_prefixes), (
+                    f"{path}: WRITE-shaped member found: {node.name}"
+                )
