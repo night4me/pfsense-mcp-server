@@ -1,5 +1,5 @@
 """`pfsense-mcp-security` -- the guided security-posture provisioning
-CLI named in `ADR-021` (Accepted). This file implements two
+CLI named in `ADR-021` (Accepted). This file implements three
 entirely read-only/mutation-free subcommands:
 
   - `discover` (`docs/SECURITY_POSTURE_PROVISIONING.md`'s Phase B):
@@ -12,19 +12,27 @@ entirely read-only/mutation-free subcommands:
     it -- see `security_plan.py`'s own module docstring for the full
     mutation-free argument and the "a plan is never authorization"
     invariant.
+  - `doctor` (`docs/ROADMAP.md`'s doctor/preflight item): read-only
+    Tier 1 ceremony readiness check -- artifact-exchange path
+    cleanliness plus witness readiness, one deterministic READY/
+    NOT_READY verdict. See `security_doctor.py`'s own module docstring
+    for the full design and its explicit, documented limitations.
 
 **No selection-execution, provisioning, activation, or any other
 mutating subcommand exists yet** -- that is Phase C onward, each its
-own separate, future, explicitly-scoped authorization. Neither
-`discover` nor `plan` performs any provisioning, repair, or mutation.
+own separate, future, explicitly-scoped authorization. None of
+`discover`, `plan`, or `doctor` performs any provisioning, repair, or
+mutation.
 
 This file does not import `pfsense_mcp.tier1` directly, or at all --
 every axis-discovery call goes through the one function
 `security_discovery.discover_security_posture()` exposes (`plan` calls
-it only indirectly, via `security_plan.generate_security_posture_plan()`),
-keeping the tier1-package-isolation exemption's surface to exactly
-`security_discovery.py`, matching `tier1_anchor_check.py`'s own
-established discipline for `application.py`.
+it only indirectly, via `security_plan.generate_security_posture_plan()`;
+`doctor` calls it only indirectly, via
+`security_doctor.run_doctor_checks()`), keeping the tier1-package-
+isolation exemption's surface to exactly `security_discovery.py`,
+matching `tier1_anchor_check.py`'s own established discipline for
+`application.py`.
 """
 
 from __future__ import annotations
@@ -43,6 +51,7 @@ from .security_discovery import (
     SecurityPostureDiscovery,
     discover_security_posture,
 )
+from .security_doctor import CheckStatus, DoctorCheck, DoctorResult, run_doctor_checks
 from .security_plan import (
     PlanOverallStatus,
     PlanStep,
@@ -53,6 +62,12 @@ from .security_plan_digest import PLAN_DIGEST_SCHEMA_VERSION, compute_plan_diges
 
 _MISMATCH_EXIT_CODE = 2
 _BLOCKED_TARGET_EXIT_CODE = 2
+# Deliberately distinct from the two above: `doctor`'s whole purpose is
+# a binary readiness gate for automation, unlike discover/plan (which
+# exit 0 even when "unconfigured"). 1 = one or more checks failed;
+# argparse's own existing exit 2 remains reserved for usage errors
+# (main()'s no-subcommand-matched fallback, unchanged below).
+_DOCTOR_NOT_READY_EXIT_CODE = 1
 
 _CAPABILITY_POSTURE_CHOICES = [member.value for member in CapabilityPosture]
 # AnchorAssurance.UNKNOWN is deliberately excluded -- it is an
@@ -244,12 +259,60 @@ def _format_plan_human(plan: SecurityPosturePlan) -> str:
     return "\n".join(lines)
 
 
+def _doctor_check_to_dict(check: DoctorCheck) -> dict[str, Any]:
+    return {
+        "check_id": check.check_id,
+        "description": check.description,
+        "status": check.status.value,
+        "detail": check.detail,
+    }
+
+
+def _doctor_result_to_dict(result: DoctorResult) -> dict[str, Any]:
+    return {
+        "ready": result.ready,
+        "checks": [_doctor_check_to_dict(check) for check in result.checks],
+        "notes": [
+            "Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state "
+            "was changed. Checks only artifact-exchange path cleanliness and witness readiness, not the "
+            "full build_production_runtime() prerequisite set (store/authority-key configuration, etc.).",
+        ],
+    }
+
+
+_STATUS_SYMBOL = {
+    CheckStatus.PASS: "OK",
+    CheckStatus.FAIL: "FAIL",
+    CheckStatus.NOT_CONFIGURED: "NOT CONFIGURED",
+}
+
+
+def _format_doctor_human(result: DoctorResult) -> str:
+    lines = [
+        "pfsense-mcp-security: Tier 1 ceremony readiness check (read-only, diagnostic only)",
+        "",
+        f"Overall: {'READY' if result.ready else 'NOT READY'}",
+        "",
+    ]
+    for check in result.checks:
+        lines.append(f"  [{_STATUS_SYMBOL[check.status]}] {check.description} ({check.check_id})")
+        lines.append(f"        {check.detail}")
+    lines.append("")
+    lines.append(
+        "Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state was "
+        "changed. Checks artifact-exchange path cleanliness and witness readiness only, not the full "
+        "build_production_runtime() prerequisite set."
+    )
+    return "\n".join(lines)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pfsense-mcp-security",
         description=(
-            "Guided security-posture discovery for pfsense-mcp-server (ADR-021, Accepted). "
-            "Phase B: read-only discovery only -- no provisioning/setup subcommand exists yet."
+            "Guided security-posture discovery and diagnostics for pfsense-mcp-server (ADR-021, "
+            "Accepted). Read-only discovery/diagnostics only -- no provisioning/setup subcommand "
+            "exists yet."
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -324,6 +387,38 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
     )
 
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help=(
+            "Read-only Tier 1 ceremony preflight: artifact-exchange path cleanliness plus witness "
+            "readiness. Diagnostic only -- never repairs, cleans, or mutates anything."
+        ),
+        description=(
+            "Checks the four fixed Tier 1 artifact-exchange paths (authorization inbox, "
+            "confirmation-pending outbox, confirmation-signed inbox, authorization-preview outbox) are "
+            "absent, and that the anti-rollback witness is currently verified -- exactly the two classes "
+            "of real incident this command exists to catch before an operator starts a ceremony. Never "
+            "deletes/moves/repairs an artifact and never mutates witness or store state."
+        ),
+        epilog=(
+            "Exit codes: 0 if every check passed (READY). 1 if one or more checks failed or are not "
+            "configured (NOT READY) -- unlike `discover`/`plan`, an entirely unconfigured host is reported "
+            "as NOT READY here, since a ceremony genuinely cannot begin without configuration; each "
+            "check's own status distinguishes 'not configured' from 'configured but broken' so the "
+            "reason is still actionable. 2 on a usage error (argparse's own existing convention, "
+            "unchanged).\n\n"
+            "This command never deletes, moves, archives, or overwrites an artifact, and never changes "
+            "witness or store state -- it only reads filesystem metadata and delegates witness readiness "
+            "to the same read-only discovery `discover` itself already uses."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    doctor_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
     return parser
 
 
@@ -359,6 +454,15 @@ def _run_plan(
     return 0
 
 
+def _run_doctor(*, as_json: bool, env: dict[str, str] | None, out: TextIO) -> int:
+    result = run_doctor_checks(env)
+    if as_json:
+        print(json.dumps(_doctor_result_to_dict(result), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_doctor_human(result), file=out)
+    return 0 if result.ready else _DOCTOR_NOT_READY_EXIT_CODE
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -373,6 +477,8 @@ def main(argv: list[str] | None = None) -> int:
             env=None,
             out=sys.stdout,
         )
+    if args.command == "doctor":
+        return _run_doctor(as_json=args.json, env=None, out=sys.stdout)
 
     parser.print_help(sys.stderr)
     return 2

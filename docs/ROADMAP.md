@@ -366,18 +366,22 @@ lived experience rather than only theory:
   API-key-only use) from API-key self-generation (requires a distinct,
   narrow, revocable bootstrap privilege the target account does not
   otherwise need).
-- **Doctor/preflight** (`pfsense-mcp-security doctor`): a genuinely
-  safe, separable, read-only command is a good, implementable-now
-  candidate independent of the rest of the wizard. **2026-08-17
-  update — this is the currently recommended next implementation
-  candidate** (identified during a post-v0.4.2/post-Nexus-pause
-  roadmap review): narrowest, lowest-risk, most concretely-specified
-  unbuilt piece of this effort, and directly addresses two real
-  incidents already hit during this project's own live ceremonies
-  (a pre-positioned stale `confirmation-signed.bin`; a signer with a
-  stale local witness-store snapshot) rather than a hypothetical gap.
-  Not yet authorized to build — recorded here as the recommendation,
-  awaiting explicit owner go-ahead.
+- **Doctor/preflight** (`pfsense-mcp-security doctor`): **implemented
+  2026-08-17** — a genuinely safe, separable, read-only command,
+  independent of the rest of the wizard. Checks the four fixed Tier 1
+  artifact-exchange paths are clean and that the anti-rollback witness
+  is currently `provisioned_verified`, directly addressing the two real
+  incidents that motivated it (a pre-positioned stale
+  `confirmation-signed.bin`; a signer with a stale local witness-store
+  snapshot). One deterministic READY/NOT READY verdict, human and
+  `--json` output, exit codes `0`/`1`/`2`. Never repairs, cleans, or
+  mutates anything — diagnostic only. Full detail:
+  [`SECURITY_POSTURE_PROVISIONING.md`](SECURITY_POSTURE_PROVISIONING.md)'s
+  "Doctor/preflight slice" section. This is only the doctor/preflight
+  slice, not the full `pfsense-mcp-security setup` wizard — the rest of
+  this section's items (least-privilege bootstrap automation, signer
+  separation, authority key generation, config/env generation, etc.)
+  remain unbuilt.
 - **Signer separation, authority key generation, config/env generation,
   validation, rollback, and explicit owner decision points** all remain
   as originally scoped above — the live ceremony re-confirmed each of

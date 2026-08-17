@@ -572,6 +572,165 @@ rather than reinventing it.
   current state — both are reported as blocking findings, never acted
   on.
 
+## Doctor/preflight slice — implemented (2026-08-17)
+
+A third `pfsense-mcp-security` subcommand, `doctor`, layered on top of
+`discover_anchor_assurance()` (Phase B's own witness-readiness
+evidence, reused completely unchanged) plus new, narrowly-scoped
+filesystem checks over the four fixed Tier 1 artifact-exchange paths
+`tier1/production_runtime.py` defines. Answers one question directly:
+**can an operator safely begin a new Tier 1 signing ceremony right
+now?** Two real incidents motivated it (see `docs/ROADMAP.md`'s
+"Ceremony TTL/operator UX" section): a pre-positioned stale
+`confirmation-signed.bin` left over from a completed ceremony, and a
+signer whose local witness-store snapshot had gone stale, reporting
+`provisioned_mismatch`. Both are exactly what `doctor` now catches
+before an operator spends a ceremony's own limited validity window
+finding out the hard way.
+
+### What `doctor` checks
+
+1. **Artifact-exchange path cleanliness** (4 checks, one per fixed
+   path): the signed-authorization inbox, the pending-confirmation
+   outbox, the signed-confirmation inbox, and the (W3 Slice 5A)
+   authorization-preview outbox must each be **absent** before a fresh
+   ceremony begins — a leftover file at any of these paths silently
+   blocks the next ceremony's own write, because artifact writes use
+   `write_secure_new()`'s exclusive-create discipline and never
+   overwrite. For each configured path, `doctor` verifies: the env var
+   is set; the configured value is an absolute path; the containing
+   directory exists and is writable; and no file (including a broken
+   symlink) already exists at the exact path.
+2. **Witness readiness** (1 check): reuses
+   `security_discovery.discover_anchor_assurance()` verbatim — no
+   second witness client, no new TPM/network code. A ceremony is
+   witness-ready only when the resulting `evidence_state` is exactly
+   `provisioned_verified`; every other state (including
+   `provisioned_mismatch`, the same anomaly `discover` itself already
+   flags) is reported as not ready.
+
+### What `doctor` deliberately does not check
+
+- The full `build_production_runtime()` prerequisite set — store
+  configuration, encryption/authority key files, the consumption
+  store, and so on. A `doctor` result of `READY` means "the
+  artifact-exchange paths are clean and the witness is currently
+  verified," not "every precondition `build_production_runtime()`
+  itself checks is satisfied."
+- Whether the operator has a valid, unexpired authorization/
+  confirmation artifact in hand — that is the ceremony's own concern,
+  not a preflight question.
+- Anything about pfSense itself (connectivity, credentials, the target
+  alias's current state) — `doctor` never constructs a `PfSenseClient`
+  or makes a network call to pfSense.
+
+### Usage
+
+```
+$ pfsense-mcp-security doctor
+pfsense-mcp-security: Tier 1 ceremony readiness check (read-only, diagnostic only)
+
+Overall: NOT READY
+
+  [OK] Signed PlanAuthorizationV2 inbox (artifact_exchange.authorization_inbox)
+        /var/lib/pfsense-mcp/exchange/authorization-signed.bin is absent, as expected before a new ceremony.
+  [OK] Unsigned PendingConfirmationRequest outbox (artifact_exchange.confirmation_pending)
+        /var/lib/pfsense-mcp/exchange/confirmation-pending.bin is absent, as expected before a new ceremony.
+  [FAIL] Signed ConfirmationEvidence inbox (artifact_exchange.confirmation_signed)
+        A file already exists at /var/lib/pfsense-mcp/exchange/confirmation-signed.bin -- likely left over
+        from a previous ceremony. Archive or remove it by hand before starting a new one; doctor never does
+        this automatically.
+  [OK] Non-authorizing AuthorizationPreview outbox (artifact_exchange.authorization_preview)
+        /var/lib/pfsense-mcp/exchange/authorization-preview.bin is absent, as expected before a new ceremony.
+  [OK] TPM anti-rollback witness readiness (witness_readiness)
+        Witness verified and matches the persisted baseline (value=4).
+
+Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state was changed.
+```
+
+`pfsense-mcp-security doctor --json` emits the same information as
+deterministic, sorted-key JSON for automation, with each check's
+`status` one of `pass`/`fail`/`not_configured` (deliberately three-way,
+not a bool — "you haven't configured this yet" and "you configured it
+and it's currently broken" call for different operator action, even
+though both make the overall result `NOT READY`).
+
+### Exit codes
+
+Deliberately different from `discover`/`plan`, which exit `0` even when
+"entirely unconfigured" — `doctor`'s whole purpose is a binary
+readiness gate for automation, so an unconfigured host is genuinely
+`NOT READY`, not a clean report of nothing-to-do.
+
+- `0` — every check passed (`READY`).
+- `1` — one or more checks failed or are not configured (`NOT READY`).
+- `2` — usage error (argparse's own existing convention, unchanged).
+
+### Operator remediation guidance
+
+- A `FAIL` on an artifact-path check names the exact file. Confirm the
+  prior ceremony genuinely completed (or was abandoned) before moving
+  it aside by hand — `doctor` never does this for you, on purpose.
+- A `FAIL` on the witness-readiness check with `evidence_state=
+  provisioned_mismatch` is the same security-relevant anomaly
+  `discover` already surfaces — investigate before proceeding; do not
+  attempt a ceremony against a witness whose live value disagrees with
+  the persisted baseline.
+- A `FAIL` with any other `evidence_state` (`configuration_invalid`,
+  `store_error`, `configured_unprovisioned`, `provisioned_unverified`,
+  `provisioned_unreachable`) means the witness could not be positively
+  confirmed current — run `pfsense-mcp-security discover` for the full
+  diagnostic detail behind the summary.
+
+### Read-only guarantees
+
+- Never imports `pfsense_mcp.tier1` in any form — proven structurally
+  by `tests/test_security_doctor_isolation.py`, mirroring
+  `tests/test_security_discovery_isolation.py`'s own approach. Unlike
+  `security_discovery.py`, this module is not a tier1-isolation
+  exemption at all; it has no need to be.
+- The four fixed artifact-exchange env var names are a deliberate,
+  comment-linked *duplication* of `production_runtime.py`'s own
+  constants, never an import — `tests/test_security_doctor.py::
+  test_artifact_path_env_var_names_match_production_runtime` fails
+  loudly if the two ever drift apart.
+- Never deletes, moves, archives, or overwrites a file — every
+  artifact-path check only reads filesystem metadata
+  (`Path.exists()`/`Path.is_dir()`/`os.access()`), proven by dedicated
+  tests that plant a stale artifact, run `doctor`, and assert the file
+  is byte-for-byte unchanged afterward.
+- Never mutates witness or store state — delegates entirely to
+  `discover_anchor_assurance()`, itself already proven never to call
+  `advance()` or any provisioning primitive; a dedicated test's fake
+  witness anchor raises if `advance()` is ever called, proof rather
+  than mere omission.
+- No secrets, private keys, tokens, or artifact contents appear in any
+  check's `detail` text — only file paths (operationally necessary for
+  "archive/remove this file") and the same non-sensitive witness
+  counter value `discover` already prints.
+
+### Files
+
+- `src/pfsense_mcp/security_doctor.py` (new) — the readiness-check data
+  model and logic: the four artifact-path checks, the witness-readiness
+  check, the combined `DoctorResult`. No `pfsense_mcp.tier1` import.
+- `src/pfsense_mcp/security_cli.py` (modified) — new `doctor` subcommand:
+  argument parsing, human/`--json` formatting, exit-code handling.
+- `tests/test_security_doctor.py`, `tests/test_security_doctor_isolation.py`
+  (new); `tests/test_security_cli.py` (modified, `doctor`-subcommand
+  coverage added).
+
+### What the doctor/preflight slice deliberately does not do
+
+- No automatic cleanup of a stale artifact, ever — `doctor` diagnoses,
+  an operator (or a future, separately-authorized command) decides
+  what to do about it.
+- No witness/store repair or reconciliation of any kind.
+- Does not check the full `build_production_runtime()` prerequisite
+  set (see "What `doctor` deliberately does not check" above) — a
+  possible, separately-scoped future extension, not attempted here.
+- No `--fix`/`--clean`/`--repair` flag of any kind on this subcommand.
+
 ## Open design questions
 
 **All six of `ADR-021`'s original open questions are resolved** — see

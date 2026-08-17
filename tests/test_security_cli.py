@@ -335,3 +335,95 @@ def test_plan_indeterminate_current_state_exits_with_nonzero_status(tmp_path, ca
     assert exit_code == 2
     out = capsys.readouterr().out
     assert "blocked_indeterminate_current_state" in out
+
+
+def test_doctor_default_environment_is_not_ready_human_output(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    exit_code = main(["doctor"])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "Overall: NOT READY" in out
+    assert "NOT CONFIGURED" in out
+    assert "Diagnostic only" in out
+
+
+def test_doctor_json_output_is_valid_and_deterministic(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    exit_code_first = main(["doctor", "--json"])
+    first_stdout = capsys.readouterr().out
+    exit_code_second = main(["doctor", "--json"])
+    second_stdout = capsys.readouterr().out
+
+    assert exit_code_first == 1
+    assert exit_code_second == 1
+    assert first_stdout == second_stdout
+
+    payload = json.loads(first_stdout)
+    assert payload["ready"] is False
+    assert len(payload["checks"]) == 5
+    assert all(check["status"] == "not_configured" for check in payload["checks"])
+
+
+def test_doctor_ready_when_artifact_paths_clean_and_witness_verified(tmp_path, capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+    from tests.test_security_discovery import _WITNESS_ENV, _FakeAnchor, _patch_witness_anchor, _provisioned_store_env
+
+    exchange_dir = tmp_path / "exchange"
+    exchange_dir.mkdir()
+    monkeypatch.setenv("PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE", str(exchange_dir / "authorization-signed.bin"))
+    monkeypatch.setenv("PFSENSE_TIER1_CONFIRMATION_PENDING_FILE", str(exchange_dir / "confirmation-pending.bin"))
+    monkeypatch.setenv("PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE", str(exchange_dir / "confirmation-signed.bin"))
+    monkeypatch.setenv("PFSENSE_TIER1_AUTHORIZATION_PREVIEW_FILE", str(exchange_dir / "authorization-preview.bin"))
+
+    store_env = _provisioned_store_env(tmp_path, value=2, handle="0x01500000")
+    for key, value in {**store_env, **_WITNESS_ENV}.items():
+        monkeypatch.setenv(key, value)
+    _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
+
+    exit_code = main(["doctor"])
+
+    assert exit_code == 0
+    out = capsys.readouterr().out
+    assert "Overall: READY" in out
+    assert "FAIL" not in out
+
+
+def test_doctor_stale_artifact_is_not_ready_and_reports_the_path(tmp_path, capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+    exchange_dir = tmp_path / "exchange"
+    exchange_dir.mkdir()
+    stale_path = exchange_dir / "confirmation-signed.bin"
+    stale_path.write_bytes(b"leftover")
+    monkeypatch.setenv("PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE", str(exchange_dir / "authorization-signed.bin"))
+    monkeypatch.setenv("PFSENSE_TIER1_CONFIRMATION_PENDING_FILE", str(exchange_dir / "confirmation-pending.bin"))
+    monkeypatch.setenv("PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE", str(stale_path))
+    monkeypatch.setenv("PFSENSE_TIER1_AUTHORIZATION_PREVIEW_FILE", str(exchange_dir / "authorization-preview.bin"))
+
+    exit_code = main(["doctor"])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "Overall: NOT READY" in out
+    assert str(stale_path) in out
+    assert stale_path.read_bytes() == b"leftover"  # doctor never touches it
+
+
+def test_doctor_never_writes_to_the_configured_artifact_paths(tmp_path, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+    exchange_dir = tmp_path / "exchange"
+    exchange_dir.mkdir()
+    paths = {
+        "PFSENSE_TIER1_AUTHORIZATION_INBOX_FILE": exchange_dir / "authorization-signed.bin",
+        "PFSENSE_TIER1_CONFIRMATION_PENDING_FILE": exchange_dir / "confirmation-pending.bin",
+        "PFSENSE_TIER1_CONFIRMATION_SIGNED_FILE": exchange_dir / "confirmation-signed.bin",
+        "PFSENSE_TIER1_AUTHORIZATION_PREVIEW_FILE": exchange_dir / "authorization-preview.bin",
+    }
+    for name, path in paths.items():
+        monkeypatch.setenv(name, str(path))
+
+    main(["doctor"])
+
+    assert not any(path.exists() for path in paths.values())
