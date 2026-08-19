@@ -28,6 +28,7 @@ CLIENT_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_client.py"
 ENGINE_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_engine.py"
 RECOVERY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_recovery.py"
 TRANSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_auth_transition.py"
+COMPOSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_admin_composition.py"
 
 _RUNTIME_ENTRY_POINTS = (
     ROOT / "src/pfsense_mcp/server.py",
@@ -113,6 +114,7 @@ def test_both_modules_exist():
     assert ENGINE_MODULE_PATH.is_file()
     assert RECOVERY_MODULE_PATH.is_file()
     assert TRANSITION_MODULE_PATH.is_file()
+    assert COMPOSITION_MODULE_PATH.is_file()
 
 
 def test_neither_module_imports_pfsense_mcp_tier1_or_a_raw_http_library():
@@ -140,6 +142,7 @@ def test_no_shipped_runtime_entry_point_references_the_bootstrap_engine_or_clien
         assert "security_bootstrap_client" not in source, f"{entry_point.name} references security_bootstrap_client"
         assert "security_bootstrap_recovery" not in source, f"{entry_point.name} references security_bootstrap_recovery"
         assert "security_auth_transition" not in source, f"{entry_point.name} references security_auth_transition"
+        assert "security_admin_composition" not in source, f"{entry_point.name} references security_admin_composition"
 
 
 def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
@@ -150,6 +153,22 @@ def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
         assert "security_bootstrap_client" not in source, f"{path} references security_bootstrap_client"
         assert "security_bootstrap_recovery" not in source, f"{path} references security_bootstrap_recovery"
         assert "security_auth_transition" not in source, f"{path} references security_auth_transition"
+        assert "security_admin_composition" not in source, f"{path} references security_admin_composition"
+
+
+def test_composition_is_absent_from_all_runtime_cli_doctor_and_tool_imports():
+    searched = [*_RUNTIME_ENTRY_POINTS, *sorted((ROOT / "src/pfsense_mcp/tools").rglob("*.py"))]
+    for path in searched:
+        assert "security_admin_composition" not in path.read_text(encoding="utf-8"), path
+
+
+def test_composition_does_not_register_commands_or_call_transport_directly():
+    source = COMPOSITION_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+    assert "@app.command" not in source
+    assert "add_parser(" not in source
+    assert "mcp.tool" not in source
+    assert "FastMCP" not in source
 
 
 def test_engine_never_calls_transport_request_directly():

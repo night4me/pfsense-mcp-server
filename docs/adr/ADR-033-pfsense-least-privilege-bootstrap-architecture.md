@@ -800,3 +800,66 @@ local administrative interruption model.
 Slice 1 remains unwired from `pfsense-mcp-security`, application startup, MCP
 tools, bootstrap/recovery engines, and `doctor`. A later composition/CLI slice
 requires separate owner authorization.
+
+## CLI/runtime integration Slice 2: fixed administrative composition
+
+The next offline slice adds `security_admin_composition.py` as the one fixed
+construction boundary for ADR-033 administration. It accepts an explicit
+mapping of secure references and binds the complete internal component graph
+to one normalized HTTPS origin, one configured appliance identity, the fixed
+`pfsense-mcp` account, the fixed `write_protected` profile, and one
+source-cross-checked schema digest. No endpoint, HTTP method, adapter,
+transport, account, profile, or mutation authority is caller-selectable.
+
+The explicit required configuration is:
+
+- `PFSENSE_API_URL`, `PFSENSE_IDENTITY`, `PFSENSE_API_VERSION`,
+  `PFSENSE_TLS_MODE`, and (for `auto`) `PFSENSE_TLS_CA_FILE`;
+- `PFSENSE_API_KEY_FILE`, the administrator KeyAuth credential reference;
+- `PFSENSE_ADMIN_USERNAME` and `PFSENSE_ADMIN_PASSWORD_FILE`, the temporary
+  bootstrap BasicAuth references;
+- `PFSENSE_SERVICE_API_KEY_FILE`, the exclusive service-key custody target;
+- `PFSENSE_ADMIN_STATE_DIR` and `PFSENSE_ADMIN_JOURNAL_KEY_FILE`; and
+- `PFSENSE_ADMIN_SCHEMA_FILE`, `PFSENSE_ADMIN_SCHEMA_VERSION`, and
+  `PFSENSE_RESTAPI_PACKAGE_VERSION`.
+
+Target, identity, credential, custody, state, schema, and integrity-key paths
+have no discovery fallback and must be explicit. API v2, the account name,
+descriptions, profile, and target-namespaced journal/lock filenames are safe
+fixed values. Insecure TLS is refused. Secret files and state directories are
+owner-only and non-symlink; CA material may be shared read-only but must be a
+non-symlink regular file owned by the invoking user and not writable by group
+or other. Existing custody artifacts are validated but never overwritten or
+read during composition.
+
+The namespace is a domain-separated digest of origin, target identity,
+account, and profile. Journal and lock paths derive from that stable namespace,
+preventing accidental cross-target reuse while ensuring changed schema/version
+evidence cannot select a fresh path and hide an unfinished operation. Schema
+evidence remains authenticated in the journal binding, so drift fails closed.
+An existing journal is authenticated and checked against every binding; a
+corrupt, replayed, mismatched, or unsafe journal/lock fails construction.
+
+The only public service is `AdministrativeStatusService`, which combines the
+authenticated journal, lock observation, an internally revalidated service-key
+custody observation, and caller-supplied authoritative observation through
+Slice 1's pure classifier. A caller cannot hide an existing or unsafe custody
+artifact. The service exposes only `classify()` and `availability()`. A new
+bootstrap is available only for `CLEAN_NO_OPERATION`; completed, unfinished,
+unknown-send, corrupt, drifted, and recovery states never silently reopen it.
+Partial/recovery state exposes only the classifier's closed `RecoveryAction`.
+
+Fixed KeyAuth/BasicAuth factories and exact bootstrap, recovery, and
+auth-transition call bindings are assembled privately so later orchestration
+cannot replace their target or dependencies. They are intentionally absent
+from the public context API in this slice. In particular, Slice 2 does not yet
+provide journal-aware mutation orchestration, operation locking around an
+engine call, key custody, command parsing, or any callable mutating service.
+No transport is constructed and no file, network, or mutation action occurs
+merely by building the context.
+
+The module remains absent from `pfsense-mcp-security`, `doctor`, application
+startup, the MCP factory/server, and all tool modules. A separately authorized
+next slice must first compose journal-aware administrative actions and then
+register any human-invoked command; construction alone is not CLI wiring and
+does not grant permission to provision or recover.

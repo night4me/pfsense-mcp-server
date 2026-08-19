@@ -280,6 +280,24 @@ This runbook still does not authorize CLI composition. The journal integrity
 key, paths, component construction, and operator command surface must be wired
 only by separately reviewed later slices.
 
+Offline CLI/runtime integration Slice 2 now fixes the component-construction
+boundary in `security_admin_composition.py`. The administrative process must
+receive explicit secure references for the target, TLS trust, administrator
+KeyAuth and BasicAuth files, service-key custody, owner-only state directory,
+journal MAC key, captured schema/version evidence, and installed package
+version. It never searches for credentials or state. The account
+(`pfsense-mcp`), descriptions, profile (`write_protected`), API version, and
+target-derived journal/lock names are fixed.
+
+Composition authenticates and target-checks any existing journal, inspects the
+matching lock, validates source-cross-checked privilege evidence, and creates
+no files, clients, requests, or mutations. Its public surface is read-only
+restart status only. The fixed bootstrap/recovery/transition bindings remain
+private and cannot be invoked by a command in this slice. Therefore this
+runbook still does not authorize or describe a runnable command: journal-aware
+mutation orchestration, explicit human confirmation, custody sequencing, and
+command registration remain separate review gates.
+
 ## Final verification and stop
 
 Before declaring the exercise complete, independently prove:
