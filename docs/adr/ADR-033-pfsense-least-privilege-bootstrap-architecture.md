@@ -6,10 +6,11 @@
   provisioning sequence (§3's read-before-write/partial-failure model,
   §9's operation list) is **implemented, offline-tested only**, as of
   Phase C (2026-08-17) -- see "Implementation Phase C" below. §4
-  (credential-handling design beyond what Phase C already implements),
-  §6 (`doctor` integration), and any CLI/live-validation flow remain
-  research/design only. **No phase to date authorizes live pfSense
-  provisioning, any `pfsense-mcp-security setup`/`bootstrap`
+  (`doctor` integration) and any CLI/runtime flow remain research/design
+  only. A later, explicitly owner-authorized Phase D LAB exercise partially
+  executed and left the recovery state documented below; it created no
+  standing live authority. **No current phase authorizes further live pfSense
+  provisioning, cleanup, any `pfsense-mcp-security setup`/`bootstrap`
   subcommand, or wiring this engine into normal application startup.**
   Owner-authorized 2026-08-17 (initial research pass), 2026-08-17
   (Phase B), and 2026-08-17 (Phase C), each explicitly scoped, each
