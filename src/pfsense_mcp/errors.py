@@ -62,4 +62,19 @@ class BootstrapProvisioningError(PfSenseMCPError):
     Never includes the request payload
     (which may contain a generated password), the response body, or any
     API-key value -- only the HTTP status code and the named operation
-    that failed."""
+    that failed.
+
+    `status_code` is populated only for the non-2xx-response case
+    (`security_bootstrap_client.py`'s `_check_response()`); it is `None`
+    for a refused invariant or a malformed/unparseable response shape,
+    where there is no HTTP status to classify. This is the minimum
+    typed distinction `security_auth_transition.py`'s bounded
+    observation-retry logic needs to tell a transient upstream response
+    (e.g. 502/503/504 during a settings-triggered reload) apart from a
+    definite, non-retryable failure -- added 2026-08-19 as a narrow,
+    observation-only hardening slice; it does not change this
+    exception's message/`str()` behavior for any existing caller."""
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        self.status_code = status_code
+        super().__init__(message)

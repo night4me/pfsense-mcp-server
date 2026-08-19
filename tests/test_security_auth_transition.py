@@ -291,6 +291,136 @@ def test_2026_08_19_regression_persisted_enable_then_reads_timeout_without_resub
     assert [method for method, _, _ in key.calls].count("PATCH") == 1
 
 
+# --- 2026-08-19 observation-retry hardening: transient 502/503/504 -------
+#
+# Independent Claude review of the incident fix found that _observe_bounded()
+# retried a transport-level timeout/connection failure but treated ANY
+# non-2xx HTTP response -- including a transient 502/503/504 a
+# settings-triggered reload can plausibly produce instead of a hard
+# connection drop -- as immediately terminal. These tests prove the narrow
+# fix: only that three-status set is retried, within the identical bound,
+# and nothing about mutation-send or fail-closed behavior for any other
+# status changed.
+
+
+def _transient(status: int) -> TransportResponse:
+    return TransportResponse(status, json.dumps({"message": "synthetic transient upstream error"}))
+
+
+def test_transient_502_then_success_is_retried_and_confirms():
+    coordinator, key, _ = _coordinator(
+        [
+            _get(_transient(502)),
+            _get(_settings(_KEY_ONLY)),
+            _enable(_patch_response(_ENABLED)),
+            _get(_settings(_ENABLED)),
+        ],
+        attempts=3,
+    )
+    result = coordinator.enable_basic_auth()
+    assert result.state is AuthTransitionState.BASICAUTH_CONFIRMED
+    assert result.finding is TransitionFinding.EXPECTED_STATE_CONFIRMED
+    assert [method for method, _, _ in key.calls].count("PATCH") == 1
+
+
+def test_transient_503_then_success_is_retried_and_confirms():
+    coordinator, key, _ = _coordinator(
+        [
+            _get(_transient(503)),
+            _get(_settings(_KEY_ONLY)),
+            _enable(_patch_response(_ENABLED)),
+            _get(_settings(_ENABLED)),
+        ],
+        attempts=3,
+    )
+    result = coordinator.enable_basic_auth()
+    assert result.state is AuthTransitionState.BASICAUTH_CONFIRMED
+    assert [method for method, _, _ in key.calls].count("PATCH") == 1
+
+
+def test_transient_504_then_success_is_retried_and_confirms():
+    coordinator, key, _ = _coordinator(
+        [
+            _get(_settings(_KEY_ONLY)),
+            _enable(_patch_response(_ENABLED)),
+            _get(_transient(504)),
+            _get(_settings(_ENABLED)),
+        ],
+        attempts=3,
+    )
+    result = coordinator.enable_basic_auth()
+    assert result.state is AuthTransitionState.BASICAUTH_CONFIRMED
+    assert [method for method, _, _ in key.calls].count("PATCH") == 1
+
+
+def test_repeated_transient_responses_exhaust_bound_and_require_recovery():
+    coordinator, key, _ = _coordinator([_get(_transient(502)), _get(_transient(503))], attempts=2)
+    result = coordinator.enable_basic_auth()
+    assert result.state is AuthTransitionState.OUT_OF_BAND_RECOVERY_REQUIRED
+    assert result.finding is TransitionFinding.RECONNECT_EXHAUSTED
+    assert result.observation_attempts == 2
+    assert not any(method == "PATCH" for method, _, _ in key.calls)
+
+
+def test_non_transient_4xx_does_not_retry():
+    coordinator, key, _ = _coordinator([_get(_transient(404))], attempts=3)
+    result = coordinator.enable_basic_auth()
+    assert result.finding is TransitionFinding.MALFORMED_RESPONSE
+    assert result.observation_attempts == 1
+    assert not any(method == "PATCH" for method, _, _ in key.calls)
+    # Only one factory step was ever provided -- a second attempt would raise
+    # AssertionError("unexpected fresh transport") and fail this test, so a
+    # passing test is itself structural proof no retry occurred.
+
+
+def test_unexpected_5xx_status_does_not_retry():
+    """500 is a real server error, not the reverse-proxy "not ready yet"
+    trio -- it must stay just as fail-closed and non-retried as a 4xx."""
+
+    coordinator, key, _ = _coordinator([_get(_transient(500))], attempts=3)
+    result = coordinator.enable_basic_auth()
+    assert result.finding is TransitionFinding.MALFORMED_RESPONSE
+    assert result.observation_attempts == 1
+    assert not any(method == "PATCH" for method, _, _ in key.calls)
+
+
+def test_mutation_patch_never_retries_even_when_observation_around_it_does():
+    """Transient retries surround the mutation on both sides (preflight
+    read and post-mutation read); the PATCH itself is still sent exactly
+    once -- retry logic touches only the read/observation path."""
+
+    coordinator, key, _ = _coordinator(
+        [
+            _get(_transient(502)),
+            _get(_settings(_KEY_ONLY)),
+            _enable(_patch_response(_ENABLED)),
+            _get(_transient(503)),
+            _get(_settings(_ENABLED)),
+        ],
+        attempts=3,
+    )
+    result = coordinator.enable_basic_auth()
+    assert result.state is AuthTransitionState.BASICAUTH_CONFIRMED
+    patch_calls = [call for call in key.calls if call[0] == "PATCH"]
+    assert len(patch_calls) == 1
+    assert patch_calls[0] == ("PATCH", _SETTINGS, b'{"auth_methods":["KeyAuth","BasicAuth"]}')
+
+
+def test_unrelated_settings_preservation_holds_across_transient_retries():
+    coordinator, _, _ = _coordinator(
+        [
+            _get(_settings(_KEY_ONLY, marker="before")),
+            _enable(_patch_response(_ENABLED)),
+            _get(_transient(502)),
+            _get(_settings(_ENABLED, marker="before")),
+        ],
+        attempts=3,
+    )
+    result = coordinator.enable_basic_auth()
+    assert result.state is AuthTransitionState.BASICAUTH_CONFIRMED
+    assert result.unrelated_settings_preserved
+
+
 def test_unrelated_setting_change_fails_closed():
     coordinator, _, _ = _coordinator(
         [

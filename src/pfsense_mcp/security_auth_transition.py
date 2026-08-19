@@ -10,6 +10,18 @@ that the setting may persist while immediate requests time out.
 The coordinator never provisions, cleans up, retries a mutation, accepts an
 endpoint or payload, or treats a timeout as proof of failure.  Exhausted or
 unexpected observations require out-of-band recovery.
+
+2026-08-19 observation-retry hardening (narrow, offline-reviewed slice): a
+transport-level timeout/connection failure was already bounded-retried, but
+an HTTP-level transient upstream response (502/503/504 -- the standard
+reverse-proxy "upstream not ready yet" trio a settings-triggered reload,
+documented **Applies immediately: Yes**, can plausibly produce instead of a
+hard connection drop) was previously treated as immediately terminal. Only
+_observe_bounded() -- the read-only observation/reconnect path -- now
+retries exactly these three statuses, within the same existing bound/backoff.
+Every other non-2xx status, every malformed-response shape, and every
+mutating PATCH send remain exactly as fail-closed/single-send as before this
+change.
 """
 
 from __future__ import annotations
@@ -33,6 +45,13 @@ from .transport.base import (
 
 _KEY_ONLY = frozenset({"KeyAuth"})
 _KEY_AND_BASIC = frozenset({"KeyAuth", "BasicAuth"})
+
+#: The standard reverse-proxy "upstream not ready yet" trio -- Bad Gateway,
+#: Service Unavailable, Gateway Timeout. Nothing in the transport layer or
+#: pfSense's own REST API contract suggests any *other* non-2xx status is
+#: ever transient, so this set is fixed at exactly these three and is never
+#: derived, configured, or generalized into a broader retry policy.
+_TRANSIENT_OBSERVATION_STATUS_CODES = frozenset({502, 503, 504})
 
 
 class FreshTransport(Transport, Protocol):
@@ -165,14 +184,24 @@ class AuthMethodTransitionCoordinator:
         return self._fresh_call(self._keyauth_factory, lambda client: client._observe_auth_settings_for_transition())
 
     def _observe_bounded(self) -> tuple[ObservedAuthSettings | None, int, TransitionFinding | None]:
+        """Read-only, bounded, backoff-delayed reconnect loop. Retries a
+        transport-level timeout/connection failure and, as of the
+        2026-08-19 hardening, an HTTP-level transient upstream response
+        (502/503/504) within the identical bound -- never a wider set,
+        never a mutation, never more attempts than `self._policy`
+        already allows."""
+
         for attempt in range(1, self._policy.maximum_attempts + 1):
             try:
                 return self._observe_once(), attempt, None
             except (TransportConnectionError, TransportTimeoutError):
                 if attempt < self._policy.maximum_attempts:
                     self._sleeper(self._policy.delay_seconds)
-            except BootstrapProvisioningError:
-                return None, attempt, TransitionFinding.MALFORMED_RESPONSE
+            except BootstrapProvisioningError as exc:
+                if exc.status_code not in _TRANSIENT_OBSERVATION_STATUS_CODES:
+                    return None, attempt, TransitionFinding.MALFORMED_RESPONSE
+                if attempt < self._policy.maximum_attempts:
+                    self._sleeper(self._policy.delay_seconds)
             except Exception:
                 return None, attempt, TransitionFinding.INFRASTRUCTURE_FAILURE
         return None, self._policy.maximum_attempts, TransitionFinding.RECONNECT_EXHAUSTED

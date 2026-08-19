@@ -157,7 +157,9 @@ def _check_response(response_status: int, response_text: str, *, operation: str)
     only the operation name and status code."""
 
     if not 200 <= response_status < 300:
-        raise BootstrapProvisioningError(f"{operation} failed: pfSense API returned HTTP {response_status}.")
+        raise BootstrapProvisioningError(
+            f"{operation} failed: pfSense API returned HTTP {response_status}.", status_code=response_status
+        )
 
     try:
         body = json.loads(response_text)
