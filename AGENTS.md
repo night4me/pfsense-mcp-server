@@ -52,6 +52,34 @@ The standard verification set is Ruff format/check, mypy, pytest,
 Prefer focused diffs, strong typing, consistent style, and no unnecessary
 refactoring.
 
+## File ownership invariant
+
+All tracked repository files and directories must remain owned by the normal
+repository operator, `tomfrode:tomfrode`. Agents must never leave source,
+tests, documentation, generated tracked artifacts, or repository directories
+owned by `root` or another account.
+
+- Before editing, verify that the repository root and every target file are
+  owned by and writable by `tomfrode`. Repair an ownership mismatch before
+  editing; it is a blocking preflight condition.
+- Do not perform normal repository editing as `root`, and do not create new
+  repository files from a root shell. If the agent shell runs as root, run
+  repository-modifying commands as the normal operator, for example
+  `sudo -u tomfrode -H <command>` or `runuser -u tomfrode -- <command>`.
+- Elevated/root execution is permitted only for genuinely privileged
+  external-system operations, never ordinary repository editing.
+- After any privileged command that may affect repository paths, recheck
+  ownership. Do not use `chmod` to mask an ownership problem, and preserve
+  existing permission modes unless a separate permission defect is proven.
+- Before finalizing any task, run:
+
+  ```bash
+  find . -xdev \( ! -user tomfrode -o ! -group tomfrode \) -print
+  ```
+
+  Any unintended output is a blocking finalization failure and must be
+  repaired or reported rather than handed off as a successful repository.
+
 ## Approval boundaries
 
 Explicit approval is required before:
