@@ -757,3 +757,46 @@ out-of-band recovery when exact state cannot be proven. It is isolated from
 bootstrap, recovery, CLI, application, and MCP paths. Live orphan cleanup,
 Exercise 1 retry, Exercise 2, and any runtime wiring remain separately
 owner-gated.
+
+## CLI/runtime integration Slice 1: durable operation state
+
+Phase D Exercise 1 and Exercise 2 subsequently completed under separate owner
+authorizations. Their supervised one-shot process model is evidence, not a safe
+normal CLI interruption model. Before any mutating administrative CLI can be
+wired, `security_operation_journal.py` now provides an offline-only persistence
+foundation:
+
+- an owner-only HMAC-SHA256 chained JSON-lines journal, domain-separated from
+  its separately authenticated head checkpoint and lock metadata;
+- append fsync before an atomically replaced head, followed by directory
+  fsync, so torn/truncated appends and journal/head disagreement fail closed;
+- immutable operation binding covering operation/type, target identity/origin,
+  account, approved profile, schema evidence, and starting auth methods;
+- a closed durable state graph with an explicit send-intent boundary. A crash
+  after that boundary is always classified as unknown delivery and never as
+  permission to resend;
+- an owner-only advisory lock whose authenticated operation ownership survives
+  process death as stale metadata. A free OS lock does not erase that evidence
+  or authorize continuation; restart classification is required; and
+- a pure restart classifier combining trusted journal/lock/local-artifact
+  evidence with caller-supplied authoritative observations. It has no client,
+  transport, endpoint, CLI, or mutation authority.
+
+Only `CREATED`/`PRE_SEND_READY` with matching authoritative clean state can be
+`PRE_SEND_RESUMABLE`. Unknown sends, partial server state, recovery-required
+state, pending final verification, and corrupt/untrusted local state remain
+distinct. An unfinished journal always blocks a new bootstrap. Recovery actions
+are closed enum values, owner-directed, and never chain into provisioning.
+
+The HMAC key is external secure bootstrap material and is never journaled. The
+journal stores no password, API key, Basic-Auth material, raw response, request,
+transport, or client. Local HMAC plus an authenticated head detects record
+forgery, truncation, internal replay, and journal-only rollback. It does not
+claim protection if a privileged attacker replays both journal and head while
+also bypassing owner-only directory controls; a stronger external monotonic
+anchor would be a separate architecture decision and is not required for this
+local administrative interruption model.
+
+Slice 1 remains unwired from `pfsense-mcp-security`, application startup, MCP
+tools, bootstrap/recovery engines, and `doctor`. A later composition/CLI slice
+requires separate owner authorization.

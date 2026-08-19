@@ -260,10 +260,25 @@ supervised, one-shot disposable-LAB exercise. This is acceptable only because:
 - server-side state is freshly reobserved and manually classified; and
 - administrator access and the recovery table remain available throughout.
 
-Persistence becomes mandatory before bootstrap is exposed through a normal
-CLI/runtime path, used unattended, scheduled, used concurrently, or promoted
-beyond a disposable controlled LAB. Its future design must not reuse Tier 1's
-`RecoveryContract` as an accidental second owner and requires separate review.
+Persistence is mandatory before bootstrap is exposed through a normal
+administrative CLI, used unattended, scheduled, used concurrently, or promoted
+beyond a disposable controlled LAB. Offline Slice 1 now implements the
+foundation in `security_operation_journal.py`: an authenticated chained journal
+and head, an operation-attributed exclusive local lock, and a pure restart
+classifier. It does not reuse Tier 1's `RecoveryContract` and remains unwired.
+
+The journal must record the send-intent boundary before every future mutation.
+After interruption, only an exact pre-send checkpoint plus matching fresh
+authoritative state is resumable. A send-intent or unknown-result checkpoint is
+never resend authority. Stale/missing/foreign lock evidence, partial server
+state, pending final verification, or corrupt/untrusted local state blocks new
+bootstrap and requires the classifier's explicit result. Recovery remains a
+separate owner-directed action and stops after its verified postcondition; it
+never automatically continues into provisioning.
+
+This runbook still does not authorize CLI composition. The journal integrity
+key, paths, component construction, and operator command surface must be wired
+only by separately reviewed later slices.
 
 ## Final verification and stop
 
