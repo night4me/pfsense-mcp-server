@@ -12,16 +12,52 @@ import pytest
 
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.errors import BootstrapProvisioningError
-from pfsense_mcp.security_bootstrap_client import BootstrapProvisioningClient, ObservedUser, ProvisionedApiKey
+from pfsense_mcp.security_bootstrap_client import (
+    BootstrapProvisioningClient,
+    ObservedAuthSettings,
+    ObservedUser,
+    ProvisionedApiKey,
+)
 from pfsense_mcp.transport.mock import MockTransport
 
 _USERS_PATH = "/api/v2/users"
 _USER_PATH = "/api/v2/user"
 _AUTH_KEY_PATH = "/api/v2/auth/key"
+_SETTINGS_PATH = "/api/v2/system/restapi/settings"
 
 
 def _client(transport: MockTransport) -> BootstrapProvisioningClient:
     return BootstrapProvisioningClient(transport, api_version=ApiVersion.V2)
+
+
+def test_auth_transition_client_operations_are_fixed_and_preserve_sibling_evidence():
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        _SETTINGS_PATH,
+        status_code=200,
+        text=json.dumps({"data": {"auth_methods": ["KeyAuth"], "sibling": "preserved"}}),
+    )
+    transport.register("PATCH", _SETTINGS_PATH, status_code=200, text=json.dumps({"data": {}}))
+    client = _client(transport)
+
+    observed = client._observe_auth_settings_for_transition()
+    client._enable_basic_auth_for_transition()
+    client._restore_key_auth_for_transition()
+
+    assert isinstance(observed, ObservedAuthSettings)
+    assert observed.auth_methods == frozenset({"KeyAuth"})
+    assert len(observed.unrelated_digest) == 64
+    assert transport.calls == [
+        ("GET", _SETTINGS_PATH),
+        ("PATCH", _SETTINGS_PATH),
+        ("PATCH", _SETTINGS_PATH),
+    ]
+    assert transport.request_bodies == [
+        None,
+        b'{"auth_methods":["KeyAuth","BasicAuth"]}',
+        b'{"auth_methods":["KeyAuth"]}',
+    ]
 
 
 # --- list_users() -----------------------------------------------------

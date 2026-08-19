@@ -7,6 +7,7 @@ import respx
 from pfsense_mcp.transport.base import (
     TransportConfigurationError,
     TransportConnectionError,
+    TransportRequestNotSentError,
     TransportTimeoutError,
 )
 from pfsense_mcp.transport.http import BasicAuthHttpTransport, HttpTransport
@@ -71,6 +72,17 @@ def test_connect_error_raises_transport_connection_error():
     transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
     try:
         with pytest.raises(TransportConnectionError):
+            transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+
+
+@respx.mock
+def test_connect_timeout_is_proven_not_sent_for_transition_accounting():
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=httpx.ConnectTimeout("hidden"))
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        with pytest.raises(TransportRequestNotSentError):
             transport.request("GET", "/api/v2/status/system")
     finally:
         transport.close()

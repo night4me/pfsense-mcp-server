@@ -67,6 +67,47 @@ and TLS trust. It must call `provision_service_account()` directly; it must not
 add a CLI command, application-startup hook, MCP tool, generic dispatch, or
 runtime bootstrap behavior.
 
+## Authentication-method transition boundary
+
+The 2026-08-19 LAB exercise established a load-bearing operational fact. A
+settings save from exact `KeyAuth` to `KeyAuth + BasicAuth` persisted, while
+the immediately following REST API reads timed out. The owner restored exact
+`KeyAuth` through the WebGUI; two later, independent KeyAuth reads proved the
+safe steady state and API health. Cleanup and provisioning did not continue.
+
+Pinned `pfSense-pkg-RESTAPI` v2.10 source shows that the settings endpoint
+writes configuration, always applies the settings model, and starts its apply
+dispatcher asynchronously. It does **not** promise that the connection used
+for the settings PATCH remains usable, or that the REST API is immediately
+available after the save. The package source does not establish one specific
+daemon/restart mechanism for the observed timeout, so operators must not claim
+one. The supported conclusion is narrower: connection continuity and
+immediate availability across this save are not guarantees.
+
+Any future separately authorized transition must use the closed
+`AuthMethodTransitionCoordinator` and obey all of these rules:
+
+1. Capture exact `KeyAuth` plus a digest of every unrelated returned setting.
+   Any other initial method set stops without mutation.
+2. The only enable payload is `KeyAuth + BasicAuth`; the only restore payload
+   is exact `KeyAuth`. Each transition is submitted at most once.
+3. A timeout/disconnect after submission is indeterminate, never proof of
+   failure and never permission to resend.
+4. Discard every pre-transition transport. Construct a fresh transport for
+   each bounded health/verification attempt.
+5. Independently confirm either the expected state, the unchanged pre-state,
+   or an unexpected/unobservable state. Verify the unrelated-settings digest.
+6. Verify restoration only through a newly constructed KeyAuth transport; do
+   not depend on BasicAuth, which restoration intentionally removes.
+7. Exhausted reconnects, malformed evidence, sibling-setting drift, or an
+   unexpected method set yields `OUT_OF_BAND_RECOVERY_REQUIRED`. Stop all
+   cleanup/provisioning. Use the WebGUI recovery procedure and independently
+   prove exact `KeyAuth` before any later owner decision.
+
+The expected final steady state is always exact `KeyAuth`. The coordinator is
+offline-built and remains absent from CLI, application, MCP, cleanup, and
+provisioning entry points. It never auto-chains into another operation.
+
 ## Initial authoritative checks
 
 Perform and retain secret-free evidence for:

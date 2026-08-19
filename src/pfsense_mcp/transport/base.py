@@ -25,6 +25,16 @@ class TransportConnectionError(TransportError):
     pass
 
 
+class TransportRequestNotSentError(TransportConnectionError):
+    """The request could not reach the point where HTTP bytes may be sent.
+
+    This narrow distinction is security-relevant for one-shot mutations.  It
+    must only be raised for connection establishment failures, never for read,
+    write, protocol, or response failures whose server-side outcome may be
+    uncertain.
+    """
+
+
 class TransportTimeoutError(TransportError):
     pass
 

@@ -27,6 +27,7 @@ ROOT = Path(__file__).parents[1]
 CLIENT_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_client.py"
 ENGINE_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_engine.py"
 RECOVERY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_recovery.py"
+TRANSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_auth_transition.py"
 
 _RUNTIME_ENTRY_POINTS = (
     ROOT / "src/pfsense_mcp/server.py",
@@ -46,6 +47,7 @@ _FORBIDDEN_IMPORT_ROOTS = {
 _CLIENT_EXPECTED_PUBLIC_SURFACE = {
     "ObservedUser",
     "ObservedApiKey",
+    "ObservedAuthSettings",
     "ProvisionedApiKey",
     "BootstrapProvisioningClient",
 }
@@ -64,6 +66,18 @@ _RECOVERY_EXPECTED_PUBLIC_SURFACE = {
     "RecoveryDeletionEvidence",
     "revoke_failed_bootstrap_api_key",
     "delete_dedicated_recovery_user",
+}
+
+_TRANSITION_EXPECTED_PUBLIC_SURFACE = {
+    "FreshTransport",
+    "FreshTransportFactory",
+    "AuthTransitionState",
+    "MutationDelivery",
+    "TransitionFinding",
+    "ReconnectPolicy",
+    "AuthTransitionResult",
+    "BasicAuthAvailability",
+    "AuthMethodTransitionCoordinator",
 }
 
 
@@ -98,10 +112,11 @@ def test_both_modules_exist():
     assert CLIENT_MODULE_PATH.is_file()
     assert ENGINE_MODULE_PATH.is_file()
     assert RECOVERY_MODULE_PATH.is_file()
+    assert TRANSITION_MODULE_PATH.is_file()
 
 
 def test_neither_module_imports_pfsense_mcp_tier1_or_a_raw_http_library():
-    for path in (CLIENT_MODULE_PATH, ENGINE_MODULE_PATH, RECOVERY_MODULE_PATH):
+    for path in (CLIENT_MODULE_PATH, ENGINE_MODULE_PATH, RECOVERY_MODULE_PATH, TRANSITION_MODULE_PATH):
         imported = _imports(path)
         offending = {
             module
@@ -124,6 +139,7 @@ def test_no_shipped_runtime_entry_point_references_the_bootstrap_engine_or_clien
         assert "security_bootstrap_engine" not in source, f"{entry_point.name} references security_bootstrap_engine"
         assert "security_bootstrap_client" not in source, f"{entry_point.name} references security_bootstrap_client"
         assert "security_bootstrap_recovery" not in source, f"{entry_point.name} references security_bootstrap_recovery"
+        assert "security_auth_transition" not in source, f"{entry_point.name} references security_auth_transition"
 
 
 def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
@@ -133,6 +149,7 @@ def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
         assert "security_bootstrap_engine" not in source, f"{path} references security_bootstrap_engine"
         assert "security_bootstrap_client" not in source, f"{path} references security_bootstrap_client"
         assert "security_bootstrap_recovery" not in source, f"{path} references security_bootstrap_recovery"
+        assert "security_auth_transition" not in source, f"{path} references security_auth_transition"
 
 
 def test_engine_never_calls_transport_request_directly():
@@ -166,6 +183,10 @@ def test_engine_public_surface_is_exactly_the_reviewed_api():
 
 def test_recovery_public_surface_is_exactly_the_two_closed_operations_and_evidence():
     assert _public_surface(RECOVERY_MODULE_PATH) == _RECOVERY_EXPECTED_PUBLIC_SURFACE
+
+
+def test_transition_public_surface_is_exactly_the_reviewed_closed_coordinator():
+    assert _public_surface(TRANSITION_MODULE_PATH) == _TRANSITION_EXPECTED_PUBLIC_SURFACE
 
 
 def test_recovery_never_calls_transport_request_or_bootstrap_engine():

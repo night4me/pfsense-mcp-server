@@ -16,6 +16,7 @@ import httpx
 from .base import (
     TransportConfigurationError,
     TransportConnectionError,
+    TransportRequestNotSentError,
     TransportResponse,
     TransportTimeoutError,
 )
@@ -36,8 +37,8 @@ class HttpTransport:
         try:
             headers = {"Content-Type": "application/json"} if body is not None else None
             response = self._client.request(method, path, content=body, headers=headers)
-        except httpx.ConnectError:
-            raise TransportConnectionError(f"Could not connect for {method} {path}") from None
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout):
+            raise TransportRequestNotSentError(f"Could not connect for {method} {path}") from None
         except httpx.TimeoutException:
             raise TransportTimeoutError(f"Request timed out for {method} {path}") from None
         except httpx.TransportError:
@@ -137,8 +138,8 @@ class BasicAuthHttpTransport:
             headers = {"Content-Type": "application/json"} if body is not None else None
             response = client.request(method, path, content=body, headers=headers)
             request_failed = False
-        except httpx.ConnectError:
-            raise TransportConnectionError("Basic Auth request could not connect") from None
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout):
+            raise TransportRequestNotSentError("Basic Auth request could not connect") from None
         except httpx.TimeoutException:
             raise TransportTimeoutError("Basic Auth request timed out") from None
         except httpx.TransportError:

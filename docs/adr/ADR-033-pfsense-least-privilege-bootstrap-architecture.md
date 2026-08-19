@@ -634,12 +634,14 @@ natural fit, not a new pattern.
 5. **No decision has been made on whether `bootstrap` becomes part of
    `pfsense-mcp-security setup` directly or a standalone subcommand** —
    §9's sketch is illustrative only.
-6. **Resolved offline: a Basic-Auth-capable `Transport` now exists** —
+6. **Resolved offline and partially exercised in the LAB: a Basic-Auth-capable `Transport` now exists** —
    `BasicAuthHttpTransport` is tested against the real `httpx` stack and
    through `provision_service_account()`'s existing caller-supplied
-   factory seam. It remains runtime-unwired and has never contacted a
-   pfSense appliance; this closes an implementation prerequisite, not
-   the separate live-validation authorization boundary.
+   factory seam. It remains runtime-unwired. Read-only LAB authentication
+   attempts correctly returned HTTP 401 while BasicAuth was disabled; a later
+   temporary enable transition exposed the availability hazard documented in
+   the Phase D runbook. This closes an implementation prerequisite, not the
+   separate live provisioning or runtime-wiring authorization boundaries.
 7. **The "modify an existing, differently-provisioned account"
    additive-sync path (Phase C's `PRIVILEGES_SYNCED` outcome) has never
    been exercised against a real appliance** — offline-tested only,
@@ -736,3 +738,21 @@ interruption states, recovery actions, and stop conditions are in
 [`ADR033_PHASE_D_LAB_RUNBOOK.md`](../ADR033_PHASE_D_LAB_RUNBOOK.md).
 Wiring a CLI subcommand or normal runtime remains a distinct later
 decision even after Phase D succeeds.
+
+### 2026-08-19 partial Phase D evidence and transition hardening
+
+One owner-authorized absent-account exercise reached verified server-side
+account/key state but failed local key custody, leaving one disposable account
+and one unrecoverable orphan key pending cleanup. A later temporary
+authentication-method enablement persisted but immediate REST API reads timed
+out; the owner restored exact KeyAuth out of band and two independent reads
+verified recovery. No cleanup or exercise retry followed.
+
+The resulting closed `AuthMethodTransitionCoordinator` treats the settings
+PATCH as at-most-once and any post-submit disconnect/timeout as indeterminate,
+throws away the old connection, performs bounded verification with newly
+constructed transports, preserves an unrelated-settings digest, and requires
+out-of-band recovery when exact state cannot be proven. It is isolated from
+bootstrap, recovery, CLI, application, and MCP paths. Live orphan cleanup,
+Exercise 1 retry, Exercise 2, and any runtime wiring remain separately
+owner-gated.

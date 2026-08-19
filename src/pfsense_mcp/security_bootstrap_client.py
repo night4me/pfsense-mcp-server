@@ -34,6 +34,12 @@ operation is a named method with a fixed, hard-coded path.
   private methods are callable only by `security_bootstrap_recovery.py`'s
   fixed-identity, read-before-write recovery functions. They are not a
   generic DELETE surface and accept only an integer model ID.
+- `_observe_auth_settings_for_transition()` and the two fixed enable/restore
+  projections use only `GET`/`PATCH /api/v2/system/restapi/settings`. The
+  private mutation projections have literal payloads; callers cannot choose
+  another setting or authentication-method set. The separately isolated
+  `security_auth_transition.py` coordinator owns fresh-transport,
+  at-most-once, bounded-reconnect, and independent-verification semantics.
 
 **Payload/response shapes are not guessed.** They are transcribed
 directly from a real, already-executed, already-authorized live
@@ -56,6 +62,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from hashlib import sha256
 from typing import Any
 
 from .api_version import ApiVersion
@@ -66,6 +73,7 @@ _USER_PATH = "/user"
 _USERS_PATH = "/users"
 _AUTH_KEY_PATH = "/auth/key"
 _AUTH_KEYS_PATH = "/auth/keys?limit=100"
+_RESTAPI_SETTINGS_PATH = "/system/restapi/settings"
 
 
 def _full_path(path_suffix: str, api_version: ApiVersion) -> str:
@@ -103,6 +111,19 @@ class ObservedApiKey:
     descr: str
     hash_algo: str
     length_bytes: int
+
+
+@dataclass(frozen=True)
+class ObservedAuthSettings:
+    """Minimal, secret-free authoritative authentication-settings view.
+
+    The complete response participates in ``unrelated_digest`` after removing
+    only ``auth_methods``.  This lets the transition coordinator prove that no
+    sibling setting changed without retaining or exposing identifying settings.
+    """
+
+    auth_methods: frozenset[str]
+    unrelated_digest: str
 
 
 @dataclass(frozen=True)
@@ -208,6 +229,24 @@ def _parse_observed_api_key(data: dict[str, Any], *, operation: str) -> Observed
     )
 
 
+def _parse_auth_settings(data: dict[str, Any], *, operation: str) -> ObservedAuthSettings:
+    auth_methods = data.get("auth_methods")
+    if (
+        not isinstance(auth_methods, list)
+        or not auth_methods
+        or not all(isinstance(method, str) and method for method in auth_methods)
+        or len(set(auth_methods)) != len(auth_methods)
+    ):
+        raise BootstrapProvisioningError(f"{operation}: response had malformed authentication methods.")
+    unrelated = {key: value for key, value in data.items() if key != "auth_methods"}
+    try:
+        canonical = json.dumps(unrelated, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError):
+        raise BootstrapProvisioningError(f"{operation}: response had malformed unrelated settings.") from None
+    digest = sha256(b"pfsense-restapi-settings-unrelated-v1\x00" + canonical).hexdigest()
+    return ObservedAuthSettings(auth_methods=frozenset(auth_methods), unrelated_digest=digest)
+
+
 class BootstrapProvisioningClient:
     """Bound to exactly one `Transport` for its lifetime -- callers
     needing both an admin-authenticated call and a self-service
@@ -262,6 +301,36 @@ class BootstrapProvisioningClient:
         if not all(isinstance(entry, dict) for entry in data):
             raise BootstrapProvisioningError("list_auth_keys: response 'data' contained a non-object entry.")
         return tuple(_parse_observed_api_key(entry, operation="list_auth_keys") for entry in data)
+
+    def _observe_auth_settings_for_transition(self) -> ObservedAuthSettings:
+        """Read the one fixed settings resource for auth-transition evidence."""
+
+        path = _full_path(_RESTAPI_SETTINGS_PATH, self._api_version)
+        response = self._transport.request("GET", path)
+        data = _check_response(response.status_code, response.text, operation="observe_auth_settings")
+        return _parse_auth_settings(data, operation="observe_auth_settings")
+
+    def _enable_basic_auth_for_transition(self) -> None:
+        """Send the sole accepted enable payload; selection remains closed."""
+
+        path = _full_path(_RESTAPI_SETTINGS_PATH, self._api_version)
+        response = self._transport.request(
+            "PATCH",
+            path,
+            body=b'{"auth_methods":["KeyAuth","BasicAuth"]}',
+        )
+        _check_response(response.status_code, response.text, operation="enable_basic_auth")
+
+    def _restore_key_auth_for_transition(self) -> None:
+        """Send the sole accepted steady-state restoration payload."""
+
+        path = _full_path(_RESTAPI_SETTINGS_PATH, self._api_version)
+        response = self._transport.request(
+            "PATCH",
+            path,
+            body=b'{"auth_methods":["KeyAuth"]}',
+        )
+        _check_response(response.status_code, response.text, operation="restore_key_auth")
 
     def create_user(self, *, name: str, password: str, descr: str, priv: frozenset[str]) -> ObservedUser:
         """`POST /api/v2/user` -- creates one new pfSense account.
