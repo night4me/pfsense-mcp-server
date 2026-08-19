@@ -162,3 +162,9 @@ def test_engine_does_not_construct_its_own_http_transport():
         m for m in imported if m == "pfsense_mcp.transport.http" or m.startswith("pfsense_mcp.transport.http.")
     }
     assert not offending
+
+
+def test_basic_auth_transport_remains_unwired_from_runtime_entry_points():
+    for entry_point in _RUNTIME_ENTRY_POINTS:
+        source = entry_point.read_text(encoding="utf-8")
+        assert "BasicAuthHttpTransport" not in source, f"{entry_point.name} wires BasicAuthHttpTransport"

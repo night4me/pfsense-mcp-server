@@ -15,9 +15,12 @@ which this engine's re-read-after-every-mutation design requires.
 
 from __future__ import annotations
 
+import base64
 import json
 
+import httpx
 import pytest
+import respx
 
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.security_bootstrap_engine import (
@@ -31,7 +34,8 @@ from pfsense_mcp.security_bootstrap_transaction import (
     is_steady_state_privilege_set,
 )
 from pfsense_mcp.security_privileges import read_profile_requirements, resolve_profile_privileges
-from pfsense_mcp.transport.base import TransportResponse
+from pfsense_mcp.transport.base import TransportConfigurationError, TransportResponse
+from pfsense_mcp.transport.http import BasicAuthHttpTransport
 
 _USERS_PATH = "/api/v2/users"
 _USER_PATH = "/api/v2/user"
@@ -270,6 +274,107 @@ def test_fresh_account_completes_full_sequence_read_only_profile():
     # PATCH called exactly twice: grant, then revoke.
     patch_calls = [c for c in admin.calls if c[0] == "PATCH"]
     assert len(patch_calls) == 2
+
+
+@respx.mock
+def test_fresh_account_uses_real_basic_auth_transport_at_the_existing_factory_seam():
+    """Offline end-to-end proof of the exact ADR-033 integration:
+    the engine supplies its transient generated credentials to the
+    caller-owned factory, while the fixed provisioning client remains
+    the only component selecting POST /auth/key."""
+
+    route = respx.post("https://pfsense.example.invalid/api/v2/auth/key").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "data": {
+                    "username": "pfsense_mcp_svc",
+                    "descr": "d",
+                    "hash_algo": "sha256",
+                    "length_bytes": 32,
+                    "key": "synthetic-generated-api-key",
+                }
+            },
+        )
+    )
+    admin = _FakeAdminTransport()
+
+    def factory(username: str, password: str):
+        return BasicAuthHttpTransport("https://pfsense.example.invalid", username, password, True)
+
+    result = provision_service_account(
+        admin_transport=admin,
+        self_service_transport_factory=factory,
+        api_version=ApiVersion.V2,
+        username="pfsense_mcp_svc",
+        target_profile=TargetProfile.READ_ONLY,
+        schema=_SCHEMA,
+        password_factory=lambda: "synthetic-bootstrap-password",
+        key_descr="d",
+    )
+
+    assert result.outcome is ProvisioningOutcome.COMPLETED
+    assert result.api_key is not None
+    assert result.api_key.reveal() == "synthetic-generated-api-key"
+    assert len(route.calls) == 1
+    request = route.calls.last.request
+    expected_auth = base64.b64encode(b"pfsense_mcp_svc:synthetic-bootstrap-password").decode("ascii")
+    assert request.headers["Authorization"] == f"Basic {expected_auth}"
+    assert "X-API-Key" not in request.headers
+
+
+def test_basic_auth_factory_failure_is_sanitized_and_leaves_explicit_partial_state():
+    canary = "SYNTHETIC-CREDENTIAL-CANARY"
+    admin = _FakeAdminTransport()
+
+    def factory(username: str, password: str):
+        raise TransportConfigurationError(canary)
+
+    result = provision_service_account(
+        admin_transport=admin,
+        self_service_transport_factory=factory,
+        api_version=ApiVersion.V2,
+        username="pfsense_mcp_svc",
+        target_profile=TargetProfile.READ_ONLY,
+        schema=_SCHEMA,
+        password_factory=lambda: "synthetic-bootstrap-password",
+    )
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert result.transaction is not None
+    assert "API-key creation transport failed" in (result.transaction.failure_detail or "")
+    assert canary not in (result.transaction.failure_detail or "")
+    assert BOOTSTRAP_ONLY_PRIVILEGE in admin.users[1]["priv"]
+    assert len([call for call in admin.calls if call[0] == "PATCH"]) == 1
+
+
+@respx.mock
+def test_basic_auth_timeout_is_one_attempt_and_never_auto_revoked_or_retried():
+    route = respx.post("https://pfsense.example.invalid/api/v2/auth/key").mock(
+        side_effect=httpx.ReadTimeout("SYNTHETIC-CREDENTIAL-CANARY")
+    )
+    admin = _FakeAdminTransport()
+
+    def factory(username: str, password: str):
+        return BasicAuthHttpTransport("https://pfsense.example.invalid", username, password, True)
+
+    result = provision_service_account(
+        admin_transport=admin,
+        self_service_transport_factory=factory,
+        api_version=ApiVersion.V2,
+        username="pfsense_mcp_svc",
+        target_profile=TargetProfile.READ_ONLY,
+        schema=_SCHEMA,
+        password_factory=lambda: "synthetic-bootstrap-password",
+    )
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert result.transaction is not None
+    assert "API-key creation transport failed" in (result.transaction.failure_detail or "")
+    assert "SYNTHETIC-CREDENTIAL-CANARY" not in (result.transaction.failure_detail or "")
+    assert len(route.calls) == 1
+    assert BOOTSTRAP_ONLY_PRIVILEGE in admin.users[1]["priv"]
+    assert len([call for call in admin.calls if call[0] == "PATCH"]) == 1
 
 
 def test_fresh_account_completes_full_sequence_write_protected_profile():

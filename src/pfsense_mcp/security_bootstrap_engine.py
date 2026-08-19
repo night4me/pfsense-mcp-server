@@ -62,16 +62,16 @@ an inconsistency with it.
 
 `POST /api/v2/auth/key` must be called authenticated as the *new*
 account itself (HTTP Basic Auth, `security_bootstrap_client.py`'s own
-docstring). This codebase does not yet have a Basic-Auth-capable
-`Transport` implementation (`transport/http.py`'s `HttpTransport` is
-`X-API-Key`-only) -- building one is out of this phase's scope (no
-live provisioning is authorized here at all). `provision_service_
-account()` therefore takes a caller-supplied
+docstring). A Basic-Auth-capable `Transport` implementation was added
+later as the deliberately
+single-use `transport/http.py::BasicAuthHttpTransport`, but it remains
+unwired: this engine does not construct or import it. `provision_service_
+account()` continues to take a caller-supplied
 `self_service_transport_factory(username, password) -> Transport`
-rather than constructing one itself; every test in this repository
-supplies a factory that returns a `MockTransport`. A future,
-separately-authorized live-validation phase must supply a real
-implementation of this factory.
+rather than constructing one itself. Offline integration tests may bind
+that factory to the Basic-Auth transport; a future, separately-authorized
+live phase would still have to supply fixed target/TLS configuration and
+explicitly wire it. Nothing here makes such a call reachable.
 
 No `pfsense_mcp.tier1` import in any form -- pfSense privilege
 provisioning and Tier 1's cryptographic mutation-authorization chain
@@ -113,7 +113,7 @@ from .security_privileges import (
     resolve_profile_privileges,
     write_protected_profile_requirements,
 )
-from .transport.base import Transport
+from .transport.base import Transport, TransportError
 
 _DEFAULT_KEY_DESCR = "pfsense-mcp-server provisioned key"
 _DEFAULT_USER_DESCR = "pfsense-mcp-server dedicated least-privilege service account"
@@ -458,6 +458,13 @@ def _provision_new_account(
                 f"API-key creation failed: {_sanitize_client_error(exc)}. The account currently holds the "
                 f"temporary bootstrap privilege {BOOTSTRAP_ONLY_PRIVILEGE!r} -- this was NOT automatically "
                 "revoked and requires manual/operator-reviewed remediation."
+            )
+            return _failed_result(transaction)
+        except TransportError:
+            transaction = transaction.fail(
+                "API-key creation transport failed. The account currently holds the temporary bootstrap "
+                f"privilege {BOOTSTRAP_ONLY_PRIVILEGE!r} -- this was NOT automatically revoked and requires "
+                "manual/operator-reviewed remediation."
             )
             return _failed_result(transaction)
 

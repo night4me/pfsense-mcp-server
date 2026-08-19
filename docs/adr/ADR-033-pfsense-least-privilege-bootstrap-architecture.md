@@ -125,16 +125,18 @@ B's primitives with a new, narrow HTTP surface:
   exactly which step failed and states plainly that the temporary
   privilege is still present and requires manual/operator-reviewed
   remediation.
-- **Self-service authentication is caller-supplied.** This codebase has
-  no Basic-Auth-capable `Transport` implementation yet
-  (`transport/http.py`'s `HttpTransport` is `X-API-Key`-only, matching
-  the normal 42-tool/WRITE-chokepoint traffic, which never needs Basic
-  Auth). `provision_service_account()` takes a
+- **Self-service authentication is caller-supplied.** Phase C initially
+  had no Basic-Auth-capable `Transport`. A later offline implementation
+  added `transport/http.py`'s deliberately single-use
+  `BasicAuthHttpTransport`: HTTPS/TLS-verification-only, no redirect or
+  retry, strict credential validation, automatic client disposal after
+  one attempt, and no X-API-Key fallback. `provision_service_account()`
+  still takes a
   `self_service_transport_factory(username, password) -> Transport`
-  parameter rather than building one itself -- every test in this
-  repository supplies a factory returning an in-memory fake. Building a
-  real one is an explicit prerequisite for any future live-validation
-  phase (see "Unresolved blockers" below).
+  parameter rather than building one itself. Offline integration tests
+  bind the new transport at that existing seam; no CLI/application
+  runtime path does. Selecting the real target/TLS configuration and
+  invoking it live remain future, separately-authorized work.
 - **CLI/runtime isolation, proven mechanically**: neither new module is
   referenced by `server.py`, `application.py`, `factory.py`,
   `security_cli.py`, `security_doctor.py`, or any file under
@@ -604,11 +606,12 @@ natural fit, not a new pattern.
 5. **No decision has been made on whether `bootstrap` becomes part of
    `pfsense-mcp-security setup` directly or a standalone subcommand** —
    §9's sketch is illustrative only.
-6. **No Basic-Auth-capable `Transport` implementation exists yet** —
-   `provision_service_account()`'s `self_service_transport_factory` is
-   caller-supplied and untested against a real HTTP stack; a future
-   live-validation phase must add and test one before any live call to
-   `POST /api/v2/auth/key` is possible.
+6. **Resolved offline: a Basic-Auth-capable `Transport` now exists** —
+   `BasicAuthHttpTransport` is tested against the real `httpx` stack and
+   through `provision_service_account()`'s existing caller-supplied
+   factory seam. It remains runtime-unwired and has never contacted a
+   pfSense appliance; this closes an implementation prerequisite, not
+   the separate live-validation authorization boundary.
 7. **The "modify an existing, differently-provisioned account"
    additive-sync path (Phase C's `PRIVILEGES_SYNCED` outcome) has never
    been exercised against a real appliance** — offline-tested only,
@@ -673,14 +676,17 @@ grant/revoke, `POST /api/v2/auth/key`), conditional on:
 ## GO / NO-GO recommendation (Phase D, post-Phase-C)
 
 **NO-GO on live provisioning today.** The engine is functionally
-complete and offline-verified, but three concrete prerequisites remain
-before a live-validation phase could responsibly be authorized (see
+complete and offline-verified. The first of the original three
+prerequisites is now resolved offline; the remaining prerequisites and
+the explicit owner gate remain before a live-validation phase could
+responsibly be authorized (see
 "Unresolved blockers" #6 above, and the module docstrings' own stated
 gaps):
 
-1. A real Basic-Auth-capable `Transport` implementation for
-   `POST /api/v2/auth/key`'s self-service call does not exist in this
-   codebase yet.
+1. **Resolved offline:** the single-use `BasicAuthHttpTransport` exists,
+   is adversarially tested, and composes through the existing factory
+   seam. It is deliberately not wired into a CLI or runtime path and
+   has not been live-tested.
 2. Every payload/response shape Phase C's client uses is transcribed
    from `ADR-026`'s real live evidence (2026-08-16) *except* the
    `PRIVILEGES_SYNCED` (existing-account additive-sync) path, which

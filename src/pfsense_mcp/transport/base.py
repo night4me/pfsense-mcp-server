@@ -29,5 +29,13 @@ class TransportTimeoutError(TransportError):
     pass
 
 
+class TransportConfigurationError(TransportError):
+    """A transport could not be constructed safely.
+
+    Messages must identify only the invalid field or invariant, never
+    include the rejected value because it may be credential material.
+    """
+
+
 class Transport(Protocol):
     def request(self, method: str, path: str, *, body: bytes | None = None) -> TransportResponse: ...
