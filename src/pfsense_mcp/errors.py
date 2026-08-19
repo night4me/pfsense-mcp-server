@@ -57,9 +57,9 @@ class WriteNotAllowedError(PfSenseMCPError):
 
 
 class BootstrapProvisioningError(PfSenseMCPError):
-    """Raised by `security_bootstrap_client.py` (`ADR-033` implementation
-    Phase C) for any non-2xx response from one of the four enumerated
-    bootstrap HTTP operations. Never includes the request payload
+    """Raised by ADR-033 bootstrap/recovery code for a refused invariant
+    or any non-2xx response from its closed, enumerated HTTP operations.
+    Never includes the request payload
     (which may contain a generated password), the response body, or any
     API-key value -- only the HTTP status code and the named operation
     that failed."""

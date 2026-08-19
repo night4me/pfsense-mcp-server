@@ -26,6 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).parents[1]
 CLIENT_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_client.py"
 ENGINE_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_engine.py"
+RECOVERY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_recovery.py"
 
 _RUNTIME_ENTRY_POINTS = (
     ROOT / "src/pfsense_mcp/server.py",
@@ -44,6 +45,7 @@ _FORBIDDEN_IMPORT_ROOTS = {
 
 _CLIENT_EXPECTED_PUBLIC_SURFACE = {
     "ObservedUser",
+    "ObservedApiKey",
     "ProvisionedApiKey",
     "BootstrapProvisioningClient",
 }
@@ -53,6 +55,15 @@ _ENGINE_EXPECTED_PUBLIC_SURFACE = {
     "ProvisioningOutcome",
     "ProvisioningResult",
     "provision_service_account",
+}
+
+_RECOVERY_EXPECTED_PUBLIC_SURFACE = {
+    "RECOVERY_USERNAME",
+    "RECOVERY_USER_DESCRIPTION",
+    "RECOVERY_KEY_DESCRIPTION",
+    "RecoveryDeletionEvidence",
+    "revoke_failed_bootstrap_api_key",
+    "delete_dedicated_recovery_user",
 }
 
 
@@ -86,10 +97,11 @@ def _public_surface(path: Path) -> set[str]:
 def test_both_modules_exist():
     assert CLIENT_MODULE_PATH.is_file()
     assert ENGINE_MODULE_PATH.is_file()
+    assert RECOVERY_MODULE_PATH.is_file()
 
 
 def test_neither_module_imports_pfsense_mcp_tier1_or_a_raw_http_library():
-    for path in (CLIENT_MODULE_PATH, ENGINE_MODULE_PATH):
+    for path in (CLIENT_MODULE_PATH, ENGINE_MODULE_PATH, RECOVERY_MODULE_PATH):
         imported = _imports(path)
         offending = {
             module
@@ -111,6 +123,7 @@ def test_no_shipped_runtime_entry_point_references_the_bootstrap_engine_or_clien
         source = entry_point.read_text(encoding="utf-8")
         assert "security_bootstrap_engine" not in source, f"{entry_point.name} references security_bootstrap_engine"
         assert "security_bootstrap_client" not in source, f"{entry_point.name} references security_bootstrap_client"
+        assert "security_bootstrap_recovery" not in source, f"{entry_point.name} references security_bootstrap_recovery"
 
 
 def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
@@ -119,6 +132,7 @@ def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
         source = path.read_text(encoding="utf-8")
         assert "security_bootstrap_engine" not in source, f"{path} references security_bootstrap_engine"
         assert "security_bootstrap_client" not in source, f"{path} references security_bootstrap_client"
+        assert "security_bootstrap_recovery" not in source, f"{path} references security_bootstrap_recovery"
 
 
 def test_engine_never_calls_transport_request_directly():
@@ -148,6 +162,17 @@ def test_client_public_surface_is_exactly_the_reviewed_api():
 
 def test_engine_public_surface_is_exactly_the_reviewed_api():
     assert _public_surface(ENGINE_MODULE_PATH) == _ENGINE_EXPECTED_PUBLIC_SURFACE
+
+
+def test_recovery_public_surface_is_exactly_the_two_closed_operations_and_evidence():
+    assert _public_surface(RECOVERY_MODULE_PATH) == _RECOVERY_EXPECTED_PUBLIC_SURFACE
+
+
+def test_recovery_never_calls_transport_request_or_bootstrap_engine():
+    source = RECOVERY_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+    assert "security_bootstrap_engine" not in source
+    assert "provision_service_account" not in source
 
 
 def test_engine_does_not_construct_its_own_http_transport():

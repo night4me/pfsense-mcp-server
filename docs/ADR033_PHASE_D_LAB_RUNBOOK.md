@@ -1,9 +1,11 @@
 # ADR-033 Phase D: controlled LAB provisioning runbook
 
-Status: **offline preparation only**. This document does not authorize a
-pfSense call, account mutation, API-key creation, CLI/runtime integration, or
-ADR-033 Phase D. Every network step below requires a new, explicit owner
-authorization naming the disposable LAB target and execution window.
+Status: **owner-gated procedure; never standing authorization**. The first
+owner-authorized Exercise 1 reached server-side `VERIFIED` but its generated
+key was not persisted after a caller-side configuration error. The resulting
+partial LAB state requires the separately reviewed cleanup below. Every network
+step, including cleanup or retry, requires a new explicit owner authorization
+naming the disposable LAB target and execution window.
 
 ## Fixed exercise identity
 
@@ -37,6 +39,10 @@ fixed ceremony:
    identity.
 2. TLS verification mode. Strict public trust or one fixed CA-file path is
    required; `verify=False`, redirects, and origin changes are prohibited.
+   This LAB uses repository mode `PFSENSE_TLS_MODE=auto` with the existing
+   fixed CA path supplied as `PFSENSE_TLS_CA_FILE`. `custom_ca` is not a valid
+   mode. `tls.resolve_verify()` must resolve to that CA path, preserving HTTPS
+   certificate and hostname verification; `insecure` is prohibited.
 3. API version `v2` and an installed `pfSense-pkg-RESTAPI` version within the
    repository's verified range (`v2.7.7` through `v2.10.0`). A version outside
    that range stops the exercise.
@@ -153,6 +159,53 @@ If `PFSENSE_API_KEY_FILE` creation fails after key issuance, do not print or
 copy the key through an unreviewed channel. The account/key is partial state,
 not success. Preserve the secret only through an owner-approved secure custody
 mechanism or remediate the orphan key/account explicitly.
+
+## Closed orphan-key/account cleanup
+
+Cleanup is not part of the successful bootstrap state machine and never chains
+into provisioning. It uses only `security_bootstrap_recovery.py`'s two fixed
+functions and `security_bootstrap_client.py`'s private transport projections:
+
+- `revoke_failed_bootstrap_api_key()` performs two `GET /api/v2/auth/keys`
+  observations, selects exactly one key whose stable integer ID, owner
+  `pfsense-mcp`, and fixed key description agree, sends exactly one
+  `DELETE /api/v2/auth/key` body containing only that ID through a separate
+  single-use administrator `BasicAuthHttpTransport`, then rereads all key
+  metadata. Upstream v2.10 marks this singular endpoint Basic-Auth-only; the
+  ordinary administrator API-key transport remains read-only in this action.
+  It succeeds only if the ID is absent and every unrelated key's complete
+  non-secret metadata is unchanged.
+- `delete_dedicated_recovery_user()` freshly derives the exact
+  `write_protected` privilege set, performs two `GET /api/v2/users`
+  observations, requires exactly one enabled `scope=user` account with the
+  fixed name/description, exact target privileges and no `page-all`, and twice
+  proves no API key is owned by that username. It sends exactly one
+  `DELETE /api/v2/user` body containing only the stable user ID, then rereads
+  users and keys. It succeeds only if the ID/name and owned keys are absent and
+  unrelated observed user metadata is unchanged.
+
+The exact future owner-authorized cleanup sequence is:
+
+1. Diagnose the partial state with authoritative user and key-metadata reads.
+2. Identify exactly one orphan key by owner, fixed description, stable ID and
+   complete non-secret metadata. Zero, duplicate, or changed matches stop.
+3. Construct one single-use administrator Basic-Auth transport for the exact
+   TLS origin. Call `revoke_failed_bootstrap_api_key()` once. Never retry
+   DELETE or persist the administrator password.
+4. Independently require the selected ID absent and unrelated keys unchanged.
+5. Re-derive the target profile and revalidate the exact disposable user,
+   including `scope=user`, enabled state, fixed identity and no remaining key.
+6. Call `delete_dedicated_recovery_user()` once. Never retry DELETE.
+7. Independently require zero matching account/key records and unrelated users
+   unchanged.
+8. Stop. Cleanup success does not authorize provisioning.
+9. Obtain separate owner authorization before any Exercise 1 retry.
+
+The API provides stable integer IDs but no revision/CAS primitive. Two fresh
+reads narrow, but cannot eliminate, ID reuse or concurrent-change risk between
+the last read and DELETE. The exclusive administrative window is mandatory.
+Any transport uncertainty or postcondition mismatch is partial success:
+authoritatively reread and return for owner review, never resend automatically.
 
 ## Persistence decision
 

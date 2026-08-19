@@ -4,7 +4,7 @@
 Transport's `request()` method directly.
 
 `ADR-033` implementation Phase C, requirement 8 ("HTTP surface"): this
-client exposes **exactly four** named pfSense REST API operations,
+client exposes a closed set of named pfSense REST API operations,
 deliberately kept separate from the normal 42-tool endpoint catalogue
 (`endpoints.py`/`Endpoints`) and from the write allow-list
 (`write_endpoints.py`/`WriteEndpoints`) -- provisioning a pfSense
@@ -27,6 +27,13 @@ operation is a named method with a fixed, hard-coded path.
   never callable on another account's behalf, matching
   `security_bootstrap_transaction.py`'s own documented reason for why
   `BOOTSTRAP_ONLY_PRIVILEGE` exists at all.
+- `_list_auth_keys_for_recovery()` -- `GET /api/v2/auth/keys`. Read-only recovery
+  observation that deliberately omits any plaintext key field.
+- `_revoke_auth_key_for_recovery()` -- `DELETE /api/v2/auth/key` and
+  `_delete_user_for_recovery()` -- `DELETE /api/v2/user`. These two
+  private methods are callable only by `security_bootstrap_recovery.py`'s
+  fixed-identity, read-before-write recovery functions. They are not a
+  generic DELETE surface and accept only an integer model ID.
 
 **Payload/response shapes are not guessed.** They are transcribed
 directly from a real, already-executed, already-authorized live
@@ -58,6 +65,7 @@ from .transport.base import Transport
 _USER_PATH = "/user"
 _USERS_PATH = "/users"
 _AUTH_KEY_PATH = "/auth/key"
+_AUTH_KEYS_PATH = "/auth/keys?limit=100"
 
 
 def _full_path(path_suffix: str, api_version: ApiVersion) -> str:
@@ -77,6 +85,24 @@ class ObservedUser:
     descr: str
     priv: frozenset[str]
     disabled: bool
+    scope: str | None = None
+
+
+@dataclass(frozen=True)
+class ObservedApiKey:
+    """Non-secret API-key metadata from an authoritative list read.
+
+    The upstream representation may contain a plaintext ``key`` field
+    in some contexts.  This type intentionally has no such field, so a
+    recovery observation cannot retain, print, or return credential
+    material.
+    """
+
+    id: int
+    username: str | None
+    descr: str
+    hash_algo: str
+    length_bytes: int
 
 
 @dataclass(frozen=True)
@@ -137,17 +163,49 @@ def _parse_observed_user(data: dict[str, Any], *, operation: str) -> ObservedUse
     except KeyError as exc:
         raise BootstrapProvisioningError(f"{operation}: response 'data' missing expected field {exc}.") from None
 
+    scope = data.get("scope")
     if (
         not isinstance(user_id, int)
         or not isinstance(name, str)
         or not isinstance(descr, str)
         or not isinstance(disabled, bool)
+        or (scope is not None and not isinstance(scope, str))
     ):
         raise BootstrapProvisioningError(f"{operation}: response 'data' had an unexpected field type.")
     if not isinstance(priv, list) or not all(isinstance(p, str) for p in priv):
         raise BootstrapProvisioningError(f"{operation}: response 'data.priv' was not a list of strings.")
 
-    return ObservedUser(id=user_id, name=name, descr=descr, priv=frozenset(priv), disabled=disabled)
+    return ObservedUser(id=user_id, name=name, descr=descr, priv=frozenset(priv), disabled=disabled, scope=scope)
+
+
+def _parse_observed_api_key(data: dict[str, Any], *, operation: str) -> ObservedApiKey:
+    try:
+        key_id = data["id"]
+        username = data["username"]
+        descr = data["descr"]
+        hash_algo = data["hash_algo"]
+        length_bytes = data["length_bytes"]
+    except KeyError as exc:
+        raise BootstrapProvisioningError(f"{operation}: response 'data' missing expected field {exc}.") from None
+
+    if (
+        not isinstance(key_id, int)
+        or isinstance(key_id, bool)
+        or key_id < 0
+        or (username is not None and not isinstance(username, str))
+        or not isinstance(descr, str)
+        or not isinstance(hash_algo, str)
+        or not isinstance(length_bytes, int)
+        or isinstance(length_bytes, bool)
+    ):
+        raise BootstrapProvisioningError(f"{operation}: response 'data' had an unexpected field type.")
+    return ObservedApiKey(
+        id=key_id,
+        username=username,
+        descr=descr,
+        hash_algo=hash_algo,
+        length_bytes=length_bytes,
+    )
 
 
 class BootstrapProvisioningClient:
@@ -179,7 +237,31 @@ class BootstrapProvisioningClient:
         data = body.get("data")
         if not isinstance(data, list):
             raise BootstrapProvisioningError("list_users: response 'data' was not a list.")
-        return tuple(_parse_observed_user(entry, operation="list_users") for entry in data if isinstance(entry, dict))
+        if not all(isinstance(entry, dict) for entry in data):
+            raise BootstrapProvisioningError("list_users: response 'data' contained a non-object entry.")
+        return tuple(_parse_observed_user(entry, operation="list_users") for entry in data)
+
+    def _list_auth_keys_for_recovery(self) -> tuple[ObservedApiKey, ...]:
+        """Authoritatively list non-secret API-key metadata for recovery."""
+
+        path = _full_path(_AUTH_KEYS_PATH, self._api_version)
+        response = self._transport.request("GET", path)
+        if not 200 <= response.status_code < 300:
+            raise BootstrapProvisioningError(
+                f"list_auth_keys failed: pfSense API returned HTTP {response.status_code}."
+            )
+        try:
+            body = json.loads(response.text)
+        except ValueError:
+            raise BootstrapProvisioningError("list_auth_keys: response was not valid JSON.") from None
+        if not isinstance(body, dict):
+            raise BootstrapProvisioningError("list_auth_keys: response was not a JSON object.")
+        data = body.get("data")
+        if not isinstance(data, list):
+            raise BootstrapProvisioningError("list_auth_keys: response 'data' was not a list.")
+        if not all(isinstance(entry, dict) for entry in data):
+            raise BootstrapProvisioningError("list_auth_keys: response 'data' contained a non-object entry.")
+        return tuple(_parse_observed_api_key(entry, operation="list_auth_keys") for entry in data)
 
     def create_user(self, *, name: str, password: str, descr: str, priv: frozenset[str]) -> ObservedUser:
         """`POST /api/v2/user` -- creates one new pfSense account.
@@ -246,3 +328,25 @@ class BootstrapProvisioningClient:
             length_bytes=length_bytes,
             _secret=raw_key,
         )
+
+    def _revoke_auth_key_for_recovery(self, *, key_id: int) -> None:
+        """Delete one ID selected by the fixed recovery coordinator.
+
+        This private transport projection performs no selection and is
+        intentionally unusable as a generic public recovery API.
+        """
+
+        if not isinstance(key_id, int) or isinstance(key_id, bool) or key_id < 0:
+            raise BootstrapProvisioningError("revoke_auth_key_for_recovery: key ID is invalid.")
+        path = _full_path(_AUTH_KEY_PATH, self._api_version)
+        response = self._transport.request("DELETE", path, body=json.dumps({"id": key_id}).encode("utf-8"))
+        _check_response(response.status_code, response.text, operation="revoke_auth_key_for_recovery")
+
+    def _delete_user_for_recovery(self, *, user_id: int) -> None:
+        """Delete one ID selected by the fixed recovery coordinator."""
+
+        if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id < 0:
+            raise BootstrapProvisioningError("delete_user_for_recovery: user ID is invalid.")
+        path = _full_path(_USER_PATH, self._api_version)
+        response = self._transport.request("DELETE", path, body=json.dumps({"id": user_id}).encode("utf-8"))
+        _check_response(response.status_code, response.text, operation="delete_user_for_recovery")
