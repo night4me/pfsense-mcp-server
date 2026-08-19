@@ -40,6 +40,7 @@ from pfsense_mcp.transport.http import BasicAuthHttpTransport
 _USERS_PATH = "/api/v2/users"
 _USER_PATH = "/api/v2/user"
 _AUTH_KEY_PATH = "/api/v2/auth/key"
+_USER_DESCR = "Dedicated service account for pfsense-mcp-server"
 
 
 def _load_trimmed_schema() -> dict:
@@ -77,8 +78,16 @@ class _FakeAdminTransport:
         self._call_counts: dict[str, int] = {}
         self.fail_on: dict[str, int] = {}
 
-    def seed_user(self, *, user_id: int, name: str, priv: frozenset[str], disabled: bool = False) -> None:
-        self.users[user_id] = {"id": user_id, "name": name, "priv": sorted(priv), "disabled": disabled}
+    def seed_user(
+        self, *, user_id: int, name: str, priv: frozenset[str], disabled: bool = False, descr: str = _USER_DESCR
+    ) -> None:
+        self.users[user_id] = {
+            "id": user_id,
+            "name": name,
+            "descr": descr,
+            "priv": sorted(priv),
+            "disabled": disabled,
+        }
         self._next_id = max(self._next_id, user_id + 1)
 
     def _maybe_fail(self, key: str) -> TransportResponse | None:
@@ -103,7 +112,13 @@ class _FakeAdminTransport:
             payload = json.loads(body)
             user_id = self._next_id
             self._next_id += 1
-            record = {"id": user_id, "name": payload["name"], "priv": payload["priv"], "disabled": False}
+            record = {
+                "id": user_id,
+                "name": payload["name"],
+                "descr": payload["descr"],
+                "priv": payload["priv"],
+                "disabled": False,
+            }
             self.users[user_id] = record
             return TransportResponse(200, json.dumps({"data": record}))
 
@@ -519,6 +534,7 @@ def test_existing_account_missing_privileges_gets_synced_additively():
     assert set(admin.users[7]["priv"]) == _EXPECTED_READ_PRIVS
     assert self_transport.calls == []  # no key generated for a modify-only sync
     assert len([c for c in admin.calls if c[0] == "POST"]) == 0  # never re-created
+    assert "exclusive administrative window" in result.detail
 
 
 def test_existing_account_unrelated_additional_privilege_is_preserved_during_sync():
@@ -531,6 +547,106 @@ def test_existing_account_unrelated_additional_privilege_is_preserved_during_syn
     assert result.outcome is ProvisioningOutcome.PRIVILEGES_SYNCED
     assert "some-unrelated-priv-get" in admin.users[7]["priv"]
     assert set(admin.users[7]["priv"]) == _EXPECTED_READ_PRIVS | {"some-unrelated-priv-get"}
+
+
+def test_privilege_sync_refreshes_stale_snapshot_and_preserves_newly_observed_extra():
+    class _DriftBeforeFinalReadTransport(_FakeAdminTransport):
+        def request(self, method, path, *, body=None):
+            if method == "GET" and path == _USERS_PATH and self._call_counts.get("GET_users", 0) == 1:
+                self.users[7]["priv"].append("concurrently-observed-extra-get")
+            return super().request(method, path, body=body)
+
+    admin = _DriftBeforeFinalReadTransport()
+    partial = frozenset(list(_EXPECTED_READ_PRIVS)[:-1])
+    admin.seed_user(user_id=7, name="pfsense_mcp_svc", priv=partial)
+
+    result, _ = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.PRIVILEGES_SYNCED
+    assert "concurrently-observed-extra-get" in admin.users[7]["priv"]
+
+
+def test_privilege_sync_fails_if_server_drops_final_pre_mutation_privilege():
+    class _DropsPrivilegeAfterPatchTransport(_FakeAdminTransport):
+        def request(self, method, path, *, body=None):
+            response = super().request(method, path, body=body)
+            if method == "PATCH" and path == _USER_PATH:
+                self.users[7]["priv"].remove("preexisting-extra-get")
+            return response
+
+    admin = _DropsPrivilegeAfterPatchTransport()
+    partial = frozenset(list(_EXPECTED_READ_PRIVS)[:-1]) | {"preexisting-extra-get"}
+    admin.seed_user(user_id=7, name="pfsense_mcp_svc", priv=partial)
+
+    result, _ = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert "final pre-mutation snapshot were removed" in result.detail
+
+
+def test_privilege_sync_refuses_if_account_changes_identity_before_patch():
+    class _IdentityDriftTransport(_FakeAdminTransport):
+        def request(self, method, path, *, body=None):
+            if method == "GET" and path == _USERS_PATH and self._call_counts.get("GET_users", 0) == 1:
+                self.users[7]["id"] = 8
+            return super().request(method, path, body=body)
+
+    admin = _IdentityDriftTransport()
+    admin.seed_user(user_id=7, name="pfsense_mcp_svc", priv=frozenset(list(_EXPECTED_READ_PRIVS)[:-1]))
+
+    result, _ = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert "same enabled account" in result.detail
+    assert not any(method == "PATCH" for method, _path in admin.calls)
+
+
+def test_privilege_sync_refuses_disabled_existing_account_without_patch():
+    admin = _FakeAdminTransport()
+    admin.seed_user(
+        user_id=7,
+        name="pfsense_mcp_svc",
+        priv=frozenset(list(_EXPECTED_READ_PRIVS)[:-1]),
+        disabled=True,
+    )
+
+    result, _ = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert "disabled" in result.detail
+    assert admin.calls == [("GET", _USERS_PATH)]
+
+
+def test_privilege_sync_refuses_same_name_without_project_description():
+    admin = _FakeAdminTransport()
+    admin.seed_user(
+        user_id=7,
+        name="pfsense_mcp_svc",
+        priv=frozenset(list(_EXPECTED_READ_PRIVS)[:-1]),
+        descr="Unrelated operator account",
+    )
+
+    result, _ = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.FAILED
+    assert "project-owned" in result.detail
+    assert admin.calls == [("GET", _USERS_PATH)]
+
+
+def test_privilege_sync_refuses_new_bootstrap_privilege_seen_at_final_read():
+    class _BootstrapDriftTransport(_FakeAdminTransport):
+        def request(self, method, path, *, body=None):
+            if method == "GET" and path == _USERS_PATH and self._call_counts.get("GET_users", 0) == 1:
+                self.users[7]["priv"].append(BOOTSTRAP_ONLY_PRIVILEGE)
+            return super().request(method, path, body=body)
+
+    admin = _BootstrapDriftTransport()
+    admin.seed_user(user_id=7, name="pfsense_mcp_svc", priv=frozenset(list(_EXPECTED_READ_PRIVS)[:-1]))
+
+    result, _ = _provision(admin)
+
+    assert result.outcome is ProvisioningOutcome.BLOCKED_EXISTING_PARTIAL
+    assert not any(method == "PATCH" for method, _path in admin.calls)
 
 
 def test_existing_account_with_only_unrelated_extra_privilege_is_left_untouched():

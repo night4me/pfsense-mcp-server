@@ -161,6 +161,26 @@ B's primitives with a new, narrow HTTP surface:
   new module imports `httpx`/`requests`/`socket`/`urllib` (isolation
   test); every test drives an in-memory fake `Transport`.
 
+### Offline Phase D prerequisite closure (2026-08-19)
+
+No live phase was started. The existing `PFSENSE_API_KEY_FILE` reader
+now has a matching `config.store_api_key()` custody primitive:
+exclusive non-following creation, mode `0600`, complete write + fsync,
+descriptor-bound reread verification, failure cleanup, and no secret in
+errors. It remains unwired from CLI/runtime/bootstrap execution.
+
+`PRIVILEGES_SYNCED` now means that an authoritative final pre-PATCH
+snapshot was taken, the same enabled account remained selected, every
+required privilege was observed after PATCH, and every privilege in
+that final snapshot remained present. The API supplies no revision/CAS
+primitive; the result therefore requires an exclusive administrative
+window and does not claim to eliminate the residual read-to-PATCH
+TOCTOU interval. The future controlled procedure and interruption
+handling are fixed in
+[`ADR033_PHASE_D_LAB_RUNBOOK.md`](../ADR033_PHASE_D_LAB_RUNBOOK.md).
+Cross-process bootstrap persistence remains deliberately deferred for
+the first supervised one-shot LAB exercise.
+
 ## Summary
 
 This project's Tier 1 architecture and its one live-verified WRITE
@@ -383,7 +403,7 @@ Three independent signals, all read-only:
 
 All three map directly to future `doctor` checks — see §6.
 
-## 4. Credential handling (design, not implemented)
+## 4. Credential handling
 
 - **No new secret store.** This project already has an established
   pattern (`PFSENSE_API_KEY_FILE`, mode-600, exclusive-create,
@@ -410,6 +430,14 @@ All three map directly to future `doctor` checks — see §6.
   implementation should improve on this by never touching disk for
   the password at all, since the API key — not the password — is the
   credential this project actually uses afterward.)
+
+The output half of this design is now implemented offline by
+`config.store_api_key()`: the configured `PFSENSE_API_KEY_FILE` is
+created exclusively through a non-following parent descriptor, forced
+to mode `0600`, completely written and fsynced, verified through the
+existing descriptor-bound loader, and removed on a safely attributable
+failure. It remains intentionally unwired from bootstrap, CLI, and
+runtime paths.
 
 ## 5. Relationship to `ADR-021`'s two-axis model
 
@@ -673,38 +701,38 @@ grant/revoke, `POST /api/v2/auth/key`), conditional on:
   `security_bootstrap_engine.py` is referenced anywhere in
   `security_doctor.py`.
 
-## GO / NO-GO recommendation (Phase D, post-Phase-C)
+## GO / NO-GO recommendation (Phase D prerequisites)
 
-**NO-GO on live provisioning today.** The engine is functionally
-complete and offline-verified. The first of the original three
-prerequisites is now resolved offline; the remaining prerequisites and
-the explicit owner gate remain before a live-validation phase could
-responsibly be authorized (see
-"Unresolved blockers" #6 above, and the module docstrings' own stated
-gaps):
+**GO for owner consideration of one narrowly scoped,
+disposable-LAB-only Phase D; no live action is authorized by this
+text.** The offline prerequisites are now closed:
 
 1. **Resolved offline:** the single-use `BasicAuthHttpTransport` exists,
    is adversarially tested, and composes through the existing factory
    seam. It is deliberately not wired into a CLI or runtime path and
    has not been live-tested.
-2. Every payload/response shape Phase C's client uses is transcribed
-   from `ADR-026`'s real live evidence (2026-08-16) *except* the
-   `PRIVILEGES_SYNCED` (existing-account additive-sync) path, which
-   reuses the same `PATCH /api/v2/user` shape but was never itself
-   live-exercised against that specific scenario.
-3. `provision_service_account()`'s dedicated-account username, the
-   exact `descr` text, and the target profile for a first live use are
-   all owner decisions this ADR does not make.
+2. **Resolved offline:** generated-key custody uses the existing
+   `PFSENSE_API_KEY_FILE` model with exclusive, owner-only, fail-safe
+   creation and descriptor-bound reread verification.
+3. **Resolved by owner decision:** the dedicated account is
+   `pfsense-mcp`, description `Dedicated service account for
+   pfsense-mcp-server`, key description `pfsense-mcp-server primary API
+   key`, and target profile `write_protected` (41 READ privileges plus
+   only `api-v2-firewall-alias-patch`).
+4. **Resolved offline as a precise contract:** `PRIVILEGES_SYNCED`
+   preserves every privilege in its final authoritative pre-mutation
+   snapshot and proves every target privilege after PATCH. The absence
+   of an API revision/CAS primitive remains explicit; a controlled live
+   exercise requires an exclusive administrative window.
+5. **Deliberately deferred:** cross-process transaction persistence is
+   not required for one synchronous, supervised LAB exercise with hard
+   stop, authoritative reobservation, and manual recovery. It is
+   mandatory before unattended or normal CLI/runtime use.
 
-**GO, conditional on all three being resolved first**, for a
-narrowly-scoped Phase D whose *only* addition is: (a) a tested
-Basic-Auth `Transport`, and (b) one single, explicitly-authorized,
-disposable-LAB-only live invocation of
-`provision_service_account()` — mirroring exactly the review discipline
-`ADR-026`'s own first live WRITE required (owner-authorized target
-identity, explicit hard stop, independent re-verification of every
-claim before and after). Wiring a CLI subcommand or normal-runtime
-integration remains a distinct, later, separately-authorized decision
-even after a successful Phase D — this ADR's own "CLI/runtime
-isolation" requirement (§9) does not expire just because live
-provisioning has been proven to work once.
+The remaining `PRIVILEGES_SYNCED` evidence is necessarily live evidence
+to be gathered *inside* a separately owner-authorized Phase D, not an
+offline implementation prerequisite. The exact permitted ceremony,
+interruption states, recovery actions, and stop conditions are in
+[`ADR033_PHASE_D_LAB_RUNBOOK.md`](../ADR033_PHASE_D_LAB_RUNBOOK.md).
+Wiring a CLI subcommand or normal runtime remains a distinct later
+decision even after Phase D succeeds.

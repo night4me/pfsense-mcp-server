@@ -115,8 +115,8 @@ from .security_privileges import (
 )
 from .transport.base import Transport, TransportError
 
-_DEFAULT_KEY_DESCR = "pfsense-mcp-server provisioned key"
-_DEFAULT_USER_DESCR = "pfsense-mcp-server dedicated least-privilege service account"
+_DEFAULT_KEY_DESCR = "pfsense-mcp-server primary API key"
+_DEFAULT_USER_DESCR = "Dedicated service account for pfsense-mcp-server"
 _PASSWORD_ENTROPY_BYTES = 32
 
 
@@ -134,7 +134,10 @@ class ProvisioningOutcome(str, Enum):
     #: reported, never auto-removed, and no mutation is performed.
     ALREADY_SATISFIED_WITH_EXTRA_PRIVILEGES = "already_satisfied_with_extra_privileges"
     #: Existing account was missing one or more required privileges;
-    #: exactly the missing ones were added, unrelated ones preserved.
+    #: every privilege in the final authoritative pre-mutation snapshot
+    #: was preserved and every required privilege was authoritatively
+    #: observed after the mutation.  This does not claim server-side CAS:
+    #: callers must provide an exclusive administrative window.
     PRIVILEGES_SYNCED = "privileges_synced"
     #: A brand-new account was created and the full bootstrap
     #: transaction reached BootstrapState.VERIFIED.
@@ -302,7 +305,7 @@ def provision_service_account(
         )
 
     if existing is not None:
-        return _provision_against_existing_account(admin_client, existing, expected)
+        return _provision_against_existing_account(admin_client, existing, expected, expected_descr=user_descr)
 
     return _provision_new_account(
         admin_client,
@@ -317,7 +320,11 @@ def provision_service_account(
 
 
 def _provision_against_existing_account(
-    admin_client: BootstrapProvisioningClient, existing: ObservedUser, expected: frozenset[str]
+    admin_client: BootstrapProvisioningClient,
+    existing: ObservedUser,
+    expected: frozenset[str],
+    *,
+    expected_descr: str,
 ) -> ProvisioningResult:
     if BOOTSTRAP_ONLY_PRIVILEGE in existing.priv:
         return ProvisioningResult(
@@ -325,6 +332,18 @@ def _provision_against_existing_account(
             f"existing account {existing.name!r} already holds the temporary bootstrap privilege "
             f"{BOOTSTRAP_ONLY_PRIVILEGE!r} -- a prior bootstrap run may have been interrupted; "
             "human review is required before any further provisioning attempt. No mutation performed.",
+        )
+
+    if existing.disabled:
+        return ProvisioningResult(
+            ProvisioningOutcome.FAILED,
+            f"existing account {existing.name!r} is disabled; refusing to change its privileges",
+        )
+    if existing.descr != expected_descr:
+        return ProvisioningResult(
+            ProvisioningOutcome.FAILED,
+            f"existing account {existing.name!r} does not carry the expected dedicated-service description; "
+            "refusing to treat it as project-owned or change its privileges",
         )
 
     drift_before = compute_account_drift(expected, existing.priv)
@@ -349,7 +368,41 @@ def _provision_against_existing_account(
             drift_before=drift_before,
         )
 
-    new_priv = existing.priv | missing
+    # The API offers full-list replacement without a revision/CAS token.
+    # Narrow the unavoidable TOCTOU window with one last authoritative
+    # observation and bind the preservation proof to that snapshot.  An
+    # exclusive administrative window remains a required operational
+    # precondition because a change after this read cannot be detected as
+    # having existed before the PATCH.
+    try:
+        pre_mutation_users = admin_client.list_users()
+        pre_mutation = _find_user(pre_mutation_users, existing.name)
+    except BootstrapProvisioningError as exc:
+        return ProvisioningResult(
+            ProvisioningOutcome.FAILED,
+            f"final pre-sync observation for {existing.name!r} failed: {_sanitize_client_error(exc)}",
+            drift_before=drift_before,
+        )
+    if (
+        pre_mutation is None
+        or pre_mutation.id != existing.id
+        or pre_mutation.disabled
+        or pre_mutation.descr != expected_descr
+    ):
+        return ProvisioningResult(
+            ProvisioningOutcome.FAILED,
+            f"final pre-sync observation for {existing.name!r} no longer identifies the same enabled account",
+            drift_before=drift_before,
+        )
+    if BOOTSTRAP_ONLY_PRIVILEGE in pre_mutation.priv:
+        return ProvisioningResult(
+            ProvisioningOutcome.BLOCKED_EXISTING_PARTIAL,
+            f"final pre-sync observation found temporary bootstrap privilege {BOOTSTRAP_ONLY_PRIVILEGE!r}; "
+            "no mutation performed and human review is required",
+            drift_before=drift_before,
+        )
+
+    new_priv = pre_mutation.priv | expected
     try:
         admin_client.update_user_privileges(user_id=existing.id, priv=new_priv)
     except BootstrapProvisioningError as exc:
@@ -375,6 +428,13 @@ def _provision_against_existing_account(
             drift_before=drift_before,
         )
 
+    if refreshed.id != pre_mutation.id or refreshed.disabled or refreshed.descr != expected_descr:
+        return ProvisioningResult(
+            ProvisioningOutcome.FAILED,
+            f"post-sync verification failed: account {existing.name!r} identity or enabled state changed",
+            drift_before=drift_before,
+        )
+
     drift_after = compute_account_drift(expected, refreshed.priv)
     still_missing = any(f.kind is DriftFindingKind.PRIVILEGE_MISSING for f in drift_after.findings)
     if still_missing:
@@ -385,10 +445,21 @@ def _provision_against_existing_account(
             drift_before=drift_before,
             drift_after=drift_after,
         )
+    removed = pre_mutation.priv - refreshed.priv
+    if removed:
+        return ProvisioningResult(
+            ProvisioningOutcome.FAILED,
+            f"post-sync verification failed: one or more privileges from the final pre-mutation snapshot "
+            f"were removed from account {existing.name!r}",
+            drift_before=drift_before,
+            drift_after=drift_after,
+        )
 
     return ProvisioningResult(
         ProvisioningOutcome.PRIVILEGES_SYNCED,
-        f"missing privileges added to existing account {existing.name!r}; unrelated privileges preserved.",
+        f"missing privileges added to existing account {existing.name!r}; every privilege in the final "
+        "authoritative pre-mutation snapshot was preserved. This result assumes the required exclusive "
+        "administrative window because the pfSense endpoint provides no revision/CAS primitive.",
         drift_before=drift_before,
         drift_after=drift_after,
     )
@@ -415,7 +486,9 @@ def _provision_new_account(
             transaction = transaction.fail(f"account creation failed: {_sanitize_client_error(exc)}")
             return _failed_result(transaction)
 
-        verified = _reread_and_check(admin_client, username, expected)
+        verified = _reread_and_check(
+            admin_client, username, expected, expected_id=created.id, expected_descr=user_descr
+        )
         if verified is None:
             transaction = transaction.fail(
                 "post-creation verification failed: created account's privileges do not match the requested set"
@@ -435,7 +508,9 @@ def _provision_new_account(
             transaction = transaction.fail(f"bootstrap-privilege grant failed: {_sanitize_client_error(exc)}")
             return _failed_result(transaction)
 
-        verified = _reread_and_check(admin_client, username, granted_priv)
+        verified = _reread_and_check(
+            admin_client, username, granted_priv, expected_id=created.id, expected_descr=user_descr
+        )
         if verified is None:
             transaction = transaction.fail(
                 "post-grant verification failed: account does not hold exactly the expected privileges plus the "
@@ -484,7 +559,9 @@ def _provision_new_account(
             )
             return _failed_result(transaction)
 
-        verified = _reread_and_check(admin_client, username, expected)
+        verified = _reread_and_check(
+            admin_client, username, expected, expected_id=created.id, expected_descr=user_descr
+        )
         if verified is None:
             transaction = transaction.fail(
                 "post-revocation verification failed: cannot confirm the temporary bootstrap privilege was "
@@ -510,7 +587,12 @@ def _provision_new_account(
 
 
 def _reread_and_check(
-    admin_client: BootstrapProvisioningClient, username: str, expected_priv: frozenset[str]
+    admin_client: BootstrapProvisioningClient,
+    username: str,
+    expected_priv: frozenset[str],
+    *,
+    expected_id: int,
+    expected_descr: str,
 ) -> ObservedUser | None:
     """Independent re-read + exact-match check -- never trusts a
     mutating call's own response echo alone (`ADR-033`'s own stated
@@ -522,6 +604,12 @@ def _reread_and_check(
         user = _find_user(users, username)
     except BootstrapProvisioningError:
         return None
-    if user is None or user.priv != expected_priv:
+    if (
+        user is None
+        or user.id != expected_id
+        or user.descr != expected_descr
+        or user.disabled
+        or user.priv != expected_priv
+    ):
         return None
     return user

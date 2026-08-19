@@ -3,7 +3,7 @@ import os
 import pytest
 
 from pfsense_mcp.api_version import ApiVersion
-from pfsense_mcp.config import ConfigurationError, load_api_key, load_config, load_logging_config
+from pfsense_mcp.config import ConfigurationError, load_api_key, load_config, load_logging_config, store_api_key
 from pfsense_mcp.tls import TLSMode
 
 
@@ -347,6 +347,91 @@ def test_key_file_inode_and_contents_remain_bound_after_path_replacement(tmp_pat
     assert load_api_key(config) == "original-key-value"
     assert descriptor_inode == original_inode
     assert key_file.read_text() == "replacement-key-value\n"
+
+
+def test_store_api_key_exclusively_creates_owner_only_verified_file(tmp_path):
+    key_file = tmp_path / "provisioned.key"
+    config = load_config(_base_env(key_file))
+
+    store_api_key(config, "synthetic-provisioned-key")
+
+    assert key_file.stat().st_mode & 0o777 == 0o600
+    assert load_api_key(config) == "synthetic-provisioned-key"
+
+
+def test_store_api_key_never_overwrites_existing_file(tmp_path):
+    key_file = tmp_path / "existing.key"
+    key_file.write_text("existing-key\n", encoding="utf-8")
+    key_file.chmod(0o600)
+    config = load_config(_base_env(key_file))
+
+    with pytest.raises(ConfigurationError, match="created exclusively"):
+        store_api_key(config, "replacement-key")
+
+    assert load_api_key(config) == "existing-key"
+
+
+def test_store_api_key_refuses_symlink_target_without_changing_referent(tmp_path):
+    referent = tmp_path / "referent.key"
+    referent.write_text("existing-key\n", encoding="utf-8")
+    referent.chmod(0o600)
+    link = tmp_path / "provisioned.key"
+    link.symlink_to(referent)
+    config = load_config(_base_env(link))
+
+    with pytest.raises(ConfigurationError, match="created exclusively"):
+        store_api_key(config, "replacement-key")
+
+    assert referent.read_text(encoding="utf-8") == "existing-key\n"
+
+
+def test_store_api_key_refuses_symlink_parent_without_creating_file(tmp_path):
+    real_parent = tmp_path / "real"
+    real_parent.mkdir()
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+    key_file = linked_parent / "provisioned.key"
+    config = load_config(_base_env(key_file))
+
+    with pytest.raises(ConfigurationError, match="created exclusively"):
+        store_api_key(config, "synthetic-provisioned-key")
+
+    assert not (real_parent / "provisioned.key").exists()
+
+
+@pytest.mark.parametrize("value", ["", " key", "key ", "key\nvalue", "key\x00value", "x" * 4097])
+def test_store_api_key_rejects_invalid_values_without_creating_file(tmp_path, value):
+    key_file = tmp_path / "provisioned.key"
+    config = load_config(_base_env(key_file))
+
+    with pytest.raises(ConfigurationError, match="Provisioned API key"):
+        store_api_key(config, value)
+
+    assert not key_file.exists()
+
+
+def test_store_api_key_removes_partial_artifact_and_redacts_secret_on_write_failure(tmp_path, monkeypatch):
+    key_file = tmp_path / "provisioned.key"
+    config = load_config(_base_env(key_file))
+    canary = "must-not-escape-key-custody"
+
+    monkeypatch.setattr(os, "write", lambda _descriptor, _value: 0)
+    with pytest.raises(ConfigurationError) as exc_info:
+        store_api_key(config, canary)
+
+    assert canary not in str(exc_info.value)
+    assert not key_file.exists()
+
+
+def test_store_api_key_removes_artifact_when_readback_verification_fails(tmp_path, monkeypatch):
+    key_file = tmp_path / "provisioned.key"
+    config = load_config(_base_env(key_file))
+    monkeypatch.setattr("pfsense_mcp.config.load_api_key", lambda _config: "different-key")
+
+    with pytest.raises(ConfigurationError, match="verification failed"):
+        store_api_key(config, "synthetic-provisioned-key")
+
+    assert not key_file.exists()
 
 
 def test_key_file_errors_and_logs_never_contain_key_contents(tmp_path, caplog):

@@ -36,8 +36,14 @@ def test_list_users_parses_multiple_records():
         text=json.dumps(
             {
                 "data": [
-                    {"id": 0, "name": "admin", "priv": ["page-all"], "disabled": False},
-                    {"id": 1, "name": "svc", "priv": ["api-v2-status-system-get"], "disabled": False},
+                    {"id": 0, "name": "admin", "descr": "Administrator", "priv": ["page-all"], "disabled": False},
+                    {
+                        "id": 1,
+                        "name": "svc",
+                        "descr": "Dedicated service account",
+                        "priv": ["api-v2-status-system-get"],
+                        "disabled": False,
+                    },
                 ]
             }
         ),
@@ -46,8 +52,14 @@ def test_list_users_parses_multiple_records():
     users = _client(transport).list_users()
 
     assert users == (
-        ObservedUser(id=0, name="admin", priv=frozenset({"page-all"}), disabled=False),
-        ObservedUser(id=1, name="svc", priv=frozenset({"api-v2-status-system-get"}), disabled=False),
+        ObservedUser(id=0, name="admin", descr="Administrator", priv=frozenset({"page-all"}), disabled=False),
+        ObservedUser(
+            id=1,
+            name="svc",
+            descr="Dedicated service account",
+            priv=frozenset({"api-v2-status-system-get"}),
+            disabled=False,
+        ),
     )
 
 
@@ -96,14 +108,26 @@ def test_create_user_sends_expected_payload_and_parses_response():
         "POST",
         _USER_PATH,
         status_code=200,
-        text=json.dumps({"data": {"id": 5, "name": "svc", "priv": ["a-get", "b-get"], "disabled": False}}),
+        text=json.dumps(
+            {
+                "data": {
+                    "id": 5,
+                    "name": "svc",
+                    "descr": "a service account",
+                    "priv": ["a-get", "b-get"],
+                    "disabled": False,
+                }
+            }
+        ),
     )
 
     created = _client(transport).create_user(
         name="svc", password="hunter2-generated", descr="a service account", priv=frozenset({"b-get", "a-get"})
     )
 
-    assert created == ObservedUser(id=5, name="svc", priv=frozenset({"a-get", "b-get"}), disabled=False)
+    assert created == ObservedUser(
+        id=5, name="svc", descr="a service account", priv=frozenset({"a-get", "b-get"}), disabled=False
+    )
     sent = json.loads(transport.request_bodies[0])
     assert sent == {
         "name": "svc",
@@ -131,7 +155,9 @@ def test_update_user_privileges_sends_full_replace_payload():
         "PATCH",
         _USER_PATH,
         status_code=200,
-        text=json.dumps({"data": {"id": 5, "name": "svc", "priv": ["a-get"], "disabled": False}}),
+        text=json.dumps(
+            {"data": {"id": 5, "name": "svc", "descr": "a service account", "priv": ["a-get"], "disabled": False}}
+        ),
     )
 
     updated = _client(transport).update_user_privileges(user_id=5, priv=frozenset({"a-get"}))

@@ -74,6 +74,7 @@ class ObservedUser:
 
     id: int
     name: str
+    descr: str
     priv: frozenset[str]
     disabled: bool
 
@@ -130,17 +131,23 @@ def _parse_observed_user(data: dict[str, Any], *, operation: str) -> ObservedUse
     try:
         user_id = data["id"]
         name = data["name"]
+        descr = data["descr"]
         priv = data["priv"]
         disabled = data["disabled"]
     except KeyError as exc:
         raise BootstrapProvisioningError(f"{operation}: response 'data' missing expected field {exc}.") from None
 
-    if not isinstance(user_id, int) or not isinstance(name, str) or not isinstance(disabled, bool):
+    if (
+        not isinstance(user_id, int)
+        or not isinstance(name, str)
+        or not isinstance(descr, str)
+        or not isinstance(disabled, bool)
+    ):
         raise BootstrapProvisioningError(f"{operation}: response 'data' had an unexpected field type.")
     if not isinstance(priv, list) or not all(isinstance(p, str) for p in priv):
         raise BootstrapProvisioningError(f"{operation}: response 'data.priv' was not a list of strings.")
 
-    return ObservedUser(id=user_id, name=name, priv=frozenset(priv), disabled=disabled)
+    return ObservedUser(id=user_id, name=name, descr=descr, priv=frozenset(priv), disabled=disabled)
 
 
 class BootstrapProvisioningClient:

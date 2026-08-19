@@ -8,9 +8,12 @@ Missing or invalid configuration fails closed via ConfigurationError.
 from __future__ import annotations
 
 import os
+import stat
 import unicodedata
 from collections.abc import Mapping
+from contextlib import suppress
 from dataclasses import dataclass
+from hmac import compare_digest
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -231,3 +234,93 @@ def load_api_key(config: PfSenseConfig) -> str:
     if not key:
         raise ConfigurationError(f"Key file is empty: {config.key_file}")
     return key
+
+
+def store_api_key(config: PfSenseConfig, api_key: str) -> None:
+    """Write a newly provisioned API key to ``PFSENSE_API_KEY_FILE``.
+
+    Creation is exclusive and non-following: an existing path is never
+    replaced.  A write/fsync/close/verification failure removes only the
+    newly created artifact, so a partial key cannot be mistaken for a
+    usable credential.  Error messages contain the configured path but
+    never the key value.
+
+    This helper performs no network operation and is deliberately not
+    called by application startup or the ADR-033 bootstrap engine.  A
+    future, separately authorized provisioning ceremony must invoke it
+    explicitly after receiving a successful ``ProvisionedApiKey``.
+    """
+
+    if (
+        not isinstance(api_key, str)
+        or not api_key
+        or api_key != api_key.strip()
+        or _contains_control_characters(api_key)
+    ):
+        raise ConfigurationError("Provisioned API key is invalid")
+    try:
+        encoded = api_key.encode("utf-8")
+    except UnicodeEncodeError:
+        raise ConfigurationError("Provisioned API key is invalid") from None
+    if len(encoded) > _KEY_LINE_MAX_LENGTH:
+        raise ConfigurationError("Provisioned API key exceeds the maximum supported length")
+
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        raise ConfigurationError("Secure key-file creation is unsupported on this platform")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow | getattr(os, "O_CLOEXEC", 0)
+    directory_flags = os.O_RDONLY | nofollow | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_CLOEXEC", 0)
+    parent_descriptor: int | None = None
+    descriptor: int | None = None
+    created = False
+    created_identity: tuple[int, int] | None = None
+    complete = False
+    try:
+        try:
+            parent_descriptor = os.open(config.key_file.parent, directory_flags)
+            descriptor = os.open(config.key_file.name, flags, 0o600, dir_fd=parent_descriptor)
+            created = True
+        except OSError:
+            raise ConfigurationError(f"Key file could not be created exclusively: {config.key_file}") from None
+
+        os.fchmod(descriptor, 0o600)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.geteuid():
+            raise ConfigurationError(f"Key file creation produced an unsafe artifact: {config.key_file}")
+        created_identity = (metadata.st_dev, metadata.st_ino)
+        value = encoded + b"\n"
+        offset = 0
+        while offset < len(value):
+            written = os.write(descriptor, value[offset:])
+            if written <= 0:
+                raise ConfigurationError(f"Key file could not be written: {config.key_file}")
+            offset += written
+        os.fsync(descriptor)
+        os.close(descriptor)
+        descriptor = None
+
+        if not compare_digest(load_api_key(config), api_key):
+            raise ConfigurationError(f"Key file verification failed: {config.key_file}")
+        os.fsync(parent_descriptor)
+        complete = True
+    except ConfigurationError:
+        raise
+    except OSError:
+        raise ConfigurationError(f"Key file could not be stored safely: {config.key_file}") from None
+    finally:
+        if descriptor is not None:
+            with suppress(OSError):
+                os.close(descriptor)
+        if created and not complete and created_identity is not None:
+            # Never unlink a path that another process substituted after
+            # creation.  That may leave our inaccessible orphan elsewhere,
+            # but cannot delete an unrelated replacement artifact.
+            with suppress(OSError):
+                if parent_descriptor is not None:
+                    current = os.stat(config.key_file.name, dir_fd=parent_descriptor, follow_symlinks=False)
+                    if (current.st_dev, current.st_ino) == created_identity:
+                        os.unlink(config.key_file.name, dir_fd=parent_descriptor)
+                        os.fsync(parent_descriptor)
+        if parent_descriptor is not None:
+            with suppress(OSError):
+                os.close(parent_descriptor)
