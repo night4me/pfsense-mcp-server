@@ -7,6 +7,58 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+**Focused READ capability expansion — no WRITE change, no security-model
+change.** Follows an offline-only comprehensive READ capability discovery
+audit (267 OpenAPI paths / 243 GET operations reviewed; every GET given
+exactly one disposition) that found the prior 44-tool contract covered
+roughly 42% of the useful READ capability universe. Prioritized the
+audit's P0 backlog (7 candidates, all zero/near-zero risk) and, for each,
+independently re-verified the response schema for secrets before
+implementation, then live-verified against a disposable LAB appliance
+(`pfsense-test.lab.invalid`, pfSense CE 2.8.1-RELEASE, REST API v2.10 —
+never production) before public registration.
+
+### Added
+
+- **7 new READ tools, public MCP contract 44 → 51 (0 WRITE, unchanged):**
+  - `pfsense_get_interface_vlans` — 802.1Q VLAN interfaces.
+  - `pfsense_get_routing_static_routes` — static routes (network/gateway
+    redacted by default).
+  - `pfsense_get_interface_groups` — interface group membership, useful
+    for interpreting firewall rules that target a group.
+  - `pfsense_get_firewall_schedules` — time-based firewall schedules.
+  - `pfsense_get_system_restapi_version` — installed REST API package
+    version and update availability.
+  - `pfsense_get_firewall_virtual_ips` — CARP/IP-alias/proxy-ARP virtual
+    IPs (address fields redacted by default; the CARP shared secret is
+    never modeled at all — see "Security" below).
+  - `pfsense_get_system_certificate_authorities` — trusted CA inventory
+    (the CA private key is never modeled at all — see "Security" below).
+  - Two of the seven (`system_restapi_version`,
+    `system_certificate_authorities`) were verified against real,
+    populated LAB objects, not just an empty envelope — the latter
+    against the LAB's own internal CA.
+
+### Security
+
+- **Two confirmed secret-bearing schema fields are never modeled at
+  all**, not merely redacted behind a flag: `VirtualIP.password` (the
+  CARP shared advertisement secret between HA peers) and
+  `CertificateAuthority.prv` (the CA private key) — mirroring the
+  already-shipped `SystemCertificate` model's own established treatment
+  of the identical `prv` distinction. Proven by construction
+  (`hasattr(model, "password"/"prv")` is `False`), independently
+  confirmed against real LAB data for the CA case.
+- A draft test fixture containing a placeholder `password` key was
+  caught and rejected by this project's own `fixture_safety.py`
+  prohibited-credential-field scan before it reached `main` — fixed by
+  injecting secret-field values into the raw response only in-memory,
+  at test time, never in a committed fixture file.
+- `SystemRestApiVersion.install_version` is modeled as optional: LAB
+  verification found it genuinely absent from a real live response (not
+  merely `null`), a compatibility finding the schema alone did not
+  surface.
+
 ## [0.4.2] - 2026-08-16
 
 **Documentation/packaging presentation patch — no functional or
