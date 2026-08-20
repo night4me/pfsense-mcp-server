@@ -1,0 +1,18 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "ifname": "IOT",
+      "members": ["igb1.10", "igb1.20"],
+      "descr": "Synthetic interface group (offline fixture)"
+    },
+    {
+      "ifname": "GUEST",
+      "members": [],
+      "descr": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

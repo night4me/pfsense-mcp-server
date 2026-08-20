@@ -283,3 +283,35 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-08-20, READ Expansion phase Batch 2, LAB-only
+    # verification against https://pfsense-test.lab.invalid): HTTP 200,
+    # correct envelope, zero configured interface groups at verification
+    # time -- ENDPOINT_VERIFIED, not FIELD_MODEL_LIVE_VERIFIED; field-type
+    # compatibility backed by the exact schema-component match already
+    # established for this pass's LAB target (REST API v2.10, 267/267
+    # paths matching the pinned reference).
+    INTERFACE_GROUPS = EndpointInfo(
+        path_suffix="/interface/groups",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-20) -- same LAB verification pass as
+    # INTERFACE_GROUPS immediately above; identical result (zero
+    # configured firewall schedules, ENDPOINT_VERIFIED only).
+    FIREWALL_SCHEDULES = EndpointInfo(
+        path_suffix="/firewall/schedules",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-20) -- same LAB verification pass, but this
+    # one reached FIELD_MODEL_LIVE_VERIFIED: the LAB's REST API package
+    # returned a fully populated singleton object (current_version,
+    # latest_version, latest_version_release_date, update_available,
+    # available_versions all present; install_version genuinely absent
+    # from the response, confirming SystemRestApiVersion.install_version's
+    # optional-field design against real live data, not just schema).
+    SYSTEM_RESTAPI_VERSION = EndpointInfo(
+        path_suffix="/system/restapi/version",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )

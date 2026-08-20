@@ -167,15 +167,15 @@ def test_all_three_conditions_register_exactly_one_write_tool(monkeypatch):
     assert registry._registered_write_names == ["set_firewall_alias_description_v1"]
 
 
-def test_all_three_conditions_via_full_register_all_still_exactly_46_read_plus_one_write(monkeypatch):
+def test_all_three_conditions_via_full_register_all_still_exactly_49_read_plus_one_write(monkeypatch):
     monkeypatch.setattr(registry_module.tier1_write_bridge, "can_construct_write_runtime", lambda: True)
     registry, mcp = _registry(WriteProtectedProfile.capabilities)
     registry.register_all()
 
     read_names = {fn.__name__ for fn in mcp.registered if fn.__name__ != "set_firewall_alias_description_v1"}
-    assert len(read_names) == 46
+    assert len(read_names) == 49
     assert _write_tool_names(mcp) == {"set_firewall_alias_description_v1"}
-    assert len(mcp.registered) == 47
+    assert len(mcp.registered) == 50
 
 
 def test_all_three_conditions_produce_no_additional_write_capability_or_tool(monkeypatch):

@@ -1,0 +1,30 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "BusinessHours",
+      "descr": "Synthetic firewall schedule (offline fixture)",
+      "schedlabel": "businesshours",
+      "active": true,
+      "timerange": [
+        {
+          "month": [8],
+          "day": [20],
+          "hour": "0900-1700",
+          "position": [1],
+          "rangedescr": "Weekday business hours"
+        }
+      ]
+    },
+    {
+      "name": "Empty",
+      "descr": "",
+      "schedlabel": null,
+      "active": false,
+      "timerange": []
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

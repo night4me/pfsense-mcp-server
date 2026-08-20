@@ -41,6 +41,7 @@ from .read import (
     firewall_nat_outbound_mode,
     firewall_nat_port_forwards,
     firewall_rules,
+    firewall_schedules,
     firewall_states,
     firewall_states_size,
     firewall_traffic_shaper_limiters,
@@ -49,6 +50,7 @@ from .read import (
     gateways,
     interface_bridges,
     interface_configs,
+    interface_groups,
     interface_vlans,
     interfaces,
     mcp_info,
@@ -61,6 +63,7 @@ from .read import (
     system_hasync,
     system_packages,
     system_restapi_settings,
+    system_restapi_version,
     system_status,
     system_tunables,
     system_version,
@@ -108,6 +111,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_firewall_nat_outbound_mode",
         "pfsense_get_firewall_nat_port_forwards",
         "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_schedules",
         "pfsense_get_firewall_states",
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_traffic_shaper_limiters",
@@ -116,6 +120,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_gateways",
         "pfsense_get_interface_bridges",
         "pfsense_get_interface_configs",
+        "pfsense_get_interface_groups",
         "pfsense_get_interface_vlans",
         "pfsense_get_interfaces",
         "pfsense_get_ntp_settings",
@@ -127,6 +132,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_system_hasync",
         "pfsense_get_system_packages",
         "pfsense_get_system_restapi_settings",
+        "pfsense_get_system_restapi_version",
         "pfsense_get_system_status",
         "pfsense_get_system_tunables",
         "pfsense_get_system_version",
@@ -258,6 +264,12 @@ class ToolRegistry:
             self._register_interface_vlan_read()
         if Capability.ROUTING_STATIC_ROUTE_READ in self._capabilities:
             self._register_routing_static_route_read()
+        if Capability.INTERFACE_GROUP_READ in self._capabilities:
+            self._register_interface_group_read()
+        if Capability.FIREWALL_SCHEDULE_READ in self._capabilities:
+            self._register_firewall_schedule_read()
+        if Capability.SYSTEM_RESTAPI_VERSION_READ in self._capabilities:
+            self._register_system_restapi_version_read()
 
         self.register_all_write()
 
@@ -547,6 +559,21 @@ class ToolRegistry:
     def _register_routing_static_route_read(self) -> None:
         fn = routing_static_routes.build(self._client)
         wrapped = audit_logged("pfsense_get_routing_static_routes", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_interface_group_read(self) -> None:
+        fn = interface_groups.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_groups", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_firewall_schedule_read(self) -> None:
+        fn = firewall_schedules.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_schedules", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_restapi_version_read(self) -> None:
+        fn = system_restapi_version.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_restapi_version", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

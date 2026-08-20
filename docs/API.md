@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 46 READ, 0 WRITE
+Registered tools: 49 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -114,6 +114,16 @@ Common parameters:
   default. HA passwords are excluded unconditionally.
 - **Example:** `{"name":"pfsense_get_system_restapi_settings","arguments":{}}`
 
+### `pfsense_get_system_restapi_version`
+
+- **Purpose:** Return the installed pfSense REST API package's current
+  version, latest available version, and update availability.
+- **Parameters:** None.
+- **Returns:** `SystemRestApiVersion`.
+- **Security:** Version/update metadata only; no credentials or topology
+  data.
+- **Example:** `{"name":"pfsense_get_system_restapi_version","arguments":{}}`
+
 ### `pfsense_get_system_hasync`
 
 - **Purpose:** Return High Availability configuration and synchronization
@@ -173,6 +183,17 @@ Common parameters:
 - **Security:** Interface/VLAN identifiers only; no address or credential
   material.
 - **Example:** `{"name":"pfsense_get_interface_vlans","arguments":{"limit":20}}`
+
+### `pfsense_get_interface_groups`
+
+- **Purpose:** List interface groups: group name, member interfaces, and
+  description. Useful for interpreting firewall rules that target a group
+  rather than a single interface.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[InterfaceGroup]`.
+- **Security:** Interface identifiers only; no address or credential
+  material.
+- **Example:** `{"name":"pfsense_get_interface_groups","arguments":{"limit":20}}`
 
 ### `pfsense_get_gateways`
 
@@ -314,6 +335,16 @@ Common parameters:
 - **Security:** Reveals traffic policy and capacity; does not return packet
   contents or credentials.
 - **Example:** `{"name":"pfsense_get_firewall_traffic_shaper_limiters","arguments":{"limit":20}}`
+
+### `pfsense_get_firewall_schedules`
+
+- **Purpose:** List time-based firewall schedules: name, description,
+  active state, and configured time ranges.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[FirewallSchedule]`.
+- **Security:** Reveals rule-scheduling policy; no addresses or credentials
+  are returned.
+- **Example:** `{"name":"pfsense_get_firewall_schedules","arguments":{"limit":20}}`
 
 ### `pfsense_get_firewall_advanced_settings`
 

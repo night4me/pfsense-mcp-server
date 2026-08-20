@@ -4702,3 +4702,305 @@ def test_get_routing_static_routes_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_routing_static_routes()
     assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_GROUPS_FIXTURE = Path(__file__).parent / "fixtures" / "interface_groups_response.json"
+
+
+def _interface_groups_body() -> dict:
+    return json.loads(INTERFACE_GROUPS_FIXTURE.read_text())
+
+
+def _interface_groups_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_groups_body()
+    transport.register("GET", "/api/v2/interface/groups?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_groups_parses_empty_list():
+    """2026-08-20 LAB verification observed exactly this shape: HTTP
+    200, `{"data": []}` -- zero interface groups configured on the LAB
+    appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _interface_groups_client(body)
+    assert client.get_interface_groups() == []
+
+
+def test_get_interface_groups_maps_all_fields():
+    client, _ = _interface_groups_client()
+    groups = client.get_interface_groups()
+    assert len(groups) == 2
+    first = next(g for g in groups if g.ifname == "IOT")
+    assert first.members == ["igb1.10", "igb1.20"]
+    assert first.descr == "Synthetic interface group (offline fixture)"
+
+
+def test_get_interface_groups_only_calls_endpoint_with_default_limit():
+    client, transport = _interface_groups_client()
+    client.get_interface_groups()
+    assert transport.calls == [("GET", "/api/v2/interface/groups?limit=100")]
+
+
+def test_get_interface_groups_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_groups_body()
+    transport.register("GET", "/api/v2/interface/groups?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_groups(limit=5)
+    assert transport.calls == [("GET", "/api/v2/interface/groups?limit=5")]
+
+
+def test_get_interface_groups_rejects_zero_limit():
+    client, _ = _interface_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_groups(limit=0)
+
+
+def test_get_interface_groups_rejects_limit_above_max():
+    client, _ = _interface_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_groups(limit=101)
+
+
+def test_get_interface_groups_invalid_limit_never_calls_transport():
+    client, transport = _interface_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_groups(limit=0)
+    assert transport.calls == []
+
+
+def test_get_interface_groups_missing_data_key_raises_shape_error():
+    body = _interface_groups_body()
+    del body["data"]
+    client, _ = _interface_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_groups()
+
+
+def test_get_interface_groups_item_wrong_type_raises_shape_error():
+    body = _interface_groups_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_groups()
+
+
+def test_get_interface_groups_required_field_missing_raises_shape_error():
+    body = _interface_groups_body()
+    del body["data"][0]["members"]
+    client, _ = _interface_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_groups()
+
+
+def test_get_interface_groups_shape_error_does_not_leak_raw_field_values():
+    body = _interface_groups_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _interface_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_groups()
+    assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_SCHEDULES_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_schedules_response.json"
+
+
+def _firewall_schedules_body() -> dict:
+    return json.loads(FIREWALL_SCHEDULES_FIXTURE.read_text())
+
+
+def _firewall_schedules_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_schedules_body()
+    transport.register("GET", "/api/v2/firewall/schedules?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_schedules_parses_empty_list():
+    """2026-08-20 LAB verification observed exactly this shape: HTTP
+    200, `{"data": []}` -- zero firewall schedules configured on the
+    LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _firewall_schedules_client(body)
+    assert client.get_firewall_schedules() == []
+
+
+def test_get_firewall_schedules_maps_all_fields():
+    client, _ = _firewall_schedules_client()
+    schedules = client.get_firewall_schedules()
+    assert len(schedules) == 2
+    first = next(s for s in schedules if s.name == "BusinessHours")
+    assert first.descr == "Synthetic firewall schedule (offline fixture)"
+    assert first.schedlabel == "businesshours"
+    assert first.active is True
+    assert first.timerange == [
+        {"month": [8], "day": [20], "hour": "0900-1700", "position": [1], "rangedescr": "Weekday business hours"}
+    ]
+
+
+def test_get_firewall_schedules_handles_null_schedlabel_and_empty_timerange():
+    client, _ = _firewall_schedules_client()
+    schedules = client.get_firewall_schedules()
+    empty = next(s for s in schedules if s.name == "Empty")
+    assert empty.schedlabel is None
+    assert empty.timerange == []
+    assert empty.active is False
+
+
+def test_get_firewall_schedules_only_calls_endpoint_with_default_limit():
+    client, transport = _firewall_schedules_client()
+    client.get_firewall_schedules()
+    assert transport.calls == [("GET", "/api/v2/firewall/schedules?limit=100")]
+
+
+def test_get_firewall_schedules_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_schedules_body()
+    transport.register("GET", "/api/v2/firewall/schedules?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_schedules(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/schedules?limit=5")]
+
+
+def test_get_firewall_schedules_rejects_zero_limit():
+    client, _ = _firewall_schedules_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_schedules(limit=0)
+
+
+def test_get_firewall_schedules_rejects_limit_above_max():
+    client, _ = _firewall_schedules_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_schedules(limit=101)
+
+
+def test_get_firewall_schedules_invalid_limit_never_calls_transport():
+    client, transport = _firewall_schedules_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_schedules(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_schedules_missing_data_key_raises_shape_error():
+    body = _firewall_schedules_body()
+    del body["data"]
+    client, _ = _firewall_schedules_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_schedules()
+
+
+def test_get_firewall_schedules_item_wrong_type_raises_shape_error():
+    body = _firewall_schedules_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_schedules_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_schedules()
+
+
+def test_get_firewall_schedules_required_field_missing_raises_shape_error():
+    body = _firewall_schedules_body()
+    del body["data"][0]["name"]
+    client, _ = _firewall_schedules_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_schedules()
+
+
+def test_get_firewall_schedules_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_schedules_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _firewall_schedules_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_schedules()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_RESTAPI_VERSION_FIXTURE = Path(__file__).parent / "fixtures" / "system_restapi_version_response.json"
+
+
+def _system_restapi_version_body() -> dict:
+    return json.loads(SYSTEM_RESTAPI_VERSION_FIXTURE.read_text())
+
+
+def _system_restapi_version_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_restapi_version_body()
+    transport.register("GET", "/api/v2/system/restapi/version", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_restapi_version_maps_all_present_fields():
+    """The committed fixture matches the exact live LAB response
+    observed 2026-08-20 (https://pfsense-test.lab.invalid), which
+    omitted `install_version` entirely."""
+
+    client, _ = _system_restapi_version_client()
+    version = client.get_system_restapi_version()
+    assert version.current_version == "v2.10"
+    assert version.latest_version == "v2.10.0"
+    assert version.latest_version_release_date == "2026-08-08T01:08:52Z"
+    assert version.update_available is True
+    assert version.available_versions == ["v2.10.0", "v2.9.0", "v2.8.4"]
+
+
+def test_get_system_restapi_version_install_version_absent_from_response_defaults_to_none():
+    client, _ = _system_restapi_version_client()
+    version = client.get_system_restapi_version()
+    assert version.install_version is None
+
+
+def test_get_system_restapi_version_install_version_present_is_captured():
+    body = _system_restapi_version_body()
+    body["data"]["install_version"] = "v2.10.0"
+    client, _ = _system_restapi_version_client(body)
+    version = client.get_system_restapi_version()
+    assert version.install_version == "v2.10.0"
+
+
+def test_get_system_restapi_version_calls_endpoint_with_no_params():
+    client, transport = _system_restapi_version_client()
+    client.get_system_restapi_version()
+    assert transport.calls == [("GET", "/api/v2/system/restapi/version")]
+
+
+def test_get_system_restapi_version_missing_data_key_raises_shape_error():
+    body = _system_restapi_version_body()
+    del body["data"]
+    client, _ = _system_restapi_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_restapi_version()
+
+
+def test_get_system_restapi_version_data_wrong_type_raises_shape_error():
+    body = _system_restapi_version_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_restapi_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_restapi_version()
+
+
+def test_get_system_restapi_version_required_field_missing_raises_shape_error():
+    body = _system_restapi_version_body()
+    del body["data"]["current_version"]
+    client, _ = _system_restapi_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_restapi_version()
+
+
+def test_get_system_restapi_version_shape_error_does_not_leak_raw_field_values():
+    body = _system_restapi_version_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["current_version"] = [sentinel]
+    client, _ = _system_restapi_version_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_restapi_version()
+    assert sentinel not in str(excinfo.value)

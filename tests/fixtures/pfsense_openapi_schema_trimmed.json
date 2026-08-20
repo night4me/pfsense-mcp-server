@@ -1071,6 +1071,11 @@
         "description": "<h3>Description:</h3>Reads all existing Firewall Rules.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: FirewallRule<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-rules-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/firewall/schedules": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Firewall Schedules.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: FirewallSchedule<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-schedules-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/firewall/states": {
       "get": {
         "description": "<h3>Description:</h3>Reads all current Firewall States. A normal firewall may have thousands, millions, or even billions of firewall states registered at a time. This can quickly become too much for this endpoint to handle. It is strongly recommended to limit the number of objects obtained by the API using the `limit` parameter or using a query to only target specific states you are looking for.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: FirewallState<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-states-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
@@ -1089,6 +1094,11 @@
     "/api/v2/interface/bridges": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Interface Bridges.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceBridge<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-bridges-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/interface/groups": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Interface Groups.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceGroup<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-groups-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/interface/vlans": {
@@ -1219,6 +1229,11 @@
     "/api/v2/system/restapi/settings": {
       "get": {
         "description": "<h3>Description:</h3>Reads current REST API Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: RESTAPISettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-restapi-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/restapi/version": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current REST API Version.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: RESTAPIVersion<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-restapi-version-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: RESTAPIVersionReleasesCache"
       }
     },
     "/api/v2/system/tunables": {

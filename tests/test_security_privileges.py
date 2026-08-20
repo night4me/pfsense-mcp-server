@@ -1,11 +1,13 @@
 """Comprehensive tests for `pfsense_mcp.security_privileges` (`ADR-033`
 implementation Phase B). `tests/fixtures/pfsense_openapi_schema_trimmed.json`
-is a real, trimmed subset (46 paths -- the current 45 READ + 1 WRITE
+is a real, trimmed subset (49 paths -- the current 48 READ + 1 WRITE
 endpoints) of an actual OpenAPI schema previously captured live from
 the disposable LAB appliance during the ADR-026 provisioning work,
-plus two entries carried over verbatim from the live production
-schema for the 2026-08-20 interface-VLAN/static-route READ addition --
-not synthetic data, just narrowed to keep the fixture small.
+plus five entries carried over verbatim from the live production/LAB
+schemas for the 2026-08-20 READ Expansion phase (interface VLANs,
+static routes, interface groups, firewall schedules, REST API
+version) -- not synthetic data, just narrowed to keep the fixture
+small.
 """
 
 from __future__ import annotations
@@ -225,29 +227,29 @@ def test_resolve_privilege_missing_endpoint_fails_closed_never_falls_back_to_sou
 # ---------------------------------------------------------------------------
 
 
-def test_read_profile_requirements_has_46_entries_with_exactly_one_local_only():
+def test_read_profile_requirements_has_49_entries_with_exactly_one_local_only():
     requirements = read_profile_requirements()
-    assert len(requirements) == 46
+    assert len(requirements) == 49
     local_only = [r for r in requirements if r.url is None]
     assert len(local_only) == 1
     assert local_only[0].tool_name == "mcp_info"
 
 
-def test_read_profile_resolves_to_the_currently_verified_45_privileges(live_schema):
+def test_read_profile_resolves_to_the_currently_verified_48_privileges(live_schema):
     resolved = resolve_profile_privileges(live_schema, read_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 45
+    assert len(privileges) == 48
     # Every resolved privilege is source-cross-checked -- the strongest
     # evidence class, since the fixture is real captured schema data.
     assert all(r.evidence_class is EvidenceClass.SOURCE_CROSS_CHECKED for r in resolved)
 
 
-def test_write_protected_profile_resolves_to_the_currently_verified_46_privileges(live_schema):
+def test_write_protected_profile_resolves_to_the_currently_verified_49_privileges(live_schema):
     resolved = resolve_profile_privileges(live_schema, write_protected_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 46
+    assert len(privileges) == 49
 
 
 def test_write_protected_includes_the_write_exclusive_patch_privilege(live_schema):

@@ -2871,6 +2871,103 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "FIREWALL_SCHEDULE_READ",
+      "client_method": "get_firewall_schedules",
+      "description": "List pfSense time-based firewall schedules: name,\n        description, active state, and configured time ranges.\n        Read-only.\n\n        limit: maximum number of schedules to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/firewall/schedules",
+        "symbol": "FIREWALL_SCHEDULES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_firewall_schedulesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_firewall_schedules",
+      "output_schema": {
+        "$defs": {
+          "FirewallSchedule": {
+            "properties": {
+              "active": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Active"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "schedlabel": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Schedlabel"
+              },
+              "timerange": {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "title": "Timerange",
+                "type": "array"
+              }
+            },
+            "required": [
+              "active",
+              "descr",
+              "name",
+              "schedlabel",
+              "timerange"
+            ],
+            "title": "FirewallSchedule",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/FirewallSchedule"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_firewall_schedulesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "FIREWALL_READ",
       "client_method": "get_firewall_states",
       "description": "Get pfSense live firewall states (the active connection\n        table): interface, protocol, direction, status, age, and\n        packet/byte counters. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        source and destination address for each state. Defaults to\n        False.\n\n        limit: maximum number of states to return (1-500, default\n        100). A firewall can hold millions of states; this must\n        stay bounded.",
@@ -4876,6 +4973,78 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "INTERFACE_GROUP_READ",
+      "client_method": "get_interface_groups",
+      "description": "List pfSense interface groups: group name, member\n        interfaces, and description. Useful for interpreting firewall\n        rules that target a group rather than a single interface.\n        Read-only.\n\n        limit: maximum number of interface groups to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/interface/groups",
+        "symbol": "INTERFACE_GROUPS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_interface_groupsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_interface_groups",
+      "output_schema": {
+        "$defs": {
+          "InterfaceGroup": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "ifname": {
+                "title": "Ifname",
+                "type": "string"
+              },
+              "members": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Members",
+                "type": "array"
+              }
+            },
+            "required": [
+              "descr",
+              "ifname",
+              "members"
+            ],
+            "title": "InterfaceGroup",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/InterfaceGroup"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_interface_groupsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "INTERFACE_VLAN_READ",
       "client_method": "get_interface_vlans",
       "description": "List pfSense 802.1Q VLAN interfaces: parent interface, VLAN\n        tag, priority code point, resulting VLAN interface identifier,\n        and description. Read-only.\n\n        limit: maximum number of VLAN interfaces to return (1-100,\n        default 100).",
@@ -6381,6 +6550,98 @@
           "represent_interfaces_as"
         ],
         "title": "SystemRestApiSettings",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SYSTEM_RESTAPI_VERSION_READ",
+      "client_method": "get_system_restapi_version",
+      "description": "Return the installed pfSense REST API package's current\n        version, latest available version, and update availability.\n        Read-only.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/restapi/version",
+        "symbol": "SYSTEM_RESTAPI_VERSION",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_system_restapi_versionArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_restapi_version",
+      "output_schema": {
+        "properties": {
+          "available_versions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Versions",
+            "type": "array"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Version"
+          },
+          "install_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Absent entirely in at least one observed live response; not required by the schema.",
+            "title": "Install Version"
+          },
+          "latest_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version"
+          },
+          "latest_version_release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version Release Date"
+          },
+          "update_available": {
+            "title": "Update Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available_versions",
+          "current_version",
+          "latest_version",
+          "latest_version_release_date",
+          "update_available"
+        ],
+        "title": "SystemRestApiVersion",
         "type": "object"
       }
     },

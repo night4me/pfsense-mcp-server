@@ -44,6 +44,9 @@ class Capability(Enum):
     SERVER_INFO_READ = auto()
     INTERFACE_VLAN_READ = auto()
     ROUTING_STATIC_ROUTE_READ = auto()
+    INTERFACE_GROUP_READ = auto()
+    FIREWALL_SCHEDULE_READ = auto()
+    SYSTEM_RESTAPI_VERSION_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -94,6 +97,9 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.SERVER_INFO_READ,
         Capability.INTERFACE_VLAN_READ,
         Capability.ROUTING_STATIC_ROUTE_READ,
+        Capability.INTERFACE_GROUP_READ,
+        Capability.FIREWALL_SCHEDULE_READ,
+        Capability.SYSTEM_RESTAPI_VERSION_READ,
     }
 )
 

@@ -584,3 +584,39 @@ def test_routing_static_routes_path_suffix_has_no_api_prefix():
 
 def test_routing_static_routes_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.ROUTING_STATIC_ROUTES.path_suffix == "/routing/static_routes"
+
+
+def test_interface_groups_is_declared_verified():
+    assert Endpoints.INTERFACE_GROUPS.verified is True
+
+
+def test_interface_groups_path_suffix_has_no_api_prefix():
+    assert not Endpoints.INTERFACE_GROUPS.path_suffix.startswith("/api")
+
+
+def test_interface_groups_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.INTERFACE_GROUPS.path_suffix == "/interface/groups"
+
+
+def test_firewall_schedules_is_declared_verified():
+    assert Endpoints.FIREWALL_SCHEDULES.verified is True
+
+
+def test_firewall_schedules_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FIREWALL_SCHEDULES.path_suffix.startswith("/api")
+
+
+def test_firewall_schedules_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.FIREWALL_SCHEDULES.path_suffix == "/firewall/schedules"
+
+
+def test_system_restapi_version_is_declared_verified():
+    assert Endpoints.SYSTEM_RESTAPI_VERSION.verified is True
+
+
+def test_system_restapi_version_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_RESTAPI_VERSION.path_suffix.startswith("/api")
+
+
+def test_system_restapi_version_path_suffix_is_the_singular_endpoint():
+    assert Endpoints.SYSTEM_RESTAPI_VERSION.path_suffix == "/system/restapi/version"
