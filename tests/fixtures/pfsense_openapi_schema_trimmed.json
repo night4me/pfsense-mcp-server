@@ -36,6 +36,1026 @@
         "description": "<h3>Description:</h3>Read pending firewall change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FirewallApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/firewall/nat/one_to_one/mappings": {
+      "get": {
+        "deprecated": false,
+        "description": "<h3>Description:</h3>Reads all existing 1:1 NAT mappings.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OneToOneNATMapping<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-nat-one-to-one-mappings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None",
+        "operationId": "getFirewallNATOneToOneMappingsEndpoint",
+        "parameters": [
+          {
+            "description": "The number of objects to obtain at once. Set to 0 for no limit.",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The starting point in the dataset to begin fetching objects.",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The fields to sort response data by.",
+            "in": "query",
+            "name": "sort_by",
+            "schema": {
+              "default": null,
+              "items": {
+                "type": "string"
+              },
+              "nullable": true,
+              "type": "array"
+            }
+          },
+          {
+            "description": "The order to sort response data by.",
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "enum": [
+                "SORT_ASC",
+                "SORT_DESC"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "The sort flag to use to customize the behavior of the sort.",
+            "in": "query",
+            "name": "sort_flags",
+            "schema": {
+              "enum": [
+                "SORT_REGULAR",
+                "SORT_NUMERIC",
+                "SORT_STRING",
+                "SORT_LOCALE_STRING",
+                "SORT_NATURAL",
+                "SORT_FLAG_CASE"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "The arbitrary query parameters to include in the request.<br><br>Note: This does not define a real parameter (e.g. there is no `query` parameter), rather it allows for any arbitrary query parameters to be included in the request.",
+            "explode": true,
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {},
+              "type": "object"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "allOf": [
+                              {
+                                "properties": {
+                                  "id": {
+                                    "type": "integer"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              {
+                                "$ref": "#/components/schemas/OneToOneNATMapping"
+                              }
+                            ]
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has made a successful request."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client request data has one or more input validation errors."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthenticationError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has failed to authenticate the API call."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ForbiddenError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client does not have sufficient privileges to make this API call."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NotFoundError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a resource that could not be found."
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MethodNotAllowedError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested an HTTP method that is not supported by the current URL."
+          },
+          "406": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NotAcceptableError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested content in a format that is not supported."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ConflictError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client's request cannot be fulfilled due to one or more conflicts."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MediaTypeError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a content-type that is not supported by the server."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnprocessableContentError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a resource that requires a dependency or other requirement that was not met."
+          },
+          "424": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/FailedDependencyError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a resource that requires a dependency which is not installed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The server encountered an unexpected error and cannot complete the request."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceUnavailableError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The requested service is temporarily unavailable."
+          }
+        },
+        "tags": [
+          "FIREWALL"
+        ]
+      }
+    },
+    "/api/v2/firewall/nat/outbound/mappings": {
+      "get": {
+        "deprecated": false,
+        "description": "<h3>Description:</h3>Reads all existing Outbound NAT Mappings.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OutboundNATMapping<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-nat-outbound-mappings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None",
+        "operationId": "getFirewallNATOutboundMappingsEndpoint",
+        "parameters": [
+          {
+            "description": "The number of objects to obtain at once. Set to 0 for no limit.",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The starting point in the dataset to begin fetching objects.",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The fields to sort response data by.",
+            "in": "query",
+            "name": "sort_by",
+            "schema": {
+              "default": null,
+              "items": {
+                "type": "string"
+              },
+              "nullable": true,
+              "type": "array"
+            }
+          },
+          {
+            "description": "The order to sort response data by.",
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "enum": [
+                "SORT_ASC",
+                "SORT_DESC"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "The sort flag to use to customize the behavior of the sort.",
+            "in": "query",
+            "name": "sort_flags",
+            "schema": {
+              "enum": [
+                "SORT_REGULAR",
+                "SORT_NUMERIC",
+                "SORT_STRING",
+                "SORT_LOCALE_STRING",
+                "SORT_NATURAL",
+                "SORT_FLAG_CASE"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "The arbitrary query parameters to include in the request.<br><br>Note: This does not define a real parameter (e.g. there is no `query` parameter), rather it allows for any arbitrary query parameters to be included in the request.",
+            "explode": true,
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {},
+              "type": "object"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "allOf": [
+                              {
+                                "properties": {
+                                  "id": {
+                                    "type": "integer"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              {
+                                "$ref": "#/components/schemas/OutboundNATMapping"
+                              }
+                            ]
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has made a successful request."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client request data has one or more input validation errors."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthenticationError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has failed to authenticate the API call."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ForbiddenError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client does not have sufficient privileges to make this API call."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NotFoundError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a resource that could not be found."
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MethodNotAllowedError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested an HTTP method that is not supported by the current URL."
+          },
+          "406": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/NotAcceptableError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested content in a format that is not supported."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ConflictError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client's request cannot be fulfilled due to one or more conflicts."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/MediaTypeError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a content-type that is not supported by the server."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/UnprocessableContentError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a resource that requires a dependency or other requirement that was not met."
+          },
+          "424": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/FailedDependencyError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The client has requested a resource that requires a dependency which is not installed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServerError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The server encountered an unexpected error and cannot complete the request."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ServiceUnavailableError"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "items": {
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "The requested service is temporarily unavailable."
+          }
+        },
+        "tags": [
+          "FIREWALL"
+        ]
+      }
+    },
     "/api/v2/firewall/nat/outbound/mode": {
       "get": {
         "description": "<h3>Description:</h3>Reads current Outbound NAT Mode.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: OutboundNATMode<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-nat-outbound-mode-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"

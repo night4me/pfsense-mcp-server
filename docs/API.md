@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 42 READ, 0 WRITE
+Registered tools: 44 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -259,6 +259,32 @@ Common parameters:
 - **Returns:** `FirewallNatOutboundMode`.
 - **Security:** Reveals policy mode but no mapping endpoints or credentials.
 - **Example:** `{"name":"pfsense_get_firewall_nat_outbound_mode","arguments":{}}`
+
+### `pfsense_get_firewall_nat_outbound_mappings`
+
+- **Purpose:** List outbound NAT mappings: interface, protocol, NAT port
+  behavior, and pool options.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[FirewallNatOutboundMapping]`.
+- **Security:** Literal sources, destinations, and NAT targets are omitted by
+  default. Live-verified 2026-08-20 against production (zero mappings
+  configured at verification time; field-level compatibility confirmed via
+  an exact live-schema match to the pinned v2.10 reference).
+- **Example:** `{"name":"pfsense_get_firewall_nat_outbound_mappings","arguments":{"limit":20}}`
+
+### `pfsense_get_firewall_nat_one_to_one_mappings`
+
+- **Purpose:** List 1:1 NAT mappings: interface, protocol family, NAT
+  reflection, and bi-directional NAT state.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[FirewallNatOneToOneMapping]`.
+- **Security:** Literal external/source/destination addresses are omitted by
+  default. Live-verified 2026-08-20 against production (zero mappings
+  configured at verification time; field-level compatibility confirmed via
+  an exact live-schema match to the pinned v2.10 reference).
+- **Example:** `{"name":"pfsense_get_firewall_nat_one_to_one_mappings","arguments":{"limit":20}}`
 
 ### `pfsense_get_firewall_traffic_shaper_limiters`
 

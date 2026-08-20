@@ -529,13 +529,12 @@ def test_firewall_read_does_not_expose_alias_or_log_endpoints():
     assert "/status/logs/firewall" not in declared_suffixes
 
 
-def test_firewall_nat_outbound_mappings_is_declared_unverified():
-    # Offline typed-READ addition (client/model/endpoint declared, no
-    # MCP tool registered yet -- see test_public_contract_is_complete_
-    # and_security_preserving's requirement that every *registered*
-    # tool's endpoint be verified=True). Live verification and public
-    # tool registration are a separate, later, explicitly authorized step.
-    assert Endpoints.FIREWALL_NAT_OUTBOUND_MAPPINGS.verified is False
+def test_firewall_nat_outbound_mappings_is_declared_verified():
+    # Live-verified 2026-08-20 against the production appliance -- see
+    # Endpoints.FIREWALL_NAT_OUTBOUND_MAPPINGS's own comment for the
+    # exact verification method (zero live records; schema-level exact
+    # match used for field-type/nullability confidence instead).
+    assert Endpoints.FIREWALL_NAT_OUTBOUND_MAPPINGS.verified is True
 
 
 def test_firewall_nat_outbound_mappings_path_suffix_has_no_api_prefix():
@@ -546,8 +545,8 @@ def test_firewall_nat_outbound_mappings_path_suffix_is_the_plural_list_endpoint(
     assert Endpoints.FIREWALL_NAT_OUTBOUND_MAPPINGS.path_suffix == "/firewall/nat/outbound/mappings"
 
 
-def test_firewall_nat_one_to_one_mappings_is_declared_unverified():
-    assert Endpoints.FIREWALL_NAT_ONE_TO_ONE_MAPPINGS.verified is False
+def test_firewall_nat_one_to_one_mappings_is_declared_verified():
+    assert Endpoints.FIREWALL_NAT_ONE_TO_ONE_MAPPINGS.verified is True
 
 
 def test_firewall_nat_one_to_one_mappings_path_suffix_has_no_api_prefix():

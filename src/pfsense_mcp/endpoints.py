@@ -92,19 +92,28 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # verified=False: derived from the pinned v2.10 OpenAPI schema
-    # (already-captured evidence, not a new live call) but not yet
-    # independently confirmed via an authenticated GET against a real
-    # instance. Live verification is a separate, later, explicitly
-    # authorized step -- see docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md.
+    # verified=True (2026-08-20, owner-authorized live production READ
+    # verification): the typed GET succeeded against the production
+    # appliance (pfSense Plus 26.07-RELEASE) and returned the expected
+    # {"data": [...]} envelope. The live account currently has zero
+    # configured mappings, so per-field value parsing was not exercised
+    # against real instance data -- compatibility for field types/
+    # nullability is instead confirmed by an exact, byte-for-byte match
+    # between the live OpenAPI schema's `OutboundNATMapping` component
+    # (and this endpoint's full "Allowed privileges" description text)
+    # and the pinned v2.10 reference this project's model was already
+    # derived from. See docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md.
     FIREWALL_NAT_OUTBOUND_MAPPINGS = EndpointInfo(
         path_suffix="/firewall/nat/outbound/mappings",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-08-20) -- see FIREWALL_NAT_OUTBOUND_MAPPINGS's
+    # comment immediately above; identical verification method and the
+    # same live result (zero configured mappings, schema match exact).
     FIREWALL_NAT_ONE_TO_ONE_MAPPINGS = EndpointInfo(
         path_suffix="/firewall/nat/one_to_one/mappings",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     USERS = EndpointInfo(

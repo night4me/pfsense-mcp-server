@@ -195,6 +195,6 @@ def test_public_contract_remains_42_read_0_write() -> None:
 
     read_tools = [t for t in tools if t.annotations.readOnlyHint]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 42
-    assert len(read_tools) == 42
+    assert len(tools) == 44
+    assert len(read_tools) == 44
     assert len(write_tools) == 0

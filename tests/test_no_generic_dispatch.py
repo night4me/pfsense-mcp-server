@@ -18,7 +18,7 @@ them. This test is therefore two independent rules, not one:
   2. zero uses of `getattr`/`setattr`/`hasattr` anywhere in a tool file.
 
 Both rules are checked by direct AST inspection of the actual shipped
-source, not by trusting that today's 42 tools happen to already satisfy
+source, not by trusting that today's tools happen to already satisfy
 them -- this is exactly the kind of claim ADR-019's acceptance review
 found the design had asserted without a direct check.
 """
@@ -86,8 +86,8 @@ def test_exactly_one_tool_file_has_zero_client_method_calls_and_it_is_the_expect
     assert zero_call_files == EXPECTED_ZERO_CLIENT_CALL_TOOLS
 
 
-def test_forty_two_tool_files_exist_matching_the_public_contract() -> None:
-    assert len(_tool_files()) == 42
+def test_forty_four_tool_files_exist_matching_the_public_contract() -> None:
+    assert len(_tool_files()) == 44
 
 
 def test_no_tool_file_uses_getattr_setattr_or_hasattr() -> None:

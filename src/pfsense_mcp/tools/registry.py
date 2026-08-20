@@ -36,6 +36,8 @@ from .read import (
     firewall_advanced_settings,
     firewall_aliases,
     firewall_apply_status,
+    firewall_nat_one_to_one_mappings,
+    firewall_nat_outbound_mappings,
     firewall_nat_outbound_mode,
     firewall_nat_port_forwards,
     firewall_rules,
@@ -99,6 +101,8 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_firewall_advanced_settings",
         "pfsense_get_firewall_aliases",
         "pfsense_get_firewall_apply_status",
+        "pfsense_get_firewall_nat_one_to_one_mappings",
+        "pfsense_get_firewall_nat_outbound_mappings",
         "pfsense_get_firewall_nat_outbound_mode",
         "pfsense_get_firewall_nat_port_forwards",
         "pfsense_get_firewall_rules",
@@ -376,6 +380,16 @@ class ToolRegistry:
             firewall_nat_outbound_mode_fn
         )
         self._register_read_tool(firewall_nat_outbound_mode_wrapped)
+
+        outbound_mappings_fn = firewall_nat_outbound_mappings.build(self._client)
+        outbound_mappings_wrapped = audit_logged("pfsense_get_firewall_nat_outbound_mappings", self._identity)(
+            outbound_mappings_fn
+        )
+        self._register_read_tool(outbound_mappings_wrapped)
+
+        one_to_one_fn = firewall_nat_one_to_one_mappings.build(self._client)
+        one_to_one_wrapped = audit_logged("pfsense_get_firewall_nat_one_to_one_mappings", self._identity)(one_to_one_fn)
+        self._register_read_tool(one_to_one_wrapped)
 
     def _register_user_read(self) -> None:
         fn = users.build(self._client)

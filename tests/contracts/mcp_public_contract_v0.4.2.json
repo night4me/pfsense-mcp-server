@@ -1845,6 +1845,342 @@
         "readOnlyHint": true
       },
       "capability": "FIREWALL_NAT_READ",
+      "client_method": "get_firewall_nat_one_to_one_mappings",
+      "description": "List pfSense 1:1 NAT mappings: interface, protocol family,\n        NAT reflection, and bi-directional NAT state. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        external/source/destination addresses. Defaults to False.\n\n        limit: maximum number of mappings to return (1-500, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/firewall/nat/one_to_one/mappings",
+        "symbol": "FIREWALL_NAT_ONE_TO_ONE_MAPPINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_firewall_nat_one_to_one_mappingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_firewall_nat_one_to_one_mappings",
+      "output_schema": {
+        "$defs": {
+          "FirewallNatOneToOneMapping": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "destination": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Destination"
+              },
+              "disabled": {
+                "title": "Disabled",
+                "type": "boolean"
+              },
+              "external": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "External"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "interface": {
+                "title": "Interface",
+                "type": "string"
+              },
+              "ipprotocol": {
+                "title": "Ipprotocol",
+                "type": "string"
+              },
+              "natreflection": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Natreflection"
+              },
+              "nobinat": {
+                "title": "Nobinat",
+                "type": "boolean"
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Source"
+              }
+            },
+            "required": [
+              "descr",
+              "disabled",
+              "id",
+              "interface",
+              "ipprotocol",
+              "natreflection",
+              "nobinat"
+            ],
+            "title": "FirewallNatOneToOneMapping",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/FirewallNatOneToOneMapping"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_firewall_nat_one_to_one_mappingsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "FIREWALL_NAT_READ",
+      "client_method": "get_firewall_nat_outbound_mappings",
+      "description": "List pfSense outbound NAT mappings: interface, protocol,\n        NAT port behavior, and pool options. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        source/destination/target addresses. Defaults to False.\n\n        limit: maximum number of mappings to return (1-500, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/firewall/nat/outbound/mappings",
+        "symbol": "FIREWALL_NAT_OUTBOUND_MAPPINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_firewall_nat_outbound_mappingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_firewall_nat_outbound_mappings",
+      "output_schema": {
+        "$defs": {
+          "FirewallNatOutboundMapping": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "destination": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Destination"
+              },
+              "destination_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Destination Port"
+              },
+              "disabled": {
+                "title": "Disabled",
+                "type": "boolean"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "interface": {
+                "title": "Interface",
+                "type": "string"
+              },
+              "nat_port": {
+                "title": "Nat Port",
+                "type": "string"
+              },
+              "nonat": {
+                "title": "Nonat",
+                "type": "boolean"
+              },
+              "nosync": {
+                "title": "Nosync",
+                "type": "boolean"
+              },
+              "poolopts": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Poolopts"
+              },
+              "protocol": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Protocol"
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Source"
+              },
+              "source_hash_key": {
+                "title": "Source Hash Key",
+                "type": "string"
+              },
+              "source_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Source Port"
+              },
+              "static_nat_port": {
+                "title": "Static Nat Port",
+                "type": "boolean"
+              },
+              "target": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Target"
+              },
+              "target_subnet": {
+                "title": "Target Subnet",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "descr",
+              "destination_port",
+              "disabled",
+              "id",
+              "interface",
+              "nat_port",
+              "nonat",
+              "nosync",
+              "poolopts",
+              "protocol",
+              "source_hash_key",
+              "source_port",
+              "static_nat_port",
+              "target_subnet"
+            ],
+            "title": "FirewallNatOutboundMapping",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/FirewallNatOutboundMapping"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_firewall_nat_outbound_mappingsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "FIREWALL_NAT_READ",
       "client_method": "get_firewall_nat_outbound_mode",
       "description": "Get pfSense's outbound NAT mode: automatic, hybrid,\n        advanced, or disabled. Read-only.",
       "endpoint": {

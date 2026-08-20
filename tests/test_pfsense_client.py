@@ -1538,6 +1538,17 @@ def _firewall_nat_outbound_mappings_client(body: dict | None = None) -> tuple[Pf
     return PfSenseClient(rest_client), transport
 
 
+def test_get_firewall_nat_outbound_mappings_parses_empty_list():
+    """2026-08-20 live production verification observed exactly this
+    shape: HTTP 200, `{"data": []}` -- zero outbound NAT mappings
+    configured at verification time. Confirms the empty-list case
+    (not just populated lists) parses without error."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _firewall_nat_outbound_mappings_client(body)
+    assert client.get_firewall_nat_outbound_mappings() == []
+
+
 def test_get_firewall_nat_outbound_mappings_omits_identifying_fields_by_default():
     client, _ = _firewall_nat_outbound_mappings_client()
     mappings = client.get_firewall_nat_outbound_mappings()
@@ -1655,6 +1666,16 @@ def _firewall_nat_one_to_one_mappings_client(body: dict | None = None) -> tuple[
     )
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_nat_one_to_one_mappings_parses_empty_list():
+    """2026-08-20 live production verification observed exactly this
+    shape: HTTP 200, `{"data": []}` -- zero 1:1 NAT mappings configured
+    at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _firewall_nat_one_to_one_mappings_client(body)
+    assert client.get_firewall_nat_one_to_one_mappings() == []
 
 
 def test_get_firewall_nat_one_to_one_mappings_omits_identifying_fields_by_default():
