@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "network": "198.51.100.0/24",
+      "gateway": "WAN_GW",
+      "disabled": false,
+      "descr": "Synthetic static route (offline fixture)"
+    },
+    {
+      "network": "203.0.113.0/24",
+      "gateway": "WAN_GW",
+      "disabled": true,
+      "descr": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

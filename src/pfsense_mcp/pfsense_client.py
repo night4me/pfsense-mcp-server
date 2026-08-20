@@ -36,11 +36,13 @@ from .models.free_radius_eap import FreeRadiusEap
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
+from .models.interface_vlan import InterfaceVlan
 from .models.interfaces import InterfaceStatus
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
+from .models.routing_static_route import RoutingStaticRoute
 from .models.service_status import ServiceStatus
 from .models.ssh_settings import SshSettings
 from .models.system import SystemStatus
@@ -146,6 +148,14 @@ DIAGNOSTICS_TABLES_MAX_LIMIT = 100
 
 AUTH_KEYS_MIN_LIMIT = 1
 AUTH_KEYS_MAX_LIMIT = 100
+
+
+INTERFACE_VLANS_MIN_LIMIT = 1
+INTERFACE_VLANS_MAX_LIMIT = 100
+
+
+ROUTING_STATIC_ROUTES_MIN_LIMIT = 1
+ROUTING_STATIC_ROUTES_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -582,3 +592,28 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.AUTH_KEYS, params={"limit": limit})
         return _parse_list_response(raw, "/auth/keys", AuthKey.from_api)
+
+    def get_interface_vlans(self, *, limit: int = 100) -> list[InterfaceVlan]:
+        if not (INTERFACE_VLANS_MIN_LIMIT <= limit <= INTERFACE_VLANS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {INTERFACE_VLANS_MIN_LIMIT} and {INTERFACE_VLANS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.INTERFACE_VLANS, params={"limit": limit})
+        return _parse_list_response(raw, "/interface/vlans", InterfaceVlan.from_api)
+
+    def get_routing_static_routes(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[RoutingStaticRoute]:
+        if not (ROUTING_STATIC_ROUTES_MIN_LIMIT <= limit <= ROUTING_STATIC_ROUTES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {ROUTING_STATIC_ROUTES_MIN_LIMIT} and "
+                f"{ROUTING_STATIC_ROUTES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.ROUTING_STATIC_ROUTES, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/routing/static_routes",
+            lambda data: RoutingStaticRoute.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )

@@ -1,0 +1,22 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "if": "igb1",
+      "tag": 10,
+      "pcp": "0",
+      "descr": "Synthetic VLAN (offline fixture)",
+      "vlanif": "igb1.10"
+    },
+    {
+      "if": "igb1",
+      "tag": 20,
+      "pcp": null,
+      "descr": "",
+      "vlanif": "igb1.20"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

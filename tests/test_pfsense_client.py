@@ -4477,3 +4477,207 @@ def test_get_auth_keys_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_auth_keys()
     assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_VLANS_FIXTURE = Path(__file__).parent / "fixtures" / "interface_vlans_response.json"
+
+
+def _interface_vlans_body() -> dict:
+    return json.loads(INTERFACE_VLANS_FIXTURE.read_text())
+
+
+def _interface_vlans_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_vlans_body()
+    transport.register("GET", "/api/v2/interface/vlans?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_vlans_maps_all_fields():
+    client, _ = _interface_vlans_client()
+    vlans = client.get_interface_vlans()
+    assert len(vlans) == 2
+    first = next(v for v in vlans if v.tag == 10)
+    assert first.if_ == "igb1"
+    assert first.vlanif == "igb1.10"
+    assert first.pcp == "0"
+    assert first.descr == "Synthetic VLAN (offline fixture)"
+
+
+def test_get_interface_vlans_only_calls_endpoint_with_default_limit():
+    client, transport = _interface_vlans_client()
+    client.get_interface_vlans()
+    assert transport.calls == [("GET", "/api/v2/interface/vlans?limit=100")]
+
+
+def test_get_interface_vlans_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_vlans_body()
+    transport.register("GET", "/api/v2/interface/vlans?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_vlans(limit=5)
+    assert transport.calls == [("GET", "/api/v2/interface/vlans?limit=5")]
+
+
+def test_get_interface_vlans_rejects_zero_limit():
+    client, _ = _interface_vlans_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_vlans(limit=0)
+
+
+def test_get_interface_vlans_rejects_limit_above_max():
+    client, _ = _interface_vlans_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_vlans(limit=101)
+
+
+def test_get_interface_vlans_invalid_limit_never_calls_transport():
+    client, transport = _interface_vlans_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_vlans(limit=0)
+    assert transport.calls == []
+
+
+def test_get_interface_vlans_missing_data_key_raises_shape_error():
+    body = _interface_vlans_body()
+    del body["data"]
+    client, _ = _interface_vlans_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_vlans()
+
+
+def test_get_interface_vlans_item_wrong_type_raises_shape_error():
+    body = _interface_vlans_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_vlans_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_vlans()
+
+
+def test_get_interface_vlans_required_field_missing_raises_shape_error():
+    body = _interface_vlans_body()
+    del body["data"][0]["tag"]
+    client, _ = _interface_vlans_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_vlans()
+
+
+def test_get_interface_vlans_shape_error_does_not_leak_raw_field_values():
+    body = _interface_vlans_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _interface_vlans_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_vlans()
+    assert sentinel not in str(excinfo.value)
+
+
+ROUTING_STATIC_ROUTES_FIXTURE = Path(__file__).parent / "fixtures" / "routing_static_routes_response.json"
+ROUTING_STATIC_ROUTES_IDENTIFYING_FIELDS = ("gateway", "network")
+
+
+def _routing_static_routes_body() -> dict:
+    return json.loads(ROUTING_STATIC_ROUTES_FIXTURE.read_text())
+
+
+def _routing_static_routes_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _routing_static_routes_body()
+    transport.register("GET", "/api/v2/routing/static_routes?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_routing_static_routes_omits_identifying_fields_by_default():
+    client, _ = _routing_static_routes_client()
+    routes = client.get_routing_static_routes()
+    assert len(routes) == 2
+    for route in routes:
+        for field in ROUTING_STATIC_ROUTES_IDENTIFYING_FIELDS:
+            assert getattr(route, field) is None
+
+
+def test_get_routing_static_routes_includes_identifying_fields_when_requested():
+    client, _ = _routing_static_routes_client()
+    routes = client.get_routing_static_routes(include_identifying_metadata=True)
+    first = next(r for r in routes if r.disabled is False)
+    assert first.network == "198.51.100.0/24"
+    assert first.gateway == "WAN_GW"
+
+
+def test_get_routing_static_routes_maps_non_sensitive_fields():
+    client, _ = _routing_static_routes_client()
+    routes = client.get_routing_static_routes()
+    first = next(r for r in routes if r.disabled is False)
+    assert first.descr == "Synthetic static route (offline fixture)"
+
+
+def test_get_routing_static_routes_only_calls_endpoint_with_default_limit():
+    client, transport = _routing_static_routes_client()
+    client.get_routing_static_routes()
+    assert transport.calls == [("GET", "/api/v2/routing/static_routes?limit=100")]
+
+
+def test_get_routing_static_routes_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _routing_static_routes_body()
+    transport.register("GET", "/api/v2/routing/static_routes?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_routing_static_routes(limit=5)
+    assert transport.calls == [("GET", "/api/v2/routing/static_routes?limit=5")]
+
+
+def test_get_routing_static_routes_rejects_zero_limit():
+    client, _ = _routing_static_routes_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_routing_static_routes(limit=0)
+
+
+def test_get_routing_static_routes_rejects_limit_above_max():
+    client, _ = _routing_static_routes_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_routing_static_routes(limit=101)
+
+
+def test_get_routing_static_routes_invalid_limit_never_calls_transport():
+    client, transport = _routing_static_routes_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_routing_static_routes(limit=0)
+    assert transport.calls == []
+
+
+def test_get_routing_static_routes_missing_data_key_raises_shape_error():
+    body = _routing_static_routes_body()
+    del body["data"]
+    client, _ = _routing_static_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_static_routes()
+
+
+def test_get_routing_static_routes_item_wrong_type_raises_shape_error():
+    body = _routing_static_routes_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _routing_static_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_static_routes()
+
+
+def test_get_routing_static_routes_required_field_missing_raises_shape_error():
+    body = _routing_static_routes_body()
+    del body["data"][0]["disabled"]
+    client, _ = _routing_static_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_static_routes()
+
+
+def test_get_routing_static_routes_shape_error_does_not_leak_raw_field_values():
+    body = _routing_static_routes_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _routing_static_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_routing_static_routes()
+    assert sentinel not in str(excinfo.value)

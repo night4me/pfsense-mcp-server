@@ -256,5 +256,23 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # Future entries added only after individual verification, e.g.:
-    # ROUTING_STATIC_ROUTES = EndpointInfo("/routing/static_routes", verified=False, min_api_version=ApiVersion.V2)
+    # Offline-only discovery-audit addition (2026-08-20): client/model
+    # implemented from already-captured schema evidence, not yet live
+    # verified. Deliberately NOT wired into tools/registry.py -- see
+    # test_endpoints_verified.py's paired verified=False assertion and
+    # test_public_contract_is_complete_and_security_preserving's
+    # requirement that every *registered* tool's endpoint be
+    # verified=True. Live verification and public tool registration
+    # remain a separate, later, explicitly authorized step.
+    INTERFACE_VLANS = EndpointInfo(
+        path_suffix="/interface/vlans",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # Offline-only discovery-audit addition (2026-08-20) -- see
+    # INTERFACE_VLANS's comment immediately above; same status.
+    ROUTING_STATIC_ROUTES = EndpointInfo(
+        path_suffix="/routing/static_routes",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
