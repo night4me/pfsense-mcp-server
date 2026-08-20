@@ -256,23 +256,30 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # Offline-only discovery-audit addition (2026-08-20): client/model
-    # implemented from already-captured schema evidence, not yet live
-    # verified. Deliberately NOT wired into tools/registry.py -- see
-    # test_endpoints_verified.py's paired verified=False assertion and
-    # test_public_contract_is_complete_and_security_preserving's
-    # requirement that every *registered* tool's endpoint be
-    # verified=True. Live verification and public tool registration
-    # remain a separate, later, explicitly authorized step.
+    # verified=True (2026-08-20, owner-authorized LAB READ verification,
+    # Phase 8 of the READ capability audit): confirmed LAB identity first
+    # (https://pfsense-test.lab.invalid, pfSense CE 2.8.1-RELEASE,
+    # distinct from the production https://pfsense.local target) and
+    # confirmed the LAB's REST API package is v2.10 -- an exact,
+    # byte-for-byte match (267/267 paths) against the pinned v2.10
+    # reference this model was derived from. The typed GET succeeded
+    # (HTTP 200, correct {"data": [...]} envelope) with zero configured
+    # VLANs on the LAB appliance at verification time --
+    # ENDPOINT_VERIFIED, not FIELD_MODEL_LIVE_VERIFIED (no populated
+    # object to exercise field parsing); compatibility for field types
+    # is instead backed by the exact schema-component match above, the
+    # same method already established for the NAT mappings verification.
     INTERFACE_VLANS = EndpointInfo(
         path_suffix="/interface/vlans",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # Offline-only discovery-audit addition (2026-08-20) -- see
-    # INTERFACE_VLANS's comment immediately above; same status.
+    # verified=True (2026-08-20) -- see INTERFACE_VLANS's comment
+    # INTERFACE_VLANS's comment immediately above; identical verification
+    # method and the same live result (zero configured static routes,
+    # schema match exact).
     ROUTING_STATIC_ROUTES = EndpointInfo(
         path_suffix="/routing/static_routes",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

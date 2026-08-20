@@ -4494,6 +4494,17 @@ def _interface_vlans_client(body: dict | None = None) -> tuple[PfSenseClient, Mo
     return PfSenseClient(rest_client), transport
 
 
+def test_get_interface_vlans_parses_empty_list():
+    """2026-08-20 LAB verification observed exactly this shape: HTTP
+    200, `{"data": []}` -- zero VLANs configured on the LAB appliance
+    at verification time. Confirms the empty-list case (not just
+    populated lists) parses without error."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _interface_vlans_client(body)
+    assert client.get_interface_vlans() == []
+
+
 def test_get_interface_vlans_maps_all_fields():
     client, _ = _interface_vlans_client()
     vlans = client.get_interface_vlans()
@@ -4588,6 +4599,16 @@ def _routing_static_routes_client(body: dict | None = None) -> tuple[PfSenseClie
     transport.register("GET", "/api/v2/routing/static_routes?limit=100", status_code=200, text=json.dumps(payload))
     rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
     return PfSenseClient(rest_client), transport
+
+
+def test_get_routing_static_routes_parses_empty_list():
+    """2026-08-20 LAB verification observed exactly this shape: HTTP
+    200, `{"data": []}` -- zero static routes configured on the LAB
+    appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _routing_static_routes_client(body)
+    assert client.get_routing_static_routes() == []
 
 
 def test_get_routing_static_routes_omits_identifying_fields_by_default():

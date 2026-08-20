@@ -49,10 +49,12 @@ from .read import (
     gateways,
     interface_bridges,
     interface_configs,
+    interface_vlans,
     interfaces,
     mcp_info,
     ntp_settings,
     ntp_time_servers,
+    routing_static_routes,
     service_status,
     ssh_settings,
     system_certificates,
@@ -114,9 +116,11 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_gateways",
         "pfsense_get_interface_bridges",
         "pfsense_get_interface_configs",
+        "pfsense_get_interface_vlans",
         "pfsense_get_interfaces",
         "pfsense_get_ntp_settings",
         "pfsense_get_ntp_time_servers",
+        "pfsense_get_routing_static_routes",
         "pfsense_get_service_status",
         "pfsense_get_ssh_settings",
         "pfsense_get_system_certificates",
@@ -250,6 +254,10 @@ class ToolRegistry:
             self._register_auth_keys_read()
         if Capability.SERVER_INFO_READ in self._capabilities:
             self._register_server_info_read()
+        if Capability.INTERFACE_VLAN_READ in self._capabilities:
+            self._register_interface_vlan_read()
+        if Capability.ROUTING_STATIC_ROUTE_READ in self._capabilities:
+            self._register_routing_static_route_read()
 
         self.register_all_write()
 
@@ -530,6 +538,16 @@ class ToolRegistry:
         fn = mcp_info.build(self._build_introspection_snapshot)
         wrapped = audit_logged("pfsense_mcp_info", self._identity)(fn)
         self._register_read_tool(wrapped, annotation_policy=LOCAL_ONLY_ANNOTATION_POLICY)
+
+    def _register_interface_vlan_read(self) -> None:
+        fn = interface_vlans.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_vlans", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_routing_static_route_read(self) -> None:
+        fn = routing_static_routes.build(self._client)
+        wrapped = audit_logged("pfsense_get_routing_static_routes", self._identity)(fn)
+        self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:
         """Assemble pfsense_mcp_info's response from live process state,

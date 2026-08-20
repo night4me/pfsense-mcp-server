@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 44 READ, 0 WRITE
+Registered tools: 46 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -164,6 +164,16 @@ Common parameters:
   credentials.
 - **Example:** `{"name":"pfsense_get_interface_bridges","arguments":{"limit":20}}`
 
+### `pfsense_get_interface_vlans`
+
+- **Purpose:** List 802.1Q VLAN interfaces: parent interface, VLAN tag,
+  priority code point, and resulting VLAN interface identifier.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[InterfaceVlan]`.
+- **Security:** Interface/VLAN identifiers only; no address or credential
+  material.
+- **Example:** `{"name":"pfsense_get_interface_vlans","arguments":{"limit":20}}`
+
 ### `pfsense_get_gateways`
 
 - **Purpose:** List configured gateways and monitoring settings.
@@ -190,6 +200,16 @@ Common parameters:
 - **Security:** This is sensitive live topology and device-identity data. The
   caller must be trusted even though the request is read-only.
 - **Example:** `{"name":"pfsense_get_arp_table","arguments":{"limit":25}}`
+
+### `pfsense_get_routing_static_routes`
+
+- **Purpose:** List configured static routes: destination network, gateway,
+  and description.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[RoutingStaticRoute]`.
+- **Security:** Literal network/gateway addresses are omitted by default.
+- **Example:** `{"name":"pfsense_get_routing_static_routes","arguments":{}}`
 
 ## Firewall and NAT
 

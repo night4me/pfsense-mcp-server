@@ -557,14 +557,13 @@ def test_firewall_nat_one_to_one_mappings_path_suffix_is_the_plural_list_endpoin
     assert Endpoints.FIREWALL_NAT_ONE_TO_ONE_MAPPINGS.path_suffix == "/firewall/nat/one_to_one/mappings"
 
 
-def test_interface_vlans_is_declared_unverified():
-    # Offline READ-capability-audit addition (client/model/endpoint
-    # declared, no MCP tool registered yet -- see test_public_contract_
-    # is_complete_and_security_preserving's requirement that every
-    # *registered* tool's endpoint be verified=True). Live verification
-    # and public tool registration are a separate, later, explicitly
-    # authorized step.
-    assert Endpoints.INTERFACE_VLANS.verified is False
+def test_interface_vlans_is_declared_verified():
+    # LAB-verified 2026-08-20 (owner-authorized Phase 8) -- see
+    # Endpoints.INTERFACE_VLANS's own comment for the exact verification
+    # method (LAB identity confirmed, REST API v2.10 exact schema match,
+    # zero live records; schema-level match used for field-type
+    # confidence instead).
+    assert Endpoints.INTERFACE_VLANS.verified is True
 
 
 def test_interface_vlans_path_suffix_has_no_api_prefix():
@@ -575,8 +574,8 @@ def test_interface_vlans_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.INTERFACE_VLANS.path_suffix == "/interface/vlans"
 
 
-def test_routing_static_routes_is_declared_unverified():
-    assert Endpoints.ROUTING_STATIC_ROUTES.verified is False
+def test_routing_static_routes_is_declared_verified():
+    assert Endpoints.ROUTING_STATIC_ROUTES.verified is True
 
 
 def test_routing_static_routes_path_suffix_has_no_api_prefix():

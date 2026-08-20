@@ -4876,6 +4876,106 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "INTERFACE_VLAN_READ",
+      "client_method": "get_interface_vlans",
+      "description": "List pfSense 802.1Q VLAN interfaces: parent interface, VLAN\n        tag, priority code point, resulting VLAN interface identifier,\n        and description. Read-only.\n\n        limit: maximum number of VLAN interfaces to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/interface/vlans",
+        "symbol": "INTERFACE_VLANS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_interface_vlansArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_interface_vlans",
+      "output_schema": {
+        "$defs": {
+          "InterfaceVlan": {
+            "properties": {
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "if_": {
+                "title": "If",
+                "type": "string"
+              },
+              "pcp": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Pcp"
+              },
+              "tag": {
+                "title": "Tag",
+                "type": "integer"
+              },
+              "vlanif": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vlanif"
+              }
+            },
+            "required": [
+              "descr",
+              "if_",
+              "pcp",
+              "tag",
+              "vlanif"
+            ],
+            "title": "InterfaceVlan",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/InterfaceVlan"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_interface_vlansOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "INTERFACE_READ",
       "client_method": "get_interfaces",
       "description": "Get pfSense interface inventory and live status: name,\n        description, hardware interface, MTU, enabled state, link\n        status, media, DHCP link state, and traffic/error counters.\n        Read-only.\n\n        include_identifying_metadata: if True, includes MAC address,\n        IPv4/IPv6 addresses, subnets, and gateways in the response.\n        Defaults to False.",
@@ -5395,6 +5495,108 @@
           "result"
         ],
         "title": "pfsense_get_ntp_time_serversOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "ROUTING_STATIC_ROUTE_READ",
+      "client_method": "get_routing_static_routes",
+      "description": "List pfSense static routes: destination network, gateway,\n        and description. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        network/gateway addresses. Defaults to False.\n\n        limit: maximum number of static routes to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/routing/static_routes",
+        "symbol": "ROUTING_STATIC_ROUTES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_routing_static_routesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_routing_static_routes",
+      "output_schema": {
+        "$defs": {
+          "RoutingStaticRoute": {
+            "properties": {
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "disabled": {
+                "title": "Disabled",
+                "type": "boolean"
+              },
+              "gateway": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Gateway"
+              },
+              "network": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Network"
+              }
+            },
+            "required": [
+              "descr",
+              "disabled"
+            ],
+            "title": "RoutingStaticRoute",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RoutingStaticRoute"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_routing_static_routesOutput",
         "type": "object"
       }
     },

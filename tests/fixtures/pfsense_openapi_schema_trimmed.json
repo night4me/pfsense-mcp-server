@@ -1091,6 +1091,11 @@
         "description": "<h3>Description:</h3>Reads all existing Interface Bridges.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceBridge<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-bridges-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/interface/vlans": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Interface VLANs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceVLAN<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-vlans-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/interfaces": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Network Interfaces.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: NetworkInterface<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interfaces-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
@@ -1099,6 +1104,11 @@
     "/api/v2/routing/gateways": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Routing Gatewaies.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RoutingGateway<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-gateways-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/routing/static_routes": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Static Routes.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: StaticRoute<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-static-routes-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/services/acme/settings": {
