@@ -27,6 +27,8 @@ from .models.email_notification_settings import EmailNotificationSettings
 from .models.firewall import FirewallApplyStatus, FirewallRule, FirewallState, FirewallStatesSize
 from .models.firewall_advanced_settings import FirewallAdvancedSettings
 from .models.firewall_alias import FirewallAlias
+from .models.firewall_nat_one_to_one_mapping import FirewallNatOneToOneMapping
+from .models.firewall_nat_outbound_mapping import FirewallNatOutboundMapping
 from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.firewall_traffic_shaper_limiter import FirewallTrafficShaperLimiter
@@ -68,6 +70,14 @@ INTERFACE_CONFIGS_MAX_LIMIT = 100
 
 FIREWALL_NAT_PORT_FORWARDS_MIN_LIMIT = 1
 FIREWALL_NAT_PORT_FORWARDS_MAX_LIMIT = 500
+
+
+FIREWALL_NAT_OUTBOUND_MAPPINGS_MIN_LIMIT = 1
+FIREWALL_NAT_OUTBOUND_MAPPINGS_MAX_LIMIT = 500
+
+
+FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_MIN_LIMIT = 1
+FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_MAX_LIMIT = 500
 
 
 USERS_MIN_LIMIT = 1
@@ -304,6 +314,42 @@ class PfSenseClient:
     def get_firewall_nat_outbound_mode(self) -> FirewallNatOutboundMode:
         raw = self._rest.get(Endpoints.FIREWALL_NAT_OUTBOUND_MODE)
         return _parse_object_response(raw, "/firewall/nat/outbound/mode", FirewallNatOutboundMode.from_api)
+
+    def get_firewall_nat_outbound_mappings(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FirewallNatOutboundMapping]:
+        if not (FIREWALL_NAT_OUTBOUND_MAPPINGS_MIN_LIMIT <= limit <= FIREWALL_NAT_OUTBOUND_MAPPINGS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_NAT_OUTBOUND_MAPPINGS_MIN_LIMIT} and "
+                f"{FIREWALL_NAT_OUTBOUND_MAPPINGS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_NAT_OUTBOUND_MAPPINGS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/firewall/nat/outbound/mappings",
+            lambda data: FirewallNatOutboundMapping.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
+
+    def get_firewall_nat_one_to_one_mappings(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FirewallNatOneToOneMapping]:
+        if not (FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_MIN_LIMIT <= limit <= FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_MIN_LIMIT} and "
+                f"{FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_NAT_ONE_TO_ONE_MAPPINGS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/firewall/nat/one_to_one/mappings",
+            lambda data: FirewallNatOneToOneMapping.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
 
     def get_users(self, *, include_identifying_metadata: bool = False, limit: int = 100) -> list[PfSenseUser]:
         if not (USERS_MIN_LIMIT <= limit <= USERS_MAX_LIMIT):

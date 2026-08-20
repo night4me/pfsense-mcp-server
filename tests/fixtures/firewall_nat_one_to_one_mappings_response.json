@@ -1,0 +1,32 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 0,
+      "interface": "wan",
+      "disabled": false,
+      "nobinat": false,
+      "natreflection": "purenat",
+      "ipprotocol": "inet",
+      "external": "203.0.113.30",
+      "source": "198.51.100.10",
+      "destination": "any",
+      "descr": "Synthetic 1:1 NAT mapping (offline fixture)"
+    },
+    {
+      "id": 1,
+      "interface": "wan",
+      "disabled": true,
+      "nobinat": true,
+      "natreflection": null,
+      "ipprotocol": "inet",
+      "external": "203.0.113.31",
+      "source": "198.51.100.11",
+      "destination": "198.51.100.0/24",
+      "descr": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

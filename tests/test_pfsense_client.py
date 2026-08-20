@@ -1518,6 +1518,244 @@ def test_get_firewall_nat_outbound_mode_shape_error_does_not_leak_raw_field_valu
     assert sentinel not in str(excinfo.value)
 
 
+FIREWALL_NAT_OUTBOUND_MAPPINGS_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "firewall_nat_outbound_mappings_response.json"
+)
+FIREWALL_NAT_OUTBOUND_MAPPINGS_IDENTIFYING_FIELDS = ("destination", "source", "target")
+
+
+def _firewall_nat_outbound_mappings_body() -> dict:
+    return json.loads(FIREWALL_NAT_OUTBOUND_MAPPINGS_FIXTURE.read_text())
+
+
+def _firewall_nat_outbound_mappings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_nat_outbound_mappings_body()
+    transport.register(
+        "GET", "/api/v2/firewall/nat/outbound/mappings?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_nat_outbound_mappings_omits_identifying_fields_by_default():
+    client, _ = _firewall_nat_outbound_mappings_client()
+    mappings = client.get_firewall_nat_outbound_mappings()
+    assert len(mappings) == 2
+    for mapping in mappings:
+        for field in FIREWALL_NAT_OUTBOUND_MAPPINGS_IDENTIFYING_FIELDS:
+            assert getattr(mapping, field) is None
+
+
+def test_get_firewall_nat_outbound_mappings_includes_identifying_fields_when_requested():
+    client, _ = _firewall_nat_outbound_mappings_client()
+    mappings = client.get_firewall_nat_outbound_mappings(include_identifying_metadata=True)
+    first = next(m for m in mappings if m.id == 0)
+    assert first.target == "203.0.113.10"
+    assert first.source == "198.51.100.0/24"
+
+
+def test_get_firewall_nat_outbound_mappings_maps_non_sensitive_fields():
+    client, _ = _firewall_nat_outbound_mappings_client()
+    mappings = client.get_firewall_nat_outbound_mappings()
+    first = next(m for m in mappings if m.id == 0)
+    assert first.interface == "wan"
+    assert first.protocol == "tcp/udp"
+    assert first.disabled is False
+    assert first.nonat is False
+    assert first.static_nat_port is False
+    assert first.target_subnet == 32
+    assert first.source_hash_key == "0x15758006d87dc3affc7973c95e378b65"
+
+
+def test_get_firewall_nat_outbound_mappings_only_calls_endpoint_with_default_limit():
+    client, transport = _firewall_nat_outbound_mappings_client()
+    client.get_firewall_nat_outbound_mappings()
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/outbound/mappings?limit=100")]
+
+
+def test_get_firewall_nat_outbound_mappings_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_nat_outbound_mappings_body()
+    transport.register("GET", "/api/v2/firewall/nat/outbound/mappings?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_nat_outbound_mappings(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/outbound/mappings?limit=5")]
+
+
+def test_get_firewall_nat_outbound_mappings_rejects_zero_limit():
+    client, _ = _firewall_nat_outbound_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_outbound_mappings(limit=0)
+
+
+def test_get_firewall_nat_outbound_mappings_rejects_limit_above_max():
+    client, _ = _firewall_nat_outbound_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_outbound_mappings(limit=501)
+
+
+def test_get_firewall_nat_outbound_mappings_invalid_limit_never_calls_transport():
+    client, transport = _firewall_nat_outbound_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_outbound_mappings(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_nat_outbound_mappings_missing_data_key_raises_shape_error():
+    body = _firewall_nat_outbound_mappings_body()
+    del body["data"]
+    client, _ = _firewall_nat_outbound_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mappings()
+
+
+def test_get_firewall_nat_outbound_mappings_item_wrong_type_raises_shape_error():
+    body = _firewall_nat_outbound_mappings_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_nat_outbound_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mappings()
+
+
+def test_get_firewall_nat_outbound_mappings_required_field_missing_raises_shape_error():
+    body = _firewall_nat_outbound_mappings_body()
+    del body["data"][0]["descr"]
+    client, _ = _firewall_nat_outbound_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_outbound_mappings()
+
+
+def test_get_firewall_nat_outbound_mappings_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_nat_outbound_mappings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _firewall_nat_outbound_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_nat_outbound_mappings()
+    assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "firewall_nat_one_to_one_mappings_response.json"
+)
+FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_IDENTIFYING_FIELDS = ("destination", "external", "source")
+
+
+def _firewall_nat_one_to_one_mappings_body() -> dict:
+    return json.loads(FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_FIXTURE.read_text())
+
+
+def _firewall_nat_one_to_one_mappings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_nat_one_to_one_mappings_body()
+    transport.register(
+        "GET", "/api/v2/firewall/nat/one_to_one/mappings?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_nat_one_to_one_mappings_omits_identifying_fields_by_default():
+    client, _ = _firewall_nat_one_to_one_mappings_client()
+    mappings = client.get_firewall_nat_one_to_one_mappings()
+    assert len(mappings) == 2
+    for mapping in mappings:
+        for field in FIREWALL_NAT_ONE_TO_ONE_MAPPINGS_IDENTIFYING_FIELDS:
+            assert getattr(mapping, field) is None
+
+
+def test_get_firewall_nat_one_to_one_mappings_includes_identifying_fields_when_requested():
+    client, _ = _firewall_nat_one_to_one_mappings_client()
+    mappings = client.get_firewall_nat_one_to_one_mappings(include_identifying_metadata=True)
+    first = next(m for m in mappings if m.id == 0)
+    assert first.external == "203.0.113.30"
+    assert first.source == "198.51.100.10"
+
+
+def test_get_firewall_nat_one_to_one_mappings_maps_non_sensitive_fields():
+    client, _ = _firewall_nat_one_to_one_mappings_client()
+    mappings = client.get_firewall_nat_one_to_one_mappings()
+    first = next(m for m in mappings if m.id == 0)
+    assert first.interface == "wan"
+    assert first.disabled is False
+    assert first.nobinat is False
+    assert first.natreflection == "purenat"
+    assert first.ipprotocol == "inet"
+
+
+def test_get_firewall_nat_one_to_one_mappings_only_calls_endpoint_with_default_limit():
+    client, transport = _firewall_nat_one_to_one_mappings_client()
+    client.get_firewall_nat_one_to_one_mappings()
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/one_to_one/mappings?limit=100")]
+
+
+def test_get_firewall_nat_one_to_one_mappings_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_nat_one_to_one_mappings_body()
+    transport.register(
+        "GET", "/api/v2/firewall/nat/one_to_one/mappings?limit=5", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_nat_one_to_one_mappings(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/nat/one_to_one/mappings?limit=5")]
+
+
+def test_get_firewall_nat_one_to_one_mappings_rejects_zero_limit():
+    client, _ = _firewall_nat_one_to_one_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_one_to_one_mappings(limit=0)
+
+
+def test_get_firewall_nat_one_to_one_mappings_rejects_limit_above_max():
+    client, _ = _firewall_nat_one_to_one_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_one_to_one_mappings(limit=501)
+
+
+def test_get_firewall_nat_one_to_one_mappings_invalid_limit_never_calls_transport():
+    client, transport = _firewall_nat_one_to_one_mappings_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_nat_one_to_one_mappings(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_nat_one_to_one_mappings_missing_data_key_raises_shape_error():
+    body = _firewall_nat_one_to_one_mappings_body()
+    del body["data"]
+    client, _ = _firewall_nat_one_to_one_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_one_to_one_mappings()
+
+
+def test_get_firewall_nat_one_to_one_mappings_item_wrong_type_raises_shape_error():
+    body = _firewall_nat_one_to_one_mappings_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_nat_one_to_one_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_one_to_one_mappings()
+
+
+def test_get_firewall_nat_one_to_one_mappings_required_field_missing_raises_shape_error():
+    body = _firewall_nat_one_to_one_mappings_body()
+    del body["data"][0]["descr"]
+    client, _ = _firewall_nat_one_to_one_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_nat_one_to_one_mappings()
+
+
+def test_get_firewall_nat_one_to_one_mappings_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_nat_one_to_one_mappings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _firewall_nat_one_to_one_mappings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_nat_one_to_one_mappings()
+    assert sentinel not in str(excinfo.value)
+
+
 USERS_FIXTURE = Path(__file__).parent / "fixtures" / "users_response.json"
 USERS_IDENTIFYING_FIELDS = ("authorizedkeys",)
 

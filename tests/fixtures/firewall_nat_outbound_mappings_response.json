@@ -1,0 +1,46 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 0,
+      "interface": "wan",
+      "protocol": "tcp/udp",
+      "disabled": false,
+      "nonat": false,
+      "nosync": false,
+      "source": "198.51.100.0/24",
+      "source_port": null,
+      "destination": "any",
+      "destination_port": null,
+      "target": "203.0.113.10",
+      "target_subnet": 32,
+      "nat_port": "",
+      "static_nat_port": false,
+      "poolopts": null,
+      "source_hash_key": "0x15758006d87dc3affc7973c95e378b65",
+      "descr": "Synthetic outbound NAT mapping (offline fixture)"
+    },
+    {
+      "id": 1,
+      "interface": "wan",
+      "protocol": null,
+      "disabled": true,
+      "nonat": true,
+      "nosync": false,
+      "source": "198.51.100.128/25",
+      "source_port": null,
+      "destination": "any",
+      "destination_port": null,
+      "target": "203.0.113.20",
+      "target_subnet": 32,
+      "nat_port": "",
+      "static_nat_port": false,
+      "poolopts": null,
+      "source_hash_key": "0x00000000000000000000000000000000",
+      "descr": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

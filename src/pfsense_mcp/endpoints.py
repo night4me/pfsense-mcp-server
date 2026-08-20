@@ -92,6 +92,21 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=False: derived from the pinned v2.10 OpenAPI schema
+    # (already-captured evidence, not a new live call) but not yet
+    # independently confirmed via an authenticated GET against a real
+    # instance. Live verification is a separate, later, explicitly
+    # authorized step -- see docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md.
+    FIREWALL_NAT_OUTBOUND_MAPPINGS = EndpointInfo(
+        path_suffix="/firewall/nat/outbound/mappings",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    FIREWALL_NAT_ONE_TO_ONE_MAPPINGS = EndpointInfo(
+        path_suffix="/firewall/nat/one_to_one/mappings",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
     USERS = EndpointInfo(
         path_suffix="/users",
         verified=True,

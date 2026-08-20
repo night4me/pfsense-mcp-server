@@ -7,6 +7,20 @@ which covers the bootstrap architecture this matrix feeds. See that ADR
 for the full design; this document is the raw evidence table plus its
 derivation methodology.
 
+**2026-08-20 — offline typed READ support added, not yet in scope of this
+matrix**: `PfSenseClient.get_firewall_nat_outbound_mappings()`/
+`get_firewall_nat_one_to_one_mappings()` and their models/`Endpoints`
+entries (`FIREWALL_NAT_OUTBOUND_MAPPINGS`/`FIREWALL_NAT_ONE_TO_ONE_
+MAPPINGS`, both `verified=False`) now exist, derived from the pinned
+v2.10 OpenAPI schema. Deliberately **not** wired into `tools/registry.py`
+or `KNOWN_READ_TOOL_NAMES` yet — `tests/test_public_contract.py::
+test_public_contract_is_complete_and_security_preserving` requires every
+*registered* tool's endpoint to be `verified=True`, and live verification
+is a separate, later, explicitly authorized step. Because
+`security_privileges.py`'s derivation only scans `tools/read/*.py`, these
+two endpoints are correctly absent from every count in this document
+(still 41 READ / 42 combined) until that later registration happens.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
