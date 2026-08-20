@@ -45,6 +45,7 @@ from .read import (
     firewall_states,
     firewall_states_size,
     firewall_traffic_shaper_limiters,
+    firewall_virtual_ips,
     freeradius_eap,
     gateway_status,
     gateways,
@@ -59,6 +60,7 @@ from .read import (
     routing_static_routes,
     service_status,
     ssh_settings,
+    system_certificate_authorities,
     system_certificates,
     system_hasync,
     system_packages,
@@ -115,6 +117,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_firewall_states",
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_traffic_shaper_limiters",
+        "pfsense_get_firewall_virtual_ips",
         "pfsense_get_freeradius_eap",
         "pfsense_get_gateway_status",
         "pfsense_get_gateways",
@@ -128,6 +131,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_routing_static_routes",
         "pfsense_get_service_status",
         "pfsense_get_ssh_settings",
+        "pfsense_get_system_certificate_authorities",
         "pfsense_get_system_certificates",
         "pfsense_get_system_hasync",
         "pfsense_get_system_packages",
@@ -270,6 +274,10 @@ class ToolRegistry:
             self._register_firewall_schedule_read()
         if Capability.SYSTEM_RESTAPI_VERSION_READ in self._capabilities:
             self._register_system_restapi_version_read()
+        if Capability.FIREWALL_VIRTUAL_IP_READ in self._capabilities:
+            self._register_firewall_virtual_ip_read()
+        if Capability.SYSTEM_CERTIFICATE_AUTHORITY_READ in self._capabilities:
+            self._register_system_certificate_authority_read()
 
         self.register_all_write()
 
@@ -574,6 +582,16 @@ class ToolRegistry:
     def _register_system_restapi_version_read(self) -> None:
         fn = system_restapi_version.build(self._client)
         wrapped = audit_logged("pfsense_get_system_restapi_version", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_firewall_virtual_ip_read(self) -> None:
+        fn = firewall_virtual_ips.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_virtual_ips", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_certificate_authority_read(self) -> None:
+        fn = system_certificate_authorities.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_certificate_authorities", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

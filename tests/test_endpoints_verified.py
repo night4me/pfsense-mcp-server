@@ -620,3 +620,27 @@ def test_system_restapi_version_path_suffix_has_no_api_prefix():
 
 def test_system_restapi_version_path_suffix_is_the_singular_endpoint():
     assert Endpoints.SYSTEM_RESTAPI_VERSION.path_suffix == "/system/restapi/version"
+
+
+def test_firewall_virtual_ips_is_declared_verified():
+    assert Endpoints.FIREWALL_VIRTUAL_IPS.verified is True
+
+
+def test_firewall_virtual_ips_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FIREWALL_VIRTUAL_IPS.path_suffix.startswith("/api")
+
+
+def test_firewall_virtual_ips_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.FIREWALL_VIRTUAL_IPS.path_suffix == "/firewall/virtual_ips"
+
+
+def test_system_certificate_authorities_is_declared_verified():
+    assert Endpoints.SYSTEM_CERTIFICATE_AUTHORITIES.verified is True
+
+
+def test_system_certificate_authorities_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_CERTIFICATE_AUTHORITIES.path_suffix.startswith("/api")
+
+
+def test_system_certificate_authorities_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SYSTEM_CERTIFICATE_AUTHORITIES.path_suffix == "/system/certificate_authorities"

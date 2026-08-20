@@ -33,6 +33,7 @@ from .models.firewall_nat_outbound_mode import FirewallNatOutboundMode
 from .models.firewall_nat_port_forward import FirewallNatPortForward
 from .models.firewall_schedule import FirewallSchedule
 from .models.firewall_traffic_shaper_limiter import FirewallTrafficShaperLimiter
+from .models.firewall_virtual_ip import FirewallVirtualIp
 from .models.free_radius_eap import FreeRadiusEap
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
@@ -49,6 +50,7 @@ from .models.service_status import ServiceStatus
 from .models.ssh_settings import SshSettings
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
+from .models.system_certificate_authority import SystemCertificateAuthority
 from .models.system_ha_sync import SystemHaSync
 from .models.system_package import SystemPackage
 from .models.system_rest_api_settings import SystemRestApiSettings
@@ -167,6 +169,14 @@ INTERFACE_GROUPS_MAX_LIMIT = 100
 
 FIREWALL_SCHEDULES_MIN_LIMIT = 1
 FIREWALL_SCHEDULES_MAX_LIMIT = 100
+
+
+FIREWALL_VIRTUAL_IPS_MIN_LIMIT = 1
+FIREWALL_VIRTUAL_IPS_MAX_LIMIT = 100
+
+
+SYSTEM_CERTIFICATE_AUTHORITIES_MIN_LIMIT = 1
+SYSTEM_CERTIFICATE_AUTHORITIES_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -651,3 +661,29 @@ class PfSenseClient:
     def get_system_restapi_version(self) -> SystemRestApiVersion:
         raw = self._rest.get(Endpoints.SYSTEM_RESTAPI_VERSION)
         return _parse_object_response(raw, "/system/restapi/version", SystemRestApiVersion.from_api)
+
+    def get_firewall_virtual_ips(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FirewallVirtualIp]:
+        if not (FIREWALL_VIRTUAL_IPS_MIN_LIMIT <= limit <= FIREWALL_VIRTUAL_IPS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_VIRTUAL_IPS_MIN_LIMIT} and "
+                f"{FIREWALL_VIRTUAL_IPS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_VIRTUAL_IPS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/firewall/virtual_ips",
+            lambda data: FirewallVirtualIp.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_system_certificate_authorities(self, *, limit: int = 100) -> list[SystemCertificateAuthority]:
+        if not (SYSTEM_CERTIFICATE_AUTHORITIES_MIN_LIMIT <= limit <= SYSTEM_CERTIFICATE_AUTHORITIES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SYSTEM_CERTIFICATE_AUTHORITIES_MIN_LIMIT} and "
+                f"{SYSTEM_CERTIFICATE_AUTHORITIES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SYSTEM_CERTIFICATE_AUTHORITIES, params={"limit": limit})
+        return _parse_list_response(raw, "/system/certificate_authorities", SystemCertificateAuthority.from_api)

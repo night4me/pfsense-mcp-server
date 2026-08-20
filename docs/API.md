@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 49 READ, 0 WRITE
+Registered tools: 51 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -92,6 +92,18 @@ Common parameters:
 - **Security:** Tunables can reveal hardening and network-stack configuration;
   no credential value is returned.
 - **Example:** `{"name":"pfsense_get_system_tunables","arguments":{"limit":25}}`
+
+### `pfsense_get_system_certificate_authorities`
+
+- **Purpose:** List trusted Certificate Authorities: description,
+  trust/serial settings, and the CA certificate itself.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[SystemCertificateAuthority]`.
+- **Security:** Public CA certificates are not secrets but can identify
+  internal PKI. The CA private key (`prv`) is never returned -- it is not
+  modeled at all, mirroring `pfsense_get_system_certificates`'s own
+  treatment of the same distinction.
+- **Example:** `{"name":"pfsense_get_system_certificate_authorities","arguments":{"limit":10}}`
 
 ### `pfsense_get_system_certificates`
 
@@ -355,6 +367,18 @@ Common parameters:
 - **Security:** Reveals hardening posture; no alias URL contents or credentials
   are returned.
 - **Example:** `{"name":"pfsense_get_firewall_advanced_settings","arguments":{}}`
+
+### `pfsense_get_firewall_virtual_ips`
+
+- **Purpose:** List virtual IPs (CARP/IP alias/proxy ARP/other): interface,
+  type, mode, and CARP status.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[FirewallVirtualIp]`.
+- **Security:** Literal virtual IP/CARP peer addresses are omitted by
+  default. The CARP shared secret (`password`) is never returned under any
+  argument.
+- **Example:** `{"name":"pfsense_get_firewall_virtual_ips","arguments":{}}`
 
 ## Users and API identities
 

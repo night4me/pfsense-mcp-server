@@ -3,7 +3,7 @@ as test_appliance_identity_isolation.py, extended to evidence.py and
 applicability.py: no production bootstrap import, no Tier 1 import, no
 write transport/client import, no network client, no cache/database, no
 MCP registration, no new endpoint/capability, public contract remains
-49 READ / 0 WRITE, and no regression in ApplianceIdentity.
+51 READ / 0 WRITE, and no regression in ApplianceIdentity.
 """
 
 from __future__ import annotations
@@ -132,7 +132,7 @@ def test_pfsense_mcp_info_remains_zero_pfsense_call_after_step_2() -> None:
     assert not any("pfsense_client" in m for m in imported)
 
 
-def test_public_contract_remains_49_read_0_write_after_step_2() -> None:
+def test_public_contract_remains_51_read_0_write_after_step_2() -> None:
     import asyncio
 
     from mcp.server.fastmcp import FastMCP
@@ -152,8 +152,8 @@ def test_public_contract_remains_49_read_0_write_after_step_2() -> None:
 
     read_tools = [t for t in tools if t.annotations.readOnlyHint]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 49
-    assert len(read_tools) == 49
+    assert len(tools) == 51
+    assert len(read_tools) == 51
     assert len(write_tools) == 0
 
 

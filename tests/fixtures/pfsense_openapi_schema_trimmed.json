@@ -1091,6 +1091,11 @@
         "description": "<h3>Description:</h3>Reads all existing Traffic Shaper Limiters.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: TrafficShaperLimiter<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-traffic-shaper-limiters-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/firewall/virtual_ips": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Virtual IPs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: VirtualIP<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-virtual-ips-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/interface/bridges": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Interface Bridges.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceBridge<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-bridges-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
@@ -1204,6 +1209,11 @@
     "/api/v2/status/system": {
       "get": {
         "description": "<h3>Description:</h3>Reads current System Status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-system-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/certificate_authorities": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Certificate Authorities.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: CertificateAuthority<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-certificate-authorities-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/system/certificates": {

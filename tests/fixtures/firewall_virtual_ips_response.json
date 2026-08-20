@@ -1,0 +1,40 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "uniqid": "68a1a1a1a1a1a",
+      "mode": "carp",
+      "interface": "wan",
+      "type": "network",
+      "subnet": "203.0.113.5",
+      "subnet_bits": 32,
+      "descr": "Synthetic virtual IP (offline fixture)",
+      "noexpand": false,
+      "vhid": 1,
+      "advbase": 1,
+      "advskew": 0,
+      "carp_status": "MASTER",
+      "carp_mode": "ipv4",
+      "carp_peer": "203.0.113.6"
+    },
+    {
+      "uniqid": null,
+      "mode": "ipalias",
+      "interface": "lan",
+      "type": "single",
+      "subnet": "198.51.100.10",
+      "subnet_bits": 32,
+      "descr": "",
+      "noexpand": true,
+      "vhid": 0,
+      "advbase": 0,
+      "advskew": 0,
+      "carp_status": null,
+      "carp_mode": "",
+      "carp_peer": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

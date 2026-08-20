@@ -3775,6 +3775,165 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "FIREWALL_VIRTUAL_IP_READ",
+      "client_method": "get_firewall_virtual_ips",
+      "description": "List pfSense virtual IPs (CARP/IP alias/proxy ARP/other):\n        interface, type, mode, and CARP status. The CARP shared secret\n        is never returned by this tool under any argument. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        virtual IP address and CARP peer address. Defaults to False.\n\n        limit: maximum number of virtual IPs to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/firewall/virtual_ips",
+        "symbol": "FIREWALL_VIRTUAL_IPS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_firewall_virtual_ipsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_firewall_virtual_ips",
+      "output_schema": {
+        "$defs": {
+          "FirewallVirtualIp": {
+            "properties": {
+              "advbase": {
+                "title": "Advbase",
+                "type": "integer"
+              },
+              "advskew": {
+                "title": "Advskew",
+                "type": "integer"
+              },
+              "carp_mode": {
+                "title": "Carp Mode",
+                "type": "string"
+              },
+              "carp_peer": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Carp Peer"
+              },
+              "carp_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Carp Status"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "interface": {
+                "title": "Interface",
+                "type": "string"
+              },
+              "mode": {
+                "title": "Mode",
+                "type": "string"
+              },
+              "noexpand": {
+                "title": "Noexpand",
+                "type": "boolean"
+              },
+              "subnet": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Subnet"
+              },
+              "subnet_bits": {
+                "title": "Subnet Bits",
+                "type": "integer"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "uniqid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Uniqid"
+              },
+              "vhid": {
+                "title": "Vhid",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "advbase",
+              "advskew",
+              "carp_mode",
+              "carp_status",
+              "descr",
+              "interface",
+              "mode",
+              "noexpand",
+              "subnet_bits",
+              "type",
+              "uniqid",
+              "vhid"
+            ],
+            "title": "FirewallVirtualIp",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/FirewallVirtualIp"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_firewall_virtual_ipsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SERVICES_FREERADIUS_READ",
       "client_method": "get_freeradius_eap",
       "description": "Get pfSense FreeRADIUS EAP (Extensible Authentication\n        Protocol) settings: default EAP type, TLS options, and OCSP\n        configuration. Read-only.",
@@ -5923,6 +6082,109 @@
           "sshdkeyonly"
         ],
         "title": "SshSettings",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SYSTEM_CERTIFICATE_AUTHORITY_READ",
+      "client_method": "get_system_certificate_authorities",
+      "description": "List pfSense trusted Certificate Authorities: description,\n        trust/serial settings, and the CA certificate itself. The CA\n        private key is never returned by this tool. Read-only.\n\n        limit: maximum number of certificate authorities to return\n        (1-100, default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/certificate_authorities",
+        "symbol": "SYSTEM_CERTIFICATE_AUTHORITIES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_system_certificate_authoritiesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_certificate_authorities",
+      "output_schema": {
+        "$defs": {
+          "SystemCertificateAuthority": {
+            "properties": {
+              "caref": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Caref"
+              },
+              "crt": {
+                "title": "Crt",
+                "type": "string"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "randomserial": {
+                "title": "Randomserial",
+                "type": "boolean"
+              },
+              "refid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Refid"
+              },
+              "serial": {
+                "title": "Serial",
+                "type": "integer"
+              },
+              "trust": {
+                "title": "Trust",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "caref",
+              "crt",
+              "descr",
+              "randomserial",
+              "refid",
+              "serial",
+              "trust"
+            ],
+            "title": "SystemCertificateAuthority",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/SystemCertificateAuthority"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_system_certificate_authoritiesOutput",
         "type": "object"
       }
     },

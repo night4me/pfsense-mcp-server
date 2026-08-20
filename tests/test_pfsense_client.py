@@ -5004,3 +5004,282 @@ def test_get_system_restapi_version_shape_error_does_not_leak_raw_field_values()
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_restapi_version()
     assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_VIRTUAL_IPS_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_virtual_ips_response.json"
+FIREWALL_VIRTUAL_IPS_IDENTIFYING_FIELDS = ("carp_peer", "subnet")
+
+
+def _firewall_virtual_ips_body() -> dict:
+    return json.loads(FIREWALL_VIRTUAL_IPS_FIXTURE.read_text())
+
+
+def _firewall_virtual_ips_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_virtual_ips_body()
+    transport.register("GET", "/api/v2/firewall/virtual_ips?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_virtual_ips_never_exposes_password_field():
+    """The confirmed CARP shared-secret field must never reach the
+    caller under any argument combination -- unlike identifying
+    fields, there is no flag that reveals it. The `password` value is
+    injected into the raw response only in-memory here (never
+    committed to the fixture file, which fixture_safety.py's
+    prohibited-credential-field scan correctly refuses) -- proving the
+    model ignores it even when genuinely present in the raw payload,
+    not merely absent from test data."""
+
+    body = _firewall_virtual_ips_body()
+    for entry in body["data"]:
+        entry["password"] = "SENTINEL-CARP-SHARED-SECRET"
+    client, _ = _firewall_virtual_ips_client(body)
+    for include in (False, True):
+        vips = client.get_firewall_virtual_ips(include_identifying_metadata=include)
+        for vip in vips:
+            assert not hasattr(vip, "password")
+            assert "password" not in vip.model_dump()
+
+
+def test_get_firewall_virtual_ips_omits_identifying_fields_by_default():
+    client, _ = _firewall_virtual_ips_client()
+    vips = client.get_firewall_virtual_ips()
+    assert len(vips) == 2
+    for vip in vips:
+        for field in FIREWALL_VIRTUAL_IPS_IDENTIFYING_FIELDS:
+            assert getattr(vip, field) is None
+
+
+def test_get_firewall_virtual_ips_includes_identifying_fields_when_requested():
+    client, _ = _firewall_virtual_ips_client()
+    vips = client.get_firewall_virtual_ips(include_identifying_metadata=True)
+    first = next(v for v in vips if v.vhid == 1)
+    assert first.subnet == "203.0.113.5"
+    assert first.carp_peer == "203.0.113.6"
+
+
+def test_get_firewall_virtual_ips_maps_non_sensitive_fields():
+    client, _ = _firewall_virtual_ips_client()
+    vips = client.get_firewall_virtual_ips()
+    first = next(v for v in vips if v.vhid == 1)
+    assert first.mode == "carp"
+    assert first.interface == "wan"
+    assert first.type == "network"
+    assert first.subnet_bits == 32
+    assert first.descr == "Synthetic virtual IP (offline fixture)"
+    assert first.noexpand is False
+    assert first.advbase == 1
+    assert first.advskew == 0
+    assert first.carp_status == "MASTER"
+    assert first.carp_mode == "ipv4"
+    assert first.uniqid == "68a1a1a1a1a1a"
+
+
+def test_get_firewall_virtual_ips_only_calls_endpoint_with_default_limit():
+    client, transport = _firewall_virtual_ips_client()
+    client.get_firewall_virtual_ips()
+    assert transport.calls == [("GET", "/api/v2/firewall/virtual_ips?limit=100")]
+
+
+def test_get_firewall_virtual_ips_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_virtual_ips_body()
+    transport.register("GET", "/api/v2/firewall/virtual_ips?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_virtual_ips(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/virtual_ips?limit=5")]
+
+
+def test_get_firewall_virtual_ips_rejects_zero_limit():
+    client, _ = _firewall_virtual_ips_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_virtual_ips(limit=0)
+
+
+def test_get_firewall_virtual_ips_rejects_limit_above_max():
+    client, _ = _firewall_virtual_ips_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_virtual_ips(limit=101)
+
+
+def test_get_firewall_virtual_ips_invalid_limit_never_calls_transport():
+    client, transport = _firewall_virtual_ips_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_virtual_ips(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_virtual_ips_parses_empty_list():
+    """2026-08-20 LAB verification observed exactly this shape: HTTP
+    200, `{"data": []}` -- zero virtual IPs configured on the LAB
+    appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _firewall_virtual_ips_client(body)
+    assert client.get_firewall_virtual_ips() == []
+
+
+def test_get_firewall_virtual_ips_missing_data_key_raises_shape_error():
+    body = _firewall_virtual_ips_body()
+    del body["data"]
+    client, _ = _firewall_virtual_ips_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_virtual_ips()
+
+
+def test_get_firewall_virtual_ips_item_wrong_type_raises_shape_error():
+    body = _firewall_virtual_ips_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_virtual_ips_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_virtual_ips()
+
+
+def test_get_firewall_virtual_ips_required_field_missing_raises_shape_error():
+    body = _firewall_virtual_ips_body()
+    del body["data"][0]["vhid"]
+    client, _ = _firewall_virtual_ips_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_virtual_ips()
+
+
+def test_get_firewall_virtual_ips_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_virtual_ips_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _firewall_virtual_ips_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_virtual_ips()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_CERTIFICATE_AUTHORITIES_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "system_certificate_authorities_response.json"
+)
+
+
+def _system_certificate_authorities_body() -> dict:
+    return json.loads(SYSTEM_CERTIFICATE_AUTHORITIES_FIXTURE.read_text())
+
+
+def _system_certificate_authorities_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_certificate_authorities_body()
+    transport.register(
+        "GET", "/api/v2/system/certificate_authorities?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_certificate_authorities_never_exposes_prv_field():
+    """The confirmed CA private-key field must never reach the caller,
+    even when the raw response genuinely includes a populated `prv`
+    value -- proving the model ignores it rather than merely never
+    having seen it in test data. The `prv` value is injected into the
+    raw response only in-memory here (never committed to the fixture
+    file, matching this codebase's `password`-field discipline even
+    though `prv` isn't itself in fixture_safety.py's prohibited-field
+    list). 2026-08-20 LAB verification independently confirmed this
+    against a real, populated CertificateAuthority object (the LAB's
+    own internal CA) -- the real `prv` value was never fetched into
+    this test suite; only the parsed model's field set was inspected."""
+
+    body = _system_certificate_authorities_body()
+    body["data"][0]["prv"] = "SENTINEL-CA-PRIVATE-KEY-MATERIAL"
+    client, _ = _system_certificate_authorities_client(body)
+    cas = client.get_system_certificate_authorities()
+    assert len(cas) == 2
+    for ca in cas:
+        assert not hasattr(ca, "prv")
+        assert "prv" not in ca.model_dump()
+
+
+def test_get_system_certificate_authorities_maps_non_sensitive_fields():
+    client, _ = _system_certificate_authorities_client()
+    cas = client.get_system_certificate_authorities()
+    first = next(c for c in cas if c.serial == 1)
+    assert first.descr == "Synthetic internal CA (offline fixture)"
+    assert first.refid == "68a1a1a1a1a1b"
+    assert first.caref == "68a1a1a1a1a1b"
+    assert first.trust is True
+    assert first.randomserial is False
+    assert first.crt == "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t"
+
+
+def test_get_system_certificate_authorities_only_calls_endpoint_with_default_limit():
+    client, transport = _system_certificate_authorities_client()
+    client.get_system_certificate_authorities()
+    assert transport.calls == [("GET", "/api/v2/system/certificate_authorities?limit=100")]
+
+
+def test_get_system_certificate_authorities_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _system_certificate_authorities_body()
+    transport.register("GET", "/api/v2/system/certificate_authorities?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_system_certificate_authorities(limit=5)
+    assert transport.calls == [("GET", "/api/v2/system/certificate_authorities?limit=5")]
+
+
+def test_get_system_certificate_authorities_rejects_zero_limit():
+    client, _ = _system_certificate_authorities_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_certificate_authorities(limit=0)
+
+
+def test_get_system_certificate_authorities_rejects_limit_above_max():
+    client, _ = _system_certificate_authorities_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_certificate_authorities(limit=101)
+
+
+def test_get_system_certificate_authorities_invalid_limit_never_calls_transport():
+    client, transport = _system_certificate_authorities_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_certificate_authorities(limit=0)
+    assert transport.calls == []
+
+
+def test_get_system_certificate_authorities_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _system_certificate_authorities_client(body)
+    assert client.get_system_certificate_authorities() == []
+
+
+def test_get_system_certificate_authorities_missing_data_key_raises_shape_error():
+    body = _system_certificate_authorities_body()
+    del body["data"]
+    client, _ = _system_certificate_authorities_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificate_authorities()
+
+
+def test_get_system_certificate_authorities_item_wrong_type_raises_shape_error():
+    body = _system_certificate_authorities_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_certificate_authorities_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificate_authorities()
+
+
+def test_get_system_certificate_authorities_required_field_missing_raises_shape_error():
+    body = _system_certificate_authorities_body()
+    del body["data"][0]["crt"]
+    client, _ = _system_certificate_authorities_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_certificate_authorities()
+
+
+def test_get_system_certificate_authorities_shape_error_does_not_leak_raw_field_values():
+    body = _system_certificate_authorities_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _system_certificate_authorities_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_certificate_authorities()
+    assert sentinel not in str(excinfo.value)

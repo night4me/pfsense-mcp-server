@@ -1,0 +1,26 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "refid": "68a1a1a1a1a1b",
+      "descr": "Synthetic internal CA (offline fixture)",
+      "trust": true,
+      "randomserial": false,
+      "serial": 1,
+      "caref": "68a1a1a1a1a1b",
+      "crt": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t"
+    },
+    {
+      "refid": null,
+      "descr": "",
+      "trust": false,
+      "randomserial": true,
+      "serial": 0,
+      "caref": null,
+      "crt": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

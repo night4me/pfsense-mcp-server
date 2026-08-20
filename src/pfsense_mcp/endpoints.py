@@ -315,3 +315,25 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-08-20, READ Expansion phase Batch 3, LAB-only
+    # verification against https://pfsense-test.lab.invalid): HTTP 200,
+    # correct envelope, zero configured virtual IPs at verification time
+    # -- ENDPOINT_VERIFIED, not FIELD_MODEL_LIVE_VERIFIED. The confirmed
+    # secret field (VirtualIP.password) is never modeled at all -- see
+    # FirewallVirtualIp's docstring.
+    FIREWALL_VIRTUAL_IPS = EndpointInfo(
+        path_suffix="/firewall/virtual_ips",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-20) -- same LAB verification pass, and this
+    # one reached FIELD_MODEL_LIVE_VERIFIED: the LAB returned one real,
+    # populated CertificateAuthority object (its own internal CA). The
+    # parsed model has no `prv` attribute at all -- proven by
+    # construction (SystemCertificateAuthority never declares the
+    # field), not merely by redacting a captured value.
+    SYSTEM_CERTIFICATE_AUTHORITIES = EndpointInfo(
+        path_suffix="/system/certificate_authorities",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
