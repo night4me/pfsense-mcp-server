@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "data": {
+    "hostname": "pfsense-lab",
+    "domain": "example.invalid"
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

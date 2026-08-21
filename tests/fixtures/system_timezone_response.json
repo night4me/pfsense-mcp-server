@@ -1,0 +1,9 @@
+{
+  "code": 200,
+  "data": {
+    "timezone": "Etc/UTC"
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

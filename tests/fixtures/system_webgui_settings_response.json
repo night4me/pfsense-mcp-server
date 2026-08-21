@@ -1,0 +1,11 @@
+{
+  "code": 200,
+  "data": {
+    "protocol": "https",
+    "port": "443",
+    "sslcertref": "68f9c9c1a2b3c"
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

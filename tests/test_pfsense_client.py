@@ -7587,3 +7587,341 @@ def test_get_dhcp_server_custom_options_shape_error_does_not_leak_raw_field_valu
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_dhcp_server_custom_options()
     assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_HOSTNAME_FIXTURE = Path(__file__).parent / "fixtures" / "system_hostname_response.json"
+SYSTEM_HOSTNAME_IDENTIFYING_FIELDS = ("hostname", "domain")
+
+
+def _system_hostname_body() -> dict:
+    return json.loads(SYSTEM_HOSTNAME_FIXTURE.read_text())
+
+
+def _system_hostname_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_hostname_body()
+    transport.register("GET", "/api/v2/system/hostname", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_hostname_omits_identifying_fields_by_default():
+    client, _ = _system_hostname_client()
+    hostname = client.get_system_hostname()
+    for field in SYSTEM_HOSTNAME_IDENTIFYING_FIELDS:
+        assert getattr(hostname, field) is None
+
+
+def test_get_system_hostname_includes_identifying_fields_when_requested():
+    client, _ = _system_hostname_client()
+    hostname = client.get_system_hostname(include_identifying_metadata=True)
+    assert hostname.hostname == "pfsense-lab"
+    assert hostname.domain == "example.invalid"
+
+
+def test_get_system_hostname_only_calls_endpoint():
+    client, transport = _system_hostname_client()
+    client.get_system_hostname()
+    assert transport.calls == [("GET", "/api/v2/system/hostname")]
+
+
+def test_get_system_hostname_missing_data_key_raises_shape_error():
+    body = _system_hostname_body()
+    del body["data"]
+    client, _ = _system_hostname_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hostname()
+
+
+def test_get_system_hostname_data_wrong_type_raises_shape_error():
+    body = _system_hostname_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_hostname_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hostname()
+
+
+def test_get_system_hostname_required_field_missing_raises_shape_error():
+    body = _system_hostname_body()
+    del body["data"]["hostname"]
+    client, _ = _system_hostname_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_hostname()
+
+
+def test_get_system_hostname_shape_error_does_not_leak_raw_field_values():
+    body = _system_hostname_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["hostname"] = [sentinel]
+    client, _ = _system_hostname_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_hostname(include_identifying_metadata=True)
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_TIMEZONE_FIXTURE = Path(__file__).parent / "fixtures" / "system_timezone_response.json"
+
+
+def _system_timezone_body() -> dict:
+    return json.loads(SYSTEM_TIMEZONE_FIXTURE.read_text())
+
+
+def _system_timezone_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_timezone_body()
+    transport.register("GET", "/api/v2/system/timezone", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_timezone_maps_fields():
+    client, _ = _system_timezone_client()
+    tz = client.get_system_timezone()
+    assert tz.timezone == "Etc/UTC"
+
+
+def test_get_system_timezone_only_calls_endpoint():
+    client, transport = _system_timezone_client()
+    client.get_system_timezone()
+    assert transport.calls == [("GET", "/api/v2/system/timezone")]
+
+
+def test_get_system_timezone_missing_data_key_raises_shape_error():
+    body = _system_timezone_body()
+    del body["data"]
+    client, _ = _system_timezone_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_timezone()
+
+
+def test_get_system_timezone_data_wrong_type_raises_shape_error():
+    body = _system_timezone_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_timezone_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_timezone()
+
+
+def test_get_system_timezone_required_field_missing_raises_shape_error():
+    body = _system_timezone_body()
+    del body["data"]["timezone"]
+    client, _ = _system_timezone_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_timezone()
+
+
+def test_get_system_timezone_shape_error_does_not_leak_raw_field_values():
+    body = _system_timezone_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["timezone"] = [sentinel]
+    client, _ = _system_timezone_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_timezone()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_DNS_FIXTURE = Path(__file__).parent / "fixtures" / "system_dns_response.json"
+
+
+def _system_dns_body() -> dict:
+    return json.loads(SYSTEM_DNS_FIXTURE.read_text())
+
+
+def _system_dns_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_dns_body()
+    transport.register("GET", "/api/v2/system/dns", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_dns_omits_identifying_fields_by_default():
+    client, _ = _system_dns_client()
+    dns = client.get_system_dns()
+    assert dns.dnsserver is None
+
+
+def test_get_system_dns_object_metadata_is_visible_by_default():
+    client, _ = _system_dns_client()
+    raw = _system_dns_body()["data"]
+    dns = client.get_system_dns()
+    assert dns.dnsallowoverride == raw["dnsallowoverride"]
+    assert dns.dnslocalhost == raw["dnslocalhost"]
+
+
+def test_get_system_dns_includes_identifying_fields_when_requested():
+    client, _ = _system_dns_client()
+    dns = client.get_system_dns(include_identifying_metadata=True)
+    assert dns.dnsserver == ["198.51.100.1", "198.51.100.2"]
+
+
+def test_get_system_dns_only_calls_endpoint():
+    client, transport = _system_dns_client()
+    client.get_system_dns()
+    assert transport.calls == [("GET", "/api/v2/system/dns")]
+
+
+def test_get_system_dns_missing_data_key_raises_shape_error():
+    body = _system_dns_body()
+    del body["data"]
+    client, _ = _system_dns_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_dns()
+
+
+def test_get_system_dns_data_wrong_type_raises_shape_error():
+    body = _system_dns_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_dns_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_dns()
+
+
+def test_get_system_dns_required_field_missing_raises_shape_error():
+    body = _system_dns_body()
+    del body["data"]["dnsallowoverride"]
+    client, _ = _system_dns_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_dns()
+
+
+def test_get_system_dns_shape_error_does_not_leak_raw_field_values():
+    body = _system_dns_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["dnsallowoverride"] = [sentinel]
+    client, _ = _system_dns_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_dns()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_CONSOLE_FIXTURE = Path(__file__).parent / "fixtures" / "system_console_response.json"
+
+
+def _system_console_body() -> dict:
+    return json.loads(SYSTEM_CONSOLE_FIXTURE.read_text())
+
+
+def _system_console_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_console_body()
+    transport.register("GET", "/api/v2/system/console", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_console_maps_fields():
+    client, _ = _system_console_client()
+    console = client.get_system_console()
+    assert console.passwd_protect_console is False
+
+
+def test_get_system_console_only_calls_endpoint():
+    client, transport = _system_console_client()
+    client.get_system_console()
+    assert transport.calls == [("GET", "/api/v2/system/console")]
+
+
+def test_get_system_console_missing_data_key_raises_shape_error():
+    body = _system_console_body()
+    del body["data"]
+    client, _ = _system_console_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_console()
+
+
+def test_get_system_console_data_wrong_type_raises_shape_error():
+    body = _system_console_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_console_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_console()
+
+
+def test_get_system_console_required_field_missing_raises_shape_error():
+    body = _system_console_body()
+    del body["data"]["passwd_protect_console"]
+    client, _ = _system_console_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_console()
+
+
+def test_get_system_console_shape_error_does_not_leak_raw_field_values():
+    body = _system_console_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["passwd_protect_console"] = [sentinel]
+    client, _ = _system_console_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_console()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_WEBGUI_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "system_webgui_settings_response.json"
+
+
+def _system_webgui_settings_body() -> dict:
+    return json.loads(SYSTEM_WEBGUI_SETTINGS_FIXTURE.read_text())
+
+
+def _system_webgui_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_webgui_settings_body()
+    transport.register("GET", "/api/v2/system/webgui/settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_webgui_settings_maps_fields():
+    client, _ = _system_webgui_settings_client()
+    settings = client.get_system_webgui_settings()
+    assert settings.protocol == "https"
+    assert settings.port == "443"
+    assert settings.sslcertref == "68f9c9c1a2b3c"
+
+
+def test_get_system_webgui_settings_parses_null_sslcertref():
+    body = _system_webgui_settings_body()
+    body["data"]["sslcertref"] = None
+    client, _ = _system_webgui_settings_client(body)
+    settings = client.get_system_webgui_settings()
+    assert settings.sslcertref is None
+
+
+def test_get_system_webgui_settings_only_calls_endpoint():
+    client, transport = _system_webgui_settings_client()
+    client.get_system_webgui_settings()
+    assert transport.calls == [("GET", "/api/v2/system/webgui/settings")]
+
+
+def test_get_system_webgui_settings_missing_data_key_raises_shape_error():
+    body = _system_webgui_settings_body()
+    del body["data"]
+    client, _ = _system_webgui_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_webgui_settings()
+
+
+def test_get_system_webgui_settings_data_wrong_type_raises_shape_error():
+    body = _system_webgui_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _system_webgui_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_webgui_settings()
+
+
+def test_get_system_webgui_settings_required_field_missing_raises_shape_error():
+    body = _system_webgui_settings_body()
+    del body["data"]["protocol"]
+    client, _ = _system_webgui_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_webgui_settings()
+
+
+def test_get_system_webgui_settings_shape_error_does_not_leak_raw_field_values():
+    body = _system_webgui_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["protocol"] = [sentinel]
+    client, _ = _system_webgui_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_webgui_settings()
+    assert sentinel not in str(excinfo.value)

@@ -1,0 +1,11 @@
+{
+  "code": 200,
+  "data": {
+    "dnsallowoverride": true,
+    "dnslocalhost": "local",
+    "dnsserver": ["198.51.100.1", "198.51.100.2"]
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

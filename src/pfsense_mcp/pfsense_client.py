@@ -68,12 +68,17 @@ from .models.ssh_settings import SshSettings
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
 from .models.system_certificate_authority import SystemCertificateAuthority
+from .models.system_console import SystemConsole
+from .models.system_dns import SystemDNS
 from .models.system_ha_sync import SystemHaSync
+from .models.system_hostname import SystemHostname
 from .models.system_package import SystemPackage
 from .models.system_rest_api_settings import SystemRestApiSettings
 from .models.system_restapi_version import SystemRestApiVersion
+from .models.system_timezone import SystemTimezone
 from .models.system_tunable import SystemTunable
 from .models.system_version import SystemVersion
+from .models.web_gui_settings import WebGUISettings
 from .models.wireguard_peer_status import WireGuardPeerStatus
 from .models.wireguard_tunnel_status import WireGuardTunnelStatus
 from .rest_api_client import RestApiClient
@@ -1027,3 +1032,31 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.DHCP_SERVER_CUSTOM_OPTIONS, params={"limit": limit})
         return _parse_list_response(raw, "/services/dhcp_server/custom_options", DHCPServerCustomOption.from_api)
+
+    def get_system_hostname(self, *, include_identifying_metadata: bool = False) -> SystemHostname:
+        raw = self._rest.get(Endpoints.SYSTEM_HOSTNAME)
+        return _parse_object_response(
+            raw,
+            "/system/hostname",
+            lambda data: SystemHostname.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_system_timezone(self) -> SystemTimezone:
+        raw = self._rest.get(Endpoints.SYSTEM_TIMEZONE)
+        return _parse_object_response(raw, "/system/timezone", SystemTimezone.from_api)
+
+    def get_system_dns(self, *, include_identifying_metadata: bool = False) -> SystemDNS:
+        raw = self._rest.get(Endpoints.SYSTEM_DNS)
+        return _parse_object_response(
+            raw,
+            "/system/dns",
+            lambda data: SystemDNS.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_system_console(self) -> SystemConsole:
+        raw = self._rest.get(Endpoints.SYSTEM_CONSOLE)
+        return _parse_object_response(raw, "/system/console", SystemConsole.from_api)
+
+    def get_system_webgui_settings(self) -> WebGUISettings:
+        raw = self._rest.get(Endpoints.SYSTEM_WEBGUI_SETTINGS)
+        return _parse_object_response(raw, "/system/webgui/settings", WebGUISettings.from_api)

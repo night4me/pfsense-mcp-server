@@ -511,3 +511,43 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # P1 Batch F candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; hostname/domain
+    # redacted by default -- conservative posture, not a schema-confirmed
+    # secret). Not yet LAB-verified.
+    SYSTEM_HOSTNAME = EndpointInfo(
+        path_suffix="/system/hostname",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch F candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found). Not yet LAB-verified.
+    SYSTEM_TIMEZONE = EndpointInfo(
+        path_suffix="/system/timezone",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch F candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; dnsserver redacted by
+    # default). Not yet LAB-verified.
+    SYSTEM_DNS = EndpointInfo(
+        path_suffix="/system/dns",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch F candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; boolean flag only, not
+    # the password itself). Not yet LAB-verified.
+    SYSTEM_CONSOLE = EndpointInfo(
+        path_suffix="/system/console",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch F candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; re-verified secret-free,
+    # protocol/port/sslcertref only). Not yet LAB-verified.
+    SYSTEM_WEBGUI_SETTINGS = EndpointInfo(
+        path_suffix="/system/webgui/settings",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
