@@ -60,6 +60,8 @@ from .read import (
     routing_static_routes,
     service_status,
     ssh_settings,
+    status_ipsec_child_sas,
+    status_ipsec_sas,
     system_certificate_authorities,
     system_certificates,
     system_hasync,
@@ -131,6 +133,8 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_routing_static_routes",
         "pfsense_get_service_status",
         "pfsense_get_ssh_settings",
+        "pfsense_get_status_ipsec_child_sas",
+        "pfsense_get_status_ipsec_sas",
         "pfsense_get_system_certificate_authorities",
         "pfsense_get_system_certificates",
         "pfsense_get_system_hasync",
@@ -278,6 +282,10 @@ class ToolRegistry:
             self._register_firewall_virtual_ip_read()
         if Capability.SYSTEM_CERTIFICATE_AUTHORITY_READ in self._capabilities:
             self._register_system_certificate_authority_read()
+        if Capability.STATUS_IPSEC_SA_READ in self._capabilities:
+            self._register_status_ipsec_sa_read()
+        if Capability.STATUS_IPSEC_CHILD_SA_READ in self._capabilities:
+            self._register_status_ipsec_child_sa_read()
 
         self.register_all_write()
 
@@ -592,6 +600,16 @@ class ToolRegistry:
     def _register_system_certificate_authority_read(self) -> None:
         fn = system_certificate_authorities.build(self._client)
         wrapped = audit_logged("pfsense_get_system_certificate_authorities", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_ipsec_sa_read(self) -> None:
+        fn = status_ipsec_sas.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_ipsec_sas", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_ipsec_child_sa_read(self) -> None:
+        fn = status_ipsec_child_sas.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_ipsec_child_sas", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

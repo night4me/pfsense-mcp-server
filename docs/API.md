@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 51 READ, 0 WRITE
+Registered tools: 53 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -379,6 +379,31 @@ Common parameters:
   default. The CARP shared secret (`password`) is never returned under any
   argument.
 - **Example:** `{"name":"pfsense_get_firewall_virtual_ips","arguments":{}}`
+
+## VPN
+
+### `pfsense_get_status_ipsec_sas`
+
+- **Purpose:** List live IPsec security association (SA/tunnel) status:
+  state, algorithms, timers, and nested child SAs.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[IPsecSaStatus]`.
+- **Security:** Literal local/remote host and ID addresses (at both the
+  tunnel and nested child-SA level) are omitted by default. No key
+  material is present in status data.
+- **Example:** `{"name":"pfsense_get_status_ipsec_sas","arguments":{}}`
+
+### `pfsense_get_status_ipsec_child_sas`
+
+- **Purpose:** List live IPsec child SA status: state, algorithms,
+  byte/packet counters, and rekey timers.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[IPsecChildSaStatus]`.
+- **Security:** Literal local/remote traffic-selector subnets are
+  omitted by default.
+- **Example:** `{"name":"pfsense_get_status_ipsec_child_sas","arguments":{}}`
 
 ## Users and API identities
 

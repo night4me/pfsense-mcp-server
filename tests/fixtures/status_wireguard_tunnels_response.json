@@ -1,0 +1,46 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "tun_wg0",
+      "status": "up",
+      "public_key": "SYNTHETIC-TUNNEL-PUBLIC-KEY-BASE64==",
+      "listen_port": "51820",
+      "mtu": 1420,
+      "transfer_rx": 4096,
+      "transfer_tx": 8192,
+      "inpkts": 40,
+      "outpkts": 80,
+      "descr": "Synthetic WireGuard tunnel (offline fixture)",
+      "peers": [
+        {
+          "tunnel_device": "tun_wg0",
+          "public_key": "SYNTHETIC-PUBLIC-KEY-BASE64==",
+          "endpoint": "203.0.113.20:51820",
+          "allowed_ips": ["192.0.2.2/32"],
+          "latest_handshake": 1755600000,
+          "transfer_rx": 1024,
+          "transfer_tx": 2048,
+          "persistent_keepalive": "25",
+          "descr": "Synthetic peer (offline fixture)"
+        }
+      ]
+    },
+    {
+      "name": null,
+      "status": null,
+      "public_key": null,
+      "listen_port": null,
+      "mtu": null,
+      "transfer_rx": null,
+      "transfer_tx": null,
+      "inpkts": null,
+      "outpkts": null,
+      "descr": null,
+      "peers": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

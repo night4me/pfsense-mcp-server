@@ -38,6 +38,22 @@ never production) before public registration.
     `system_certificate_authorities`) were verified against real,
     populated LAB objects, not just an empty envelope — the latter
     against the LAB's own internal CA.
+- **2 more READ tools (P1 Batch A, partial), public MCP contract 51 →
+  53 (0 WRITE, unchanged):**
+  - `pfsense_get_status_ipsec_sas` — live IPsec SA/tunnel status,
+    including nested child SAs.
+  - `pfsense_get_status_ipsec_child_sas` — live IPsec child SA status.
+  - `IPsecSaStatus.child_sas` embeds full `IPsecChildSaStatus` objects
+    (schema-confirmed `$ref`) and is constructed through that model's
+    own parser for every nested item, not passed through as a raw dict.
+  - `status/wireguard/tunnels`/`status/wireguard/peers` were also
+    implemented and offline-tested this batch but remain unregistered:
+    the LAB used for this phase does not have `pfSense-pkg-WireGuard`
+    installed, so live verification is blocked pending a separate
+    owner decision (installing a package would be a LAB mutation,
+    outside this project's non-destructive READ-only LAB
+    authorization) — see "Security" below for the redaction work
+    already done regardless.
 
 ### Security
 
@@ -58,6 +74,23 @@ never production) before public registration.
   verification found it genuinely absent from a real live response (not
   merely `null`), a compatibility finding the schema alone did not
   surface.
+- **`WireGuardPeerStatus.preshared_key` is confirmed present in the
+  live *status* object** (not merely the config object) and is **never
+  modeled at all**, matching the `VirtualIP.password`/
+  `CertificateAuthority.prv` precedent exactly. `WireGuardTunnelStatus.peers`
+  is schema-confirmed to embed full `WireGuardPeerStatus` objects and is
+  constructed through that model's own parser for every nested item —
+  a raw-dict passthrough there would have silently leaked
+  `preshared_key` verbatim into the tunnel-status tool's output.
+  Independently re-confirmed via the owner's pfREST 2.10 settings-UI
+  sensitive-field classification, which agrees with every exclusion
+  this project has already made
+  (`OpenVPNClient.proxy_passwd`/`.auth_pass`, `VirtualIP.password`,
+  `CertificateAuthority.prv`, `WireGuardPeer.presharedkey`,
+  `WireGuardPeerStatus.preshared_key`, `WireGuardTunnel.privatekey`) —
+  this project's own model-level exclusions remain the enforcement
+  mechanism regardless; pfREST's own redaction behavior, if any, is
+  never relied upon.
 
 ### Fixed
 

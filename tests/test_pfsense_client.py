@@ -5319,3 +5319,534 @@ def test_get_system_certificate_authorities_shape_error_does_not_leak_raw_field_
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_certificate_authorities()
     assert sentinel not in str(excinfo.value)
+
+
+STATUS_IPSEC_SAS_FIXTURE = Path(__file__).parent / "fixtures" / "status_ipsec_sas_response.json"
+STATUS_IPSEC_SAS_IDENTIFYING_FIELDS = ("local_host", "local_id", "remote_host", "remote_id")
+
+
+def _status_ipsec_sas_body() -> dict:
+    return json.loads(STATUS_IPSEC_SAS_FIXTURE.read_text())
+
+
+def _status_ipsec_sas_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_ipsec_sas_body()
+    transport.register("GET", "/api/v2/status/ipsec/sas?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_ipsec_sas_omits_identifying_fields_by_default():
+    client, _ = _status_ipsec_sas_client()
+    sas = client.get_status_ipsec_sas()
+    assert len(sas) == 2
+    for sa in sas:
+        for field in STATUS_IPSEC_SAS_IDENTIFYING_FIELDS:
+            assert getattr(sa, field) is None
+
+
+def test_get_status_ipsec_sas_includes_identifying_fields_when_requested():
+    client, _ = _status_ipsec_sas_client()
+    sas = client.get_status_ipsec_sas(include_identifying_metadata=True)
+    first = next(s for s in sas if s.con_id == "con1")
+    assert first.local_host == "198.51.100.1"
+    assert first.remote_host == "203.0.113.1"
+    assert first.local_id == "198.51.100.1"
+    assert first.remote_id == "203.0.113.1"
+
+
+def test_get_status_ipsec_sas_maps_non_sensitive_fields():
+    client, _ = _status_ipsec_sas_client()
+    sas = client.get_status_ipsec_sas()
+    first = next(s for s in sas if s.con_id == "con1")
+    assert first.state == "ESTABLISHED"
+    assert first.version == 2
+    assert first.encr_alg == "AES_CBC"
+    assert first.established == 3600
+
+
+def test_get_status_ipsec_sas_nested_child_sas_constructed_as_typed_objects():
+    client, _ = _status_ipsec_sas_client()
+    sas = client.get_status_ipsec_sas()
+    first = next(s for s in sas if s.con_id == "con1")
+    assert first.child_sas is not None
+    assert len(first.child_sas) == 1
+    assert first.child_sas[0].name == "con1"
+    assert first.child_sas[0].state == "INSTALLED"
+
+
+def test_get_status_ipsec_sas_nested_child_sas_redaction_follows_parent_flag():
+    client, _ = _status_ipsec_sas_client()
+    sas = client.get_status_ipsec_sas()
+    first = next(s for s in sas if s.con_id == "con1")
+    assert first.child_sas[0].local_ts is None
+    assert first.child_sas[0].remote_ts is None
+
+    sas_revealed = client.get_status_ipsec_sas(include_identifying_metadata=True)
+    first_revealed = next(s for s in sas_revealed if s.con_id == "con1")
+    assert first_revealed.child_sas[0].local_ts == ["198.51.100.0/24"]
+    assert first_revealed.child_sas[0].remote_ts == ["203.0.113.0/24"]
+
+
+def test_get_status_ipsec_sas_handles_null_child_sas():
+    client, _ = _status_ipsec_sas_client()
+    sas = client.get_status_ipsec_sas()
+    second = next(s for s in sas if s.con_id is None)
+    assert second.child_sas is None
+
+
+def test_get_status_ipsec_sas_only_calls_endpoint_with_default_limit():
+    client, transport = _status_ipsec_sas_client()
+    client.get_status_ipsec_sas()
+    assert transport.calls == [("GET", "/api/v2/status/ipsec/sas?limit=100")]
+
+
+def test_get_status_ipsec_sas_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_ipsec_sas_body()
+    transport.register("GET", "/api/v2/status/ipsec/sas?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_ipsec_sas(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/ipsec/sas?limit=5")]
+
+
+def test_get_status_ipsec_sas_rejects_zero_limit():
+    client, _ = _status_ipsec_sas_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_ipsec_sas(limit=0)
+
+
+def test_get_status_ipsec_sas_rejects_limit_above_max():
+    client, _ = _status_ipsec_sas_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_ipsec_sas(limit=101)
+
+
+def test_get_status_ipsec_sas_invalid_limit_never_calls_transport():
+    client, transport = _status_ipsec_sas_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_ipsec_sas(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_ipsec_sas_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- zero configured
+    IPsec SAs on the LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_ipsec_sas_client(body)
+    assert client.get_status_ipsec_sas() == []
+
+
+def test_get_status_ipsec_sas_missing_data_key_raises_shape_error():
+    body = _status_ipsec_sas_body()
+    del body["data"]
+    client, _ = _status_ipsec_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_ipsec_sas()
+
+
+def test_get_status_ipsec_sas_item_wrong_type_raises_shape_error():
+    body = _status_ipsec_sas_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_ipsec_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_ipsec_sas()
+
+
+def test_get_status_ipsec_sas_required_field_missing_raises_shape_error():
+    body = _status_ipsec_sas_body()
+    del body["data"][0]["con_id"]
+    client, _ = _status_ipsec_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_ipsec_sas()
+
+
+def test_get_status_ipsec_sas_shape_error_does_not_leak_raw_field_values():
+    body = _status_ipsec_sas_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["con_id"] = [sentinel]
+    client, _ = _status_ipsec_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_ipsec_sas()
+    assert sentinel not in str(excinfo.value)
+
+
+STATUS_IPSEC_CHILD_SAS_FIXTURE = Path(__file__).parent / "fixtures" / "status_ipsec_child_sas_response.json"
+STATUS_IPSEC_CHILD_SAS_IDENTIFYING_FIELDS = ("local_ts", "remote_ts")
+
+
+def _status_ipsec_child_sas_body() -> dict:
+    return json.loads(STATUS_IPSEC_CHILD_SAS_FIXTURE.read_text())
+
+
+def _status_ipsec_child_sas_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_ipsec_child_sas_body()
+    transport.register("GET", "/api/v2/status/ipsec/child_sas?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_ipsec_child_sas_omits_identifying_fields_by_default():
+    client, _ = _status_ipsec_child_sas_client()
+    sas = client.get_status_ipsec_child_sas()
+    assert len(sas) == 2
+    for sa in sas:
+        for field in STATUS_IPSEC_CHILD_SAS_IDENTIFYING_FIELDS:
+            assert getattr(sa, field) is None
+
+
+def test_get_status_ipsec_child_sas_includes_identifying_fields_when_requested():
+    client, _ = _status_ipsec_child_sas_client()
+    sas = client.get_status_ipsec_child_sas(include_identifying_metadata=True)
+    first = next(s for s in sas if s.name == "con1")
+    assert first.local_ts == ["198.51.100.0/24"]
+    assert first.remote_ts == ["203.0.113.0/24"]
+
+
+def test_get_status_ipsec_child_sas_maps_non_sensitive_fields():
+    client, _ = _status_ipsec_child_sas_client()
+    sas = client.get_status_ipsec_child_sas()
+    first = next(s for s in sas if s.name == "con1")
+    assert first.state == "INSTALLED"
+    assert first.mode == "TUNNEL"
+    assert first.bytes_in == 1024
+
+
+def test_get_status_ipsec_child_sas_only_calls_endpoint_with_default_limit():
+    client, transport = _status_ipsec_child_sas_client()
+    client.get_status_ipsec_child_sas()
+    assert transport.calls == [("GET", "/api/v2/status/ipsec/child_sas?limit=100")]
+
+
+def test_get_status_ipsec_child_sas_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_ipsec_child_sas_body()
+    transport.register("GET", "/api/v2/status/ipsec/child_sas?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_ipsec_child_sas(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/ipsec/child_sas?limit=5")]
+
+
+def test_get_status_ipsec_child_sas_rejects_zero_limit():
+    client, _ = _status_ipsec_child_sas_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_ipsec_child_sas(limit=0)
+
+
+def test_get_status_ipsec_child_sas_rejects_limit_above_max():
+    client, _ = _status_ipsec_child_sas_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_ipsec_child_sas(limit=101)
+
+
+def test_get_status_ipsec_child_sas_invalid_limit_never_calls_transport():
+    client, transport = _status_ipsec_child_sas_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_ipsec_child_sas(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_ipsec_child_sas_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- zero configured
+    IPsec child SAs on the LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_ipsec_child_sas_client(body)
+    assert client.get_status_ipsec_child_sas() == []
+
+
+def test_get_status_ipsec_child_sas_missing_data_key_raises_shape_error():
+    body = _status_ipsec_child_sas_body()
+    del body["data"]
+    client, _ = _status_ipsec_child_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_ipsec_child_sas()
+
+
+def test_get_status_ipsec_child_sas_item_wrong_type_raises_shape_error():
+    body = _status_ipsec_child_sas_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_ipsec_child_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_ipsec_child_sas()
+
+
+def test_get_status_ipsec_child_sas_required_field_missing_raises_shape_error():
+    body = _status_ipsec_child_sas_body()
+    del body["data"][0]["name"]
+    client, _ = _status_ipsec_child_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_ipsec_child_sas()
+
+
+def test_get_status_ipsec_child_sas_shape_error_does_not_leak_raw_field_values():
+    body = _status_ipsec_child_sas_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["name"] = [sentinel]
+    client, _ = _status_ipsec_child_sas_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_ipsec_child_sas()
+    assert sentinel not in str(excinfo.value)
+
+
+STATUS_WIREGUARD_TUNNELS_FIXTURE = Path(__file__).parent / "fixtures" / "status_wireguard_tunnels_response.json"
+STATUS_WIREGUARD_PEERS_FIXTURE = Path(__file__).parent / "fixtures" / "status_wireguard_peers_response.json"
+WIREGUARD_PEER_STATUS_IDENTIFYING_FIELDS = ("allowed_ips", "endpoint")
+
+
+def _status_wireguard_tunnels_body() -> dict:
+    return json.loads(STATUS_WIREGUARD_TUNNELS_FIXTURE.read_text())
+
+
+def _status_wireguard_tunnels_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_wireguard_tunnels_body()
+    transport.register("GET", "/api/v2/status/wireguard/tunnels?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def _status_wireguard_peers_body() -> dict:
+    return json.loads(STATUS_WIREGUARD_PEERS_FIXTURE.read_text())
+
+
+def _status_wireguard_peers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_wireguard_peers_body()
+    transport.register("GET", "/api/v2/status/wireguard/peers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_wireguard_peers_never_exposes_preshared_key_field():
+    """preshared_key is confirmed present in the raw response (matching
+    real WireGuard status behavior) but injected only in-memory here --
+    never committed to a fixture file. The model must never expose it
+    under any argument combination."""
+
+    body = _status_wireguard_peers_body()
+    for entry in body["data"]:
+        entry["preshared_key"] = "SENTINEL-WIREGUARD-PRESHARED-KEY"
+    client, _ = _status_wireguard_peers_client(body)
+    for include in (False, True):
+        peers = client.get_status_wireguard_peers(include_identifying_metadata=include)
+        for peer in peers:
+            assert not hasattr(peer, "preshared_key")
+            assert "preshared_key" not in peer.model_dump()
+
+
+def test_get_status_wireguard_peers_omits_identifying_fields_by_default():
+    client, _ = _status_wireguard_peers_client()
+    peers = client.get_status_wireguard_peers()
+    assert len(peers) == 2
+    for peer in peers:
+        for field in WIREGUARD_PEER_STATUS_IDENTIFYING_FIELDS:
+            assert getattr(peer, field) is None
+
+
+def test_get_status_wireguard_peers_includes_identifying_fields_when_requested():
+    client, _ = _status_wireguard_peers_client()
+    peers = client.get_status_wireguard_peers(include_identifying_metadata=True)
+    first = next(p for p in peers if p.tunnel_device == "tun_wg0")
+    assert first.endpoint == "203.0.113.20:51820"
+    assert first.allowed_ips == ["192.0.2.2/32"]
+
+
+def test_get_status_wireguard_peers_maps_non_sensitive_fields():
+    client, _ = _status_wireguard_peers_client()
+    peers = client.get_status_wireguard_peers()
+    first = next(p for p in peers if p.tunnel_device == "tun_wg0")
+    assert first.public_key == "SYNTHETIC-PUBLIC-KEY-BASE64=="
+    assert first.transfer_rx == 1024
+    assert first.persistent_keepalive == "25"
+
+
+def test_get_status_wireguard_peers_only_calls_endpoint_with_default_limit():
+    client, transport = _status_wireguard_peers_client()
+    client.get_status_wireguard_peers()
+    assert transport.calls == [("GET", "/api/v2/status/wireguard/peers?limit=100")]
+
+
+def test_get_status_wireguard_peers_rejects_zero_limit():
+    client, _ = _status_wireguard_peers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_wireguard_peers(limit=0)
+
+
+def test_get_status_wireguard_peers_rejects_limit_above_max():
+    client, _ = _status_wireguard_peers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_wireguard_peers(limit=101)
+
+
+def test_get_status_wireguard_peers_invalid_limit_never_calls_transport():
+    client, transport = _status_wireguard_peers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_wireguard_peers(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_wireguard_peers_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_wireguard_peers_client(body)
+    assert client.get_status_wireguard_peers() == []
+
+
+def test_get_status_wireguard_peers_missing_data_key_raises_shape_error():
+    body = _status_wireguard_peers_body()
+    del body["data"]
+    client, _ = _status_wireguard_peers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_wireguard_peers()
+
+
+def test_get_status_wireguard_peers_item_wrong_type_raises_shape_error():
+    body = _status_wireguard_peers_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_wireguard_peers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_wireguard_peers()
+
+
+def test_get_status_wireguard_peers_shape_error_does_not_leak_raw_field_values():
+    body = _status_wireguard_peers_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _status_wireguard_peers_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_wireguard_peers()
+    assert sentinel not in str(excinfo.value)
+
+
+def test_get_status_wireguard_tunnels_maps_non_sensitive_fields():
+    client, _ = _status_wireguard_tunnels_client()
+    tunnels = client.get_status_wireguard_tunnels()
+    assert len(tunnels) == 2
+    first = next(t for t in tunnels if t.name == "tun_wg0")
+    assert first.status == "up"
+    assert first.public_key == "SYNTHETIC-TUNNEL-PUBLIC-KEY-BASE64=="
+    assert first.listen_port == "51820"
+
+
+def test_get_status_wireguard_tunnels_nested_peers_constructed_as_typed_objects():
+    client, _ = _status_wireguard_tunnels_client()
+    tunnels = client.get_status_wireguard_tunnels()
+    first = next(t for t in tunnels if t.name == "tun_wg0")
+    assert first.peers is not None
+    assert len(first.peers) == 1
+    assert first.peers[0].public_key == "SYNTHETIC-PUBLIC-KEY-BASE64=="
+
+
+def test_get_status_wireguard_tunnels_nested_peers_never_expose_preshared_key():
+    """Confirms the tunnel-status tool cannot leak a peer's
+    preshared_key through its nested peers field, even though the raw
+    per-peer object genuinely carries that field in real WireGuard
+    status responses (injected in-memory only, never in a fixture)."""
+
+    body = _status_wireguard_tunnels_body()
+    body["data"][0]["peers"][0]["preshared_key"] = "SENTINEL-WIREGUARD-PRESHARED-KEY"
+    client, _ = _status_wireguard_tunnels_client(body)
+    tunnels = client.get_status_wireguard_tunnels()
+    first = next(t for t in tunnels if t.name == "tun_wg0")
+    assert not hasattr(first.peers[0], "preshared_key")
+    assert "preshared_key" not in first.peers[0].model_dump()
+
+
+def test_get_status_wireguard_tunnels_nested_peers_redaction_follows_parent_flag():
+    client, _ = _status_wireguard_tunnels_client()
+    tunnels = client.get_status_wireguard_tunnels()
+    first = next(t for t in tunnels if t.name == "tun_wg0")
+    assert first.peers[0].endpoint is None
+
+    tunnels_revealed = client.get_status_wireguard_tunnels(include_identifying_metadata=True)
+    first_revealed = next(t for t in tunnels_revealed if t.name == "tun_wg0")
+    assert first_revealed.peers[0].endpoint == "203.0.113.20:51820"
+
+
+def test_get_status_wireguard_tunnels_handles_null_peers():
+    client, _ = _status_wireguard_tunnels_client()
+    tunnels = client.get_status_wireguard_tunnels()
+    second = next(t for t in tunnels if t.name is None)
+    assert second.peers is None
+
+
+def test_get_status_wireguard_tunnels_only_calls_endpoint_with_default_limit():
+    client, transport = _status_wireguard_tunnels_client()
+    client.get_status_wireguard_tunnels()
+    assert transport.calls == [("GET", "/api/v2/status/wireguard/tunnels?limit=100")]
+
+
+def test_get_status_wireguard_tunnels_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_wireguard_tunnels_body()
+    transport.register("GET", "/api/v2/status/wireguard/tunnels?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_wireguard_tunnels(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/wireguard/tunnels?limit=5")]
+
+
+def test_get_status_wireguard_tunnels_rejects_zero_limit():
+    client, _ = _status_wireguard_tunnels_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_wireguard_tunnels(limit=0)
+
+
+def test_get_status_wireguard_tunnels_rejects_limit_above_max():
+    client, _ = _status_wireguard_tunnels_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_wireguard_tunnels(limit=101)
+
+
+def test_get_status_wireguard_tunnels_invalid_limit_never_calls_transport():
+    client, transport = _status_wireguard_tunnels_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_wireguard_tunnels(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_wireguard_tunnels_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_wireguard_tunnels_client(body)
+    assert client.get_status_wireguard_tunnels() == []
+
+
+def test_get_status_wireguard_tunnels_missing_data_key_raises_shape_error():
+    body = _status_wireguard_tunnels_body()
+    del body["data"]
+    client, _ = _status_wireguard_tunnels_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_wireguard_tunnels()
+
+
+def test_get_status_wireguard_tunnels_item_wrong_type_raises_shape_error():
+    body = _status_wireguard_tunnels_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_wireguard_tunnels_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_wireguard_tunnels()
+
+
+def test_get_status_wireguard_tunnels_required_field_missing_raises_shape_error():
+    body = _status_wireguard_tunnels_body()
+    del body["data"][0]["name"]
+    client, _ = _status_wireguard_tunnels_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_wireguard_tunnels()
+
+
+def test_get_status_wireguard_tunnels_shape_error_does_not_leak_raw_field_values():
+    body = _status_wireguard_tunnels_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _status_wireguard_tunnels_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_wireguard_tunnels()
+    assert sentinel not in str(excinfo.value)

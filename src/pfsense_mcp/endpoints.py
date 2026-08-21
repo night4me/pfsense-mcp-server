@@ -337,3 +337,46 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-08-21, P1 Batch A, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, zero configured IPsec SAs at
+    # verification time -- ENDPOINT_VERIFIED, not FIELD_MODEL_LIVE_VERIFIED;
+    # field-type compatibility backed by the pinned schema-component
+    # match (267/267 paths, same as every prior LAB verification).
+    STATUS_IPSEC_SAS = EndpointInfo(
+        path_suffix="/status/ipsec/sas",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-21) -- same LAB verification pass as
+    # STATUS_IPSEC_SAS immediately above; identical result (zero
+    # configured child SAs, ENDPOINT_VERIFIED only).
+    STATUS_IPSEC_CHILD_SAS = EndpointInfo(
+        path_suffix="/status/ipsec/child_sas",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=False (2026-08-21) -- client/model implemented and
+    # offline-tested, but LAB verification is BLOCKED: this LAB
+    # appliance does not have pfSense-pkg-WireGuard installed
+    # (HTTP 404, response_id=MODEL_MISSING_REQUIRED_PACKAGE observed
+    # directly). Installing the package to complete verification would
+    # be a LAB environment mutation, outside this task's non-destructive
+    # READ-only authorization -- left for a separate owner decision, not
+    # silently worked around. WireGuardPeerStatus.preshared_key is a
+    # confirmed secret field, never modeled at all regardless (see model
+    # docstring) -- that constraint is independent of and unaffected by
+    # this verification blocker.
+    STATUS_WIREGUARD_TUNNELS = EndpointInfo(
+        path_suffix="/status/wireguard/tunnels",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=False (2026-08-21) -- same blocker as
+    # STATUS_WIREGUARD_TUNNELS immediately above (package not installed
+    # on this LAB).
+    STATUS_WIREGUARD_PEERS = EndpointInfo(
+        path_suffix="/status/wireguard/peers",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

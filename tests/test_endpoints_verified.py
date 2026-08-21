@@ -644,3 +644,51 @@ def test_system_certificate_authorities_path_suffix_has_no_api_prefix():
 
 def test_system_certificate_authorities_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.SYSTEM_CERTIFICATE_AUTHORITIES.path_suffix == "/system/certificate_authorities"
+
+
+def test_status_ipsec_sas_is_declared_verified():
+    assert Endpoints.STATUS_IPSEC_SAS.verified is True
+
+
+def test_status_ipsec_sas_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_IPSEC_SAS.path_suffix.startswith("/api")
+
+
+def test_status_ipsec_sas_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_IPSEC_SAS.path_suffix == "/status/ipsec/sas"
+
+
+def test_status_ipsec_child_sas_is_declared_verified():
+    assert Endpoints.STATUS_IPSEC_CHILD_SAS.verified is True
+
+
+def test_status_ipsec_child_sas_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_IPSEC_CHILD_SAS.path_suffix.startswith("/api")
+
+
+def test_status_ipsec_child_sas_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_IPSEC_CHILD_SAS.path_suffix == "/status/ipsec/child_sas"
+
+
+def test_status_wireguard_tunnels_is_declared_unverified():
+    assert Endpoints.STATUS_WIREGUARD_TUNNELS.verified is False
+
+
+def test_status_wireguard_tunnels_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_WIREGUARD_TUNNELS.path_suffix.startswith("/api")
+
+
+def test_status_wireguard_tunnels_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_WIREGUARD_TUNNELS.path_suffix == "/status/wireguard/tunnels"
+
+
+def test_status_wireguard_peers_is_declared_unverified():
+    assert Endpoints.STATUS_WIREGUARD_PEERS.verified is False
+
+
+def test_status_wireguard_peers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_WIREGUARD_PEERS.path_suffix.startswith("/api")
+
+
+def test_status_wireguard_peers_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_WIREGUARD_PEERS.path_suffix == "/status/wireguard/peers"

@@ -6146,6 +6146,987 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "STATUS_IPSEC_CHILD_SA_READ",
+      "client_method": "get_status_ipsec_child_sas",
+      "description": "List live IPsec child SA status: state, algorithms, byte/\n        packet counters, and rekey timers. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        local/remote traffic-selector subnets. Defaults to False.\n\n        limit: maximum number of child SAs to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/ipsec/child_sas",
+        "symbol": "STATUS_IPSEC_CHILD_SAS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_ipsec_child_sasArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_ipsec_child_sas",
+      "output_schema": {
+        "$defs": {
+          "IPsecChildSaStatus": {
+            "properties": {
+              "bytes_in": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes In"
+              },
+              "bytes_out": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes Out"
+              },
+              "dh_group": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dh Group"
+              },
+              "encap": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encap"
+              },
+              "encr_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encr Alg"
+              },
+              "encr_keysize": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encr Keysize"
+              },
+              "install_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Install Time"
+              },
+              "integ_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Integ Alg"
+              },
+              "life_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Life Time"
+              },
+              "local_ts": {
+                "anyOf": [
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Local Ts"
+              },
+              "mode": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mode"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "packets_in": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Packets In"
+              },
+              "packets_out": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Packets Out"
+              },
+              "protocol": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Protocol"
+              },
+              "rekey_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Rekey Time"
+              },
+              "remote_ts": {
+                "anyOf": [
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Ts"
+              },
+              "reqid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Reqid"
+              },
+              "spi_in": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Spi In"
+              },
+              "spi_out": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Spi Out"
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State"
+              },
+              "uniqueid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Uniqueid"
+              },
+              "use_in": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Use In"
+              },
+              "use_out": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Use Out"
+              }
+            },
+            "required": [
+              "bytes_in",
+              "bytes_out",
+              "dh_group",
+              "encap",
+              "encr_alg",
+              "encr_keysize",
+              "install_time",
+              "integ_alg",
+              "life_time",
+              "mode",
+              "name",
+              "packets_in",
+              "packets_out",
+              "protocol",
+              "rekey_time",
+              "reqid",
+              "spi_in",
+              "spi_out",
+              "state",
+              "uniqueid",
+              "use_in",
+              "use_out"
+            ],
+            "title": "IPsecChildSaStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/IPsecChildSaStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_ipsec_child_sasOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "STATUS_IPSEC_SA_READ",
+      "client_method": "get_status_ipsec_sas",
+      "description": "List live IPsec security association (SA/tunnel) status:\n        state, algorithms, timers, and nested child SAs. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        local/remote host and ID addresses (at both the tunnel and\n        nested child-SA level). Defaults to False.\n\n        limit: maximum number of SAs to return (1-100, default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/ipsec/sas",
+        "symbol": "STATUS_IPSEC_SAS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_ipsec_sasArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_ipsec_sas",
+      "output_schema": {
+        "$defs": {
+          "IPsecChildSaStatus": {
+            "properties": {
+              "bytes_in": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes In"
+              },
+              "bytes_out": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes Out"
+              },
+              "dh_group": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dh Group"
+              },
+              "encap": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encap"
+              },
+              "encr_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encr Alg"
+              },
+              "encr_keysize": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encr Keysize"
+              },
+              "install_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Install Time"
+              },
+              "integ_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Integ Alg"
+              },
+              "life_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Life Time"
+              },
+              "local_ts": {
+                "anyOf": [
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Local Ts"
+              },
+              "mode": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mode"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "packets_in": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Packets In"
+              },
+              "packets_out": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Packets Out"
+              },
+              "protocol": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Protocol"
+              },
+              "rekey_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Rekey Time"
+              },
+              "remote_ts": {
+                "anyOf": [
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Ts"
+              },
+              "reqid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Reqid"
+              },
+              "spi_in": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Spi In"
+              },
+              "spi_out": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Spi Out"
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State"
+              },
+              "uniqueid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Uniqueid"
+              },
+              "use_in": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Use In"
+              },
+              "use_out": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Use Out"
+              }
+            },
+            "required": [
+              "bytes_in",
+              "bytes_out",
+              "dh_group",
+              "encap",
+              "encr_alg",
+              "encr_keysize",
+              "install_time",
+              "integ_alg",
+              "life_time",
+              "mode",
+              "name",
+              "packets_in",
+              "packets_out",
+              "protocol",
+              "rekey_time",
+              "reqid",
+              "spi_in",
+              "spi_out",
+              "state",
+              "uniqueid",
+              "use_in",
+              "use_out"
+            ],
+            "title": "IPsecChildSaStatus",
+            "type": "object"
+          },
+          "IPsecSaStatus": {
+            "properties": {
+              "child_sas": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/IPsecChildSaStatus"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Child Sas"
+              },
+              "con_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Con Id"
+              },
+              "dh_group": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dh Group"
+              },
+              "encr_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encr Alg"
+              },
+              "encr_keysize": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Encr Keysize"
+              },
+              "established": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Established"
+              },
+              "initiator_spi": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Initiator Spi"
+              },
+              "integ_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Integ Alg"
+              },
+              "local_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Local Host"
+              },
+              "local_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Local Id"
+              },
+              "local_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Local Port"
+              },
+              "nat_any": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Nat Any"
+              },
+              "nat_remote": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Nat Remote"
+              },
+              "prf_alg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Prf Alg"
+              },
+              "rekey_time": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Rekey Time"
+              },
+              "remote_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Host"
+              },
+              "remote_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Id"
+              },
+              "remote_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Remote Port"
+              },
+              "responder_spi": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Responder Spi"
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State"
+              },
+              "uniqueid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Uniqueid"
+              },
+              "version": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Version"
+              }
+            },
+            "required": [
+              "con_id",
+              "dh_group",
+              "encr_alg",
+              "encr_keysize",
+              "established",
+              "initiator_spi",
+              "integ_alg",
+              "local_port",
+              "nat_any",
+              "nat_remote",
+              "prf_alg",
+              "rekey_time",
+              "remote_port",
+              "responder_spi",
+              "state",
+              "uniqueid",
+              "version",
+              "child_sas"
+            ],
+            "title": "IPsecSaStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/IPsecSaStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_ipsec_sasOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SYSTEM_CERTIFICATE_AUTHORITY_READ",
       "client_method": "get_system_certificate_authorities",
       "description": "List pfSense trusted Certificate Authorities: description,\n        trust/serial settings, and the CA certificate itself. The CA\n        private key is never returned by this tool. Read-only.\n\n        limit: maximum number of certificate authorities to return\n        (1-100, default 100).",

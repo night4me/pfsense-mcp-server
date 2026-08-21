@@ -1,0 +1,30 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "tunnel_device": "tun_wg0",
+      "public_key": "SYNTHETIC-PUBLIC-KEY-BASE64==",
+      "endpoint": "203.0.113.20:51820",
+      "allowed_ips": ["192.0.2.2/32"],
+      "latest_handshake": 1755600000,
+      "transfer_rx": 1024,
+      "transfer_tx": 2048,
+      "persistent_keepalive": "25",
+      "descr": "Synthetic peer (offline fixture)"
+    },
+    {
+      "tunnel_device": null,
+      "public_key": null,
+      "endpoint": null,
+      "allowed_ips": null,
+      "latest_handshake": null,
+      "transfer_rx": null,
+      "transfer_tx": null,
+      "persistent_keepalive": null,
+      "descr": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

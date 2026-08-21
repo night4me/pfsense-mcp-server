@@ -49,6 +49,8 @@ class Capability(Enum):
     SYSTEM_RESTAPI_VERSION_READ = auto()
     FIREWALL_VIRTUAL_IP_READ = auto()
     SYSTEM_CERTIFICATE_AUTHORITY_READ = auto()
+    STATUS_IPSEC_SA_READ = auto()
+    STATUS_IPSEC_CHILD_SA_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -104,6 +106,8 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.SYSTEM_RESTAPI_VERSION_READ,
         Capability.FIREWALL_VIRTUAL_IP_READ,
         Capability.SYSTEM_CERTIFICATE_AUTHORITY_READ,
+        Capability.STATUS_IPSEC_SA_READ,
+        Capability.STATUS_IPSEC_CHILD_SA_READ,
     }
 )
 

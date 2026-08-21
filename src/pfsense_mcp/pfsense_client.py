@@ -41,6 +41,8 @@ from .models.interface_config import InterfaceConfig
 from .models.interface_group import InterfaceGroup
 from .models.interface_vlan import InterfaceVlan
 from .models.interfaces import InterfaceStatus
+from .models.ipsec_child_sa_status import IPsecChildSaStatus
+from .models.ipsec_sa_status import IPsecSaStatus
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
 from .models.pf_sense_user import PfSenseUser
@@ -57,6 +59,8 @@ from .models.system_rest_api_settings import SystemRestApiSettings
 from .models.system_restapi_version import SystemRestApiVersion
 from .models.system_tunable import SystemTunable
 from .models.system_version import SystemVersion
+from .models.wireguard_peer_status import WireGuardPeerStatus
+from .models.wireguard_tunnel_status import WireGuardTunnelStatus
 from .rest_api_client import RestApiClient
 
 FIREWALL_STATES_MIN_LIMIT = 1
@@ -177,6 +181,22 @@ FIREWALL_VIRTUAL_IPS_MAX_LIMIT = 100
 
 SYSTEM_CERTIFICATE_AUTHORITIES_MIN_LIMIT = 1
 SYSTEM_CERTIFICATE_AUTHORITIES_MAX_LIMIT = 100
+
+
+STATUS_IPSEC_SAS_MIN_LIMIT = 1
+STATUS_IPSEC_SAS_MAX_LIMIT = 100
+
+
+STATUS_IPSEC_CHILD_SAS_MIN_LIMIT = 1
+STATUS_IPSEC_CHILD_SAS_MAX_LIMIT = 100
+
+
+STATUS_WIREGUARD_TUNNELS_MIN_LIMIT = 1
+STATUS_WIREGUARD_TUNNELS_MAX_LIMIT = 100
+
+
+STATUS_WIREGUARD_PEERS_MIN_LIMIT = 1
+STATUS_WIREGUARD_PEERS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -687,3 +707,68 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.SYSTEM_CERTIFICATE_AUTHORITIES, params={"limit": limit})
         return _parse_list_response(raw, "/system/certificate_authorities", SystemCertificateAuthority.from_api)
+
+    def get_status_ipsec_sas(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[IPsecSaStatus]:
+        if not (STATUS_IPSEC_SAS_MIN_LIMIT <= limit <= STATUS_IPSEC_SAS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_IPSEC_SAS_MIN_LIMIT} and {STATUS_IPSEC_SAS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_IPSEC_SAS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/ipsec/sas",
+            lambda data: IPsecSaStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_status_ipsec_child_sas(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[IPsecChildSaStatus]:
+        if not (STATUS_IPSEC_CHILD_SAS_MIN_LIMIT <= limit <= STATUS_IPSEC_CHILD_SAS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_IPSEC_CHILD_SAS_MIN_LIMIT} and "
+                f"{STATUS_IPSEC_CHILD_SAS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_IPSEC_CHILD_SAS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/ipsec/child_sas",
+            lambda data: IPsecChildSaStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_status_wireguard_tunnels(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[WireGuardTunnelStatus]:
+        if not (STATUS_WIREGUARD_TUNNELS_MIN_LIMIT <= limit <= STATUS_WIREGUARD_TUNNELS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_WIREGUARD_TUNNELS_MIN_LIMIT} and "
+                f"{STATUS_WIREGUARD_TUNNELS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_WIREGUARD_TUNNELS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/wireguard/tunnels",
+            lambda data: WireGuardTunnelStatus.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
+
+    def get_status_wireguard_peers(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[WireGuardPeerStatus]:
+        if not (STATUS_WIREGUARD_PEERS_MIN_LIMIT <= limit <= STATUS_WIREGUARD_PEERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_WIREGUARD_PEERS_MIN_LIMIT} and "
+                f"{STATUS_WIREGUARD_PEERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_WIREGUARD_PEERS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/wireguard/peers",
+            lambda data: WireGuardPeerStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
