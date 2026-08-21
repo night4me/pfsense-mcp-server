@@ -1,6 +1,6 @@
 [project]
 name = "pfsense-mcp-server"
-version = "0.5.0"
+version = "0.5.1"
 description = "Security-focused local MCP server exposing strongly typed READ tools for pfSense."
 readme = "README.md"
 license = "MIT"
@@ -222,6 +222,7 @@ include = [
     "/docs/ACCEPTANCE_v0.4.1.md",
     "/docs/ACCEPTANCE_v0.4.2.md",
     "/docs/ACCEPTANCE_v0.5.0.md",
+    "/docs/ACCEPTANCE_v0.5.1.md",
     "/docs/API.md",
     "/docs/PYPI_RELEASE.md",
     "/docs/RECOVERY_CONTRACT_SPEC.md",

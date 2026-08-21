@@ -18,8 +18,13 @@ scripting surface, or any way to change the appliance by accident.
 - Covers roughly **80% of the useful READ capability surface** identified
   by this project's own capability audit (267 OpenAPI paths / 243 GET
   operations reviewed, every one given an explicit disposition).
-- Every tool is **verified against a real pfSense instance** before public
-  registration — LAB or production, never assumed from schema alone — see
+- Every one of the 84 tools has been **exercised at least once against a
+  real pfSense instance** (LAB or production) before public registration
+  and confirmed to return a response matching this project's typed
+  model — never assumed from schema alone. Depth varies by tool: some
+  were confirmed against real, populated data; others have so far only
+  been observed returning a valid empty/default envelope on every
+  system tested (noted per capability where relevant) — see
   [Compatibility](#requirements--compatibility).
 - **Explicit capability → privilege mapping** for every tool: least-privilege
   pfSense identities are documented and derivable from source, not
@@ -96,6 +101,33 @@ enabled by implementation.
   change — see [Security model](#security-model) for what's actually
   enforced, not just designed.
 
+**The READ trust path, in one diagram:**
+
+```mermaid
+flowchart LR
+    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 84, no dispatcher)"]
+    B --> C["Capability / profile gate<br/>(auditor: READ only)"]
+    C --> D["Least-privilege mapping<br/>(exact pfSense privilege)"]
+    D --> E["One fixed typed<br/>client method"]
+    E --> F["pfREST GET<br/>(GET-only, enforced)"]
+    F --> G[("pfSense appliance")]
+    G --> H["Typed model boundary<br/>(secret fields excluded<br/>by construction)"]
+    H --> I["Safe MCP result"]
+
+    style A fill:#eee,stroke:#333
+    style G fill:#eee,stroke:#333
+    style C fill:#fff3cd,stroke:#856404
+    style D fill:#fff3cd,stroke:#856404
+    style H fill:#d1e7dd,stroke:#0f5132
+```
+
+Every one of the 84 tools takes this same path — no exceptions, no
+alternate route. The yellow boxes are hard gates (fail closed, not
+merely checked); the green box is where confirmed secret-bearing fields
+are structurally excluded, not filtered. See
+[the full architecture diagrams page](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/) for
+the detailed sequence diagram this summarizes.
+
 I don't mind if an AI answers a question incorrectly. I do mind if an AI
 accidentally disconnects my house from the Internet. That single design
 principle explains almost every architectural decision in this
@@ -108,7 +140,7 @@ path.
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.5.0'
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.5.1'
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```
@@ -145,52 +177,86 @@ token exists.
 
 ### pfSense edition/version compatibility
 
-Evidence tiers used below:
+Evidence tiers used below — deliberately mutually exclusive, so no two
+rows can plausibly satisfy the same tier:
 
 | Tier | Meaning |
 |---|---|
-| **LIVE VERIFIED** | Exercised against a real, live pfSense installation (LAB or production) with this project's own registered tools. |
-| **LAB VERIFIED** | Exercised against the project's controlled, disposable LAB appliance. |
-| **SUPPORTED / COMPATIBLE** | Not directly exercised, but sufficiently established by matching API/schema/platform evidence from a verified adjacent version. |
-| **EXPECTED COMPATIBLE / UNVERIFIED** | Reasonable expectation from public documentation only; insufficient evidence for a stronger claim. |
+| **PRODUCTION VERIFIED** | Exercised against a real **production** pfSense appliance, under an explicit, narrowly-scoped, owner-authorized READ-only verification pass. |
+| **LAB VERIFIED** | Exercised against this project's controlled, disposable **LAB** appliance — never production. |
+| **SUPPORTED / COMPATIBLE** | Not directly exercised on that exact release, but compatibility is established by *this project's own* stronger adjacent evidence (e.g. a schema fetch or tool invocation against a release one step away with proven zero drift) — more than a plausible expectation, short of a direct test. |
+| **EXPECTED COMPATIBLE / UNVERIFIED** | A reasonable expectation from public vendor documentation, FreeBSD-generation similarity, or cross-release package-version behavior — but nothing this project directly exercised against that release. Do not read this as "supported." |
 
 | Platform | Version | Status | Evidence |
 |---|---|---|---|
 | pfSense CE | 2.9.0 (FreeBSD 16.0-CURRENT, pfREST 2.10) | **LAB VERIFIED** | Current LAB baseline; full public contract exercised against a disposable, isolated appliance. |
 | pfSense CE | 2.8.1 (pfREST 2.10) | **LAB VERIFIED** | Prior LAB baseline; this project's READ-expansion audit's initial 7-tool backlog was verified here before the LAB's platform upgrade to CE 2.9.0. |
-| pfSense Plus | 26.07-RELEASE | **LIVE VERIFIED** | Owner-authorized, READ-only production compatibility pass: 82 of 84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified as package-absent, not a compatibility failure. The REST API package's own self-reported version (`pfsense_get_system_restapi_version`'s `current_version` field) was directly confirmed as **v2.10** — identical to both CE LAB baselines below. Schema-level: the live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components; the only differences found across every field in every component were 5 instance-specific runtime default values, never a type or nullability change. Zero secret-bearing fields present in any exercised response. |
-| pfSense Plus | 25.11 | **SUPPORTED / COMPATIBLE** (not live-verified) | No live or LAB access was available for this version. Classified as supported based on converging evidence: the same pfREST v2.10 package this project directly confirmed (via `pfsense_get_system_restapi_version`, not inferred) on CE 2.8.1, CE 2.9.0, and Plus 26.07 already spans three different platform release numbers across both editions without incident; and Netgate's own published 25.11 release notes state its base OS was updated to FreeBSD 16-CURRENT, matching the CE 2.9.0 LAB baseline's directly-observed FreeBSD generation. This is an inference from adjacent evidence, not a test result — treat accordingly. |
+| pfSense Plus | 26.07-RELEASE | **PRODUCTION VERIFIED** | Owner-authorized, READ-only production compatibility pass: 82 of 84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified as package-absent, not a compatibility failure. The REST API package's own self-reported version (`pfsense_get_system_restapi_version`'s `current_version` field) was directly confirmed as **v2.10** — identical to both CE LAB baselines below. Schema-level: the live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components; the only differences found across every field in every component were 5 instance-specific runtime default values, never a type or nullability change. Zero secret-bearing fields present in any exercised response. |
+| pfSense Plus | 25.11 | **EXPECTED COMPATIBLE / UNVERIFIED** | No live or LAB access to a 25.11 instance was available — nothing in this project has directly exercised a schema fetch, tool call, or package inspection against this specific release. The evidence available is entirely adjacent: the same pfREST v2.10 package this project directly confirmed (via `pfsense_get_system_restapi_version`, not inferred) on CE 2.8.1, CE 2.9.0, and Plus 26.07 already spans three different platform release numbers across both editions without incident; and Netgate's own published 25.11 release notes state its base OS was updated to FreeBSD 16-CURRENT, matching the CE 2.9.0 LAB baseline's directly-observed FreeBSD generation. That is a reasonable expectation, not this project's own stronger evidence — hence `EXPECTED COMPATIBLE / UNVERIFIED`, not `SUPPORTED / COMPATIBLE`. |
 
-pfSense platform version, edition, and REST API package version are
-independent facts, not proxies for one another. The REST API package's
-own self-reported version (`pfsense_get_system_restapi_version`'s
-`current_version` field) was directly, independently confirmed as
-**v2.10** on three separate live systems: the CE 2.8.1 LAB, the CE
-2.9.0 LAB, and — via this release's owner-authorized production
-compatibility pass — pfSense Plus 26.07. That identical version string
-held across three different platform release numbers and both
-editions, so pfSense REST API package versioning is **not** required
-to numerically match the pfSense platform version.
+pfSense platform version, edition, FreeBSD generation, and REST API
+package variant/version are five independent facts, not proxies for one
+another:
 
-The REST API package does **not** appear as a discrete entry in the
-general installed-package listing (`pfsense_get_system_packages`) on
-either edition — confirmed directly on both the CE 2.9.0 LAB (which
-lists only the one other package genuinely installed there) and the
-Plus 26.07 production appliance (which lists 9 other installed
-packages, none named RESTAPI). This is a consistent characteristic of
-how the REST API package reports itself through that specific endpoint
-on every platform tested, **not a CE-vs-Plus difference**, and it does
-not mean the package is unversioned or merely a built-in platform
-feature with no package identity: the dedicated version-check endpoint
-directly confirms it is a real, versioned package (`v2.10`) on every
-platform tested. Schema-level comparison (above) provides independent,
-additional evidence of compatibility.
+- **Platform version** (e.g. `26.07-RELEASE`) and **edition** (CE vs.
+  Plus) are read directly from `pfsense_get_system_version`/
+  `pfsense_get_system_status`.
+- **REST API package version**: self-reported (`pfsense_get_system_restapi_version`'s
+  `current_version` field) and directly, independently confirmed as
+  **v2.10** on three separate live systems — the CE 2.8.1 LAB, the CE
+  2.9.0 LAB, and, via this release's owner-authorized production pass,
+  pfSense Plus 26.07. That identical version string held across three
+  different platform release numbers and both editions, so REST API
+  package versioning is **not** required to numerically match the
+  pfSense platform version.
+- **REST API package variant**: on every platform this project has
+  directly tested — the CE 2.9.0 LAB (which lists only the one other
+  package actually installed there) and the Plus 26.07 production
+  appliance (which lists 9 other installed packages) — the REST API
+  package does **not** appear as a discrete named entry in
+  `pfsense_get_system_packages`, the REST API's own general
+  installed-package listing endpoint. **This omission is a property of
+  that one pfREST endpoint, confirmed identical on both CE and Plus —
+  it says nothing about, and must not be confused with, the appliance's
+  underlying FreeBSD/pfSense package database.** The REST API package
+  itself is unambiguously real and versioned: the dedicated
+  version-check endpoint above directly confirms `v2.10` on every
+  platform tested. An earlier draft of this document incorrectly
+  concluded from this same endpoint's output that the REST API "ships
+  as a built-in platform component" on Plus specifically — that was
+  wrong on both counts (Plus does run a real, versioned REST API
+  package, and the omission is not a CE-vs-Plus difference); see
+  `CHANGELOG.md` for the correction record.
+- **Schema/API compatibility**: verified independently of the above, by
+  direct structural comparison (267/267 paths, 186/186 components) —
+  see the Plus 26.07 row above.
 
-**Package-conditional tools.** Two tools
+**Package-conditional tools.** Every one of the 84 registered tools'
+underlying endpoints was checked against the pfREST schema's own
+declared package requirements, not assumed. Two tools
 (`pfsense_get_status_wireguard_tunnels`, `pfsense_get_status_wireguard_peers`)
-require `pfSense-pkg-WireGuard` to be installed; they return a
-package-absent result (not an error) when it isn't. No other tool in the
-public contract has an external package dependency.
+require `pfSense-pkg-WireGuard` **in practice**: they return an
+automatically-classified package-absent result (HTTP 404,
+`MODEL_MISSING_REQUIRED_PACKAGE`) — never an error — when the package
+isn't installed, confirmed directly on both the LAB and production
+systems used for this project's testing.
+
+Four further tools' endpoints declare a required package in the
+schema's own metadata but do **not** gate on it in practice, confirmed
+by direct invocation against systems that genuinely lack the declared
+package: `pfsense_get_acme_settings` (schema declares
+`pfSense-pkg-acme`), `pfsense_get_bind_settings` (`pfSense-pkg-bind`),
+`pfsense_get_cron_jobs` (`pfSense-pkg-Cron`), and
+`pfsense_get_freeradius_eap` (`pfSense-pkg-freeradius3`) all returned a
+successful, real response on the CE 2.9.0 LAB (which has none of these
+four packages installed) and on the Plus 26.07 production appliance
+(which has none of the first three, though `pfSense-pkg-Cron` happens
+to be installed there). These read as stored configuration/default
+settings structures rather than genuinely package-gated runtime state,
+unlike the WireGuard status pair, which report live package-dependent
+state and do 404 when absent. Do not assume a schema-declared package
+requirement reflects actual runtime gating without direct verification
+— this project checked, rather than guessed.
 
 ## MCP client setup
 
@@ -263,8 +329,42 @@ not simply an API credential placed behind an MCP tool.
   fail-closed reconciliation on any ambiguous outcome — never a blind
   retry.
 - Integrity-protected, MAC-authenticated audit trail and state.
-- Optional hardware-backed TPM monotonic witness for anti-rollback
-  protection.
+- Hardware-backed TPM monotonic witness for anti-rollback protection —
+  the only anchor-assurance backend implemented today (a software-only
+  posture is modeled but has no backend yet) and required for a plan to
+  be considered safe to proceed in production.
+
+**The authorization path, in one diagram:**
+
+```mermaid
+flowchart LR
+    A["Default profile:<br/>0 WRITE tools<br/>(not reachable)"] -.->|"explicit operator<br/>opt-in required"| B["write_protected profile<br/>+ full Tier 1 material<br/>provisioned"]
+    B --> C["Off-host signed<br/>authorization + confirmation<br/>(separate identities)"]
+    C --> D["6 fail-closed gates<br/>(signature, expiry, digest,<br/>freshness, one-time use)"]
+    D --> E["Sealed MutationExecutor<br/>(only path that ever sends)"]
+    E --> F["Authoritative read-back"]
+    F --> G{"Outcome?"}
+    G -->|"confirmed"| H["VERIFIED"]
+    G -->|"ambiguous"| I["RECONCILIATION<br/>(never blind retry)"]
+
+    style A fill:#f8d7da,stroke:#842029
+    style H fill:#d1e7dd,stroke:#0f5132
+    style I fill:#fff3cd,stroke:#856404
+    style E fill:#cfe2ff,stroke:#084298
+```
+
+**Implemented, verified, and default-reachable are three different
+things — do not conflate them.** This path is *implemented* (real code,
+shown above) and *verified* (twice, end-to-end, against a real
+disposable LAB appliance) for exactly one operation. It is **not**
+default-reachable: an operator must explicitly opt out of the default
+profile, and even then an AI cannot single-handedly produce a valid
+authorization — that requires an off-host Ed25519 signature the running
+server never holds the key for. See
+[the full authorization-path diagram](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/) for
+the gate-by-gate detail and
+[the defense-in-depth diagram](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/) for how this
+fits alongside the READ path.
 
 **`verified=True` does not mean WRITE is enabled by default.**
 Verification, profile/posture selection, authorization, confirmation,
@@ -317,15 +417,28 @@ A browsable version of the full documentation set below is published at
 
 ## Release status
 
-**v0.5.0 is the immutable production baseline, published on PyPI —
-84 READ tools, 0 WRITE tools.** A major READ-capability expansion over
-the prior `v0.4.2` baseline — exactly a 100% increase in public READ
-tool count (42 → 84) — driven by a comprehensive capability discovery
-audit that found the prior 42-tool contract covered only ~40% of the
-useful READ capability universe; v0.5.0 covers roughly 80%. See
-`CHANGELOG.md`'s `[0.5.0]` entry for the complete, tool-by-tool list,
-the pfSense CE/Plus compatibility verification performed for this
-release, and every security-relevant finding along the way.
+**v0.5.1 is the immutable production baseline, published on PyPI —
+84 READ tools, 0 WRITE tools.** A documentation-accuracy and
+security-communication patch over `v0.5.0` — no MCP capability change,
+no runtime security-semantic change, public contract byte-identical to
+`v0.5.0`. It corrects an error `v0.5.0` shipped with (an incorrect
+pfSense Plus REST API packaging claim, found via post-publication
+review), completes the package-dependency documentation, sharpens the
+compatibility evidence-tier terminology, downgrades an overstated
+pfSense Plus 25.11 classification, and adds three new architecture
+diagrams explaining the READ and protected-WRITE security paths. See
+`CHANGELOG.md`'s `[0.5.1]` entry for the complete list.
+
+`v0.5.0` itself was a major READ-capability expansion over the prior
+`v0.4.2` baseline — exactly a 100% increase in public READ tool count
+(42 → 84) — driven by a comprehensive capability discovery audit that
+found the prior 42-tool contract covered only ~40% of the useful READ
+capability universe; this release covers roughly 80%. `v0.5.0`'s own
+tag, GitHub Release, and PyPI artifacts remain unmoved as an accurate
+historical record, including the packaging-claim error later found and
+corrected here — see `CHANGELOG.md`'s `[0.5.0]` entry for that
+release's complete, tool-by-tool list and every security-relevant
+finding along the way.
 
 The one WRITE capability this repository has ever added
 (`set_firewall_alias_description_v1`) is `verified=True` following
@@ -336,7 +449,7 @@ owner-driven signing ceremony for every individual mutation — see
 [the security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/)'s "Recovery and WRITE status"
 section for the precise, current description. The Tier 1 safety
 framework described above remains implemented, tested, structurally
-isolated code, unchanged by this READ expansion.
+isolated code, unchanged by this release.
 
 `v0.4.2` was a documentation/packaging-presentation patch over `v0.4.1`
 — no functional or security-relevant change — and remains a valid,

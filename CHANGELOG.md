@@ -7,6 +7,15 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-08-21
+
+**Documentation-accuracy and security-communication patch. NO MCP
+capability change. NO runtime security-semantic change. Public contract
+remains exactly 84 READ / 0 default WRITE**, byte-identical to `v0.5.0`
+— confirmed by an unchanged `tests/contracts/mcp_public_contract_v0.5.1.json`
+snapshot relative to `v0.5.0`'s. Every finding below is documentation or
+presentation only.
+
 ### Fixed
 
 - **Post-publication documentation correction (2026-08-21): incorrect
@@ -41,6 +50,105 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   underlying evidence (schema match, tool-count regression results)
   was always correct — only the packaging-mechanism inference was
   wrong.
+- **Package-dependency documentation was incomplete.** README only
+  documented the two WireGuard status tools as package-conditional.
+  Re-derived every one of the 84 registered endpoints' schema-declared
+  `Required packages` metadata directly (not assumed): four more tools
+  (`pfsense_get_acme_settings`, `pfsense_get_bind_settings`,
+  `pfsense_get_cron_jobs`, `pfsense_get_freeradius_eap`) reference a
+  package in the schema's own metadata (`pfSense-pkg-acme`,
+  `pfSense-pkg-bind`, `pfSense-pkg-Cron`, `pfSense-pkg-freeradius3`
+  respectively) but were directly confirmed, by invoking them against
+  systems genuinely lacking those packages (the CE 2.9.0 LAB for all
+  four; the Plus 26.07 production appliance for three of the four),
+  to succeed regardless — these read as stored
+  configuration/default-settings structures, not genuinely
+  package-gated runtime state, unlike the WireGuard status pair (which
+  do 404 with `MODEL_MISSING_REQUIRED_PACKAGE` when absent). README
+  now documents this distinction precisely instead of implying only
+  WireGuard has any package reference at all.
+- **Evidence-tier terminology overlapped.** README's compatibility
+  matrix previously used `LIVE VERIFIED` to mean "LAB or production,"
+  which overlapped with the separate `LAB VERIFIED` tier and made the
+  two indistinguishable for a reader. Replaced `LIVE VERIFIED` with
+  `PRODUCTION VERIFIED` (production only) so all four tiers
+  (`PRODUCTION VERIFIED` / `LAB VERIFIED` / `SUPPORTED / COMPATIBLE` /
+  `EXPECTED COMPATIBLE / UNVERIFIED`) are mutually exclusive. No
+  evidence changed — pfSense Plus 26.07's row is unaffected in
+  substance, only relabeled from `LIVE VERIFIED` to the more precise
+  `PRODUCTION VERIFIED`.
+- **pfSense Plus 25.11's classification was too strong for its
+  evidence.** Re-evaluated rather than preserved as previously written:
+  the evidence behind the prior `SUPPORTED / COMPATIBLE` classification
+  was entirely adjacent (FreeBSD-generation similarity via Netgate's
+  own 25.11 release notes, plus pfREST v2.10 behavior observed on
+  *other* releases) — nothing this project has directly exercised
+  touches a 25.11 instance in any way. Downgraded to
+  `EXPECTED COMPATIBLE / UNVERIFIED`, the tier this project's own newly
+  mutually-exclusive definitions assign to exactly this evidence
+  profile.
+- **An unqualified "verified before promotion" claim was too
+  universal.** README's "Key facts" bullet stated every tool is
+  "verified against a real pfSense instance before public
+  registration" without distinguishing depth. Reworded to state
+  precisely what is true: every one of the 84 tools was exercised at
+  least once and confirmed to match its typed model, but some have so
+  far only been observed against a valid empty/default envelope on
+  every system tested, not populated real data — the two are not the
+  same claim and the README no longer conflates them.
+- **`docs/TIER1_ARCHITECTURE.md` and `docs/ARCHITECTURE_DIAGRAMS.md`
+  were stale, describing the pre-`ADR-026` v0.3.0-era state** ("no
+  mutation executor exists yet," "adapter implementation remains
+  blocked," "these diagrams describe the immutable v0.3.0 production
+  baseline") despite the first WRITE capability having been built and
+  independently live-verified since 2026-08-16. Added a dated
+  historical note to `TIER1_ARCHITECTURE.md` (matching
+  `SECURITY_MODEL.md`'s own established correction pattern) rather than
+  rewriting its still-accurate generic reusable-framework content, and
+  updated `ARCHITECTURE_DIAGRAMS.md`'s framing and its
+  "Inert Tier 1 framework and future execution path" section — which
+  claimed "no executor, endpoint, capability, or tool is active" — to
+  describe the real, current architecture instead. This inaccuracy was
+  independent of, and unrelated to, the pfREST packaging finding above;
+  found during this release's own re-reading of the authoritative
+  architecture sources before drafting new diagrams.
+
+### Added
+
+- **Three new Mermaid architecture diagrams**, derived directly from
+  current source (`tools/registry.py`, `capabilities.py`, `profiles.py`,
+  `tier1/execution_coordinator.py`, `tier1/executor.py`,
+  `tier1/state_machine.py`) and accepted architecture
+  (`ADR-026`, `SECURITY_MODEL.md`), not from this changelog entry's own
+  prose:
+  - **READ security path** — the exact path every one of the 84 tools
+    takes, compact version in README near "Why this server," full
+    version in `docs/ARCHITECTURE_DIAGRAMS.md`.
+  - **Protected WRITE authorization path** — the gate-by-gate `ADR-026`
+    flow (off-host signature → 6 fail-closed pre-execution gates →
+    `RecoveryContract` → sealed `MutationExecutor` → read-back →
+    verified/reconciliation), compact version in README's "Protected
+    WRITE architecture" section, full version with all six gates named
+    individually in `docs/ARCHITECTURE_DIAGRAMS.md`. Explicitly
+    distinguishes `IMPLEMENTED` / `VERIFIED` / `DEFAULT-REACHABLE` as
+    three different claims, since the one capability that exists is
+    the first two but never the third.
+  - **Defense in depth / trust boundaries** — a single high-level
+    diagram in `docs/ARCHITECTURE_DIAGRAMS.md` showing which failure
+    class each layer actually stops, limits, constrains, or detects
+    (deliberately not a blanket "secure" label on any layer). Corrects
+    a self-caught drafting error: the TPM witness was initially
+    labeled "optional," which contradicts `SECURITY_MODEL.md`'s own
+    statement that production WRITE activation requires it (a
+    software-only anchor alternative is modeled but has no implemented
+    backend) — fixed before this diagram was ever committed.
+  - All four diagrams (three new plus the existing set) independently
+    validated with `mermaid`'s own parser (`mermaid.parse()` via a
+    headless DOM shim) before commit; full visual/browser rendering
+    was not available in this environment (missing
+    `chrome-headless-shell` system dependency), so parser-level syntax
+    validation is this release's evidence tier for "renders correctly"
+    rather than a rendered-image comparison.
 
 ## [0.5.0] - 2026-08-21
 
@@ -1039,7 +1147,8 @@ endpoint, or transport path is active.
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/night4me/pfsense-mcp-server/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.0...v0.4.1

@@ -7,14 +7,16 @@ capability or authorizes a production change.
 
 ## Current baseline
 
-**2026-08-21 update — current immutable published baseline is v0.5.0**
-(PyPI and GitHub; see `CHANGELOG.md`'s `[0.5.0]` entry) — a major
-READ-capability expansion over the prior v0.4.2 baseline (42 → 84
-tools, exactly a 100% increase), plus an independent, adversarial
-release-readiness audit covering pfSense CE/Plus compatibility
-(including a live-verified pfSense Plus 26.07 production READ pass),
-security regression, packaging, and documentation accuracy. No WRITE
-capability changed. The `v0.2.x`/`v0.3.0` sections immediately below are
+**2026-08-21 update — current immutable published baseline is v0.5.1**
+(PyPI and GitHub; see `CHANGELOG.md`'s `[0.5.1]` entry) — a
+documentation-accuracy and security-communication patch over `v0.5.0`
+(itself a major READ-capability expansion over the prior v0.4.2
+baseline: 42 → 84 tools, exactly a 100% increase). `v0.5.1` corrects a
+packaging-claim error found in `v0.5.0` after publication, completes
+package-dependency documentation, sharpens compatibility-evidence
+terminology, downgrades an overstated pfSense Plus 25.11 claim, and
+adds three new architecture diagrams. No WRITE capability changed at
+either release. The `v0.2.x`/`v0.3.0` sections immediately below are
 kept exactly as originally written, as an accurate historical record of
 what shipped and when — not rewritten to look cleaner. Treat "v0.3.0"
 in their text as the baseline *at the time those sections were

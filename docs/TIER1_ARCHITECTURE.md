@@ -1,5 +1,22 @@
 # Tier 1 safety architecture
 
+**Historical note (2026-08-21):** this page's original text (below)
+described the framework as entirely inert — "no mutation executor
+exists yet," "adapter implementation remains blocked" — written before
+the first capability (`set_firewall_alias_description_v1`) was actually
+built and independently live-verified per
+[`ADR-026`](adr/ADR-026-first-write-capability-adapter.md), accepted
+2026-08-12. That capability's sealed executor, adapter, and full
+authorization chain are real, committed, tested code today — see
+[`SECURITY_MODEL.md`](SECURITY_MODEL.md)'s "Recovery and WRITE status"
+section and the
+[architecture diagrams](ARCHITECTURE_DIAGRAMS.md#protected-write-authorization-path-adr-026)
+for the current, accurate description. This page's original text is
+left unedited below as the generic reusable-framework design record it
+still accurately describes for any *future* additional capability; do
+not read "no mutation executor exists yet" or "blocked" below as
+describing the one capability that already exists.
+
 Status: inert framework; no production mutation is reachable or authorized.
 
 ## Isolation and dependency direction
