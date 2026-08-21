@@ -10,7 +10,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 **Focused READ capability expansion — no WRITE change, no security-model
 change.** Follows an offline-only comprehensive READ capability discovery
 audit (267 OpenAPI paths / 243 GET operations reviewed; every GET given
-exactly one disposition) that found the prior 44-tool contract covered
+exactly one disposition) that found the prior 42-tool contract covered
 roughly 42% of the useful READ capability universe. Prioritized the
 audit's P0 backlog (7 candidates, all zero/near-zero risk) and, for each,
 independently re-verified the response schema for secrets before
@@ -20,6 +20,21 @@ never production) before public registration.
 
 ### Added
 
+- **2 new READ tools (production live-verified, pre-dating the P0
+  backlog below), public MCP contract 42 → 44 (0 WRITE, unchanged):**
+  - `pfsense_get_firewall_nat_outbound_mappings` — outbound NAT
+    mappings (`source`/`destination`/`target` address/alias fields
+    redacted by default, matching `FirewallNatPortForward`'s
+    established convention; `source_hash_key` is a hash seed, not a
+    credential, and stays visible).
+  - `pfsense_get_firewall_nat_one_to_one_mappings` — 1:1 NAT mappings
+    (`external`/`source`/`destination` redacted the same way).
+  - Owner-authorized, narrowly-scoped live **production** READ
+    verification (not LAB) of exactly these two endpoints: both typed
+    GETs succeeded with zero configured mappings in either category;
+    field-level type/nullability compatibility confirmed via an exact,
+    byte-for-byte match between the live OpenAPI schema and the pinned
+    v2.10 reference the models were derived from.
 - **7 new READ tools, public MCP contract 44 → 51 (0 WRITE, unchanged):**
   - `pfsense_get_interface_vlans` — 802.1Q VLAN interfaces.
   - `pfsense_get_routing_static_routes` — static routes (network/gateway

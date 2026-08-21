@@ -13,7 +13,17 @@ from pfsense_mcp.rest_api_client import RestApiClient
 from pfsense_mcp.tools.registry import KNOWN_READ_TOOL_NAMES, ToolRegistry
 from pfsense_mcp.transport.mock import MockTransport
 
-PROHIBITED_FIELDS = {"ipsecpsk", "password", "key"}
+PROHIBITED_FIELDS = {
+    "ipsecpsk",
+    "password",
+    "key",
+    "auth_pass",
+    "proxy_passwd",
+    "privatekey",
+    "presharedkey",
+    "preshared_key",
+    "prv",
+}
 
 
 def _property_names(value: object) -> set[str]:

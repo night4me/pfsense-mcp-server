@@ -2,9 +2,8 @@
 
 Field types/nullability were derived from the pinned v2.10 OpenAPI
 schema's `OneToOneNATMapping` component (already-captured evidence,
-not a new live call). Not yet cross-checked against an approved
-fixture from a real instance -- see `Endpoints.FIREWALL_NAT_ONE_TO_
-ONE_MAPPINGS.verified` (`False`) and
+not a new live call). Live-verified against production (`Endpoints.
+FIREWALL_NAT_ONE_TO_ONE_MAPPINGS.verified` is `True`) -- see
 `docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`. `external`/`source`/
 `destination` are network-topology-identifying address/alias fields
 and are redacted by default, matching `FirewallNatPortForward`'s

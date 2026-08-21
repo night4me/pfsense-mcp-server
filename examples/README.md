@@ -4,6 +4,12 @@ These guides configure supported MCP clients to launch the local
 `pfsense-mcp-server` process over stdio. Start with the project's
 [installation and credential instructions](../README.md#quick-start).
 
+Tool counts below (42) describe the currently **published** PyPI
+release. A source-built install from `main` currently exposes a larger,
+unreleased release-candidate contract — see the parent
+[README's release status](../README.md#release-status) for the exact
+count and distinction.
+
 | Client | Local stdio support | Guide |
 |---|---:|---|
 | Claude Desktop | Yes | [Claude Desktop](claude-desktop.md) |
