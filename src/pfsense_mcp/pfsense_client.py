@@ -62,7 +62,9 @@ from .models.ipsec_phase2_encryption import IPsecPhase2Encryption
 from .models.ipsec_sa_status import IPsecSaStatus
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
+from .models.openvpn_client_specific_override import OpenVpnClientSpecificOverride
 from .models.openvpn_client_status import OpenVpnClientStatus
+from .models.openvpn_server import OpenVpnServer
 from .models.openvpn_server_connection_status import OpenVpnServerConnectionStatus
 from .models.openvpn_server_route_status import OpenVpnServerRouteStatus
 from .models.openvpn_server_status import OpenVpnServerStatus
@@ -319,6 +321,14 @@ VPN_IPSEC_PHASE1_ENCRYPTIONS_MAX_LIMIT = 100
 
 VPN_IPSEC_PHASE2_ENCRYPTIONS_MIN_LIMIT = 1
 VPN_IPSEC_PHASE2_ENCRYPTIONS_MAX_LIMIT = 100
+
+
+VPN_OPENVPN_SERVERS_MIN_LIMIT = 1
+VPN_OPENVPN_SERVERS_MAX_LIMIT = 100
+
+
+VPN_OPENVPN_CSOS_MIN_LIMIT = 1
+VPN_OPENVPN_CSOS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -1234,3 +1244,36 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS, params={"limit": limit})
         return _parse_list_response(raw, "/vpn/ipsec/phase2/encryptions", IPsecPhase2Encryption.from_api)
+
+    def get_vpn_openvpn_servers(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVpnServer]:
+        if not (VPN_OPENVPN_SERVERS_MIN_LIMIT <= limit <= VPN_OPENVPN_SERVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_OPENVPN_SERVERS_MIN_LIMIT} and "
+                f"{VPN_OPENVPN_SERVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_OPENVPN_SERVERS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/openvpn/servers",
+            lambda data: OpenVpnServer.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_vpn_openvpn_csos(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVpnClientSpecificOverride]:
+        if not (VPN_OPENVPN_CSOS_MIN_LIMIT <= limit <= VPN_OPENVPN_CSOS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_OPENVPN_CSOS_MIN_LIMIT} and {VPN_OPENVPN_CSOS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_OPENVPN_CSOS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/openvpn/csos",
+            lambda data: OpenVpnClientSpecificOverride.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )

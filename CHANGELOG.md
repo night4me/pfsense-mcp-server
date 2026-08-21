@@ -300,6 +300,36 @@ never production) before public registration.
     on this LAB, since no IPsec Phase 1 is configured to derive
     options from). No package required for any of the three (base
     pfSense feature).
+- **2 more READ candidates (P1 Batch J, OpenVPN server config +
+  client-specific overrides) implemented and offline-tested, public
+  MCP contract unchanged at 82 (0 WRITE) — these two are NOT yet
+  registered:**
+  - `vpn/openvpn/servers` (`OpenVpnServer`, 73 fields) and
+    `vpn/openvpn/csos` (`OpenVpnClientSpecificOverride`, 27 fields).
+    Neither schema component has any `writeOnly` field, unlike the
+    Batch G CRL case. `caref`/`certref` are CA/certificate
+    *references*, not certificate material, matching this project's
+    established treatment of reference IDs as non-secret.
+    `tlsauth_keydir` is re-confirmed (a fourth time across sessions)
+    to be a direction-flag enum, not key material. The singular
+    `vpn/openvpn/server` endpoint is redundant with the plural
+    `vpn/openvpn/servers` (same underlying model) and is deliberately
+    not implemented, matching the established NAT-mappings precedent.
+  - Network/address fields (`local_network`/`local_networkv6`/
+    `remote_network`/`remote_networkv6`/`tunnel_network`/
+    `tunnel_networkv6`/`dns_server1-4`/`ntp_server1-2`/
+    `wins_server1-2`/`serverbridge_dhcp_start`/`serverbridge_dhcp_end`
+    on the server model; `common_name` plus the same address-field set
+    on the client-specific-override model) are redacted by default,
+    matching `RoutingStaticRoute.gateway`'s established convention.
+  - 37 of `OpenVpnServer`'s 73 fields and 5 of
+    `OpenVpnClientSpecificOverride`'s 27 fields are schema-documented
+    as only available under a specific `mode`/`use_tls`/`gwredir`/
+    `ping_action` condition and are treated as genuinely
+    possibly-absent via `.get()`, matching the `InterfaceLAGG`/
+    `TrafficShaperQueue` precedent.
+  - Not yet LAB-verified or publicly registered; no package required
+    (base pfSense feature).
 
 ### Security
 

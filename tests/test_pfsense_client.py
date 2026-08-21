@@ -9119,3 +9119,324 @@ def test_get_vpn_ipsec_phase2_encryptions_shape_error_does_not_leak_raw_field_va
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_vpn_ipsec_phase2_encryptions()
     assert sentinel not in str(excinfo.value)
+
+
+VPN_OPENVPN_SERVERS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_openvpn_servers_response.json"
+VPN_OPENVPN_SERVERS_SCALAR_IDENTIFYING_FIELDS = (
+    "tunnel_network",
+    "tunnel_networkv6",
+    "dns_server1",
+    "dns_server2",
+    "dns_server3",
+    "dns_server4",
+    "ntp_server1",
+    "ntp_server2",
+    "wins_server1",
+    "wins_server2",
+    "serverbridge_dhcp_start",
+    "serverbridge_dhcp_end",
+)
+VPN_OPENVPN_SERVERS_LIST_IDENTIFYING_FIELDS = (
+    "local_network",
+    "local_networkv6",
+    "remote_network",
+    "remote_networkv6",
+)
+
+
+def _vpn_openvpn_servers_body() -> dict:
+    return json.loads(VPN_OPENVPN_SERVERS_FIXTURE.read_text())
+
+
+def _vpn_openvpn_servers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_openvpn_servers_body()
+    transport.register("GET", "/api/v2/vpn/openvpn/servers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_openvpn_servers_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_openvpn_servers_client(body)
+    assert client.get_vpn_openvpn_servers() == []
+
+
+def test_get_vpn_openvpn_servers_omits_identifying_fields_by_default():
+    client, _ = _vpn_openvpn_servers_client()
+    servers = client.get_vpn_openvpn_servers()
+    assert len(servers) == 2
+    for server in servers:
+        for field in VPN_OPENVPN_SERVERS_SCALAR_IDENTIFYING_FIELDS:
+            assert getattr(server, field) is None
+        for field in VPN_OPENVPN_SERVERS_LIST_IDENTIFYING_FIELDS:
+            assert getattr(server, field) == []
+
+
+def test_get_vpn_openvpn_servers_includes_identifying_fields_when_requested():
+    client, _ = _vpn_openvpn_servers_client()
+    servers = client.get_vpn_openvpn_servers(include_identifying_metadata=True)
+    first = next(s for s in servers if s.vpnid == 1)
+    assert first.tunnel_network == "198.51.100.0/24"
+    assert first.tunnel_networkv6 == "2001:db8::/64"
+    assert first.remote_network == ["203.0.113.0/24"]
+    assert first.local_network == ["192.0.2.0/24"]
+    assert first.dns_server1 == "198.51.100.1"
+    assert first.wins_server1 == "198.51.100.1"
+
+
+def test_get_vpn_openvpn_servers_maps_non_sensitive_fields():
+    client, _ = _vpn_openvpn_servers_client()
+    servers = client.get_vpn_openvpn_servers()
+    first = next(s for s in servers if s.vpnid == 1)
+    assert first.description == "Synthetic OpenVPN server (offline fixture)"
+    assert first.mode == "server_tls_user"
+    assert first.protocol == "UDP4"
+    assert first.caref == "68f9c9c1a2b3d"
+    assert first.certref == "68f9c9c1a2b3e"
+    assert first.tlsauth_keydir == "default"
+    assert first.data_ciphers == ["AES-256-GCM"]
+
+
+def test_get_vpn_openvpn_servers_tolerates_missing_conditional_fields():
+    """37 of OpenVpnServer's 73 fields are each schema-documented as
+    only available for a specific mode/use_tls/gwredir/ping_action
+    condition -- confirm the model falls back to None/the schema's own
+    declared default when genuinely absent, rather than raising a
+    shape error. The fixture's second item already omits all 37;
+    this test asserts the fallback values directly."""
+
+    client, _ = _vpn_openvpn_servers_client()
+    servers = client.get_vpn_openvpn_servers()
+    minimal = next(s for s in servers if s.vpnid == 2)
+    assert minimal.authmode == ["Local Database"]
+    assert minimal.tlsauth_keydir == "default"
+    assert minimal.topology == "subnet"
+    assert minimal.keepalive_interval == 10
+    assert minimal.keepalive_timeout == 60
+    assert minimal.ping_seconds == 10
+    assert minimal.ping_action == "ping_restart"
+    assert minimal.ping_action_seconds == 60
+    assert minimal.interface is None
+    assert minimal.strictusercn is None
+    assert minimal.dns_domain is None
+
+
+def test_get_vpn_openvpn_servers_only_calls_endpoint_with_default_limit():
+    client, transport = _vpn_openvpn_servers_client()
+    client.get_vpn_openvpn_servers()
+    assert transport.calls == [("GET", "/api/v2/vpn/openvpn/servers?limit=100")]
+
+
+def test_get_vpn_openvpn_servers_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _vpn_openvpn_servers_body()
+    transport.register("GET", "/api/v2/vpn/openvpn/servers?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_vpn_openvpn_servers(limit=5)
+    assert transport.calls == [("GET", "/api/v2/vpn/openvpn/servers?limit=5")]
+
+
+def test_get_vpn_openvpn_servers_rejects_zero_limit():
+    client, _ = _vpn_openvpn_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_servers(limit=0)
+
+
+def test_get_vpn_openvpn_servers_rejects_limit_above_max():
+    client, _ = _vpn_openvpn_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_servers(limit=101)
+
+
+def test_get_vpn_openvpn_servers_invalid_limit_never_calls_transport():
+    client, transport = _vpn_openvpn_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_servers(limit=0)
+    assert transport.calls == []
+
+
+def test_get_vpn_openvpn_servers_missing_data_key_raises_shape_error():
+    body = _vpn_openvpn_servers_body()
+    del body["data"]
+    client, _ = _vpn_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_servers()
+
+
+def test_get_vpn_openvpn_servers_item_wrong_type_raises_shape_error():
+    body = _vpn_openvpn_servers_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _vpn_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_servers()
+
+
+def test_get_vpn_openvpn_servers_required_field_missing_raises_shape_error():
+    body = _vpn_openvpn_servers_body()
+    del body["data"][0]["description"]
+    client, _ = _vpn_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_servers()
+
+
+def test_get_vpn_openvpn_servers_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_openvpn_servers_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["description"] = [sentinel]
+    client, _ = _vpn_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_openvpn_servers()
+    assert sentinel not in str(excinfo.value)
+
+
+VPN_OPENVPN_CSOS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_openvpn_csos_response.json"
+VPN_OPENVPN_CSOS_SCALAR_IDENTIFYING_FIELDS = (
+    "common_name",
+    "tunnel_network",
+    "tunnel_networkv6",
+    "dns_server1",
+    "dns_server2",
+    "dns_server3",
+    "dns_server4",
+    "ntp_server1",
+    "ntp_server2",
+    "wins_server1",
+    "wins_server2",
+)
+VPN_OPENVPN_CSOS_LIST_IDENTIFYING_FIELDS = (
+    "local_network",
+    "local_networkv6",
+    "remote_network",
+    "remote_networkv6",
+)
+
+
+def _vpn_openvpn_csos_body() -> dict:
+    return json.loads(VPN_OPENVPN_CSOS_FIXTURE.read_text())
+
+
+def _vpn_openvpn_csos_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_openvpn_csos_body()
+    transport.register("GET", "/api/v2/vpn/openvpn/csos?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_openvpn_csos_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_openvpn_csos_client(body)
+    assert client.get_vpn_openvpn_csos() == []
+
+
+def test_get_vpn_openvpn_csos_omits_identifying_fields_by_default():
+    client, _ = _vpn_openvpn_csos_client()
+    csos = client.get_vpn_openvpn_csos()
+    assert len(csos) == 2
+    for cso in csos:
+        for field in VPN_OPENVPN_CSOS_SCALAR_IDENTIFYING_FIELDS:
+            assert getattr(cso, field) is None
+        for field in VPN_OPENVPN_CSOS_LIST_IDENTIFYING_FIELDS:
+            assert getattr(cso, field) == []
+
+
+def test_get_vpn_openvpn_csos_includes_identifying_fields_when_requested():
+    client, _ = _vpn_openvpn_csos_client()
+    csos = client.get_vpn_openvpn_csos(include_identifying_metadata=True)
+    first = next(c for c in csos if c.description == "Synthetic client-specific override (offline fixture)")
+    assert first.common_name == "client1.example.invalid"
+    assert first.tunnel_network == "198.51.100.4/30"
+    assert first.local_network == ["192.0.2.0/24"]
+    assert first.remote_network == ["203.0.113.0/24"]
+    assert first.dns_server1 == "198.51.100.1"
+    assert first.wins_server1 == "198.51.100.1"
+
+
+def test_get_vpn_openvpn_csos_maps_non_sensitive_fields():
+    client, _ = _vpn_openvpn_csos_client()
+    csos = client.get_vpn_openvpn_csos()
+    first = next(c for c in csos if c.description == "Synthetic client-specific override (offline fixture)")
+    assert first.disable is False
+    assert first.block is False
+    assert first.server_list == ["ovpns1"]
+    assert first.gwredir is False
+
+
+def test_get_vpn_openvpn_csos_tolerates_missing_conditional_fields():
+    client, _ = _vpn_openvpn_csos_client()
+    csos = client.get_vpn_openvpn_csos()
+    second = next(c for c in csos if c.disable is True)
+    assert second.remove_options == []
+    assert second.netbios_ntype is None
+    assert second.netbios_scope is None
+
+
+def test_get_vpn_openvpn_csos_only_calls_endpoint_with_default_limit():
+    client, transport = _vpn_openvpn_csos_client()
+    client.get_vpn_openvpn_csos()
+    assert transport.calls == [("GET", "/api/v2/vpn/openvpn/csos?limit=100")]
+
+
+def test_get_vpn_openvpn_csos_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _vpn_openvpn_csos_body()
+    transport.register("GET", "/api/v2/vpn/openvpn/csos?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_vpn_openvpn_csos(limit=5)
+    assert transport.calls == [("GET", "/api/v2/vpn/openvpn/csos?limit=5")]
+
+
+def test_get_vpn_openvpn_csos_rejects_zero_limit():
+    client, _ = _vpn_openvpn_csos_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_csos(limit=0)
+
+
+def test_get_vpn_openvpn_csos_rejects_limit_above_max():
+    client, _ = _vpn_openvpn_csos_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_csos(limit=101)
+
+
+def test_get_vpn_openvpn_csos_invalid_limit_never_calls_transport():
+    client, transport = _vpn_openvpn_csos_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_csos(limit=0)
+    assert transport.calls == []
+
+
+def test_get_vpn_openvpn_csos_missing_data_key_raises_shape_error():
+    body = _vpn_openvpn_csos_body()
+    del body["data"]
+    client, _ = _vpn_openvpn_csos_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_csos()
+
+
+def test_get_vpn_openvpn_csos_item_wrong_type_raises_shape_error():
+    body = _vpn_openvpn_csos_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _vpn_openvpn_csos_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_csos()
+
+
+def test_get_vpn_openvpn_csos_required_field_missing_raises_shape_error():
+    body = _vpn_openvpn_csos_body()
+    del body["data"][0]["description"]
+    client, _ = _vpn_openvpn_csos_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_csos()
+
+
+def test_get_vpn_openvpn_csos_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_openvpn_csos_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["description"] = [sentinel]
+    client, _ = _vpn_openvpn_csos_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_openvpn_csos()
+    assert sentinel not in str(excinfo.value)
