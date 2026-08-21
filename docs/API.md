@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 62 READ, 0 WRITE
+Registered tools: 65 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -206,6 +206,39 @@ Common parameters:
 - **Security:** Interface identifiers only; no address or credential
   material.
 - **Example:** `{"name":"pfsense_get_interface_groups","arguments":{"limit":20}}`
+
+### `pfsense_get_interface_available_interfaces`
+
+- **Purpose:** List all interfaces available for assignment on this pfSense
+  appliance (not just already-assigned ones): interface identifier, in-use
+  status, and hardware boot message.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[AvailableInterface]`.
+- **Security:** Literal MAC addresses are omitted by default.
+- **Example:** `{"name":"pfsense_get_interface_available_interfaces","arguments":{"limit":20}}`
+
+### `pfsense_get_interface_gres`
+
+- **Purpose:** List GRE tunnel interfaces: interface identifier and
+  description.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[InterfaceGRE]`.
+- **Security:** Literal tunnel-endpoint addresses (remote address,
+  local/remote tunnel addresses and networks, IPv4 and IPv6) are omitted by
+  default.
+- **Example:** `{"name":"pfsense_get_interface_gres","arguments":{"limit":20}}`
+
+### `pfsense_get_interface_laggs`
+
+- **Purpose:** List LAGG (link aggregation) interfaces: LAGG interface
+  identifier, member interfaces, protocol, and description.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[InterfaceLAGG]`.
+- **Security:** Interface identifiers only; no address or credential
+  material.
+- **Example:** `{"name":"pfsense_get_interface_laggs","arguments":{"limit":20}}`
 
 ### `pfsense_get_gateways`
 

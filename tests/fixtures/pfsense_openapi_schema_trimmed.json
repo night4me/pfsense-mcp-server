@@ -1096,6 +1096,11 @@
         "description": "<h3>Description:</h3>Reads all existing Virtual IPs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: VirtualIP<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-virtual-ips-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/interface/available_interfaces": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Available Interfaces.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: AvailableInterface<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-available-interfaces-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/interface/bridges": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Interface Bridges.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceBridge<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-bridges-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
@@ -1106,9 +1111,19 @@
         "description": "<h3>Description:</h3>Reads all existing Interface Groups.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceGroup<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-groups-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/interface/gres": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Interface GREs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceGRE<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-gres-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/interface/vlans": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Interface VLANs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceVLAN<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-vlans-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/interface/laggs": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Interface LAGGs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: InterfaceLAGG<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-laggs-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/interfaces": {

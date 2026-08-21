@@ -52,9 +52,12 @@ from .read import (
     freeradius_eap,
     gateway_status,
     gateways,
+    interface_available_interfaces,
     interface_bridges,
     interface_configs,
+    interface_gres,
     interface_groups,
+    interface_laggs,
     interface_vlans,
     interfaces,
     mcp_info,
@@ -135,9 +138,12 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_freeradius_eap",
         "pfsense_get_gateway_status",
         "pfsense_get_gateways",
+        "pfsense_get_interface_available_interfaces",
         "pfsense_get_interface_bridges",
         "pfsense_get_interface_configs",
+        "pfsense_get_interface_gres",
         "pfsense_get_interface_groups",
+        "pfsense_get_interface_laggs",
         "pfsense_get_interface_vlans",
         "pfsense_get_interfaces",
         "pfsense_get_ntp_settings",
@@ -322,6 +328,12 @@ class ToolRegistry:
             self._register_dns_resolver_domain_override_read()
         if Capability.DNS_RESOLVER_ACCESS_LIST_READ in self._capabilities:
             self._register_dns_resolver_access_list_read()
+        if Capability.INTERFACE_AVAILABLE_INTERFACE_READ in self._capabilities:
+            self._register_interface_available_interface_read()
+        if Capability.INTERFACE_GRE_READ in self._capabilities:
+            self._register_interface_gre_read()
+        if Capability.INTERFACE_LAGG_READ in self._capabilities:
+            self._register_interface_lagg_read()
 
         self.register_all_write()
 
@@ -691,6 +703,21 @@ class ToolRegistry:
     def _register_dns_resolver_access_list_read(self) -> None:
         fn = dns_resolver_access_lists.build(self._client)
         wrapped = audit_logged("pfsense_get_dns_resolver_access_lists", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_interface_available_interface_read(self) -> None:
+        fn = interface_available_interfaces.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_available_interfaces", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_interface_gre_read(self) -> None:
+        fn = interface_gres.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_gres", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_interface_lagg_read(self) -> None:
+        fn = interface_laggs.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_laggs", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

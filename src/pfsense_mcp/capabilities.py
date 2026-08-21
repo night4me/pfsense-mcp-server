@@ -60,6 +60,9 @@ class Capability(Enum):
     DNS_FORWARDER_HOST_OVERRIDE_READ = auto()
     DNS_RESOLVER_DOMAIN_OVERRIDE_READ = auto()
     DNS_RESOLVER_ACCESS_LIST_READ = auto()
+    INTERFACE_AVAILABLE_INTERFACE_READ = auto()
+    INTERFACE_GRE_READ = auto()
+    INTERFACE_LAGG_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -126,6 +129,9 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.DNS_FORWARDER_HOST_OVERRIDE_READ,
         Capability.DNS_RESOLVER_DOMAIN_OVERRIDE_READ,
         Capability.DNS_RESOLVER_ACCESS_LIST_READ,
+        Capability.INTERFACE_AVAILABLE_INTERFACE_READ,
+        Capability.INTERFACE_GRE_READ,
+        Capability.INTERFACE_LAGG_READ,
     }
 )
 

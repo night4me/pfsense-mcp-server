@@ -205,6 +205,30 @@ pfSense/dnsmasq/Unbound features). All three `Endpoints` entries are now
 combined become 61 READ / 62 combined** throughout this document as of
 this pass.
 
+**2026-08-21 (same day, later still) — interface extras LAB-verified
+and registered (P1 Batch D).** `interface/available_interfaces`,
+`interface/gres`, and `interface/laggs` were re-checked against the
+pinned schema for secret fields (none found). `AvailableInterface.mac`
+and 7 of `InterfaceGRE`'s 11 fields (tunnel-endpoint addresses) are
+redacted by default, matching `InterfaceStatus.macaddr` and
+`RoutingStaticRoute`'s established conventions; `InterfaceLAGG`'s
+`members`/`laggif` stay visible, matching `InterfaceBridge`'s
+established no-redaction precedent. `PfSenseClient.
+get_interface_available_interfaces()`/`get_interface_gres()`/
+`get_interface_laggs()`, their models, and their `Endpoints` entries
+were implemented, offline-tested, and left unregistered for one commit
+(matching the P1 Batch A WireGuard precedent) before LAB verification.
+LAB-verified: `interface/available_interfaces` returned
+`FIELD_MODEL_LIVE_VERIFIED` — 2 real populated objects (the LAB's
+actual `vtnet0`/`vtnet1` WAN/LAN interfaces), with redaction confirmed
+against real data (default call returned `mac=None` for both;
+`include_identifying_metadata=True` returned the literal addresses);
+`interface/gres` and `interface/laggs` both returned zero configured
+objects (`ENDPOINT_VERIFIED` only). All three `Endpoints` entries are
+now `verified=True`; all three tools are now registered. **61 READ / 62
+combined become 64 READ / 65 combined** throughout this document as of
+this pass.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -264,17 +288,18 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 61 endpoints this project's 62 READ
+exists for them. **None of the 64 endpoints this project's 65 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
 group, firewall-schedule/virtual-IP, REST-API-version, and
 certificate-authority endpoints, the IPsec SA/child-SA and WireGuard
 tunnel/peer status endpoints, the OpenVPN server/client/connection/
-route status endpoints, and the DNS Forwarder host-override/DNS
-Resolver domain-override/access-list endpoints, each of which offers a
-narrow alternative alongside `page-all`). This must be re-checked for
-any *future* tool added against a new endpoint — it is not a general
+route status endpoints, the DNS Forwarder host-override/DNS Resolver
+domain-override/access-list endpoints, and the interface available-
+interfaces/GRE/LAGG endpoints, each of which offers a narrow
+alternative alongside `page-all`). This must be re-checked for any
+*future* tool added against a new endpoint — it is not a general
 guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
@@ -306,17 +331,19 @@ source this document reasons about. The interface-VLAN/static-route
 pair, the interface-group/firewall-schedule/REST-API-version trio, the
 firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
 status pair, the WireGuard tunnel/peer status pair, the OpenVPN
-server/client/connection/route status four, and the DNS Forwarder/
-Resolver extras three, were cross-checked against a live schema freshly
-fetched from the **LAB** appliance (`pfsense-test.lab.invalid`) during
+server/client/connection/route status four, the DNS Forwarder/
+Resolver extras three, and the interface available-interfaces/GRE/LAGG
+three, were cross-checked against a live schema freshly fetched from
+the **LAB** appliance (`pfsense-test.lab.invalid`) during
 owner-authorized LAB READ verification passes — also an exact match,
-zero mismatches (61 of 61 now, including all eighteen). The IPsec,
-WireGuard, OpenVPN, and DNS groups' LAB cross-checks were against the
-upgraded pfSense CE 2.9.0 appliance specifically; its REST API package
-schema remained an exact 267-path match despite the platform upgrade,
-both before and after installing `pfSense-pkg-WireGuard`.
+zero mismatches (64 of 64 now, including all twenty-one). The IPsec,
+WireGuard, OpenVPN, DNS, and interface-extras groups' LAB cross-checks
+were against the upgraded pfSense CE 2.9.0 appliance specifically; its
+REST API package schema remained an exact 267-path match despite the
+platform upgrade, both before and after installing
+`pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (62 tools)
+## READ privilege matrix (65 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -352,9 +379,12 @@ both before and after installing `pfSense-pkg-WireGuard`.
 | `pfsense_freeradius_eap` | `get_freeradius_eap` | `GET /api/v2/services/freeradius/eap` | `api-v2-services-freeradius-eap-get` | ✅ |
 | `pfsense_gateway_status` | `get_gateway_status` | `GET /api/v2/status/gateways` | `api-v2-status-gateways-get` | ✅ |
 | `pfsense_gateways` | `get_gateways` | `GET /api/v2/routing/gateways` | `api-v2-routing-gateways-get` | ✅ |
+| `pfsense_interface_available_interfaces` | `get_interface_available_interfaces` | `GET /api/v2/interface/available_interfaces` | `api-v2-interface-available-interfaces-get` | ✅ |
 | `pfsense_interface_bridges` | `get_interface_bridges` | `GET /api/v2/interface/bridges` | `api-v2-interface-bridges-get` | ✅ |
 | `pfsense_interface_configs` | `get_interface_configs` | `GET /api/v2/interfaces` | `api-v2-interfaces-get` | ✅ |
+| `pfsense_interface_gres` | `get_interface_gres` | `GET /api/v2/interface/gres` | `api-v2-interface-gres-get` | ✅ |
 | `pfsense_interface_groups` | `get_interface_groups` | `GET /api/v2/interface/groups` | `api-v2-interface-groups-get` | ✅ |
+| `pfsense_interface_laggs` | `get_interface_laggs` | `GET /api/v2/interface/laggs` | `api-v2-interface-laggs-get` | ✅ |
 | `pfsense_interface_vlans` | `get_interface_vlans` | `GET /api/v2/interface/vlans` | `api-v2-interface-vlans-get` | ✅ |
 | `pfsense_interfaces` | `get_interfaces` | `GET /api/v2/status/interfaces` | `api-v2-status-interfaces-get` | ✅ |
 | `pfsense_mcp_info` | *(none — local only)* | *(no pfSense call)* | *(none required)* | n/a |
@@ -383,10 +413,10 @@ both before and after installing `pfSense-pkg-WireGuard`.
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**61 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 61`). A least-privilege
-READ-only identity holding exactly these 61 (never `page-all`) can serve
-every one of this project's 62 registered READ tools.
+**64 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 64`). A least-privilege
+READ-only identity holding exactly these 64 (never `page-all`) can serve
+every one of this project's 65 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -395,7 +425,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 63rd tool would
+completeness, since a future decision to expose it as a 66th tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -429,11 +459,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 61 READ privileges
+The 4 WRITE privileges are a strict subset of the 64 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **62 distinct privileges**: the 61 READ
+identity therefore needs exactly **65 distinct privileges**: the 64 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

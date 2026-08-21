@@ -112,19 +112,36 @@ never production) before public registration.
   - All three LAB-verified live: `HTTP 200`, zero configured objects
     (`ENDPOINT_VERIFIED`); no package required (base
     pfSense/dnsmasq/Unbound features).
-- **3 more READ candidates implemented and offline-tested (P1 Batch D,
-  interface extras) but NOT yet registered** — public MCP contract
-  unchanged at 62: `AvailableInterface`, `InterfaceGRE`, `InterfaceLAGG`
-  models, `PfSenseClient.get_interface_available_interfaces()`/
-  `get_interface_gres()`/`get_interface_laggs()`, and their `Endpoints`
-  entries (`verified=False`) all exist and are fully offline-tested,
-  matching the established "implemented, offline-tested, blocked"
-  precedent from P1 Batch A's WireGuard pair — no `tools/read/` file
-  exists for any of the three yet, so they remain structurally
-  unreachable through the MCP surface (`test_no_generic_dispatch.py`'s
-  file-count-matches-contract invariant enforces this). `mac`
-  (`AvailableInterface`) and 7 of `InterfaceGRE`'s 11 fields
-  (tunnel-endpoint addresses) are redacted by default once registered.
+- **3 more READ tools (P1 Batch D, interface extras), public MCP
+  contract 62 → 65 (0 WRITE, unchanged):**
+  - `pfsense_get_interface_available_interfaces` — all interfaces
+    available for assignment (not just already-assigned ones):
+    identifier, in-use status, hardware boot message.
+  - `pfsense_get_interface_gres` — GRE tunnel interfaces.
+  - `pfsense_get_interface_laggs` — LAGG (link aggregation) interfaces.
+  - All three re-checked against the pinned schema for secrets (none
+    found). `mac` (`AvailableInterface`) and 7 of `InterfaceGRE`'s 11
+    fields (tunnel-endpoint addresses) are redacted by default,
+    matching `InterfaceStatus.macaddr` and `RoutingStaticRoute`'s
+    established conventions; `InterfaceLAGG`'s `members`/`laggif` stay
+    visible, matching `InterfaceBridge`'s established no-redaction
+    precedent. `InterfaceLAGG`'s proto-conditional fields
+    (`lacptimeout`/`lagghash`/`failovermaster`) use `.get()` with the
+    schema's own declared default, matching the `install_version`
+    precedent for a field that can be legitimately absent rather than
+    merely null.
+  - `interface/available_interfaces` LAB-verified with
+    `FIELD_MODEL_LIVE_VERIFIED`: 2 real populated objects (the LAB's
+    actual `vtnet0`/`vtnet1` WAN/LAN interfaces), with redaction
+    confirmed against real data. `interface/gres` and
+    `interface/laggs` both LAB-verified `ENDPOINT_VERIFIED` (zero
+    configured objects); no package required for any of the three
+    (base pfSense features).
+  - The models/client methods/`Endpoints` entries were implemented and
+    offline-tested one commit before registration, deliberately
+    unregistered in the interim, matching the established
+    "implemented, offline-tested, blocked" precedent from P1 Batch A's
+    WireGuard pair.
   LAB verification pending.
 
 ### Security

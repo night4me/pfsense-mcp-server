@@ -443,27 +443,29 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch D candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found: if/mac/dmesg/in_use_by
-    # only). Not yet LAB-verified.
+    # verified=True (2026-08-21, P1 Batch D, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, FIELD_MODEL_LIVE_VERIFIED -- the LAB
+    # returned 2 real populated objects (vtnet0/vtnet1, the LAB's actual
+    # WAN/LAN interfaces), not just an empty list. Redaction confirmed
+    # against real data: default call returned mac=None for both; the
+    # literal MAC only appeared with include_identifying_metadata=True.
     INTERFACE_AVAILABLE_INTERFACES = EndpointInfo(
         path_suffix="/interface/available_interfaces",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch D candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; 7 of 11 fields are
-    # tunnel-endpoint address data, redacted by default). Not yet
-    # LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured GRE tunnels, ENDPOINT_VERIFIED only.
     INTERFACE_GRES = EndpointInfo(
         path_suffix="/interface/gres",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch D candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found). Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured LAGGs, ENDPOINT_VERIFIED only.
     INTERFACE_LAGGS = EndpointInfo(
         path_suffix="/interface/laggs",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

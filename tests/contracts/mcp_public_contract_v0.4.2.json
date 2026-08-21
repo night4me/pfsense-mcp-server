@@ -4788,6 +4788,114 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "INTERFACE_AVAILABLE_INTERFACE_READ",
+      "client_method": "get_interface_available_interfaces",
+      "description": "List all interfaces available for assignment on this\n        pfSense appliance (not just already-assigned ones): interface\n        identifier, in-use status, and hardware boot message. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        MAC address. Defaults to False.\n\n        limit: maximum number of interfaces to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/interface/available_interfaces",
+        "symbol": "INTERFACE_AVAILABLE_INTERFACES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_interface_available_interfacesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_interface_available_interfaces",
+      "output_schema": {
+        "$defs": {
+          "AvailableInterface": {
+            "properties": {
+              "dmesg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dmesg"
+              },
+              "if_": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "If"
+              },
+              "in_use_by": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "In Use By"
+              },
+              "mac": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Mac"
+              }
+            },
+            "required": [
+              "if_",
+              "dmesg",
+              "in_use_by"
+            ],
+            "title": "AvailableInterface",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/AvailableInterface"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_interface_available_interfacesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "INTERFACE_VIRTUAL_READ",
       "client_method": "get_interface_bridges",
       "description": "List pfSense bridge interfaces: bridge interface\n        identifier, member interfaces, and description. Read-only.\n\n        limit: maximum number of bridge interfaces to return (1-100,\n        default 100).",
@@ -5422,6 +5530,183 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "INTERFACE_GRE_READ",
+      "client_method": "get_interface_gres",
+      "description": "List pfSense GRE tunnel interfaces: interface identifier\n        and description. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        tunnel-endpoint addresses (remote address, local/remote tunnel\n        addresses and networks, IPv4 and IPv6). Defaults to False.\n\n        limit: maximum number of GRE interfaces to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/interface/gres",
+        "symbol": "INTERFACE_GRES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_interface_gresArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_interface_gres",
+      "output_schema": {
+        "$defs": {
+          "InterfaceGRE": {
+            "properties": {
+              "add_static_route": {
+                "title": "Add Static Route",
+                "type": "boolean"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "greif": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Greif"
+              },
+              "if_": {
+                "title": "If",
+                "type": "string"
+              },
+              "remote_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Addr"
+              },
+              "tunnel_local_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Local Addr"
+              },
+              "tunnel_local_addr6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Local Addr6"
+              },
+              "tunnel_remote_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Remote Addr"
+              },
+              "tunnel_remote_addr6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Remote Addr6"
+              },
+              "tunnel_remote_net": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Remote Net"
+              },
+              "tunnel_remote_net6": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Remote Net6"
+              }
+            },
+            "required": [
+              "if_",
+              "greif",
+              "descr",
+              "add_static_route"
+            ],
+            "title": "InterfaceGRE",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/InterfaceGRE"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_interface_gresOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "INTERFACE_GROUP_READ",
       "client_method": "get_interface_groups",
       "description": "List pfSense interface groups: group name, member\n        interfaces, and description. Useful for interpreting firewall\n        rules that target a group rather than a single interface.\n        Read-only.\n\n        limit: maximum number of interface groups to return (1-100,\n        default 100).",
@@ -5486,6 +5771,105 @@
           "result"
         ],
         "title": "pfsense_get_interface_groupsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "INTERFACE_LAGG_READ",
+      "client_method": "get_interface_laggs",
+      "description": "List pfSense LAGG (link aggregation) interfaces: LAGG\n        interface identifier, member interfaces, protocol, and\n        description. Read-only.\n\n        limit: maximum number of LAGG interfaces to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/interface/laggs",
+        "symbol": "INTERFACE_LAGGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_interface_laggsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_interface_laggs",
+      "output_schema": {
+        "$defs": {
+          "InterfaceLAGG": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "failovermaster": {
+                "title": "Failovermaster",
+                "type": "string"
+              },
+              "lacptimeout": {
+                "title": "Lacptimeout",
+                "type": "string"
+              },
+              "lagghash": {
+                "title": "Lagghash",
+                "type": "string"
+              },
+              "laggif": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Laggif"
+              },
+              "members": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Members",
+                "type": "array"
+              },
+              "proto": {
+                "title": "Proto",
+                "type": "string"
+              }
+            },
+            "required": [
+              "laggif",
+              "descr",
+              "members",
+              "proto",
+              "lacptimeout",
+              "lagghash",
+              "failovermaster"
+            ],
+            "title": "InterfaceLAGG",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/InterfaceLAGG"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_interface_laggsOutput",
         "type": "object"
       }
     },

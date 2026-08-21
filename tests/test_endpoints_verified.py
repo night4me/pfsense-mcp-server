@@ -778,8 +778,8 @@ def test_dns_resolver_access_lists_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.DNS_RESOLVER_ACCESS_LISTS.path_suffix == "/services/dns_resolver/access_lists"
 
 
-def test_interface_available_interfaces_is_not_yet_declared_verified():
-    assert Endpoints.INTERFACE_AVAILABLE_INTERFACES.verified is False
+def test_interface_available_interfaces_is_declared_verified():
+    assert Endpoints.INTERFACE_AVAILABLE_INTERFACES.verified is True
 
 
 def test_interface_available_interfaces_path_suffix_has_no_api_prefix():
@@ -790,8 +790,8 @@ def test_interface_available_interfaces_path_suffix_is_the_plural_list_endpoint(
     assert Endpoints.INTERFACE_AVAILABLE_INTERFACES.path_suffix == "/interface/available_interfaces"
 
 
-def test_interface_gres_is_not_yet_declared_verified():
-    assert Endpoints.INTERFACE_GRES.verified is False
+def test_interface_gres_is_declared_verified():
+    assert Endpoints.INTERFACE_GRES.verified is True
 
 
 def test_interface_gres_path_suffix_has_no_api_prefix():
@@ -802,8 +802,8 @@ def test_interface_gres_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.INTERFACE_GRES.path_suffix == "/interface/gres"
 
 
-def test_interface_laggs_is_not_yet_declared_verified():
-    assert Endpoints.INTERFACE_LAGGS.verified is False
+def test_interface_laggs_is_declared_verified():
+    assert Endpoints.INTERFACE_LAGGS.verified is True
 
 
 def test_interface_laggs_path_suffix_has_no_api_prefix():

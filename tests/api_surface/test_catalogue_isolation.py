@@ -163,7 +163,7 @@ def test_production_bootstrap_never_imports_api_surface() -> None:
     assert offenders == []
 
 
-def test_public_contract_remains_62_read_0_write_after_api_surface() -> None:
+def test_public_contract_remains_65_read_0_write_after_api_surface() -> None:
     import asyncio
 
     from mcp.server.fastmcp import FastMCP
@@ -183,8 +183,8 @@ def test_public_contract_remains_62_read_0_write_after_api_surface() -> None:
 
     read_tools = [t for t in tools if t.annotations.readOnlyHint]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 62
-    assert len(read_tools) == 62
+    assert len(tools) == 65
+    assert len(read_tools) == 65
     assert len(write_tools) == 0
 
 
