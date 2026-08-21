@@ -2506,6 +2506,26 @@ def test_get_dhcp_servers_only_calls_endpoint_with_default_limit():
     assert transport.calls == [("GET", "/api/v2/services/dhcp_servers?limit=100")]
 
 
+def test_get_dhcp_servers_parses_null_optional_fields():
+    """2026-08-21 LAB CE 2.8.1 -> 2.9.0 platform-upgrade regression
+    check observed exactly this shape for an unconfigured scope: HTTP
+    200 with domain/domainsearchlist/failover_peerip/gateway/mac_allow/
+    mac_deny all `null`, where the original 2.8.1 capture had returned
+    empty string/list for the same fields. Confirms the widened types
+    accept both shapes."""
+
+    body = _dhcp_servers_body()
+    unconfigured = dict(body["data"][0])
+    for field in ("domain", "domainsearchlist", "failover_peerip", "gateway", "mac_allow", "mac_deny"):
+        unconfigured[field] = None
+    body["data"] = [unconfigured]
+    client, _ = _dhcp_servers_client(body)
+    servers = client.get_dhcp_servers()
+    assert len(servers) == 1
+    for field in ("domain", "domainsearchlist", "failover_peerip", "gateway", "mac_allow", "mac_deny"):
+        assert getattr(servers[0], field) is None
+
+
 def test_get_dhcp_servers_passes_custom_limit_in_query_string():
     transport = MockTransport()
     body = _dhcp_servers_body()
@@ -3071,6 +3091,22 @@ def test_get_dns_resolver_settings_only_calls_settings_endpoint():
     client, transport = _dns_resolver_settings_client()
     client.get_dns_resolver_settings()
     assert transport.calls == [("GET", "/api/v2/services/dns_resolver/settings")]
+
+
+def test_get_dns_resolver_settings_parses_null_sslcertref_and_tlsport():
+    """2026-08-21 LAB CE 2.8.1 -> 2.9.0 platform-upgrade regression
+    check observed exactly this shape when DNS-over-TLS/SSL is not
+    configured: HTTP 200 with sslcertref/tlsport both `null`, where the
+    original 2.8.1 capture had returned a populated/empty string for
+    the same fields. Confirms the widened types accept both shapes."""
+
+    body = _dns_resolver_settings_body()
+    body["data"]["sslcertref"] = None
+    body["data"]["tlsport"] = None
+    client, _ = _dns_resolver_settings_client(body)
+    settings = client.get_dns_resolver_settings()
+    assert settings.sslcertref is None
+    assert settings.tlsport is None
 
 
 def test_get_dns_resolver_settings_missing_data_key_raises_shape_error():

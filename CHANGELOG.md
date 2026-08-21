@@ -59,6 +59,29 @@ never production) before public registration.
   merely `null`), a compatibility finding the schema alone did not
   surface.
 
+### Fixed
+
+- **LAB CE 2.8.1 → 2.9.0 platform-upgrade regression** (2026-08-21): a
+  full regression smoke test of all 51 public READ tools against the
+  freshly upgraded LAB appliance (pfSense CE 2.9.0-RELEASE, FreeBSD
+  16.0-CURRENT, reinstalled `pfSense-pkg-RESTAPI` v2.10 — same REST API
+  version, same 267-path schema, distinct install) found 2 of 51 tools
+  now fail shape validation: `pfsense_get_dhcp_servers` and
+  `pfsense_get_dns_resolver_settings`. Root cause: for an unconfigured
+  optional field (e.g. no DHCP scope domain/gateway set, no DNS-over-TLS
+  certificate configured), the platform now returns `null` where the
+  original 2.8.1 LAB capture had returned an empty string/list — the
+  pinned schema still declares these fields `nullable: false` in both
+  cases, so live server behavior was trusted over the schema's stale
+  claim (matching this project's own `install_version` precedent).
+  `DhcpServer.domain`/`.domainsearchlist`/`.failover_peerip`/`.gateway`/
+  `.mac_allow`/`.mac_deny` and `DnsResolverSettings.sslcertref`/
+  `.tlsport` are widened to also accept `None`; existing 2.8.1-shaped
+  fixtures (empty string/list) continue to validate unchanged. All 51
+  tools re-verified passing against the upgraded LAB after the fix; no
+  tool count change (51 unchanged), no new capability, no security
+  impact — a pure type-widening correctness fix.
+
 ## [0.4.2] - 2026-08-16
 
 **Documentation/packaging presentation patch — no functional or

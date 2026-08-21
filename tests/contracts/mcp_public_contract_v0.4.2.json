@@ -828,27 +828,55 @@
                 "title": "Dnsserver"
               },
               "domain": {
-                "title": "Domain",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Domain"
               },
               "domainsearchlist": {
-                "items": {
-                  "type": "string"
-                },
-                "title": "Domainsearchlist",
-                "type": "array"
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Domainsearchlist"
               },
               "enable": {
                 "title": "Enable",
                 "type": "boolean"
               },
               "failover_peerip": {
-                "title": "Failover Peerip",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Failover Peerip"
               },
               "gateway": {
-                "title": "Gateway",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Gateway"
               },
               "id": {
                 "title": "Id",
@@ -867,18 +895,32 @@
                 "type": "string"
               },
               "mac_allow": {
-                "items": {
-                  "type": "string"
-                },
-                "title": "Mac Allow",
-                "type": "array"
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mac Allow"
               },
               "mac_deny": {
-                "items": {
-                  "type": "string"
-                },
-                "title": "Mac Deny",
-                "type": "array"
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mac Deny"
               },
               "maxleasetime": {
                 "anyOf": [
@@ -1480,8 +1522,15 @@
             "type": "boolean"
           },
           "sslcertref": {
-            "title": "Sslcertref",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sslcertref"
           },
           "strictout": {
             "title": "Strictout",
@@ -1492,8 +1541,15 @@
             "type": "string"
           },
           "tlsport": {
-            "title": "Tlsport",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tlsport"
           }
         },
         "required": [

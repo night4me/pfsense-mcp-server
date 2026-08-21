@@ -10,6 +10,17 @@ synthesizes the nested staticmap `descr` field (this install's real
 per-device labels) via a stricter capture policy; IP/MAC/domain values
 are synthesized by the sanitizer's generic substitution regardless of
 identifying status. Runtime behavior is unaffected.
+
+`domain`/`domainsearchlist`/`failover_peerip`/`gateway`/`mac_allow`/
+`mac_deny` are widened to also accept `None` (2026-08-21, LAB CE 2.8.1
+-> 2.9.0 platform-upgrade regression check): the pinned schema still
+declares these `nullable: false` and the original 2.8.1 LAB capture
+returned empty string/list for an unset scope, but a live, unconfigured
+DHCP server scope on the upgraded LAB (pfSense CE 2.9.0-RELEASE,
+FreeBSD 16.0-CURRENT, reinstalled pfSense-pkg-RESTAPI v2.10) genuinely
+returns `null` for these same fields instead. Live server behavior is
+trusted over the schema's stale claim, matching this project's own
+established precedent (`SystemRestApiVersion.install_version`).
 """
 
 from __future__ import annotations
@@ -25,17 +36,17 @@ class DhcpServer(BaseModel):
     dhcpleaseinlocaltime: bool
     disablepingcheck: bool
     dnsserver: list[str] | None
-    domain: str
-    domainsearchlist: list[str]
+    domain: str | None
+    domainsearchlist: list[str] | None
     enable: bool
-    failover_peerip: str
-    gateway: str
+    failover_peerip: str | None
+    gateway: str | None
     id: str
     ignorebootp: bool
     ignoreclientuids: bool
     interface: str
-    mac_allow: list[str]
-    mac_deny: list[str]
+    mac_allow: list[str] | None
+    mac_deny: list[str] | None
     maxleasetime: int | None
     nonak: bool
     ntpserver: list[str] | None
