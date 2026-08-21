@@ -11,7 +11,7 @@ boundaries, not a build plan.
 ## Why this document exists
 
 pfSense's actual API surface — and its actual installed-package surface —
-is far larger than the 42 tools this project currently exposes. As this
+is far larger than the 84 tools this project currently exposes. As this
 project grows toward that surface (more endpoints, eventually a WRITE
 track, possibly package-aware capabilities), the risk is not "too few
 tools" — it is that convenience pressure eventually produces the pattern
@@ -634,10 +634,10 @@ Four options, evaluated against this project's existing security
 preference (explicit typed schemas, explicit capability association,
 inspectable public contracts, no arbitrary method dispatch):
 
-- **(A) Many explicit typed tools** (current design, 42 tools). Preserves
+- **(A) Many explicit typed tools** (current design, 84 tools). Preserves
   every existing control at full strength. Cost: linear growth in tool
   count as coverage grows. **Current preference — no reason found to
-  change it at 42 tools, or even considered up to roughly 80–150 by this
+  change it at 84 tools, or even considered up to roughly 80–150 by this
   document's own judgment, absent evidence MCP client-side tool-list
   ergonomics actually degrade at that scale (not tested by this
   document).**
@@ -841,7 +841,7 @@ pfSense's own served schema directly, not from an intermediate dependency
 whose own generation/curation process this project cannot review.
 
 **DEFER actual implementation** — no current volume of manual typing
-effort has been identified as a real bottleneck; this project's 42 tools
+effort has been identified as a real bottleneck; this project's 84 tools
 were all hand-typed against a manually-consulted schema without apparent
 strain. Revisit if/when the catalogue (Part 1, also DEFERred) reveals a
 large `CATALOGUED`-but-`TYPED`-backlog that manual typing genuinely

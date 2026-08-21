@@ -7,15 +7,20 @@ capability or authorizes a production change.
 
 ## Current baseline
 
-**2026-08-17 update — current immutable published baseline is v0.4.2**
-(PyPI and GitHub; see `CHANGELOG.md`'s `[0.4.2]` entry). The `v0.2.x`/
-`v0.3.0` sections immediately below are kept exactly as originally
-written, as an accurate historical record of what shipped and when —
-not rewritten to look cleaner. Treat "v0.3.0" in their text as the
-baseline *at the time those sections were written*, not the current
-one.
+**2026-08-21 update — current immutable published baseline is v0.5.0**
+(PyPI and GitHub; see `CHANGELOG.md`'s `[0.5.0]` entry) — a major
+READ-capability expansion over the prior v0.4.2 baseline (42 → 84
+tools, exactly a 100% increase), plus an independent, adversarial
+release-readiness audit covering pfSense CE/Plus compatibility
+(including a live-verified pfSense Plus 26.07 production READ pass),
+security regression, packaging, and documentation accuracy. No WRITE
+capability changed. The `v0.2.x`/`v0.3.0` sections immediately below are
+kept exactly as originally written, as an accurate historical record of
+what shipped and when — not rewritten to look cleaner. Treat "v0.3.0"
+in their text as the baseline *at the time those sections were
+written*, not the current one.
 
-- Production MCP surface: **42 READ tools, 0 default-reachable WRITE
+- Production MCP surface: **84 READ tools, 0 default-reachable WRITE
   tools** — enforced mechanically on every CI run
   (`scripts/write_capability_check.py`), not merely documented.
 - **One WRITE capability now exists and is `verified=True`**:

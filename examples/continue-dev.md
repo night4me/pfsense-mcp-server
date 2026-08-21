@@ -28,7 +28,7 @@ locations and standalone-block requirements.
 
 ## Expected behaviour
 
-In Agent mode, Continue loads the `pfSense` server and discovers 42 READ tools.
+In Agent mode, Continue loads the `pfSense` server and discovers 84 READ tools.
 No WRITE tool is available. Tool approval behaviour depends on the Continue
 version and local agent settings.
 

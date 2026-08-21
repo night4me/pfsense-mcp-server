@@ -46,7 +46,7 @@ separate, explicitly authorized future phase (see
 [the public roadmap](ROADMAP.md)), not a way to unlock anything today.
 
 `PFSENSE_ALLOWED_TOOLS` is an optional restriction applied after the
-selected profile. If absent, the auditor profile keeps all 42 tools. If
+selected profile. If absent, the auditor profile keeps all 84 tools. If
 present, only the comma-separated exact names in both the profile and the
 restriction register. Whitespace around names is ignored and duplicate
 names are normalized. An explicitly empty value registers zero tools.

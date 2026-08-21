@@ -7,16 +7,24 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-**Focused READ capability expansion — no WRITE change, no security-model
-change.** Follows an offline-only comprehensive READ capability discovery
-audit (267 OpenAPI paths / 243 GET operations reviewed; every GET given
-exactly one disposition) that found the prior 42-tool contract covered
-roughly 42% of the useful READ capability universe. Prioritized the
-audit's P0 backlog (7 candidates, all zero/near-zero risk) and, for each,
-independently re-verified the response schema for secrets before
-implementation, then live-verified against a disposable LAB appliance
-(`pfsense-test.lab.invalid`, pfSense CE 2.8.1-RELEASE, REST API v2.10 —
-never production) before public registration.
+## [0.5.0] - 2026-08-21
+
+**Major READ capability expansion — no WRITE change, no security-model
+change.** Public MCP contract grows from 42 to 84 READ tools (exactly a
+100% increase over the last published baseline, `v0.4.2`), covering
+roughly 80% of the useful READ capability universe identified by this
+project's own capability discovery audit (267 OpenAPI paths / 243 GET
+operations reviewed; every GET given exactly one disposition — up from
+roughly 40% coverage at the `v0.4.2` baseline). Every tool below was
+independently re-verified for secret-bearing fields before
+implementation, then verified against a real pfSense instance (LAB or,
+where explicitly owner-authorized, production) before public
+registration — never assumed from schema alone. Closes with an
+independent, adversarial release-readiness audit (security regression
+sweep, CE/Plus compatibility verification including a live production
+Plus 26.07 pass, packaging/fresh-install/upgrade-path verification, and
+a full README restructure) — see "Security" and "Changed" below for its
+findings.
 
 ### Added
 
@@ -392,6 +400,71 @@ never production) before public registration.
   merely network topology — redacted by default like other identifying
   fields, with the extra care this class of field warrants noted
   explicitly rather than treated as an ordinary address field.
+- **Release-readiness audit (2026-08-21): hardened the global
+  credential-disclosure regression test.**
+  `tests/test_credential_non_disclosure.py`'s `PROHIBITED_FIELDS` set,
+  which is scanned against every registered tool's full input/output
+  MCP schema, previously only checked for `{ipsecpsk, password, key}`
+  by exact field name — a future field literally named `auth_pass`,
+  `proxy_passwd`, `privatekey`, `presharedkey`, `preshared_key`, or
+  `prv` would not have been caught by this specific automated check
+  even though this project has explicitly committed to excluding
+  every one of those names. Expanded the set to all seven. Confirmed
+  zero regressions and zero live hits with the expanded set across all
+  84 registered tools.
+
+### Changed
+
+- **Release-readiness audit (2026-08-21): independently re-verified and
+  documented pfSense CE/Plus compatibility.** pfSense CE 2.9.0 remains
+  the **LAB VERIFIED** baseline (unchanged). Added **pfSense Plus
+  26.07 — LIVE VERIFIED**: an owner-authorized, strictly READ-only
+  production compatibility pass (identity verified first; no
+  POST/PUT/PATCH/DELETE, no package/config/privilege changes performed)
+  found the live OpenAPI schema structurally identical to the pinned
+  v2.10 reference (267/267 paths, 186/186 components — the only
+  differences across every field were 5 instance-specific runtime
+  default values, never a type or nullability change), and successfully
+  exercised 82 of the 84 public READ tools against real production data
+  (30 of those as valid, meaningful empty envelopes); the remaining 2
+  (`pfsense_get_status_wireguard_tunnels`/`_peers`) were correctly and
+  automatically classified package-absent (WireGuard not installed on
+  that appliance, and not installed by this audit) rather than treated
+  as a failure. Zero genuine incompatibilities found; a targeted
+  secret-safety re-check against the seven highest-risk live tool
+  responses found zero prohibited field names. Added **pfSense Plus
+  25.11 — SUPPORTED/COMPATIBLE (not live-verified)**, an explicit
+  inference from converging platform/schema evidence (same FreeBSD
+  16-CURRENT base OS as the verified CE 2.9.0/Plus 26.07 evidence; one
+  platform-version step from a build already proven to have zero schema
+  drift; the same pinned pfREST v2.10 package already confirmed
+  compatible across three separate platform/edition combinations),
+  explicitly not a test result.
+- **Corrected the published-baseline framing used throughout this
+  `[Unreleased]` narrative.** Git archaeology (checking
+  `KNOWN_READ_TOOL_NAMES`'s length at the actual `v0.4.2` git tag,
+  cross-checked against README's and v0.4.2's own `CHANGELOG` entry,
+  both of which already correctly said 42) proved the true
+  last-published baseline this entire READ-expansion audit measures
+  against was **42 tools, not 44** as this section originally stated.
+  The correct headline for this release is **42 → 84 public READ
+  tools, exactly a 100% increase** (not 44 → 84 / ~91%). The two
+  "extra" tools accounting for the discrepancy
+  (`pfsense_get_firewall_nat_outbound_mappings`/
+  `pfsense_get_firewall_nat_one_to_one_mappings`) were live-verified
+  against production and registered before this audit's own tracked
+  narrative began, but had never received their own `Added` bullet —
+  fixed above.
+- **Full README restructure** (key facts → what you can do → why this
+  server → quick start → requirements/compatibility → MCP client setup
+  → capability overview → security model → troubleshooting →
+  documentation → release status → contributing/license), including a
+  category-level capability overview table and a symptom/cause/action
+  troubleshooting table. Structural/UX patterns only (badges,
+  table-based summaries, per-client setup subsections) were drawn from
+  surveying other pfSense MCP projects' README conventions for
+  inspiration — no wording, architecture, or security claims copied
+  from any external project.
 
 ### Fixed
 
@@ -415,6 +488,15 @@ never production) before public registration.
   tools re-verified passing against the upgraded LAB after the fix; no
   tool count change (51 unchanged), no new capability, no security
   impact — a pure type-widening correctness fix.
+- **Release-readiness audit (2026-08-21): three stale-documentation
+  findings.** Two model docstrings
+  (`firewall_nat_one_to_one_mapping.py`, `firewall_nat_outbound_mapping.py`)
+  still said "Not yet cross-checked... verified (False)" despite both
+  `Endpoints` entries having been `verified=True` for some time.
+  `docs/PYPI_RELEASE.md`'s release checklist hardcoded "Confirm 42 READ
+  tools" — would have misdirected the owner during this very release;
+  replaced with a pointer to the live registry check instead of a
+  number that will go stale again next release.
 
 ## [0.4.2] - 2026-08-16
 
@@ -922,7 +1004,8 @@ endpoint, or transport path is active.
 - Strongly typed pfSense REST API models and capability-gated tools.
 - GET-only transport enforcement, sanitized fixtures, and offline tests.
 
-[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/night4me/pfsense-mcp-server/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/night4me/pfsense-mcp-server/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/night4me/pfsense-mcp-server/compare/v0.3.0...v0.4.0

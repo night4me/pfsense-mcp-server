@@ -12,14 +12,7 @@ one pfSense appliance — system, network, firewall, DHCP, DNS, VPN,
 certificates, and diagnostics — without raw shell access, an unaudited
 scripting surface, or any way to change the appliance by accident.
 
-> **Release status.** This README describes the **release candidate on
-> `main`** (84 READ tools). **Currently published on PyPI: v0.4.2, 42 READ
-> tools** — see [Release status](#release-status) below for the exact
-> difference and how to preview the candidate today. `pip install
-> pfsense-mcp-server` always gets you the published version, never an
-> unreleased candidate.
-
-## Key facts (release candidate)
+## Key facts
 
 - **84 public READ tools. 0 public WRITE tools by default.**
 - Covers roughly **80% of the useful READ capability surface** identified
@@ -112,14 +105,10 @@ path.
 
 ## Quick start
 
-This installs the **currently published** release (v0.4.2, 42 READ
-tools). To preview the 84-tool release candidate instead, build from
-source — see [`CONTRIBUTING.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md#local-setup).
-
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.4.2'
+.venv/bin/python -m pip install 'pfsense-mcp-server==0.5.0'
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```
@@ -137,7 +126,7 @@ install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 ```
 
 Point your MCP client at that command — see [MCP client setup](#mcp-client-setup)
-below for client-specific guides — confirm it shows 42 READ tools and no
+below for client-specific guides — confirm it shows 84 READ tools and no
 WRITE tools, then try one of the [example prompts](#what-you-can-do)
 above. Full configuration reference, troubleshooting, and every
 environment variable: [`docs/CONFIGURATION.md`](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/).
@@ -312,40 +301,35 @@ A browsable version of the full documentation set below is published at
 
 ## Release status
 
-**v0.4.2 is the immutable production baseline, published on PyPI —
-42 READ tools, 0 WRITE tools.** It is a documentation/packaging-presentation
-patch over v0.4.1 — no functional or security-relevant change. See
-`CHANGELOG.md`'s `[0.4.2]`
-entry for the complete list.
-
-**On `main` (unreleased release candidate): 84 READ tools, 0 WRITE tools
-by default.** A major READ-capability expansion — roughly a 100% increase
-in public READ tool count over the published baseline (42 → 84) — driven
-by a comprehensive capability discovery audit that found the prior
-42-tool contract covered only ~40% of the useful READ capability
-universe; this candidate covers roughly 80%. See `CHANGELOG.md`'s
-`[Unreleased]` section for the complete, tool-by-tool list and every
-security-relevant finding along the way. Publication of this candidate
-(version bump, git tag, GitHub Release, PyPI upload) is an explicit,
-owner-only action and has not yet occurred as of this README.
+**v0.5.0 is the immutable production baseline, published on PyPI —
+84 READ tools, 0 WRITE tools.** A major READ-capability expansion over
+the prior `v0.4.2` baseline — exactly a 100% increase in public READ
+tool count (42 → 84) — driven by a comprehensive capability discovery
+audit that found the prior 42-tool contract covered only ~40% of the
+useful READ capability universe; v0.5.0 covers roughly 80%. See
+`CHANGELOG.md`'s `[0.5.0]` entry for the complete, tool-by-tool list,
+the pfSense CE/Plus compatibility verification performed for this
+release, and every security-relevant finding along the way.
 
 The one WRITE capability this repository has ever added
 (`set_firewall_alias_description_v1`) is `verified=True` following
-independently-verified live evidence (`ADR-026`), but remains unreachable
-under the default profile in both the published and candidate states,
-requires an operator to explicitly opt into `write_protected`, and still
-requires a real, owner-driven signing ceremony for every individual
-mutation — see [the security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/)'s "Recovery and WRITE status"
+independently-verified live evidence (`ADR-026`), but remains
+unreachable under the default profile, requires an operator to
+explicitly opt into `write_protected`, and still requires a real,
+owner-driven signing ceremony for every individual mutation — see
+[the security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/)'s "Recovery and WRITE status"
 section for the precise, current description. The Tier 1 safety
 framework described above remains implemented, tested, structurally
 isolated code, unchanged by this READ expansion.
 
-`v0.4.1` itself published to PyPI successfully and remains a valid,
-installable historical release. `v0.4.0` was tagged and its GitHub
-Release published, but its PyPI publication failed outright before any
-upload was attempted — see `CHANGELOG.md`'s `[0.4.1]` entry for the full
-root cause; per this project's release policy, `v0.4.0`'s tag/Release are
-preserved unmoved as an accurate historical record. See
+`v0.4.2` was a documentation/packaging-presentation patch over `v0.4.1`
+— no functional or security-relevant change — and remains a valid,
+installable historical release, as does `v0.4.1` itself. `v0.4.0` was
+tagged and its GitHub Release published, but its PyPI publication
+failed outright before any upload was attempted — see `CHANGELOG.md`'s
+`[0.4.1]` entry for the full root cause; per this project's release
+policy, `v0.4.0`'s tag/Release are preserved unmoved as an accurate
+historical record. See
 [`docs/ROADMAP.md`](https://night4me.github.io/pfsense-mcp-server/ROADMAP/) for what's next.
 
 ## Contributing

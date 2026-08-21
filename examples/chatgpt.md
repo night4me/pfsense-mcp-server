@@ -41,7 +41,7 @@ same host.
 ## Expected behaviour
 
 Use `/mcp` in the composer to inspect connected servers. The unrestricted
-Auditor profile exposes 42 READ tools and zero WRITE tools. No browser-accessible
+Auditor profile exposes 84 READ tools and zero WRITE tools. No browser-accessible
 endpoint is created.
 
 ## Troubleshooting and limitations
