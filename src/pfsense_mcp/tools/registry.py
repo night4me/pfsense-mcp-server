@@ -81,13 +81,18 @@ from .read import (
     status_wireguard_tunnels,
     system_certificate_authorities,
     system_certificates,
+    system_console,
+    system_dns,
     system_hasync,
+    system_hostname,
     system_packages,
     system_restapi_settings,
     system_restapi_version,
     system_status,
+    system_timezone,
     system_tunables,
     system_version,
+    system_webgui_settings,
     user_groups,
     users,
 )
@@ -171,13 +176,18 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_status_wireguard_tunnels",
         "pfsense_get_system_certificate_authorities",
         "pfsense_get_system_certificates",
+        "pfsense_get_system_console",
+        "pfsense_get_system_dns",
         "pfsense_get_system_hasync",
+        "pfsense_get_system_hostname",
         "pfsense_get_system_packages",
         "pfsense_get_system_restapi_settings",
         "pfsense_get_system_restapi_version",
         "pfsense_get_system_status",
+        "pfsense_get_system_timezone",
         "pfsense_get_system_tunables",
         "pfsense_get_system_version",
+        "pfsense_get_system_webgui_settings",
         "pfsense_get_user_groups",
         "pfsense_get_users",
         "pfsense_mcp_info",
@@ -354,6 +364,16 @@ class ToolRegistry:
             self._register_dhcp_server_address_pool_read()
         if Capability.DHCP_SERVER_CUSTOM_OPTION_READ in self._capabilities:
             self._register_dhcp_server_custom_option_read()
+        if Capability.SYSTEM_HOSTNAME_READ in self._capabilities:
+            self._register_system_hostname_read()
+        if Capability.SYSTEM_TIMEZONE_READ in self._capabilities:
+            self._register_system_timezone_read()
+        if Capability.SYSTEM_DNS_READ in self._capabilities:
+            self._register_system_dns_read()
+        if Capability.SYSTEM_CONSOLE_READ in self._capabilities:
+            self._register_system_console_read()
+        if Capability.SYSTEM_WEBGUI_SETTINGS_READ in self._capabilities:
+            self._register_system_webgui_settings_read()
 
         self.register_all_write()
 
@@ -763,6 +783,31 @@ class ToolRegistry:
     def _register_dhcp_server_custom_option_read(self) -> None:
         fn = dhcp_server_custom_options.build(self._client)
         wrapped = audit_logged("pfsense_get_dhcp_server_custom_options", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_hostname_read(self) -> None:
+        fn = system_hostname.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_hostname", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_timezone_read(self) -> None:
+        fn = system_timezone.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_timezone", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_dns_read(self) -> None:
+        fn = system_dns.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_dns", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_console_read(self) -> None:
+        fn = system_console.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_console", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_webgui_settings_read(self) -> None:
+        fn = system_webgui_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_webgui_settings", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

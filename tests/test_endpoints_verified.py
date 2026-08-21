@@ -874,8 +874,8 @@ def test_dhcp_server_custom_options_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.DHCP_SERVER_CUSTOM_OPTIONS.path_suffix == "/services/dhcp_server/custom_options"
 
 
-def test_system_hostname_is_not_yet_declared_verified():
-    assert Endpoints.SYSTEM_HOSTNAME.verified is False
+def test_system_hostname_is_declared_verified():
+    assert Endpoints.SYSTEM_HOSTNAME.verified is True
 
 
 def test_system_hostname_path_suffix_has_no_api_prefix():
@@ -886,8 +886,8 @@ def test_system_hostname_path_suffix_is_correct():
     assert Endpoints.SYSTEM_HOSTNAME.path_suffix == "/system/hostname"
 
 
-def test_system_timezone_is_not_yet_declared_verified():
-    assert Endpoints.SYSTEM_TIMEZONE.verified is False
+def test_system_timezone_is_declared_verified():
+    assert Endpoints.SYSTEM_TIMEZONE.verified is True
 
 
 def test_system_timezone_path_suffix_has_no_api_prefix():
@@ -898,8 +898,8 @@ def test_system_timezone_path_suffix_is_correct():
     assert Endpoints.SYSTEM_TIMEZONE.path_suffix == "/system/timezone"
 
 
-def test_system_dns_is_not_yet_declared_verified():
-    assert Endpoints.SYSTEM_DNS.verified is False
+def test_system_dns_is_declared_verified():
+    assert Endpoints.SYSTEM_DNS.verified is True
 
 
 def test_system_dns_path_suffix_has_no_api_prefix():
@@ -910,8 +910,8 @@ def test_system_dns_path_suffix_is_correct():
     assert Endpoints.SYSTEM_DNS.path_suffix == "/system/dns"
 
 
-def test_system_console_is_not_yet_declared_verified():
-    assert Endpoints.SYSTEM_CONSOLE.verified is False
+def test_system_console_is_declared_verified():
+    assert Endpoints.SYSTEM_CONSOLE.verified is True
 
 
 def test_system_console_path_suffix_has_no_api_prefix():
@@ -922,8 +922,8 @@ def test_system_console_path_suffix_is_correct():
     assert Endpoints.SYSTEM_CONSOLE.path_suffix == "/system/console"
 
 
-def test_system_webgui_settings_is_not_yet_declared_verified():
-    assert Endpoints.SYSTEM_WEBGUI_SETTINGS.verified is False
+def test_system_webgui_settings_is_declared_verified():
+    assert Endpoints.SYSTEM_WEBGUI_SETTINGS.verified is True
 
 
 def test_system_webgui_settings_path_suffix_has_no_api_prefix():

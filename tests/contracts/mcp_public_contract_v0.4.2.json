@@ -9959,6 +9959,110 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "SYSTEM_CONSOLE_READ",
+      "client_method": "get_system_console",
+      "description": "Return whether a password is required to access the system\n        console. Read-only.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/console",
+        "symbol": "SYSTEM_CONSOLE",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_system_consoleArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_console",
+      "output_schema": {
+        "properties": {
+          "passwd_protect_console": {
+            "title": "Passwd Protect Console",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "passwd_protect_console"
+        ],
+        "title": "SystemConsole",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SYSTEM_DNS_READ",
+      "client_method": "get_system_dns",
+      "description": "Return the current system DNS settings: override policy,\n        local-vs-remote resolution preference, and remote DNS servers.\n        Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        remote DNS server addresses. Defaults to False.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/dns",
+        "symbol": "SYSTEM_DNS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          }
+        },
+        "title": "pfsense_get_system_dnsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_dns",
+      "output_schema": {
+        "properties": {
+          "dnsallowoverride": {
+            "title": "Dnsallowoverride",
+            "type": "boolean"
+          },
+          "dnslocalhost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dnslocalhost"
+          },
+          "dnsserver": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+            "title": "Dnsserver"
+          }
+        },
+        "required": [
+          "dnsallowoverride",
+          "dnslocalhost"
+        ],
+        "title": "SystemDNS",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SYSTEM_HA_SYNC_READ",
       "client_method": "get_system_hasync",
       "description": "Get pfSense's High Availability (HA) synchronization\n        (pfsync/XMLRPC config sync) settings: whether pfsync is\n        enabled, the sync interface, peer address, and which\n        configuration areas are synchronized. Read-only.\n\n        include_identifying_metadata: if True, includes the HA sync\n        username and host ID in the response. Defaults to False.",
@@ -10157,6 +10261,66 @@
           "synchronizewol"
         ],
         "title": "SystemHaSync",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SYSTEM_HOSTNAME_READ",
+      "client_method": "get_system_hostname",
+      "description": "Return the current system hostname and domain. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        hostname and domain. Defaults to False.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/hostname",
+        "symbol": "SYSTEM_HOSTNAME",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          }
+        },
+        "title": "pfsense_get_system_hostnameArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_hostname",
+      "output_schema": {
+        "properties": {
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+            "title": "Domain"
+          },
+          "hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+            "title": "Hostname"
+          }
+        },
+        "title": "SystemHostname",
         "type": "object"
       }
     },
@@ -10645,6 +10809,41 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "SYSTEM_TIMEZONE_READ",
+      "client_method": "get_system_timezone",
+      "description": "Return the current system timezone. Read-only.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/timezone",
+        "symbol": "SYSTEM_TIMEZONE",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_system_timezoneArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_timezone",
+      "output_schema": {
+        "properties": {
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timezone"
+        ],
+        "title": "SystemTimezone",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SYSTEM_TUNABLE_READ",
       "client_method": "get_system_tunables",
       "description": "List pfSense system tunables (FreeBSD sysctl name, description, and current value).",
@@ -10789,6 +10988,58 @@
           "version"
         ],
         "title": "SystemVersion",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SYSTEM_WEBGUI_SETTINGS_READ",
+      "client_method": "get_system_webgui_settings",
+      "description": "Return the current web GUI listener settings: protocol,\n        port, and assigned TLS certificate reference. Read-only.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/webgui/settings",
+        "symbol": "SYSTEM_WEBGUI_SETTINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_system_webgui_settingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_webgui_settings",
+      "output_schema": {
+        "properties": {
+          "port": {
+            "title": "Port",
+            "type": "string"
+          },
+          "protocol": {
+            "title": "Protocol",
+            "type": "string"
+          },
+          "sslcertref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sslcertref"
+          }
+        },
+        "required": [
+          "protocol",
+          "port",
+          "sslcertref"
+        ],
+        "title": "WebGUISettings",
         "type": "object"
       }
     },

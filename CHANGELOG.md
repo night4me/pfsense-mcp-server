@@ -178,24 +178,36 @@ never production) before public registration.
     unregistered in the interim, matching the established
     "implemented, offline-tested, blocked" precedent from P1 Batch A's
     WireGuard pair.
-- **5 more READ candidates implemented and offline-tested (P1 Batch F,
-  system identity/config cluster) but NOT yet registered** — public
-  MCP contract unchanged at 70: `SystemHostname`, `SystemTimezone`,
-  `SystemDNS`, `SystemConsole`, `WebGUISettings` models,
-  `PfSenseClient.get_system_hostname()`/`get_system_timezone()`/
-  `get_system_dns()`/`get_system_console()`/`get_system_webgui_settings()`,
-  and their `Endpoints` entries (`verified=False`) all exist and are
-  fully offline-tested. No `tools/read/` file exists for any of the
-  five yet, so they remain structurally unreachable through the MCP
-  surface. `SystemHostname.hostname`/`.domain` are redacted by default
-  (a conservative-posture judgment call, not a schema-confirmed
-  secret — they identify the specific managed appliance/network) and
-  `SystemDNS.dnsserver` (literal DNS server addresses) is redacted by
-  default, matching `RoutingStaticRoute.gateway`/`GatewayConfig.gateway`'s
-  established conventions. `WebGUISettings` was independently
-  re-verified secret-free during this batch's own re-check
-  (`protocol`/`port`/`sslcertref` only — `sslcertref` is a certificate
-  reference, not key material).
+- **5 more READ tools (P1 Batch F, system identity/config cluster),
+  public MCP contract 70 → 75 (0 WRITE, unchanged):**
+  - `pfsense_get_system_hostname` — system hostname and domain.
+  - `pfsense_get_system_timezone` — system timezone.
+  - `pfsense_get_system_dns` — system DNS settings: override policy,
+    local-vs-remote resolution preference, remote DNS servers.
+  - `pfsense_get_system_console` — whether a password is required to
+    access the system console.
+  - `pfsense_get_system_webgui_settings` — web GUI listener settings:
+    protocol, port, assigned TLS certificate reference.
+  - `SystemHostname.hostname`/`.domain` are redacted by default (a
+    conservative-posture judgment call, not a schema-confirmed
+    secret — they identify the specific managed appliance/network) and
+    `SystemDNS.dnsserver` (literal DNS server addresses) is redacted by
+    default, matching `RoutingStaticRoute.gateway`/`GatewayConfig.gateway`'s
+    established conventions. `WebGUISettings` was independently
+    re-verified secret-free during this batch's own re-check
+    (`protocol`/`port`/`sslcertref` only — `sslcertref` is a certificate
+    reference, not key material).
+  - LAB-verified: `system/hostname`, `system/timezone`,
+    `system/console`, and `system/webgui/settings` all reached
+    `FIELD_MODEL_LIVE_VERIFIED` (real populated data, not just an empty
+    envelope); `system/dns` reached `ENDPOINT_VERIFIED` (no remote DNS
+    servers configured on this LAB). No package required for any of
+    the five (base pfSense features).
+  - The models/client methods/`Endpoints` entries were implemented and
+    offline-tested one commit before registration, deliberately
+    unregistered in the interim, matching the established
+    "implemented, offline-tested, blocked" precedent from P1 Batch A's
+    WireGuard pair.
 
 ### Security
 

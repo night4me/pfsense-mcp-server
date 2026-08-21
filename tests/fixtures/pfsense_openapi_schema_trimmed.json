@@ -1316,9 +1316,24 @@
         "description": "<h3>Description:</h3>Reads all existing Certificates.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Certificate<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-certificates-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/system/console": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current System Console.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemConsole<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-console-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/dns": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads the current system DNS settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemDNS<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-dns-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/system/hasync": {
       "get": {
         "description": "<h3>Description:</h3>Reads pfSense High Availability synchronization settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HASync<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-hasync-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/hostname": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads the current system hostname.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemHostname<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-hostname-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/system/notifications/email_settings": {
@@ -1349,6 +1364,16 @@
     "/api/v2/system/version": {
       "get": {
         "description": "<h3>Description:</h3>Reads current System Version.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemVersion<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-version-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/timezone": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads the current system timezone.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemTimezone<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-timezone-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/webgui/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Web GUI Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: WebGUISettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-webgui-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/user/groups": {

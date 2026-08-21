@@ -262,6 +262,37 @@ on this LAB — no populated non-null value observed). All five
 registered. **64 READ / 65 combined become 69 READ / 70 combined**
 throughout this document as of this pass.
 
+**2026-08-21 (same day, later still) — system identity/config cluster
+LAB-verified and registered (P1 Batch F).** `system/hostname`,
+`system/timezone`, `system/dns`, `system/console`, and
+`system/webgui/settings` were re-checked against the pinned schema for
+secret fields (none found). `SystemHostname.hostname`/`.domain` are
+redacted by default (a conservative-posture judgment call, not a
+schema-confirmed secret — they identify the specific managed
+appliance/network) and `SystemDNS.dnsserver` (literal DNS server
+addresses) is redacted by default, matching
+`RoutingStaticRoute.gateway`/`GatewayConfig.gateway`'s established
+conventions. `WebGUISettings` was independently re-verified
+secret-free during this batch's own re-check (`protocol`/`port`/
+`sslcertref` only — `sslcertref` is a certificate reference, not key
+material). `PfSenseClient.get_system_hostname()`/`get_system_timezone()`/
+`get_system_dns()`/`get_system_console()`/`get_system_webgui_settings()`,
+their models, and their `Endpoints` entries were implemented,
+offline-tested, and left unregistered for one commit (matching the P1
+Batch A WireGuard precedent) before LAB verification. LAB verification
+found real populated data for all five: `system/hostname` returned
+`FIELD_MODEL_LIVE_VERIFIED` (`hostname="pfSenseLAB"`,
+`domain="test.arpa"`), `system/timezone` returned
+`FIELD_MODEL_LIVE_VERIFIED` (`"Etc/UTC"`), `system/console` returned
+`FIELD_MODEL_LIVE_VERIFIED` (`passwd_protect_console=False`),
+`system/webgui/settings` returned `FIELD_MODEL_LIVE_VERIFIED` (a real
+populated `sslcertref`), and `system/dns` returned `ENDPOINT_VERIFIED`
+(`dnsserver`/`dnslocalhost` both null — no remote DNS servers
+configured on this LAB). All five `Endpoints` entries are now
+`verified=True`; all five tools are now registered. **69 READ / 70
+combined become 74 READ / 75 combined** throughout this document as of
+this pass.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -321,7 +352,7 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 69 endpoints this project's 70 READ
+exists for them. **None of the 74 endpoints this project's 75 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
@@ -330,8 +361,9 @@ certificate-authority endpoints, the IPsec SA/child-SA and WireGuard
 tunnel/peer status endpoints, the OpenVPN server/client/connection/
 route status endpoints, the DNS Forwarder host-override/DNS Resolver
 domain-override/access-list endpoints, the interface available-
-interfaces/GRE/LAGG endpoints, and the routing-gateway-group/default
-and DHCP relay/address-pool/custom-option endpoints, each of which
+interfaces/GRE/LAGG endpoints, the routing-gateway-group/default and
+DHCP relay/address-pool/custom-option endpoints, and the system
+hostname/timezone/DNS/console/webgui-settings endpoints, each of which
 offers a narrow alternative alongside `page-all`). This must be
 re-checked for any *future* tool added against a new endpoint — it is
 not a general guarantee.
@@ -367,18 +399,19 @@ firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
 status pair, the WireGuard tunnel/peer status pair, the OpenVPN
 server/client/connection/route status four, the DNS Forwarder/
 Resolver extras three, the interface available-interfaces/GRE/LAGG
-three, and the routing-gateway-group/default and DHCP relay/address-
-pool/custom-option five, were cross-checked against a live schema
+three, the routing-gateway-group/default and DHCP relay/address-
+pool/custom-option five, and the system hostname/timezone/DNS/
+console/webgui-settings five, were cross-checked against a live schema
 freshly fetched from the **LAB** appliance (`pfsense-test.lab.invalid`)
 during owner-authorized LAB READ verification passes — also an exact
-match, zero mismatches (69 of 69 now, including all twenty-six). The
-IPsec, WireGuard, OpenVPN, DNS, interface-extras, and routing/DHCP
-groups' LAB cross-checks were against the upgraded pfSense CE 2.9.0
-appliance specifically; its REST API package schema remained an exact
-267-path match despite the platform upgrade, both before and after
-installing `pfSense-pkg-WireGuard`.
+match, zero mismatches (74 of 74 now, including all thirty-one). The
+IPsec, WireGuard, OpenVPN, DNS, interface-extras, routing/DHCP, and
+system-identity groups' LAB cross-checks were against the upgraded
+pfSense CE 2.9.0 appliance specifically; its REST API package schema
+remained an exact 267-path match despite the platform upgrade, both
+before and after installing `pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (70 tools)
+## READ privilege matrix (75 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -443,20 +476,25 @@ installing `pfSense-pkg-WireGuard`.
 | `pfsense_status_wireguard_tunnels` | `get_status_wireguard_tunnels` | `GET /api/v2/status/wireguard/tunnels` | `api-v2-status-wireguard-tunnels-get` | ✅ |
 | `pfsense_system_certificate_authorities` | `get_system_certificate_authorities` | `GET /api/v2/system/certificate_authorities` | `api-v2-system-certificate-authorities-get` | ✅ |
 | `pfsense_system_certificates` | `get_system_certificates` | `GET /api/v2/system/certificates` | `api-v2-system-certificates-get` | ✅ |
+| `pfsense_system_console` | `get_system_console` | `GET /api/v2/system/console` | `api-v2-system-console-get` | ✅ |
+| `pfsense_system_dns` | `get_system_dns` | `GET /api/v2/system/dns` | `api-v2-system-dns-get` | ✅ |
 | `pfsense_system_hasync` | `get_system_hasync` | `GET /api/v2/system/hasync` | `api-v2-system-hasync-get` | ✅ |
+| `pfsense_system_hostname` | `get_system_hostname` | `GET /api/v2/system/hostname` | `api-v2-system-hostname-get` | ✅ |
 | `pfsense_system_packages` | `get_system_packages` | `GET /api/v2/system/packages` | `api-v2-system-packages-get` | ✅ |
 | `pfsense_system_restapi_settings` | `get_system_restapi_settings` | `GET /api/v2/system/restapi/settings` | `api-v2-system-restapi-settings-get` | ✅ |
 | `pfsense_system_restapi_version` | `get_system_restapi_version` | `GET /api/v2/system/restapi/version` | `api-v2-system-restapi-version-get` | ✅ |
 | `pfsense_system_status` | `get_system_status` | `GET /api/v2/status/system` | `api-v2-status-system-get` | ✅ |
+| `pfsense_system_timezone` | `get_system_timezone` | `GET /api/v2/system/timezone` | `api-v2-system-timezone-get` | ✅ |
 | `pfsense_system_tunables` | `get_system_tunables` | `GET /api/v2/system/tunables` | `api-v2-system-tunables-get` | ✅ |
 | `pfsense_system_version` | `get_system_version` | `GET /api/v2/system/version` | `api-v2-system-version-get` | ✅ |
+| `pfsense_system_webgui_settings` | `get_system_webgui_settings` | `GET /api/v2/system/webgui/settings` | `api-v2-system-webgui-settings-get` | ✅ |
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**69 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 69`). A least-privilege
-READ-only identity holding exactly these 69 (never `page-all`) can serve
-every one of this project's 70 registered READ tools.
+**74 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 74`). A least-privilege
+READ-only identity holding exactly these 74 (never `page-all`) can serve
+every one of this project's 75 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -465,7 +503,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 71st tool would
+completeness, since a future decision to expose it as a 76th tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -499,11 +537,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 69 READ privileges
+The 4 WRITE privileges are a strict subset of the 74 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **70 distinct privileges**: the 69 READ
+identity therefore needs exactly **75 distinct privileges**: the 74 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

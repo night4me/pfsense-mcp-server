@@ -68,6 +68,11 @@ class Capability(Enum):
     DHCP_RELAY_READ = auto()
     DHCP_SERVER_ADDRESS_POOL_READ = auto()
     DHCP_SERVER_CUSTOM_OPTION_READ = auto()
+    SYSTEM_HOSTNAME_READ = auto()
+    SYSTEM_TIMEZONE_READ = auto()
+    SYSTEM_DNS_READ = auto()
+    SYSTEM_CONSOLE_READ = auto()
+    SYSTEM_WEBGUI_SETTINGS_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -142,6 +147,11 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.DHCP_RELAY_READ,
         Capability.DHCP_SERVER_ADDRESS_POOL_READ,
         Capability.DHCP_SERVER_CUSTOM_OPTION_READ,
+        Capability.SYSTEM_HOSTNAME_READ,
+        Capability.SYSTEM_TIMEZONE_READ,
+        Capability.SYSTEM_DNS_READ,
+        Capability.SYSTEM_CONSOLE_READ,
+        Capability.SYSTEM_WEBGUI_SETTINGS_READ,
     }
 )
 

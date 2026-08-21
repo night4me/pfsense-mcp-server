@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 70 READ, 0 WRITE
+Registered tools: 75 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -154,6 +154,52 @@ Common parameters:
 - **Security:** Reveals HA role/health but no peer credential or mutation
   control.
 - **Example:** `{"name":"pfsense_get_carp_status","arguments":{}}`
+
+### `pfsense_get_system_hostname`
+
+- **Purpose:** Return the current system hostname and domain.
+- **Parameters:** `include_identifying_metadata: boolean = false`.
+- **Returns:** `SystemHostname`.
+- **Security:** Literal hostname/domain are omitted by default (a
+  conservative-posture judgment call, not a schema-confirmed secret).
+- **Example:** `{"name":"pfsense_get_system_hostname","arguments":{}}`
+
+### `pfsense_get_system_timezone`
+
+- **Purpose:** Return the current system timezone.
+- **Parameters:** None.
+- **Returns:** `SystemTimezone`.
+- **Security:** General configuration value; not redacted.
+- **Example:** `{"name":"pfsense_get_system_timezone","arguments":{}}`
+
+### `pfsense_get_system_dns`
+
+- **Purpose:** Return the current system DNS settings: override policy,
+  local-vs-remote resolution preference, and remote DNS servers.
+- **Parameters:** `include_identifying_metadata: boolean = false`.
+- **Returns:** `SystemDNS`.
+- **Security:** Literal remote DNS server addresses are omitted by default.
+- **Example:** `{"name":"pfsense_get_system_dns","arguments":{}}`
+
+### `pfsense_get_system_console`
+
+- **Purpose:** Return whether a password is required to access the system
+  console.
+- **Parameters:** None.
+- **Returns:** `SystemConsole`.
+- **Security:** A boolean flag only, not the password itself; not redacted.
+- **Example:** `{"name":"pfsense_get_system_console","arguments":{}}`
+
+### `pfsense_get_system_webgui_settings`
+
+- **Purpose:** Return the current web GUI listener settings: protocol,
+  port, and assigned TLS certificate reference.
+- **Parameters:** None.
+- **Returns:** `WebGUISettings`.
+- **Security:** Listener/service posture only; no credential or key
+  material (`sslcertref` is a certificate reference, not the certificate
+  itself).
+- **Example:** `{"name":"pfsense_get_system_webgui_settings","arguments":{}}`
 
 ## Interfaces, routing, and neighbors
 
