@@ -578,3 +578,44 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # P1 Batch H candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; pure QoS/bandwidth
+    # config, no addresses). No package required (base pfSense
+    # feature). Not yet LAB-verified.
+    FIREWALL_TRAFFIC_SHAPERS = EndpointInfo(
+        path_suffix="/firewall/traffic_shapers",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch H candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; addr redacted by
+    # default). Requires pfSense-pkg-freeradius3, confirmed NOT
+    # installed on this LAB (only pfSense-pkg-WireGuard is installed) --
+    # implemented and offline-tested only per the package-conditional
+    # candidate rule; owner decision required before LAB installation.
+    SERVICES_FREERADIUS_INTERFACES = EndpointInfo(
+        path_suffix="/services/freeradius/interfaces",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch H candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; mac + 5 framed_*
+    # address fields redacted by default). Requires
+    # pfSense-pkg-freeradius3, confirmed NOT installed on this LAB --
+    # implemented and offline-tested only per the package-conditional
+    # candidate rule; owner decision required before LAB installation.
+    SERVICES_FREERADIUS_MACS = EndpointInfo(
+        path_suffix="/services/freeradius/macs",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch H candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found). Requires
+    # pfSense-pkg-Service_Watchdog, confirmed NOT installed on this LAB --
+    # implemented and offline-tested only per the package-conditional
+    # candidate rule; owner decision required before LAB installation.
+    SERVICES_SERVICE_WATCHDOGS = EndpointInfo(
+        path_suffix="/services/service_watchdogs",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

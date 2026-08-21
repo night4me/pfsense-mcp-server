@@ -1,0 +1,22 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "addr": "198.51.100.5",
+      "port": "1812",
+      "type": "auth",
+      "ip_version": "ipv4",
+      "description": "Synthetic FreeRADIUS auth interface (offline fixture)"
+    },
+    {
+      "addr": "0.0.0.0",
+      "port": "1813",
+      "type": "acct",
+      "ip_version": "ipv4",
+      "description": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

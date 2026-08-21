@@ -1,0 +1,58 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "enabled": true,
+      "interface": "wan",
+      "name": "WAN_SHAPER",
+      "scheduler": "HFSC",
+      "bandwidthtype": "Mb",
+      "bandwidth": 100,
+      "qlimit": 100,
+      "tbrconfig": null,
+      "queue": [
+        {
+          "name": "qDefault",
+          "qlimit": 50,
+          "bandwidth": 50,
+          "upperlimit_m2": "50Mb",
+          "realtime_m2": "10Mb",
+          "linkshare_m2": "50Mb",
+          "interface": "wan",
+          "enabled": true,
+          "priority": 1,
+          "description": "Synthetic default queue (offline fixture)",
+          "default": true,
+          "red": false,
+          "rio": false,
+          "ecn": false,
+          "codel": false,
+          "bandwidthtype": "Mb",
+          "upperlimit": true,
+          "upperlimit_m1": "80Mb",
+          "upperlimit_d": 1000,
+          "realtime": true,
+          "realtime_m1": "20Mb",
+          "realtime_d": 1000,
+          "linkshare": true,
+          "linkshare_m1": "50Mb",
+          "linkshare_d": 1000
+        }
+      ]
+    },
+    {
+      "enabled": false,
+      "interface": "lan",
+      "name": null,
+      "scheduler": "FAIRQ",
+      "bandwidthtype": "Mb",
+      "bandwidth": 1000,
+      "qlimit": null,
+      "tbrconfig": null,
+      "queue": []
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

@@ -45,6 +45,8 @@ from .models.firewall_schedule import FirewallSchedule
 from .models.firewall_traffic_shaper_limiter import FirewallTrafficShaperLimiter
 from .models.firewall_virtual_ip import FirewallVirtualIp
 from .models.free_radius_eap import FreeRadiusEap
+from .models.free_radius_interface import FreeRADIUSInterface
+from .models.free_radius_mac import FreeRADIUSMAC
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
@@ -67,6 +69,7 @@ from .models.restapi_access_list_entry import RESTAPIAccessListEntry
 from .models.routing_gateway_group import RoutingGatewayGroup
 from .models.routing_static_route import RoutingStaticRoute
 from .models.service_status import ServiceStatus
+from .models.service_watchdog import ServiceWatchdog
 from .models.ssh_settings import SshSettings
 from .models.system import SystemStatus
 from .models.system_certificate import SystemCertificate
@@ -81,6 +84,7 @@ from .models.system_restapi_version import SystemRestApiVersion
 from .models.system_timezone import SystemTimezone
 from .models.system_tunable import SystemTunable
 from .models.system_version import SystemVersion
+from .models.traffic_shaper import TrafficShaper
 from .models.web_gui_settings import WebGUISettings
 from .models.wireguard_peer_status import WireGuardPeerStatus
 from .models.wireguard_tunnel_status import WireGuardTunnelStatus
@@ -284,6 +288,22 @@ SYSTEM_CRLS_MAX_LIMIT = 100
 
 SYSTEM_PACKAGE_AVAILABLE_MIN_LIMIT = 1
 SYSTEM_PACKAGE_AVAILABLE_MAX_LIMIT = 100
+
+
+FIREWALL_TRAFFIC_SHAPERS_MIN_LIMIT = 1
+FIREWALL_TRAFFIC_SHAPERS_MAX_LIMIT = 100
+
+
+SERVICES_FREERADIUS_INTERFACES_MIN_LIMIT = 1
+SERVICES_FREERADIUS_INTERFACES_MAX_LIMIT = 100
+
+
+SERVICES_FREERADIUS_MACS_MIN_LIMIT = 1
+SERVICES_FREERADIUS_MACS_MAX_LIMIT = 100
+
+
+SERVICES_SERVICE_WATCHDOGS_MIN_LIMIT = 1
+SERVICES_SERVICE_WATCHDOGS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -1112,3 +1132,55 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.SYSTEM_PACKAGE_AVAILABLE, params={"limit": limit})
         return _parse_list_response(raw, "/system/package/available", AvailablePackage.from_api)
+
+    def get_firewall_traffic_shapers(self, *, limit: int = 100) -> list[TrafficShaper]:
+        if not (FIREWALL_TRAFFIC_SHAPERS_MIN_LIMIT <= limit <= FIREWALL_TRAFFIC_SHAPERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {FIREWALL_TRAFFIC_SHAPERS_MIN_LIMIT} and "
+                f"{FIREWALL_TRAFFIC_SHAPERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.FIREWALL_TRAFFIC_SHAPERS, params={"limit": limit})
+        return _parse_list_response(raw, "/firewall/traffic_shapers", TrafficShaper.from_api)
+
+    def get_services_freeradius_interfaces(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FreeRADIUSInterface]:
+        if not (SERVICES_FREERADIUS_INTERFACES_MIN_LIMIT <= limit <= SERVICES_FREERADIUS_INTERFACES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SERVICES_FREERADIUS_INTERFACES_MIN_LIMIT} and "
+                f"{SERVICES_FREERADIUS_INTERFACES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SERVICES_FREERADIUS_INTERFACES, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/services/freeradius/interfaces",
+            lambda data: FreeRADIUSInterface.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_services_freeradius_macs(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[FreeRADIUSMAC]:
+        if not (SERVICES_FREERADIUS_MACS_MIN_LIMIT <= limit <= SERVICES_FREERADIUS_MACS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SERVICES_FREERADIUS_MACS_MIN_LIMIT} and "
+                f"{SERVICES_FREERADIUS_MACS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SERVICES_FREERADIUS_MACS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/services/freeradius/macs",
+            lambda data: FreeRADIUSMAC.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_services_service_watchdogs(self, *, limit: int = 100) -> list[ServiceWatchdog]:
+        if not (SERVICES_SERVICE_WATCHDOGS_MIN_LIMIT <= limit <= SERVICES_SERVICE_WATCHDOGS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SERVICES_SERVICE_WATCHDOGS_MIN_LIMIT} and "
+                f"{SERVICES_SERVICE_WATCHDOGS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SERVICES_SERVICE_WATCHDOGS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/service_watchdogs", ServiceWatchdog.from_api)

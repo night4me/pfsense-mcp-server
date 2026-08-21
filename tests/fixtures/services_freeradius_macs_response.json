@@ -1,0 +1,33 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "mac": "02:00:00:aa:bb:cc",
+      "description": "Synthetic FreeRADIUS MAC entry (offline fixture)",
+      "framed_ip_address": "198.51.100.20",
+      "framed_ip_netmask": "255.255.255.0",
+      "framed_route": "198.51.100.0/24",
+      "framed_ipv6_address": "2001:db8::20",
+      "framed_ipv6_route": "2001:db8::/64",
+      "vlan_id": "10",
+      "wispr_redirection_url": "",
+      "simultaneous_connect": 1,
+      "expiration": "",
+      "session_timeout": 3600,
+      "login_time": "",
+      "amount_of_time": null,
+      "point_of_time": "",
+      "max_total_octets": null,
+      "max_total_octets_time_range": "",
+      "max_bandwidth_down": null,
+      "max_bandwidth_up": null,
+      "acct_interim_interval": null,
+      "top_additional_options": [],
+      "check_items_additional_options": [],
+      "reply_items_additional_options": []
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

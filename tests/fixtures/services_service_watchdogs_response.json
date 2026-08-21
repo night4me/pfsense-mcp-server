@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "unbound",
+      "description": "Synthetic watchdog entry (offline fixture)",
+      "notify": true,
+      "enabled": true
+    },
+    {
+      "name": "openvpn",
+      "description": null,
+      "notify": false,
+      "enabled": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

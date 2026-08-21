@@ -241,6 +241,38 @@ never production) before public registration.
     unregistered in the interim, matching the established
     "implemented, offline-tested, blocked" precedent from P1 Batch A's
     WireGuard pair.
+- **1 more READ candidate implemented and offline-tested (P1 Batch H,
+  service/traffic policy cluster) but NOT yet registered** — public
+  MCP contract unchanged at 78: `TrafficShaper`/`TrafficShaperQueue`,
+  `PfSenseClient.get_firewall_traffic_shapers()`, and its `Endpoints`
+  entry (`verified=False`) all exist and are fully offline-tested. No
+  `tools/read/` file exists yet, so it remains structurally
+  unreachable through the MCP surface. No field is redacted (pure
+  QoS/bandwidth-shaping configuration data, no addresses). Of
+  `TrafficShaperQueue`'s 27 fields, only 6 are schema-required; the
+  other 21 are each documented as only available for a specific
+  `scheduler` type or sibling boolean flag and are treated as
+  genuinely possibly-absent via `.get()`, matching the `InterfaceLAGG`
+  precedent.
+- **3 more READ candidates implemented and offline-tested (P1 Batch H,
+  service/traffic policy cluster) but requiring an absent package —
+  package-conditional, NOT a LAB-installation authorization**:
+  `services/freeradius/interfaces` and `services/freeradius/macs`
+  (require `pfSense-pkg-freeradius3`) and `services/service_watchdogs`
+  (requires `pfSense-pkg-Service_Watchdog`). Direct LAB inspection via
+  the already-shipped `pfsense_get_system_packages` tool confirmed
+  neither package is installed on this LAB — only
+  `pfSense-pkg-WireGuard` is. `FreeRADIUSInterface`/`FreeRADIUSMAC`/
+  `ServiceWatchdog` models, their client methods, and their `Endpoints`
+  entries (`verified=False`) all exist and are fully offline-tested,
+  but are left unregistered pending an owner decision on installing
+  either package — matching this project's standing
+  package-conditional-candidate rule (only `pfSense-pkg-WireGuard`
+  installation was ever explicitly authorized). `FreeRADIUSInterface.addr`
+  (listening address) and `FreeRADIUSMAC.mac`/5 `framed_*` address
+  fields are redacted by default once registered, matching
+  `GatewayConfig.gateway`/`InterfaceStatus.macaddr`'s established
+  conventions.
 
 ### Security
 

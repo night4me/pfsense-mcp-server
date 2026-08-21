@@ -8279,3 +8279,492 @@ def test_get_system_package_available_shape_error_does_not_leak_raw_field_values
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_package_available()
     assert sentinel not in str(excinfo.value)
+
+
+FIREWALL_TRAFFIC_SHAPERS_FIXTURE = Path(__file__).parent / "fixtures" / "firewall_traffic_shapers_response.json"
+
+
+def _firewall_traffic_shapers_body() -> dict:
+    return json.loads(FIREWALL_TRAFFIC_SHAPERS_FIXTURE.read_text())
+
+
+def _firewall_traffic_shapers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _firewall_traffic_shapers_body()
+    transport.register("GET", "/api/v2/firewall/traffic_shapers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_firewall_traffic_shapers_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _firewall_traffic_shapers_client(body)
+    assert client.get_firewall_traffic_shapers() == []
+
+
+def test_get_firewall_traffic_shapers_maps_fields_with_nested_queue():
+    client, _ = _firewall_traffic_shapers_client()
+    shapers = client.get_firewall_traffic_shapers()
+    first = next(s for s in shapers if s.interface == "wan")
+    assert first.enabled is True
+    assert first.name == "WAN_SHAPER"
+    assert first.scheduler == "HFSC"
+    assert first.bandwidth == 100
+    assert len(first.queue) == 1
+    queue = first.queue[0]
+    assert queue.name == "qDefault"
+    assert queue.qlimit == 50
+    assert queue.upperlimit_m2 == "50Mb"
+    assert queue.priority == 1
+    assert queue.bandwidthtype == "Mb"
+
+
+def test_get_firewall_traffic_shapers_tolerates_missing_conditional_queue_fields():
+    """TrafficShaperQueue's non-required fields are each schema-documented
+    as only available for specific scheduler types -- confirm the model
+    falls back to None/the schema's own declared default when a
+    conditional field is genuinely absent, rather than raising a shape
+    error."""
+
+    body = _firewall_traffic_shapers_body()
+    queue_item = body["data"][0]["queue"][0]
+    for field in ("interface", "enabled", "priority", "description", "default", "bandwidthtype", "upperlimit_m1"):
+        del queue_item[field]
+    client, _ = _firewall_traffic_shapers_client(body)
+    shapers = client.get_firewall_traffic_shapers()
+    queue = next(s for s in shapers if s.interface == "wan").queue[0]
+    assert queue.interface is None
+    assert queue.enabled is None
+    assert queue.priority == 1
+    assert queue.description is None
+    assert queue.default is None
+    assert queue.bandwidthtype == "Mb"
+    assert queue.upperlimit_m1 is None
+
+
+def test_get_firewall_traffic_shapers_parses_null_optional_fields():
+    client, _ = _firewall_traffic_shapers_client()
+    shapers = client.get_firewall_traffic_shapers()
+    second = next(s for s in shapers if s.interface == "lan")
+    assert second.name is None
+    assert second.qlimit is None
+    assert second.tbrconfig is None
+    assert second.queue == []
+
+
+def test_get_firewall_traffic_shapers_only_calls_endpoint_with_default_limit():
+    client, transport = _firewall_traffic_shapers_client()
+    client.get_firewall_traffic_shapers()
+    assert transport.calls == [("GET", "/api/v2/firewall/traffic_shapers?limit=100")]
+
+
+def test_get_firewall_traffic_shapers_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _firewall_traffic_shapers_body()
+    transport.register("GET", "/api/v2/firewall/traffic_shapers?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_firewall_traffic_shapers(limit=5)
+    assert transport.calls == [("GET", "/api/v2/firewall/traffic_shapers?limit=5")]
+
+
+def test_get_firewall_traffic_shapers_rejects_zero_limit():
+    client, _ = _firewall_traffic_shapers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_traffic_shapers(limit=0)
+
+
+def test_get_firewall_traffic_shapers_rejects_limit_above_max():
+    client, _ = _firewall_traffic_shapers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_traffic_shapers(limit=101)
+
+
+def test_get_firewall_traffic_shapers_invalid_limit_never_calls_transport():
+    client, transport = _firewall_traffic_shapers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_firewall_traffic_shapers(limit=0)
+    assert transport.calls == []
+
+
+def test_get_firewall_traffic_shapers_missing_data_key_raises_shape_error():
+    body = _firewall_traffic_shapers_body()
+    del body["data"]
+    client, _ = _firewall_traffic_shapers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shapers()
+
+
+def test_get_firewall_traffic_shapers_item_wrong_type_raises_shape_error():
+    body = _firewall_traffic_shapers_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _firewall_traffic_shapers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shapers()
+
+
+def test_get_firewall_traffic_shapers_required_field_missing_raises_shape_error():
+    body = _firewall_traffic_shapers_body()
+    del body["data"][0]["queue"][0]["name"]
+    client, _ = _firewall_traffic_shapers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_firewall_traffic_shapers()
+
+
+def test_get_firewall_traffic_shapers_shape_error_does_not_leak_raw_field_values():
+    body = _firewall_traffic_shapers_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["scheduler"] = [sentinel]
+    client, _ = _firewall_traffic_shapers_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_firewall_traffic_shapers()
+    assert sentinel not in str(excinfo.value)
+
+
+SERVICES_FREERADIUS_INTERFACES_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "services_freeradius_interfaces_response.json"
+)
+SERVICES_FREERADIUS_INTERFACES_IDENTIFYING_FIELDS = ("addr",)
+
+
+def _services_freeradius_interfaces_body() -> dict:
+    return json.loads(SERVICES_FREERADIUS_INTERFACES_FIXTURE.read_text())
+
+
+def _services_freeradius_interfaces_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _services_freeradius_interfaces_body()
+    transport.register(
+        "GET", "/api/v2/services/freeradius/interfaces?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_services_freeradius_interfaces_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _services_freeradius_interfaces_client(body)
+    assert client.get_services_freeradius_interfaces() == []
+
+
+def test_get_services_freeradius_interfaces_omits_identifying_fields_by_default():
+    client, _ = _services_freeradius_interfaces_client()
+    interfaces = client.get_services_freeradius_interfaces()
+    assert len(interfaces) == 2
+    for interface in interfaces:
+        for field in SERVICES_FREERADIUS_INTERFACES_IDENTIFYING_FIELDS:
+            assert getattr(interface, field) is None
+
+
+def test_get_services_freeradius_interfaces_includes_identifying_fields_when_requested():
+    client, _ = _services_freeradius_interfaces_client()
+    interfaces = client.get_services_freeradius_interfaces(include_identifying_metadata=True)
+    first = next(i for i in interfaces if i.type == "auth")
+    assert first.addr == "198.51.100.5"
+
+
+def test_get_services_freeradius_interfaces_maps_non_sensitive_fields():
+    client, _ = _services_freeradius_interfaces_client()
+    interfaces = client.get_services_freeradius_interfaces()
+    first = next(i for i in interfaces if i.type == "auth")
+    assert first.port == "1812"
+    assert first.ip_version == "ipv4"
+    assert first.description == "Synthetic FreeRADIUS auth interface (offline fixture)"
+
+
+def test_get_services_freeradius_interfaces_only_calls_endpoint_with_default_limit():
+    client, transport = _services_freeradius_interfaces_client()
+    client.get_services_freeradius_interfaces()
+    assert transport.calls == [("GET", "/api/v2/services/freeradius/interfaces?limit=100")]
+
+
+def test_get_services_freeradius_interfaces_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _services_freeradius_interfaces_body()
+    transport.register("GET", "/api/v2/services/freeradius/interfaces?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_services_freeradius_interfaces(limit=5)
+    assert transport.calls == [("GET", "/api/v2/services/freeradius/interfaces?limit=5")]
+
+
+def test_get_services_freeradius_interfaces_rejects_zero_limit():
+    client, _ = _services_freeradius_interfaces_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_freeradius_interfaces(limit=0)
+
+
+def test_get_services_freeradius_interfaces_rejects_limit_above_max():
+    client, _ = _services_freeradius_interfaces_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_freeradius_interfaces(limit=101)
+
+
+def test_get_services_freeradius_interfaces_invalid_limit_never_calls_transport():
+    client, transport = _services_freeradius_interfaces_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_freeradius_interfaces(limit=0)
+    assert transport.calls == []
+
+
+def test_get_services_freeradius_interfaces_missing_data_key_raises_shape_error():
+    body = _services_freeradius_interfaces_body()
+    del body["data"]
+    client, _ = _services_freeradius_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_freeradius_interfaces()
+
+
+def test_get_services_freeradius_interfaces_item_wrong_type_raises_shape_error():
+    body = _services_freeradius_interfaces_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _services_freeradius_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_freeradius_interfaces()
+
+
+def test_get_services_freeradius_interfaces_required_field_missing_raises_shape_error():
+    body = _services_freeradius_interfaces_body()
+    del body["data"][0]["port"]
+    client, _ = _services_freeradius_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_freeradius_interfaces()
+
+
+def test_get_services_freeradius_interfaces_shape_error_does_not_leak_raw_field_values():
+    body = _services_freeradius_interfaces_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["port"] = [sentinel]
+    client, _ = _services_freeradius_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_services_freeradius_interfaces()
+    assert sentinel not in str(excinfo.value)
+
+
+SERVICES_FREERADIUS_MACS_FIXTURE = Path(__file__).parent / "fixtures" / "services_freeradius_macs_response.json"
+SERVICES_FREERADIUS_MACS_IDENTIFYING_FIELDS = (
+    "mac",
+    "framed_ip_address",
+    "framed_ip_netmask",
+    "framed_route",
+    "framed_ipv6_address",
+    "framed_ipv6_route",
+)
+
+
+def _services_freeradius_macs_body() -> dict:
+    return json.loads(SERVICES_FREERADIUS_MACS_FIXTURE.read_text())
+
+
+def _services_freeradius_macs_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _services_freeradius_macs_body()
+    transport.register("GET", "/api/v2/services/freeradius/macs?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_services_freeradius_macs_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _services_freeradius_macs_client(body)
+    assert client.get_services_freeradius_macs() == []
+
+
+def test_get_services_freeradius_macs_omits_identifying_fields_by_default():
+    client, _ = _services_freeradius_macs_client()
+    macs = client.get_services_freeradius_macs()
+    assert len(macs) == 1
+    for field in SERVICES_FREERADIUS_MACS_IDENTIFYING_FIELDS:
+        assert getattr(macs[0], field) is None
+
+
+def test_get_services_freeradius_macs_includes_identifying_fields_when_requested():
+    client, _ = _services_freeradius_macs_client()
+    macs = client.get_services_freeradius_macs(include_identifying_metadata=True)
+    assert macs[0].mac == "02:00:00:aa:bb:cc"
+    assert macs[0].framed_ip_address == "198.51.100.20"
+    assert macs[0].framed_ipv6_address == "2001:db8::20"
+
+
+def test_get_services_freeradius_macs_maps_non_sensitive_fields():
+    client, _ = _services_freeradius_macs_client()
+    macs = client.get_services_freeradius_macs()
+    assert macs[0].description == "Synthetic FreeRADIUS MAC entry (offline fixture)"
+    assert macs[0].vlan_id == "10"
+    assert macs[0].session_timeout == 3600
+
+
+def test_get_services_freeradius_macs_only_calls_endpoint_with_default_limit():
+    client, transport = _services_freeradius_macs_client()
+    client.get_services_freeradius_macs()
+    assert transport.calls == [("GET", "/api/v2/services/freeradius/macs?limit=100")]
+
+
+def test_get_services_freeradius_macs_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _services_freeradius_macs_body()
+    transport.register("GET", "/api/v2/services/freeradius/macs?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_services_freeradius_macs(limit=5)
+    assert transport.calls == [("GET", "/api/v2/services/freeradius/macs?limit=5")]
+
+
+def test_get_services_freeradius_macs_rejects_zero_limit():
+    client, _ = _services_freeradius_macs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_freeradius_macs(limit=0)
+
+
+def test_get_services_freeradius_macs_rejects_limit_above_max():
+    client, _ = _services_freeradius_macs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_freeradius_macs(limit=101)
+
+
+def test_get_services_freeradius_macs_invalid_limit_never_calls_transport():
+    client, transport = _services_freeradius_macs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_freeradius_macs(limit=0)
+    assert transport.calls == []
+
+
+def test_get_services_freeradius_macs_missing_data_key_raises_shape_error():
+    body = _services_freeradius_macs_body()
+    del body["data"]
+    client, _ = _services_freeradius_macs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_freeradius_macs()
+
+
+def test_get_services_freeradius_macs_item_wrong_type_raises_shape_error():
+    body = _services_freeradius_macs_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _services_freeradius_macs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_freeradius_macs()
+
+
+def test_get_services_freeradius_macs_required_field_missing_raises_shape_error():
+    body = _services_freeradius_macs_body()
+    del body["data"][0]["description"]
+    client, _ = _services_freeradius_macs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_freeradius_macs()
+
+
+def test_get_services_freeradius_macs_shape_error_does_not_leak_raw_field_values():
+    body = _services_freeradius_macs_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["description"] = [sentinel]
+    client, _ = _services_freeradius_macs_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_services_freeradius_macs()
+    assert sentinel not in str(excinfo.value)
+
+
+SERVICES_SERVICE_WATCHDOGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_service_watchdogs_response.json"
+
+
+def _services_service_watchdogs_body() -> dict:
+    return json.loads(SERVICES_SERVICE_WATCHDOGS_FIXTURE.read_text())
+
+
+def _services_service_watchdogs_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _services_service_watchdogs_body()
+    transport.register("GET", "/api/v2/services/service_watchdogs?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_services_service_watchdogs_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _services_service_watchdogs_client(body)
+    assert client.get_services_service_watchdogs() == []
+
+
+def test_get_services_service_watchdogs_maps_fields():
+    client, _ = _services_service_watchdogs_client()
+    watchdogs = client.get_services_service_watchdogs()
+    first = next(w for w in watchdogs if w.name == "unbound")
+    assert first.description == "Synthetic watchdog entry (offline fixture)"
+    assert first.notify is True
+    assert first.enabled is True
+
+
+def test_get_services_service_watchdogs_parses_null_optional_fields():
+    client, _ = _services_service_watchdogs_client()
+    watchdogs = client.get_services_service_watchdogs()
+    second = next(w for w in watchdogs if w.name == "openvpn")
+    assert second.description is None
+    assert second.enabled is None
+
+
+def test_get_services_service_watchdogs_only_calls_endpoint_with_default_limit():
+    client, transport = _services_service_watchdogs_client()
+    client.get_services_service_watchdogs()
+    assert transport.calls == [("GET", "/api/v2/services/service_watchdogs?limit=100")]
+
+
+def test_get_services_service_watchdogs_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _services_service_watchdogs_body()
+    transport.register("GET", "/api/v2/services/service_watchdogs?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_services_service_watchdogs(limit=5)
+    assert transport.calls == [("GET", "/api/v2/services/service_watchdogs?limit=5")]
+
+
+def test_get_services_service_watchdogs_rejects_zero_limit():
+    client, _ = _services_service_watchdogs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_service_watchdogs(limit=0)
+
+
+def test_get_services_service_watchdogs_rejects_limit_above_max():
+    client, _ = _services_service_watchdogs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_service_watchdogs(limit=101)
+
+
+def test_get_services_service_watchdogs_invalid_limit_never_calls_transport():
+    client, transport = _services_service_watchdogs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_services_service_watchdogs(limit=0)
+    assert transport.calls == []
+
+
+def test_get_services_service_watchdogs_missing_data_key_raises_shape_error():
+    body = _services_service_watchdogs_body()
+    del body["data"]
+    client, _ = _services_service_watchdogs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_service_watchdogs()
+
+
+def test_get_services_service_watchdogs_item_wrong_type_raises_shape_error():
+    body = _services_service_watchdogs_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _services_service_watchdogs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_service_watchdogs()
+
+
+def test_get_services_service_watchdogs_required_field_missing_raises_shape_error():
+    body = _services_service_watchdogs_body()
+    del body["data"][0]["notify"]
+    client, _ = _services_service_watchdogs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_services_service_watchdogs()
+
+
+def test_get_services_service_watchdogs_shape_error_does_not_leak_raw_field_values():
+    body = _services_service_watchdogs_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["notify"] = [sentinel]
+    client, _ = _services_service_watchdogs_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_services_service_watchdogs()
+    assert sentinel not in str(excinfo.value)

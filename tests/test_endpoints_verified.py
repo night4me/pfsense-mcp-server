@@ -968,3 +968,51 @@ def test_system_package_available_path_suffix_has_no_api_prefix():
 
 def test_system_package_available_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.SYSTEM_PACKAGE_AVAILABLE.path_suffix == "/system/package/available"
+
+
+def test_firewall_traffic_shapers_is_not_yet_declared_verified():
+    assert Endpoints.FIREWALL_TRAFFIC_SHAPERS.verified is False
+
+
+def test_firewall_traffic_shapers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.FIREWALL_TRAFFIC_SHAPERS.path_suffix.startswith("/api")
+
+
+def test_firewall_traffic_shapers_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.FIREWALL_TRAFFIC_SHAPERS.path_suffix == "/firewall/traffic_shapers"
+
+
+def test_services_freeradius_interfaces_is_not_yet_declared_verified():
+    assert Endpoints.SERVICES_FREERADIUS_INTERFACES.verified is False
+
+
+def test_services_freeradius_interfaces_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SERVICES_FREERADIUS_INTERFACES.path_suffix.startswith("/api")
+
+
+def test_services_freeradius_interfaces_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SERVICES_FREERADIUS_INTERFACES.path_suffix == "/services/freeradius/interfaces"
+
+
+def test_services_freeradius_macs_is_not_yet_declared_verified():
+    assert Endpoints.SERVICES_FREERADIUS_MACS.verified is False
+
+
+def test_services_freeradius_macs_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SERVICES_FREERADIUS_MACS.path_suffix.startswith("/api")
+
+
+def test_services_freeradius_macs_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SERVICES_FREERADIUS_MACS.path_suffix == "/services/freeradius/macs"
+
+
+def test_services_service_watchdogs_is_not_yet_declared_verified():
+    assert Endpoints.SERVICES_SERVICE_WATCHDOGS.verified is False
+
+
+def test_services_service_watchdogs_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SERVICES_SERVICE_WATCHDOGS.path_suffix.startswith("/api")
+
+
+def test_services_service_watchdogs_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SERVICES_SERVICE_WATCHDOGS.path_suffix == "/services/service_watchdogs"
