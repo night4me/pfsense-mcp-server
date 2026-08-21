@@ -300,13 +300,16 @@ never production) before public registration.
     on this LAB, since no IPsec Phase 1 is configured to derive
     options from). No package required for any of the three (base
     pfSense feature).
-- **2 more READ candidates (P1 Batch J, OpenVPN server config +
-  client-specific overrides) implemented and offline-tested, public
-  MCP contract unchanged at 82 (0 WRITE) — these two are NOT yet
-  registered:**
-  - `vpn/openvpn/servers` (`OpenVpnServer`, 73 fields) and
-    `vpn/openvpn/csos` (`OpenVpnClientSpecificOverride`, 27 fields).
-    Neither schema component has any `writeOnly` field, unlike the
+- **2 more READ tools (P1 Batch J, OpenVPN server config +
+  client-specific overrides), public MCP contract 82 → 84 (0 WRITE,
+  unchanged):**
+  - `pfsense_get_vpn_openvpn_servers` — OpenVPN server configurations:
+    mode, protocol, TLS/cert references, ciphers, and topology
+    (`OpenVpnServer`, 73 fields).
+  - `pfsense_get_vpn_openvpn_csos` — OpenVPN client-specific overrides:
+    per-client tunnel settings, allowed servers, and DNS/NTP/WINS
+    pushes (`OpenVpnClientSpecificOverride`, 27 fields).
+  - Neither schema component has any `writeOnly` field, unlike the
     Batch G CRL case. `caref`/`certref` are CA/certificate
     *references*, not certificate material, matching this project's
     established treatment of reference IDs as non-secret.
@@ -328,8 +331,9 @@ never production) before public registration.
     `ping_action` condition and are treated as genuinely
     possibly-absent via `.get()`, matching the `InterfaceLAGG`/
     `TrafficShaperQueue` precedent.
-  - Not yet LAB-verified or publicly registered; no package required
-    (base pfSense feature).
+  - LAB-verified `ENDPOINT_VERIFIED` for both (zero configured OpenVPN
+    servers and zero client-specific overrides on this LAB). No
+    package required for either (base pfSense feature).
 
 ### Security
 

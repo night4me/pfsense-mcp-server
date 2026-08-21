@@ -1420,6 +1420,16 @@
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Users.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: User<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-users-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
+    },
+    "/api/v2/vpn/openvpn/servers": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Servers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNServer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-openvpn-servers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/openvpn/csos": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Client Specific Overrides.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNClientSpecificOverride<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-openvpn-csos-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
     }
   }
 }

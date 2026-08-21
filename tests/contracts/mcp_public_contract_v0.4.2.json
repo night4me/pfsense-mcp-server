@@ -12504,6 +12504,1018 @@
     },
     {
       "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_OPENVPN_CSO_READ",
+      "client_method": "get_vpn_openvpn_csos",
+      "description": "List OpenVPN client-specific overrides: per-client tunnel\n        settings, allowed servers, and DNS/NTP/WINS pushes. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        client common name and tunnel/local/remote network ranges plus\n        DNS/NTP/WINS servers. Defaults to False.\n\n        limit: maximum number of client-specific overrides to return\n        (1-100, default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/openvpn/csos",
+        "symbol": "VPN_OPENVPN_CSOS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_openvpn_csosArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_openvpn_csos",
+      "output_schema": {
+        "$defs": {
+          "OpenVpnClientSpecificOverride": {
+            "properties": {
+              "block": {
+                "title": "Block",
+                "type": "boolean"
+              },
+              "common_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Common Name"
+              },
+              "custom_options": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Custom Options",
+                "type": "array"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "disable": {
+                "title": "Disable",
+                "type": "boolean"
+              },
+              "dns_domain": {
+                "title": "Dns Domain",
+                "type": "string"
+              },
+              "dns_server1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server1"
+              },
+              "dns_server2": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server2"
+              },
+              "dns_server3": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server3"
+              },
+              "dns_server4": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server4"
+              },
+              "gwredir": {
+                "title": "Gwredir",
+                "type": "boolean"
+              },
+              "local_network": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Local Network",
+                "type": "array"
+              },
+              "local_networkv6": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Local Networkv6",
+                "type": "array"
+              },
+              "netbios_enable": {
+                "title": "Netbios Enable",
+                "type": "boolean"
+              },
+              "netbios_ntype": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Netbios Ntype"
+              },
+              "netbios_scope": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Netbios Scope"
+              },
+              "ntp_server1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ntp Server1"
+              },
+              "ntp_server2": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ntp Server2"
+              },
+              "push_reset": {
+                "title": "Push Reset",
+                "type": "boolean"
+              },
+              "remote_network": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remote Network",
+                "type": "array"
+              },
+              "remote_networkv6": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remote Networkv6",
+                "type": "array"
+              },
+              "remove_options": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remove Options",
+                "type": "array"
+              },
+              "server_list": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Server List",
+                "type": "array"
+              },
+              "tunnel_network": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Network"
+              },
+              "tunnel_networkv6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Networkv6"
+              },
+              "wins_server1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Wins Server1"
+              },
+              "wins_server2": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Wins Server2"
+              }
+            },
+            "required": [
+              "disable",
+              "block",
+              "description",
+              "server_list",
+              "gwredir",
+              "push_reset",
+              "dns_domain",
+              "netbios_enable",
+              "custom_options",
+              "remove_options",
+              "netbios_ntype",
+              "netbios_scope"
+            ],
+            "title": "OpenVpnClientSpecificOverride",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVpnClientSpecificOverride"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_openvpn_csosOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_OPENVPN_SERVER_READ",
+      "client_method": "get_vpn_openvpn_servers",
+      "description": "List OpenVPN server configurations: mode, protocol, TLS/cert\n        references, ciphers, and topology. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        tunnel/local/remote network ranges, DNS/NTP/WINS servers, and\n        server-bridge DHCP range. Defaults to False.\n\n        limit: maximum number of OpenVPN servers to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/openvpn/servers",
+        "symbol": "VPN_OPENVPN_SERVERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_openvpn_serversArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_openvpn_servers",
+      "output_schema": {
+        "$defs": {
+          "OpenVpnServer": {
+            "properties": {
+              "allow_compression": {
+                "title": "Allow Compression",
+                "type": "string"
+              },
+              "authmode": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Authmode",
+                "type": "array"
+              },
+              "caref": {
+                "title": "Caref",
+                "type": "string"
+              },
+              "cert_depth": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cert Depth"
+              },
+              "certref": {
+                "title": "Certref",
+                "type": "string"
+              },
+              "client2client": {
+                "title": "Client2Client",
+                "type": "boolean"
+              },
+              "connlimit": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connlimit"
+              },
+              "create_gw": {
+                "title": "Create Gw",
+                "type": "string"
+              },
+              "custom_options": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Custom Options",
+                "type": "array"
+              },
+              "data_ciphers": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Data Ciphers",
+                "type": "array"
+              },
+              "data_ciphers_fallback": {
+                "title": "Data Ciphers Fallback",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "dev_mode": {
+                "title": "Dev Mode",
+                "type": "string"
+              },
+              "dh_length": {
+                "title": "Dh Length",
+                "type": "string"
+              },
+              "digest": {
+                "title": "Digest",
+                "type": "string"
+              },
+              "disable": {
+                "title": "Disable",
+                "type": "boolean"
+              },
+              "dns_domain": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dns Domain"
+              },
+              "dns_server1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server1"
+              },
+              "dns_server2": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server2"
+              },
+              "dns_server3": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server3"
+              },
+              "dns_server4": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Dns Server4"
+              },
+              "duplicate_cn": {
+                "title": "Duplicate Cn",
+                "type": "boolean"
+              },
+              "dynamic_ip": {
+                "title": "Dynamic Ip",
+                "type": "boolean"
+              },
+              "ecdh_curve": {
+                "title": "Ecdh Curve",
+                "type": "string"
+              },
+              "gwredir": {
+                "title": "Gwredir",
+                "type": "boolean"
+              },
+              "gwredir6": {
+                "title": "Gwredir6",
+                "type": "boolean"
+              },
+              "inactive_seconds": {
+                "title": "Inactive Seconds",
+                "type": "integer"
+              },
+              "interface": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Interface"
+              },
+              "keepalive_interval": {
+                "title": "Keepalive Interval",
+                "type": "integer"
+              },
+              "keepalive_timeout": {
+                "title": "Keepalive Timeout",
+                "type": "integer"
+              },
+              "local_network": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Local Network",
+                "type": "array"
+              },
+              "local_networkv6": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Local Networkv6",
+                "type": "array"
+              },
+              "local_port": {
+                "title": "Local Port",
+                "type": "string"
+              },
+              "maxclients": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Maxclients"
+              },
+              "mode": {
+                "title": "Mode",
+                "type": "string"
+              },
+              "netbios_enable": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Netbios Enable"
+              },
+              "netbios_ntype": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Netbios Ntype"
+              },
+              "netbios_scope": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Netbios Scope"
+              },
+              "ntp_server1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ntp Server1"
+              },
+              "ntp_server2": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ntp Server2"
+              },
+              "passtos": {
+                "title": "Passtos",
+                "type": "boolean"
+              },
+              "ping_action": {
+                "title": "Ping Action",
+                "type": "string"
+              },
+              "ping_action_push": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ping Action Push"
+              },
+              "ping_action_seconds": {
+                "title": "Ping Action Seconds",
+                "type": "integer"
+              },
+              "ping_method": {
+                "title": "Ping Method",
+                "type": "string"
+              },
+              "ping_push": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ping Push"
+              },
+              "ping_seconds": {
+                "title": "Ping Seconds",
+                "type": "integer"
+              },
+              "protocol": {
+                "title": "Protocol",
+                "type": "string"
+              },
+              "push_blockoutsidedns": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Push Blockoutsidedns"
+              },
+              "push_register_dns": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Push Register Dns"
+              },
+              "remote_cert_tls": {
+                "title": "Remote Cert Tls",
+                "type": "boolean"
+              },
+              "remote_network": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remote Network",
+                "type": "array"
+              },
+              "remote_networkv6": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remote Networkv6",
+                "type": "array"
+              },
+              "serverbridge_dhcp": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Serverbridge Dhcp"
+              },
+              "serverbridge_dhcp_end": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Serverbridge Dhcp End"
+              },
+              "serverbridge_dhcp_start": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Serverbridge Dhcp Start"
+              },
+              "serverbridge_interface": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Serverbridge Interface"
+              },
+              "serverbridge_routegateway": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Serverbridge Routegateway"
+              },
+              "sndrcvbuf": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Sndrcvbuf"
+              },
+              "strictusercn": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Strictusercn"
+              },
+              "tls": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tls"
+              },
+              "tls_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tls Type"
+              },
+              "tlsauth_keydir": {
+                "title": "Tlsauth Keydir",
+                "type": "string"
+              },
+              "topology": {
+                "title": "Topology",
+                "type": "string"
+              },
+              "tunnel_network": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Network"
+              },
+              "tunnel_networkv6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Networkv6"
+              },
+              "use_tls": {
+                "title": "Use Tls",
+                "type": "boolean"
+              },
+              "username_as_common_name": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Username As Common Name"
+              },
+              "verbosity_level": {
+                "title": "Verbosity Level",
+                "type": "integer"
+              },
+              "vpnid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vpnid"
+              },
+              "vpnif": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vpnif"
+              },
+              "wins_server1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Wins Server1"
+              },
+              "wins_server2": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Wins Server2"
+              }
+            },
+            "required": [
+              "vpnid",
+              "vpnif",
+              "description",
+              "disable",
+              "mode",
+              "dev_mode",
+              "protocol",
+              "local_port",
+              "use_tls",
+              "caref",
+              "certref",
+              "cert_depth",
+              "dh_length",
+              "ecdh_curve",
+              "data_ciphers",
+              "data_ciphers_fallback",
+              "digest",
+              "remote_cert_tls",
+              "gwredir",
+              "gwredir6",
+              "maxclients",
+              "allow_compression",
+              "passtos",
+              "client2client",
+              "duplicate_cn",
+              "dynamic_ip",
+              "inactive_seconds",
+              "ping_method",
+              "custom_options",
+              "sndrcvbuf",
+              "create_gw",
+              "verbosity_level",
+              "authmode",
+              "interface",
+              "tls",
+              "tls_type",
+              "tlsauth_keydir",
+              "strictusercn",
+              "serverbridge_dhcp",
+              "serverbridge_interface",
+              "serverbridge_routegateway",
+              "connlimit",
+              "topology",
+              "keepalive_interval",
+              "keepalive_timeout",
+              "ping_seconds",
+              "ping_push",
+              "ping_action",
+              "ping_action_seconds",
+              "ping_action_push",
+              "dns_domain",
+              "push_blockoutsidedns",
+              "push_register_dns",
+              "netbios_enable",
+              "netbios_ntype",
+              "netbios_scope",
+              "username_as_common_name"
+            ],
+            "title": "OpenVpnServer",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVpnServer"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_openvpn_serversOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
         "openWorldHint": false,
         "readOnlyHint": true
       },

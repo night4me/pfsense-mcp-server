@@ -102,6 +102,8 @@ from .read import (
     vpn_ipsec_phase1_encryptions,
     vpn_ipsec_phase2_encryptions,
     vpn_ipsec_phase2s,
+    vpn_openvpn_csos,
+    vpn_openvpn_servers,
 )
 from .write import set_firewall_alias_description
 
@@ -204,6 +206,8 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_vpn_ipsec_phase1_encryptions",
         "pfsense_get_vpn_ipsec_phase2_encryptions",
         "pfsense_get_vpn_ipsec_phase2s",
+        "pfsense_get_vpn_openvpn_csos",
+        "pfsense_get_vpn_openvpn_servers",
         "pfsense_mcp_info",
     }
 )
@@ -402,6 +406,10 @@ class ToolRegistry:
             self._register_vpn_ipsec_phase1_encryption_read()
         if Capability.VPN_IPSEC_PHASE2_ENCRYPTION_READ in self._capabilities:
             self._register_vpn_ipsec_phase2_encryption_read()
+        if Capability.VPN_OPENVPN_SERVER_READ in self._capabilities:
+            self._register_vpn_openvpn_server_read()
+        if Capability.VPN_OPENVPN_CSO_READ in self._capabilities:
+            self._register_vpn_openvpn_cso_read()
 
         self.register_all_write()
 
@@ -871,6 +879,16 @@ class ToolRegistry:
     def _register_vpn_ipsec_phase2_encryption_read(self) -> None:
         fn = vpn_ipsec_phase2_encryptions.build(self._client)
         wrapped = audit_logged("pfsense_get_vpn_ipsec_phase2_encryptions", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_openvpn_server_read(self) -> None:
+        fn = vpn_openvpn_servers.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_openvpn_servers", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_openvpn_cso_read(self) -> None:
+        fn = vpn_openvpn_csos.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_openvpn_csos", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

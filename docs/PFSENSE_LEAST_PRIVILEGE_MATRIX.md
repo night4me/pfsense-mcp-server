@@ -385,6 +385,30 @@ IPsec Phase 1 is configured to derive options from). All three
 registered. **78 READ / 79 combined become 81 READ / 82 combined**
 throughout this document as of this pass.
 
+**OpenVPN server config + client-specific overrides LAB-verified and
+registered (P1 Batch J).** `vpn/openvpn/servers` and `vpn/openvpn/csos`
+were re-checked against the pinned schema for secret fields — neither
+`OpenVPNServer` nor `OpenVPNClientSpecificOverride` has any field marked
+`writeOnly`, unlike the Batch G CRL case. `caref`/`certref` are
+CA/certificate references, not certificate/key material.
+`tlsauth_keydir` is re-confirmed (a fourth time across sessions) to be
+a direction-flag enum, not key material. Network/address fields
+(tunnel/local/remote networks, DNS/NTP/WINS servers, server-bridge DHCP
+range on the server model; common name plus the same address-field set
+on the client-specific-override model) are redacted by default,
+matching `RoutingStaticRoute.gateway`'s established convention. The
+singular `vpn/openvpn/server` endpoint is redundant with the plural
+`vpn/openvpn/servers` (same model) and is deliberately not implemented,
+matching the established NAT-mappings precedent. `PfSenseClient.get_vpn_openvpn_servers()`/
+`get_vpn_openvpn_csos()`, their models, and their `Endpoints` entries
+were implemented, offline-tested, and left unregistered for one commit
+(matching the P1 Batch A WireGuard precedent) before LAB verification.
+Both LAB-verified `ENDPOINT_VERIFIED` (zero configured OpenVPN servers
+and zero client-specific overrides on this LAB). Both `Endpoints`
+entries are now `verified=True`; both tools are now registered.
+**81 READ / 82 combined become 83 READ / 84 combined** throughout this
+document as of this pass.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -444,7 +468,7 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 81 endpoints this project's 82 READ
+exists for them. **None of the 83 endpoints this project's 84 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
@@ -457,10 +481,11 @@ interfaces/GRE/LAGG endpoints, the routing-gateway-group/default and
 DHCP relay/address-pool/custom-option endpoints, the system
 hostname/timezone/DNS/console/webgui-settings endpoints, the REST
 API access-list/CRLs/available-packages endpoints, firewall traffic
-shapers, and the IPsec Phase 2/encryption capability lists trio, each
-of which offers a narrow alternative alongside `page-all`). This must
-be re-checked for any *future* tool added against a new endpoint — it
-is not a general guarantee.
+shapers, the IPsec Phase 2/encryption capability lists trio, and the
+OpenVPN server-config/client-specific-override pair, each of which
+offers a narrow alternative alongside `page-all`). This must be
+re-checked for any *future* tool added against a new endpoint — it is
+not a general guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
 
@@ -496,19 +521,21 @@ Resolver extras three, the interface available-interfaces/GRE/LAGG
 three, the routing-gateway-group/default and DHCP relay/address-
 pool/custom-option five, the system hostname/timezone/DNS/
 console/webgui-settings five, the REST API access-list/CRLs/
-available-packages three, firewall traffic shapers, and the IPsec
-Phase 2/encryption capability lists trio, were cross-checked against a
-live schema freshly fetched from the **LAB** appliance
+available-packages three, firewall traffic shapers, the IPsec
+Phase 2/encryption capability lists trio, and the OpenVPN
+server-config/client-specific-override pair, were cross-checked against
+a live schema freshly fetched from the **LAB** appliance
 (`pfsense-test.lab.invalid`) during owner-authorized LAB READ
-verification passes — also an exact match, zero mismatches (81 of 81
-now, including all thirty-eight). The IPsec, WireGuard, OpenVPN, DNS,
-interface-extras, routing/DHCP, system-identity, REST-API/PKI, and
-traffic-shaper/IPsec-Phase-2 groups' LAB cross-checks were against the
-upgraded pfSense CE 2.9.0 appliance specifically; its REST API package
-schema remained an exact 267-path match despite the platform upgrade,
-both before and after installing `pfSense-pkg-WireGuard`.
+verification passes — also an exact match, zero mismatches (83 of 83
+now, including all forty). The IPsec, WireGuard, OpenVPN, DNS,
+interface-extras, routing/DHCP, system-identity, REST-API/PKI,
+traffic-shaper/IPsec-Phase-2, and OpenVPN-server-config groups' LAB
+cross-checks were against the upgraded pfSense CE 2.9.0 appliance
+specifically; its REST API package schema remained an exact 267-path
+match despite the platform upgrade, both before and after installing
+`pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (82 tools)
+## READ privilege matrix (84 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -594,11 +621,13 @@ both before and after installing `pfSense-pkg-WireGuard`.
 | `pfsense_vpn_ipsec_phase1_encryptions` | `get_vpn_ipsec_phase1_encryptions` | `GET /api/v2/vpn/ipsec/phase1/encryptions` | `api-v2-vpn-ipsec-phase1-encryptions-get` | ✅ |
 | `pfsense_vpn_ipsec_phase2_encryptions` | `get_vpn_ipsec_phase2_encryptions` | `GET /api/v2/vpn/ipsec/phase2/encryptions` | `api-v2-vpn-ipsec-phase2-encryptions-get` | ✅ |
 | `pfsense_vpn_ipsec_phase2s` | `get_vpn_ipsec_phase2s` | `GET /api/v2/vpn/ipsec/phase2s` | `api-v2-vpn-ipsec-phase2s-get` | ✅ |
+| `pfsense_vpn_openvpn_csos` | `get_vpn_openvpn_csos` | `GET /api/v2/vpn/openvpn/csos` | `api-v2-vpn-openvpn-csos-get` | ✅ |
+| `pfsense_vpn_openvpn_servers` | `get_vpn_openvpn_servers` | `GET /api/v2/vpn/openvpn/servers` | `api-v2-vpn-openvpn-servers-get` | ✅ |
 
-**81 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 81`). A least-privilege
-READ-only identity holding exactly these 81 (never `page-all`) can serve
-every one of this project's 82 registered READ tools.
+**83 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 83`). A least-privilege
+READ-only identity holding exactly these 83 (never `page-all`) can serve
+every one of this project's 84 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -607,7 +636,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as an 83rd tool would
+completeness, since a future decision to expose it as an 85th tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -641,11 +670,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 81 READ privileges
+The 4 WRITE privileges are a strict subset of the 83 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **82 distinct privileges**: the 81 READ
+identity therefore needs exactly **84 distinct privileges**: the 83 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

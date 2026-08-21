@@ -643,9 +643,9 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch J candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; no field marked
-    # writeOnly, unlike the CRL revoked-certificate case). tlsauth_keydir
+    # P1 Batch J -- re-checked against the pinned schema for secrets
+    # before implementation (none found; no field marked writeOnly,
+    # unlike the CRL revoked-certificate case). tlsauth_keydir
     # re-confirmed a fourth time to be a direction-flag enum, not key
     # material. caref/certref are references, not certificate/key
     # material. Network/address fields redacted by default. The
@@ -653,18 +653,21 @@ class Endpoints:
     # plural form (same OpenVPNServer model) and is deliberately not
     # implemented, matching this project's established NAT-mappings
     # precedent (plural only). No package required (base pfSense
-    # feature). Not yet LAB-verified.
+    # feature). LAB-verified ENDPOINT_VERIFIED: 200, {"data": []} --
+    # no OpenVPN server configured on this LAB.
     VPN_OPENVPN_SERVERS = EndpointInfo(
         path_suffix="/vpn/openvpn/servers",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch J candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; no field marked
-    # writeOnly). common_name and network/address fields redacted by
-    # default. No package required. Not yet LAB-verified.
+    # P1 Batch J -- re-checked against the pinned schema for secrets
+    # before implementation (none found; no field marked writeOnly).
+    # common_name and network/address fields redacted by default. No
+    # package required. LAB-verified ENDPOINT_VERIFIED: 200,
+    # {"data": []} -- no client-specific override configured on this
+    # LAB.
     VPN_OPENVPN_CSOS = EndpointInfo(
         path_suffix="/vpn/openvpn/csos",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

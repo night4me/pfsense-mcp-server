@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 82 READ, 0 WRITE
+Registered tools: 84 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -642,6 +642,30 @@ Common parameters:
 - **Security:** Literal client common name and remote/virtual addresses
   are omitted by default.
 - **Example:** `{"name":"pfsense_get_status_openvpn_server_routes","arguments":{}}`
+
+### `pfsense_get_vpn_openvpn_servers`
+
+- **Purpose:** List OpenVPN server configurations: mode, protocol,
+  TLS/cert references, ciphers, and topology.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVpnServer]`.
+- **Security:** Literal tunnel/local/remote network ranges, DNS/NTP/WINS
+  servers, and server-bridge DHCP range are omitted by default.
+  `caref`/`certref` are CA/certificate references, never certificate or
+  key material.
+- **Example:** `{"name":"pfsense_get_vpn_openvpn_servers","arguments":{}}`
+
+### `pfsense_get_vpn_openvpn_csos`
+
+- **Purpose:** List OpenVPN client-specific overrides: per-client
+  tunnel settings, allowed servers, and DNS/NTP/WINS pushes.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVpnClientSpecificOverride]`.
+- **Security:** Literal client common name and tunnel/local/remote
+  network ranges plus DNS/NTP/WINS servers are omitted by default.
+- **Example:** `{"name":"pfsense_get_vpn_openvpn_csos","arguments":{}}`
 
 ## Users and API identities
 

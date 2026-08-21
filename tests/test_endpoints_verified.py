@@ -1054,8 +1054,8 @@ def test_vpn_ipsec_phase2_encryptions_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS.path_suffix == "/vpn/ipsec/phase2/encryptions"
 
 
-def test_vpn_openvpn_servers_is_not_yet_declared_verified():
-    assert Endpoints.VPN_OPENVPN_SERVERS.verified is False
+def test_vpn_openvpn_servers_is_declared_verified():
+    assert Endpoints.VPN_OPENVPN_SERVERS.verified is True
 
 
 def test_vpn_openvpn_servers_path_suffix_has_no_api_prefix():
@@ -1066,8 +1066,8 @@ def test_vpn_openvpn_servers_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_OPENVPN_SERVERS.path_suffix == "/vpn/openvpn/servers"
 
 
-def test_vpn_openvpn_csos_is_not_yet_declared_verified():
-    assert Endpoints.VPN_OPENVPN_CSOS.verified is False
+def test_vpn_openvpn_csos_is_declared_verified():
+    assert Endpoints.VPN_OPENVPN_CSOS.verified is True
 
 
 def test_vpn_openvpn_csos_path_suffix_has_no_api_prefix():
