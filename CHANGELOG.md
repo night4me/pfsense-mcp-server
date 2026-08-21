@@ -7,6 +7,41 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Post-publication documentation correction (2026-08-21): incorrect
+  pfSense Plus REST API packaging claim.** README's compatibility
+  section (and the matching table in `docs/ACCEPTANCE_v0.5.0.md`)
+  claimed the REST API "ships as a built-in platform component" on
+  pfSense Plus rather than a separately versioned package, inferred
+  from its absence in the general installed-package listing
+  (`pfsense_get_system_packages`) during the v0.5.0 release audit. This
+  was a genuine error: a direct, targeted follow-up call to
+  `pfsense_get_system_restapi_version` — the tool actually built for
+  this exact question, not consulted at the time — confirms the REST
+  API package's own self-reported version (`current_version`) is
+  **v2.10 on both pfSense CE (re-confirmed live on the CE 2.9.0 LAB)
+  and pfSense Plus 26.07 production**, identical to the CE baseline
+  already documented. Further investigation found the package does
+  **not** appear as a discrete entry in the general installed-package
+  listing on **either** edition — re-confirmed directly on the CE 2.9.0
+  LAB (which lists only the one other package genuinely installed
+  there) — so this was never a CE-vs-Plus difference at all, only a
+  characteristic of that one endpoint on every platform tested. README
+  and `docs/ACCEPTANCE_v0.5.0.md` corrected to state only
+  independently-verified facts, distinguishing pfSense platform
+  version, edition, REST API package version, and schema/API
+  compatibility as the separate facts they are. `v0.5.0` itself
+  (already tagged, released, and published to PyPI before this error
+  was found) still carries the original incorrect text in its
+  immutable tag/Release/PyPI artifacts — per this project's own
+  release policy, that historical record is not altered; this fix
+  applies to `main` and every release from here forward. No public
+  contract, security, or compatibility-verification-result change: the
+  underlying evidence (schema match, tool-count regression results)
+  was always correct — only the packaging-mechanism inference was
+  wrong.
+
 ## [0.5.0] - 2026-08-21
 
 **Major READ capability expansion — no WRITE change, no security-model

@@ -93,8 +93,21 @@ change list.
 |---|---|---|---|
 | pfSense CE | 2.9.0 (FreeBSD 16.0-CURRENT, pfREST 2.10) | **LAB VERIFIED** | Current LAB baseline; full public contract exercised against a disposable, isolated appliance. |
 | pfSense CE | 2.8.1 (pfREST 2.10) | **LAB VERIFIED** | Prior LAB baseline, superseded. |
-| pfSense Plus | 26.07-RELEASE | **LIVE VERIFIED** | Owner-authorized, READ-only production compatibility pass: identity verified first (platform = "Netgate pfSense Plus", version = 26.07-RELEASE exact match); 82/84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified package-absent, not a compatibility failure; live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components, zero type/nullability differences (only 5 instance-specific runtime default values differed); targeted secret-safety re-check against the seven highest-risk live responses found zero prohibited field names; zero production mutation of any kind performed. |
-| pfSense Plus | 25.11 | **SUPPORTED / COMPATIBLE** (not live-verified) | No live or LAB access was available or authorized for this version. Classified from converging evidence: shares the same FreeBSD 16-CURRENT base OS as both the CE 2.9.0 LAB baseline and the live-verified Plus 26.07 instance; one platform-version step from a build already proven to have zero schema drift from the pinned v2.10 reference; the same pfREST v2.10 package this project pins against already spans CE 2.8.1, CE 2.9.0, and Plus 26.07 without incident. An inference from strong adjacent evidence, not a test result. |
+| pfSense Plus | 26.07-RELEASE | **LIVE VERIFIED** | Owner-authorized, READ-only production compatibility pass: identity verified first (platform = "Netgate pfSense Plus", version = 26.07-RELEASE exact match); 82/84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified package-absent, not a compatibility failure; the REST API package's own self-reported version (`pfsense_get_system_restapi_version`'s `current_version`) was directly confirmed as **v2.10**, identical to both CE LAB baselines; live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components, zero type/nullability differences (only 5 instance-specific runtime default values differed); targeted secret-safety re-check against the seven highest-risk live responses found zero prohibited field names; zero production mutation of any kind performed. |
+| pfSense Plus | 25.11 | **SUPPORTED / COMPATIBLE** (not live-verified) | No live or LAB access was available or authorized for this version. Classified from converging evidence: the same pfREST v2.10 package this project directly confirmed (via `pfsense_get_system_restapi_version`, not inferred) on CE 2.8.1, CE 2.9.0, and Plus 26.07 already spans three different platform release numbers across both editions without incident; Netgate's own published 25.11 release notes state its base OS was updated to FreeBSD 16-CURRENT, matching the CE 2.9.0 LAB baseline's directly-observed FreeBSD generation. An inference from adjacent evidence, not a test result. |
+
+**Correction to an earlier draft of this document (found during post-publication
+review):** an earlier version of this compatibility narrative claimed the REST
+API "ships as a built-in platform component" on pfSense Plus rather than a
+separately versioned package. Direct evidence gathered afterward
+(`pfsense_get_system_restapi_version` called against both the CE 2.9.0 LAB and
+the Plus 26.07 production appliance) disproves that claim: the REST API
+package is confirmed to be a real, versioned package (`v2.10`) on **both**
+editions. What is genuinely true, and confirmed identically on both editions,
+is that the REST API package does not appear as a discrete entry in the
+general installed-package listing (`pfsense_get_system_packages`) — this is
+consistent CE/Plus behavior for this specific endpoint, not a CE-vs-Plus
+packaging difference, and does not mean the package is unversioned.
 
 ### Packaging
 

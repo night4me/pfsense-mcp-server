@@ -158,17 +158,33 @@ Evidence tiers used below:
 |---|---|---|---|
 | pfSense CE | 2.9.0 (FreeBSD 16.0-CURRENT, pfREST 2.10) | **LAB VERIFIED** | Current LAB baseline; full public contract exercised against a disposable, isolated appliance. |
 | pfSense CE | 2.8.1 (pfREST 2.10) | **LAB VERIFIED** | Prior LAB baseline; this project's READ-expansion audit's initial 7-tool backlog was verified here before the LAB's platform upgrade to CE 2.9.0. |
-| pfSense Plus | 26.07-RELEASE | **LIVE VERIFIED** | Owner-authorized, READ-only production compatibility pass: 82 of 84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified as package-absent, not a compatibility failure. Schema-level: the live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components; the only differences found across every field in every component were 5 instance-specific runtime default values, never a type or nullability change. Zero secret-bearing fields present in any exercised response. |
-| pfSense Plus | 25.11 | **SUPPORTED / COMPATIBLE** (not live-verified) | No live or LAB access was available for this version. Classified as supported based on converging evidence: it shares the same FreeBSD 16-CURRENT base OS as both the CE 2.9.0 LAB baseline and the live-verified Plus 26.07 instance; it is one platform-version step from a build already proven to have zero schema drift from the pinned v2.10 reference; and the same pfREST v2.10 package this project pins against already spans CE 2.8.1, CE 2.9.0, and Plus 26.07 without incident in this project's own testing. This is an inference from strong adjacent evidence, not a test result — treat accordingly. |
+| pfSense Plus | 26.07-RELEASE | **LIVE VERIFIED** | Owner-authorized, READ-only production compatibility pass: 82 of 84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified as package-absent, not a compatibility failure. The REST API package's own self-reported version (`pfsense_get_system_restapi_version`'s `current_version` field) was directly confirmed as **v2.10** — identical to both CE LAB baselines below. Schema-level: the live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components; the only differences found across every field in every component were 5 instance-specific runtime default values, never a type or nullability change. Zero secret-bearing fields present in any exercised response. |
+| pfSense Plus | 25.11 | **SUPPORTED / COMPATIBLE** (not live-verified) | No live or LAB access was available for this version. Classified as supported based on converging evidence: the same pfREST v2.10 package this project directly confirmed (via `pfsense_get_system_restapi_version`, not inferred) on CE 2.8.1, CE 2.9.0, and Plus 26.07 already spans three different platform release numbers across both editions without incident; and Netgate's own published 25.11 release notes state its base OS was updated to FreeBSD 16-CURRENT, matching the CE 2.9.0 LAB baseline's directly-observed FreeBSD generation. This is an inference from adjacent evidence, not a test result — treat accordingly. |
 
-pfSense REST API package versioning is **not** required to numerically
-match the pfSense platform version — a single pfREST release (v2.10 here)
-has been directly confirmed compatible across three different
-platform/edition combinations above. On pfSense Plus, the REST API ships
-as a built-in platform component rather than a separately versioned
-add-on package, so its exact internal version is not independently
-discoverable the way `pfSense-pkg-RESTAPI`'s package version is on CE;
-schema-level comparison (above) is used instead.
+pfSense platform version, edition, and REST API package version are
+independent facts, not proxies for one another. The REST API package's
+own self-reported version (`pfsense_get_system_restapi_version`'s
+`current_version` field) was directly, independently confirmed as
+**v2.10** on three separate live systems: the CE 2.8.1 LAB, the CE
+2.9.0 LAB, and — via this release's owner-authorized production
+compatibility pass — pfSense Plus 26.07. That identical version string
+held across three different platform release numbers and both
+editions, so pfSense REST API package versioning is **not** required
+to numerically match the pfSense platform version.
+
+The REST API package does **not** appear as a discrete entry in the
+general installed-package listing (`pfsense_get_system_packages`) on
+either edition — confirmed directly on both the CE 2.9.0 LAB (which
+lists only the one other package genuinely installed there) and the
+Plus 26.07 production appliance (which lists 9 other installed
+packages, none named RESTAPI). This is a consistent characteristic of
+how the REST API package reports itself through that specific endpoint
+on every platform tested, **not a CE-vs-Plus difference**, and it does
+not mean the package is unversioned or merely a built-in platform
+feature with no package identity: the dedicated version-check endpoint
+directly confirms it is a real, versioned package (`v2.10`) on every
+platform tested. Schema-level comparison (above) provides independent,
+additional evidence of compatibility.
 
 **Package-conditional tools.** Two tools
 (`pfsense_get_status_wireguard_tunnels`, `pfsense_get_status_wireguard_peers`)
