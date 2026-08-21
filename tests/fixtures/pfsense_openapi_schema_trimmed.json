@@ -1211,6 +1211,26 @@
         "description": "<h3>Description:</h3>Reads all existing IPsec SA Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: IPsecSAStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-ipsec-sas-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/status/openvpn/clients": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Client Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNClientStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-openvpn-clients-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/openvpn/server/connections": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Server Connection Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNServerConnectionStatus<br>**Parent model**: OpenVPNServerStatus<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-openvpn-server-connections-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/openvpn/server/routes": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Server Route Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNServerRouteStatus<br>**Parent model**: OpenVPNServerStatus<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-openvpn-server-routes-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/status/openvpn/servers": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Server Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNServerStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-openvpn-servers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/status/services": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Services.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Service<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-services-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"

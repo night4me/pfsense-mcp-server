@@ -45,6 +45,10 @@ from .models.ipsec_child_sa_status import IPsecChildSaStatus
 from .models.ipsec_sa_status import IPsecSaStatus
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
+from .models.openvpn_client_status import OpenVpnClientStatus
+from .models.openvpn_server_connection_status import OpenVpnServerConnectionStatus
+from .models.openvpn_server_route_status import OpenVpnServerRouteStatus
+from .models.openvpn_server_status import OpenVpnServerStatus
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.routing_static_route import RoutingStaticRoute
@@ -197,6 +201,22 @@ STATUS_WIREGUARD_TUNNELS_MAX_LIMIT = 100
 
 STATUS_WIREGUARD_PEERS_MIN_LIMIT = 1
 STATUS_WIREGUARD_PEERS_MAX_LIMIT = 100
+
+
+STATUS_OPENVPN_SERVERS_MIN_LIMIT = 1
+STATUS_OPENVPN_SERVERS_MAX_LIMIT = 100
+
+
+STATUS_OPENVPN_CLIENTS_MIN_LIMIT = 1
+STATUS_OPENVPN_CLIENTS_MAX_LIMIT = 100
+
+
+STATUS_OPENVPN_SERVER_CONNECTIONS_MIN_LIMIT = 1
+STATUS_OPENVPN_SERVER_CONNECTIONS_MAX_LIMIT = 100
+
+
+STATUS_OPENVPN_SERVER_ROUTES_MIN_LIMIT = 1
+STATUS_OPENVPN_SERVER_ROUTES_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -771,4 +791,72 @@ class PfSenseClient:
             raw,
             "/status/wireguard/peers",
             lambda data: WireGuardPeerStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_status_openvpn_servers(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVpnServerStatus]:
+        if not (STATUS_OPENVPN_SERVERS_MIN_LIMIT <= limit <= STATUS_OPENVPN_SERVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_OPENVPN_SERVERS_MIN_LIMIT} and "
+                f"{STATUS_OPENVPN_SERVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_OPENVPN_SERVERS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/openvpn/servers",
+            lambda data: OpenVpnServerStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_status_openvpn_clients(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVpnClientStatus]:
+        if not (STATUS_OPENVPN_CLIENTS_MIN_LIMIT <= limit <= STATUS_OPENVPN_CLIENTS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_OPENVPN_CLIENTS_MIN_LIMIT} and "
+                f"{STATUS_OPENVPN_CLIENTS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_OPENVPN_CLIENTS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/openvpn/clients",
+            lambda data: OpenVpnClientStatus.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_status_openvpn_server_connections(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVpnServerConnectionStatus]:
+        if not (STATUS_OPENVPN_SERVER_CONNECTIONS_MIN_LIMIT <= limit <= STATUS_OPENVPN_SERVER_CONNECTIONS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_OPENVPN_SERVER_CONNECTIONS_MIN_LIMIT} and "
+                f"{STATUS_OPENVPN_SERVER_CONNECTIONS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_OPENVPN_SERVER_CONNECTIONS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/openvpn/server/connections",
+            lambda data: OpenVpnServerConnectionStatus.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
+
+    def get_status_openvpn_server_routes(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVpnServerRouteStatus]:
+        if not (STATUS_OPENVPN_SERVER_ROUTES_MIN_LIMIT <= limit <= STATUS_OPENVPN_SERVER_ROUTES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {STATUS_OPENVPN_SERVER_ROUTES_MIN_LIMIT} and "
+                f"{STATUS_OPENVPN_SERVER_ROUTES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.STATUS_OPENVPN_SERVER_ROUTES, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/status/openvpn/server/routes",
+            lambda data: OpenVpnServerRouteStatus.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
         )

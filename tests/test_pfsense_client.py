@@ -5860,3 +5860,516 @@ def test_get_status_wireguard_tunnels_shape_error_does_not_leak_raw_field_values
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_status_wireguard_tunnels()
     assert sentinel not in str(excinfo.value)
+
+
+STATUS_OPENVPN_SERVER_CONNECTIONS_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "status_openvpn_server_connections_response.json"
+)
+STATUS_OPENVPN_SERVER_CONNECTIONS_IDENTIFYING_FIELDS = (
+    "common_name",
+    "remote_host",
+    "user_name",
+    "virtual_addr",
+    "virtual_addr6",
+)
+
+
+def _status_openvpn_server_connections_body() -> dict:
+    return json.loads(STATUS_OPENVPN_SERVER_CONNECTIONS_FIXTURE.read_text())
+
+
+def _status_openvpn_server_connections_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_openvpn_server_connections_body()
+    transport.register(
+        "GET", "/api/v2/status/openvpn/server/connections?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_openvpn_server_connections_omits_identifying_fields_by_default():
+    client, _ = _status_openvpn_server_connections_client()
+    conns = client.get_status_openvpn_server_connections()
+    assert len(conns) == 2
+    for conn in conns:
+        for field in STATUS_OPENVPN_SERVER_CONNECTIONS_IDENTIFYING_FIELDS:
+            assert getattr(conn, field) is None
+
+
+def test_get_status_openvpn_server_connections_includes_identifying_fields_when_requested():
+    client, _ = _status_openvpn_server_connections_client()
+    conns = client.get_status_openvpn_server_connections(include_identifying_metadata=True)
+    first = next(c for c in conns if c.client_id == 1)
+    assert first.common_name == "client1.example.invalid"
+    assert first.remote_host == "203.0.113.30"
+    assert first.user_name == "vpnuser1"
+    assert first.virtual_addr == "198.51.100.70"
+
+
+def test_get_status_openvpn_server_connections_maps_non_sensitive_fields():
+    client, _ = _status_openvpn_server_connections_client()
+    conns = client.get_status_openvpn_server_connections()
+    first = next(c for c in conns if c.client_id == 1)
+    assert first.cipher == "AES-256-GCM"
+    assert first.bytes_recv == 1024
+    assert first.bytes_sent == 2048
+
+
+def test_get_status_openvpn_server_connections_only_calls_endpoint_with_default_limit():
+    client, transport = _status_openvpn_server_connections_client()
+    client.get_status_openvpn_server_connections()
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/server/connections?limit=100")]
+
+
+def test_get_status_openvpn_server_connections_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_openvpn_server_connections_body()
+    transport.register(
+        "GET", "/api/v2/status/openvpn/server/connections?limit=5", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_openvpn_server_connections(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/server/connections?limit=5")]
+
+
+def test_get_status_openvpn_server_connections_rejects_zero_limit():
+    client, _ = _status_openvpn_server_connections_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_server_connections(limit=0)
+
+
+def test_get_status_openvpn_server_connections_rejects_limit_above_max():
+    client, _ = _status_openvpn_server_connections_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_server_connections(limit=101)
+
+
+def test_get_status_openvpn_server_connections_invalid_limit_never_calls_transport():
+    client, transport = _status_openvpn_server_connections_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_server_connections(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_openvpn_server_connections_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- zero active OpenVPN
+    server connections on the LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_openvpn_server_connections_client(body)
+    assert client.get_status_openvpn_server_connections() == []
+
+
+def test_get_status_openvpn_server_connections_missing_data_key_raises_shape_error():
+    body = _status_openvpn_server_connections_body()
+    del body["data"]
+    client, _ = _status_openvpn_server_connections_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_server_connections()
+
+
+def test_get_status_openvpn_server_connections_item_wrong_type_raises_shape_error():
+    body = _status_openvpn_server_connections_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_openvpn_server_connections_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_server_connections()
+
+
+def test_get_status_openvpn_server_connections_required_field_missing_raises_shape_error():
+    body = _status_openvpn_server_connections_body()
+    del body["data"][0]["cipher"]
+    client, _ = _status_openvpn_server_connections_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_server_connections()
+
+
+def test_get_status_openvpn_server_connections_shape_error_does_not_leak_raw_field_values():
+    body = _status_openvpn_server_connections_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["cipher"] = [sentinel]
+    client, _ = _status_openvpn_server_connections_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_openvpn_server_connections()
+    assert sentinel not in str(excinfo.value)
+
+
+STATUS_OPENVPN_SERVER_ROUTES_FIXTURE = Path(__file__).parent / "fixtures" / "status_openvpn_server_routes_response.json"
+STATUS_OPENVPN_SERVER_ROUTES_IDENTIFYING_FIELDS = ("common_name", "remote_host", "virtual_addr")
+
+
+def _status_openvpn_server_routes_body() -> dict:
+    return json.loads(STATUS_OPENVPN_SERVER_ROUTES_FIXTURE.read_text())
+
+
+def _status_openvpn_server_routes_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_openvpn_server_routes_body()
+    transport.register(
+        "GET", "/api/v2/status/openvpn/server/routes?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_openvpn_server_routes_omits_identifying_fields_by_default():
+    client, _ = _status_openvpn_server_routes_client()
+    routes = client.get_status_openvpn_server_routes()
+    assert len(routes) == 2
+    for route in routes:
+        for field in STATUS_OPENVPN_SERVER_ROUTES_IDENTIFYING_FIELDS:
+            assert getattr(route, field) is None
+
+
+def test_get_status_openvpn_server_routes_includes_identifying_fields_when_requested():
+    client, _ = _status_openvpn_server_routes_client()
+    routes = client.get_status_openvpn_server_routes(include_identifying_metadata=True)
+    first = next(r for r in routes if r.common_name == "client1.example.invalid")
+    assert first.remote_host == "203.0.113.30"
+    assert first.virtual_addr == "198.51.100.70"
+
+
+def test_get_status_openvpn_server_routes_maps_non_sensitive_fields():
+    client, _ = _status_openvpn_server_routes_client()
+    routes = client.get_status_openvpn_server_routes()
+    first = next(r for r in routes if r.last_time is not None)
+    assert first.last_time == "Fri Aug 21 00:00:00 2026"
+
+
+def test_get_status_openvpn_server_routes_only_calls_endpoint_with_default_limit():
+    client, transport = _status_openvpn_server_routes_client()
+    client.get_status_openvpn_server_routes()
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/server/routes?limit=100")]
+
+
+def test_get_status_openvpn_server_routes_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_openvpn_server_routes_body()
+    transport.register("GET", "/api/v2/status/openvpn/server/routes?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_openvpn_server_routes(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/server/routes?limit=5")]
+
+
+def test_get_status_openvpn_server_routes_rejects_zero_limit():
+    client, _ = _status_openvpn_server_routes_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_server_routes(limit=0)
+
+
+def test_get_status_openvpn_server_routes_rejects_limit_above_max():
+    client, _ = _status_openvpn_server_routes_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_server_routes(limit=101)
+
+
+def test_get_status_openvpn_server_routes_invalid_limit_never_calls_transport():
+    client, transport = _status_openvpn_server_routes_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_server_routes(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_openvpn_server_routes_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- zero OpenVPN server
+    routes on the LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_openvpn_server_routes_client(body)
+    assert client.get_status_openvpn_server_routes() == []
+
+
+def test_get_status_openvpn_server_routes_missing_data_key_raises_shape_error():
+    body = _status_openvpn_server_routes_body()
+    del body["data"]
+    client, _ = _status_openvpn_server_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_server_routes()
+
+
+def test_get_status_openvpn_server_routes_item_wrong_type_raises_shape_error():
+    body = _status_openvpn_server_routes_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_openvpn_server_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_server_routes()
+
+
+def test_get_status_openvpn_server_routes_required_field_missing_raises_shape_error():
+    body = _status_openvpn_server_routes_body()
+    del body["data"][0]["last_time"]
+    client, _ = _status_openvpn_server_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_server_routes()
+
+
+def test_get_status_openvpn_server_routes_shape_error_does_not_leak_raw_field_values():
+    body = _status_openvpn_server_routes_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["last_time"] = [sentinel]
+    client, _ = _status_openvpn_server_routes_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_openvpn_server_routes()
+    assert sentinel not in str(excinfo.value)
+
+
+STATUS_OPENVPN_SERVERS_FIXTURE = Path(__file__).parent / "fixtures" / "status_openvpn_servers_response.json"
+
+
+def _status_openvpn_servers_body() -> dict:
+    return json.loads(STATUS_OPENVPN_SERVERS_FIXTURE.read_text())
+
+
+def _status_openvpn_servers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_openvpn_servers_body()
+    transport.register("GET", "/api/v2/status/openvpn/servers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_openvpn_servers_maps_non_sensitive_fields():
+    client, _ = _status_openvpn_servers_client()
+    servers = client.get_status_openvpn_servers()
+    assert len(servers) == 2
+    first = next(s for s in servers if s.name == "server1")
+    assert first.mode == "server_tls"
+    assert first.port == "1194"
+    assert first.vpnid == 1
+
+
+def test_get_status_openvpn_servers_nested_conns_and_routes_constructed_as_typed_objects():
+    client, _ = _status_openvpn_servers_client()
+    servers = client.get_status_openvpn_servers()
+    first = next(s for s in servers if s.name == "server1")
+    assert first.conns is not None and len(first.conns) == 1
+    assert first.conns[0].cipher == "AES-256-GCM"
+    assert first.routes is not None and len(first.routes) == 1
+    assert first.routes[0].last_time == "Fri Aug 21 00:00:00 2026"
+
+
+def test_get_status_openvpn_servers_nested_redaction_follows_parent_flag():
+    client, _ = _status_openvpn_servers_client()
+    servers = client.get_status_openvpn_servers()
+    first = next(s for s in servers if s.name == "server1")
+    assert first.conns[0].common_name is None
+    assert first.routes[0].common_name is None
+
+    servers_revealed = client.get_status_openvpn_servers(include_identifying_metadata=True)
+    first_revealed = next(s for s in servers_revealed if s.name == "server1")
+    assert first_revealed.conns[0].common_name == "client1.example.invalid"
+    assert first_revealed.routes[0].common_name == "client1.example.invalid"
+
+
+def test_get_status_openvpn_servers_handles_null_conns_and_routes():
+    client, _ = _status_openvpn_servers_client()
+    servers = client.get_status_openvpn_servers()
+    second = next(s for s in servers if s.name is None)
+    assert second.conns is None
+    assert second.routes is None
+
+
+def test_get_status_openvpn_servers_only_calls_endpoint_with_default_limit():
+    client, transport = _status_openvpn_servers_client()
+    client.get_status_openvpn_servers()
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/servers?limit=100")]
+
+
+def test_get_status_openvpn_servers_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_openvpn_servers_body()
+    transport.register("GET", "/api/v2/status/openvpn/servers?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_openvpn_servers(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/servers?limit=5")]
+
+
+def test_get_status_openvpn_servers_rejects_zero_limit():
+    client, _ = _status_openvpn_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_servers(limit=0)
+
+
+def test_get_status_openvpn_servers_rejects_limit_above_max():
+    client, _ = _status_openvpn_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_servers(limit=101)
+
+
+def test_get_status_openvpn_servers_invalid_limit_never_calls_transport():
+    client, transport = _status_openvpn_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_servers(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_openvpn_servers_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- zero configured
+    OpenVPN servers on the LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_openvpn_servers_client(body)
+    assert client.get_status_openvpn_servers() == []
+
+
+def test_get_status_openvpn_servers_missing_data_key_raises_shape_error():
+    body = _status_openvpn_servers_body()
+    del body["data"]
+    client, _ = _status_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_servers()
+
+
+def test_get_status_openvpn_servers_item_wrong_type_raises_shape_error():
+    body = _status_openvpn_servers_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_servers()
+
+
+def test_get_status_openvpn_servers_required_field_missing_raises_shape_error():
+    body = _status_openvpn_servers_body()
+    del body["data"][0]["mode"]
+    client, _ = _status_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_servers()
+
+
+def test_get_status_openvpn_servers_shape_error_does_not_leak_raw_field_values():
+    body = _status_openvpn_servers_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["mode"] = [sentinel]
+    client, _ = _status_openvpn_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_openvpn_servers()
+    assert sentinel not in str(excinfo.value)
+
+
+STATUS_OPENVPN_CLIENTS_FIXTURE = Path(__file__).parent / "fixtures" / "status_openvpn_clients_response.json"
+STATUS_OPENVPN_CLIENTS_IDENTIFYING_FIELDS = ("local_host", "remote_host", "virtual_addr", "virtual_addr6")
+
+
+def _status_openvpn_clients_body() -> dict:
+    return json.loads(STATUS_OPENVPN_CLIENTS_FIXTURE.read_text())
+
+
+def _status_openvpn_clients_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _status_openvpn_clients_body()
+    transport.register("GET", "/api/v2/status/openvpn/clients?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_status_openvpn_clients_omits_identifying_fields_by_default():
+    client, _ = _status_openvpn_clients_client()
+    clients = client.get_status_openvpn_clients()
+    assert len(clients) == 2
+    for c in clients:
+        for field in STATUS_OPENVPN_CLIENTS_IDENTIFYING_FIELDS:
+            assert getattr(c, field) is None
+
+
+def test_get_status_openvpn_clients_includes_identifying_fields_when_requested():
+    client, _ = _status_openvpn_clients_client()
+    clients = client.get_status_openvpn_clients(include_identifying_metadata=True)
+    first = next(c for c in clients if c.name == "client1")
+    assert first.local_host == "198.51.100.1"
+    assert first.remote_host == "203.0.113.40"
+    assert first.virtual_addr == "198.51.100.80"
+
+
+def test_get_status_openvpn_clients_maps_non_sensitive_fields():
+    client, _ = _status_openvpn_clients_client()
+    clients = client.get_status_openvpn_clients()
+    first = next(c for c in clients if c.name == "client1")
+    assert first.status == "up"
+    assert first.state == "CONNECTED"
+    assert first.vpnid == 1
+
+
+def test_get_status_openvpn_clients_only_calls_endpoint_with_default_limit():
+    client, transport = _status_openvpn_clients_client()
+    client.get_status_openvpn_clients()
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/clients?limit=100")]
+
+
+def test_get_status_openvpn_clients_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _status_openvpn_clients_body()
+    transport.register("GET", "/api/v2/status/openvpn/clients?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_status_openvpn_clients(limit=5)
+    assert transport.calls == [("GET", "/api/v2/status/openvpn/clients?limit=5")]
+
+
+def test_get_status_openvpn_clients_rejects_zero_limit():
+    client, _ = _status_openvpn_clients_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_clients(limit=0)
+
+
+def test_get_status_openvpn_clients_rejects_limit_above_max():
+    client, _ = _status_openvpn_clients_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_clients(limit=101)
+
+
+def test_get_status_openvpn_clients_invalid_limit_never_calls_transport():
+    client, transport = _status_openvpn_clients_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_status_openvpn_clients(limit=0)
+    assert transport.calls == []
+
+
+def test_get_status_openvpn_clients_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- zero configured
+    OpenVPN clients on the LAB appliance at verification time."""
+
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _status_openvpn_clients_client(body)
+    assert client.get_status_openvpn_clients() == []
+
+
+def test_get_status_openvpn_clients_missing_data_key_raises_shape_error():
+    body = _status_openvpn_clients_body()
+    del body["data"]
+    client, _ = _status_openvpn_clients_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_clients()
+
+
+def test_get_status_openvpn_clients_item_wrong_type_raises_shape_error():
+    body = _status_openvpn_clients_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _status_openvpn_clients_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_clients()
+
+
+def test_get_status_openvpn_clients_required_field_missing_raises_shape_error():
+    body = _status_openvpn_clients_body()
+    del body["data"][0]["status"]
+    client, _ = _status_openvpn_clients_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_status_openvpn_clients()
+
+
+def test_get_status_openvpn_clients_shape_error_does_not_leak_raw_field_values():
+    body = _status_openvpn_clients_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["status"] = [sentinel]
+    client, _ = _status_openvpn_clients_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_status_openvpn_clients()
+    assert sentinel not in str(excinfo.value)

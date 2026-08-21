@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 55 READ, 0 WRITE
+Registered tools: 59 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -428,6 +428,49 @@ Common parameters:
   omitted by default. The preshared key is never returned under any
   argument.
 - **Example:** `{"name":"pfsense_get_status_wireguard_peers","arguments":{}}`
+
+### `pfsense_get_status_openvpn_servers`
+
+- **Purpose:** List live OpenVPN server status: mode, port, and nested
+  connection/route status.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVpnServerStatus]`.
+- **Security:** Literal client identity/address fields nested under each
+  server's connections and routes are omitted by default.
+- **Example:** `{"name":"pfsense_get_status_openvpn_servers","arguments":{}}`
+
+### `pfsense_get_status_openvpn_clients`
+
+- **Purpose:** List live OpenVPN client status: connection state and
+  virtual/remote address details.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVpnClientStatus]`.
+- **Security:** Literal local/remote/virtual addresses are omitted by
+  default.
+- **Example:** `{"name":"pfsense_get_status_openvpn_clients","arguments":{}}`
+
+### `pfsense_get_status_openvpn_server_connections`
+
+- **Purpose:** List live, flat, all-servers OpenVPN client connection
+  status: cipher, byte counters, and connect time.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVpnServerConnectionStatus]`.
+- **Security:** Literal client common name, username, and remote/virtual
+  addresses are omitted by default.
+- **Example:** `{"name":"pfsense_get_status_openvpn_server_connections","arguments":{}}`
+
+### `pfsense_get_status_openvpn_server_routes`
+
+- **Purpose:** List live, flat, all-servers OpenVPN client route status.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVpnServerRouteStatus]`.
+- **Security:** Literal client common name and remote/virtual addresses
+  are omitted by default.
+- **Example:** `{"name":"pfsense_get_status_openvpn_server_routes","arguments":{}}`
 
 ## Users and API identities
 

@@ -1,0 +1,40 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "client1",
+      "port": "1194",
+      "vpnid": 1,
+      "mgmt": "/var/etc/openvpn/client1/sock",
+      "status": "up",
+      "state": "CONNECTED",
+      "state_detail": "SUCCESS",
+      "connect_time": "Fri Aug 21 00:00:00 2026",
+      "virtual_addr": "198.51.100.80",
+      "virtual_addr6": null,
+      "remote_host": "203.0.113.40",
+      "remote_port": "1194",
+      "local_host": "198.51.100.1",
+      "local_port": "1194"
+    },
+    {
+      "name": null,
+      "port": null,
+      "vpnid": null,
+      "mgmt": null,
+      "status": null,
+      "state": null,
+      "state_detail": null,
+      "connect_time": null,
+      "virtual_addr": null,
+      "virtual_addr6": null,
+      "remote_host": null,
+      "remote_port": null,
+      "local_host": null,
+      "local_port": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

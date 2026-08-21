@@ -384,3 +384,39 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-08-21, P1 Batch B, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, zero configured OpenVPN servers at
+    # verification time -- ENDPOINT_VERIFIED, not FIELD_MODEL_LIVE_VERIFIED.
+    # No package required (base pfSense feature).
+    STATUS_OPENVPN_SERVERS = EndpointInfo(
+        path_suffix="/status/openvpn/servers",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured OpenVPN clients, ENDPOINT_VERIFIED only.
+    STATUS_OPENVPN_CLIENTS = EndpointInfo(
+        path_suffix="/status/openvpn/clients",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # active connections, ENDPOINT_VERIFIED only. Schema-declared
+    # "Parent model: OpenVPNServerStatus", the same structural
+    # relationship already established as non-redundant between
+    # IPsecSaStatus/IPsecChildSaStatus -- implemented as a genuinely
+    # independent, non-duplicative endpoint on that basis.
+    STATUS_OPENVPN_SERVER_CONNECTIONS = EndpointInfo(
+        path_suffix="/status/openvpn/server/connections",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-21) -- same LAB verification pass and same
+    # non-redundancy basis as STATUS_OPENVPN_SERVER_CONNECTIONS
+    # immediately above.
+    STATUS_OPENVPN_SERVER_ROUTES = EndpointInfo(
+        path_suffix="/status/openvpn/server/routes",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )

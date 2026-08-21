@@ -70,6 +70,29 @@ never production) before public registration.
     mechanism, which remains untouched and still empty except
     `FIREWALL_ALIAS_DESCRIPTION` — not a WRITE-capability expansion of
     the shipped server.
+- **4 more READ tools (P1 Batch B), public MCP contract 55 → 59 (0
+  WRITE, unchanged):**
+  - `pfsense_get_status_openvpn_servers` — live OpenVPN server status,
+    including nested connection/route status.
+  - `pfsense_get_status_openvpn_clients` — live OpenVPN client status.
+  - `pfsense_get_status_openvpn_server_connections` — flat, all-servers
+    OpenVPN client connection status.
+  - `pfsense_get_status_openvpn_server_routes` — flat, all-servers
+    OpenVPN client route status.
+  - Resolved the standing open question of whether the standalone
+    connection/route endpoints duplicate `OpenVpnServerStatus`'s own
+    nested `conns`/`routes` fields using the pinned schema's own
+    `Parent model` declaration (both standalone endpoints declare
+    `Parent model: OpenVPNServerStatus`) — the identical structural
+    relationship already established as non-redundant between
+    `IPsecSaStatus`/`IPsecChildSaStatus`, so all four were implemented
+    as genuinely independent capabilities rather than assumed
+    duplicates.
+  - `OpenVpnServerStatus.conns`/`.routes` embed full
+    `OpenVpnServerConnectionStatus`/`OpenVpnServerRouteStatus` objects
+    (schema-confirmed `$ref`) and are constructed through those
+    models' own parsers for every nested item, not passed through as
+    raw dicts.
 
 ### Security
 
@@ -107,6 +130,12 @@ never production) before public registration.
   this project's own model-level exclusions remain the enforcement
   mechanism regardless; pfREST's own redaction behavior, if any, is
   never relied upon.
+- `OpenVpnServerConnectionStatus.common_name`/`.user_name` and the
+  analogous `common_name` fields elsewhere in the OpenVPN status
+  cluster are real per-connection human/device identity data, not
+  merely network topology — redacted by default like other identifying
+  fields, with the extra care this class of field warrants noted
+  explicitly rather than treated as an ordinary address field.
 
 ### Fixed
 

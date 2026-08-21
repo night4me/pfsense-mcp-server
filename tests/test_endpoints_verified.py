@@ -692,3 +692,51 @@ def test_status_wireguard_peers_path_suffix_has_no_api_prefix():
 
 def test_status_wireguard_peers_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.STATUS_WIREGUARD_PEERS.path_suffix == "/status/wireguard/peers"
+
+
+def test_status_openvpn_servers_is_declared_verified():
+    assert Endpoints.STATUS_OPENVPN_SERVERS.verified is True
+
+
+def test_status_openvpn_servers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_OPENVPN_SERVERS.path_suffix.startswith("/api")
+
+
+def test_status_openvpn_servers_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_OPENVPN_SERVERS.path_suffix == "/status/openvpn/servers"
+
+
+def test_status_openvpn_clients_is_declared_verified():
+    assert Endpoints.STATUS_OPENVPN_CLIENTS.verified is True
+
+
+def test_status_openvpn_clients_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_OPENVPN_CLIENTS.path_suffix.startswith("/api")
+
+
+def test_status_openvpn_clients_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_OPENVPN_CLIENTS.path_suffix == "/status/openvpn/clients"
+
+
+def test_status_openvpn_server_connections_is_declared_verified():
+    assert Endpoints.STATUS_OPENVPN_SERVER_CONNECTIONS.verified is True
+
+
+def test_status_openvpn_server_connections_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_OPENVPN_SERVER_CONNECTIONS.path_suffix.startswith("/api")
+
+
+def test_status_openvpn_server_connections_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_OPENVPN_SERVER_CONNECTIONS.path_suffix == "/status/openvpn/server/connections"
+
+
+def test_status_openvpn_server_routes_is_declared_verified():
+    assert Endpoints.STATUS_OPENVPN_SERVER_ROUTES.verified is True
+
+
+def test_status_openvpn_server_routes_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_OPENVPN_SERVER_ROUTES.path_suffix.startswith("/api")
+
+
+def test_status_openvpn_server_routes_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.STATUS_OPENVPN_SERVER_ROUTES.path_suffix == "/status/openvpn/server/routes"

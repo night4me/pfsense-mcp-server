@@ -1,0 +1,36 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "common_name": "client1.example.invalid",
+      "remote_host": "203.0.113.30",
+      "virtual_addr": "198.51.100.70",
+      "virtual_addr6": null,
+      "bytes_recv": 1024,
+      "bytes_sent": 2048,
+      "connect_time": "Fri Aug 21 00:00:00 2026",
+      "connect_time_unix": 1755763200,
+      "user_name": "vpnuser1",
+      "client_id": 1,
+      "peer_id": 0,
+      "cipher": "AES-256-GCM"
+    },
+    {
+      "common_name": null,
+      "remote_host": null,
+      "virtual_addr": null,
+      "virtual_addr6": null,
+      "bytes_recv": null,
+      "bytes_sent": null,
+      "connect_time": null,
+      "connect_time_unix": null,
+      "user_name": null,
+      "client_id": null,
+      "peer_id": null,
+      "cipher": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

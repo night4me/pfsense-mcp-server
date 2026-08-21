@@ -62,6 +62,10 @@ from .read import (
     ssh_settings,
     status_ipsec_child_sas,
     status_ipsec_sas,
+    status_openvpn_clients,
+    status_openvpn_server_connections,
+    status_openvpn_server_routes,
+    status_openvpn_servers,
     status_wireguard_peers,
     status_wireguard_tunnels,
     system_certificate_authorities,
@@ -137,6 +141,10 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_ssh_settings",
         "pfsense_get_status_ipsec_child_sas",
         "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_openvpn_clients",
+        "pfsense_get_status_openvpn_server_connections",
+        "pfsense_get_status_openvpn_server_routes",
+        "pfsense_get_status_openvpn_servers",
         "pfsense_get_status_wireguard_peers",
         "pfsense_get_status_wireguard_tunnels",
         "pfsense_get_system_certificate_authorities",
@@ -294,6 +302,14 @@ class ToolRegistry:
             self._register_status_wireguard_tunnel_read()
         if Capability.STATUS_WIREGUARD_PEER_READ in self._capabilities:
             self._register_status_wireguard_peer_read()
+        if Capability.STATUS_OPENVPN_SERVER_READ in self._capabilities:
+            self._register_status_openvpn_server_read()
+        if Capability.STATUS_OPENVPN_CLIENT_READ in self._capabilities:
+            self._register_status_openvpn_client_read()
+        if Capability.STATUS_OPENVPN_SERVER_CONNECTION_READ in self._capabilities:
+            self._register_status_openvpn_server_connection_read()
+        if Capability.STATUS_OPENVPN_SERVER_ROUTE_READ in self._capabilities:
+            self._register_status_openvpn_server_route_read()
 
         self.register_all_write()
 
@@ -628,6 +644,26 @@ class ToolRegistry:
     def _register_status_wireguard_peer_read(self) -> None:
         fn = status_wireguard_peers.build(self._client)
         wrapped = audit_logged("pfsense_get_status_wireguard_peers", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_openvpn_server_read(self) -> None:
+        fn = status_openvpn_servers.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_openvpn_servers", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_openvpn_client_read(self) -> None:
+        fn = status_openvpn_clients.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_openvpn_clients", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_openvpn_server_connection_read(self) -> None:
+        fn = status_openvpn_server_connections.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_openvpn_server_connections", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_openvpn_server_route_read(self) -> None:
+        fn = status_openvpn_server_routes.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_openvpn_server_routes", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

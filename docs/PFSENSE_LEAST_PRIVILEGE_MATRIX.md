@@ -155,6 +155,36 @@ and contained no unexpected fields. Both `Endpoints` entries are now
 combined become 54 READ / 55 combined** throughout this document as of
 this pass.
 
+**2026-08-21 (same day, later still) — OpenVPN status cluster
+LAB-verified and registered (P1 Batch B).** Before implementing, the
+open question of whether `OpenVpnServerStatus`'s nested `conns`/`routes`
+duplicate the standalone `status/openvpn/server/connections`/`routes`
+endpoints was resolved via the pinned schema's own `Parent model`
+declaration: both standalone endpoints declare `Parent model:
+OpenVPNServerStatus`, the identical structural relationship already
+established as non-redundant between `IPsecSaStatus`/`IPsecChildSaStatus`
+in Batch A — implemented as four genuinely independent, non-duplicative
+endpoints on that basis (live OpenVPN data was unavailable on this LAB
+either way to settle it empirically). `PfSenseClient.
+get_status_openvpn_servers()`/`get_status_openvpn_clients()`/
+`get_status_openvpn_server_connections()`/`get_status_openvpn_server_routes()`,
+their models, and their `Endpoints` entries were implemented and
+LAB-verified — all four returned zero configured objects
+(`ENDPOINT_VERIFIED` only; no package required, a base pfSense
+feature). `common_name`/`remote_host`/`user_name`/`virtual_addr`/
+`virtual_addr6` (real per-connection human/device identity data, not
+merely topology, on `OpenVpnServerConnectionStatus`) and the analogous
+`common_name`/`remote_host`/`virtual_addr` (on `OpenVpnServerRouteStatus`)
+and `local_host`/`remote_host`/`virtual_addr`/`virtual_addr6` (on
+`OpenVpnClientStatus`) are redacted by default. `OpenVpnServerStatus.conns`/
+`.routes` are schema-confirmed to embed full `OpenVpnServerConnectionStatus`/
+`OpenVpnServerRouteStatus` objects and are constructed through those
+models' own `from_api()` for every item, so the redaction gates hold
+for the nested case too. All four `Endpoints` entries are now
+`verified=True`; all four tools are now registered. **54 READ / 55
+combined become 58 READ / 59 combined** throughout this document as of
+this pass.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -214,16 +244,16 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 54 endpoints this project's 55 READ
+exists for them. **None of the 58 endpoints this project's 59 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
 group, firewall-schedule/virtual-IP, REST-API-version, and
-certificate-authority endpoints, and the IPsec SA/child-SA and
-WireGuard tunnel/peer status endpoints, each of which offers a narrow
-alternative alongside `page-all`). This must be re-checked for any
-*future* tool added against a new endpoint — it is not a general
-guarantee.
+certificate-authority endpoints, the IPsec SA/child-SA and WireGuard
+tunnel/peer status endpoints, and the OpenVPN server/client/connection/
+route status endpoints, each of which offers a narrow alternative
+alongside `page-all`). This must be re-checked for any *future* tool
+added against a new endpoint — it is not a general guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
 
@@ -253,17 +283,18 @@ installed version's privilege-naming behavior matches the pinned
 source this document reasons about. The interface-VLAN/static-route
 pair, the interface-group/firewall-schedule/REST-API-version trio, the
 firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
-status pair, and the WireGuard tunnel/peer status pair, were
-cross-checked against a live schema freshly fetched from the **LAB**
-appliance (`pfsense-test.lab.invalid`) during owner-authorized LAB READ
-verification passes — also an exact match, zero mismatches (54 of 54
-now, including all eleven). The IPsec and WireGuard pairs' LAB
-cross-checks were against the upgraded pfSense CE 2.9.0 appliance
+status pair, the WireGuard tunnel/peer status pair, and the OpenVPN
+server/client/connection/route status four, were cross-checked against
+a live schema freshly fetched from the **LAB** appliance
+(`pfsense-test.lab.invalid`) during owner-authorized LAB READ
+verification passes — also an exact match, zero mismatches (58 of 58
+now, including all fifteen). The IPsec, WireGuard, and OpenVPN groups'
+LAB cross-checks were against the upgraded pfSense CE 2.9.0 appliance
 specifically; its REST API package schema remained an exact 267-path
 match despite the platform upgrade, both before and after installing
 `pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (55 tools)
+## READ privilege matrix (59 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -309,6 +340,10 @@ match despite the platform upgrade, both before and after installing
 | `pfsense_ssh_settings` | `get_ssh_settings` | `GET /api/v2/services/ssh` | `api-v2-services-ssh-get` | ✅ |
 | `pfsense_status_ipsec_child_sas` | `get_status_ipsec_child_sas` | `GET /api/v2/status/ipsec/child_sas` | `api-v2-status-ipsec-child-sas-get` | ✅ |
 | `pfsense_status_ipsec_sas` | `get_status_ipsec_sas` | `GET /api/v2/status/ipsec/sas` | `api-v2-status-ipsec-sas-get` | ✅ |
+| `pfsense_status_openvpn_clients` | `get_status_openvpn_clients` | `GET /api/v2/status/openvpn/clients` | `api-v2-status-openvpn-clients-get` | ✅ |
+| `pfsense_status_openvpn_server_connections` | `get_status_openvpn_server_connections` | `GET /api/v2/status/openvpn/server/connections` | `api-v2-status-openvpn-server-connections-get` | ✅ |
+| `pfsense_status_openvpn_server_routes` | `get_status_openvpn_server_routes` | `GET /api/v2/status/openvpn/server/routes` | `api-v2-status-openvpn-server-routes-get` | ✅ |
+| `pfsense_status_openvpn_servers` | `get_status_openvpn_servers` | `GET /api/v2/status/openvpn/servers` | `api-v2-status-openvpn-servers-get` | ✅ |
 | `pfsense_status_wireguard_peers` | `get_status_wireguard_peers` | `GET /api/v2/status/wireguard/peers` | `api-v2-status-wireguard-peers-get` | ✅ |
 | `pfsense_status_wireguard_tunnels` | `get_status_wireguard_tunnels` | `GET /api/v2/status/wireguard/tunnels` | `api-v2-status-wireguard-tunnels-get` | ✅ |
 | `pfsense_system_certificate_authorities` | `get_system_certificate_authorities` | `GET /api/v2/system/certificate_authorities` | `api-v2-system-certificate-authorities-get` | ✅ |
@@ -323,10 +358,10 @@ match despite the platform upgrade, both before and after installing
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**54 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 54`). A least-privilege
-READ-only identity holding exactly these 54 (never `page-all`) can serve
-every one of this project's 55 registered READ tools.
+**58 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 58`). A least-privilege
+READ-only identity holding exactly these 58 (never `page-all`) can serve
+every one of this project's 59 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -335,7 +370,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 56th tool would
+completeness, since a future decision to expose it as a 60th tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -369,11 +404,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 54 READ privileges
+The 4 WRITE privileges are a strict subset of the 58 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **55 distinct privileges**: the 54 READ
+identity therefore needs exactly **59 distinct privileges**: the 58 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

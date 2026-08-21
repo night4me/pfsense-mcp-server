@@ -7127,6 +7127,920 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "STATUS_OPENVPN_CLIENT_READ",
+      "client_method": "get_status_openvpn_clients",
+      "description": "List live OpenVPN client status: connection state and\n        virtual/remote address details. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        local/remote/virtual addresses. Defaults to False.\n\n        limit: maximum number of clients to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/openvpn/clients",
+        "symbol": "STATUS_OPENVPN_CLIENTS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_openvpn_clientsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_openvpn_clients",
+      "output_schema": {
+        "$defs": {
+          "OpenVpnClientStatus": {
+            "properties": {
+              "connect_time": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connect Time"
+              },
+              "local_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Local Host"
+              },
+              "local_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Local Port"
+              },
+              "mgmt": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mgmt"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Port"
+              },
+              "remote_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Host"
+              },
+              "remote_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Remote Port"
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State"
+              },
+              "state_detail": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "State Detail"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Status"
+              },
+              "virtual_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr"
+              },
+              "virtual_addr6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr6"
+              },
+              "vpnid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vpnid"
+              }
+            },
+            "required": [
+              "connect_time",
+              "local_port",
+              "mgmt",
+              "name",
+              "port",
+              "remote_port",
+              "state",
+              "state_detail",
+              "status",
+              "vpnid"
+            ],
+            "title": "OpenVpnClientStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVpnClientStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_openvpn_clientsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "STATUS_OPENVPN_SERVER_CONNECTION_READ",
+      "client_method": "get_status_openvpn_server_connections",
+      "description": "List live, flat, all-servers OpenVPN client connection\n        status: cipher, byte counters, and connect time. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        client common name, username, and remote/virtual addresses.\n        Defaults to False.\n\n        limit: maximum number of connections to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/openvpn/server/connections",
+        "symbol": "STATUS_OPENVPN_SERVER_CONNECTIONS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_openvpn_server_connectionsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_openvpn_server_connections",
+      "output_schema": {
+        "$defs": {
+          "OpenVpnServerConnectionStatus": {
+            "properties": {
+              "bytes_recv": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes Recv"
+              },
+              "bytes_sent": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes Sent"
+              },
+              "cipher": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cipher"
+              },
+              "client_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Client Id"
+              },
+              "common_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Common Name"
+              },
+              "connect_time": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connect Time"
+              },
+              "connect_time_unix": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connect Time Unix"
+              },
+              "peer_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Peer Id"
+              },
+              "remote_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Host"
+              },
+              "user_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "User Name"
+              },
+              "virtual_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr"
+              },
+              "virtual_addr6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr6"
+              }
+            },
+            "required": [
+              "bytes_recv",
+              "bytes_sent",
+              "cipher",
+              "client_id",
+              "connect_time",
+              "connect_time_unix",
+              "peer_id"
+            ],
+            "title": "OpenVpnServerConnectionStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVpnServerConnectionStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_openvpn_server_connectionsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "STATUS_OPENVPN_SERVER_ROUTE_READ",
+      "client_method": "get_status_openvpn_server_routes",
+      "description": "List live, flat, all-servers OpenVPN client route status.\n        Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        client common name and remote/virtual addresses. Defaults to\n        False.\n\n        limit: maximum number of routes to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/openvpn/server/routes",
+        "symbol": "STATUS_OPENVPN_SERVER_ROUTES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_openvpn_server_routesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_openvpn_server_routes",
+      "output_schema": {
+        "$defs": {
+          "OpenVpnServerRouteStatus": {
+            "properties": {
+              "common_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Common Name"
+              },
+              "last_time": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Last Time"
+              },
+              "remote_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Host"
+              },
+              "virtual_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr"
+              }
+            },
+            "required": [
+              "last_time"
+            ],
+            "title": "OpenVpnServerRouteStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVpnServerRouteStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_openvpn_server_routesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "STATUS_OPENVPN_SERVER_READ",
+      "client_method": "get_status_openvpn_servers",
+      "description": "List live OpenVPN server status: mode, port, and nested\n        connection/route status. Read-only.\n\n        include_identifying_metadata: if True, includes literal client\n        identity/address fields nested under each server's connections\n        and routes. Defaults to False.\n\n        limit: maximum number of servers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/openvpn/servers",
+        "symbol": "STATUS_OPENVPN_SERVERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_openvpn_serversArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_openvpn_servers",
+      "output_schema": {
+        "$defs": {
+          "OpenVpnServerConnectionStatus": {
+            "properties": {
+              "bytes_recv": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes Recv"
+              },
+              "bytes_sent": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bytes Sent"
+              },
+              "cipher": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cipher"
+              },
+              "client_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Client Id"
+              },
+              "common_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Common Name"
+              },
+              "connect_time": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connect Time"
+              },
+              "connect_time_unix": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connect Time Unix"
+              },
+              "peer_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Peer Id"
+              },
+              "remote_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Host"
+              },
+              "user_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "User Name"
+              },
+              "virtual_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr"
+              },
+              "virtual_addr6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr6"
+              }
+            },
+            "required": [
+              "bytes_recv",
+              "bytes_sent",
+              "cipher",
+              "client_id",
+              "connect_time",
+              "connect_time_unix",
+              "peer_id"
+            ],
+            "title": "OpenVpnServerConnectionStatus",
+            "type": "object"
+          },
+          "OpenVpnServerRouteStatus": {
+            "properties": {
+              "common_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Common Name"
+              },
+              "last_time": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Last Time"
+              },
+              "remote_host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Host"
+              },
+              "virtual_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Addr"
+              }
+            },
+            "required": [
+              "last_time"
+            ],
+            "title": "OpenVpnServerRouteStatus",
+            "type": "object"
+          },
+          "OpenVpnServerStatus": {
+            "properties": {
+              "conns": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/OpenVpnServerConnectionStatus"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Conns"
+              },
+              "mgmt": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mgmt"
+              },
+              "mode": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mode"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Port"
+              },
+              "routes": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/OpenVpnServerRouteStatus"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Routes"
+              },
+              "vpnid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vpnid"
+              }
+            },
+            "required": [
+              "mgmt",
+              "mode",
+              "name",
+              "port",
+              "vpnid",
+              "conns",
+              "routes"
+            ],
+            "title": "OpenVpnServerStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVpnServerStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_openvpn_serversOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "STATUS_WIREGUARD_PEER_READ",
       "client_method": "get_status_wireguard_peers",
       "description": "List live WireGuard peer status: handshake time, traffic\n        counters, and public key. The preshared key is never returned\n        by this tool under any argument. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        peer endpoint address and allowed-IP ranges. Defaults to False.\n\n        limit: maximum number of peers to return (1-100, default\n        100).",

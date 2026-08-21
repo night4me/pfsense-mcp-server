@@ -53,6 +53,10 @@ class Capability(Enum):
     STATUS_IPSEC_CHILD_SA_READ = auto()
     STATUS_WIREGUARD_TUNNEL_READ = auto()
     STATUS_WIREGUARD_PEER_READ = auto()
+    STATUS_OPENVPN_SERVER_READ = auto()
+    STATUS_OPENVPN_CLIENT_READ = auto()
+    STATUS_OPENVPN_SERVER_CONNECTION_READ = auto()
+    STATUS_OPENVPN_SERVER_ROUTE_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -112,6 +116,10 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.STATUS_IPSEC_CHILD_SA_READ,
         Capability.STATUS_WIREGUARD_TUNNEL_READ,
         Capability.STATUS_WIREGUARD_PEER_READ,
+        Capability.STATUS_OPENVPN_SERVER_READ,
+        Capability.STATUS_OPENVPN_CLIENT_READ,
+        Capability.STATUS_OPENVPN_SERVER_CONNECTION_READ,
+        Capability.STATUS_OPENVPN_SERVER_ROUTE_READ,
     }
 )
 

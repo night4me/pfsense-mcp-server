@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "common_name": "client1.example.invalid",
+      "remote_host": "203.0.113.30",
+      "virtual_addr": "198.51.100.70",
+      "last_time": "Fri Aug 21 00:00:00 2026"
+    },
+    {
+      "common_name": null,
+      "remote_host": null,
+      "virtual_addr": null,
+      "last_time": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
