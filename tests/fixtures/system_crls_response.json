@@ -1,0 +1,33 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "refid": "68f9c9c1a2b3c",
+      "caref": "68f9c9c1a2b3d",
+      "descr": "Synthetic internal CRL (offline fixture)",
+      "method": "internal",
+      "lifetime": 9999,
+      "serial": 1,
+      "cert": [
+        {
+          "certref": "68f9c9c1a2b3e",
+          "serial": null,
+          "reason": 0,
+          "revoke_time": 1750000000
+        }
+      ]
+    },
+    {
+      "refid": null,
+      "caref": "68f9c9c1a2b3f",
+      "descr": "Synthetic imported CRL (offline fixture)",
+      "method": "existing",
+      "lifetime": 0,
+      "serial": 0,
+      "text": "-----BEGIN X509 CRL-----\nSYNTHETIC-OFFLINE-FIXTURE-DATA\n-----END X509 CRL-----\n"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

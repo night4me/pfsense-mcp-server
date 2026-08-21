@@ -7925,3 +7925,357 @@ def test_get_system_webgui_settings_shape_error_does_not_leak_raw_field_values()
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_system_webgui_settings()
     assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_RESTAPI_ACCESS_LIST_FIXTURE = Path(__file__).parent / "fixtures" / "system_restapi_access_list_response.json"
+SYSTEM_RESTAPI_ACCESS_LIST_IDENTIFYING_FIELDS = ("network",)
+
+
+def _system_restapi_access_list_body() -> dict:
+    return json.loads(SYSTEM_RESTAPI_ACCESS_LIST_FIXTURE.read_text())
+
+
+def _system_restapi_access_list_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_restapi_access_list_body()
+    transport.register("GET", "/api/v2/system/restapi/access_list?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_restapi_access_list_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _system_restapi_access_list_client(body)
+    assert client.get_system_restapi_access_list() == []
+
+
+def test_get_system_restapi_access_list_omits_identifying_fields_by_default():
+    client, _ = _system_restapi_access_list_client()
+    entries = client.get_system_restapi_access_list()
+    assert len(entries) == 2
+    for entry in entries:
+        for field in SYSTEM_RESTAPI_ACCESS_LIST_IDENTIFYING_FIELDS:
+            assert getattr(entry, field) is None
+
+
+def test_get_system_restapi_access_list_includes_identifying_fields_when_requested():
+    client, _ = _system_restapi_access_list_client()
+    entries = client.get_system_restapi_access_list(include_identifying_metadata=True)
+    first = next(e for e in entries if e.type == "allow")
+    assert first.network == "198.51.100.0/24"
+
+
+def test_get_system_restapi_access_list_maps_non_sensitive_fields():
+    client, _ = _system_restapi_access_list_client()
+    entries = client.get_system_restapi_access_list()
+    first = next(e for e in entries if e.type == "allow")
+    assert first.weight == 1
+    assert first.users == ["admin"]
+    assert first.descr == "Synthetic access list entry (offline fixture)"
+
+
+def test_get_system_restapi_access_list_only_calls_endpoint_with_default_limit():
+    client, transport = _system_restapi_access_list_client()
+    client.get_system_restapi_access_list()
+    assert transport.calls == [("GET", "/api/v2/system/restapi/access_list?limit=100")]
+
+
+def test_get_system_restapi_access_list_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _system_restapi_access_list_body()
+    transport.register("GET", "/api/v2/system/restapi/access_list?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_system_restapi_access_list(limit=5)
+    assert transport.calls == [("GET", "/api/v2/system/restapi/access_list?limit=5")]
+
+
+def test_get_system_restapi_access_list_rejects_zero_limit():
+    client, _ = _system_restapi_access_list_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_restapi_access_list(limit=0)
+
+
+def test_get_system_restapi_access_list_rejects_limit_above_max():
+    client, _ = _system_restapi_access_list_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_restapi_access_list(limit=101)
+
+
+def test_get_system_restapi_access_list_invalid_limit_never_calls_transport():
+    client, transport = _system_restapi_access_list_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_restapi_access_list(limit=0)
+    assert transport.calls == []
+
+
+def test_get_system_restapi_access_list_missing_data_key_raises_shape_error():
+    body = _system_restapi_access_list_body()
+    del body["data"]
+    client, _ = _system_restapi_access_list_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_restapi_access_list()
+
+
+def test_get_system_restapi_access_list_item_wrong_type_raises_shape_error():
+    body = _system_restapi_access_list_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_restapi_access_list_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_restapi_access_list()
+
+
+def test_get_system_restapi_access_list_required_field_missing_raises_shape_error():
+    body = _system_restapi_access_list_body()
+    del body["data"][0]["weight"]
+    client, _ = _system_restapi_access_list_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_restapi_access_list()
+
+
+def test_get_system_restapi_access_list_shape_error_does_not_leak_raw_field_values():
+    body = _system_restapi_access_list_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["weight"] = [sentinel]
+    client, _ = _system_restapi_access_list_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_restapi_access_list()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_CRLS_FIXTURE = Path(__file__).parent / "fixtures" / "system_crls_response.json"
+
+
+def _system_crls_body() -> dict:
+    return json.loads(SYSTEM_CRLS_FIXTURE.read_text())
+
+
+def _system_crls_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_crls_body()
+    transport.register("GET", "/api/v2/system/crls?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_crls_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _system_crls_client(body)
+    assert client.get_system_crls() == []
+
+
+def test_get_system_crls_maps_internal_method_with_nested_cert_list():
+    client, _ = _system_crls_client()
+    crls = client.get_system_crls()
+    internal = next(c for c in crls if c.method == "internal")
+    assert internal.refid == "68f9c9c1a2b3c"
+    assert internal.descr == "Synthetic internal CRL (offline fixture)"
+    assert len(internal.cert) == 1
+    assert internal.cert[0].certref == "68f9c9c1a2b3e"
+    assert internal.cert[0].reason == 0
+    assert internal.cert[0].revoke_time == 1750000000
+    assert internal.text == ""
+
+
+def test_get_system_crls_never_exposes_revoked_certificate_private_key_field():
+    """CertificateRevocationListRevokedCertificate.prv is the revoked
+    certificate's X509 private key. Confirmed absent by construction,
+    not merely by trusting the schema's writeOnly claim -- injected
+    in-memory only, never in a committed fixture."""
+
+    body = _system_crls_body()
+    body["data"][0]["cert"][0]["prv"] = "SENTINEL-PRIVATE-KEY-MATERIAL"
+    client, _ = _system_crls_client(body)
+    crls = client.get_system_crls()
+    internal = next(c for c in crls if c.method == "internal")
+    assert not hasattr(internal.cert[0], "prv")
+    assert "prv" not in internal.cert[0].model_dump()
+
+
+def test_get_system_crls_maps_existing_method_with_text():
+    client, _ = _system_crls_client()
+    crls = client.get_system_crls()
+    existing = next(c for c in crls if c.method == "existing")
+    assert existing.refid is None
+    assert existing.text.startswith("-----BEGIN X509 CRL-----")
+    assert existing.cert == []
+
+
+def test_get_system_crls_only_calls_endpoint_with_default_limit():
+    client, transport = _system_crls_client()
+    client.get_system_crls()
+    assert transport.calls == [("GET", "/api/v2/system/crls?limit=100")]
+
+
+def test_get_system_crls_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _system_crls_body()
+    transport.register("GET", "/api/v2/system/crls?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_system_crls(limit=5)
+    assert transport.calls == [("GET", "/api/v2/system/crls?limit=5")]
+
+
+def test_get_system_crls_rejects_zero_limit():
+    client, _ = _system_crls_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_crls(limit=0)
+
+
+def test_get_system_crls_rejects_limit_above_max():
+    client, _ = _system_crls_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_crls(limit=101)
+
+
+def test_get_system_crls_invalid_limit_never_calls_transport():
+    client, transport = _system_crls_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_crls(limit=0)
+    assert transport.calls == []
+
+
+def test_get_system_crls_missing_data_key_raises_shape_error():
+    body = _system_crls_body()
+    del body["data"]
+    client, _ = _system_crls_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_crls()
+
+
+def test_get_system_crls_item_wrong_type_raises_shape_error():
+    body = _system_crls_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_crls_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_crls()
+
+
+def test_get_system_crls_required_field_missing_raises_shape_error():
+    body = _system_crls_body()
+    del body["data"][0]["caref"]
+    client, _ = _system_crls_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_crls()
+
+
+def test_get_system_crls_shape_error_does_not_leak_raw_field_values():
+    body = _system_crls_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["caref"] = [sentinel]
+    client, _ = _system_crls_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_crls()
+    assert sentinel not in str(excinfo.value)
+
+
+SYSTEM_PACKAGE_AVAILABLE_FIXTURE = Path(__file__).parent / "fixtures" / "system_package_available_response.json"
+
+
+def _system_package_available_body() -> dict:
+    return json.loads(SYSTEM_PACKAGE_AVAILABLE_FIXTURE.read_text())
+
+
+def _system_package_available_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _system_package_available_body()
+    transport.register("GET", "/api/v2/system/package/available?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_system_package_available_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _system_package_available_client(body)
+    assert client.get_system_package_available() == []
+
+
+def test_get_system_package_available_maps_fields():
+    client, _ = _system_package_available_client()
+    packages = client.get_system_package_available()
+    first = next(p for p in packages if p.name == "pfSense-pkg-WireGuard")
+    assert first.shortname == "WireGuard"
+    assert first.version == "0.2.13_4"
+    assert first.installed is True
+    assert first.deps == []
+
+
+def test_get_system_package_available_parses_null_optional_fields():
+    client, _ = _system_package_available_client()
+    packages = client.get_system_package_available()
+    second = next(p for p in packages if p.name == "pfSense-pkg-Zabbix-agent")
+    assert second.shortname is None
+    assert second.descr is None
+    assert second.version is None
+    assert second.installed is None
+    assert second.deps is None
+
+
+def test_get_system_package_available_only_calls_endpoint_with_default_limit():
+    client, transport = _system_package_available_client()
+    client.get_system_package_available()
+    assert transport.calls == [("GET", "/api/v2/system/package/available?limit=100")]
+
+
+def test_get_system_package_available_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _system_package_available_body()
+    transport.register("GET", "/api/v2/system/package/available?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_system_package_available(limit=5)
+    assert transport.calls == [("GET", "/api/v2/system/package/available?limit=5")]
+
+
+def test_get_system_package_available_rejects_zero_limit():
+    client, _ = _system_package_available_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_package_available(limit=0)
+
+
+def test_get_system_package_available_rejects_limit_above_max():
+    client, _ = _system_package_available_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_package_available(limit=101)
+
+
+def test_get_system_package_available_invalid_limit_never_calls_transport():
+    client, transport = _system_package_available_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_system_package_available(limit=0)
+    assert transport.calls == []
+
+
+def test_get_system_package_available_missing_data_key_raises_shape_error():
+    body = _system_package_available_body()
+    del body["data"]
+    client, _ = _system_package_available_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_package_available()
+
+
+def test_get_system_package_available_item_wrong_type_raises_shape_error():
+    body = _system_package_available_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _system_package_available_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_package_available()
+
+
+def test_get_system_package_available_required_field_missing_raises_shape_error():
+    body = _system_package_available_body()
+    del body["data"][0]["name"]
+    client, _ = _system_package_available_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_system_package_available()
+
+
+def test_get_system_package_available_shape_error_does_not_leak_raw_field_values():
+    body = _system_package_available_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["name"] = [sentinel]
+    client, _ = _system_package_available_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_system_package_available()
+    assert sentinel not in str(excinfo.value)

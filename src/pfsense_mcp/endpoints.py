@@ -549,3 +549,30 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # P1 Batch G candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; network redacted by
+    # default). Not yet LAB-verified.
+    SYSTEM_RESTAPI_ACCESS_LIST = EndpointInfo(
+        path_suffix="/system/restapi/access_list",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch G candidate -- re-checked against the pinned schema for
+    # secrets before implementation. Found that
+    # CertificateRevocationListRevokedCertificate.prv is the revoked
+    # certificate's X509 PRIVATE KEY (marked writeOnly in the schema,
+    # confirmed never modeled at all -- see that model's own docstring).
+    # Not yet LAB-verified.
+    SYSTEM_CRLS = EndpointInfo(
+        path_suffix="/system/crls",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch G candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; package catalog
+    # metadata only). Not yet LAB-verified.
+    SYSTEM_PACKAGE_AVAILABLE = EndpointInfo(
+        path_suffix="/system/package/available",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

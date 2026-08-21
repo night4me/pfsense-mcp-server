@@ -1,0 +1,24 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "pfSense-pkg-WireGuard",
+      "shortname": "WireGuard",
+      "descr": "Synthetic package description (offline fixture)",
+      "version": "0.2.13_4",
+      "installed": true,
+      "deps": []
+    },
+    {
+      "name": "pfSense-pkg-Zabbix-agent",
+      "shortname": null,
+      "descr": null,
+      "version": null,
+      "installed": null,
+      "deps": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

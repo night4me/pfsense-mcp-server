@@ -932,3 +932,39 @@ def test_system_webgui_settings_path_suffix_has_no_api_prefix():
 
 def test_system_webgui_settings_path_suffix_is_correct():
     assert Endpoints.SYSTEM_WEBGUI_SETTINGS.path_suffix == "/system/webgui/settings"
+
+
+def test_system_restapi_access_list_is_not_yet_declared_verified():
+    assert Endpoints.SYSTEM_RESTAPI_ACCESS_LIST.verified is False
+
+
+def test_system_restapi_access_list_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_RESTAPI_ACCESS_LIST.path_suffix.startswith("/api")
+
+
+def test_system_restapi_access_list_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SYSTEM_RESTAPI_ACCESS_LIST.path_suffix == "/system/restapi/access_list"
+
+
+def test_system_crls_is_not_yet_declared_verified():
+    assert Endpoints.SYSTEM_CRLS.verified is False
+
+
+def test_system_crls_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_CRLS.path_suffix.startswith("/api")
+
+
+def test_system_crls_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SYSTEM_CRLS.path_suffix == "/system/crls"
+
+
+def test_system_package_available_is_not_yet_declared_verified():
+    assert Endpoints.SYSTEM_PACKAGE_AVAILABLE.verified is False
+
+
+def test_system_package_available_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_PACKAGE_AVAILABLE.path_suffix.startswith("/api")
+
+
+def test_system_package_available_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.SYSTEM_PACKAGE_AVAILABLE.path_suffix == "/system/package/available"

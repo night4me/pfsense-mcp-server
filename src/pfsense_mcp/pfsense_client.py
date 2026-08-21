@@ -14,8 +14,10 @@ from .models.acme_settings import AcmeSettings
 from .models.arp_table_entry import ArpTableEntry
 from .models.auth_key import AuthKey
 from .models.available_interface import AvailableInterface
+from .models.available_package import AvailablePackage
 from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
+from .models.certificate_revocation_list import CertificateRevocationList
 from .models.config_history_revision import ConfigHistoryRevision
 from .models.cron_job import CronJob
 from .models.default_gateway import DefaultGateway
@@ -61,6 +63,7 @@ from .models.openvpn_server_route_status import OpenVpnServerRouteStatus
 from .models.openvpn_server_status import OpenVpnServerStatus
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
+from .models.restapi_access_list_entry import RESTAPIAccessListEntry
 from .models.routing_gateway_group import RoutingGatewayGroup
 from .models.routing_static_route import RoutingStaticRoute
 from .models.service_status import ServiceStatus
@@ -269,6 +272,18 @@ DHCP_SERVER_ADDRESS_POOLS_MAX_LIMIT = 100
 
 DHCP_SERVER_CUSTOM_OPTIONS_MIN_LIMIT = 1
 DHCP_SERVER_CUSTOM_OPTIONS_MAX_LIMIT = 100
+
+
+SYSTEM_RESTAPI_ACCESS_LIST_MIN_LIMIT = 1
+SYSTEM_RESTAPI_ACCESS_LIST_MAX_LIMIT = 100
+
+
+SYSTEM_CRLS_MIN_LIMIT = 1
+SYSTEM_CRLS_MAX_LIMIT = 100
+
+
+SYSTEM_PACKAGE_AVAILABLE_MIN_LIMIT = 1
+SYSTEM_PACKAGE_AVAILABLE_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -1060,3 +1075,40 @@ class PfSenseClient:
     def get_system_webgui_settings(self) -> WebGUISettings:
         raw = self._rest.get(Endpoints.SYSTEM_WEBGUI_SETTINGS)
         return _parse_object_response(raw, "/system/webgui/settings", WebGUISettings.from_api)
+
+    def get_system_restapi_access_list(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[RESTAPIAccessListEntry]:
+        if not (SYSTEM_RESTAPI_ACCESS_LIST_MIN_LIMIT <= limit <= SYSTEM_RESTAPI_ACCESS_LIST_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SYSTEM_RESTAPI_ACCESS_LIST_MIN_LIMIT} and "
+                f"{SYSTEM_RESTAPI_ACCESS_LIST_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SYSTEM_RESTAPI_ACCESS_LIST, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/system/restapi/access_list",
+            lambda data: RESTAPIAccessListEntry.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )
+
+    def get_system_crls(self, *, limit: int = 100) -> list[CertificateRevocationList]:
+        if not (SYSTEM_CRLS_MIN_LIMIT <= limit <= SYSTEM_CRLS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SYSTEM_CRLS_MIN_LIMIT} and {SYSTEM_CRLS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SYSTEM_CRLS, params={"limit": limit})
+        return _parse_list_response(raw, "/system/crls", CertificateRevocationList.from_api)
+
+    def get_system_package_available(self, *, limit: int = 100) -> list[AvailablePackage]:
+        if not (SYSTEM_PACKAGE_AVAILABLE_MIN_LIMIT <= limit <= SYSTEM_PACKAGE_AVAILABLE_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {SYSTEM_PACKAGE_AVAILABLE_MIN_LIMIT} and "
+                f"{SYSTEM_PACKAGE_AVAILABLE_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.SYSTEM_PACKAGE_AVAILABLE, params={"limit": limit})
+        return _parse_list_response(raw, "/system/package/available", AvailablePackage.from_api)
