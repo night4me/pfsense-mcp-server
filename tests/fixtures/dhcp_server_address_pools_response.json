@@ -1,0 +1,42 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "range_from": "198.51.100.100",
+      "range_to": "198.51.100.199",
+      "domain": "example.invalid",
+      "mac_allow": ["02:00:00:aa:bb:cc"],
+      "mac_deny": [],
+      "domainsearchlist": ["example.invalid"],
+      "defaultleasetime": 7200,
+      "maxleasetime": 86400,
+      "gateway": "198.51.100.1",
+      "dnsserver": ["198.51.100.1"],
+      "winsserver": [],
+      "ntpserver": ["198.51.100.1"],
+      "ignorebootp": false,
+      "ignoreclientuids": false,
+      "denyunknown": "disabled"
+    },
+    {
+      "range_from": "203.0.113.100",
+      "range_to": "203.0.113.199",
+      "domain": null,
+      "mac_allow": null,
+      "mac_deny": null,
+      "domainsearchlist": null,
+      "defaultleasetime": null,
+      "maxleasetime": null,
+      "gateway": null,
+      "dnsserver": null,
+      "winsserver": null,
+      "ntpserver": null,
+      "ignorebootp": true,
+      "ignoreclientuids": true,
+      "denyunknown": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

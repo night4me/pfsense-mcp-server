@@ -469,3 +469,43 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # P1 Batch E candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; priorities' nested
+    # gateway/virtual_ip redacted by default). Not yet LAB-verified.
+    ROUTING_GATEWAY_GROUPS = EndpointInfo(
+        path_suffix="/routing/gateway/groups",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch E candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; defaultgw4/defaultgw6
+    # redacted by default). Not yet LAB-verified.
+    ROUTING_GATEWAY_DEFAULT = EndpointInfo(
+        path_suffix="/routing/gateway/default",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch E candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; server redacted by
+    # default). Not yet LAB-verified.
+    DHCP_RELAY = EndpointInfo(
+        path_suffix="/services/dhcp_relay",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch E candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; Parent model DHCPServer,
+    # no redaction, matching DhcpServer's own established convention).
+    # Not yet LAB-verified.
+    DHCP_SERVER_ADDRESS_POOLS = EndpointInfo(
+        path_suffix="/services/dhcp_server/address_pools",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch E candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found). Not yet LAB-verified.
+    DHCP_SERVER_CUSTOM_OPTIONS = EndpointInfo(
+        path_suffix="/services/dhcp_server/custom_options",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

@@ -1,0 +1,13 @@
+{
+  "code": 200,
+  "data": {
+    "enable": true,
+    "interface": ["lan", "opt1"],
+    "agentoption": false,
+    "carpstatusvip": "none",
+    "server": ["198.51.100.10", "198.51.100.11"]
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

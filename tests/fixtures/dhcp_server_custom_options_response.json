@@ -1,0 +1,18 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "number": 43,
+      "type": "text",
+      "value": "Synthetic vendor-specific option (offline fixture)"
+    },
+    {
+      "number": 66,
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

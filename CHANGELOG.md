@@ -142,6 +142,27 @@ never production) before public registration.
     unregistered in the interim, matching the established
     "implemented, offline-tested, blocked" precedent from P1 Batch A's
     WireGuard pair.
+- **5 more READ candidates implemented and offline-tested (P1 Batch E,
+  routing + DHCP extras) but NOT yet registered** — public MCP
+  contract unchanged at 65: `RoutingGatewayGroup`/
+  `RoutingGatewayGroupPriority`, `DefaultGateway`, `DHCPRelay`,
+  `DHCPServerAddressPool`, `DHCPServerCustomOption` models,
+  `PfSenseClient.get_routing_gateway_groups()`/
+  `get_routing_gateway_default()`/`get_dhcp_relay()`/
+  `get_dhcp_server_address_pools()`/`get_dhcp_server_custom_options()`,
+  and their `Endpoints` entries (`verified=False`) all exist and are
+  fully offline-tested. No `tools/read/` file exists for any of the
+  five yet, so they remain structurally unreachable through the MCP
+  surface. `RoutingGatewayGroupPriority.gateway`/`.virtual_ip` and
+  `DefaultGateway.defaultgw4`/`.defaultgw6` (gateway name references)
+  and `DHCPRelay.server` (literal relay target addresses) are redacted
+  by default once registered, matching `RoutingStaticRoute.gateway`
+  and `GatewayConfig.gateway`'s established conventions.
+  `DHCPServerAddressPool`/`DHCPServerCustomOption` are schema-declared
+  children of `DHCPServer` (`Parent model: DHCPServer`) and follow
+  that resource's own established no-redaction convention instead
+  ("the whole point of a DHCP server (scope) configuration
+  capability").
   LAB verification pending.
 
 ### Security

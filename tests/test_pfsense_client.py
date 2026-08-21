@@ -7075,3 +7075,500 @@ def test_get_interface_laggs_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_interface_laggs()
     assert sentinel not in str(excinfo.value)
+
+
+ROUTING_GATEWAY_GROUPS_FIXTURE = Path(__file__).parent / "fixtures" / "routing_gateway_groups_response.json"
+ROUTING_GATEWAY_GROUP_PRIORITY_IDENTIFYING_FIELDS = ("gateway", "virtual_ip")
+
+
+def _routing_gateway_groups_body() -> dict:
+    return json.loads(ROUTING_GATEWAY_GROUPS_FIXTURE.read_text())
+
+
+def _routing_gateway_groups_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _routing_gateway_groups_body()
+    transport.register("GET", "/api/v2/routing/gateway/groups?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_routing_gateway_groups_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _routing_gateway_groups_client(body)
+    assert client.get_routing_gateway_groups() == []
+
+
+def test_get_routing_gateway_groups_omits_identifying_fields_by_default():
+    client, _ = _routing_gateway_groups_client()
+    groups = client.get_routing_gateway_groups()
+    first = next(g for g in groups if g.name == "WAN_FAILOVER")
+    for priority in first.priorities:
+        for field in ROUTING_GATEWAY_GROUP_PRIORITY_IDENTIFYING_FIELDS:
+            assert getattr(priority, field) is None
+
+
+def test_get_routing_gateway_groups_includes_identifying_fields_when_requested():
+    client, _ = _routing_gateway_groups_client()
+    groups = client.get_routing_gateway_groups(include_identifying_metadata=True)
+    first = next(g for g in groups if g.name == "WAN_FAILOVER")
+    assert first.priorities[0].gateway == "WAN_GW"
+    assert first.priorities[0].tier == 1
+    assert first.priorities[0].virtual_ip == "address"
+    assert first.priorities[1].gateway == "OPT1_GW"
+    assert first.priorities[1].virtual_ip == "198.51.100.5"
+
+
+def test_get_routing_gateway_groups_maps_non_sensitive_fields():
+    client, _ = _routing_gateway_groups_client()
+    groups = client.get_routing_gateway_groups()
+    first = next(g for g in groups if g.name == "WAN_FAILOVER")
+    assert first.trigger == "down"
+    assert first.descr == "Synthetic gateway group (offline fixture)"
+    assert first.ipprotocol == "inet"
+    assert len(first.priorities) == 2
+    assert first.priorities[0].tier == 1
+    second = next(g for g in groups if g.name == "EMPTY_GROUP")
+    assert second.ipprotocol is None
+    assert second.priorities == []
+
+
+def test_get_routing_gateway_groups_only_calls_endpoint_with_default_limit():
+    client, transport = _routing_gateway_groups_client()
+    client.get_routing_gateway_groups()
+    assert transport.calls == [("GET", "/api/v2/routing/gateway/groups?limit=100")]
+
+
+def test_get_routing_gateway_groups_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _routing_gateway_groups_body()
+    transport.register("GET", "/api/v2/routing/gateway/groups?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_routing_gateway_groups(limit=5)
+    assert transport.calls == [("GET", "/api/v2/routing/gateway/groups?limit=5")]
+
+
+def test_get_routing_gateway_groups_rejects_zero_limit():
+    client, _ = _routing_gateway_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_routing_gateway_groups(limit=0)
+
+
+def test_get_routing_gateway_groups_rejects_limit_above_max():
+    client, _ = _routing_gateway_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_routing_gateway_groups(limit=101)
+
+
+def test_get_routing_gateway_groups_invalid_limit_never_calls_transport():
+    client, transport = _routing_gateway_groups_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_routing_gateway_groups(limit=0)
+    assert transport.calls == []
+
+
+def test_get_routing_gateway_groups_missing_data_key_raises_shape_error():
+    body = _routing_gateway_groups_body()
+    del body["data"]
+    client, _ = _routing_gateway_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_gateway_groups()
+
+
+def test_get_routing_gateway_groups_item_wrong_type_raises_shape_error():
+    body = _routing_gateway_groups_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _routing_gateway_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_gateway_groups()
+
+
+def test_get_routing_gateway_groups_required_field_missing_raises_shape_error():
+    body = _routing_gateway_groups_body()
+    del body["data"][0]["priorities"][0]["tier"]
+    client, _ = _routing_gateway_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_gateway_groups()
+
+
+def test_get_routing_gateway_groups_shape_error_does_not_leak_raw_field_values():
+    body = _routing_gateway_groups_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _routing_gateway_groups_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_routing_gateway_groups()
+    assert sentinel not in str(excinfo.value)
+
+
+ROUTING_GATEWAY_DEFAULT_FIXTURE = Path(__file__).parent / "fixtures" / "routing_gateway_default_response.json"
+ROUTING_GATEWAY_DEFAULT_IDENTIFYING_FIELDS = ("defaultgw4", "defaultgw6")
+
+
+def _routing_gateway_default_body() -> dict:
+    return json.loads(ROUTING_GATEWAY_DEFAULT_FIXTURE.read_text())
+
+
+def _routing_gateway_default_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _routing_gateway_default_body()
+    transport.register("GET", "/api/v2/routing/gateway/default", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_routing_gateway_default_omits_identifying_fields_by_default():
+    client, _ = _routing_gateway_default_client()
+    default_gw = client.get_routing_gateway_default()
+    for field in ROUTING_GATEWAY_DEFAULT_IDENTIFYING_FIELDS:
+        assert getattr(default_gw, field) is None
+
+
+def test_get_routing_gateway_default_includes_identifying_fields_when_requested():
+    client, _ = _routing_gateway_default_client()
+    default_gw = client.get_routing_gateway_default(include_identifying_metadata=True)
+    assert default_gw.defaultgw4 == "WAN_GW"
+    assert default_gw.defaultgw6 == "-"
+
+
+def test_get_routing_gateway_default_only_calls_endpoint():
+    client, transport = _routing_gateway_default_client()
+    client.get_routing_gateway_default()
+    assert transport.calls == [("GET", "/api/v2/routing/gateway/default")]
+
+
+def test_get_routing_gateway_default_missing_data_key_raises_shape_error():
+    body = _routing_gateway_default_body()
+    del body["data"]
+    client, _ = _routing_gateway_default_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_gateway_default()
+
+
+def test_get_routing_gateway_default_data_wrong_type_raises_shape_error():
+    body = _routing_gateway_default_body()
+    body["data"] = "not-an-object"
+    client, _ = _routing_gateway_default_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_gateway_default()
+
+
+def test_get_routing_gateway_default_required_field_missing_raises_shape_error():
+    body = _routing_gateway_default_body()
+    del body["data"]["defaultgw4"]
+    client, _ = _routing_gateway_default_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_routing_gateway_default()
+
+
+def test_get_routing_gateway_default_shape_error_does_not_leak_raw_field_values():
+    body = _routing_gateway_default_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["defaultgw4"] = [sentinel]
+    client, _ = _routing_gateway_default_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_routing_gateway_default(include_identifying_metadata=True)
+    assert sentinel not in str(excinfo.value)
+
+
+DHCP_RELAY_FIXTURE = Path(__file__).parent / "fixtures" / "dhcp_relay_response.json"
+
+
+def _dhcp_relay_body() -> dict:
+    return json.loads(DHCP_RELAY_FIXTURE.read_text())
+
+
+def _dhcp_relay_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dhcp_relay_body()
+    transport.register("GET", "/api/v2/services/dhcp_relay", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dhcp_relay_omits_identifying_fields_by_default():
+    client, _ = _dhcp_relay_client()
+    relay = client.get_dhcp_relay()
+    assert relay.server is None
+
+
+def test_get_dhcp_relay_object_metadata_is_visible_by_default():
+    client, _ = _dhcp_relay_client()
+    raw = _dhcp_relay_body()["data"]
+    relay = client.get_dhcp_relay()
+    assert relay.enable == raw["enable"]
+    assert relay.interface == raw["interface"]
+    assert relay.agentoption == raw["agentoption"]
+    assert relay.carpstatusvip == raw["carpstatusvip"]
+
+
+def test_get_dhcp_relay_includes_identifying_fields_when_requested():
+    client, _ = _dhcp_relay_client()
+    relay = client.get_dhcp_relay(include_identifying_metadata=True)
+    assert relay.server == ["198.51.100.10", "198.51.100.11"]
+
+
+def test_get_dhcp_relay_only_calls_endpoint():
+    client, transport = _dhcp_relay_client()
+    client.get_dhcp_relay()
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_relay")]
+
+
+def test_get_dhcp_relay_missing_data_key_raises_shape_error():
+    body = _dhcp_relay_body()
+    del body["data"]
+    client, _ = _dhcp_relay_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_relay()
+
+
+def test_get_dhcp_relay_data_wrong_type_raises_shape_error():
+    body = _dhcp_relay_body()
+    body["data"] = "not-an-object"
+    client, _ = _dhcp_relay_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_relay()
+
+
+def test_get_dhcp_relay_required_field_missing_raises_shape_error():
+    body = _dhcp_relay_body()
+    del body["data"]["enable"]
+    client, _ = _dhcp_relay_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_relay()
+
+
+def test_get_dhcp_relay_shape_error_does_not_leak_raw_field_values():
+    body = _dhcp_relay_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["enable"] = [sentinel]
+    client, _ = _dhcp_relay_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dhcp_relay()
+    assert sentinel not in str(excinfo.value)
+
+
+DHCP_SERVER_ADDRESS_POOLS_FIXTURE = Path(__file__).parent / "fixtures" / "dhcp_server_address_pools_response.json"
+
+
+def _dhcp_server_address_pools_body() -> dict:
+    return json.loads(DHCP_SERVER_ADDRESS_POOLS_FIXTURE.read_text())
+
+
+def _dhcp_server_address_pools_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dhcp_server_address_pools_body()
+    transport.register(
+        "GET", "/api/v2/services/dhcp_server/address_pools?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dhcp_server_address_pools_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _dhcp_server_address_pools_client(body)
+    assert client.get_dhcp_server_address_pools() == []
+
+
+def test_get_dhcp_server_address_pools_maps_fields_with_no_redaction():
+    client, _ = _dhcp_server_address_pools_client()
+    pools = client.get_dhcp_server_address_pools()
+    first = next(p for p in pools if p.range_from == "198.51.100.100")
+    assert first.range_to == "198.51.100.199"
+    assert first.domain == "example.invalid"
+    assert first.mac_allow == ["02:00:00:aa:bb:cc"]
+    assert first.mac_deny == []
+    assert first.gateway == "198.51.100.1"
+    assert first.dnsserver == ["198.51.100.1"]
+
+
+def test_get_dhcp_server_address_pools_parses_null_optional_fields():
+    client, _ = _dhcp_server_address_pools_client()
+    pools = client.get_dhcp_server_address_pools()
+    second = next(p for p in pools if p.range_from == "203.0.113.100")
+    assert second.domain is None
+    assert second.mac_allow is None
+    assert second.mac_deny is None
+    assert second.domainsearchlist is None
+    assert second.defaultleasetime is None
+    assert second.maxleasetime is None
+    assert second.gateway is None
+    assert second.dnsserver is None
+    assert second.winsserver is None
+    assert second.ntpserver is None
+    assert second.denyunknown is None
+
+
+def test_get_dhcp_server_address_pools_only_calls_endpoint_with_default_limit():
+    client, transport = _dhcp_server_address_pools_client()
+    client.get_dhcp_server_address_pools()
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/address_pools?limit=100")]
+
+
+def test_get_dhcp_server_address_pools_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _dhcp_server_address_pools_body()
+    transport.register(
+        "GET", "/api/v2/services/dhcp_server/address_pools?limit=5", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_dhcp_server_address_pools(limit=5)
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/address_pools?limit=5")]
+
+
+def test_get_dhcp_server_address_pools_rejects_zero_limit():
+    client, _ = _dhcp_server_address_pools_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_server_address_pools(limit=0)
+
+
+def test_get_dhcp_server_address_pools_rejects_limit_above_max():
+    client, _ = _dhcp_server_address_pools_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_server_address_pools(limit=101)
+
+
+def test_get_dhcp_server_address_pools_invalid_limit_never_calls_transport():
+    client, transport = _dhcp_server_address_pools_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_server_address_pools(limit=0)
+    assert transport.calls == []
+
+
+def test_get_dhcp_server_address_pools_missing_data_key_raises_shape_error():
+    body = _dhcp_server_address_pools_body()
+    del body["data"]
+    client, _ = _dhcp_server_address_pools_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_server_address_pools()
+
+
+def test_get_dhcp_server_address_pools_item_wrong_type_raises_shape_error():
+    body = _dhcp_server_address_pools_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _dhcp_server_address_pools_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_server_address_pools()
+
+
+def test_get_dhcp_server_address_pools_required_field_missing_raises_shape_error():
+    body = _dhcp_server_address_pools_body()
+    del body["data"][0]["range_from"]
+    client, _ = _dhcp_server_address_pools_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_server_address_pools()
+
+
+def test_get_dhcp_server_address_pools_shape_error_does_not_leak_raw_field_values():
+    body = _dhcp_server_address_pools_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["range_from"] = [sentinel]
+    client, _ = _dhcp_server_address_pools_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dhcp_server_address_pools()
+    assert sentinel not in str(excinfo.value)
+
+
+DHCP_SERVER_CUSTOM_OPTIONS_FIXTURE = Path(__file__).parent / "fixtures" / "dhcp_server_custom_options_response.json"
+
+
+def _dhcp_server_custom_options_body() -> dict:
+    return json.loads(DHCP_SERVER_CUSTOM_OPTIONS_FIXTURE.read_text())
+
+
+def _dhcp_server_custom_options_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _dhcp_server_custom_options_body()
+    transport.register(
+        "GET", "/api/v2/services/dhcp_server/custom_options?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_dhcp_server_custom_options_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _dhcp_server_custom_options_client(body)
+    assert client.get_dhcp_server_custom_options() == []
+
+
+def test_get_dhcp_server_custom_options_maps_fields():
+    client, _ = _dhcp_server_custom_options_client()
+    options = client.get_dhcp_server_custom_options()
+    first = next(o for o in options if o.number == 43)
+    assert first.type == "text"
+    assert first.value == "Synthetic vendor-specific option (offline fixture)"
+
+
+def test_get_dhcp_server_custom_options_only_calls_endpoint_with_default_limit():
+    client, transport = _dhcp_server_custom_options_client()
+    client.get_dhcp_server_custom_options()
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/custom_options?limit=100")]
+
+
+def test_get_dhcp_server_custom_options_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _dhcp_server_custom_options_body()
+    transport.register(
+        "GET", "/api/v2/services/dhcp_server/custom_options?limit=5", status_code=200, text=json.dumps(body)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_dhcp_server_custom_options(limit=5)
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/custom_options?limit=5")]
+
+
+def test_get_dhcp_server_custom_options_rejects_zero_limit():
+    client, _ = _dhcp_server_custom_options_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_server_custom_options(limit=0)
+
+
+def test_get_dhcp_server_custom_options_rejects_limit_above_max():
+    client, _ = _dhcp_server_custom_options_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_server_custom_options(limit=101)
+
+
+def test_get_dhcp_server_custom_options_invalid_limit_never_calls_transport():
+    client, transport = _dhcp_server_custom_options_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_dhcp_server_custom_options(limit=0)
+    assert transport.calls == []
+
+
+def test_get_dhcp_server_custom_options_missing_data_key_raises_shape_error():
+    body = _dhcp_server_custom_options_body()
+    del body["data"]
+    client, _ = _dhcp_server_custom_options_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_server_custom_options()
+
+
+def test_get_dhcp_server_custom_options_item_wrong_type_raises_shape_error():
+    body = _dhcp_server_custom_options_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _dhcp_server_custom_options_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_server_custom_options()
+
+
+def test_get_dhcp_server_custom_options_required_field_missing_raises_shape_error():
+    body = _dhcp_server_custom_options_body()
+    del body["data"][0]["value"]
+    client, _ = _dhcp_server_custom_options_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_dhcp_server_custom_options()
+
+
+def test_get_dhcp_server_custom_options_shape_error_does_not_leak_raw_field_values():
+    body = _dhcp_server_custom_options_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["value"] = [sentinel]
+    client, _ = _dhcp_server_custom_options_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_dhcp_server_custom_options()
+    assert sentinel not in str(excinfo.value)

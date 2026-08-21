@@ -18,8 +18,12 @@ from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
 from .models.config_history_revision import ConfigHistoryRevision
 from .models.cron_job import CronJob
+from .models.default_gateway import DefaultGateway
 from .models.dhcp_lease import DhcpLease
+from .models.dhcp_relay import DHCPRelay
 from .models.dhcp_server import DhcpServer
+from .models.dhcp_server_address_pool import DHCPServerAddressPool
+from .models.dhcp_server_custom_option import DHCPServerCustomOption
 from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.diagnostics_table import DiagnosticsTable
 from .models.dns_forwarder_host_override import DnsForwarderHostOverride
@@ -57,6 +61,7 @@ from .models.openvpn_server_route_status import OpenVpnServerRouteStatus
 from .models.openvpn_server_status import OpenVpnServerStatus
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
+from .models.routing_gateway_group import RoutingGatewayGroup
 from .models.routing_static_route import RoutingStaticRoute
 from .models.service_status import ServiceStatus
 from .models.ssh_settings import SshSettings
@@ -247,6 +252,18 @@ INTERFACE_GRES_MAX_LIMIT = 100
 
 INTERFACE_LAGGS_MIN_LIMIT = 1
 INTERFACE_LAGGS_MAX_LIMIT = 100
+
+
+ROUTING_GATEWAY_GROUPS_MIN_LIMIT = 1
+ROUTING_GATEWAY_GROUPS_MAX_LIMIT = 100
+
+
+DHCP_SERVER_ADDRESS_POOLS_MIN_LIMIT = 1
+DHCP_SERVER_ADDRESS_POOLS_MAX_LIMIT = 100
+
+
+DHCP_SERVER_CUSTOM_OPTIONS_MIN_LIMIT = 1
+DHCP_SERVER_CUSTOM_OPTIONS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -958,3 +975,55 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.INTERFACE_LAGGS, params={"limit": limit})
         return _parse_list_response(raw, "/interface/laggs", InterfaceLAGG.from_api)
+
+    def get_routing_gateway_groups(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[RoutingGatewayGroup]:
+        if not (ROUTING_GATEWAY_GROUPS_MIN_LIMIT <= limit <= ROUTING_GATEWAY_GROUPS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {ROUTING_GATEWAY_GROUPS_MIN_LIMIT} and "
+                f"{ROUTING_GATEWAY_GROUPS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.ROUTING_GATEWAY_GROUPS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/routing/gateway/groups",
+            lambda data: RoutingGatewayGroup.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_routing_gateway_default(self, *, include_identifying_metadata: bool = False) -> DefaultGateway:
+        raw = self._rest.get(Endpoints.ROUTING_GATEWAY_DEFAULT)
+        return _parse_object_response(
+            raw,
+            "/routing/gateway/default",
+            lambda data: DefaultGateway.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_dhcp_relay(self, *, include_identifying_metadata: bool = False) -> DHCPRelay:
+        raw = self._rest.get(Endpoints.DHCP_RELAY)
+        return _parse_object_response(
+            raw,
+            "/services/dhcp_relay",
+            lambda data: DHCPRelay.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_dhcp_server_address_pools(self, *, limit: int = 100) -> list[DHCPServerAddressPool]:
+        if not (DHCP_SERVER_ADDRESS_POOLS_MIN_LIMIT <= limit <= DHCP_SERVER_ADDRESS_POOLS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DHCP_SERVER_ADDRESS_POOLS_MIN_LIMIT} and "
+                f"{DHCP_SERVER_ADDRESS_POOLS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DHCP_SERVER_ADDRESS_POOLS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/dhcp_server/address_pools", DHCPServerAddressPool.from_api)
+
+    def get_dhcp_server_custom_options(self, *, limit: int = 100) -> list[DHCPServerCustomOption]:
+        if not (DHCP_SERVER_CUSTOM_OPTIONS_MIN_LIMIT <= limit <= DHCP_SERVER_CUSTOM_OPTIONS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DHCP_SERVER_CUSTOM_OPTIONS_MIN_LIMIT} and "
+                f"{DHCP_SERVER_CUSTOM_OPTIONS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DHCP_SERVER_CUSTOM_OPTIONS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/dhcp_server/custom_options", DHCPServerCustomOption.from_api)

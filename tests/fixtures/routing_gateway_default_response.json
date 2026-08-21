@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "data": {
+    "defaultgw4": "WAN_GW",
+    "defaultgw6": "-"
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

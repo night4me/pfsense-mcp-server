@@ -1,0 +1,33 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "WAN_FAILOVER",
+      "trigger": "down",
+      "descr": "Synthetic gateway group (offline fixture)",
+      "ipprotocol": "inet",
+      "priorities": [
+        {
+          "gateway": "WAN_GW",
+          "tier": 1,
+          "virtual_ip": "address"
+        },
+        {
+          "gateway": "OPT1_GW",
+          "tier": 2,
+          "virtual_ip": "198.51.100.5"
+        }
+      ]
+    },
+    {
+      "name": "EMPTY_GROUP",
+      "trigger": "downloss",
+      "descr": "",
+      "ipprotocol": null,
+      "priorities": []
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
