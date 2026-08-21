@@ -1,0 +1,26 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "laggif": "lagg0",
+      "descr": "Synthetic LAGG (offline fixture)",
+      "members": ["igb1", "igb2"],
+      "proto": "lacp",
+      "lacptimeout": "fast",
+      "lagghash": "l2,l3,l4",
+      "failovermaster": "auto"
+    },
+    {
+      "laggif": null,
+      "descr": "",
+      "members": ["igb3"],
+      "proto": "failover",
+      "lacptimeout": "slow",
+      "lagghash": "l2,l3,l4",
+      "failovermaster": "igb3"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

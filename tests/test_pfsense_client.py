@@ -6702,3 +6702,376 @@ def test_get_dns_resolver_access_lists_shape_error_does_not_leak_raw_field_value
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_dns_resolver_access_lists()
     assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_AVAILABLE_INTERFACES_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "interface_available_interfaces_response.json"
+)
+INTERFACE_AVAILABLE_INTERFACES_IDENTIFYING_FIELDS = ("mac",)
+
+
+def _interface_available_interfaces_body() -> dict:
+    return json.loads(INTERFACE_AVAILABLE_INTERFACES_FIXTURE.read_text())
+
+
+def _interface_available_interfaces_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_available_interfaces_body()
+    transport.register(
+        "GET", "/api/v2/interface/available_interfaces?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_available_interfaces_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _interface_available_interfaces_client(body)
+    assert client.get_interface_available_interfaces() == []
+
+
+def test_get_interface_available_interfaces_omits_identifying_fields_by_default():
+    client, _ = _interface_available_interfaces_client()
+    interfaces = client.get_interface_available_interfaces()
+    assert len(interfaces) == 2
+    for interface in interfaces:
+        for field in INTERFACE_AVAILABLE_INTERFACES_IDENTIFYING_FIELDS:
+            assert getattr(interface, field) is None
+
+
+def test_get_interface_available_interfaces_includes_identifying_fields_when_requested():
+    client, _ = _interface_available_interfaces_client()
+    interfaces = client.get_interface_available_interfaces(include_identifying_metadata=True)
+    first = next(i for i in interfaces if i.if_ == "igb0")
+    assert first.mac == "02:00:00:aa:bb:cc"
+
+
+def test_get_interface_available_interfaces_maps_non_sensitive_fields():
+    client, _ = _interface_available_interfaces_client()
+    interfaces = client.get_interface_available_interfaces()
+    first = next(i for i in interfaces if i.if_ == "igb0")
+    assert first.in_use_by == "wan"
+    assert first.dmesg is not None and "igb0" in first.dmesg
+    second = next(i for i in interfaces if i.if_ == "igb1")
+    assert second.dmesg is None
+    assert second.in_use_by is None
+
+
+def test_get_interface_available_interfaces_only_calls_endpoint_with_default_limit():
+    client, transport = _interface_available_interfaces_client()
+    client.get_interface_available_interfaces()
+    assert transport.calls == [("GET", "/api/v2/interface/available_interfaces?limit=100")]
+
+
+def test_get_interface_available_interfaces_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_available_interfaces_body()
+    transport.register("GET", "/api/v2/interface/available_interfaces?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_available_interfaces(limit=5)
+    assert transport.calls == [("GET", "/api/v2/interface/available_interfaces?limit=5")]
+
+
+def test_get_interface_available_interfaces_rejects_zero_limit():
+    client, _ = _interface_available_interfaces_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_available_interfaces(limit=0)
+
+
+def test_get_interface_available_interfaces_rejects_limit_above_max():
+    client, _ = _interface_available_interfaces_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_available_interfaces(limit=101)
+
+
+def test_get_interface_available_interfaces_invalid_limit_never_calls_transport():
+    client, transport = _interface_available_interfaces_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_available_interfaces(limit=0)
+    assert transport.calls == []
+
+
+def test_get_interface_available_interfaces_missing_data_key_raises_shape_error():
+    body = _interface_available_interfaces_body()
+    del body["data"]
+    client, _ = _interface_available_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_available_interfaces()
+
+
+def test_get_interface_available_interfaces_item_wrong_type_raises_shape_error():
+    body = _interface_available_interfaces_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_available_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_available_interfaces()
+
+
+def test_get_interface_available_interfaces_required_field_missing_raises_shape_error():
+    body = _interface_available_interfaces_body()
+    del body["data"][0]["if"]
+    client, _ = _interface_available_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_available_interfaces()
+
+
+def test_get_interface_available_interfaces_shape_error_does_not_leak_raw_field_values():
+    body = _interface_available_interfaces_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["dmesg"] = [sentinel]
+    client, _ = _interface_available_interfaces_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_available_interfaces()
+    assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_GRES_FIXTURE = Path(__file__).parent / "fixtures" / "interface_gres_response.json"
+INTERFACE_GRES_IDENTIFYING_FIELDS = (
+    "remote_addr",
+    "tunnel_local_addr",
+    "tunnel_remote_addr",
+    "tunnel_remote_net",
+    "tunnel_local_addr6",
+    "tunnel_remote_addr6",
+    "tunnel_remote_net6",
+)
+
+
+def _interface_gres_body() -> dict:
+    return json.loads(INTERFACE_GRES_FIXTURE.read_text())
+
+
+def _interface_gres_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_gres_body()
+    transport.register("GET", "/api/v2/interface/gres?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_gres_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _interface_gres_client(body)
+    assert client.get_interface_gres() == []
+
+
+def test_get_interface_gres_omits_identifying_fields_by_default():
+    client, _ = _interface_gres_client()
+    tunnels = client.get_interface_gres()
+    assert len(tunnels) == 2
+    for tunnel in tunnels:
+        for field in INTERFACE_GRES_IDENTIFYING_FIELDS:
+            assert getattr(tunnel, field) is None
+
+
+def test_get_interface_gres_includes_identifying_fields_when_requested():
+    client, _ = _interface_gres_client()
+    tunnels = client.get_interface_gres(include_identifying_metadata=True)
+    first = next(t for t in tunnels if t.if_ == "igb1")
+    assert first.remote_addr == "198.51.100.10"
+    assert first.tunnel_local_addr == "203.0.113.1"
+    assert first.tunnel_remote_addr == "203.0.113.2"
+    assert first.tunnel_remote_net == 30
+    assert first.tunnel_local_addr6 == "2001:db8::1"
+    assert first.tunnel_remote_addr6 == "2001:db8::2"
+    assert first.tunnel_remote_net6 == 126
+
+
+def test_get_interface_gres_maps_non_sensitive_fields():
+    client, _ = _interface_gres_client()
+    tunnels = client.get_interface_gres()
+    first = next(t for t in tunnels if t.if_ == "igb1")
+    assert first.greif == "gre0"
+    assert first.descr == "Synthetic GRE tunnel (offline fixture)"
+    assert first.add_static_route is True
+
+
+def test_get_interface_gres_only_calls_endpoint_with_default_limit():
+    client, transport = _interface_gres_client()
+    client.get_interface_gres()
+    assert transport.calls == [("GET", "/api/v2/interface/gres?limit=100")]
+
+
+def test_get_interface_gres_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_gres_body()
+    transport.register("GET", "/api/v2/interface/gres?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_gres(limit=5)
+    assert transport.calls == [("GET", "/api/v2/interface/gres?limit=5")]
+
+
+def test_get_interface_gres_rejects_zero_limit():
+    client, _ = _interface_gres_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_gres(limit=0)
+
+
+def test_get_interface_gres_rejects_limit_above_max():
+    client, _ = _interface_gres_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_gres(limit=101)
+
+
+def test_get_interface_gres_invalid_limit_never_calls_transport():
+    client, transport = _interface_gres_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_gres(limit=0)
+    assert transport.calls == []
+
+
+def test_get_interface_gres_missing_data_key_raises_shape_error():
+    body = _interface_gres_body()
+    del body["data"]
+    client, _ = _interface_gres_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_gres()
+
+
+def test_get_interface_gres_item_wrong_type_raises_shape_error():
+    body = _interface_gres_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_gres_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_gres()
+
+
+def test_get_interface_gres_required_field_missing_raises_shape_error():
+    body = _interface_gres_body()
+    del body["data"][0]["descr"]
+    client, _ = _interface_gres_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_gres()
+
+
+def test_get_interface_gres_shape_error_does_not_leak_raw_field_values():
+    body = _interface_gres_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _interface_gres_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_gres()
+    assert sentinel not in str(excinfo.value)
+
+
+INTERFACE_LAGGS_FIXTURE = Path(__file__).parent / "fixtures" / "interface_laggs_response.json"
+
+
+def _interface_laggs_body() -> dict:
+    return json.loads(INTERFACE_LAGGS_FIXTURE.read_text())
+
+
+def _interface_laggs_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _interface_laggs_body()
+    transport.register("GET", "/api/v2/interface/laggs?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_interface_laggs_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _interface_laggs_client(body)
+    assert client.get_interface_laggs() == []
+
+
+def test_get_interface_laggs_maps_fields():
+    client, _ = _interface_laggs_client()
+    laggs = client.get_interface_laggs()
+    first = next(lagg for lagg in laggs if lagg.laggif == "lagg0")
+    assert first.descr == "Synthetic LAGG (offline fixture)"
+    assert first.members == ["igb1", "igb2"]
+    assert first.proto == "lacp"
+    assert first.lacptimeout == "fast"
+    assert first.lagghash == "l2,l3,l4"
+    assert first.failovermaster == "auto"
+
+
+def test_get_interface_laggs_tolerates_missing_conditional_fields():
+    """`lacptimeout`/`lagghash`/`failovermaster` are each schema-documented
+    as only available for specific `proto` values -- confirm the model
+    falls back to the schema's own declared default when a conditional
+    field is genuinely absent from a live item, rather than raising a
+    shape error."""
+
+    body = _interface_laggs_body()
+    del body["data"][0]["lacptimeout"]
+    del body["data"][0]["lagghash"]
+    del body["data"][0]["failovermaster"]
+    client, _ = _interface_laggs_client(body)
+    laggs = client.get_interface_laggs()
+    first = next(lagg for lagg in laggs if lagg.laggif == "lagg0")
+    assert first.lacptimeout == "slow"
+    assert first.lagghash == "l2,l3,l4"
+    assert first.failovermaster == "auto"
+
+
+def test_get_interface_laggs_only_calls_endpoint_with_default_limit():
+    client, transport = _interface_laggs_client()
+    client.get_interface_laggs()
+    assert transport.calls == [("GET", "/api/v2/interface/laggs?limit=100")]
+
+
+def test_get_interface_laggs_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _interface_laggs_body()
+    transport.register("GET", "/api/v2/interface/laggs?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_interface_laggs(limit=5)
+    assert transport.calls == [("GET", "/api/v2/interface/laggs?limit=5")]
+
+
+def test_get_interface_laggs_rejects_zero_limit():
+    client, _ = _interface_laggs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_laggs(limit=0)
+
+
+def test_get_interface_laggs_rejects_limit_above_max():
+    client, _ = _interface_laggs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_laggs(limit=101)
+
+
+def test_get_interface_laggs_invalid_limit_never_calls_transport():
+    client, transport = _interface_laggs_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_interface_laggs(limit=0)
+    assert transport.calls == []
+
+
+def test_get_interface_laggs_missing_data_key_raises_shape_error():
+    body = _interface_laggs_body()
+    del body["data"]
+    client, _ = _interface_laggs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_laggs()
+
+
+def test_get_interface_laggs_item_wrong_type_raises_shape_error():
+    body = _interface_laggs_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _interface_laggs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_laggs()
+
+
+def test_get_interface_laggs_required_field_missing_raises_shape_error():
+    body = _interface_laggs_body()
+    del body["data"][0]["members"]
+    client, _ = _interface_laggs_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_interface_laggs()
+
+
+def test_get_interface_laggs_shape_error_does_not_leak_raw_field_values():
+    body = _interface_laggs_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _interface_laggs_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_interface_laggs()
+    assert sentinel not in str(excinfo.value)

@@ -1,0 +1,34 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "if": "igb1",
+      "greif": "gre0",
+      "descr": "Synthetic GRE tunnel (offline fixture)",
+      "add_static_route": true,
+      "remote_addr": "198.51.100.10",
+      "tunnel_local_addr": "203.0.113.1",
+      "tunnel_remote_addr": "203.0.113.2",
+      "tunnel_remote_net": 30,
+      "tunnel_local_addr6": "2001:db8::1",
+      "tunnel_remote_addr6": "2001:db8::2",
+      "tunnel_remote_net6": 126
+    },
+    {
+      "if": "igb2",
+      "greif": null,
+      "descr": "",
+      "add_static_route": false,
+      "remote_addr": "198.51.100.20",
+      "tunnel_local_addr": null,
+      "tunnel_remote_addr": "203.0.113.20",
+      "tunnel_remote_net": 30,
+      "tunnel_local_addr6": null,
+      "tunnel_remote_addr6": "2001:db8::20",
+      "tunnel_remote_net6": 126
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

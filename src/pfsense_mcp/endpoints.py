@@ -443,3 +443,27 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # P1 Batch D candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found: if/mac/dmesg/in_use_by
+    # only). Not yet LAB-verified.
+    INTERFACE_AVAILABLE_INTERFACES = EndpointInfo(
+        path_suffix="/interface/available_interfaces",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch D candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; 7 of 11 fields are
+    # tunnel-endpoint address data, redacted by default). Not yet
+    # LAB-verified.
+    INTERFACE_GRES = EndpointInfo(
+        path_suffix="/interface/gres",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch D candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found). Not yet LAB-verified.
+    INTERFACE_LAGGS = EndpointInfo(
+        path_suffix="/interface/laggs",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

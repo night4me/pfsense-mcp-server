@@ -13,6 +13,7 @@ from .errors import PfSenseRequestValidationError, PfSenseResponseShapeError
 from .models.acme_settings import AcmeSettings
 from .models.arp_table_entry import ArpTableEntry
 from .models.auth_key import AuthKey
+from .models.available_interface import AvailableInterface
 from .models.bind_settings import BindSettings
 from .models.carp_status import CarpStatus
 from .models.config_history_revision import ConfigHistoryRevision
@@ -41,7 +42,9 @@ from .models.free_radius_eap import FreeRadiusEap
 from .models.gateways import GatewayConfig, GatewayStatus
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
+from .models.interface_gre import InterfaceGRE
 from .models.interface_group import InterfaceGroup
+from .models.interface_lagg import InterfaceLAGG
 from .models.interface_vlan import InterfaceVlan
 from .models.interfaces import InterfaceStatus
 from .models.ipsec_child_sa_status import IPsecChildSaStatus
@@ -232,6 +235,18 @@ DNS_RESOLVER_DOMAIN_OVERRIDES_MAX_LIMIT = 100
 
 DNS_RESOLVER_ACCESS_LISTS_MIN_LIMIT = 1
 DNS_RESOLVER_ACCESS_LISTS_MAX_LIMIT = 100
+
+
+INTERFACE_AVAILABLE_INTERFACES_MIN_LIMIT = 1
+INTERFACE_AVAILABLE_INTERFACES_MAX_LIMIT = 100
+
+
+INTERFACE_GRES_MIN_LIMIT = 1
+INTERFACE_GRES_MAX_LIMIT = 100
+
+
+INTERFACE_LAGGS_MIN_LIMIT = 1
+INTERFACE_LAGGS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -905,3 +920,41 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.DNS_RESOLVER_ACCESS_LISTS, params={"limit": limit})
         return _parse_list_response(raw, "/services/dns_resolver/access_lists", DnsResolverAccessList.from_api)
+
+    def get_interface_available_interfaces(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[AvailableInterface]:
+        if not (INTERFACE_AVAILABLE_INTERFACES_MIN_LIMIT <= limit <= INTERFACE_AVAILABLE_INTERFACES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {INTERFACE_AVAILABLE_INTERFACES_MIN_LIMIT} and "
+                f"{INTERFACE_AVAILABLE_INTERFACES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.INTERFACE_AVAILABLE_INTERFACES, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/interface/available_interfaces",
+            lambda data: AvailableInterface.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_interface_gres(self, *, include_identifying_metadata: bool = False, limit: int = 100) -> list[InterfaceGRE]:
+        if not (INTERFACE_GRES_MIN_LIMIT <= limit <= INTERFACE_GRES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {INTERFACE_GRES_MIN_LIMIT} and {INTERFACE_GRES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.INTERFACE_GRES, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/interface/gres",
+            lambda data: InterfaceGRE.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_interface_laggs(self, *, limit: int = 100) -> list[InterfaceLAGG]:
+        if not (INTERFACE_LAGGS_MIN_LIMIT <= limit <= INTERFACE_LAGGS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {INTERFACE_LAGGS_MIN_LIMIT} and {INTERFACE_LAGGS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.INTERFACE_LAGGS, params={"limit": limit})
+        return _parse_list_response(raw, "/interface/laggs", InterfaceLAGG.from_api)

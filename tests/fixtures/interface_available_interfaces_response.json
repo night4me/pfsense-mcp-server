@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "if": "igb0",
+      "mac": "02:00:00:aa:bb:cc",
+      "dmesg": "igb0: <Intel(R) I210> mem 0xf7c00000-0xf7cfffff at device 0.0 on pci1",
+      "in_use_by": "wan"
+    },
+    {
+      "if": "igb1",
+      "mac": "02:00:00:dd:ee:ff",
+      "dmesg": null,
+      "in_use_by": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

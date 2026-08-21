@@ -112,6 +112,20 @@ never production) before public registration.
   - All three LAB-verified live: `HTTP 200`, zero configured objects
     (`ENDPOINT_VERIFIED`); no package required (base
     pfSense/dnsmasq/Unbound features).
+- **3 more READ candidates implemented and offline-tested (P1 Batch D,
+  interface extras) but NOT yet registered** — public MCP contract
+  unchanged at 62: `AvailableInterface`, `InterfaceGRE`, `InterfaceLAGG`
+  models, `PfSenseClient.get_interface_available_interfaces()`/
+  `get_interface_gres()`/`get_interface_laggs()`, and their `Endpoints`
+  entries (`verified=False`) all exist and are fully offline-tested,
+  matching the established "implemented, offline-tested, blocked"
+  precedent from P1 Batch A's WireGuard pair — no `tools/read/` file
+  exists for any of the three yet, so they remain structurally
+  unreachable through the MCP surface (`test_no_generic_dispatch.py`'s
+  file-count-matches-contract invariant enforces this). `mac`
+  (`AvailableInterface`) and 7 of `InterfaceGRE`'s 11 fields
+  (tunnel-endpoint addresses) are redacted by default once registered.
+  LAB verification pending.
 
 ### Security
 
