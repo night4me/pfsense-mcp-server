@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 75 READ, 0 WRITE
+Registered tools: 78 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -83,6 +83,15 @@ Common parameters:
   surface; results are bounded but not redacted.
 - **Example:** `{"name":"pfsense_get_system_packages","arguments":{"limit":20}}`
 
+### `pfsense_get_system_package_available`
+
+- **Purpose:** List packages available for installation: name, version,
+  description, and installed status.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[AvailablePackage]`.
+- **Security:** Package catalog metadata only; not redacted.
+- **Example:** `{"name":"pfsense_get_system_package_available","arguments":{"limit":20}}`
+
 ### `pfsense_get_system_tunables`
 
 - **Purpose:** List FreeBSD system tunables with descriptions and current
@@ -115,6 +124,27 @@ Common parameters:
   organizations, and internal PKI. Private keys and passphrases are never
   returned.
 - **Example:** `{"name":"pfsense_get_system_certificates","arguments":{"limit":10}}`
+
+### `pfsense_get_system_crls`
+
+- **Purpose:** List Certificate Revocation Lists (CRLs).
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[CertificateRevocationList]`.
+- **Security:** CRLs are inherently public documents by design. No
+  `prv`-equivalent field exists on this component; the nested revoked-
+  certificate entries never include the revoked certificate's private
+  key (`prv`, marked `writeOnly` in the upstream schema and never
+  modeled at all).
+- **Example:** `{"name":"pfsense_get_system_crls","arguments":{"limit":10}}`
+
+### `pfsense_get_system_restapi_access_list`
+
+- **Purpose:** List the REST API's own IP allow/deny access list entries.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[RESTAPIAccessListEntry]`.
+- **Security:** Literal network CIDRs are omitted by default.
+- **Example:** `{"name":"pfsense_get_system_restapi_access_list","arguments":{"limit":10}}`
 
 ### `pfsense_get_system_restapi_settings`
 

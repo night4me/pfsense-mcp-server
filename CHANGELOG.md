@@ -208,29 +208,39 @@ never production) before public registration.
     unregistered in the interim, matching the established
     "implemented, offline-tested, blocked" precedent from P1 Batch A's
     WireGuard pair.
-- **3 more READ candidates implemented and offline-tested (P1 Batch G,
-  REST API + PKI metadata) but NOT yet registered** — public MCP
-  contract unchanged at 75: `RESTAPIAccessListEntry`,
-  `CertificateRevocationList`/`CertificateRevocationListRevokedCertificate`,
-  `AvailablePackage` models, `PfSenseClient.get_system_restapi_access_list()`/
-  `get_system_crls()`/`get_system_package_available()`, and their
-  `Endpoints` entries (`verified=False`) all exist and are fully
-  offline-tested. No `tools/read/` file exists for any of the three
-  yet, so they remain structurally unreachable through the MCP
-  surface. `RESTAPIAccessListEntry.network` (the REST API's own literal
-  IP allow/deny CIDR) is redacted by default, matching
-  `GatewayConfig.gateway`'s established convention.
-  `CertificateRevocationList.cert`/`.text` are each schema-documented
-  as only available for a specific `method` value and are treated as
-  genuinely possibly-absent, matching the `InterfaceLAGG` precedent.
-  Found during re-verification that
-  `CertificateRevocationListRevokedCertificate` has five schema fields
-  marked `writeOnly: true` — `crt`, `caref`, `descr`, `type`, and
-  **`prv`, confirmed to be the revoked certificate's X509 private
-  key** — none of these are ever present in a real GET response, and
-  none are modeled, matching the `CertificateAuthority.prv`/
-  `SystemCertificate.prv` precedent exactly rather than trusting the
-  schema's `writeOnly` promise alone.
+- **3 more READ tools (P1 Batch G, REST API + PKI metadata), public
+  MCP contract 75 → 78 (0 WRITE, unchanged):**
+  - `pfsense_get_system_restapi_access_list` — the REST API's own IP
+    allow/deny access list entries.
+  - `pfsense_get_system_crls` — Certificate Revocation Lists (CRLs).
+  - `pfsense_get_system_package_available` — packages available for
+    installation.
+  - `RESTAPIAccessListEntry.network` (the REST API's own literal IP
+    allow/deny CIDR) is redacted by default, matching
+    `GatewayConfig.gateway`'s established convention.
+    `CertificateRevocationList.cert`/`.text` are each schema-documented
+    as only available for a specific `method` value and are treated as
+    genuinely possibly-absent, matching the `InterfaceLAGG` precedent.
+  - Found during re-verification that
+    `CertificateRevocationListRevokedCertificate` has five schema
+    fields marked `writeOnly: true` — `crt`, `caref`, `descr`, `type`,
+    and **`prv`, confirmed to be the revoked certificate's X509
+    private key** — none of these are ever present in a real GET
+    response, and none are modeled, matching the
+    `CertificateAuthority.prv`/`SystemCertificate.prv` precedent
+    exactly rather than trusting the schema's `writeOnly` promise
+    alone.
+  - LAB-verified: `system/restapi/access_list` and
+    `system/package/available` both reached `FIELD_MODEL_LIVE_VERIFIED`
+    (2 real default allow-all entries; 69 real available packages);
+    `system/crls` reached `ENDPOINT_VERIFIED` (zero configured CRLs on
+    this LAB). No package required for any of the three (base pfSense
+    features).
+  - The models/client methods/`Endpoints` entries were implemented and
+    offline-tested one commit before registration, deliberately
+    unregistered in the interim, matching the established
+    "implemented, offline-tested, blocked" precedent from P1 Batch A's
+    WireGuard pair.
 
 ### Security
 

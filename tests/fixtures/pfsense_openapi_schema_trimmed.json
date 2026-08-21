@@ -1316,6 +1316,11 @@
         "description": "<h3>Description:</h3>Reads all existing Certificates.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Certificate<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-certificates-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/system/crls": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Certificate Revocation Lists.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: CertificateRevocationList<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-crls-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/system/console": {
       "get": {
         "description": "<h3>Description:</h3>Reads current System Console.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemConsole<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-console-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
@@ -1346,9 +1351,19 @@
         "description": "<h3>Description:</h3>Reads all installed Packages.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: Package<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-packages-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/system/package/available": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Available Packages.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: AvailablePackage<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-package-available-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: AvailablePackageCache"
+      }
+    },
     "/api/v2/system/restapi/settings": {
       "get": {
         "description": "<h3>Description:</h3>Reads current REST API Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: RESTAPISettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-restapi-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/system/restapi/access_list": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing REST API Access List Entries.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RESTAPIAccessListEntry<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-restapi-access-list-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/system/restapi/version": {

@@ -82,10 +82,13 @@ from .read import (
     system_certificate_authorities,
     system_certificates,
     system_console,
+    system_crls,
     system_dns,
     system_hasync,
     system_hostname,
+    system_package_available,
     system_packages,
+    system_restapi_access_list,
     system_restapi_settings,
     system_restapi_version,
     system_status,
@@ -177,10 +180,13 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_system_certificate_authorities",
         "pfsense_get_system_certificates",
         "pfsense_get_system_console",
+        "pfsense_get_system_crls",
         "pfsense_get_system_dns",
         "pfsense_get_system_hasync",
         "pfsense_get_system_hostname",
+        "pfsense_get_system_package_available",
         "pfsense_get_system_packages",
+        "pfsense_get_system_restapi_access_list",
         "pfsense_get_system_restapi_settings",
         "pfsense_get_system_restapi_version",
         "pfsense_get_system_status",
@@ -374,6 +380,12 @@ class ToolRegistry:
             self._register_system_console_read()
         if Capability.SYSTEM_WEBGUI_SETTINGS_READ in self._capabilities:
             self._register_system_webgui_settings_read()
+        if Capability.SYSTEM_RESTAPI_ACCESS_LIST_READ in self._capabilities:
+            self._register_system_restapi_access_list_read()
+        if Capability.SYSTEM_CRLS_READ in self._capabilities:
+            self._register_system_crls_read()
+        if Capability.SYSTEM_PACKAGE_AVAILABLE_READ in self._capabilities:
+            self._register_system_package_available_read()
 
         self.register_all_write()
 
@@ -808,6 +820,21 @@ class ToolRegistry:
     def _register_system_webgui_settings_read(self) -> None:
         fn = system_webgui_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_system_webgui_settings", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_restapi_access_list_read(self) -> None:
+        fn = system_restapi_access_list.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_restapi_access_list", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_crls_read(self) -> None:
+        fn = system_crls.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_crls", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_system_package_available_read(self) -> None:
+        fn = system_package_available.build(self._client)
+        wrapped = audit_logged("pfsense_get_system_package_available", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

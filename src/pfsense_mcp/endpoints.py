@@ -549,30 +549,32 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch G candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; network redacted by
-    # default). Not yet LAB-verified.
+    # verified=True (2026-08-21, P1 Batch G, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, FIELD_MODEL_LIVE_VERIFIED -- the LAB
+    # returned 2 real populated entries (the default allow-all IPv4/IPv6
+    # rules). Redaction confirmed against real data: default call
+    # returned network=None for both; the literal network only appeared
+    # with include_identifying_metadata=True.
     SYSTEM_RESTAPI_ACCESS_LIST = EndpointInfo(
         path_suffix="/system/restapi/access_list",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch G candidate -- re-checked against the pinned schema for
-    # secrets before implementation. Found that
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured CRLs, ENDPOINT_VERIFIED only. Found that
     # CertificateRevocationListRevokedCertificate.prv is the revoked
     # certificate's X509 PRIVATE KEY (marked writeOnly in the schema,
     # confirmed never modeled at all -- see that model's own docstring).
-    # Not yet LAB-verified.
     SYSTEM_CRLS = EndpointInfo(
         path_suffix="/system/crls",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch G candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; package catalog
-    # metadata only). Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass;
+    # FIELD_MODEL_LIVE_VERIFIED -- 69 real available packages returned.
     SYSTEM_PACKAGE_AVAILABLE = EndpointInfo(
         path_suffix="/system/package/available",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

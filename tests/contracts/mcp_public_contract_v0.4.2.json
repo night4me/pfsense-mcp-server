@@ -9994,6 +9994,145 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "SYSTEM_CRLS_READ",
+      "client_method": "get_system_crls",
+      "description": "List Certificate Revocation Lists (CRLs). Read-only.\n\n        limit: maximum number of CRLs to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/crls",
+        "symbol": "SYSTEM_CRLS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_system_crlsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_crls",
+      "output_schema": {
+        "$defs": {
+          "CertificateRevocationList": {
+            "properties": {
+              "caref": {
+                "title": "Caref",
+                "type": "string"
+              },
+              "cert": {
+                "items": {
+                  "$ref": "#/$defs/CertificateRevocationListRevokedCertificate"
+                },
+                "title": "Cert",
+                "type": "array"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "lifetime": {
+                "title": "Lifetime",
+                "type": "integer"
+              },
+              "method": {
+                "title": "Method",
+                "type": "string"
+              },
+              "refid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Refid"
+              },
+              "serial": {
+                "title": "Serial",
+                "type": "integer"
+              },
+              "text": {
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "refid",
+              "caref",
+              "descr",
+              "method",
+              "lifetime",
+              "serial",
+              "text",
+              "cert"
+            ],
+            "title": "CertificateRevocationList",
+            "type": "object"
+          },
+          "CertificateRevocationListRevokedCertificate": {
+            "properties": {
+              "certref": {
+                "title": "Certref",
+                "type": "string"
+              },
+              "reason": {
+                "title": "Reason",
+                "type": "integer"
+              },
+              "revoke_time": {
+                "title": "Revoke Time",
+                "type": "integer"
+              },
+              "serial": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Serial"
+              }
+            },
+            "required": [
+              "certref",
+              "serial",
+              "reason",
+              "revoke_time"
+            ],
+            "title": "CertificateRevocationListRevokedCertificate",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/CertificateRevocationList"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_system_crlsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SYSTEM_DNS_READ",
       "client_method": "get_system_dns",
       "description": "Return the current system DNS settings: override policy,\n        local-vs-remote resolution preference, and remote DNS servers.\n        Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        remote DNS server addresses. Defaults to False.",
@@ -10329,6 +10468,128 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "SYSTEM_PACKAGE_AVAILABLE_READ",
+      "client_method": "get_system_package_available",
+      "description": "List packages available for installation: name, version,\n        description, and installed status. Read-only.\n\n        limit: maximum number of packages to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/package/available",
+        "symbol": "SYSTEM_PACKAGE_AVAILABLE",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_system_package_availableArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_package_available",
+      "output_schema": {
+        "$defs": {
+          "AvailablePackage": {
+            "properties": {
+              "deps": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Deps"
+              },
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "installed": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Installed"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "shortname": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Shortname"
+              },
+              "version": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Version"
+              }
+            },
+            "required": [
+              "name",
+              "shortname",
+              "descr",
+              "version",
+              "installed",
+              "deps"
+            ],
+            "title": "AvailablePackage",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/AvailablePackage"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_system_package_availableOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SYSTEM_PACKAGE_READ",
       "client_method": "get_system_packages",
       "description": "List pfSense installed packages (name, description, installed/latest version, and update availability).",
@@ -10445,6 +10706,106 @@
           "result"
         ],
         "title": "pfsense_get_system_packagesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SYSTEM_RESTAPI_ACCESS_LIST_READ",
+      "client_method": "get_system_restapi_access_list",
+      "description": "List the REST API's own IP allow/deny access list entries.\n        Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        network CIDR each entry applies to. Defaults to False.\n\n        limit: maximum number of entries to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/system/restapi/access_list",
+        "symbol": "SYSTEM_RESTAPI_ACCESS_LIST",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_system_restapi_access_listArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_system_restapi_access_list",
+      "output_schema": {
+        "$defs": {
+          "RESTAPIAccessListEntry": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "network": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Network"
+              },
+              "sched": {
+                "title": "Sched",
+                "type": "string"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "users": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Users",
+                "type": "array"
+              },
+              "weight": {
+                "title": "Weight",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "type",
+              "weight",
+              "users",
+              "sched",
+              "descr"
+            ],
+            "title": "RESTAPIAccessListEntry",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RESTAPIAccessListEntry"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_system_restapi_access_listOutput",
         "type": "object"
       }
     },
