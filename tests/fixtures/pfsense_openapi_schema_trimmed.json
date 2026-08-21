@@ -1136,6 +1136,16 @@
         "description": "<h3>Description:</h3>Reads all existing Routing Gatewaies.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RoutingGateway<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-gateways-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/routing/gateway/default": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Default Gateway.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: DefaultGateway<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-gateway-default-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/routing/gateway/groups": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Routing Gateway Groups.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: RoutingGatewayGroup<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-gateway-groups-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/routing/static_routes": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Static Routes.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: StaticRoute<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-static-routes-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
@@ -1159,6 +1169,21 @@
     "/api/v2/services/dhcp_server/static_mappings": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing DHCP Server Static Mappings.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServerStaticMapping<br>**Parent model**: DHCPServer<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-server-static-mappings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dhcp_relay": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current DHCP Relay.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: DHCPRelay<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-relay-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dhcp_server/address_pools": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DHCP Server Address Pools.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServerAddressPool<br>**Parent model**: DHCPServer<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-server-address-pools-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dhcp_server/custom_options": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DHCP Server Custom Options.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServerCustomOption<br>**Parent model**: DHCPServer<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-server-custom-options-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/services/dhcp_servers": {

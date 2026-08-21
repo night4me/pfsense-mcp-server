@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 65 READ, 0 WRITE
+Registered tools: 70 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -256,6 +256,25 @@ Common parameters:
 - **Security:** Literal monitoring addresses are omitted by default; health
   data can reveal connectivity incidents.
 - **Example:** `{"name":"pfsense_get_gateway_status","arguments":{}}`
+
+### `pfsense_get_routing_gateway_groups`
+
+- **Purpose:** List gateway groups: name, failover trigger, description, and
+  prioritized member gateways.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[RoutingGatewayGroup]`.
+- **Security:** Literal gateway names and virtual IPs in each group's
+  priority list are omitted by default.
+- **Example:** `{"name":"pfsense_get_routing_gateway_groups","arguments":{"limit":20}}`
+
+### `pfsense_get_routing_gateway_default`
+
+- **Purpose:** Return the current default IPv4/IPv6 gateway assignment.
+- **Parameters:** `include_identifying_metadata: boolean = false`.
+- **Returns:** `DefaultGateway`.
+- **Security:** Literal default gateway names are omitted by default.
+- **Example:** `{"name":"pfsense_get_routing_gateway_default","arguments":{}}`
 
 ### `pfsense_get_arp_table`
 
@@ -566,6 +585,39 @@ Common parameters:
 - **Security:** Reveals internal address planning and service configuration;
   credential fields are not modeled.
 - **Example:** `{"name":"pfsense_get_dhcp_servers","arguments":{"limit":20}}`
+
+### `pfsense_get_dhcp_server_address_pools`
+
+- **Purpose:** List DHCP server address pools (additional scopes) across all
+  configured DHCP servers: range, gateway, DNS/NTP/WINS servers, and MAC
+  allow/deny lists.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[DHCPServerAddressPool]`.
+- **Security:** Reveals internal address planning and device identities;
+  credential fields are not modeled. Not redacted, matching
+  `pfsense_get_dhcp_servers`' own established convention for this
+  capability class.
+- **Example:** `{"name":"pfsense_get_dhcp_server_address_pools","arguments":{"limit":20}}`
+
+### `pfsense_get_dhcp_server_custom_options`
+
+- **Purpose:** List DHCP server custom options across all configured DHCP
+  servers: option number, type, and value.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[DHCPServerCustomOption]`.
+- **Security:** Admin-authored configuration data only; no credential
+  material.
+- **Example:** `{"name":"pfsense_get_dhcp_server_custom_options","arguments":{"limit":20}}`
+
+### `pfsense_get_dhcp_relay`
+
+- **Purpose:** Return the current DHCP Relay configuration: enabled state,
+  downstream interfaces, and CARP failover selector.
+- **Parameters:** `include_identifying_metadata: boolean = false`.
+- **Returns:** `DHCPRelay`.
+- **Security:** Literal relay target server addresses are omitted by
+  default.
+- **Example:** `{"name":"pfsense_get_dhcp_relay","arguments":{}}`
 
 ### `pfsense_get_dns_resolver_host_overrides`
 

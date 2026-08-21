@@ -63,6 +63,11 @@ class Capability(Enum):
     INTERFACE_AVAILABLE_INTERFACE_READ = auto()
     INTERFACE_GRE_READ = auto()
     INTERFACE_LAGG_READ = auto()
+    ROUTING_GATEWAY_GROUP_READ = auto()
+    ROUTING_GATEWAY_DEFAULT_READ = auto()
+    DHCP_RELAY_READ = auto()
+    DHCP_SERVER_ADDRESS_POOL_READ = auto()
+    DHCP_SERVER_CUSTOM_OPTION_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -132,6 +137,11 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.INTERFACE_AVAILABLE_INTERFACE_READ,
         Capability.INTERFACE_GRE_READ,
         Capability.INTERFACE_LAGG_READ,
+        Capability.ROUTING_GATEWAY_GROUP_READ,
+        Capability.ROUTING_GATEWAY_DEFAULT_READ,
+        Capability.DHCP_RELAY_READ,
+        Capability.DHCP_SERVER_ADDRESS_POOL_READ,
+        Capability.DHCP_SERVER_CUSTOM_OPTION_READ,
     }
 )
 

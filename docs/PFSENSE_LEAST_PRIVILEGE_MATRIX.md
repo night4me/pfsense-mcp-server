@@ -229,6 +229,39 @@ now `verified=True`; all three tools are now registered. **61 READ / 62
 combined become 64 READ / 65 combined** throughout this document as of
 this pass.
 
+**2026-08-21 (same day, later still) — routing/DHCP extras LAB-verified
+and registered (P1 Batch E).** `routing/gateway/groups`,
+`routing/gateway/default`, `services/dhcp_relay`,
+`services/dhcp_server/address_pools`, and
+`services/dhcp_server/custom_options` were re-checked against the
+pinned schema for secret fields (none found).
+`RoutingGatewayGroupPriority.gateway`/`.virtual_ip` and
+`DefaultGateway.defaultgw4`/`.defaultgw6` (gateway name references)
+and `DHCPRelay.server` (literal relay target addresses) are redacted
+by default, matching `RoutingStaticRoute.gateway` and
+`GatewayConfig.gateway`'s established conventions.
+`DHCPServerAddressPool`/`DHCPServerCustomOption` are schema-declared
+children of `DHCPServer` (`Parent model: DHCPServer`) and follow that
+resource's own established no-redaction convention instead. `PfSenseClient.
+get_routing_gateway_groups()`/`get_routing_gateway_default()`/
+`get_dhcp_relay()`/`get_dhcp_server_address_pools()`/
+`get_dhcp_server_custom_options()`, their models, and their
+`Endpoints` entries were implemented, offline-tested, and left
+unregistered for one commit (matching the P1 Batch A WireGuard
+precedent) before LAB verification. LAB verification found a genuine
+CE 2.9.0 nullability discrepancy — `DHCPRelay.interface` returned
+`null` on the LAB's unconfigured DHCP Relay despite the pinned schema
+declaring it `nullable: false` — fixed by widening the field before
+promoting, matching the `SystemRestApiVersion.install_version`/
+`DhcpServer` precedent. All five candidates reached
+`ENDPOINT_VERIFIED` (zero configured gateway groups/address
+pools/custom options; `routing/gateway/default` and `services/dhcp_relay`
+both returned real singleton objects but with every field null/disabled
+on this LAB — no populated non-null value observed). All five
+`Endpoints` entries are now `verified=True`; all five tools are now
+registered. **64 READ / 65 combined become 69 READ / 70 combined**
+throughout this document as of this pass.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -288,7 +321,7 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 64 endpoints this project's 65 READ
+exists for them. **None of the 69 endpoints this project's 70 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
@@ -296,11 +329,12 @@ group, firewall-schedule/virtual-IP, REST-API-version, and
 certificate-authority endpoints, the IPsec SA/child-SA and WireGuard
 tunnel/peer status endpoints, the OpenVPN server/client/connection/
 route status endpoints, the DNS Forwarder host-override/DNS Resolver
-domain-override/access-list endpoints, and the interface available-
-interfaces/GRE/LAGG endpoints, each of which offers a narrow
-alternative alongside `page-all`). This must be re-checked for any
-*future* tool added against a new endpoint — it is not a general
-guarantee.
+domain-override/access-list endpoints, the interface available-
+interfaces/GRE/LAGG endpoints, and the routing-gateway-group/default
+and DHCP relay/address-pool/custom-option endpoints, each of which
+offers a narrow alternative alongside `page-all`). This must be
+re-checked for any *future* tool added against a new endpoint — it is
+not a general guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
 
@@ -332,18 +366,19 @@ pair, the interface-group/firewall-schedule/REST-API-version trio, the
 firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
 status pair, the WireGuard tunnel/peer status pair, the OpenVPN
 server/client/connection/route status four, the DNS Forwarder/
-Resolver extras three, and the interface available-interfaces/GRE/LAGG
-three, were cross-checked against a live schema freshly fetched from
-the **LAB** appliance (`pfsense-test.lab.invalid`) during
-owner-authorized LAB READ verification passes — also an exact match,
-zero mismatches (64 of 64 now, including all twenty-one). The IPsec,
-WireGuard, OpenVPN, DNS, and interface-extras groups' LAB cross-checks
-were against the upgraded pfSense CE 2.9.0 appliance specifically; its
-REST API package schema remained an exact 267-path match despite the
-platform upgrade, both before and after installing
-`pfSense-pkg-WireGuard`.
+Resolver extras three, the interface available-interfaces/GRE/LAGG
+three, and the routing-gateway-group/default and DHCP relay/address-
+pool/custom-option five, were cross-checked against a live schema
+freshly fetched from the **LAB** appliance (`pfsense-test.lab.invalid`)
+during owner-authorized LAB READ verification passes — also an exact
+match, zero mismatches (69 of 69 now, including all twenty-six). The
+IPsec, WireGuard, OpenVPN, DNS, interface-extras, and routing/DHCP
+groups' LAB cross-checks were against the upgraded pfSense CE 2.9.0
+appliance specifically; its REST API package schema remained an exact
+267-path match despite the platform upgrade, both before and after
+installing `pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (65 tools)
+## READ privilege matrix (70 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -354,6 +389,9 @@ platform upgrade, both before and after installing
 | `pfsense_carp_status` | `get_carp_status` | `GET /api/v2/status/carp` | `api-v2-status-carp-get` | ✅ |
 | `pfsense_cron_jobs` | `get_cron_jobs` | `GET /api/v2/services/cron/jobs` | `api-v2-services-cron-jobs-get` | ✅ |
 | `pfsense_dhcp_leases` | `get_dhcp_leases` | `GET /api/v2/status/dhcp_server/leases` | `api-v2-status-dhcp-server-leases-get` | ✅ |
+| `pfsense_dhcp_relay` | `get_dhcp_relay` | `GET /api/v2/services/dhcp_relay` | `api-v2-services-dhcp-relay-get` | ✅ |
+| `pfsense_dhcp_server_address_pools` | `get_dhcp_server_address_pools` | `GET /api/v2/services/dhcp_server/address_pools` | `api-v2-services-dhcp-server-address-pools-get` | ✅ |
+| `pfsense_dhcp_server_custom_options` | `get_dhcp_server_custom_options` | `GET /api/v2/services/dhcp_server/custom_options` | `api-v2-services-dhcp-server-custom-options-get` | ✅ |
 | `pfsense_dhcp_servers` | `get_dhcp_servers` | `GET /api/v2/services/dhcp_servers` | `api-v2-services-dhcp-servers-get` | ✅ |
 | `pfsense_dhcp_static_mappings` | `get_dhcp_static_mappings` | `GET /api/v2/services/dhcp_server/static_mappings` | `api-v2-services-dhcp-server-static-mappings-get` | ✅ |
 | `pfsense_diagnostics_tables` | `get_diagnostics_tables` | `GET /api/v2/diagnostics/tables` | `api-v2-diagnostics-tables-get` | ✅ |
@@ -390,6 +428,8 @@ platform upgrade, both before and after installing
 | `pfsense_mcp_info` | *(none — local only)* | *(no pfSense call)* | *(none required)* | n/a |
 | `pfsense_ntp_settings` | `get_ntp_settings` | `GET /api/v2/services/ntp/settings` | `api-v2-services-ntp-settings-get` | ✅ |
 | `pfsense_ntp_time_servers` | `get_ntp_time_servers` | `GET /api/v2/services/ntp/time_servers` | `api-v2-services-ntp-time-servers-get` | ✅ |
+| `pfsense_routing_gateway_default` | `get_routing_gateway_default` | `GET /api/v2/routing/gateway/default` | `api-v2-routing-gateway-default-get` | ✅ |
+| `pfsense_routing_gateway_groups` | `get_routing_gateway_groups` | `GET /api/v2/routing/gateway/groups` | `api-v2-routing-gateway-groups-get` | ✅ |
 | `pfsense_routing_static_routes` | `get_routing_static_routes` | `GET /api/v2/routing/static_routes` | `api-v2-routing-static-routes-get` | ✅ |
 | `pfsense_service_status` | `get_service_status` | `GET /api/v2/status/services` | `api-v2-status-services-get` | ✅ |
 | `pfsense_ssh_settings` | `get_ssh_settings` | `GET /api/v2/services/ssh` | `api-v2-services-ssh-get` | ✅ |
@@ -413,10 +453,10 @@ platform upgrade, both before and after installing
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**64 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 64`). A least-privilege
-READ-only identity holding exactly these 64 (never `page-all`) can serve
-every one of this project's 65 registered READ tools.
+**69 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 69`). A least-privilege
+READ-only identity holding exactly these 69 (never `page-all`) can serve
+every one of this project's 70 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -425,7 +465,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 66th tool would
+completeness, since a future decision to expose it as a 71st tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -459,11 +499,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 64 READ privileges
+The 4 WRITE privileges are a strict subset of the 69 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **65 distinct privileges**: the 64 READ
+identity therefore needs exactly **70 distinct privileges**: the 69 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

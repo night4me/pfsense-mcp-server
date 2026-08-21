@@ -7303,6 +7303,21 @@ def test_get_dhcp_relay_object_metadata_is_visible_by_default():
     assert relay.carpstatusvip == raw["carpstatusvip"]
 
 
+def test_get_dhcp_relay_parses_null_interface_and_server():
+    """2026-08-21 LAB verification (P1 Batch E) observed exactly this
+    shape on the LAB's unconfigured DHCP Relay: HTTP 200 with
+    `interface`/`server` both `null`, despite the pinned schema
+    declaring `interface` `nullable: false`."""
+
+    body = _dhcp_relay_body()
+    body["data"]["interface"] = None
+    body["data"]["server"] = None
+    client, _ = _dhcp_relay_client(body)
+    relay = client.get_dhcp_relay(include_identifying_metadata=True)
+    assert relay.interface is None
+    assert relay.server is None
+
+
 def test_get_dhcp_relay_includes_identifying_fields_when_requested():
     client, _ = _dhcp_relay_client()
     relay = client.get_dhcp_relay(include_identifying_metadata=True)

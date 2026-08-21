@@ -469,43 +469,45 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch E candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; priorities' nested
-    # gateway/virtual_ip redacted by default). Not yet LAB-verified.
+    # verified=True (2026-08-21, P1 Batch E, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, zero configured gateway groups at
+    # verification time -- ENDPOINT_VERIFIED only.
     ROUTING_GATEWAY_GROUPS = EndpointInfo(
         path_suffix="/routing/gateway/groups",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch E candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; defaultgw4/defaultgw6
-    # redacted by default). Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; HTTP
+    # 200, both fields genuinely null (no default gateway assigned on
+    # this LAB) -- ENDPOINT_VERIFIED only.
     ROUTING_GATEWAY_DEFAULT = EndpointInfo(
         path_suffix="/routing/gateway/default",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch E candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; server redacted by
-    # default). Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; found a
+    # CE 2.9.0 nullability discrepancy (DHCPRelay.interface returned
+    # null despite nullable: false in the pinned schema) and fixed it
+    # by widening the field before promoting -- see
+    # DHCPRelay's own docstring. HTTP 200, ENDPOINT_VERIFIED only (DHCP
+    # Relay disabled on this LAB).
     DHCP_RELAY = EndpointInfo(
         path_suffix="/services/dhcp_relay",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch E candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; Parent model DHCPServer,
-    # no redaction, matching DhcpServer's own established convention).
-    # Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured address pools, ENDPOINT_VERIFIED only.
     DHCP_SERVER_ADDRESS_POOLS = EndpointInfo(
         path_suffix="/services/dhcp_server/address_pools",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch E candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found). Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured custom options, ENDPOINT_VERIFIED only.
     DHCP_SERVER_CUSTOM_OPTIONS = EndpointInfo(
         path_suffix="/services/dhcp_server/custom_options",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

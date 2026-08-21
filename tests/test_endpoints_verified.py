@@ -814,8 +814,8 @@ def test_interface_laggs_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.INTERFACE_LAGGS.path_suffix == "/interface/laggs"
 
 
-def test_routing_gateway_groups_is_not_yet_declared_verified():
-    assert Endpoints.ROUTING_GATEWAY_GROUPS.verified is False
+def test_routing_gateway_groups_is_declared_verified():
+    assert Endpoints.ROUTING_GATEWAY_GROUPS.verified is True
 
 
 def test_routing_gateway_groups_path_suffix_has_no_api_prefix():
@@ -826,8 +826,8 @@ def test_routing_gateway_groups_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.ROUTING_GATEWAY_GROUPS.path_suffix == "/routing/gateway/groups"
 
 
-def test_routing_gateway_default_is_not_yet_declared_verified():
-    assert Endpoints.ROUTING_GATEWAY_DEFAULT.verified is False
+def test_routing_gateway_default_is_declared_verified():
+    assert Endpoints.ROUTING_GATEWAY_DEFAULT.verified is True
 
 
 def test_routing_gateway_default_path_suffix_has_no_api_prefix():
@@ -838,8 +838,8 @@ def test_routing_gateway_default_path_suffix_is_correct():
     assert Endpoints.ROUTING_GATEWAY_DEFAULT.path_suffix == "/routing/gateway/default"
 
 
-def test_dhcp_relay_is_not_yet_declared_verified():
-    assert Endpoints.DHCP_RELAY.verified is False
+def test_dhcp_relay_is_declared_verified():
+    assert Endpoints.DHCP_RELAY.verified is True
 
 
 def test_dhcp_relay_path_suffix_has_no_api_prefix():
@@ -850,8 +850,8 @@ def test_dhcp_relay_path_suffix_is_correct():
     assert Endpoints.DHCP_RELAY.path_suffix == "/services/dhcp_relay"
 
 
-def test_dhcp_server_address_pools_is_not_yet_declared_verified():
-    assert Endpoints.DHCP_SERVER_ADDRESS_POOLS.verified is False
+def test_dhcp_server_address_pools_is_declared_verified():
+    assert Endpoints.DHCP_SERVER_ADDRESS_POOLS.verified is True
 
 
 def test_dhcp_server_address_pools_path_suffix_has_no_api_prefix():
@@ -862,8 +862,8 @@ def test_dhcp_server_address_pools_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.DHCP_SERVER_ADDRESS_POOLS.path_suffix == "/services/dhcp_server/address_pools"
 
 
-def test_dhcp_server_custom_options_is_not_yet_declared_verified():
-    assert Endpoints.DHCP_SERVER_CUSTOM_OPTIONS.verified is False
+def test_dhcp_server_custom_options_is_declared_verified():
+    assert Endpoints.DHCP_SERVER_CUSTOM_OPTIONS.verified is True
 
 
 def test_dhcp_server_custom_options_path_suffix_has_no_api_prefix():

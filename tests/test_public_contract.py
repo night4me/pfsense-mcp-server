@@ -11,8 +11,8 @@ def test_public_contract_is_complete_and_security_preserving():
     contract = build_contract()
     tools = contract["tools"]
 
-    assert len(tools) == 65
-    assert len({tool["name"] for tool in tools}) == 65
+    assert len(tools) == 70
+    assert len({tool["name"] for tool in tools}) == 70
     assert all(tool["name"].startswith("pfsense_get_") or tool["name"] == "pfsense_mcp_info" for tool in tools)
     assert all(tool["capability"].endswith("_READ") for tool in tools)
 

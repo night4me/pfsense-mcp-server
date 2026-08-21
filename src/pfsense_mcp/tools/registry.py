@@ -27,6 +27,9 @@ from .read import (
     carp_status,
     cron_jobs,
     dhcp_leases,
+    dhcp_relay,
+    dhcp_server_address_pools,
+    dhcp_server_custom_options,
     dhcp_servers,
     dhcp_static_mappings,
     diagnostics_tables,
@@ -63,6 +66,8 @@ from .read import (
     mcp_info,
     ntp_settings,
     ntp_time_servers,
+    routing_gateway_default,
+    routing_gateway_groups,
     routing_static_routes,
     service_status,
     ssh_settings,
@@ -113,6 +118,9 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_carp_status",
         "pfsense_get_cron_jobs",
         "pfsense_get_dhcp_leases",
+        "pfsense_get_dhcp_relay",
+        "pfsense_get_dhcp_server_address_pools",
+        "pfsense_get_dhcp_server_custom_options",
         "pfsense_get_dhcp_servers",
         "pfsense_get_dhcp_static_mappings",
         "pfsense_get_diagnostics_tables",
@@ -148,6 +156,8 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_interfaces",
         "pfsense_get_ntp_settings",
         "pfsense_get_ntp_time_servers",
+        "pfsense_get_routing_gateway_default",
+        "pfsense_get_routing_gateway_groups",
         "pfsense_get_routing_static_routes",
         "pfsense_get_service_status",
         "pfsense_get_ssh_settings",
@@ -334,6 +344,16 @@ class ToolRegistry:
             self._register_interface_gre_read()
         if Capability.INTERFACE_LAGG_READ in self._capabilities:
             self._register_interface_lagg_read()
+        if Capability.ROUTING_GATEWAY_GROUP_READ in self._capabilities:
+            self._register_routing_gateway_group_read()
+        if Capability.ROUTING_GATEWAY_DEFAULT_READ in self._capabilities:
+            self._register_routing_gateway_default_read()
+        if Capability.DHCP_RELAY_READ in self._capabilities:
+            self._register_dhcp_relay_read()
+        if Capability.DHCP_SERVER_ADDRESS_POOL_READ in self._capabilities:
+            self._register_dhcp_server_address_pool_read()
+        if Capability.DHCP_SERVER_CUSTOM_OPTION_READ in self._capabilities:
+            self._register_dhcp_server_custom_option_read()
 
         self.register_all_write()
 
@@ -718,6 +738,31 @@ class ToolRegistry:
     def _register_interface_lagg_read(self) -> None:
         fn = interface_laggs.build(self._client)
         wrapped = audit_logged("pfsense_get_interface_laggs", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_routing_gateway_group_read(self) -> None:
+        fn = routing_gateway_groups.build(self._client)
+        wrapped = audit_logged("pfsense_get_routing_gateway_groups", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_routing_gateway_default_read(self) -> None:
+        fn = routing_gateway_default.build(self._client)
+        wrapped = audit_logged("pfsense_get_routing_gateway_default", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dhcp_relay_read(self) -> None:
+        fn = dhcp_relay.build(self._client)
+        wrapped = audit_logged("pfsense_get_dhcp_relay", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dhcp_server_address_pool_read(self) -> None:
+        fn = dhcp_server_address_pools.build(self._client)
+        wrapped = audit_logged("pfsense_get_dhcp_server_address_pools", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dhcp_server_custom_option_read(self) -> None:
+        fn = dhcp_server_custom_options.build(self._client)
+        wrapped = audit_logged("pfsense_get_dhcp_server_custom_options", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

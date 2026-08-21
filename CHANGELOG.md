@@ -142,28 +142,42 @@ never production) before public registration.
     unregistered in the interim, matching the established
     "implemented, offline-tested, blocked" precedent from P1 Batch A's
     WireGuard pair.
-- **5 more READ candidates implemented and offline-tested (P1 Batch E,
-  routing + DHCP extras) but NOT yet registered** — public MCP
-  contract unchanged at 65: `RoutingGatewayGroup`/
-  `RoutingGatewayGroupPriority`, `DefaultGateway`, `DHCPRelay`,
-  `DHCPServerAddressPool`, `DHCPServerCustomOption` models,
-  `PfSenseClient.get_routing_gateway_groups()`/
-  `get_routing_gateway_default()`/`get_dhcp_relay()`/
-  `get_dhcp_server_address_pools()`/`get_dhcp_server_custom_options()`,
-  and their `Endpoints` entries (`verified=False`) all exist and are
-  fully offline-tested. No `tools/read/` file exists for any of the
-  five yet, so they remain structurally unreachable through the MCP
-  surface. `RoutingGatewayGroupPriority.gateway`/`.virtual_ip` and
-  `DefaultGateway.defaultgw4`/`.defaultgw6` (gateway name references)
-  and `DHCPRelay.server` (literal relay target addresses) are redacted
-  by default once registered, matching `RoutingStaticRoute.gateway`
-  and `GatewayConfig.gateway`'s established conventions.
-  `DHCPServerAddressPool`/`DHCPServerCustomOption` are schema-declared
-  children of `DHCPServer` (`Parent model: DHCPServer`) and follow
-  that resource's own established no-redaction convention instead
-  ("the whole point of a DHCP server (scope) configuration
-  capability").
-  LAB verification pending.
+- **5 more READ tools (P1 Batch E, routing + DHCP extras), public MCP
+  contract 65 → 70 (0 WRITE, unchanged):**
+  - `pfsense_get_routing_gateway_groups` — gateway groups: name,
+    failover trigger, description, prioritized member gateways.
+  - `pfsense_get_routing_gateway_default` — current default IPv4/IPv6
+    gateway assignment.
+  - `pfsense_get_dhcp_relay` — DHCP Relay configuration.
+  - `pfsense_get_dhcp_server_address_pools` — additional DHCP scopes
+    across all configured DHCP servers.
+  - `pfsense_get_dhcp_server_custom_options` — DHCP custom options
+    across all configured DHCP servers.
+  - `RoutingGatewayGroupPriority.gateway`/`.virtual_ip` and
+    `DefaultGateway.defaultgw4`/`.defaultgw6` (gateway name references)
+    and `DHCPRelay.server` (literal relay target addresses) are
+    redacted by default, matching `RoutingStaticRoute.gateway` and
+    `GatewayConfig.gateway`'s established conventions.
+    `RoutingGatewayGroup.priorities` embeds full
+    `RoutingGatewayGroupPriority` objects and is constructed through
+    that model's own `from_api()` for every item.
+    `DHCPServerAddressPool`/`DHCPServerCustomOption` are schema-declared
+    children of `DHCPServer` (`Parent model: DHCPServer`) and follow
+    that resource's own established no-redaction convention instead
+    ("the whole point of a DHCP server (scope) configuration
+    capability").
+  - LAB verification found a genuine CE 2.9.0 nullability discrepancy:
+    `DHCPRelay.interface` returned `null` on the LAB's unconfigured
+    DHCP Relay despite the pinned schema declaring it `nullable: false`
+    — fixed by widening the field before promoting, matching the
+    `SystemRestApiVersion.install_version`/`DhcpServer` precedent.
+  - All five reached `ENDPOINT_VERIFIED`; no package required for any
+    of the five (base pfSense features).
+  - The models/client methods/`Endpoints` entries were implemented and
+    offline-tested one commit before registration, deliberately
+    unregistered in the interim, matching the established
+    "implemented, offline-tested, blocked" precedent from P1 Batch A's
+    WireGuard pair.
 
 ### Security
 

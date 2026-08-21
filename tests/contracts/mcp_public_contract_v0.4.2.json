@@ -757,6 +757,381 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "DHCP_RELAY_READ",
+      "client_method": "get_dhcp_relay",
+      "description": "Return the current DHCP Relay configuration: enabled state,\n        downstream interfaces, and CARP failover selector. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        relay target server addresses. Defaults to False.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dhcp_relay",
+        "symbol": "DHCP_RELAY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          }
+        },
+        "title": "pfsense_get_dhcp_relayArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dhcp_relay",
+      "output_schema": {
+        "properties": {
+          "agentoption": {
+            "title": "Agentoption",
+            "type": "boolean"
+          },
+          "carpstatusvip": {
+            "title": "Carpstatusvip",
+            "type": "string"
+          },
+          "enable": {
+            "title": "Enable",
+            "type": "boolean"
+          },
+          "interface": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interface"
+          },
+          "server": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+            "title": "Server"
+          }
+        },
+        "required": [
+          "enable",
+          "interface",
+          "agentoption",
+          "carpstatusvip"
+        ],
+        "title": "DHCPRelay",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "DHCP_SERVER_ADDRESS_POOL_READ",
+      "client_method": "get_dhcp_server_address_pools",
+      "description": "List DHCP server address pools (additional scopes) across\n        all configured DHCP servers: range, gateway, DNS/NTP/WINS\n        servers, and MAC allow/deny lists. Read-only.\n\n        limit: maximum number of address pools to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dhcp_server/address_pools",
+        "symbol": "DHCP_SERVER_ADDRESS_POOLS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_dhcp_server_address_poolsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dhcp_server_address_pools",
+      "output_schema": {
+        "$defs": {
+          "DHCPServerAddressPool": {
+            "properties": {
+              "defaultleasetime": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Defaultleasetime"
+              },
+              "denyunknown": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Denyunknown"
+              },
+              "dnsserver": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dnsserver"
+              },
+              "domain": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Domain"
+              },
+              "domainsearchlist": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Domainsearchlist"
+              },
+              "gateway": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Gateway"
+              },
+              "ignorebootp": {
+                "title": "Ignorebootp",
+                "type": "boolean"
+              },
+              "ignoreclientuids": {
+                "title": "Ignoreclientuids",
+                "type": "boolean"
+              },
+              "mac_allow": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mac Allow"
+              },
+              "mac_deny": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mac Deny"
+              },
+              "maxleasetime": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Maxleasetime"
+              },
+              "ntpserver": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ntpserver"
+              },
+              "range_from": {
+                "title": "Range From",
+                "type": "string"
+              },
+              "range_to": {
+                "title": "Range To",
+                "type": "string"
+              },
+              "winsserver": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Winsserver"
+              }
+            },
+            "required": [
+              "range_from",
+              "range_to",
+              "domain",
+              "mac_allow",
+              "mac_deny",
+              "domainsearchlist",
+              "defaultleasetime",
+              "maxleasetime",
+              "gateway",
+              "dnsserver",
+              "winsserver",
+              "ntpserver",
+              "ignorebootp",
+              "ignoreclientuids",
+              "denyunknown"
+            ],
+            "title": "DHCPServerAddressPool",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/DHCPServerAddressPool"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_dhcp_server_address_poolsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "DHCP_SERVER_CUSTOM_OPTION_READ",
+      "client_method": "get_dhcp_server_custom_options",
+      "description": "List DHCP server custom options across all configured DHCP\n        servers: option number, type, and value. Read-only.\n\n        limit: maximum number of custom options to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dhcp_server/custom_options",
+        "symbol": "DHCP_SERVER_CUSTOM_OPTIONS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_dhcp_server_custom_optionsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dhcp_server_custom_options",
+      "output_schema": {
+        "$defs": {
+          "DHCPServerCustomOption": {
+            "properties": {
+              "number": {
+                "title": "Number",
+                "type": "integer"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "type": "string"
+              }
+            },
+            "required": [
+              "number",
+              "type",
+              "value"
+            ],
+            "title": "DHCPServerCustomOption",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/DHCPServerCustomOption"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_dhcp_server_custom_optionsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "DHCP_SERVER_READ",
       "client_method": "get_dhcp_servers",
       "description": "List pfSense DHCP server (scope) configuration per\n        interface: address range, gateway, DNS/NTP/WINS servers,\n        MAC allow/deny lists, address pools, custom options, and\n        embedded static mappings. Read-only.\n\n        limit: maximum number of DHCP servers to return (1-100,\n        default 100).",
@@ -6497,6 +6872,199 @@
           "result"
         ],
         "title": "pfsense_get_ntp_time_serversOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "ROUTING_GATEWAY_DEFAULT_READ",
+      "client_method": "get_routing_gateway_default",
+      "description": "Return the current default IPv4/IPv6 gateway assignment.\n        Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        default gateway names. Defaults to False.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/routing/gateway/default",
+        "symbol": "ROUTING_GATEWAY_DEFAULT",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          }
+        },
+        "title": "pfsense_get_routing_gateway_defaultArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_routing_gateway_default",
+      "output_schema": {
+        "properties": {
+          "defaultgw4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+            "title": "Defaultgw4"
+          },
+          "defaultgw6": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+            "title": "Defaultgw6"
+          }
+        },
+        "title": "DefaultGateway",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "ROUTING_GATEWAY_GROUP_READ",
+      "client_method": "get_routing_gateway_groups",
+      "description": "List gateway groups: name, failover trigger, description,\n        and prioritized member gateways. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        gateway names and virtual IPs in each group's priority list.\n        Defaults to False.\n\n        limit: maximum number of gateway groups to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/routing/gateway/groups",
+        "symbol": "ROUTING_GATEWAY_GROUPS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_routing_gateway_groupsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_routing_gateway_groups",
+      "output_schema": {
+        "$defs": {
+          "RoutingGatewayGroup": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "ipprotocol": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ipprotocol"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "priorities": {
+                "items": {
+                  "$ref": "#/$defs/RoutingGatewayGroupPriority"
+                },
+                "title": "Priorities",
+                "type": "array"
+              },
+              "trigger": {
+                "title": "Trigger",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "trigger",
+              "descr",
+              "ipprotocol",
+              "priorities"
+            ],
+            "title": "RoutingGatewayGroup",
+            "type": "object"
+          },
+          "RoutingGatewayGroupPriority": {
+            "properties": {
+              "gateway": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Gateway"
+              },
+              "tier": {
+                "title": "Tier",
+                "type": "integer"
+              },
+              "virtual_ip": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Virtual Ip"
+              }
+            },
+            "required": [
+              "tier"
+            ],
+            "title": "RoutingGatewayGroupPriority",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/RoutingGatewayGroup"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_routing_gateway_groupsOutput",
         "type": "object"
       }
     },

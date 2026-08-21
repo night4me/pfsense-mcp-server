@@ -7,6 +7,14 @@ target IPv4 addresses) is address-bearing and is redacted by default,
 matching `GatewayConfig.gateway`'s established convention. `interface`
 (downstream interface names, not addresses) and `carpstatusvip` (a CARP
 VIP selector reference, not a literal address) stay visible.
+
+`interface` is widened to also accept `None` (2026-08-21, P1 Batch E
+LAB verification): the pinned schema still declares this field
+`nullable: false`, but a live, unconfigured DHCP Relay on the LAB
+(pfSense CE 2.9.0-RELEASE) genuinely returns `null` instead of an
+empty list. Live server behavior is trusted over the schema's stale
+claim, matching this project's established precedent
+(`SystemRestApiVersion.install_version`, `DhcpServer`'s own fields).
 """
 
 from __future__ import annotations
@@ -18,7 +26,7 @@ from pydantic import BaseModel, Field
 
 class DHCPRelay(BaseModel):
     enable: bool
-    interface: list[str]
+    interface: list[str] | None
     agentoption: bool
     carpstatusvip: str
     server: list[str] | None = Field(
