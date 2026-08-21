@@ -51,6 +51,7 @@ from .read import (
     firewall_states,
     firewall_states_size,
     firewall_traffic_shaper_limiters,
+    firewall_traffic_shapers,
     firewall_virtual_ips,
     freeradius_eap,
     gateway_status,
@@ -150,6 +151,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_firewall_states",
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_traffic_shaper_limiters",
+        "pfsense_get_firewall_traffic_shapers",
         "pfsense_get_firewall_virtual_ips",
         "pfsense_get_freeradius_eap",
         "pfsense_get_gateway_status",
@@ -386,6 +388,8 @@ class ToolRegistry:
             self._register_system_crls_read()
         if Capability.SYSTEM_PACKAGE_AVAILABLE_READ in self._capabilities:
             self._register_system_package_available_read()
+        if Capability.FIREWALL_TRAFFIC_SHAPERS_READ in self._capabilities:
+            self._register_firewall_traffic_shapers_read()
 
         self.register_all_write()
 
@@ -835,6 +839,11 @@ class ToolRegistry:
     def _register_system_package_available_read(self) -> None:
         fn = system_package_available.build(self._client)
         wrapped = audit_logged("pfsense_get_system_package_available", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_firewall_traffic_shapers_read(self) -> None:
+        fn = firewall_traffic_shapers.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_traffic_shapers", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

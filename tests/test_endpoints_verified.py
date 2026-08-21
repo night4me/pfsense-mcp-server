@@ -970,8 +970,8 @@ def test_system_package_available_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.SYSTEM_PACKAGE_AVAILABLE.path_suffix == "/system/package/available"
 
 
-def test_firewall_traffic_shapers_is_not_yet_declared_verified():
-    assert Endpoints.FIREWALL_TRAFFIC_SHAPERS.verified is False
+def test_firewall_traffic_shapers_is_declared_verified():
+    assert Endpoints.FIREWALL_TRAFFIC_SHAPERS.verified is True
 
 
 def test_firewall_traffic_shapers_path_suffix_has_no_api_prefix():

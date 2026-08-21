@@ -241,19 +241,18 @@ never production) before public registration.
     unregistered in the interim, matching the established
     "implemented, offline-tested, blocked" precedent from P1 Batch A's
     WireGuard pair.
-- **1 more READ candidate implemented and offline-tested (P1 Batch H,
-  service/traffic policy cluster) but NOT yet registered** — public
-  MCP contract unchanged at 78: `TrafficShaper`/`TrafficShaperQueue`,
-  `PfSenseClient.get_firewall_traffic_shapers()`, and its `Endpoints`
-  entry (`verified=False`) all exist and are fully offline-tested. No
-  `tools/read/` file exists yet, so it remains structurally
-  unreachable through the MCP surface. No field is redacted (pure
-  QoS/bandwidth-shaping configuration data, no addresses). Of
-  `TrafficShaperQueue`'s 27 fields, only 6 are schema-required; the
-  other 21 are each documented as only available for a specific
-  `scheduler` type or sibling boolean flag and are treated as
-  genuinely possibly-absent via `.get()`, matching the `InterfaceLAGG`
-  precedent.
+- **1 more READ tool (P1 Batch H), public MCP contract 78 → 79 (0
+  WRITE, unchanged):**
+  - `pfsense_get_firewall_traffic_shapers` — traffic shapers:
+    interface, scheduler algorithm, bandwidth, and child queues.
+  - No field is redacted (pure QoS/bandwidth-shaping configuration
+    data, no addresses). Of `TrafficShaperQueue`'s 27 fields, only 6
+    are schema-required; the other 21 are each documented as only
+    available for a specific `scheduler` type or sibling boolean flag
+    and are treated as genuinely possibly-absent via `.get()`,
+    matching the `InterfaceLAGG` precedent.
+  - LAB-verified `ENDPOINT_VERIFIED` (zero configured traffic shapers
+    on this LAB); no package required (base pfSense feature).
 - **3 more READ candidates implemented and offline-tested (P1 Batch H,
   service/traffic policy cluster) but requiring an absent package —
   package-conditional, NOT a LAB-installation authorization**:

@@ -4440,6 +4440,431 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "FIREWALL_TRAFFIC_SHAPERS_READ",
+      "client_method": "get_firewall_traffic_shapers",
+      "description": "List traffic shapers: interface, scheduler algorithm,\n        bandwidth, and child queues. Read-only.\n\n        limit: maximum number of traffic shapers to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/firewall/traffic_shapers",
+        "symbol": "FIREWALL_TRAFFIC_SHAPERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_firewall_traffic_shapersArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_firewall_traffic_shapers",
+      "output_schema": {
+        "$defs": {
+          "TrafficShaper": {
+            "properties": {
+              "bandwidth": {
+                "title": "Bandwidth",
+                "type": "integer"
+              },
+              "bandwidthtype": {
+                "title": "Bandwidthtype",
+                "type": "string"
+              },
+              "enabled": {
+                "title": "Enabled",
+                "type": "boolean"
+              },
+              "interface": {
+                "title": "Interface",
+                "type": "string"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "qlimit": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Qlimit"
+              },
+              "queue": {
+                "items": {
+                  "$ref": "#/$defs/TrafficShaperQueue"
+                },
+                "title": "Queue",
+                "type": "array"
+              },
+              "scheduler": {
+                "title": "Scheduler",
+                "type": "string"
+              },
+              "tbrconfig": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tbrconfig"
+              }
+            },
+            "required": [
+              "enabled",
+              "interface",
+              "name",
+              "scheduler",
+              "bandwidthtype",
+              "bandwidth",
+              "qlimit",
+              "tbrconfig",
+              "queue"
+            ],
+            "title": "TrafficShaper",
+            "type": "object"
+          },
+          "TrafficShaperQueue": {
+            "properties": {
+              "bandwidth": {
+                "title": "Bandwidth",
+                "type": "integer"
+              },
+              "bandwidthtype": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Bandwidthtype"
+              },
+              "borrow": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Borrow"
+              },
+              "buckets": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Buckets"
+              },
+              "codel": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Codel"
+              },
+              "default": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Default"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Description"
+              },
+              "ecn": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ecn"
+              },
+              "enabled": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Enabled"
+              },
+              "hogs": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Hogs"
+              },
+              "interface": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Interface"
+              },
+              "linkshare": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Linkshare"
+              },
+              "linkshare_d": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Linkshare D"
+              },
+              "linkshare_m1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Linkshare M1"
+              },
+              "linkshare_m2": {
+                "title": "Linkshare M2",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "priority": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Priority"
+              },
+              "qlimit": {
+                "title": "Qlimit",
+                "type": "integer"
+              },
+              "realtime": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Realtime"
+              },
+              "realtime_d": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Realtime D"
+              },
+              "realtime_m1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Realtime M1"
+              },
+              "realtime_m2": {
+                "title": "Realtime M2",
+                "type": "string"
+              },
+              "red": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Red"
+              },
+              "rio": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Rio"
+              },
+              "upperlimit": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Upperlimit"
+              },
+              "upperlimit_d": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Upperlimit D"
+              },
+              "upperlimit_m1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Upperlimit M1"
+              },
+              "upperlimit_m2": {
+                "title": "Upperlimit M2",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "qlimit",
+              "bandwidth",
+              "upperlimit_m2",
+              "realtime_m2",
+              "linkshare_m2",
+              "interface",
+              "enabled",
+              "priority",
+              "description",
+              "default",
+              "red",
+              "rio",
+              "ecn",
+              "codel",
+              "bandwidthtype",
+              "buckets",
+              "hogs",
+              "borrow",
+              "upperlimit",
+              "upperlimit_m1",
+              "upperlimit_d",
+              "realtime",
+              "realtime_m1",
+              "realtime_d",
+              "linkshare",
+              "linkshare_m1",
+              "linkshare_d"
+            ],
+            "title": "TrafficShaperQueue",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/TrafficShaper"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_firewall_traffic_shapersOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "FIREWALL_VIRTUAL_IP_READ",
       "client_method": "get_firewall_virtual_ips",
       "description": "List pfSense virtual IPs (CARP/IP alias/proxy ARP/other):\n        interface, type, mode, and CARP status. The CARP shared secret\n        is never returned by this tool under any argument. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        virtual IP address and CARP peer address. Defaults to False.\n\n        limit: maximum number of virtual IPs to return (1-100, default\n        100).",

@@ -76,6 +76,7 @@ class Capability(Enum):
     SYSTEM_RESTAPI_ACCESS_LIST_READ = auto()
     SYSTEM_CRLS_READ = auto()
     SYSTEM_PACKAGE_AVAILABLE_READ = auto()
+    FIREWALL_TRAFFIC_SHAPERS_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -158,6 +159,7 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.SYSTEM_RESTAPI_ACCESS_LIST_READ,
         Capability.SYSTEM_CRLS_READ,
         Capability.SYSTEM_PACKAGE_AVAILABLE_READ,
+        Capability.FIREWALL_TRAFFIC_SHAPERS_READ,
     }
 )
 

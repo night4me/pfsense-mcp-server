@@ -325,6 +325,37 @@ real available packages). All three `Endpoints` entries are now
 combined become 77 READ / 78 combined** throughout this document as of
 this pass.
 
+**2026-08-21 (same day, later still) — service/traffic policy cluster,
+partial (P1 Batch H).** `firewall/traffic_shapers`,
+`services/freeradius/interfaces`, `services/freeradius/macs`, and
+`services/service_watchdogs` were re-checked against the pinned schema
+for secret fields (none found). `firewall/traffic_shapers` requires no
+package (base pfSense feature); the other three require
+`pfSense-pkg-freeradius3`/`pfSense-pkg-Service_Watchdog`, confirmed
+NOT installed on this LAB via the already-shipped
+`pfsense_get_system_packages` tool (only `pfSense-pkg-WireGuard` is
+installed) — implemented and offline-tested per the
+package-conditional-candidate rule, but left `verified=False` and
+unregistered pending an owner decision on installing either package
+(only `pfSense-pkg-WireGuard` installation was ever explicitly
+authorized). `TrafficShaper`/`TrafficShaperQueue` carry no redaction
+(pure QoS/bandwidth-shaping configuration, no addresses);
+`TrafficShaperQueue.queue` is schema-confirmed to embed full
+`TrafficShaperQueue` objects and is constructed through that model's
+own `from_api()` for every item, with 21 of its 27 fields treated as
+genuinely possibly-absent via `.get()` (each documented as only
+available for a specific `scheduler` type or sibling boolean flag).
+`FreeRADIUSInterface.addr` and `FreeRADIUSMAC.mac`/5 `framed_*`
+address fields are redacted by default once registered, matching
+`GatewayConfig.gateway`/`InterfaceStatus.macaddr`'s established
+conventions. `firewall/traffic_shapers` LAB-verified `ENDPOINT_VERIFIED`
+(zero configured traffic shapers on this LAB); its `Endpoints` entry is
+now `verified=True` and its tool is now registered. **77 READ / 78
+combined become 78 READ / 79 combined** throughout this document as of
+this pass. The FreeRADIUS/Service_Watchdog trio remains implemented,
+offline-tested, and unregistered pending the owner's package-installation
+decision.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -384,7 +415,7 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 77 endpoints this project's 78 READ
+exists for them. **None of the 78 endpoints this project's 79 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
@@ -395,11 +426,11 @@ route status endpoints, the DNS Forwarder host-override/DNS Resolver
 domain-override/access-list endpoints, the interface available-
 interfaces/GRE/LAGG endpoints, the routing-gateway-group/default and
 DHCP relay/address-pool/custom-option endpoints, the system
-hostname/timezone/DNS/console/webgui-settings endpoints, and the REST
-API access-list/CRLs/available-packages endpoints, each of which
-offers a narrow alternative alongside `page-all`). This must be
-re-checked for any *future* tool added against a new endpoint — it is
-not a general guarantee.
+hostname/timezone/DNS/console/webgui-settings endpoints, the REST
+API access-list/CRLs/available-packages endpoints, and firewall
+traffic shapers, each of which offers a narrow alternative alongside
+`page-all`). This must be re-checked for any *future* tool added
+against a new endpoint — it is not a general guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
 
@@ -434,19 +465,19 @@ server/client/connection/route status four, the DNS Forwarder/
 Resolver extras three, the interface available-interfaces/GRE/LAGG
 three, the routing-gateway-group/default and DHCP relay/address-
 pool/custom-option five, the system hostname/timezone/DNS/
-console/webgui-settings five, and the REST API access-list/CRLs/
-available-packages three, were cross-checked against a live schema
-freshly fetched from the **LAB** appliance (`pfsense-test.lab.invalid`)
-during owner-authorized LAB READ verification passes — also an exact
-match, zero mismatches (77 of 77 now, including all thirty-four). The
-IPsec, WireGuard, OpenVPN, DNS, interface-extras, routing/DHCP,
-system-identity, and REST-API/PKI groups' LAB cross-checks were
-against the upgraded pfSense CE 2.9.0 appliance specifically; its REST
-API package schema remained an exact 267-path match despite the
-platform upgrade, both before and after installing
-`pfSense-pkg-WireGuard`.
+console/webgui-settings five, the REST API access-list/CRLs/
+available-packages three, and firewall traffic shapers, were
+cross-checked against a live schema freshly fetched from the **LAB**
+appliance (`pfsense-test.lab.invalid`) during owner-authorized LAB
+READ verification passes — also an exact match, zero mismatches (78
+of 78 now, including all thirty-five). The IPsec, WireGuard, OpenVPN,
+DNS, interface-extras, routing/DHCP, system-identity, REST-API/PKI,
+and traffic-shaper groups' LAB cross-checks were against the upgraded
+pfSense CE 2.9.0 appliance specifically; its REST API package schema
+remained an exact 267-path match despite the platform upgrade, both
+before and after installing `pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (78 tools)
+## READ privilege matrix (79 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -481,6 +512,7 @@ platform upgrade, both before and after installing
 | `pfsense_firewall_states` | `get_firewall_states` | `GET /api/v2/firewall/states` | `api-v2-firewall-states-get` | ✅ |
 | `pfsense_firewall_states_size` | `get_firewall_states_size` | `GET /api/v2/firewall/states/size` | `api-v2-firewall-states-size-get` | ✅ |
 | `pfsense_firewall_traffic_shaper_limiters` | `get_firewall_traffic_shaper_limiters` | `GET /api/v2/firewall/traffic_shaper/limiters` | `api-v2-firewall-traffic-shaper-limiters-get` | ✅ |
+| `pfsense_firewall_traffic_shapers` | `get_firewall_traffic_shapers` | `GET /api/v2/firewall/traffic_shapers` | `api-v2-firewall-traffic-shapers-get` | ✅ |
 | `pfsense_firewall_virtual_ips` | `get_firewall_virtual_ips` | `GET /api/v2/firewall/virtual_ips` | `api-v2-firewall-virtual-ips-get` | ✅ |
 | `pfsense_freeradius_eap` | `get_freeradius_eap` | `GET /api/v2/services/freeradius/eap` | `api-v2-services-freeradius-eap-get` | ✅ |
 | `pfsense_gateway_status` | `get_gateway_status` | `GET /api/v2/status/gateways` | `api-v2-status-gateways-get` | ✅ |
@@ -529,10 +561,10 @@ platform upgrade, both before and after installing
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**77 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 77`). A least-privilege
-READ-only identity holding exactly these 77 (never `page-all`) can serve
-every one of this project's 78 registered READ tools.
+**78 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 78`). A least-privilege
+READ-only identity holding exactly these 78 (never `page-all`) can serve
+every one of this project's 79 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -541,7 +573,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 79th tool would
+completeness, since a future decision to expose it as an 80th tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -575,11 +607,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 77 READ privileges
+The 4 WRITE privileges are a strict subset of the 78 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **78 distinct privileges**: the 77 READ
+identity therefore needs exactly **79 distinct privileges**: the 78 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

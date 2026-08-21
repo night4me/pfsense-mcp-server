@@ -1086,6 +1086,11 @@
         "description": "<h3>Description:</h3>Reads current Firewall States Size.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: FirewallStatesSize<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-states-size-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/firewall/traffic_shapers": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Traffic Shapers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: TrafficShaper<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-traffic-shapers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/firewall/traffic_shaper/limiters": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Traffic Shaper Limiters.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: TrafficShaperLimiter<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-traffic-shaper-limiters-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"

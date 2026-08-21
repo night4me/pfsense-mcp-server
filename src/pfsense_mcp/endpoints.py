@@ -578,13 +578,13 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch H candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; pure QoS/bandwidth
-    # config, no addresses). No package required (base pfSense
-    # feature). Not yet LAB-verified.
+    # verified=True (2026-08-21, P1 Batch H, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, zero configured traffic shapers at
+    # verification time -- ENDPOINT_VERIFIED only.
     FIREWALL_TRAFFIC_SHAPERS = EndpointInfo(
         path_suffix="/firewall/traffic_shapers",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # P1 Batch H candidate -- re-checked against the pinned schema for

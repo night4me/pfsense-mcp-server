@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 78 READ, 0 WRITE
+Registered tools: 79 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -475,6 +475,17 @@ Common parameters:
 - **Security:** Reveals traffic policy and capacity; does not return packet
   contents or credentials.
 - **Example:** `{"name":"pfsense_get_firewall_traffic_shaper_limiters","arguments":{"limit":20}}`
+
+### `pfsense_get_firewall_traffic_shapers`
+
+- **Purpose:** List traffic shapers: interface, scheduler algorithm,
+  bandwidth, and child queues.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[TrafficShaper]`.
+- **Security:** Reveals traffic policy and capacity; does not return packet
+  contents or credentials. Not redacted (interface identifiers and
+  bandwidth-shaping data, no addresses).
+- **Example:** `{"name":"pfsense_get_firewall_traffic_shapers","arguments":{"limit":20}}`
 
 ### `pfsense_get_firewall_schedules`
 
