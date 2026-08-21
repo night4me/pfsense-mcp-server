@@ -1,0 +1,22 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "encryption_algorithm_name": "aes",
+      "encryption_algorithm_keylen": 256,
+      "hash_algorithm": "sha256",
+      "dhgroup": 14,
+      "prf_algorithm": "sha256"
+    },
+    {
+      "encryption_algorithm_name": "aes128gcm",
+      "encryption_algorithm_keylen": 128,
+      "hash_algorithm": "sha1",
+      "dhgroup": 2,
+      "prf_algorithm": "sha1"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

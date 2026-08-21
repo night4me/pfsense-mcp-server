@@ -1016,3 +1016,39 @@ def test_services_service_watchdogs_path_suffix_has_no_api_prefix():
 
 def test_services_service_watchdogs_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.SERVICES_SERVICE_WATCHDOGS.path_suffix == "/services/service_watchdogs"
+
+
+def test_vpn_ipsec_phase2s_is_not_yet_declared_verified():
+    assert Endpoints.VPN_IPSEC_PHASE2S.verified is False
+
+
+def test_vpn_ipsec_phase2s_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_IPSEC_PHASE2S.path_suffix.startswith("/api")
+
+
+def test_vpn_ipsec_phase2s_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_IPSEC_PHASE2S.path_suffix == "/vpn/ipsec/phase2s"
+
+
+def test_vpn_ipsec_phase1_encryptions_is_not_yet_declared_verified():
+    assert Endpoints.VPN_IPSEC_PHASE1_ENCRYPTIONS.verified is False
+
+
+def test_vpn_ipsec_phase1_encryptions_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_IPSEC_PHASE1_ENCRYPTIONS.path_suffix.startswith("/api")
+
+
+def test_vpn_ipsec_phase1_encryptions_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_IPSEC_PHASE1_ENCRYPTIONS.path_suffix == "/vpn/ipsec/phase1/encryptions"
+
+
+def test_vpn_ipsec_phase2_encryptions_is_not_yet_declared_verified():
+    assert Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS.verified is False
+
+
+def test_vpn_ipsec_phase2_encryptions_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS.path_suffix.startswith("/api")
+
+
+def test_vpn_ipsec_phase2_encryptions_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS.path_suffix == "/vpn/ipsec/phase2/encryptions"

@@ -619,3 +619,31 @@ class Endpoints:
         verified=False,
         min_api_version=ApiVersion.V2,
     )
+    # P1 Batch I candidate -- re-checked against the pinned schema for
+    # secrets before implementation. Re-confirmed the PSK lives only on
+    # IPsecPhase1, already REJECTed separately -- no secret material on
+    # Phase 2 itself. localid_address/natlocalid_address/
+    # remoteid_address/pinghost redacted by default. No package
+    # required (base pfSense feature). Not yet LAB-verified.
+    VPN_IPSEC_PHASE2S = EndpointInfo(
+        path_suffix="/vpn/ipsec/phase2s",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch I candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found; pure algorithm/cipher
+    # capability reference data). No package required. Not yet
+    # LAB-verified.
+    VPN_IPSEC_PHASE1_ENCRYPTIONS = EndpointInfo(
+        path_suffix="/vpn/ipsec/phase1/encryptions",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # P1 Batch I candidate -- re-checked against the pinned schema for
+    # secrets before implementation (none found). No package required.
+    # Not yet LAB-verified.
+    VPN_IPSEC_PHASE2_ENCRYPTIONS = EndpointInfo(
+        path_suffix="/vpn/ipsec/phase2/encryptions",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

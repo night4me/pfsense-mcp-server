@@ -56,6 +56,9 @@ from .models.interface_lagg import InterfaceLAGG
 from .models.interface_vlan import InterfaceVlan
 from .models.interfaces import InterfaceStatus
 from .models.ipsec_child_sa_status import IPsecChildSaStatus
+from .models.ipsec_phase1_encryption import IPsecPhase1Encryption
+from .models.ipsec_phase2 import IPsecPhase2
+from .models.ipsec_phase2_encryption import IPsecPhase2Encryption
 from .models.ipsec_sa_status import IPsecSaStatus
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
@@ -304,6 +307,18 @@ SERVICES_FREERADIUS_MACS_MAX_LIMIT = 100
 
 SERVICES_SERVICE_WATCHDOGS_MIN_LIMIT = 1
 SERVICES_SERVICE_WATCHDOGS_MAX_LIMIT = 100
+
+
+VPN_IPSEC_PHASE2S_MIN_LIMIT = 1
+VPN_IPSEC_PHASE2S_MAX_LIMIT = 100
+
+
+VPN_IPSEC_PHASE1_ENCRYPTIONS_MIN_LIMIT = 1
+VPN_IPSEC_PHASE1_ENCRYPTIONS_MAX_LIMIT = 100
+
+
+VPN_IPSEC_PHASE2_ENCRYPTIONS_MIN_LIMIT = 1
+VPN_IPSEC_PHASE2_ENCRYPTIONS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -1184,3 +1199,38 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.SERVICES_SERVICE_WATCHDOGS, params={"limit": limit})
         return _parse_list_response(raw, "/services/service_watchdogs", ServiceWatchdog.from_api)
+
+    def get_vpn_ipsec_phase2s(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[IPsecPhase2]:
+        if not (VPN_IPSEC_PHASE2S_MIN_LIMIT <= limit <= VPN_IPSEC_PHASE2S_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_IPSEC_PHASE2S_MIN_LIMIT} and {VPN_IPSEC_PHASE2S_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_IPSEC_PHASE2S, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/ipsec/phase2s",
+            lambda data: IPsecPhase2.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_vpn_ipsec_phase1_encryptions(self, *, limit: int = 100) -> list[IPsecPhase1Encryption]:
+        if not (VPN_IPSEC_PHASE1_ENCRYPTIONS_MIN_LIMIT <= limit <= VPN_IPSEC_PHASE1_ENCRYPTIONS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_IPSEC_PHASE1_ENCRYPTIONS_MIN_LIMIT} and "
+                f"{VPN_IPSEC_PHASE1_ENCRYPTIONS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_IPSEC_PHASE1_ENCRYPTIONS, params={"limit": limit})
+        return _parse_list_response(raw, "/vpn/ipsec/phase1/encryptions", IPsecPhase1Encryption.from_api)
+
+    def get_vpn_ipsec_phase2_encryptions(self, *, limit: int = 100) -> list[IPsecPhase2Encryption]:
+        if not (VPN_IPSEC_PHASE2_ENCRYPTIONS_MIN_LIMIT <= limit <= VPN_IPSEC_PHASE2_ENCRYPTIONS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_IPSEC_PHASE2_ENCRYPTIONS_MIN_LIMIT} and "
+                f"{VPN_IPSEC_PHASE2_ENCRYPTIONS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS, params={"limit": limit})
+        return _parse_list_response(raw, "/vpn/ipsec/phase2/encryptions", IPsecPhase2Encryption.from_api)

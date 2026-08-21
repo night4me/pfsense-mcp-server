@@ -8768,3 +8768,354 @@ def test_get_services_service_watchdogs_shape_error_does_not_leak_raw_field_valu
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_services_service_watchdogs()
     assert sentinel not in str(excinfo.value)
+
+
+VPN_IPSEC_PHASE2S_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_ipsec_phase2s_response.json"
+VPN_IPSEC_PHASE2S_IDENTIFYING_FIELDS = (
+    "localid_address",
+    "natlocalid_address",
+    "remoteid_address",
+    "pinghost",
+)
+
+
+def _vpn_ipsec_phase2s_body() -> dict:
+    return json.loads(VPN_IPSEC_PHASE2S_FIXTURE.read_text())
+
+
+def _vpn_ipsec_phase2s_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_ipsec_phase2s_body()
+    transport.register("GET", "/api/v2/vpn/ipsec/phase2s?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_ipsec_phase2s_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_ipsec_phase2s_client(body)
+    assert client.get_vpn_ipsec_phase2s() == []
+
+
+def test_get_vpn_ipsec_phase2s_omits_identifying_fields_by_default():
+    client, _ = _vpn_ipsec_phase2s_client()
+    entries = client.get_vpn_ipsec_phase2s()
+    assert len(entries) == 2
+    for entry in entries:
+        for field in VPN_IPSEC_PHASE2S_IDENTIFYING_FIELDS:
+            assert getattr(entry, field) is None
+
+
+def test_get_vpn_ipsec_phase2s_includes_identifying_fields_when_requested():
+    client, _ = _vpn_ipsec_phase2s_client()
+    entries = client.get_vpn_ipsec_phase2s(include_identifying_metadata=True)
+    first = next(e for e in entries if e.ikeid == 1)
+    assert first.localid_address == "198.51.100.0"
+    assert first.natlocalid_address == "203.0.113.0"
+    assert first.remoteid_address == "192.0.2.0"
+    assert first.pinghost == "198.51.100.5"
+
+
+def test_get_vpn_ipsec_phase2s_maps_nested_encryption_option():
+    client, _ = _vpn_ipsec_phase2s_client()
+    entries = client.get_vpn_ipsec_phase2s()
+    first = next(e for e in entries if e.ikeid == 1)
+    assert first.descr == "Synthetic IPsec phase 2 entry (offline fixture)"
+    assert first.protocol == "esp"
+    assert len(first.encryption_algorithm_option) == 1
+    assert first.encryption_algorithm_option[0].name == "aes"
+    assert first.encryption_algorithm_option[0].keylen == 256
+    assert first.hash_algorithm_option == ["hmac_sha256"]
+
+
+def test_get_vpn_ipsec_phase2s_tolerates_missing_conditional_encryption_option():
+    """encryption_algorithm_option is schema-documented as only
+    available when protocol is 'esp' -- confirm the model falls back to
+    an empty list when it's genuinely absent, rather than raising a
+    shape error."""
+
+    body = _vpn_ipsec_phase2s_body()
+    del body["data"][0]["encryption_algorithm_option"]
+    client, _ = _vpn_ipsec_phase2s_client(body)
+    entries = client.get_vpn_ipsec_phase2s()
+    first = next(e for e in entries if e.ikeid == 1)
+    assert first.encryption_algorithm_option == []
+
+
+def test_get_vpn_ipsec_phase2s_parses_null_optional_fields():
+    client, _ = _vpn_ipsec_phase2s_client()
+    entries = client.get_vpn_ipsec_phase2s()
+    second = next(e for e in entries if e.ikeid == 2)
+    assert second.uniqid is None
+    assert second.reqid is None
+    assert second.natlocalid_type is None
+
+
+def test_get_vpn_ipsec_phase2s_only_calls_endpoint_with_default_limit():
+    client, transport = _vpn_ipsec_phase2s_client()
+    client.get_vpn_ipsec_phase2s()
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/phase2s?limit=100")]
+
+
+def test_get_vpn_ipsec_phase2s_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _vpn_ipsec_phase2s_body()
+    transport.register("GET", "/api/v2/vpn/ipsec/phase2s?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_vpn_ipsec_phase2s(limit=5)
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/phase2s?limit=5")]
+
+
+def test_get_vpn_ipsec_phase2s_rejects_zero_limit():
+    client, _ = _vpn_ipsec_phase2s_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase2s(limit=0)
+
+
+def test_get_vpn_ipsec_phase2s_rejects_limit_above_max():
+    client, _ = _vpn_ipsec_phase2s_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase2s(limit=101)
+
+
+def test_get_vpn_ipsec_phase2s_invalid_limit_never_calls_transport():
+    client, transport = _vpn_ipsec_phase2s_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase2s(limit=0)
+    assert transport.calls == []
+
+
+def test_get_vpn_ipsec_phase2s_missing_data_key_raises_shape_error():
+    body = _vpn_ipsec_phase2s_body()
+    del body["data"]
+    client, _ = _vpn_ipsec_phase2s_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase2s()
+
+
+def test_get_vpn_ipsec_phase2s_item_wrong_type_raises_shape_error():
+    body = _vpn_ipsec_phase2s_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _vpn_ipsec_phase2s_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase2s()
+
+
+def test_get_vpn_ipsec_phase2s_required_field_missing_raises_shape_error():
+    body = _vpn_ipsec_phase2s_body()
+    del body["data"][0]["ikeid"]
+    client, _ = _vpn_ipsec_phase2s_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase2s()
+
+
+def test_get_vpn_ipsec_phase2s_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_ipsec_phase2s_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["ikeid"] = [sentinel]
+    client, _ = _vpn_ipsec_phase2s_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_ipsec_phase2s()
+    assert sentinel not in str(excinfo.value)
+
+
+VPN_IPSEC_PHASE1_ENCRYPTIONS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_ipsec_phase1_encryptions_response.json"
+
+
+def _vpn_ipsec_phase1_encryptions_body() -> dict:
+    return json.loads(VPN_IPSEC_PHASE1_ENCRYPTIONS_FIXTURE.read_text())
+
+
+def _vpn_ipsec_phase1_encryptions_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_ipsec_phase1_encryptions_body()
+    transport.register(
+        "GET", "/api/v2/vpn/ipsec/phase1/encryptions?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_ipsec_phase1_encryptions_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_ipsec_phase1_encryptions_client(body)
+    assert client.get_vpn_ipsec_phase1_encryptions() == []
+
+
+def test_get_vpn_ipsec_phase1_encryptions_maps_fields():
+    client, _ = _vpn_ipsec_phase1_encryptions_client()
+    encryptions = client.get_vpn_ipsec_phase1_encryptions()
+    first = next(e for e in encryptions if e.encryption_algorithm_name == "aes")
+    assert first.encryption_algorithm_keylen == 256
+    assert first.hash_algorithm == "sha256"
+    assert first.dhgroup == 14
+    assert first.prf_algorithm == "sha256"
+
+
+def test_get_vpn_ipsec_phase1_encryptions_only_calls_endpoint_with_default_limit():
+    client, transport = _vpn_ipsec_phase1_encryptions_client()
+    client.get_vpn_ipsec_phase1_encryptions()
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/phase1/encryptions?limit=100")]
+
+
+def test_get_vpn_ipsec_phase1_encryptions_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _vpn_ipsec_phase1_encryptions_body()
+    transport.register("GET", "/api/v2/vpn/ipsec/phase1/encryptions?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_vpn_ipsec_phase1_encryptions(limit=5)
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/phase1/encryptions?limit=5")]
+
+
+def test_get_vpn_ipsec_phase1_encryptions_rejects_zero_limit():
+    client, _ = _vpn_ipsec_phase1_encryptions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase1_encryptions(limit=0)
+
+
+def test_get_vpn_ipsec_phase1_encryptions_rejects_limit_above_max():
+    client, _ = _vpn_ipsec_phase1_encryptions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase1_encryptions(limit=101)
+
+
+def test_get_vpn_ipsec_phase1_encryptions_invalid_limit_never_calls_transport():
+    client, transport = _vpn_ipsec_phase1_encryptions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase1_encryptions(limit=0)
+    assert transport.calls == []
+
+
+def test_get_vpn_ipsec_phase1_encryptions_missing_data_key_raises_shape_error():
+    body = _vpn_ipsec_phase1_encryptions_body()
+    del body["data"]
+    client, _ = _vpn_ipsec_phase1_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase1_encryptions()
+
+
+def test_get_vpn_ipsec_phase1_encryptions_item_wrong_type_raises_shape_error():
+    body = _vpn_ipsec_phase1_encryptions_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _vpn_ipsec_phase1_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase1_encryptions()
+
+
+def test_get_vpn_ipsec_phase1_encryptions_required_field_missing_raises_shape_error():
+    body = _vpn_ipsec_phase1_encryptions_body()
+    del body["data"][0]["dhgroup"]
+    client, _ = _vpn_ipsec_phase1_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase1_encryptions()
+
+
+def test_get_vpn_ipsec_phase1_encryptions_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_ipsec_phase1_encryptions_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["dhgroup"] = [sentinel]
+    client, _ = _vpn_ipsec_phase1_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_ipsec_phase1_encryptions()
+    assert sentinel not in str(excinfo.value)
+
+
+VPN_IPSEC_PHASE2_ENCRYPTIONS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_ipsec_phase2_encryptions_response.json"
+
+
+def _vpn_ipsec_phase2_encryptions_body() -> dict:
+    return json.loads(VPN_IPSEC_PHASE2_ENCRYPTIONS_FIXTURE.read_text())
+
+
+def _vpn_ipsec_phase2_encryptions_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_ipsec_phase2_encryptions_body()
+    transport.register(
+        "GET", "/api/v2/vpn/ipsec/phase2/encryptions?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_ipsec_phase2_encryptions_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_ipsec_phase2_encryptions_client(body)
+    assert client.get_vpn_ipsec_phase2_encryptions() == []
+
+
+def test_get_vpn_ipsec_phase2_encryptions_maps_fields():
+    client, _ = _vpn_ipsec_phase2_encryptions_client()
+    encryptions = client.get_vpn_ipsec_phase2_encryptions()
+    first = next(e for e in encryptions if e.name == "aes")
+    assert first.keylen == 256
+
+
+def test_get_vpn_ipsec_phase2_encryptions_only_calls_endpoint_with_default_limit():
+    client, transport = _vpn_ipsec_phase2_encryptions_client()
+    client.get_vpn_ipsec_phase2_encryptions()
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/phase2/encryptions?limit=100")]
+
+
+def test_get_vpn_ipsec_phase2_encryptions_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _vpn_ipsec_phase2_encryptions_body()
+    transport.register("GET", "/api/v2/vpn/ipsec/phase2/encryptions?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_vpn_ipsec_phase2_encryptions(limit=5)
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/phase2/encryptions?limit=5")]
+
+
+def test_get_vpn_ipsec_phase2_encryptions_rejects_zero_limit():
+    client, _ = _vpn_ipsec_phase2_encryptions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase2_encryptions(limit=0)
+
+
+def test_get_vpn_ipsec_phase2_encryptions_rejects_limit_above_max():
+    client, _ = _vpn_ipsec_phase2_encryptions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase2_encryptions(limit=101)
+
+
+def test_get_vpn_ipsec_phase2_encryptions_invalid_limit_never_calls_transport():
+    client, transport = _vpn_ipsec_phase2_encryptions_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase2_encryptions(limit=0)
+    assert transport.calls == []
+
+
+def test_get_vpn_ipsec_phase2_encryptions_missing_data_key_raises_shape_error():
+    body = _vpn_ipsec_phase2_encryptions_body()
+    del body["data"]
+    client, _ = _vpn_ipsec_phase2_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase2_encryptions()
+
+
+def test_get_vpn_ipsec_phase2_encryptions_item_wrong_type_raises_shape_error():
+    body = _vpn_ipsec_phase2_encryptions_body()
+    body["data"] = ["not-an-object"]
+    client, _ = _vpn_ipsec_phase2_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase2_encryptions()
+
+
+def test_get_vpn_ipsec_phase2_encryptions_required_field_missing_raises_shape_error():
+    body = _vpn_ipsec_phase2_encryptions_body()
+    del body["data"][0]["keylen"]
+    client, _ = _vpn_ipsec_phase2_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase2_encryptions()
+
+
+def test_get_vpn_ipsec_phase2_encryptions_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_ipsec_phase2_encryptions_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["keylen"] = [sentinel]
+    client, _ = _vpn_ipsec_phase2_encryptions_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_ipsec_phase2_encryptions()
+    assert sentinel not in str(excinfo.value)

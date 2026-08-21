@@ -272,6 +272,29 @@ never production) before public registration.
   fields are redacted by default once registered, matching
   `GatewayConfig.gateway`/`InterfaceStatus.macaddr`'s established
   conventions.
+- **3 more READ candidates implemented and offline-tested (P1 Batch I,
+  IPsec Phase 2 + encryption capability lists) but NOT yet
+  registered** — public MCP contract unchanged at 79:
+  `IPsecPhase2`, `IPsecPhase1Encryption`, `IPsecPhase2Encryption`
+  models, `PfSenseClient.get_vpn_ipsec_phase2s()`/
+  `get_vpn_ipsec_phase1_encryptions()`/`get_vpn_ipsec_phase2_encryptions()`,
+  and their `Endpoints` entries (`verified=False`) all exist and are
+  fully offline-tested. No `tools/read/` file exists for any of the
+  three yet, so they remain structurally unreachable through the MCP
+  surface. Re-confirmed the IPsec PSK lives only on `IPsecPhase1`,
+  already REJECTed separately — no secret material is present on
+  Phase 2 itself. `IPsecPhase2.localid_address`/`.natlocalid_address`/
+  `.remoteid_address`/`.pinghost` (endpoint and monitoring target
+  addresses) are redacted by default, matching
+  `RoutingStaticRoute.gateway`'s established convention.
+  `encryption_algorithm_option` is schema-documented as only available
+  when `protocol` is `'esp'` and is treated as genuinely
+  possibly-absent via `.get()`, matching the `InterfaceLAGG`
+  precedent; it is schema-confirmed to embed full
+  `IPsecPhase2Encryption` objects and is constructed through that
+  model's own `from_api()` for every item.
+  `IPsecPhase1Encryption`/`IPsecPhase2Encryption` are pure
+  algorithm/cipher capability reference data, no redaction needed.
 
 ### Security
 

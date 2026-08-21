@@ -1,0 +1,62 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "uniqid": "68f9c9c1a2b40",
+      "reqid": 1,
+      "ikeid": 1,
+      "descr": "Synthetic IPsec phase 2 entry (offline fixture)",
+      "disabled": false,
+      "mode": "tunnel",
+      "localid_type": "network",
+      "localid_address": "198.51.100.0",
+      "localid_netbits": 24,
+      "natlocalid_type": "network",
+      "natlocalid_address": "203.0.113.0",
+      "natlocalid_netbits": 24,
+      "remoteid_type": "network",
+      "remoteid_address": "192.0.2.0",
+      "remoteid_netbits": 24,
+      "protocol": "esp",
+      "encryption_algorithm_option": [
+        {"name": "aes", "keylen": 256}
+      ],
+      "hash_algorithm_option": ["hmac_sha256"],
+      "pfsgroup": 14,
+      "rekey_time": 3600,
+      "rand_time": 300,
+      "lifetime": 28800,
+      "pinghost": "198.51.100.5",
+      "keepalive": true
+    },
+    {
+      "uniqid": null,
+      "reqid": null,
+      "ikeid": 2,
+      "descr": "",
+      "disabled": true,
+      "mode": "tunnel",
+      "localid_type": "network",
+      "localid_address": "203.0.113.128",
+      "localid_netbits": 25,
+      "natlocalid_type": null,
+      "natlocalid_address": "",
+      "natlocalid_netbits": 0,
+      "remoteid_type": "network",
+      "remoteid_address": "192.0.2.128",
+      "remoteid_netbits": 25,
+      "protocol": "ah",
+      "encryption_algorithm_option": [],
+      "hash_algorithm_option": ["hmac_sha1"],
+      "pfsgroup": 0,
+      "rekey_time": 0,
+      "rand_time": 0,
+      "lifetime": 3600,
+      "pinghost": "",
+      "keepalive": false
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}
