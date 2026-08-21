@@ -5694,6 +5694,11 @@ def test_get_status_wireguard_peers_invalid_limit_never_calls_transport():
 
 
 def test_get_status_wireguard_peers_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE, after
+    owner-authorized pfSense-pkg-WireGuard installation) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- the raw response
+    was inspected directly and contained no unexpected nested fields."""
+
     body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
     client, _ = _status_wireguard_peers_client(body)
     assert client.get_status_wireguard_peers() == []
@@ -5813,6 +5818,11 @@ def test_get_status_wireguard_tunnels_invalid_limit_never_calls_transport():
 
 
 def test_get_status_wireguard_tunnels_parses_empty_list():
+    """2026-08-21 LAB verification (pfSense CE 2.9.0-RELEASE, after
+    owner-authorized pfSense-pkg-WireGuard installation) observed
+    exactly this shape: HTTP 200, `{"data": []}` -- the raw response
+    was inspected directly and contained no unexpected nested fields."""
+
     body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
     client, _ = _status_wireguard_tunnels_client(body)
     assert client.get_status_wireguard_tunnels() == []

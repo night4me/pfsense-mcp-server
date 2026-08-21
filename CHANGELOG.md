@@ -47,13 +47,29 @@ never production) before public registration.
     (schema-confirmed `$ref`) and is constructed through that model's
     own parser for every nested item, not passed through as a raw dict.
   - `status/wireguard/tunnels`/`status/wireguard/peers` were also
-    implemented and offline-tested this batch but remain unregistered:
-    the LAB used for this phase does not have `pfSense-pkg-WireGuard`
-    installed, so live verification is blocked pending a separate
-    owner decision (installing a package would be a LAB mutation,
-    outside this project's non-destructive READ-only LAB
-    authorization) — see "Security" below for the redaction work
-    already done regardless.
+    implemented and offline-tested this batch but remained unregistered
+    at first: this LAB did not have `pfSense-pkg-WireGuard` installed,
+    so live verification was blocked — see the next entry for how this
+    was resolved.
+- **2 more READ tools (P1 Batch A completion), public MCP contract 53 →
+  55 (0 WRITE, unchanged):** owner explicitly authorized installing
+  `pfSense-pkg-WireGuard` on the LAB for non-production READ
+  verification only. Preflight: reconfirmed LAB identity distinct from
+  production, identified the LAB as the sole pfSense-named VM in its
+  Proxmox cluster, and took a fresh rollback snapshot before any
+  change. Post-install: confirmed pfSense/pfREST healthy, re-ran a
+  52-tool regression subset with zero regressions, then live-verified
+  both endpoints (HTTP 200, correct envelope, zero configured tunnels/
+  peers; raw responses inspected directly for unexpected fields).
+  - `pfsense_get_status_wireguard_tunnels` — live WireGuard tunnel
+    status, including nested peer status.
+  - `pfsense_get_status_wireguard_peers` — live WireGuard peer status.
+  - The package installation was a one-off authenticated LAB
+    administrative call, made outside and independent of this
+    project's own `WriteApiClient`/`WriteEndpoints` allow-list
+    mechanism, which remains untouched and still empty except
+    `FIREWALL_ALIAS_DESCRIPTION` — not a WRITE-capability expansion of
+    the shipped server.
 
 ### Security
 

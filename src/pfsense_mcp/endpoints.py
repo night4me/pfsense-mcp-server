@@ -356,27 +356,31 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # verified=False (2026-08-21) -- client/model implemented and
-    # offline-tested, but LAB verification is BLOCKED: this LAB
-    # appliance does not have pfSense-pkg-WireGuard installed
-    # (HTTP 404, response_id=MODEL_MISSING_REQUIRED_PACKAGE observed
-    # directly). Installing the package to complete verification would
-    # be a LAB environment mutation, outside this task's non-destructive
-    # READ-only authorization -- left for a separate owner decision, not
-    # silently worked around. WireGuardPeerStatus.preshared_key is a
-    # confirmed secret field, never modeled at all regardless (see model
-    # docstring) -- that constraint is independent of and unaffected by
-    # this verification blocker.
+    # verified=True (2026-08-21) -- owner explicitly authorized
+    # installing pfSense-pkg-WireGuard on this LAB (non-production,
+    # READ-verification only) after the earlier HTTP 404/
+    # MODEL_MISSING_REQUIRED_PACKAGE blocker. Preflight: confirmed LAB
+    # identity (pfsense-test.lab.invalid, distinct from production) and
+    # took a Proxmox snapshot (vmid 250 "pfSense-LAB",
+    # "pre-wireguard-ce290") before installing. Post-install: pfSense/
+    # pfREST confirmed healthy, a full 52-tool regression subset passed
+    # unchanged, then this endpoint's own live GET succeeded (HTTP 200,
+    # correct envelope, zero configured tunnels -- ENDPOINT_VERIFIED).
+    # The raw response body was inspected directly for unexpected nested
+    # fields (none present, since no data). WireGuardPeerStatus.
+    # preshared_key remains never-modeled regardless -- that constraint
+    # is independent of this verification and was re-confirmed via
+    # offline sentinel-injection tests, not merely by an empty live list.
     STATUS_WIREGUARD_TUNNELS = EndpointInfo(
         path_suffix="/status/wireguard/tunnels",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # verified=False (2026-08-21) -- same blocker as
-    # STATUS_WIREGUARD_TUNNELS immediately above (package not installed
-    # on this LAB).
+    # verified=True (2026-08-21) -- same LAB verification pass as
+    # STATUS_WIREGUARD_TUNNELS immediately above; identical result (zero
+    # configured peers, ENDPOINT_VERIFIED only).
     STATUS_WIREGUARD_PEERS = EndpointInfo(
         path_suffix="/status/wireguard/peers",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

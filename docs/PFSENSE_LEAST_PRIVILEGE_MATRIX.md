@@ -115,22 +115,45 @@ this pass.
 
 The same batch also implemented `status/wireguard/tunnels`/
 `status/wireguard/peers` (`WireGuardTunnelStatus`/`WireGuardPeerStatus`
-models, offline-tested) but LAB verification is **blocked**: this LAB
-does not have `pfSense-pkg-WireGuard` installed (HTTP 404,
+models, offline-tested) but LAB verification was initially **blocked**:
+this LAB did not have `pfSense-pkg-WireGuard` installed (HTTP 404,
 `response_id=MODEL_MISSING_REQUIRED_PACKAGE`, observed directly).
-Installing the package would be a LAB environment mutation, outside
-this project's non-destructive READ-only LAB authorization — left
-`verified=False` and unregistered pending a separate owner decision, not
-worked around. `WireGuardPeerStatus.preshared_key` is confirmed present
-in the schema (in the *status* object, not merely config) and is
-**never modeled at all**, matching the `VirtualIP.password`/
-`CertificateAuthority.prv` precedent — this exclusion is independent of,
-and unaffected by, the verification blocker.
-`WireGuardTunnelStatus.peers` is schema-confirmed to embed full
-`WireGuardPeerStatus` objects; it is constructed through that model's
-own `from_api()` for every nested item specifically so the
+`WireGuardPeerStatus.preshared_key` is confirmed present in the schema
+(in the *status* object, not merely config) and is **never modeled at
+all**, matching the `VirtualIP.password`/`CertificateAuthority.prv`
+precedent — this exclusion is independent of, and unaffected by, the
+verification blocker. `WireGuardTunnelStatus.peers` is schema-confirmed
+to embed full `WireGuardPeerStatus` objects; it is constructed through
+that model's own `from_api()` for every nested item specifically so the
 `preshared_key` exclusion holds for the nested case too (a raw-dict
 passthrough there would have leaked it).
+
+**2026-08-21 (same day, later) — WireGuard status LAB-verified and
+registered after owner-authorized package installation.** The owner
+explicitly authorized installing `pfSense-pkg-WireGuard` on this LAB
+for non-production READ verification only. Preflight: reconfirmed LAB
+identity (`pfsense-test.lab.invalid`, pfSense CE 2.9.0-RELEASE) is
+distinct from production; identified the LAB as Proxmox VM 250
+("pfSense-LAB", the only pfSense-named guest in the cluster — no
+production VM exists there to confuse it with) and took a fresh
+snapshot (`pre-wireguard-ce290`) as a rollback point before any change;
+confirmed `pfSense-pkg-WireGuard` (version `0.2.13_4`) as the correct,
+available package for this CE 2.9.0 install with no unmet dependencies.
+Installed via `POST /api/v2/system/package` (a one-off authenticated
+LAB administrative call, made outside and independent of this
+project's own `WriteApiClient`/`WriteEndpoints` allow-list mechanism,
+which remains untouched and still empty except
+`FIREWALL_ALIAS_DESCRIPTION` — this was not a WRITE-capability
+expansion of the shipped server). Post-install: confirmed pfSense/
+pfREST healthy, re-ran a 52-tool regression subset (all existing
+public tools except the local-only `pfsense_mcp_info`) with zero
+regressions, then both WireGuard status endpoints succeeded live (HTTP
+200, correct envelope, zero configured tunnels/peers —
+`ENDPOINT_VERIFIED`); the raw response bodies were inspected directly
+and contained no unexpected fields. Both `Endpoints` entries are now
+`verified=True`; both tools are now registered. **52 READ / 53
+combined become 54 READ / 55 combined** throughout this document as of
+this pass.
 
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
@@ -191,15 +214,16 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 52 endpoints this project's 53 READ
+exists for them. **None of the 54 endpoints this project's 55 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
 group, firewall-schedule/virtual-IP, REST-API-version, and
-certificate-authority endpoints, and, as of 2026-08-21, the IPsec
-SA/child-SA status endpoints, each of which offers a narrow alternative
-alongside `page-all`). This must be re-checked for any *future* tool
-added against a new endpoint — it is not a general guarantee.
+certificate-authority endpoints, and the IPsec SA/child-SA and
+WireGuard tunnel/peer status endpoints, each of which offers a narrow
+alternative alongside `page-all`). This must be re-checked for any
+*future* tool added against a new endpoint — it is not a general
+guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
 
@@ -228,16 +252,18 @@ algorithm (run against pinned GitHub source) and the live schema
 installed version's privilege-naming behavior matches the pinned
 source this document reasons about. The interface-VLAN/static-route
 pair, the interface-group/firewall-schedule/REST-API-version trio, the
-firewall-virtual-IP/certificate-authority pair, and (2026-08-21) the
-IPsec SA/child-SA status pair, were cross-checked against a live schema
-freshly fetched from the **LAB** appliance (`pfsense-test.lab.invalid`)
-during owner-authorized LAB READ verification passes — also an exact
-match, zero mismatches (52 of 52 now, including all nine). The IPsec
-pair's LAB cross-check was against the upgraded pfSense CE 2.9.0
-appliance specifically; its REST API package schema remained an exact
-267-path match despite the platform upgrade.
+firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
+status pair, and the WireGuard tunnel/peer status pair, were
+cross-checked against a live schema freshly fetched from the **LAB**
+appliance (`pfsense-test.lab.invalid`) during owner-authorized LAB READ
+verification passes — also an exact match, zero mismatches (54 of 54
+now, including all eleven). The IPsec and WireGuard pairs' LAB
+cross-checks were against the upgraded pfSense CE 2.9.0 appliance
+specifically; its REST API package schema remained an exact 267-path
+match despite the platform upgrade, both before and after installing
+`pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (53 tools)
+## READ privilege matrix (55 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -283,6 +309,8 @@ appliance specifically; its REST API package schema remained an exact
 | `pfsense_ssh_settings` | `get_ssh_settings` | `GET /api/v2/services/ssh` | `api-v2-services-ssh-get` | ✅ |
 | `pfsense_status_ipsec_child_sas` | `get_status_ipsec_child_sas` | `GET /api/v2/status/ipsec/child_sas` | `api-v2-status-ipsec-child-sas-get` | ✅ |
 | `pfsense_status_ipsec_sas` | `get_status_ipsec_sas` | `GET /api/v2/status/ipsec/sas` | `api-v2-status-ipsec-sas-get` | ✅ |
+| `pfsense_status_wireguard_peers` | `get_status_wireguard_peers` | `GET /api/v2/status/wireguard/peers` | `api-v2-status-wireguard-peers-get` | ✅ |
+| `pfsense_status_wireguard_tunnels` | `get_status_wireguard_tunnels` | `GET /api/v2/status/wireguard/tunnels` | `api-v2-status-wireguard-tunnels-get` | ✅ |
 | `pfsense_system_certificate_authorities` | `get_system_certificate_authorities` | `GET /api/v2/system/certificate_authorities` | `api-v2-system-certificate-authorities-get` | ✅ |
 | `pfsense_system_certificates` | `get_system_certificates` | `GET /api/v2/system/certificates` | `api-v2-system-certificates-get` | ✅ |
 | `pfsense_system_hasync` | `get_system_hasync` | `GET /api/v2/system/hasync` | `api-v2-system-hasync-get` | ✅ |
@@ -295,10 +323,10 @@ appliance specifically; its REST API package schema remained an exact
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**52 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 52`). A least-privilege
-READ-only identity holding exactly these 52 (never `page-all`) can serve
-every one of this project's 53 registered READ tools.
+**54 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 54`). A least-privilege
+READ-only identity holding exactly these 54 (never `page-all`) can serve
+every one of this project's 55 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -307,28 +335,12 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 54th tool would
+completeness, since a future decision to expose it as a 56th tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|
 | `get_config_history_revisions` | `GET /api/v2/diagnostics/config_history/revisions` | `api-v2-diagnostics-config-history-revisions-get` | ✅ |
-
-**Also currently in this state (2026-08-21, not a stale carryover):**
-`PfSenseClient.get_status_wireguard_tunnels()`/`get_status_wireguard_peers()`
-are fully implemented and offline-tested but **not registered** —
-`Endpoints.STATUS_WIREGUARD_TUNNELS`/`STATUS_WIREGUARD_PEERS` remain
-`verified=False` because this LAB appliance does not have
-`pfSense-pkg-WireGuard` installed (confirmed via a direct HTTP 404,
-`response_id=MODEL_MISSING_REQUIRED_PACKAGE`), and installing it would
-be a LAB mutation outside this project's non-destructive READ-only LAB
-authorization. Privileges below are schema-derived only, not yet
-live-confirmed:
-
-| Client method | pfSense endpoint | Required privilege | Live-confirmed |
-|---|---|---|---|
-| `get_status_wireguard_tunnels` | `GET /api/v2/status/wireguard/tunnels` | `api-v2-status-wireguard-tunnels-get` | ❌ (package not installed on LAB) |
-| `get_status_wireguard_peers` | `GET /api/v2/status/wireguard/peers` | `api-v2-status-wireguard-peers-get` | ❌ (package not installed on LAB) |
 
 ## WRITE privilege matrix (`set_firewall_alias_description_v1`)
 
@@ -357,11 +369,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 52 READ privileges
+The 4 WRITE privileges are a strict subset of the 54 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **53 distinct privileges**: the 52 READ
+identity therefore needs exactly **55 distinct privileges**: the 54 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

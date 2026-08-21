@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 53 READ, 0 WRITE
+Registered tools: 55 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -404,6 +404,30 @@ Common parameters:
 - **Security:** Literal local/remote traffic-selector subnets are
   omitted by default.
 - **Example:** `{"name":"pfsense_get_status_ipsec_child_sas","arguments":{}}`
+
+### `pfsense_get_status_wireguard_tunnels`
+
+- **Purpose:** List live WireGuard tunnel status: link state, traffic
+  counters, and nested peer status.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[WireGuardTunnelStatus]`.
+- **Security:** Literal peer endpoint/allowed-IP addresses nested under
+  each tunnel are omitted by default. Private/preshared key material is
+  never returned under any argument.
+- **Example:** `{"name":"pfsense_get_status_wireguard_tunnels","arguments":{}}`
+
+### `pfsense_get_status_wireguard_peers`
+
+- **Purpose:** List live WireGuard peer status: handshake time, traffic
+  counters, and public key.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[WireGuardPeerStatus]`.
+- **Security:** Literal peer endpoint address and allowed-IP ranges are
+  omitted by default. The preshared key is never returned under any
+  argument.
+- **Example:** `{"name":"pfsense_get_status_wireguard_peers","arguments":{}}`
 
 ## Users and API identities
 

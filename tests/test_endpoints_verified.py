@@ -670,8 +670,8 @@ def test_status_ipsec_child_sas_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.STATUS_IPSEC_CHILD_SAS.path_suffix == "/status/ipsec/child_sas"
 
 
-def test_status_wireguard_tunnels_is_declared_unverified():
-    assert Endpoints.STATUS_WIREGUARD_TUNNELS.verified is False
+def test_status_wireguard_tunnels_is_declared_verified():
+    assert Endpoints.STATUS_WIREGUARD_TUNNELS.verified is True
 
 
 def test_status_wireguard_tunnels_path_suffix_has_no_api_prefix():
@@ -682,8 +682,8 @@ def test_status_wireguard_tunnels_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.STATUS_WIREGUARD_TUNNELS.path_suffix == "/status/wireguard/tunnels"
 
 
-def test_status_wireguard_peers_is_declared_unverified():
-    assert Endpoints.STATUS_WIREGUARD_PEERS.verified is False
+def test_status_wireguard_peers_is_declared_verified():
+    assert Endpoints.STATUS_WIREGUARD_PEERS.verified is True
 
 
 def test_status_wireguard_peers_path_suffix_has_no_api_prefix():

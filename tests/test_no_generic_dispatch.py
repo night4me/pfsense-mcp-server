@@ -86,8 +86,8 @@ def test_exactly_one_tool_file_has_zero_client_method_calls_and_it_is_the_expect
     assert zero_call_files == EXPECTED_ZERO_CLIENT_CALL_TOOLS
 
 
-def test_fifty_three_tool_files_exist_matching_the_public_contract() -> None:
-    assert len(_tool_files()) == 53
+def test_fifty_five_tool_files_exist_matching_the_public_contract() -> None:
+    assert len(_tool_files()) == 55
 
 
 def test_no_tool_file_uses_getattr_setattr_or_hasattr() -> None:

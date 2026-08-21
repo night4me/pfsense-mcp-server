@@ -62,6 +62,8 @@ from .read import (
     ssh_settings,
     status_ipsec_child_sas,
     status_ipsec_sas,
+    status_wireguard_peers,
+    status_wireguard_tunnels,
     system_certificate_authorities,
     system_certificates,
     system_hasync,
@@ -135,6 +137,8 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_ssh_settings",
         "pfsense_get_status_ipsec_child_sas",
         "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_wireguard_peers",
+        "pfsense_get_status_wireguard_tunnels",
         "pfsense_get_system_certificate_authorities",
         "pfsense_get_system_certificates",
         "pfsense_get_system_hasync",
@@ -286,6 +290,10 @@ class ToolRegistry:
             self._register_status_ipsec_sa_read()
         if Capability.STATUS_IPSEC_CHILD_SA_READ in self._capabilities:
             self._register_status_ipsec_child_sa_read()
+        if Capability.STATUS_WIREGUARD_TUNNEL_READ in self._capabilities:
+            self._register_status_wireguard_tunnel_read()
+        if Capability.STATUS_WIREGUARD_PEER_READ in self._capabilities:
+            self._register_status_wireguard_peer_read()
 
         self.register_all_write()
 
@@ -610,6 +618,16 @@ class ToolRegistry:
     def _register_status_ipsec_child_sa_read(self) -> None:
         fn = status_ipsec_child_sas.build(self._client)
         wrapped = audit_logged("pfsense_get_status_ipsec_child_sas", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_wireguard_tunnel_read(self) -> None:
+        fn = status_wireguard_tunnels.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_wireguard_tunnels", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_wireguard_peer_read(self) -> None:
+        fn = status_wireguard_peers.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_wireguard_peers", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

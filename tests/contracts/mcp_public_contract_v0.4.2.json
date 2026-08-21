@@ -7127,6 +7127,489 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "STATUS_WIREGUARD_PEER_READ",
+      "client_method": "get_status_wireguard_peers",
+      "description": "List live WireGuard peer status: handshake time, traffic\n        counters, and public key. The preshared key is never returned\n        by this tool under any argument. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        peer endpoint address and allowed-IP ranges. Defaults to False.\n\n        limit: maximum number of peers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/wireguard/peers",
+        "symbol": "STATUS_WIREGUARD_PEERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_wireguard_peersArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_wireguard_peers",
+      "output_schema": {
+        "$defs": {
+          "WireGuardPeerStatus": {
+            "properties": {
+              "allowed_ips": {
+                "anyOf": [
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Allowed Ips"
+              },
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "endpoint": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Endpoint"
+              },
+              "latest_handshake": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Latest Handshake"
+              },
+              "persistent_keepalive": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persistent Keepalive"
+              },
+              "public_key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Public Key"
+              },
+              "transfer_rx": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transfer Rx"
+              },
+              "transfer_tx": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transfer Tx"
+              },
+              "tunnel_device": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tunnel Device"
+              }
+            },
+            "required": [
+              "descr",
+              "latest_handshake",
+              "persistent_keepalive",
+              "public_key",
+              "transfer_rx",
+              "transfer_tx",
+              "tunnel_device"
+            ],
+            "title": "WireGuardPeerStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/WireGuardPeerStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_wireguard_peersOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "STATUS_WIREGUARD_TUNNEL_READ",
+      "client_method": "get_status_wireguard_tunnels",
+      "description": "List live WireGuard tunnel status: link state, traffic\n        counters, and nested peer status. Private/preshared key\n        material is never returned by this tool under any argument.\n        Read-only.\n\n        include_identifying_metadata: if True, includes literal peer\n        endpoint/allowed-IP addresses nested under each tunnel.\n        Defaults to False.\n\n        limit: maximum number of tunnels to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/wireguard/tunnels",
+        "symbol": "STATUS_WIREGUARD_TUNNELS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_status_wireguard_tunnelsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_wireguard_tunnels",
+      "output_schema": {
+        "$defs": {
+          "WireGuardPeerStatus": {
+            "properties": {
+              "allowed_ips": {
+                "anyOf": [
+                  {
+                    "items": {},
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Allowed Ips"
+              },
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "endpoint": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Endpoint"
+              },
+              "latest_handshake": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Latest Handshake"
+              },
+              "persistent_keepalive": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persistent Keepalive"
+              },
+              "public_key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Public Key"
+              },
+              "transfer_rx": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transfer Rx"
+              },
+              "transfer_tx": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transfer Tx"
+              },
+              "tunnel_device": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tunnel Device"
+              }
+            },
+            "required": [
+              "descr",
+              "latest_handshake",
+              "persistent_keepalive",
+              "public_key",
+              "transfer_rx",
+              "transfer_tx",
+              "tunnel_device"
+            ],
+            "title": "WireGuardPeerStatus",
+            "type": "object"
+          },
+          "WireGuardTunnelStatus": {
+            "properties": {
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "inpkts": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Inpkts"
+              },
+              "listen_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Listen Port"
+              },
+              "mtu": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mtu"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "outpkts": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Outpkts"
+              },
+              "peers": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "$ref": "#/$defs/WireGuardPeerStatus"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Peers"
+              },
+              "public_key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Public Key"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Status"
+              },
+              "transfer_rx": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transfer Rx"
+              },
+              "transfer_tx": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transfer Tx"
+              }
+            },
+            "required": [
+              "descr",
+              "inpkts",
+              "listen_port",
+              "mtu",
+              "name",
+              "outpkts",
+              "public_key",
+              "status",
+              "transfer_rx",
+              "transfer_tx",
+              "peers"
+            ],
+            "title": "WireGuardTunnelStatus",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/WireGuardTunnelStatus"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_status_wireguard_tunnelsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SYSTEM_CERTIFICATE_AUTHORITY_READ",
       "client_method": "get_system_certificate_authorities",
       "description": "List pfSense trusted Certificate Authorities: description,\n        trust/serial settings, and the CA certificate itself. The CA\n        private key is never returned by this tool. Read-only.\n\n        limit: maximum number of certificate authorities to return\n        (1-100, default 100).",
