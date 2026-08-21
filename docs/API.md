@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 59 READ, 0 WRITE
+Registered tools: 62 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -542,6 +542,34 @@ Common parameters:
 - **Returns:** `list[DnsResolverHostOverride]`.
 - **Security:** Hostnames and addresses disclose internal DNS/topology data.
 - **Example:** `{"name":"pfsense_get_dns_resolver_host_overrides","arguments":{"limit":20}}`
+
+### `pfsense_get_dns_resolver_domain_overrides`
+
+- **Purpose:** List Unbound (DNS Resolver) domain overrides: forwarding
+  target address and DNS-over-TLS settings.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[DnsResolverDomainOverride]`.
+- **Security:** Hostnames and addresses disclose internal DNS/topology data.
+- **Example:** `{"name":"pfsense_get_dns_resolver_domain_overrides","arguments":{"limit":20}}`
+
+### `pfsense_get_dns_resolver_access_lists`
+
+- **Purpose:** List Unbound (DNS Resolver) access lists: allow/deny action
+  and the network ranges each list applies to.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[DnsResolverAccessList]`.
+- **Security:** Network ranges disclose internal topology data; no
+  credential is involved.
+- **Example:** `{"name":"pfsense_get_dns_resolver_access_lists","arguments":{"limit":20}}`
+
+### `pfsense_get_dns_forwarder_host_overrides`
+
+- **Purpose:** List dnsmasq (DNS Forwarder) host overrides, addresses,
+  aliases, and descriptions.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[DnsForwarderHostOverride]`.
+- **Security:** Hostnames and addresses disclose internal DNS/topology data.
+- **Example:** `{"name":"pfsense_get_dns_forwarder_host_overrides","arguments":{"limit":20}}`
 
 ### `pfsense_get_dns_resolver_settings`
 

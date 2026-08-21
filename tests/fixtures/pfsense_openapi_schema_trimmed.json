@@ -1151,6 +1151,21 @@
         "description": "<h3>Description:</h3>Reads all existing DHCP Servers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DHCPServer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-servers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/services/dns_forwarder/host_overrides": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DNS Forwarder Host Overrides.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DNSForwarderHostOverride<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-forwarder-host-overrides-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dns_resolver/access_lists": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DNS Resolver Access Lists.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DNSResolverAccessList<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-resolver-access-lists-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dns_resolver/domain_overrides": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing DNS Resolver Domain Overrides.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DNSResolverDomainOverride<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-resolver-domain-overrides-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/services/dns_resolver/host_overrides": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing DNS Resolver Host Overrides.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: DNSResolverHostOverride<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-resolver-host-overrides-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"

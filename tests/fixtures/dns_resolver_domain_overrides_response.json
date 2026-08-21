@@ -1,0 +1,22 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "domain": "internal.example.invalid",
+      "ip": "198.51.100.92",
+      "descr": "Synthetic domain override (offline fixture)",
+      "forward_tls_upstream": false,
+      "tls_hostname": ""
+    },
+    {
+      "domain": "secure.example.invalid",
+      "ip": "198.51.100.93",
+      "descr": "",
+      "forward_tls_upstream": true,
+      "tls_hostname": "resolver.example.invalid"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

@@ -1,0 +1,22 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "host": "printer1",
+      "domain": "example.invalid",
+      "ip": "198.51.100.90",
+      "descr": "Synthetic host override (offline fixture)",
+      "aliases": []
+    },
+    {
+      "host": "",
+      "domain": "example.invalid",
+      "ip": "198.51.100.91",
+      "descr": "",
+      "aliases": [{"host": "printer1-alt", "domain": "example.invalid", "description": ""}]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

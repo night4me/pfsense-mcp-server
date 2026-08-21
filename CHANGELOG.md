@@ -93,6 +93,25 @@ never production) before public registration.
     (schema-confirmed `$ref`) and are constructed through those
     models' own parsers for every nested item, not passed through as
     raw dicts.
+- **3 more READ tools (P1 Batch C), public MCP contract 59 → 62 (0
+  WRITE, unchanged):**
+  - `pfsense_get_dns_forwarder_host_overrides` — dnsmasq (DNS Forwarder)
+    host overrides: addresses, aliases, and descriptions.
+  - `pfsense_get_dns_resolver_domain_overrides` — Unbound (DNS Resolver)
+    domain overrides: forwarding target address and DNS-over-TLS
+    settings.
+  - `pfsense_get_dns_resolver_access_lists` — Unbound (DNS Resolver)
+    access lists: allow/deny action and the network ranges each list
+    applies to.
+  - All three re-checked against the pinned schema for secrets (none
+    found) and modeled following the existing shipped
+    `DnsResolverHostOverride` precedent: full field visibility, no
+    `include_identifying_metadata` redaction, since address/network
+    data is the core content of this capability class (the same
+    rationale already documented for `DhcpServer`).
+  - All three LAB-verified live: `HTTP 200`, zero configured objects
+    (`ENDPOINT_VERIFIED`); no package required (base
+    pfSense/dnsmasq/Unbound features).
 
 ### Security
 

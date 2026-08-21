@@ -740,3 +740,39 @@ def test_status_openvpn_server_routes_path_suffix_has_no_api_prefix():
 
 def test_status_openvpn_server_routes_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.STATUS_OPENVPN_SERVER_ROUTES.path_suffix == "/status/openvpn/server/routes"
+
+
+def test_dns_forwarder_host_overrides_is_declared_verified():
+    assert Endpoints.DNS_FORWARDER_HOST_OVERRIDES.verified is True
+
+
+def test_dns_forwarder_host_overrides_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DNS_FORWARDER_HOST_OVERRIDES.path_suffix.startswith("/api")
+
+
+def test_dns_forwarder_host_overrides_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.DNS_FORWARDER_HOST_OVERRIDES.path_suffix == "/services/dns_forwarder/host_overrides"
+
+
+def test_dns_resolver_domain_overrides_is_declared_verified():
+    assert Endpoints.DNS_RESOLVER_DOMAIN_OVERRIDES.verified is True
+
+
+def test_dns_resolver_domain_overrides_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DNS_RESOLVER_DOMAIN_OVERRIDES.path_suffix.startswith("/api")
+
+
+def test_dns_resolver_domain_overrides_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.DNS_RESOLVER_DOMAIN_OVERRIDES.path_suffix == "/services/dns_resolver/domain_overrides"
+
+
+def test_dns_resolver_access_lists_is_declared_verified():
+    assert Endpoints.DNS_RESOLVER_ACCESS_LISTS.verified is True
+
+
+def test_dns_resolver_access_lists_path_suffix_has_no_api_prefix():
+    assert not Endpoints.DNS_RESOLVER_ACCESS_LISTS.path_suffix.startswith("/api")
+
+
+def test_dns_resolver_access_lists_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.DNS_RESOLVER_ACCESS_LISTS.path_suffix == "/services/dns_resolver/access_lists"

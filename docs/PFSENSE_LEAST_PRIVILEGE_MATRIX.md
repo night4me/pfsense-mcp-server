@@ -185,6 +185,26 @@ for the nested case too. All four `Endpoints` entries are now
 combined become 58 READ / 59 combined** throughout this document as of
 this pass.
 
+**2026-08-21 (same day, later still) — DNS Forwarder/Resolver extras
+LAB-verified and registered (P1 Batch C).** `services/dns_forwarder/
+host_overrides`, `services/dns_resolver/domain_overrides`, and
+`services/dns_resolver/access_lists` were re-checked against the
+pinned schema for secret fields (none found — `DNSForwarderHostOverride`,
+`DNSResolverDomainOverride`, and `DNSResolverAccessList` are all
+address/policy data, no credential material) and modeled following the
+existing shipped `DnsResolverHostOverride` precedent: full field
+visibility, no `include_identifying_metadata` redaction, since
+address/network data is core content for this capability class (the
+same rationale already documented for `DhcpServer`). `PfSenseClient.
+get_dns_forwarder_host_overrides()`/`get_dns_resolver_domain_overrides()`/
+`get_dns_resolver_access_lists()`, their models, and their `Endpoints`
+entries were implemented and LAB-verified — all three returned zero
+configured objects (`ENDPOINT_VERIFIED`; no package required, base
+pfSense/dnsmasq/Unbound features). All three `Endpoints` entries are now
+`verified=True`; all three tools are now registered. **58 READ / 59
+combined become 61 READ / 62 combined** throughout this document as of
+this pass.
+
 **Implementation Phase B (2026-08-17)**: every value below is now
 reproduced by real, tested, pure production code —
 `src/pfsense_mcp/security_privileges.py`'s
@@ -244,16 +264,18 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 58 endpoints this project's 59 READ
+exists for them. **None of the 61 endpoints this project's 62 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
 group, firewall-schedule/virtual-IP, REST-API-version, and
 certificate-authority endpoints, the IPsec SA/child-SA and WireGuard
-tunnel/peer status endpoints, and the OpenVPN server/client/connection/
-route status endpoints, each of which offers a narrow alternative
-alongside `page-all`). This must be re-checked for any *future* tool
-added against a new endpoint — it is not a general guarantee.
+tunnel/peer status endpoints, the OpenVPN server/client/connection/
+route status endpoints, and the DNS Forwarder host-override/DNS
+Resolver domain-override/access-list endpoints, each of which offers a
+narrow alternative alongside `page-all`). This must be re-checked for
+any *future* tool added against a new endpoint — it is not a general
+guarantee.
 
 ## Evidence tier 2: live OpenAPI schema corroboration
 
@@ -283,18 +305,18 @@ installed version's privilege-naming behavior matches the pinned
 source this document reasons about. The interface-VLAN/static-route
 pair, the interface-group/firewall-schedule/REST-API-version trio, the
 firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
-status pair, the WireGuard tunnel/peer status pair, and the OpenVPN
-server/client/connection/route status four, were cross-checked against
-a live schema freshly fetched from the **LAB** appliance
-(`pfsense-test.lab.invalid`) during owner-authorized LAB READ
-verification passes — also an exact match, zero mismatches (58 of 58
-now, including all fifteen). The IPsec, WireGuard, and OpenVPN groups'
-LAB cross-checks were against the upgraded pfSense CE 2.9.0 appliance
-specifically; its REST API package schema remained an exact 267-path
-match despite the platform upgrade, both before and after installing
-`pfSense-pkg-WireGuard`.
+status pair, the WireGuard tunnel/peer status pair, the OpenVPN
+server/client/connection/route status four, and the DNS Forwarder/
+Resolver extras three, were cross-checked against a live schema freshly
+fetched from the **LAB** appliance (`pfsense-test.lab.invalid`) during
+owner-authorized LAB READ verification passes — also an exact match,
+zero mismatches (61 of 61 now, including all eighteen). The IPsec,
+WireGuard, OpenVPN, and DNS groups' LAB cross-checks were against the
+upgraded pfSense CE 2.9.0 appliance specifically; its REST API package
+schema remained an exact 267-path match despite the platform upgrade,
+both before and after installing `pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (59 tools)
+## READ privilege matrix (62 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|
@@ -308,6 +330,9 @@ match despite the platform upgrade, both before and after installing
 | `pfsense_dhcp_servers` | `get_dhcp_servers` | `GET /api/v2/services/dhcp_servers` | `api-v2-services-dhcp-servers-get` | ✅ |
 | `pfsense_dhcp_static_mappings` | `get_dhcp_static_mappings` | `GET /api/v2/services/dhcp_server/static_mappings` | `api-v2-services-dhcp-server-static-mappings-get` | ✅ |
 | `pfsense_diagnostics_tables` | `get_diagnostics_tables` | `GET /api/v2/diagnostics/tables` | `api-v2-diagnostics-tables-get` | ✅ |
+| `pfsense_dns_forwarder_host_overrides` | `get_dns_forwarder_host_overrides` | `GET /api/v2/services/dns_forwarder/host_overrides` | `api-v2-services-dns-forwarder-host-overrides-get` | ✅ |
+| `pfsense_dns_resolver_access_lists` | `get_dns_resolver_access_lists` | `GET /api/v2/services/dns_resolver/access_lists` | `api-v2-services-dns-resolver-access-lists-get` | ✅ |
+| `pfsense_dns_resolver_domain_overrides` | `get_dns_resolver_domain_overrides` | `GET /api/v2/services/dns_resolver/domain_overrides` | `api-v2-services-dns-resolver-domain-overrides-get` | ✅ |
 | `pfsense_dns_resolver_host_overrides` | `get_dns_resolver_host_overrides` | `GET /api/v2/services/dns_resolver/host_overrides` | `api-v2-services-dns-resolver-host-overrides-get` | ✅ |
 | `pfsense_dns_resolver_settings` | `get_dns_resolver_settings` | `GET /api/v2/services/dns_resolver/settings` | `api-v2-services-dns-resolver-settings-get` | ✅ |
 | `pfsense_email_notification_settings` | `get_email_notification_settings` | `GET /api/v2/system/notifications/email_settings` | `api-v2-system-notifications-email-settings-get` | ✅ |
@@ -358,10 +383,10 @@ match despite the platform upgrade, both before and after installing
 | `pfsense_user_groups` | `get_user_groups` | `GET /api/v2/user/groups` | `api-v2-user-groups-get` | ✅ |
 | `pfsense_users` | `get_users` | `GET /api/v2/users` | `api-v2-users-get` | ✅ |
 
-**58 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 58`). A least-privilege
-READ-only identity holding exactly these 58 (never `page-all`) can serve
-every one of this project's 59 registered READ tools.
+**61 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 61`). A least-privilege
+READ-only identity holding exactly these 61 (never `page-all`) can serve
+every one of this project's 62 registered READ tools.
 
 ## Additional client-only capability (not a registered MCP tool)
 
@@ -370,7 +395,7 @@ implemented (added closing ADR-026 row 18) but **no file under
 `tools/read/` calls it** — it is unreachable through the MCP surface
 today, used only for internal evidence-gathering. **Not required for
 "current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as a 60th tool would
+completeness, since a future decision to expose it as a 63rd tool would
 need this privilege:
 
 | Client method | pfSense endpoint | Required privilege | Live-confirmed |
@@ -404,11 +429,11 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 58 READ privileges
+The 4 WRITE privileges are a strict subset of the 61 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **59 distinct privileges**: the 58 READ
+identity therefore needs exactly **62 distinct privileges**: the 61 READ
 privileges plus the one additional `api-v2-firewall-alias-patch`.

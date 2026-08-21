@@ -154,7 +154,7 @@ def test_pfsense_mcp_info_remains_zero_pfsense_call_after_step_3() -> None:
     assert not any("pfsense_client" in m for m in imported)
 
 
-def test_public_contract_remains_59_read_0_write_after_step_3() -> None:
+def test_public_contract_remains_62_read_0_write_after_step_3() -> None:
     import asyncio
 
     from mcp.server.fastmcp import FastMCP
@@ -174,8 +174,8 @@ def test_public_contract_remains_59_read_0_write_after_step_3() -> None:
 
     read_tools = [t for t in tools if t.annotations.readOnlyHint]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 59
-    assert len(read_tools) == 59
+    assert len(tools) == 62
+    assert len(read_tools) == 62
     assert len(write_tools) == 0
 
 

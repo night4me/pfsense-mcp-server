@@ -420,3 +420,26 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-08-21, P1 Batch C, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, zero configured host overrides at
+    # verification time -- ENDPOINT_VERIFIED only.
+    DNS_FORWARDER_HOST_OVERRIDES = EndpointInfo(
+        path_suffix="/services/dns_forwarder/host_overrides",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured domain overrides, ENDPOINT_VERIFIED only.
+    DNS_RESOLVER_DOMAIN_OVERRIDES = EndpointInfo(
+        path_suffix="/services/dns_resolver/domain_overrides",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # verified=True (2026-08-21) -- same LAB verification pass; zero
+    # configured access lists, ENDPOINT_VERIFIED only.
+    DNS_RESOLVER_ACCESS_LISTS = EndpointInfo(
+        path_suffix="/services/dns_resolver/access_lists",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )

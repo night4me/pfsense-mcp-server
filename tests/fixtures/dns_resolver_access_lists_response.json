@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "trusted-lan",
+      "action": "allow",
+      "description": "Synthetic access list (offline fixture)",
+      "networks": [{"network": "198.51.100.0", "mask": 24, "description": ""}]
+    },
+    {
+      "name": "blocked",
+      "action": "deny",
+      "description": "",
+      "networks": []
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

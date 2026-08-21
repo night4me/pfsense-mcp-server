@@ -30,6 +30,9 @@ from .read import (
     dhcp_servers,
     dhcp_static_mappings,
     diagnostics_tables,
+    dns_forwarder_host_overrides,
+    dns_resolver_access_lists,
+    dns_resolver_domain_overrides,
     dns_resolver_host_overrides,
     dns_resolver_settings,
     email_notification_settings,
@@ -110,6 +113,9 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_dhcp_servers",
         "pfsense_get_dhcp_static_mappings",
         "pfsense_get_diagnostics_tables",
+        "pfsense_get_dns_forwarder_host_overrides",
+        "pfsense_get_dns_resolver_access_lists",
+        "pfsense_get_dns_resolver_domain_overrides",
         "pfsense_get_dns_resolver_host_overrides",
         "pfsense_get_dns_resolver_settings",
         "pfsense_get_email_notification_settings",
@@ -310,6 +316,12 @@ class ToolRegistry:
             self._register_status_openvpn_server_connection_read()
         if Capability.STATUS_OPENVPN_SERVER_ROUTE_READ in self._capabilities:
             self._register_status_openvpn_server_route_read()
+        if Capability.DNS_FORWARDER_HOST_OVERRIDE_READ in self._capabilities:
+            self._register_dns_forwarder_host_override_read()
+        if Capability.DNS_RESOLVER_DOMAIN_OVERRIDE_READ in self._capabilities:
+            self._register_dns_resolver_domain_override_read()
+        if Capability.DNS_RESOLVER_ACCESS_LIST_READ in self._capabilities:
+            self._register_dns_resolver_access_list_read()
 
         self.register_all_write()
 
@@ -664,6 +676,21 @@ class ToolRegistry:
     def _register_status_openvpn_server_route_read(self) -> None:
         fn = status_openvpn_server_routes.build(self._client)
         wrapped = audit_logged("pfsense_get_status_openvpn_server_routes", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dns_forwarder_host_override_read(self) -> None:
+        fn = dns_forwarder_host_overrides.build(self._client)
+        wrapped = audit_logged("pfsense_get_dns_forwarder_host_overrides", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dns_resolver_domain_override_read(self) -> None:
+        fn = dns_resolver_domain_overrides.build(self._client)
+        wrapped = audit_logged("pfsense_get_dns_resolver_domain_overrides", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dns_resolver_access_list_read(self) -> None:
+        fn = dns_resolver_access_lists.build(self._client)
+        wrapped = audit_logged("pfsense_get_dns_resolver_access_lists", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

@@ -1332,6 +1332,240 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "DNS_FORWARDER_HOST_OVERRIDE_READ",
+      "client_method": "get_dns_forwarder_host_overrides",
+      "description": "List dnsmasq (DNS Forwarder) host overrides, addresses,\n        aliases, and descriptions. Read-only.\n\n        limit: maximum number of overrides to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dns_forwarder/host_overrides",
+        "symbol": "DNS_FORWARDER_HOST_OVERRIDES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_dns_forwarder_host_overridesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dns_forwarder_host_overrides",
+      "output_schema": {
+        "$defs": {
+          "DnsForwarderHostOverride": {
+            "properties": {
+              "aliases": {
+                "items": {},
+                "title": "Aliases",
+                "type": "array"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "domain": {
+                "title": "Domain",
+                "type": "string"
+              },
+              "host": {
+                "title": "Host",
+                "type": "string"
+              },
+              "ip": {
+                "title": "Ip",
+                "type": "string"
+              }
+            },
+            "required": [
+              "aliases",
+              "descr",
+              "domain",
+              "host",
+              "ip"
+            ],
+            "title": "DnsForwarderHostOverride",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/DnsForwarderHostOverride"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_dns_forwarder_host_overridesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "DNS_RESOLVER_ACCESS_LIST_READ",
+      "client_method": "get_dns_resolver_access_lists",
+      "description": "List Unbound (DNS Resolver) access lists: allow/deny action\n        and the network ranges each list applies to. Read-only.\n\n        limit: maximum number of access lists to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dns_resolver/access_lists",
+        "symbol": "DNS_RESOLVER_ACCESS_LISTS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_dns_resolver_access_listsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dns_resolver_access_lists",
+      "output_schema": {
+        "$defs": {
+          "DnsResolverAccessList": {
+            "properties": {
+              "action": {
+                "title": "Action",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "networks": {
+                "items": {},
+                "title": "Networks",
+                "type": "array"
+              }
+            },
+            "required": [
+              "action",
+              "description",
+              "name",
+              "networks"
+            ],
+            "title": "DnsResolverAccessList",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/DnsResolverAccessList"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_dns_resolver_access_listsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "DNS_RESOLVER_DOMAIN_OVERRIDE_READ",
+      "client_method": "get_dns_resolver_domain_overrides",
+      "description": "List Unbound (DNS Resolver) domain overrides: forwarding\n        target address and DNS-over-TLS settings. Read-only.\n\n        limit: maximum number of overrides to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dns_resolver/domain_overrides",
+        "symbol": "DNS_RESOLVER_DOMAIN_OVERRIDES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_dns_resolver_domain_overridesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dns_resolver_domain_overrides",
+      "output_schema": {
+        "$defs": {
+          "DnsResolverDomainOverride": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "domain": {
+                "title": "Domain",
+                "type": "string"
+              },
+              "forward_tls_upstream": {
+                "title": "Forward Tls Upstream",
+                "type": "boolean"
+              },
+              "ip": {
+                "title": "Ip",
+                "type": "string"
+              },
+              "tls_hostname": {
+                "title": "Tls Hostname",
+                "type": "string"
+              }
+            },
+            "required": [
+              "descr",
+              "domain",
+              "forward_tls_upstream",
+              "ip",
+              "tls_hostname"
+            ],
+            "title": "DnsResolverDomainOverride",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/DnsResolverDomainOverride"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_dns_resolver_domain_overridesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SERVICES_DNS_RESOLVER_READ",
       "client_method": "get_dns_resolver_host_overrides",
       "description": "List pfSense DNS Resolver host overrides (host, domain, IP addresses, aliases, and description).",

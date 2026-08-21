@@ -21,6 +21,9 @@ from .models.dhcp_lease import DhcpLease
 from .models.dhcp_server import DhcpServer
 from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.diagnostics_table import DiagnosticsTable
+from .models.dns_forwarder_host_override import DnsForwarderHostOverride
+from .models.dns_resolver_access_list import DnsResolverAccessList
+from .models.dns_resolver_domain_override import DnsResolverDomainOverride
 from .models.dns_resolver_host_override import DnsResolverHostOverride
 from .models.dns_resolver_settings import DnsResolverSettings
 from .models.email_notification_settings import EmailNotificationSettings
@@ -217,6 +220,18 @@ STATUS_OPENVPN_SERVER_CONNECTIONS_MAX_LIMIT = 100
 
 STATUS_OPENVPN_SERVER_ROUTES_MIN_LIMIT = 1
 STATUS_OPENVPN_SERVER_ROUTES_MAX_LIMIT = 100
+
+
+DNS_FORWARDER_HOST_OVERRIDES_MIN_LIMIT = 1
+DNS_FORWARDER_HOST_OVERRIDES_MAX_LIMIT = 100
+
+
+DNS_RESOLVER_DOMAIN_OVERRIDES_MIN_LIMIT = 1
+DNS_RESOLVER_DOMAIN_OVERRIDES_MAX_LIMIT = 100
+
+
+DNS_RESOLVER_ACCESS_LISTS_MIN_LIMIT = 1
+DNS_RESOLVER_ACCESS_LISTS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -860,3 +875,33 @@ class PfSenseClient:
                 data, include_identifying_metadata=include_identifying_metadata
             ),
         )
+
+    def get_dns_forwarder_host_overrides(self, *, limit: int = 100) -> list[DnsForwarderHostOverride]:
+        if not (DNS_FORWARDER_HOST_OVERRIDES_MIN_LIMIT <= limit <= DNS_FORWARDER_HOST_OVERRIDES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DNS_FORWARDER_HOST_OVERRIDES_MIN_LIMIT} and "
+                f"{DNS_FORWARDER_HOST_OVERRIDES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DNS_FORWARDER_HOST_OVERRIDES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/dns_forwarder/host_overrides", DnsForwarderHostOverride.from_api)
+
+    def get_dns_resolver_domain_overrides(self, *, limit: int = 100) -> list[DnsResolverDomainOverride]:
+        if not (DNS_RESOLVER_DOMAIN_OVERRIDES_MIN_LIMIT <= limit <= DNS_RESOLVER_DOMAIN_OVERRIDES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DNS_RESOLVER_DOMAIN_OVERRIDES_MIN_LIMIT} and "
+                f"{DNS_RESOLVER_DOMAIN_OVERRIDES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DNS_RESOLVER_DOMAIN_OVERRIDES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/dns_resolver/domain_overrides", DnsResolverDomainOverride.from_api)
+
+    def get_dns_resolver_access_lists(self, *, limit: int = 100) -> list[DnsResolverAccessList]:
+        if not (DNS_RESOLVER_ACCESS_LISTS_MIN_LIMIT <= limit <= DNS_RESOLVER_ACCESS_LISTS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {DNS_RESOLVER_ACCESS_LISTS_MIN_LIMIT} and "
+                f"{DNS_RESOLVER_ACCESS_LISTS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.DNS_RESOLVER_ACCESS_LISTS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/dns_resolver/access_lists", DnsResolverAccessList.from_api)
