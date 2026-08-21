@@ -1,14 +1,22 @@
 # Acceptance — v0.5.0
 
-**Status: release-candidate — prepared, not yet tagged or published.**
-The `v0.5.0` git tag, GitHub Release, and PyPI upload do not yet exist as
-of this document. This document records the release-preparation state
-as of the exact commit it ships with; tag/Release/PyPI publication
-remain separate, explicit owner actions taken only after this document
-and that commit SHA have been reviewed. (Learn from `v0.4.0`'s own
-history: an earlier acceptance record in this project once prematurely
-said "published" before a real publish attempt had actually succeeded
-— this document deliberately avoids repeating that mistake.)
+**Status: published — the `v0.5.0` tag and PyPI release point at this
+commit.** The annotated git tag `v0.5.0` was created and pushed pointing
+at commit `0ae522cc678d51cad5891387cdac689f120766db`; the GitHub Release
+was published from that tag, which triggered the `publish.yml` OIDC
+trusted-publishing workflow (build + publish jobs both succeeded,
+including PEP 740 digital attestations). PyPI's JSON API and Simple
+Index both independently confirm `0.5.0` is live (Simple Index shows
+`/provenance` links for both the wheel and sdist). A clean installation
+of `pfsense-mcp-server==0.5.0` from the real PyPI index (not the local
+build) was independently verified after publication: reports version
+`0.5.0`, imports cleanly, exposes exactly 84 READ tools and 0 default
+WRITE tools, and both console entry points (`pfsense-mcp-server`,
+`pfsense-mcp-security`) work correctly. (Unlike `v0.4.0`'s own history
+— an earlier acceptance record in this project once prematurely said
+"published" before a real publish attempt had actually succeeded — this
+status line was only written after independent post-publication
+verification succeeded.)
 
 ## Release scope
 
