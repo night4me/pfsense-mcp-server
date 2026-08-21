@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 79 READ, 0 WRITE
+Registered tools: 82 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -543,6 +543,38 @@ Common parameters:
 - **Security:** Literal local/remote traffic-selector subnets are
   omitted by default.
 - **Example:** `{"name":"pfsense_get_status_ipsec_child_sas","arguments":{}}`
+
+### `pfsense_get_vpn_ipsec_phase2s`
+
+- **Purpose:** List IPsec Phase 2 entries: mode, protocol,
+  encryption/hash options, and rekey timing.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[IPsecPhase2]`.
+- **Security:** Literal local/NAT/remote endpoint addresses and the
+  monitoring ping host are omitted by default. The IPsec PSK is never
+  present on Phase 2 (it lives only on Phase 1, which is not exposed).
+- **Example:** `{"name":"pfsense_get_vpn_ipsec_phase2s","arguments":{}}`
+
+### `pfsense_get_vpn_ipsec_phase1_encryptions`
+
+- **Purpose:** List IPsec Phase 1 encryption algorithm/hash/DH-group
+  capability options.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[IPsecPhase1Encryption]`.
+- **Security:** Pure algorithm/cipher capability reference data; not
+  redacted.
+- **Example:** `{"name":"pfsense_get_vpn_ipsec_phase1_encryptions","arguments":{}}`
+
+### `pfsense_get_vpn_ipsec_phase2_encryptions`
+
+- **Purpose:** List IPsec Phase 2 encryption algorithm capability
+  options.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[IPsecPhase2Encryption]`.
+- **Security:** Pure algorithm capability reference data; not
+  redacted.
+- **Example:** `{"name":"pfsense_get_vpn_ipsec_phase2_encryptions","arguments":{}}`
 
 ### `pfsense_get_status_wireguard_tunnels`
 

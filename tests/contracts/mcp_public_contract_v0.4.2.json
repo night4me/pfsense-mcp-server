@@ -12105,6 +12105,405 @@
     },
     {
       "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_IPSEC_PHASE1_ENCRYPTION_READ",
+      "client_method": "get_vpn_ipsec_phase1_encryptions",
+      "description": "List IPsec Phase 1 encryption algorithm/hash/DH-group\n        capability options. Read-only.\n\n        limit: maximum number of encryption options to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/ipsec/phase1/encryptions",
+        "symbol": "VPN_IPSEC_PHASE1_ENCRYPTIONS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_ipsec_phase1_encryptionsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_ipsec_phase1_encryptions",
+      "output_schema": {
+        "$defs": {
+          "IPsecPhase1Encryption": {
+            "properties": {
+              "dhgroup": {
+                "title": "Dhgroup",
+                "type": "integer"
+              },
+              "encryption_algorithm_keylen": {
+                "title": "Encryption Algorithm Keylen",
+                "type": "integer"
+              },
+              "encryption_algorithm_name": {
+                "title": "Encryption Algorithm Name",
+                "type": "string"
+              },
+              "hash_algorithm": {
+                "title": "Hash Algorithm",
+                "type": "string"
+              },
+              "prf_algorithm": {
+                "title": "Prf Algorithm",
+                "type": "string"
+              }
+            },
+            "required": [
+              "encryption_algorithm_name",
+              "encryption_algorithm_keylen",
+              "hash_algorithm",
+              "dhgroup",
+              "prf_algorithm"
+            ],
+            "title": "IPsecPhase1Encryption",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/IPsecPhase1Encryption"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_ipsec_phase1_encryptionsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_IPSEC_PHASE2_ENCRYPTION_READ",
+      "client_method": "get_vpn_ipsec_phase2_encryptions",
+      "description": "List IPsec Phase 2 encryption algorithm capability options.\n        Read-only.\n\n        limit: maximum number of encryption options to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/ipsec/phase2/encryptions",
+        "symbol": "VPN_IPSEC_PHASE2_ENCRYPTIONS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_ipsec_phase2_encryptionsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_ipsec_phase2_encryptions",
+      "output_schema": {
+        "$defs": {
+          "IPsecPhase2Encryption": {
+            "properties": {
+              "keylen": {
+                "title": "Keylen",
+                "type": "integer"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "keylen"
+            ],
+            "title": "IPsecPhase2Encryption",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/IPsecPhase2Encryption"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_ipsec_phase2_encryptionsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_IPSEC_PHASE2_READ",
+      "client_method": "get_vpn_ipsec_phase2s",
+      "description": "List IPsec Phase 2 entries: mode, protocol, encryption/hash\n        options, and rekey timing. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        local/NAT/remote endpoint addresses and monitoring ping host.\n        Defaults to False.\n\n        limit: maximum number of Phase 2 entries to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/ipsec/phase2s",
+        "symbol": "VPN_IPSEC_PHASE2S",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_ipsec_phase2sArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_ipsec_phase2s",
+      "output_schema": {
+        "$defs": {
+          "IPsecPhase2": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "disabled": {
+                "title": "Disabled",
+                "type": "boolean"
+              },
+              "encryption_algorithm_option": {
+                "items": {
+                  "$ref": "#/$defs/IPsecPhase2Encryption"
+                },
+                "title": "Encryption Algorithm Option",
+                "type": "array"
+              },
+              "hash_algorithm_option": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Hash Algorithm Option",
+                "type": "array"
+              },
+              "ikeid": {
+                "title": "Ikeid",
+                "type": "integer"
+              },
+              "keepalive": {
+                "title": "Keepalive",
+                "type": "boolean"
+              },
+              "lifetime": {
+                "title": "Lifetime",
+                "type": "integer"
+              },
+              "localid_address": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Localid Address"
+              },
+              "localid_netbits": {
+                "title": "Localid Netbits",
+                "type": "integer"
+              },
+              "localid_type": {
+                "title": "Localid Type",
+                "type": "string"
+              },
+              "mode": {
+                "title": "Mode",
+                "type": "string"
+              },
+              "natlocalid_address": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Natlocalid Address"
+              },
+              "natlocalid_netbits": {
+                "title": "Natlocalid Netbits",
+                "type": "integer"
+              },
+              "natlocalid_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Natlocalid Type"
+              },
+              "pfsgroup": {
+                "title": "Pfsgroup",
+                "type": "integer"
+              },
+              "pinghost": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Pinghost"
+              },
+              "protocol": {
+                "title": "Protocol",
+                "type": "string"
+              },
+              "rand_time": {
+                "title": "Rand Time",
+                "type": "integer"
+              },
+              "rekey_time": {
+                "title": "Rekey Time",
+                "type": "integer"
+              },
+              "remoteid_address": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remoteid Address"
+              },
+              "remoteid_netbits": {
+                "title": "Remoteid Netbits",
+                "type": "integer"
+              },
+              "remoteid_type": {
+                "title": "Remoteid Type",
+                "type": "string"
+              },
+              "reqid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Reqid"
+              },
+              "uniqid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Uniqid"
+              }
+            },
+            "required": [
+              "uniqid",
+              "reqid",
+              "ikeid",
+              "descr",
+              "disabled",
+              "mode",
+              "localid_type",
+              "localid_netbits",
+              "natlocalid_type",
+              "natlocalid_netbits",
+              "remoteid_type",
+              "remoteid_netbits",
+              "protocol",
+              "encryption_algorithm_option",
+              "hash_algorithm_option",
+              "pfsgroup",
+              "rekey_time",
+              "rand_time",
+              "lifetime",
+              "keepalive"
+            ],
+            "title": "IPsecPhase2",
+            "type": "object"
+          },
+          "IPsecPhase2Encryption": {
+            "properties": {
+              "keylen": {
+                "title": "Keylen",
+                "type": "integer"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "keylen"
+            ],
+            "title": "IPsecPhase2Encryption",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/IPsecPhase2"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_ipsec_phase2sOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
         "openWorldHint": false,
         "readOnlyHint": true
       },

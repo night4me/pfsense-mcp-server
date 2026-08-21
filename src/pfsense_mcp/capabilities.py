@@ -77,6 +77,9 @@ class Capability(Enum):
     SYSTEM_CRLS_READ = auto()
     SYSTEM_PACKAGE_AVAILABLE_READ = auto()
     FIREWALL_TRAFFIC_SHAPERS_READ = auto()
+    VPN_IPSEC_PHASE2_READ = auto()
+    VPN_IPSEC_PHASE1_ENCRYPTION_READ = auto()
+    VPN_IPSEC_PHASE2_ENCRYPTION_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -160,6 +163,9 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.SYSTEM_CRLS_READ,
         Capability.SYSTEM_PACKAGE_AVAILABLE_READ,
         Capability.FIREWALL_TRAFFIC_SHAPERS_READ,
+        Capability.VPN_IPSEC_PHASE2_READ,
+        Capability.VPN_IPSEC_PHASE1_ENCRYPTION_READ,
+        Capability.VPN_IPSEC_PHASE2_ENCRYPTION_READ,
     }
 )
 

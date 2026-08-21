@@ -99,6 +99,9 @@ from .read import (
     system_webgui_settings,
     user_groups,
     users,
+    vpn_ipsec_phase1_encryptions,
+    vpn_ipsec_phase2_encryptions,
+    vpn_ipsec_phase2s,
 )
 from .write import set_firewall_alias_description
 
@@ -198,6 +201,9 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_system_webgui_settings",
         "pfsense_get_user_groups",
         "pfsense_get_users",
+        "pfsense_get_vpn_ipsec_phase1_encryptions",
+        "pfsense_get_vpn_ipsec_phase2_encryptions",
+        "pfsense_get_vpn_ipsec_phase2s",
         "pfsense_mcp_info",
     }
 )
@@ -390,6 +396,12 @@ class ToolRegistry:
             self._register_system_package_available_read()
         if Capability.FIREWALL_TRAFFIC_SHAPERS_READ in self._capabilities:
             self._register_firewall_traffic_shapers_read()
+        if Capability.VPN_IPSEC_PHASE2_READ in self._capabilities:
+            self._register_vpn_ipsec_phase2_read()
+        if Capability.VPN_IPSEC_PHASE1_ENCRYPTION_READ in self._capabilities:
+            self._register_vpn_ipsec_phase1_encryption_read()
+        if Capability.VPN_IPSEC_PHASE2_ENCRYPTION_READ in self._capabilities:
+            self._register_vpn_ipsec_phase2_encryption_read()
 
         self.register_all_write()
 
@@ -844,6 +856,21 @@ class ToolRegistry:
     def _register_firewall_traffic_shapers_read(self) -> None:
         fn = firewall_traffic_shapers.build(self._client)
         wrapped = audit_logged("pfsense_get_firewall_traffic_shapers", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_ipsec_phase2_read(self) -> None:
+        fn = vpn_ipsec_phase2s.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_ipsec_phase2s", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_ipsec_phase1_encryption_read(self) -> None:
+        fn = vpn_ipsec_phase1_encryptions.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_ipsec_phase1_encryptions", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_ipsec_phase2_encryption_read(self) -> None:
+        fn = vpn_ipsec_phase2_encryptions.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_ipsec_phase2_encryptions", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

@@ -619,31 +619,27 @@ class Endpoints:
         verified=False,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch I candidate -- re-checked against the pinned schema for
-    # secrets before implementation. Re-confirmed the PSK lives only on
-    # IPsecPhase1, already REJECTed separately -- no secret material on
-    # Phase 2 itself. localid_address/natlocalid_address/
-    # remoteid_address/pinghost redacted by default. No package
-    # required (base pfSense feature). Not yet LAB-verified.
+    # verified=True (2026-08-21, P1 Batch I, LAB-only verification
+    # against https://pfsense-test.lab.invalid, pfSense CE 2.9.0-RELEASE):
+    # HTTP 200, correct envelope, zero configured Phase 2 entries at
+    # verification time -- ENDPOINT_VERIFIED only.
     VPN_IPSEC_PHASE2S = EndpointInfo(
         path_suffix="/vpn/ipsec/phase2s",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch I candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found; pure algorithm/cipher
-    # capability reference data). No package required. Not yet
-    # LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; HTTP
+    # 200, {"data": []} -- ENDPOINT_VERIFIED only (no IPsec Phase 1
+    # configured on this LAB to derive capability options from).
     VPN_IPSEC_PHASE1_ENCRYPTIONS = EndpointInfo(
         path_suffix="/vpn/ipsec/phase1/encryptions",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
-    # P1 Batch I candidate -- re-checked against the pinned schema for
-    # secrets before implementation (none found). No package required.
-    # Not yet LAB-verified.
+    # verified=True (2026-08-21) -- same LAB verification pass; HTTP
+    # 200, {"data": []} -- ENDPOINT_VERIFIED only.
     VPN_IPSEC_PHASE2_ENCRYPTIONS = EndpointInfo(
         path_suffix="/vpn/ipsec/phase2/encryptions",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

@@ -1271,6 +1271,21 @@
         "description": "<h3>Description:</h3>Reads all existing IPsec SA Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: IPsecSAStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-ipsec-sas-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
       }
     },
+    "/api/v2/vpn/ipsec/phase1/encryptions": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing IPsec Phase 1 Encryptions.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: IPsecPhase1Encryption<br>**Parent model**: IPsecPhase1<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-ipsec-phase1-encryptions-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/ipsec/phase2/encryptions": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing IPsec Phase 2 Encryptions.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: IPsecPhase2Encryption<br>**Parent model**: IPsecPhase2<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-ipsec-phase2-encryptions-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/ipsec/phase2s": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing IPsec Phase 2s.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: IPsecPhase2<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-ipsec-phase2s-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
     "/api/v2/status/openvpn/clients": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing OpenVPN Client Statuses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNClientStatus<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-openvpn-clients-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
