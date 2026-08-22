@@ -51,7 +51,7 @@ _FORBIDDEN_FIELD_NAMES = {
 }
 
 
-def _synthetic_source(excerpt: str) -> DocumentSource:
+def _synthetic_source(text: str) -> DocumentSource:
     return DocumentSource(
         source_id="synthetic_adversarial_doc",
         title="Synthetic adversarial content (test-only)",
@@ -60,8 +60,10 @@ def _synthetic_source(excerpt: str) -> DocumentSource:
         version_applicability="unversioned",
         evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
         retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
-        content_excerpt=excerpt,
-        content_hash=excerpt_hash(excerpt),
+        summary=text,
+        summary_hash=excerpt_hash(text),
+        source_verification_excerpt="Synthetic verification anchor (test-only).",
+        source_verification_hash=excerpt_hash("Synthetic verification anchor (test-only)."),
         license_note="Synthetic, test-only.",
     )
 
@@ -74,7 +76,7 @@ def test_adversarial_excerpt_is_accepted_as_inert_bounded_data(adversarial_text:
     for, not from rejecting suspicious-looking text.
     """
     source = _synthetic_source(adversarial_text)
-    assert source.content_excerpt == adversarial_text
+    assert source.summary == adversarial_text
 
 
 @pytest.mark.parametrize("adversarial_text", ADVERSARIAL_EXCERPTS)
@@ -85,10 +87,10 @@ def test_adversarial_excerpt_never_reaches_a_capability_or_authorization_field(a
         source_id=source.source_id,
         title=source.title,
         canonical_url=source.canonical_url,
-        content_excerpt=source.content_excerpt,
-        content_hash=source.content_hash,
+        summary=source.summary,
+        summary_hash=source.summary_hash,
         pfsense_edition=source.pfsense_edition,
-        trust_label="pinned-snapshot",
+        trust_label="pinned-summary",
         applicability="applicable",  # type: ignore[arg-type]
         evidence_level=source.evidence_level,
         applicable_overlay_chain=(),
@@ -98,12 +100,15 @@ def test_adversarial_excerpt_never_reaches_a_capability_or_authorization_field(a
         snapshot_version="test-only",
     )
     assert _FORBIDDEN_FIELD_NAMES.isdisjoint(type(reference).model_fields)
-    # Verbatim, never rewritten/summarized/"sanitized" into something
-    # else -- I4's own discipline holds even for adversarial text.
-    assert reference.content_excerpt == adversarial_text
+    # Never rewritten/"sanitized" at runtime -- whatever text a curator put
+    # in the summary field is returned byte-for-byte; I4's own discipline
+    # holds even for adversarial text (safety comes from the schema having
+    # no field an authorization decision could be read from, never from
+    # filtering or transforming content).
+    assert reference.summary == adversarial_text
     bridged = bridge_guidance_reference(reference)
     assert _FORBIDDEN_FIELD_NAMES.isdisjoint(type(bridged).model_fields)
-    assert bridged.content_excerpt == adversarial_text
+    assert bridged.summary == adversarial_text
 
 
 def test_adversarial_excerpt_over_the_bound_is_still_rejected_by_length_not_content():

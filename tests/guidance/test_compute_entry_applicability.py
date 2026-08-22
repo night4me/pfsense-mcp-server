@@ -37,7 +37,8 @@ def _entry_kwargs(**overrides: object) -> dict[str, object]:
 
 
 def _overlay(overlay_id: str, **overrides: object) -> ReleaseOverlay:
-    excerpt = overrides.pop("caveat_excerpt", f"Caveat for {overlay_id}.")
+    summary = overrides.pop("caveat_summary", f"Caveat for {overlay_id}, project-authored summary.")
+    verification = overrides.pop("source_verification_excerpt", f"Caveat for {overlay_id}.")
     defaults: dict[str, object] = {
         "overlay_id": overlay_id,
         "capability": "ALIAS_READ",
@@ -45,9 +46,11 @@ def _overlay(overlay_id: str, **overrides: object) -> ReleaseOverlay:
         "applies_to_edition": Edition.CE,
         "evidence_level": EvidenceLevel.EXPLICIT_VERSION_SCOPED,
         "supersedes_id": None,
-        "caveat_excerpt": excerpt,
+        "caveat_summary": summary,
+        "caveat_summary_hash": excerpt_hash(summary),
+        "source_verification_excerpt": verification,
+        "source_verification_hash": excerpt_hash(verification),
         "canonical_url": _VALID_URL,
-        "content_hash": excerpt_hash(excerpt),
     }
     defaults.update(overrides)
     return ReleaseOverlay(**defaults)

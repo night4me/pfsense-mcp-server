@@ -11,6 +11,39 @@ is a constrained slug, not free text; `canonical_url` is validated against
 a small, explicit hostname allow-list at construction time (I3). Both
 constraints were gaps in this module's first draft, found and fixed by
 `reports-ai/reviews/ADR_017_RED_TEAM.md` (Findings 1 and 2).
+
+**Provenance-model revision (2026-08-22, owner-authorized)**: the original
+accepted design's `content_excerpt` field held a short *verbatim quotation*
+from the official source, hashed by `content_hash`. The owner has since
+directed a conservative move away from depending on redistributed Netgate
+prose. This revision splits that one field/hash pair into two, each with a
+distinct, non-overlapping purpose:
+
+- `summary` / `summary_hash` -- a **project-authored** explanation of the
+  capability, independently written (never a quotation, never superficial
+  word-substitution of the source text). This is the only content-bearing
+  field `GuidanceReference`/`EvidenceReference` ever exposes to a consumer.
+  `summary_hash` pins the exact summary text that shipped (drift-detects an
+  edit to the summary itself, same mechanical role `content_hash` always
+  played -- pin what ships -- now applied to project-authored text instead
+  of a quotation).
+- `source_verification_excerpt` / `source_verification_hash` -- a short
+  (<= `MAX_VERIFICATION_EXCERPT_LENGTH`, far below the old excerpt bound),
+  genuinely verbatim anchor phrase drawn from the official source page,
+  used **exclusively** by `scripts/guidance_corpus_audit.py`'s maintainer-
+  only drift check (substring presence on the live page). This pair exists
+  only on `DocumentSource`/`ReleaseOverlay` (registry-authoring input) --
+  it is deliberately **not** part of `GuidanceReference`/`EvidenceReference`
+  (G1/TB-G2: no reason for any consumer to see a maintainer verification
+  anchor, and keeping it out of the consumer-facing schema is itself part
+  of minimizing what leaves this layer). Its bound is small specifically
+  because its only job is confirming *this page still contains what the
+  summary was based on* -- it is not, and must never become, a second
+  quotation-sized excerpt.
+
+This keeps ADR-017/018's architecture unchanged (same three-layer
+separation, same deterministic registry, same isolation boundaries) -- it
+is a field-level provenance refinement, not a redesign.
 """
 
 from __future__ import annotations
@@ -37,6 +70,12 @@ ALLOWED_DOCUMENT_HOSTS: frozenset[str] = frozenset({"docs.netgate.com"})
 MAX_TITLE_LENGTH = 200
 MAX_EXCERPT_LENGTH = 2000
 MAX_LICENSE_NOTE_LENGTH = 500
+
+#: Deliberately much smaller than `MAX_EXCERPT_LENGTH`: this bound exists
+#: for `source_verification_excerpt`, a maintainer-only drift-detection
+#: anchor, never a second quotation-sized excerpt (2026-08-22 provenance
+#: revision -- see module docstring).
+MAX_VERIFICATION_EXCERPT_LENGTH = 300
 
 #: I3: the only legal `version_applicability` values are this literal and
 #: an exact `SystemVersion.version` string -- no ranges, no operators, no
@@ -150,7 +189,13 @@ def _validate_canonical_url(value: str) -> str:
 class DocumentSource(BaseModel):
     """One Git-tracked, PR-reviewed registry entry (I3). Never constructed
     from a network response, environment variable, or any other
-    request-time input (I2)."""
+    request-time input (I2).
+
+    `summary` is project-authored (2026-08-22 provenance revision -- see
+    module docstring); `source_verification_excerpt` is the only verbatim
+    text this model carries, bounded far smaller than the old excerpt,
+    used exclusively by the maintainer-only corpus-drift audit.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -161,8 +206,10 @@ class DocumentSource(BaseModel):
     version_applicability: str
     evidence_level: EvidenceLevel
     retrieval_mode: RetrievalMode
-    content_excerpt: str = Field(max_length=MAX_EXCERPT_LENGTH)
-    content_hash: str
+    summary: str = Field(max_length=MAX_EXCERPT_LENGTH)
+    summary_hash: str
+    source_verification_excerpt: str = Field(max_length=MAX_VERIFICATION_EXCERPT_LENGTH)
+    source_verification_hash: str
     license_note: str = Field(max_length=MAX_LICENSE_NOTE_LENGTH)
 
     @field_validator("canonical_url")
@@ -170,11 +217,11 @@ class DocumentSource(BaseModel):
     def _check_canonical_url(cls, value: str) -> str:
         return _validate_canonical_url(value)
 
-    @field_validator("content_hash")
+    @field_validator("summary_hash", "source_verification_hash")
     @classmethod
-    def _check_content_hash_shape(cls, value: str) -> str:
+    def _check_hash_shape(cls, value: str) -> str:
         if not re.fullmatch(r"[0-9a-f]{64}", value):
-            raise ValueError("content_hash must be a lowercase hex sha256 digest")
+            raise ValueError("hash fields must be a lowercase hex sha256 digest")
         return value
 
 
@@ -194,6 +241,12 @@ class GuidanceReference(BaseModel):
     `trust_label` is unchanged, still present here (only the separate
     `EvidenceReference` type, produced by `bridge.bridge_guidance_reference()`,
     omits it -- see that module for why).
+
+    **Provenance-model revision (2026-08-22)**: `content_excerpt`/
+    `content_hash` are replaced by `summary`/`summary_hash` (module
+    docstring). `DocumentSource.source_verification_excerpt`/
+    `source_verification_hash` are deliberately **not** fields here --
+    that pair is maintainer-audit-only and never reaches any consumer.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -208,8 +261,8 @@ class GuidanceReference(BaseModel):
     source_id: str = Field(pattern=SOURCE_ID_PATTERN)
     title: str = Field(max_length=MAX_TITLE_LENGTH)
     canonical_url: str
-    content_excerpt: str = Field(max_length=MAX_EXCERPT_LENGTH)
-    content_hash: str
+    summary: str = Field(max_length=MAX_EXCERPT_LENGTH)
+    summary_hash: str
     pfsense_edition: Edition
     trust_label: str
     applicability: ApplicabilityState
@@ -229,3 +282,10 @@ class GuidanceReference(BaseModel):
     @classmethod
     def _check_canonical_url(cls, value: str) -> str:
         return _validate_canonical_url(value)
+
+    @field_validator("summary_hash")
+    @classmethod
+    def _check_summary_hash_shape(cls, value: str) -> str:
+        if not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise ValueError("summary_hash must be a lowercase hex sha256 digest")
+        return value

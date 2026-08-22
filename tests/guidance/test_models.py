@@ -3,6 +3,11 @@ title/license_note bounds, source_id pattern, and canonical_url
 allow-list -- each independently, per Findings 1 and 2 of
 `reports-ai/reviews/ADR_017_RED_TEAM.md`, which is exactly why this test
 module exercises each field on its own rather than only a happy path.
+
+Updated 2026-08-22 for the summary/verification-anchor provenance
+revision: `content_excerpt`/`content_hash` are `summary`/`summary_hash`
+(project-authored); `source_verification_excerpt`/`source_verification_hash`
+are new, separately-bounded fields for the maintainer-audit-only anchor.
 """
 
 import pytest
@@ -13,6 +18,7 @@ from pfsense_mcp.guidance.models import (
     MAX_EXCERPT_LENGTH,
     MAX_LICENSE_NOTE_LENGTH,
     MAX_TITLE_LENGTH,
+    MAX_VERIFICATION_EXCERPT_LENGTH,
     UNVERSIONED,
     ApplicabilityState,
     DocumentSource,
@@ -24,7 +30,8 @@ from pfsense_mcp.guidance.models import (
 )
 
 _VALID_URL = "https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html"
-_VALID_EXCERPT = "Aliases define groups of ports, hosts, or networks."
+_VALID_SUMMARY = "Aliases group ports, hosts, or networks so rules can reference them by name."
+_VALID_VERIFICATION_EXCERPT = "Aliases define groups of ports, hosts, or networks."
 
 
 def _valid_source_kwargs(**overrides: object) -> dict[str, object]:
@@ -36,9 +43,11 @@ def _valid_source_kwargs(**overrides: object) -> dict[str, object]:
         "version_applicability": UNVERSIONED,
         "evidence_level": EvidenceLevel.EXPLICIT_UNVERSIONED,
         "retrieval_mode": RetrievalMode.BUNDLED_SNAPSHOT,
-        "content_excerpt": _VALID_EXCERPT,
-        "content_hash": excerpt_hash(_VALID_EXCERPT),
-        "license_note": "Short quotation, contextual reference only.",
+        "summary": _VALID_SUMMARY,
+        "summary_hash": excerpt_hash(_VALID_SUMMARY),
+        "source_verification_excerpt": _VALID_VERIFICATION_EXCERPT,
+        "source_verification_hash": excerpt_hash(_VALID_VERIFICATION_EXCERPT),
+        "license_note": "Short verification anchor only, contextual reference.",
     }
     kwargs.update(overrides)
     return kwargs
@@ -77,10 +86,20 @@ def test_document_source_rejects_oversized_title():
         DocumentSource(**_valid_source_kwargs(title="x" * (MAX_TITLE_LENGTH + 1)))
 
 
-def test_document_source_rejects_oversized_excerpt():
+def test_document_source_rejects_oversized_summary():
     oversized = "x" * (MAX_EXCERPT_LENGTH + 1)
     with pytest.raises(ValidationError):
-        DocumentSource(**_valid_source_kwargs(content_excerpt=oversized, content_hash=excerpt_hash(oversized)))
+        DocumentSource(**_valid_source_kwargs(summary=oversized, summary_hash=excerpt_hash(oversized)))
+
+
+def test_document_source_rejects_oversized_verification_excerpt():
+    oversized = "x" * (MAX_VERIFICATION_EXCERPT_LENGTH + 1)
+    with pytest.raises(ValidationError):
+        DocumentSource(
+            **_valid_source_kwargs(
+                source_verification_excerpt=oversized, source_verification_hash=excerpt_hash(oversized)
+            )
+        )
 
 
 def test_document_source_rejects_oversized_license_note():
@@ -88,9 +107,14 @@ def test_document_source_rejects_oversized_license_note():
         DocumentSource(**_valid_source_kwargs(license_note="x" * (MAX_LICENSE_NOTE_LENGTH + 1)))
 
 
-def test_document_source_rejects_malformed_content_hash():
+def test_document_source_rejects_malformed_summary_hash():
     with pytest.raises(ValidationError):
-        DocumentSource(**_valid_source_kwargs(content_hash="not-a-hash"))
+        DocumentSource(**_valid_source_kwargs(summary_hash="not-a-hash"))
+
+
+def test_document_source_rejects_malformed_verification_hash():
+    with pytest.raises(ValidationError):
+        DocumentSource(**_valid_source_kwargs(source_verification_hash="not-a-hash"))
 
 
 def test_document_source_is_frozen():
@@ -109,16 +133,22 @@ def test_document_source_accepts_every_evidence_level_value():
         DocumentSource(**_valid_source_kwargs(evidence_level=level))
 
 
+def test_document_source_has_no_content_excerpt_or_content_hash_field():
+    # The old verbatim-quotation fields must not silently reappear.
+    assert "content_excerpt" not in DocumentSource.model_fields
+    assert "content_hash" not in DocumentSource.model_fields
+
+
 def _valid_reference_kwargs(**overrides: object) -> dict[str, object]:
     kwargs: dict[str, object] = {
         "capability": "ALIAS_READ",
         "source_id": "netgate_docs_aliases",
         "title": "Aliases",
         "canonical_url": _VALID_URL,
-        "content_excerpt": _VALID_EXCERPT,
-        "content_hash": excerpt_hash(_VALID_EXCERPT),
+        "summary": _VALID_SUMMARY,
+        "summary_hash": excerpt_hash(_VALID_SUMMARY),
         "pfsense_edition": Edition.BOTH,
-        "trust_label": "pinned-snapshot",
+        "trust_label": "pinned-summary",
         "applicability": ApplicabilityState.APPLICABLE,
         "evidence_level": EvidenceLevel.EXPLICIT_UNVERSIONED,
         "applicable_overlay_chain": (),
@@ -162,8 +192,8 @@ def test_guidance_reference_has_no_capability_selection_field():
         "source_id",
         "title",
         "canonical_url",
-        "content_excerpt",
-        "content_hash",
+        "summary",
+        "summary_hash",
         "pfsense_edition",
         "trust_label",
         "applicability",
@@ -176,3 +206,9 @@ def test_guidance_reference_has_no_capability_selection_field():
     }
     forbidden_names = {"endpoint", "method", "http_method", "confirmation_token", "confirmation", "signature"}
     assert forbidden_names.isdisjoint(GuidanceReference.model_fields)
+
+
+def test_guidance_reference_has_no_source_verification_excerpt_field():
+    # The maintainer-audit-only anchor must never leak to a consumer-facing type.
+    assert "source_verification_excerpt" not in GuidanceReference.model_fields
+    assert "source_verification_hash" not in GuidanceReference.model_fields

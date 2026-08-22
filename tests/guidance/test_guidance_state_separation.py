@@ -42,10 +42,10 @@ def test_scenario_a_dns_resolver_guidance_never_encodes_the_observed_enabled_fla
     )
     assert len(guidance_off) == 1
     assert len(guidance_on) == 1
-    # Identical content_excerpt regardless of what a caller claims the
-    # observed appliance state is -- proof the excerpt is fixed registry
-    # data, not derived from (or reactive to) any live fact.
-    assert guidance_off[0].content_excerpt == guidance_on[0].content_excerpt
+    # Identical summary regardless of what a caller claims the observed
+    # appliance state is -- proof the summary is fixed registry data, not
+    # derived from (or reactive to) any live fact.
+    assert guidance_off[0].summary == guidance_on[0].summary
     assert "enable" not in GuidanceReference.model_fields
     assert "enabled" not in GuidanceReference.model_fields
     assert "status" not in GuidanceReference.model_fields
@@ -63,11 +63,11 @@ def test_scenario_b_gateway_guidance_never_encodes_the_observed_down_state():
     reference = result[0]
     status_like_fields = {"status", "is_down", "is_up", "state", "reachable", "latency", "packet_loss"}
     assert status_like_fields.isdisjoint(GuidanceReference.model_fields)
-    # The excerpt is definitional prose about what a gateway *is*, never a
+    # The summary is definitional prose about what a gateway *is*, never a
     # live status sentence -- spot-check it does not itself assert an
     # up/down fact about any specific appliance.
-    assert "is down" not in reference.content_excerpt.lower()
-    assert "is up" not in reference.content_excerpt.lower()
+    assert "is down" not in reference.summary.lower()
+    assert "is up" not in reference.summary.lower()
 
 
 def test_scenario_c_firewall_rule_editing_guidance_creates_no_write_authorization():
@@ -89,8 +89,10 @@ def test_scenario_c_firewall_rule_editing_guidance_creates_no_write_authorizatio
         version_applicability="unversioned",
         evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
         retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
-        content_excerpt=instructional_excerpt,
-        content_hash=excerpt_hash(instructional_excerpt),
+        summary=instructional_excerpt,
+        summary_hash=excerpt_hash(instructional_excerpt),
+        source_verification_excerpt="Synthetic verification anchor (test-only).",
+        source_verification_hash=excerpt_hash("Synthetic verification anchor (test-only)."),
         license_note="Synthetic, test-only.",
     )
     reference = GuidanceReference(
@@ -98,10 +100,10 @@ def test_scenario_c_firewall_rule_editing_guidance_creates_no_write_authorizatio
         source_id=synthetic.source_id,
         title=synthetic.title,
         canonical_url=synthetic.canonical_url,
-        content_excerpt=synthetic.content_excerpt,
-        content_hash=synthetic.content_hash,
+        summary=synthetic.summary,
+        summary_hash=synthetic.summary_hash,
         pfsense_edition=synthetic.pfsense_edition,
-        trust_label="pinned-snapshot",
+        trust_label="pinned-summary",
         applicability="applicable",  # type: ignore[arg-type]
         evidence_level=synthetic.evidence_level,
         applicable_overlay_chain=(),
@@ -130,4 +132,4 @@ def test_scenario_c_firewall_rule_editing_guidance_creates_no_write_authorizatio
     assert forbidden_field_names.isdisjoint(type(bridged).model_fields)
     # The instructional text itself is preserved verbatim as inert data,
     # never parsed into an action.
-    assert bridged.content_excerpt == instructional_excerpt
+    assert bridged.summary == instructional_excerpt

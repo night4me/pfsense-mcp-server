@@ -48,6 +48,7 @@ from .models import (
     APPLICABILITY_STATE_ORDER,
     MAX_EXCERPT_LENGTH,
     MAX_TITLE_LENGTH,
+    MAX_VERIFICATION_EXCERPT_LENGTH,
     SOURCE_ID_PATTERN,
     ApplicabilityState,
     Edition,
@@ -72,6 +73,13 @@ class ReleaseOverlay(BaseModel):
     Finding 6) -- same trust model as `DocumentSource`: never
     constructed from request-time input, same bounded-field/
     allow-listed-host discipline.
+
+    Same 2026-08-22 provenance revision as `DocumentSource`: `caveat_summary`
+    is project-authored (never a quotation of a release note); a short,
+    genuinely verbatim `source_verification_excerpt` exists solely for the
+    maintainer-only corpus-drift audit. Currently no entries exist in
+    `_OVERLAY_REGISTRY`, so no prior verbatim content needed migrating --
+    this shape applies from the first real entry onward.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -85,20 +93,22 @@ class ReleaseOverlay(BaseModel):
         default=None,
         description="A DocumentSource.source_id or another ReleaseOverlay.overlay_id -- both share SOURCE_ID_PATTERN.",
     )
-    caveat_excerpt: str = Field(max_length=MAX_EXCERPT_LENGTH)
+    caveat_summary: str = Field(max_length=MAX_EXCERPT_LENGTH)
+    caveat_summary_hash: str
+    source_verification_excerpt: str = Field(max_length=MAX_VERIFICATION_EXCERPT_LENGTH)
+    source_verification_hash: str
     canonical_url: str
-    content_hash: str
 
     @field_validator("canonical_url")
     @classmethod
     def _check_canonical_url(cls, value: str) -> str:
         return _validate_canonical_url(value)
 
-    @field_validator("content_hash")
+    @field_validator("caveat_summary_hash", "source_verification_hash")
     @classmethod
-    def _check_content_hash_shape(cls, value: str) -> str:
+    def _check_hash_shape(cls, value: str) -> str:
         if not re.fullmatch(r"[0-9a-f]{64}", value):
-            raise ValueError("content_hash must be a lowercase hex sha256 digest")
+            raise ValueError("hash fields must be a lowercase hex sha256 digest")
         return value
 
     @field_validator("supersedes_id")
@@ -114,6 +124,11 @@ class EvidenceReference(BaseModel):
     additive counterpart to `models.GuidanceReference`, not a
     replacement (see module docstring). No field here is a capability,
     endpoint, HTTP method, or confirmation token (G1, unchanged).
+
+    Same 2026-08-22 provenance revision: `summary`/`summary_hash` replace
+    `content_excerpt`/`content_hash` -- project-authored, never a
+    quotation. `source_verification_excerpt` is deliberately not a field
+    here (maintainer-audit-only, `DocumentSource`-internal).
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -122,8 +137,8 @@ class EvidenceReference(BaseModel):
     source_id: str = Field(pattern=SOURCE_ID_PATTERN)
     title: str = Field(max_length=MAX_TITLE_LENGTH)
     canonical_url: str
-    content_excerpt: str = Field(max_length=MAX_EXCERPT_LENGTH)
-    content_hash: str
+    summary: str = Field(max_length=MAX_EXCERPT_LENGTH)
+    summary_hash: str
     pfsense_edition: Edition
     evidence_level: EvidenceLevel
     applicability: ApplicabilityState
@@ -144,11 +159,11 @@ class EvidenceReference(BaseModel):
     def _check_canonical_url(cls, value: str) -> str:
         return _validate_canonical_url(value)
 
-    @field_validator("content_hash")
+    @field_validator("summary_hash")
     @classmethod
-    def _check_content_hash_shape(cls, value: str) -> str:
+    def _check_summary_hash_shape(cls, value: str) -> str:
         if not re.fullmatch(r"[0-9a-f]{64}", value):
-            raise ValueError("content_hash must be a lowercase hex sha256 digest")
+            raise ValueError("summary_hash must be a lowercase hex sha256 digest")
         return value
 
 

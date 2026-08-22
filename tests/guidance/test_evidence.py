@@ -23,7 +23,8 @@ _VALID_URL = "https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html"
 
 
 def _overlay(**overrides: object) -> ReleaseOverlay:
-    excerpt = overrides.pop("caveat_excerpt", "Behavior changed in this release.")
+    summary = overrides.pop("caveat_summary", "Behavior changed in this release, per project-authored summary.")
+    verification = overrides.pop("source_verification_excerpt", "Behavior changed in this release.")
     defaults: dict[str, object] = {
         "overlay_id": "test_overlay_one",
         "capability": "ALIAS_READ",
@@ -31,23 +32,25 @@ def _overlay(**overrides: object) -> ReleaseOverlay:
         "applies_to_edition": Edition.BOTH,
         "evidence_level": EvidenceLevel.EXPLICIT_VERSION_SCOPED,
         "supersedes_id": None,
-        "caveat_excerpt": excerpt,
+        "caveat_summary": summary,
+        "caveat_summary_hash": excerpt_hash(summary),
+        "source_verification_excerpt": verification,
+        "source_verification_hash": excerpt_hash(verification),
         "canonical_url": _VALID_URL,
-        "content_hash": excerpt_hash(excerpt),
     }
     defaults.update(overrides)
     return ReleaseOverlay(**defaults)
 
 
 def _evidence_reference(**overrides: object) -> EvidenceReference:
-    excerpt = overrides.pop("content_excerpt", "Aliases define groups of ports, hosts, or networks.")
+    summary = overrides.pop("summary", "Aliases group ports, hosts, or networks so rules can reference them by name.")
     defaults: dict[str, object] = {
         "capability": "ALIAS_READ",
         "source_id": "netgate_docs_aliases",
         "title": "Aliases",
         "canonical_url": _VALID_URL,
-        "content_excerpt": excerpt,
-        "content_hash": excerpt_hash(excerpt),
+        "summary": summary,
+        "summary_hash": excerpt_hash(summary),
         "pfsense_edition": Edition.BOTH,
         "evidence_level": EvidenceLevel.EXPLICIT_VERSION_SCOPED,
         "applicability": ApplicabilityState.APPLICABLE,
@@ -145,14 +148,24 @@ def test_release_overlay_rejects_non_https_scheme() -> None:
         _overlay(canonical_url="http://docs.netgate.com/aliases.html")
 
 
-def test_release_overlay_rejects_malformed_content_hash() -> None:
+def test_release_overlay_rejects_malformed_caveat_summary_hash() -> None:
     with pytest.raises(ValidationError):
-        _overlay(content_hash="not-a-hex-digest")
+        _overlay(caveat_summary_hash="not-a-hex-digest")
 
 
-def test_release_overlay_rejects_oversized_excerpt() -> None:
+def test_release_overlay_rejects_malformed_verification_hash() -> None:
     with pytest.raises(ValidationError):
-        _overlay(caveat_excerpt="x" * 2001, content_hash=excerpt_hash("x" * 2001))
+        _overlay(source_verification_hash="not-a-hex-digest")
+
+
+def test_release_overlay_rejects_oversized_summary() -> None:
+    with pytest.raises(ValidationError):
+        _overlay(caveat_summary="x" * 2001, caveat_summary_hash=excerpt_hash("x" * 2001))
+
+
+def test_release_overlay_rejects_oversized_verification_excerpt() -> None:
+    with pytest.raises(ValidationError):
+        _overlay(source_verification_excerpt="x" * 301, source_verification_hash=excerpt_hash("x" * 301))
 
 
 def test_release_overlay_rejects_malformed_overlay_id() -> None:
@@ -190,8 +203,8 @@ def test_evidence_reference_requires_every_provenance_field() -> None:
         "source_id",
         "title",
         "canonical_url",
-        "content_excerpt",
-        "content_hash",
+        "summary",
+        "summary_hash",
         "pfsense_edition",
         "evidence_level",
         "applicability",

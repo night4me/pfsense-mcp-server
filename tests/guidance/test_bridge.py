@@ -19,7 +19,7 @@ from pfsense_mcp.guidance.models import (
 )
 
 _VALID_URL = "https://docs.netgate.com/pfsense/en/latest/firewall/aliases.html"
-_VALID_EXCERPT = "Aliases define groups of ports, hosts, or networks."
+_VALID_SUMMARY = "Aliases group ports, hosts, or networks so rules can reference them by name."
 
 
 def _reference(**overrides: object) -> GuidanceReference:
@@ -28,10 +28,10 @@ def _reference(**overrides: object) -> GuidanceReference:
         "source_id": "netgate_docs_aliases",
         "title": "Aliases",
         "canonical_url": _VALID_URL,
-        "content_excerpt": _VALID_EXCERPT,
-        "content_hash": excerpt_hash(_VALID_EXCERPT),
+        "summary": _VALID_SUMMARY,
+        "summary_hash": excerpt_hash(_VALID_SUMMARY),
         "pfsense_edition": Edition.BOTH,
-        "trust_label": "pinned-snapshot",
+        "trust_label": "pinned-summary",
         "applicability": ApplicabilityState.APPLICABLE,
         "evidence_level": EvidenceLevel.EXPLICIT_UNVERSIONED,
         "applicable_overlay_chain": (),
@@ -52,8 +52,8 @@ def test_bridge_copies_every_field_except_trust_label_exactly():
     assert result.source_id == ref.source_id
     assert result.title == ref.title
     assert result.canonical_url == ref.canonical_url
-    assert result.content_excerpt == ref.content_excerpt
-    assert result.content_hash == ref.content_hash
+    assert result.summary == ref.summary
+    assert result.summary_hash == ref.summary_hash
     assert result.pfsense_edition == ref.pfsense_edition
     assert result.evidence_level == ref.evidence_level
     assert result.applicability == ref.applicability
@@ -72,11 +72,11 @@ def test_bridge_result_has_no_trust_label_field():
 def test_bridge_intentional_trust_label_omission_matches_documented_assumption():
     """The one judgment this function makes about its input: for the
     only retrieval_mode that exists today (BUNDLED_SNAPSHOT), trust_label
-    must already equal the documented constant 'pinned-snapshot' -- this
+    must already equal the documented constant 'pinned-summary' -- this
     test locks that assumption down explicitly, matching the
     task's own instruction to test the intentional omission, not just
     assert the field is absent from the output."""
-    ref = _reference(retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT, trust_label="pinned-snapshot")
+    ref = _reference(retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT, trust_label="pinned-summary")
     bridge_guidance_reference(ref)  # must not raise
 
 

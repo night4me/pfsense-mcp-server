@@ -36,23 +36,29 @@ def bridge_guidance_reference(ref: GuidanceReference) -> EvidenceReference:
     `trust_label` is the one `GuidanceReference` field with no
     `EvidenceReference` equivalent -- intentionally, not accidentally,
     omitted. Confirmed by the design pass that specified this bridge:
-    `trust_label` is currently always the constant `"pinned-snapshot"`
-    for the only `retrieval_mode` that exists today
-    (`RetrievalMode.BUNDLED_SNAPSHOT`), making it fully redundant with
-    `retrieval_mode` in this accepted scope. That specific mapping --
-    `retrieval_mode == BUNDLED_SNAPSHOT` implies `trust_label ==
-    "pinned-snapshot"` for every reference this function will ever see
-    while only `BUNDLED_SNAPSHOT` exists -- is asserted directly here
-    (not merely assumed) so a future `retrieval_mode` addition (TB-G3
-    live retrieval, still unactivated) that breaks the assumption fails
-    loudly at the point of bridging, not silently. This assertion is the
-    one and only judgment this function makes about its input; it never
-    computes a new value from it.
+    `trust_label` is currently always the constant `"pinned-summary"`
+    (renamed 2026-08-22 from `"pinned-snapshot"` to match the summary-based
+    provenance model -- see `models.py`'s module docstring) for the only
+    `retrieval_mode` that exists today (`RetrievalMode.BUNDLED_SNAPSHOT`),
+    making it fully redundant with `retrieval_mode` in this accepted
+    scope. That specific mapping -- `retrieval_mode == BUNDLED_SNAPSHOT`
+    implies `trust_label == "pinned-summary"` for every reference this
+    function will ever see while only `BUNDLED_SNAPSHOT` exists -- is
+    asserted directly here (not merely assumed) so a future
+    `retrieval_mode` addition (TB-G3 live retrieval, still unactivated)
+    that breaks the assumption fails loudly at the point of bridging, not
+    silently. This assertion is the one and only judgment this function
+    makes about its input; it never computes a new value from it.
+
+    `content_excerpt`/`content_hash` were renamed `summary`/`summary_hash`
+    on both `GuidanceReference` and `EvidenceReference` in the same
+    2026-08-22 revision (project-authored summary, not a quotation) -- the
+    field-for-field copy below is otherwise unchanged.
     """
-    if ref.retrieval_mode.value == "bundled_snapshot" and ref.trust_label != "pinned-snapshot":
+    if ref.retrieval_mode.value == "bundled_snapshot" and ref.trust_label != "pinned-summary":
         raise ValueError(
             f"bridge_guidance_reference: trust_label {ref.trust_label!r} no longer matches the "
-            "documented bundled_snapshot assumption ('pinned-snapshot') this bridge relies on to "
+            "documented bundled_snapshot assumption ('pinned-summary') this bridge relies on to "
             "omit trust_label safely -- re-examine the trust_label/retrieval_mode mapping before "
             "extending retrieval modes further."
         )
@@ -62,8 +68,8 @@ def bridge_guidance_reference(ref: GuidanceReference) -> EvidenceReference:
         source_id=ref.source_id,
         title=ref.title,
         canonical_url=ref.canonical_url,
-        content_excerpt=ref.content_excerpt,
-        content_hash=ref.content_hash,
+        summary=ref.summary,
+        summary_hash=ref.summary_hash,
         pfsense_edition=ref.pfsense_edition,
         evidence_level=ref.evidence_level,
         applicability=ref.applicability,

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Maintainer-invoked audit: verify every guidance registry entry's pinned
-`content_excerpt`/`caveat_excerpt` is still present, verbatim, on the live
-page its `canonical_url` points to.
+`source_verification_excerpt` (a short, genuinely verbatim anchor phrase --
+2026-08-22 provenance revision, see `guidance/models.py`'s module
+docstring) is still present, verbatim, on the live page its `canonical_url`
+points to. Deliberately does NOT check `summary`/`caveat_summary` for
+presence -- those are project-authored text and are never expected to
+appear verbatim on the source page.
 
 This is a **maintenance/CI tool, not runtime code** — matching
 `docs/VERSION_AWARE_GUIDANCE.md`'s TB-G3 design's own explicit
@@ -150,9 +154,9 @@ def main() -> int:
     results: list[_AuditResult] = []
     for entries in _REGISTRY.values():
         for entry in entries:
-            results.append(_audit_one(entry.source_id, entry.canonical_url, entry.content_excerpt))
+            results.append(_audit_one(entry.source_id, entry.canonical_url, entry.source_verification_excerpt))
     for overlay in _all_overlays():
-        results.append(_audit_one(overlay.overlay_id, overlay.canonical_url, overlay.caveat_excerpt))
+        results.append(_audit_one(overlay.overlay_id, overlay.canonical_url, overlay.source_verification_excerpt))
 
     for result in results:
         print(f"[{result.outcome:11s}] {result.entry_id:40s} {result.canonical_url}")

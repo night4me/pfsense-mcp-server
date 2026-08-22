@@ -26,14 +26,14 @@ def _identity(**overrides: object) -> ApplianceIdentity:
 
 
 def _reference(**overrides: object) -> EvidenceReference:
-    excerpt = overrides.pop("content_excerpt", "Aliases define groups of ports, hosts, or networks.")
+    summary = overrides.pop("summary", "Aliases group ports, hosts, or networks so rules can reference them by name.")
     defaults: dict[str, object] = {
         "capability": "ALIAS_READ",
         "source_id": "netgate_docs_aliases",
         "title": "Aliases",
         "canonical_url": _VALID_URL,
-        "content_excerpt": excerpt,
-        "content_hash": excerpt_hash(excerpt),
+        "summary": summary,
+        "summary_hash": excerpt_hash(summary),
         "pfsense_edition": Edition.BOTH,
         "evidence_level": EvidenceLevel.EXPLICIT_VERSION_SCOPED,
         "applicability": ApplicabilityState.APPLICABLE,

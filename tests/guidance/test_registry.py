@@ -31,14 +31,15 @@ from pfsense_mcp.guidance.models import (
 from pfsense_mcp.guidance.registry import _REGISTRY, lookup_guidance
 
 
-def test_registry_entries_pass_their_own_content_hash_check():
+def test_registry_entries_pass_their_own_summary_and_verification_hash_check():
     # Re-asserts the same check registry.py performs at import time (which
     # already ran once, successfully, for this test to even collect), so a
     # future regression is CI-visible as a named test failure, not just an
     # import-time crash.
     for entries in _REGISTRY.values():
         for entry in entries:
-            assert entry.content_hash == excerpt_hash(entry.content_excerpt)
+            assert entry.summary_hash == excerpt_hash(entry.summary)
+            assert entry.source_verification_hash == excerpt_hash(entry.source_verification_excerpt)
 
 
 def test_lookup_returns_entry_for_registered_capability_both_edition_unversioned():
@@ -48,12 +49,41 @@ def test_lookup_returns_entry_for_registered_capability_both_edition_unversioned
     assert reference.capability == "ALIAS_READ"
     assert reference.source_id == "netgate_docs_aliases"
     assert reference.pfsense_edition is Edition.BOTH
-    assert reference.trust_label == "pinned-snapshot"
+    assert reference.trust_label == "pinned-summary"
     # The real, seed _ALIAS_DOC entry is INFERRED_FROM_CURRENT_DOCS (an
     # undated /latest/ page, not an explicit version-independence claim)
     # -- capped to VERSION_UNCONFIRMED, never APPLICABLE, by design.
     assert reference.applicability is ApplicabilityState.VERSION_UNCONFIRMED
     assert reference.evidence_level is EvidenceLevel.INFERRED_FROM_CURRENT_DOCS
+
+
+def test_real_registry_entries_are_project_authored_not_verbatim_quotations():
+    """2026-08-22 provenance-conversion regression test: every real,
+    shipped `_REGISTRY` entry's `summary` must differ from its own
+    `source_verification_excerpt` -- proof the split is real end-to-end
+    (a project-authored summary, distinct from the short verbatim anchor),
+    not merely a schema-level rename with the same text duplicated into
+    both fields.
+    """
+    for entries in _REGISTRY.values():
+        for entry in entries:
+            assert entry.summary != entry.source_verification_excerpt
+            assert entry.source_verification_excerpt not in entry.summary, (
+                f"{entry.source_id}: verification anchor appears verbatim inside the summary -- "
+                "the summary must be independently authored, not built around the quoted anchor"
+            )
+
+
+def test_real_registry_lookup_result_carries_summary_not_verification_excerpt():
+    """End-to-end: what `lookup_guidance()` actually returns for a real
+    entry is the project-authored summary, and the GuidanceReference type
+    has no field the maintainer-only verification anchor could travel
+    through even if someone tried.
+    """
+    result = lookup_guidance(Capability.ALIAS_READ, observed_version=None, observed_edition=ObservedEdition.UNKNOWN)
+    reference = result[0]
+    assert reference.summary == _REGISTRY[Capability.ALIAS_READ][0].summary
+    assert "source_verification_excerpt" not in type(reference).model_fields
 
 
 def test_lookup_is_deterministic_for_identical_inputs():
@@ -85,7 +115,8 @@ def test_lookup_never_raises_for_a_capability_with_no_registry_entry():
 
 
 def _synthetic_entry(**overrides: object) -> DocumentSource:
-    excerpt = "Synthetic entry for applicability-branch testing only."
+    summary = "Synthetic entry for applicability-branch testing only."
+    verification = "Synthetic verification anchor."
     kwargs: dict[str, object] = {
         "source_id": "synthetic_entry",
         "title": "Synthetic",
@@ -94,8 +125,10 @@ def _synthetic_entry(**overrides: object) -> DocumentSource:
         "version_applicability": "2.7.2",
         "evidence_level": EvidenceLevel.EXPLICIT_VERSION_SCOPED,
         "retrieval_mode": RetrievalMode.BUNDLED_SNAPSHOT,
-        "content_excerpt": excerpt,
-        "content_hash": excerpt_hash(excerpt),
+        "summary": summary,
+        "summary_hash": excerpt_hash(summary),
+        "source_verification_excerpt": verification,
+        "source_verification_hash": excerpt_hash(verification),
         "license_note": "Synthetic, test-only.",
     }
     kwargs.update(overrides)
@@ -156,7 +189,8 @@ def test_lookup_reports_observed_identity_used_on_every_reference(synthetic_regi
 
 
 def _synthetic_overlay(**overrides: object) -> ReleaseOverlay:
-    excerpt = overrides.pop("caveat_excerpt", "Behavior changed for this release.")
+    summary = overrides.pop("caveat_summary", "Behavior changed for this release, per project-authored summary.")
+    verification = overrides.pop("source_verification_excerpt", "Behavior changed for this release.")
     kwargs: dict[str, object] = {
         "overlay_id": "synthetic_overlay_one",
         "capability": "SYSTEM_READ",
@@ -164,9 +198,11 @@ def _synthetic_overlay(**overrides: object) -> ReleaseOverlay:
         "applies_to_edition": Edition.CE,
         "evidence_level": EvidenceLevel.EXPLICIT_VERSION_SCOPED,
         "supersedes_id": None,
-        "caveat_excerpt": excerpt,
+        "caveat_summary": summary,
+        "caveat_summary_hash": excerpt_hash(summary),
+        "source_verification_excerpt": verification,
+        "source_verification_hash": excerpt_hash(verification),
         "canonical_url": "https://docs.netgate.com/synthetic-overlay",
-        "content_hash": excerpt_hash(excerpt),
     }
     kwargs.update(overrides)
     return ReleaseOverlay(**kwargs)
@@ -216,10 +252,17 @@ def test_registry_integrity_check_rejects_dangling_supersedes_id(monkeypatch: py
         registry_module._check_registry_integrity()
 
 
-def test_registry_integrity_check_rejects_overlay_content_hash_mismatch(monkeypatch: pytest.MonkeyPatch):
-    tampered = _synthetic_overlay(overlay_id="tampered_overlay", content_hash="0" * 64)
+def test_registry_integrity_check_rejects_overlay_caveat_summary_hash_mismatch(monkeypatch: pytest.MonkeyPatch):
+    tampered = _synthetic_overlay(overlay_id="tampered_overlay", caveat_summary_hash="0" * 64)
     monkeypatch.setitem(registry_module._OVERLAY_REGISTRY, Capability.SYSTEM_READ, (tampered,))
-    with pytest.raises(ValueError, match="content_hash"):
+    with pytest.raises(ValueError, match="caveat_summary_hash"):
+        registry_module._check_registry_integrity()
+
+
+def test_registry_integrity_check_rejects_overlay_verification_hash_mismatch(monkeypatch: pytest.MonkeyPatch):
+    tampered = _synthetic_overlay(overlay_id="tampered_overlay_2", source_verification_hash="0" * 64)
+    monkeypatch.setitem(registry_module._OVERLAY_REGISTRY, Capability.SYSTEM_READ, (tampered,))
+    with pytest.raises(ValueError, match="source_verification_hash"):
         registry_module._check_registry_integrity()
 
 
