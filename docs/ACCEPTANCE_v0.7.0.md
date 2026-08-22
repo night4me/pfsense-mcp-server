@@ -1,15 +1,35 @@
 # Acceptance — v0.7.0
 
-**Status: release-candidate, ready for the Owner Approval Gate
-(`docs/PYPI_RELEASE.md`). Not yet tagged, not yet released, not yet
-published to PyPI.** This document accepts the `v0.7.0` release-candidate
-state at its preparation commit, once that commit passes the required
-local and remote gates (CI, CodeQL, `make release-check`) — all
-confirmed below. Creating the `v0.7.0` tag, publishing the GitHub
-Release, and uploading to PyPI each remain a separate, explicit owner
-decision, taken only after this document and the exact commit SHA it
-corresponds to have been reviewed. `v0.6.0`'s own tag, GitHub Release,
-and PyPI artifact remain unmoved as an accurate historical record.
+**Status: published — the `v0.7.0` tag and PyPI release point at this
+commit.** The annotated git tag `v0.7.0` was created and pushed pointing
+at commit `c89997bc0592ec46b5971267f9f8f25f12a5845d`; the GitHub Release
+was published from that tag
+(<https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.7.0>),
+which triggered the `publish.yml` OIDC trusted-publishing workflow (run
+completed `success`). PyPI's JSON API and Simple Index both
+independently confirm `0.7.0` is live, neither artifact is yanked, and
+both the wheel and sdist carry `data-provenance` (PEP 740 attestation)
+links, matching every prior release. Rebuilding this exact commit
+locally with `docs/PYPI_RELEASE.md`'s own clean-build command
+(`SOURCE_DATE_EPOCH` derived from `HEAD`) produced artifacts whose
+SHA-256 hashes are **byte-identical** to the ones downloaded directly
+from PyPI (wheel `740944d9b1482f0eb3151bedc9dc7f7eebf654ef66beeaccb0c42e1d39623f45`,
+sdist `1a00b7765a05f85a9f4103e33cac048a91f3cc964130a82173708127d440bcb0`) —
+no packaging non-determinism to investigate this time. A clean
+installation of `pfsense-mcp-server==0.7.0` from the real PyPI index
+(not the local build) was independently verified: reports version
+`0.7.0`, both CLI entry points work, a real `FastMCP.list_tools()` call
+shows exactly 95 pfSense READ tools + 1 guidance tool
+(`pfsense_get_official_guidance`) + 0 WRITE tools registered (1 WRITE
+tool exists structurally in source, default-unreachable, unchanged), no
+new mandatory environment variable exists merely to discover tools, and
+an offline `lookup_guidance()` call against the installed package
+returned a real entry (`retrieval_mode: BUNDLED_SNAPSHOT`) — proving the
+deterministic offline registry is genuinely present in the published
+artifact, not merely claimed. This status line was only written after
+that independent post-publication verification succeeded. `v0.6.0`'s own
+tag, GitHub Release, and PyPI artifact remain unmoved as an accurate
+historical record.
 
 ## Release scope
 
