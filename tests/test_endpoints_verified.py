@@ -1076,3 +1076,20 @@ def test_vpn_openvpn_csos_path_suffix_has_no_api_prefix():
 
 def test_vpn_openvpn_csos_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_OPENVPN_CSOS.path_suffix == "/vpn/openvpn/csos"
+
+
+def test_status_logs_settings_is_not_yet_verified():
+    """v0.6.0 Phase B Batch C: implemented and offline-tested, but LAB
+    verification could not be completed this session (the read-only LAB
+    service account's privilege scope does not yet include this
+    endpoint) -- matches the established WireGuard-package-blocker
+    precedent: verified=False until a live call actually succeeds."""
+    assert Endpoints.STATUS_LOGS_SETTINGS.verified is False
+
+
+def test_status_logs_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.STATUS_LOGS_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_status_logs_settings_path_suffix_is_the_singular_settings_endpoint():
+    assert Endpoints.STATUS_LOGS_SETTINGS.path_suffix == "/status/logs/settings"

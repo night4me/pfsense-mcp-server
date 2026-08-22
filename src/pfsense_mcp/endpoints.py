@@ -671,3 +671,15 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # v0.6.0 Phase B Batch C -- re-checked against the pinned schema for
+    # secrets before implementation (none found; 34 fields, all
+    # boolean/string/integer, no field marked writeOnly). No package
+    # required (core status feature). Not yet LAB-verified: the
+    # read-only LAB service account's privilege scope does not yet
+    # include this endpoint, and granting it required admin LAB access
+    # unavailable this session -- see docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md.
+    STATUS_LOGS_SETTINGS = EndpointInfo(
+        path_suffix="/status/logs/settings",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

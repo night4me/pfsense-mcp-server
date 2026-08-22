@@ -51,6 +51,23 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   overstated; see `docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`. Public
   contract: 84 → 85 READ tools (0 default WRITE, unchanged).
 
+- **`LogSettings` model + client method, implemented and offline-tested
+  (v0.6.0 Phase B, Batch C — not yet registered).** New
+  `src/pfsense_mcp/models/log_settings.py` (34 fields, all
+  boolean/string/integer, no `writeOnly`/secret-shaped field anywhere —
+  re-verified directly against the pinned schema immediately before
+  implementation, independent of the v0.6.0 Phase A finding) and
+  `PfSenseClient.get_status_logs_settings()`. LAB verification could not
+  be completed this session: the read-only LAB service account's
+  privilege scope covers only already-registered tools, and granting
+  `api-v2-status-logs-settings-get` required admin LAB access that did
+  not authenticate successfully. `Endpoints.STATUS_LOGS_SETTINGS` remains
+  `verified=False`; no `tools/read/` file, `Capability` enum member, or
+  registry wiring was added, matching this project's established
+  WireGuard-package-blocker precedent. Public contract unchanged at 85
+  READ / 0 default WRITE. Registered in the Batch A schema-drift
+  registry.
+
 ## [0.5.1] - 2026-08-21
 
 **Documentation-accuracy and security-communication patch. NO MCP

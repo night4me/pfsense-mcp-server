@@ -17,6 +17,144 @@
       "writeOnly": false
     }
   },
+  "LogSettings": {
+    "auth": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "dhcp": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "disablelocallogging": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "dpinger": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "enableremotelogging": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "filter": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "filterdescriptions": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "format": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "hostapd": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "ipprotocol": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "logall": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "logcompressiontype": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "logconfigchanges": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "logfilesize": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "nentries": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "nologbogons": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "nologdefaultblock": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "nologdefaultpass": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "nolognginx": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "nologprivatenets": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "ntpd": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "portalauth": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "ppp": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "rawfilter": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "remoteserver": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "remoteserver2": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "remoteserver3": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "resolver": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "reverseorder": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "rotatecount": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "routing": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "sourceip": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "system": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "vpn": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
   "SystemTimezone": {
     "timezone": {
       "type": "string",

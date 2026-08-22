@@ -60,6 +60,7 @@ from .models.ipsec_phase1_encryption import IPsecPhase1Encryption
 from .models.ipsec_phase2 import IPsecPhase2
 from .models.ipsec_phase2_encryption import IPsecPhase2Encryption
 from .models.ipsec_sa_status import IPsecSaStatus
+from .models.log_settings import LogSettings
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
 from .models.openvpn_client_specific_override import OpenVpnClientSpecificOverride
@@ -1277,3 +1278,7 @@ class PfSenseClient:
                 data, include_identifying_metadata=include_identifying_metadata
             ),
         )
+
+    def get_status_logs_settings(self) -> LogSettings:
+        raw = self._rest.get(Endpoints.STATUS_LOGS_SETTINGS)
+        return _parse_object_response(raw, "/status/logs/settings", LogSettings.from_api)

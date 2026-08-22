@@ -32,6 +32,7 @@ from lib.schema_drift import SchemaDriftError, assert_model_accounts_for_schema_
 from pydantic import BaseModel
 
 from pfsense_mcp.models.config_history_revision import ConfigHistoryRevision
+from pfsense_mcp.models.log_settings import LogSettings
 from pfsense_mcp.models.system_timezone import SystemTimezone
 from pfsense_mcp.models.wireguard_peer_status import WireGuardPeerStatus
 from pfsense_mcp.models.wireguard_tunnel_status import WireGuardTunnelStatus
@@ -56,6 +57,7 @@ def _load_pinned_schemas() -> dict[str, dict]:
 # this project's explicit owner-restated constraint.
 _REGISTRY: tuple[tuple[type[BaseModel], str, frozenset[str]], ...] = (
     (ConfigHistoryRevision, "ConfigHistoryRevision", frozenset()),
+    (LogSettings, "LogSettings", frozenset()),
     (SystemTimezone, "SystemTimezone", frozenset()),
     (WireGuardTunnelStatus, "WireGuardTunnelStatus", frozenset()),
     (WireGuardPeerStatus, "WireGuardPeerStatus", frozenset({"preshared_key"})),
