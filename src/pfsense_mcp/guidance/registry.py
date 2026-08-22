@@ -105,14 +105,7 @@ _ALIAS_DOC = DocumentSource(
         "and easier to manage."
     ),
     content_hash="90de20698df2264ffd1e6fd7829270ea49e95f815b687cf162d81eabbe39df56",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC. "
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 #: Phase 16 initial corpus (2026-08-22): one verified entry per capability
@@ -133,6 +126,24 @@ _ALIAS_DOC = DocumentSource(
 #: could satisfy `ALLOWED_DOCUMENT_HOSTS` honestly -- this is a real
 #: `GUIDANCE_NOT_FOUND` gap, not an oversight (see the Phase 15 coverage
 #: mapping in `reports-ai/`).
+_SYSTEM_CONFIG_DOC = DocumentSource(
+    source_id="netgate_docs_system_configuration",
+    title="Configuration",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/config/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "Most pfSense® software configuration is performed using the "
+        "web-based GUI. There are a few tasks that may also be performed "
+        "from the console, whether it be a monitor and keyboard, over a "
+        "serial port, or via SSH."
+    ),
+    content_hash="c23ea447c30a4c9260c92d43c8da8fedfdb8bebefd1a07df5a0411bd3de0266e",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
 _FIREWALL_RULES_DOC = DocumentSource(
     source_id="netgate_docs_firewall_rules",
     title="Firewall",
@@ -143,15 +154,7 @@ _FIREWALL_RULES_DOC = DocumentSource(
     retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
     content_excerpt="Firewall rules control traffic passing through the firewall.",
     content_hash="628009dafc6ea4920a3387571bf101d20a194c7e24664698bb30f873b4215a08",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _NAT_DOC = DocumentSource(
@@ -168,15 +171,7 @@ _NAT_DOC = DocumentSource(
         "address."
     ),
     content_hash="4f6be79f6c8d3e0dfbc2132b4d948699e4d038fffd8bcbb7ba4a01756a3f72c5",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _DHCP_DOC = DocumentSource(
@@ -193,15 +188,7 @@ _DHCP_DOC = DocumentSource(
         "clients from predefined pools of addresses."
     ),
     content_hash="8b9faf0eef4e0e0e56016903935e5ac301e6fc5e0b96bcc81b2605d90716fe67",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _DNS_RESOLVER_DOC = DocumentSource(
@@ -218,15 +205,7 @@ _DNS_RESOLVER_DOC = DocumentSource(
         "DNSSEC, DNS over TLS, and a wide variety of options."
     ),
     content_hash="364811ff9c11b92bb55b06201f75ab86229c7e529b138ba917445fb02b4f9a3c",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _IPSEC_DOC = DocumentSource(
@@ -243,15 +222,7 @@ _IPSEC_DOC = DocumentSource(
         "and other devices for site-to-site connectivity."
     ),
     content_hash="2a895e5cfba8c3970bafb89febda40c47b08e9ddc29e1509a2dfde319f27d9fe",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _WIREGUARD_DOC = DocumentSource(
@@ -264,15 +235,7 @@ _WIREGUARD_DOC = DocumentSource(
     retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
     content_excerpt="WireGuard is a new VPN Layer 3 protocol designed for speed and simplicity.",
     content_hash="8eaf8af49b7c9c43e0ec71602d2419d48b60d329258f1b42179c5f92b26c82ad",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _OPENVPN_DOC = DocumentSource(
@@ -288,15 +251,7 @@ _OPENVPN_DOC = DocumentSource(
         "remote access clients and enable site-to-site connectivity."
     ),
     content_hash="9400b50964b3ac32f650fa716cb0b7db06f7de9e0af95f384f7e59a16e233d99",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _HA_CARP_DOC = DocumentSource(
@@ -314,15 +269,7 @@ _HA_CARP_DOC = DocumentSource(
         "single point of failure."
     ),
     content_hash="86e1e2e669786a6184445d016aba00085fc30b48f6a1c52e502baab632500149",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _CERTIFICATES_DOC = DocumentSource(
@@ -339,15 +286,7 @@ _CERTIFICATES_DOC = DocumentSource(
         "revocation list (CRL) entries for use by the firewall."
     ),
     content_hash="db5e59c23b12a9b1acf85d7ad1a1a70a4916dfe7a5a86ab8c8da264e60dcdd26",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _INTERFACES_DOC = DocumentSource(
@@ -364,15 +303,7 @@ _INTERFACES_DOC = DocumentSource(
         "employing other protocols such as PPP or VLANs."
     ),
     content_hash="2d91f94c4db6eb6d2fe05d24f81edc313c09a5009e3fa51a8eb6389ff29b51c6",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _VLAN_DOC = DocumentSource(
@@ -389,15 +320,7 @@ _VLAN_DOC = DocumentSource(
         "multiple switches."
     ),
     content_hash="461cba5f690683808e0b2a3216262adb7a44755844a718e40ade48b8692eb595",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _GATEWAYS_DOC = DocumentSource(
@@ -413,15 +336,7 @@ _GATEWAYS_DOC = DocumentSource(
         "connected networks through which a host can reach other networks."
     ),
     content_hash="ef7de5b121865ed979b38fedf6124ca37e15b6abd18a00886255b27301edbb7e",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _LOGGING_DOC = DocumentSource(
@@ -438,15 +353,7 @@ _LOGGING_DOC = DocumentSource(
         "firewall."
     ),
     content_hash="69a64677873f28669075afaff93e42b555ebb3c4ef7cb9ec8abbec841951f82c",
-    license_note=(
-        "Short quotation from Netgate's official pfSense documentation, used "
-        "for contextual reference only -- not a full-page mirror. Full "
-        "content and rights remain with Netgate/Rubicon Communications LLC "
-        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
-        "Verify redistribution terms before any broader reuse (ADR-017 "
-        "licensing self-challenge; not independently resolved by this "
-        "project)."
-    ),
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
 _REGISTRY: dict[Capability, tuple[DocumentSource, ...]] = {
