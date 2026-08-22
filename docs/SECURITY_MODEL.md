@@ -48,7 +48,7 @@ The default `auditor` profile exposes the accepted READ capability set and
 grants zero WRITE capabilities. The `engineer` profile also has zero
 capabilities. Under these defaults no WRITE tool is registered and the
 production bootstrap does not construct a write client — the public MCP
-contract remains exactly the accepted READ-only tool set (84 tools, 0
+contract remains exactly the accepted READ-only tool set (95 tools, 0
 WRITE) unless an operator explicitly opts in (see below).
 
 As of 2026-08-16, one WRITE endpoint is allow-listed —

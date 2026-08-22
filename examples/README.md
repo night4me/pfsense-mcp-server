@@ -22,7 +22,7 @@ These guides configure supported MCP clients to launch the local
 - Keep TLS verification in `strict` mode unless a private CA requires `auto`.
 - Treat anyone who can control the local MCP client as able to invoke every
   registered READ tool. See the [security model](../docs/SECURITY_MODEL.md).
-- Expect 84 READ tools and no WRITE tools from the current production profile.
+- Expect 95 READ tools and no WRITE tools from the current production profile.
 
 The examples use `/absolute/path/to/...` placeholders. Replace every placeholder
 before starting the client. Client interfaces and configuration formats can
@@ -37,12 +37,12 @@ PFSENSE_ALLOWED_TOOLS=pfsense_get_system_status,pfsense_get_interfaces
 ```
 
 The value can only remove tools from the selected capability profile. Unknown
-names and malformed lists fail closed. Omit it to keep all 84 Auditor tools.
+names and malformed lists fail closed. Omit it to keep all 95 Auditor tools.
 
 ## READ-only vs. `write_protected`
 
 Every guide above configures the **default (`auditor`) profile** —
-READ-only, 84 tools, 0 WRITE. This is the profile every new installation
+READ-only, 95 tools, 0 WRITE. This is the profile every new installation
 gets and the one this project recommends for normal use.
 
 A second profile, `write_protected`, exists and is documented here for

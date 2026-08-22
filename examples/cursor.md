@@ -33,7 +33,7 @@ and controls.
 
 ## Expected behaviour
 
-After Cursor reloads the MCP configuration, the `pfsense` server should show 84
+After Cursor reloads the MCP configuration, the `pfsense` server should show 95
 READ tools. Approving a tool lets the local process query the configured
 appliance. No WRITE tool is registered.
 

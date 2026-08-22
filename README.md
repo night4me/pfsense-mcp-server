@@ -14,11 +14,11 @@ scripting surface, or any way to change the appliance by accident.
 
 ## Key facts
 
-- **84 public READ tools. 0 public WRITE tools by default.**
-- Covers roughly **80% of the useful READ capability surface** identified
+- **95 public READ tools. 0 public WRITE tools by default.**
+- Covers roughly **90% of the useful READ capability surface** identified
   by this project's own capability audit (267 OpenAPI paths / 243 GET
   operations reviewed, every one given an explicit disposition).
-- Every one of the 84 tools has been **exercised at least once against a
+- Every one of the 95 tools has been **exercised at least once against a
   real pfSense instance** (LAB or production) before public registration
   and confirmed to return a response matching this project's typed
   model — never assumed from schema alone. Depth varies by tool: some
@@ -81,7 +81,7 @@ enabled by implementation.
   is one statically checked, named function calling one client method —
   there is no `call_endpoint(path, method)` escape hatch an AI (or a bug)
   could use to reach an unregistered endpoint.
-- **84 READ / 0 default-WRITE public contract**, enforced by an automated
+- **95 READ / 0 default-WRITE public contract**, enforced by an automated
   snapshot test — a change to the public surface that isn't reflected in
   the approved contract fails CI.
 - **Capability-based least privilege.** Each tool is gated behind a named
@@ -105,7 +105,7 @@ enabled by implementation.
 
 ```mermaid
 flowchart LR
-    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 84, no dispatcher)"]
+    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 95, no dispatcher)"]
     B --> C["Capability / profile gate<br/>(auditor: READ only)"]
     C --> D["Least-privilege mapping<br/>(exact pfSense privilege)"]
     D --> E["One fixed typed<br/>client method"]
@@ -121,7 +121,7 @@ flowchart LR
     style H fill:#d1e7dd,stroke:#0f5132
 ```
 
-Every one of the 84 tools takes this same path — no exceptions, no
+Every one of the 95 tools takes this same path — no exceptions, no
 alternate route. The yellow boxes are hard gates (fail closed, not
 merely checked); the green box is where confirmed secret-bearing fields
 are structurally excluded, not filtered. See
@@ -158,7 +158,7 @@ install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 ```
 
 Point your MCP client at that command — see [MCP client setup](#mcp-client-setup)
-below for client-specific guides — confirm it shows 84 READ tools and no
+below for client-specific guides — confirm it shows 95 READ tools and no
 WRITE tools, then try one of the [example prompts](#what-you-can-do)
 above. Full configuration reference, troubleshooting, and every
 environment variable: [`docs/CONFIGURATION.md`](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/).
@@ -189,9 +189,9 @@ rows can plausibly satisfy the same tier:
 
 | Platform | Version | Status | Evidence |
 |---|---|---|---|
-| pfSense CE | 2.9.0 (FreeBSD 16.0-CURRENT, pfREST 2.10) | **LAB VERIFIED** | Current LAB baseline; full public contract exercised against a disposable, isolated appliance. |
+| pfSense CE | 2.9.0 (FreeBSD 16.0-CURRENT, pfREST 2.10) | **LAB VERIFIED** | Current LAB baseline; full 95-tool public contract exercised against a disposable, isolated appliance, including all 11 tools added in `v0.6.0` (config-history revisions, log settings, the 8 apply-status endpoints, and WireGuard tunnel addresses). |
 | pfSense CE | 2.8.1 (pfREST 2.10) | **LAB VERIFIED** | Prior LAB baseline; this project's READ-expansion audit's initial 7-tool backlog was verified here before the LAB's platform upgrade to CE 2.9.0. |
-| pfSense Plus | 26.07-RELEASE | **PRODUCTION VERIFIED** | Owner-authorized, READ-only production compatibility pass: 82 of 84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified as package-absent, not a compatibility failure. The REST API package's own self-reported version (`pfsense_get_system_restapi_version`'s `current_version` field) was directly confirmed as **v2.10** — identical to both CE LAB baselines below. Schema-level: the live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components; the only differences found across every field in every component were 5 instance-specific runtime default values, never a type or nullability change. Zero secret-bearing fields present in any exercised response. |
+| pfSense Plus | 26.07-RELEASE | **PRODUCTION VERIFIED** | Owner-authorized, READ-only production compatibility pass, performed against the `v0.5.x` 84-tool contract: 82 of 84 public tools invoked successfully with real data (30 valid-empty results); the remaining 2 (WireGuard status) correctly and automatically classified as package-absent, not a compatibility failure. The REST API package's own self-reported version (`pfsense_get_system_restapi_version`'s `current_version` field) was directly confirmed as **v2.10** — identical to both CE LAB baselines below. Schema-level: the live OpenAPI schema matched the pinned v2.10 reference exactly — 267/267 paths, 186/186 components; the only differences found across every field in every component were 5 instance-specific runtime default values, never a type or nullability change. Zero secret-bearing fields present in any exercised response. **The 11 tools added in `v0.6.0` have not yet been exercised against production — they are LAB VERIFIED only; this row's evidence predates them and must not be read as covering them.** |
 | pfSense Plus | 25.11 | **EXPECTED COMPATIBLE / UNVERIFIED** | No live or LAB access to a 25.11 instance was available — nothing in this project has directly exercised a schema fetch, tool call, or package inspection against this specific release. The evidence available is entirely adjacent: the same pfREST v2.10 package this project directly confirmed (via `pfsense_get_system_restapi_version`, not inferred) on CE 2.8.1, CE 2.9.0, and Plus 26.07 already spans three different platform release numbers across both editions without incident; and Netgate's own published 25.11 release notes state its base OS was updated to FreeBSD 16-CURRENT, matching the CE 2.9.0 LAB baseline's directly-observed FreeBSD generation. That is a reasonable expectation, not this project's own stronger evidence — hence `EXPECTED COMPATIBLE / UNVERIFIED`, not `SUPPORTED / COMPATIBLE`. |
 
 pfSense platform version, edition, FreeBSD generation, and REST API
@@ -231,7 +231,7 @@ another:
   direct structural comparison (267/267 paths, 186/186 components) —
   see the Plus 26.07 row above.
 
-**Package-conditional tools.** Every one of the 84 registered tools'
+**Package-conditional tools.** Every one of the 95 registered tools'
 underlying endpoints was checked against the pfREST schema's own
 declared package requirements, not assumed. Two tools
 (`pfsense_get_status_wireguard_tunnels`, `pfsense_get_status_wireguard_peers`)
@@ -271,18 +271,18 @@ client-specific config file location and key differ.
 
 | Category | Tools | Examples |
 |---|---:|---|
-| System | 24 | hostname, timezone, DNS, console, version, packages, REST API settings, cron, ACME, diagnostics |
-| Firewall | 14 | rules, aliases, states, NAT (outbound / 1:1 / port forward), schedules, virtual IPs, traffic shapers |
-| VPN | 14 | IPsec (Phase 2, encryption options, live SA/child-SA status), OpenVPN (server config, client-specific overrides, live status), WireGuard status, CARP |
-| DHCP | 6 | servers, static mappings, leases, relay, address pools, custom options |
-| Interfaces | 8 | interface status, VLANs, groups, bridges, GRE, LAGG, available interfaces |
-| DNS | 5 | resolver settings, host/domain overrides, access lists, forwarder overrides |
-| Routing / Gateways | 5 | gateways, gateway status, gateway groups, default gateway, static routes |
+| System | 26 | hostname, timezone, DNS, console, version, packages, REST API settings, cron, ACME, diagnostics, config-history revisions, log settings |
+| VPN | 17 | IPsec (Phase 2, encryption options, live SA/child-SA status, pending-apply status), OpenVPN (server config, client-specific overrides, live status), WireGuard (status, tunnel addresses, pending-apply status), CARP |
+| Firewall | 15 | rules, aliases, states, NAT (outbound / 1:1 / port forward), schedules, virtual IPs (incl. pending-apply status), traffic shapers |
+| DNS | 7 | resolver settings, host/domain overrides, access lists, forwarder overrides, forwarder/resolver pending-apply status |
+| Interfaces | 9 | interface status, VLANs, groups, bridges, GRE, LAGG, available interfaces, pending-apply status |
+| DHCP | 7 | servers, static mappings, leases, relay, address pools, custom options, pending-apply status |
+| Routing / Gateways | 6 | gateways, gateway status, gateway groups, default gateway, static routes, pending-apply status |
 | Certificates / PKI | 3 | certificates, certificate authorities, CRLs |
 | Users / API identities | 3 | local users, user groups, API keys |
 | Services / Monitoring | 2 | service status, FreeRADIUS EAP |
 
-84 tools total. Full per-tool reference, parameters, and security notes:
+95 tools total. Full per-tool reference, parameters, and security notes:
 [`docs/API.md`](https://night4me.github.io/pfsense-mcp-server/API/).
 
 ## Security model

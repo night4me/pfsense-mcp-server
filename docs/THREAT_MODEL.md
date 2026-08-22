@@ -3,7 +3,7 @@
 Version: v0.3.0 production baseline text, retained below largely as
 originally written, with a 2026-08-16 update note wherever its own claims
 about WRITE being categorically inert/unauthorized are no longer accurate
-Scope: current local stdio MCP server, 84 READ tools (0 by default under
+Scope: current local stdio MCP server, 95 READ tools (0 by default under
 `write_protected`/one gated `FIREWALL_ALIAS_DESCRIPTION` WRITE tool when
 an operator explicitly selects `write_protected` and the full Tier1
 security material is provisioned — see `docs/SECURITY_MODEL.md`'s

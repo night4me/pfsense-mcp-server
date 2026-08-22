@@ -1,6 +1,6 @@
 # Architecture diagrams
 
-These diagrams describe the current release's production READ path (84
+These diagrams describe the current release's production READ path (95
 tools, 0 default WRITE) and the protected WRITE architecture built and
 independently verified per `ADR-026`. Solid paths are active in
 production; not-default-reachable paths are explicitly labeled as such
@@ -14,7 +14,7 @@ explicit, separate operator opt-in.
 flowchart LR
     Caller[Trusted local MCP client] -->|stdio| App[Application / FastMCP]
     App --> Registry[ToolRegistry]
-    Registry --> Tools[84 thin READ tools]
+    Registry --> Tools[95 thin READ tools]
     Tools --> Domain[PfSenseClient]
     Domain --> Rest[RestApiClient\nGET-only]
     Rest --> Transport[HttpTransport]
@@ -75,7 +75,7 @@ flowchart TD
     Registry --> WriteDispatch[register_all_write]
     WriteDispatch --> Empty[No branches / no WRITE registration]
 
-    Tests[Registry and profile tests] -. assert 84 READ / 0 WRITE .-> MCP
+    Tests[Registry and profile tests] -. assert 95 READ / 0 WRITE .-> MCP
 ```
 
 ## Configuration loading
@@ -172,12 +172,12 @@ flowchart LR
 ## READ security path (summary)
 
 Source: `src/pfsense_mcp/tools/registry.py`, `capabilities.py`, `profiles.py`,
-`pfsense_client.py`. Every one of the 84 registered READ tools takes this
+`pfsense_client.py`. Every one of the 95 registered READ tools takes this
 exact path — no exceptions.
 
 ```mermaid
 flowchart LR
-    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 84, no dispatcher)"]
+    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 95, no dispatcher)"]
     B --> C["Capability / profile gate<br/>(auditor: READ only)"]
     C --> D["Least-privilege mapping<br/>(exact pfSense privilege)"]
     D --> E["One fixed typed<br/>client method"]
@@ -287,7 +287,7 @@ absolute guarantee, and this diagram does not claim otherwise.
 flowchart TD
     AI["Untrusted / fallible AI reasoning<br/>(not treated as a security authority)"]
 
-    L1["Explicit MCP surface<br/>STOPS: arbitrary endpoint selection -<br/>84 named tools, no generic dispatcher"]
+    L1["Explicit MCP surface<br/>STOPS: arbitrary endpoint selection -<br/>95 named tools, no generic dispatcher"]
     L2["Capability / profile boundary<br/>STOPS: unauthorized capability reachability -<br/>auditor grants 0 WRITE capabilities"]
     L3["Least-privilege pfSense identity<br/>LIMITS: blast radius even if an upper<br/>layer fails - scoped credential, not admin"]
     L4["Typed model / secret-exclusion boundary<br/>STOPS: confirmed credential/private-key<br/>fields from reaching AI output"]
@@ -300,7 +300,7 @@ flowchart TD
     L11["TPM monotonic witness<br/>(WRITE path only)<br/>PROVIDES: hardware-backed anti-rollback<br/>evidence - the only anchor backend<br/>implemented today; required for<br/>production WRITE activation"]
 
     AI --> L1 --> L2 --> L3 --> L4 --> L5
-    L5 -.->|"READ ends here for all 84 tools"| Done["Typed result returned"]
+    L5 -.->|"READ ends here for all 95 tools"| Done["Typed result returned"]
     L5 --> L6 --> L7 --> L8 --> L9 --> L10
     L9 -. "required before any plan is<br/>considered safe_to_proceed" .-> L11
 

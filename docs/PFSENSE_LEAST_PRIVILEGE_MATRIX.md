@@ -468,7 +468,7 @@ convention this project has chosen to follow.
 endpoints package-wide (1 of 268 checked this pass:
 `/api/v2/system/restapi/settings/sync`, a POST-only sync action) hard-code
 `page-all` as the *only* accepted privilege — no narrow alternative
-exists for them. **None of the 83 endpoints this project's 84 READ
+exists for them. **None of the 94 endpoints this project's 95 READ
 tools use require `page-all`**, confirmed by direct inspection of every
 matching `Endpoints/*.inc` file at the pinned tag (including the two
 outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
@@ -535,7 +535,7 @@ specifically; its REST API package schema remained an exact 267-path
 match despite the platform upgrade, both before and after installing
 `pfSense-pkg-WireGuard`.
 
-## READ privilege matrix (84 tools)
+## READ privilege matrix (95 tools)
 
 | MCP tool | `PfSenseClient` method | pfSense endpoint | Required privilege | Live-confirmed |
 |---|---|---|---|---|

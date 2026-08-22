@@ -15,7 +15,7 @@ requires explicit owner approval.
 - Confirm the MIT `LICENSE` and `License-Expression: MIT` package metadata.
 - Confirm the accepted READ-tool count against the live registry
   (`KNOWN_READ_TOOL_NAMES` / `make validate`'s `public_contract` check —
-  84 as of this candidate), zero WRITE tools, an empty WRITE allow-list,
+  95 as of this candidate), zero WRITE tools, an empty WRITE allow-list,
   and no capability or endpoint expansion unless separately approved.
 
 ## Clean build
