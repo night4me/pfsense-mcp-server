@@ -18,7 +18,6 @@ def test_api_reference_declares_current_registration_count():
     text = API_REFERENCE.read_text(encoding="utf-8")
 
     expected = (
-        f"Registered tools: {len(KNOWN_READ_TOOL_NAMES)} READ, "
-        f"{len(KNOWN_GUIDANCE_TOOL_NAMES)} guidance, 0 WRITE"
+        f"Registered tools: {len(KNOWN_READ_TOOL_NAMES)} READ, {len(KNOWN_GUIDANCE_TOOL_NAMES)} guidance, 0 WRITE"
     )
     assert expected in text
