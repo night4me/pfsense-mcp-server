@@ -6,7 +6,7 @@
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
-        docs-build docs-serve sbom min-deps-check witness-daemon-check
+        docs-build docs-serve sbom min-deps-check witness-daemon-check guidance-corpus-audit
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -291,6 +291,16 @@ docs-build:
 
 docs-serve:
 	@$(PYTHON) -m mkdocs serve
+
+# Maintainer-invoked audit (task Phase 18): verify every guidance registry
+# entry's pinned excerpt is still present, verbatim, on its live
+# canonical_url. Requires network access; not part of validate/quick/
+# release-check for that reason (same rationale as any live-network
+# check in this project). Exits non-zero on drift/fetch failure -- a
+# documentation site change should be a visible maintenance finding, not
+# silent wrong guidance.
+guidance-corpus-audit:
+	@$(PYTHON) scripts/guidance_corpus_audit.py
 
 # Software Bill of Materials (SBOM) generation. Deliberately outside
 # quick/validate/release-check -- an occasional, explicit, network-
