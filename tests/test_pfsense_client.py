@@ -9661,3 +9661,86 @@ def test_apply_status_invalid_field_type_raises_shape_error(fixture_name, path, 
     client = PfSenseClient(rest_client)
     with pytest.raises(PfSenseResponseShapeError):
         getattr(client, call)()
+
+
+# --- v0.6.0 Phase B Batch E: WireGuard tunnel addresses (implemented + offline-tested, unregistered) ---
+
+VPN_WIREGUARD_TUNNEL_ADDRESSES_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "vpn_wireguard_tunnel_addresses_response.json"
+)
+
+
+def _vpn_wireguard_tunnel_addresses_body() -> dict:
+    return json.loads(VPN_WIREGUARD_TUNNEL_ADDRESSES_FIXTURE.read_text())
+
+
+def _vpn_wireguard_tunnel_addresses_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_wireguard_tunnel_addresses_body()
+    transport.register(
+        "GET", "/api/v2/vpn/wireguard/tunnel/addresses?limit=100", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_wireguard_tunnel_addresses_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_wireguard_tunnel_addresses_client(body)
+    assert client.get_vpn_wireguard_tunnel_addresses() == []
+
+
+def test_get_vpn_wireguard_tunnel_addresses_omits_identifying_fields_by_default():
+    client, _ = _vpn_wireguard_tunnel_addresses_client()
+    addresses = client.get_vpn_wireguard_tunnel_addresses()
+    assert len(addresses) == 1
+    assert addresses[0].address is None
+    assert addresses[0].mask is None
+    assert addresses[0].descr == "primary tunnel address"
+
+
+def test_get_vpn_wireguard_tunnel_addresses_includes_identifying_fields_when_requested():
+    client, _ = _vpn_wireguard_tunnel_addresses_client()
+    addresses = client.get_vpn_wireguard_tunnel_addresses(include_identifying_metadata=True)
+    assert addresses[0].address == "198.51.100.40"
+    assert addresses[0].mask == 24
+
+
+def test_get_vpn_wireguard_tunnel_addresses_only_calls_its_own_endpoint():
+    client, transport = _vpn_wireguard_tunnel_addresses_client()
+    client.get_vpn_wireguard_tunnel_addresses()
+    assert transport.calls == [("GET", "/api/v2/vpn/wireguard/tunnel/addresses?limit=100")]
+
+
+def test_get_vpn_wireguard_tunnel_addresses_rejects_limit_out_of_range():
+    client, _ = _vpn_wireguard_tunnel_addresses_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_wireguard_tunnel_addresses(limit=0)
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_wireguard_tunnel_addresses(limit=101)
+
+
+def test_get_vpn_wireguard_tunnel_addresses_missing_data_key_raises_shape_error():
+    body = _vpn_wireguard_tunnel_addresses_body()
+    del body["data"]
+    client, _ = _vpn_wireguard_tunnel_addresses_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_tunnel_addresses()
+
+
+def test_get_vpn_wireguard_tunnel_addresses_required_field_missing_raises_shape_error():
+    body = _vpn_wireguard_tunnel_addresses_body()
+    del body["data"][0]["descr"]
+    client, _ = _vpn_wireguard_tunnel_addresses_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_tunnel_addresses()
+
+
+def test_get_vpn_wireguard_tunnel_addresses_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_wireguard_tunnel_addresses_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"][0]["descr"] = [sentinel]
+    client, _ = _vpn_wireguard_tunnel_addresses_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_wireguard_tunnel_addresses()
+    assert sentinel not in str(excinfo.value)

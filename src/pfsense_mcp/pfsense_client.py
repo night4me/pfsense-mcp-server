@@ -101,6 +101,7 @@ from .models.virtual_ip_apply import VirtualIPApply
 from .models.web_gui_settings import WebGUISettings
 from .models.wireguard_apply import WireGuardApply
 from .models.wireguard_peer_status import WireGuardPeerStatus
+from .models.wireguard_tunnel_address import WireGuardTunnelAddress
 from .models.wireguard_tunnel_status import WireGuardTunnelStatus
 from .rest_api_client import RestApiClient
 
@@ -338,6 +339,9 @@ VPN_OPENVPN_SERVERS_MAX_LIMIT = 100
 
 VPN_OPENVPN_CSOS_MIN_LIMIT = 1
 VPN_OPENVPN_CSOS_MAX_LIMIT = 100
+
+VPN_WIREGUARD_TUNNEL_ADDRESSES_MIN_LIMIT = 1
+VPN_WIREGUARD_TUNNEL_ADDRESSES_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -1322,3 +1326,21 @@ class PfSenseClient:
     def get_wireguard_apply_status(self) -> WireGuardApply:
         raw = self._rest.get(Endpoints.VPN_WIREGUARD_APPLY)
         return _parse_object_response(raw, "/vpn/wireguard/apply", WireGuardApply.from_api)
+
+    def get_vpn_wireguard_tunnel_addresses(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[WireGuardTunnelAddress]:
+        if not (VPN_WIREGUARD_TUNNEL_ADDRESSES_MIN_LIMIT <= limit <= VPN_WIREGUARD_TUNNEL_ADDRESSES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_WIREGUARD_TUNNEL_ADDRESSES_MIN_LIMIT} and "
+                f"{VPN_WIREGUARD_TUNNEL_ADDRESSES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/wireguard/tunnel/addresses",
+            lambda data: WireGuardTunnelAddress.from_api(
+                data, include_identifying_metadata=include_identifying_metadata
+            ),
+        )

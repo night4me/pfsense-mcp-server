@@ -255,6 +255,20 @@
       "writeOnly": false
     }
   },
+  "WireGuardTunnelAddress": {
+    "address": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "descr": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "mask": {
+      "type": "integer",
+      "writeOnly": false
+    }
+  },
   "WireGuardTunnelStatus": {
     "descr": {
       "type": "string",

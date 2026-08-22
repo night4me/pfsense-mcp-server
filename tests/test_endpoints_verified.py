@@ -1189,3 +1189,15 @@ def test_vpn_wireguard_apply_path_suffix_has_no_api_prefix():
 
 def test_vpn_wireguard_apply_path_suffix_is_correct():
     assert Endpoints.VPN_WIREGUARD_APPLY.path_suffix == "/vpn/wireguard/apply"
+
+
+def test_vpn_wireguard_tunnel_addresses_is_not_yet_verified():
+    assert Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.verified is False
+
+
+def test_vpn_wireguard_tunnel_addresses_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.path_suffix.startswith("/api")
+
+
+def test_vpn_wireguard_tunnel_addresses_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.path_suffix == "/vpn/wireguard/tunnel/addresses"

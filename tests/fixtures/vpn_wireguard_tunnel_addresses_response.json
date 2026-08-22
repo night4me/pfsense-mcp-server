@@ -1,0 +1,13 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "address": "198.51.100.40",
+      "mask": 24,
+      "descr": "primary tunnel address"
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

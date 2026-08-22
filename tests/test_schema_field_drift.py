@@ -43,6 +43,7 @@ from pfsense_mcp.models.system_timezone import SystemTimezone
 from pfsense_mcp.models.virtual_ip_apply import VirtualIPApply
 from pfsense_mcp.models.wireguard_apply import WireGuardApply
 from pfsense_mcp.models.wireguard_peer_status import WireGuardPeerStatus
+from pfsense_mcp.models.wireguard_tunnel_address import WireGuardTunnelAddress
 from pfsense_mcp.models.wireguard_tunnel_status import WireGuardTunnelStatus
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "pinned_response_schemas.json"
@@ -77,6 +78,7 @@ _REGISTRY: tuple[tuple[type[BaseModel], str, frozenset[str]], ...] = (
     (DNSResolverApply, "DNSResolverApply", frozenset()),
     (IPsecApply, "IPsecApply", frozenset()),
     (WireGuardApply, "WireGuardApply", frozenset()),
+    (WireGuardTunnelAddress, "WireGuardTunnelAddress", frozenset()),
 )
 
 

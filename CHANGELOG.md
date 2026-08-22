@@ -84,6 +84,22 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   registered as public tools — same LAB-access blocker as Batch C.
   Public contract unchanged at 85 READ / 0 default WRITE.
 
+- **WireGuard tunnel addresses, implemented and offline-tested (v0.6.0
+  Phase B, Batch E — not yet registered).** New
+  `WireGuardTunnelAddress` model/client method for
+  `vpn/wireguard/tunnel/addresses` (`address`/`mask`/`descr`, none
+  `writeOnly`, no secret material — `address`/`mask` redacted by
+  default, matching `RoutingStaticRoute`'s established convention).
+  Independently re-confirmed NOT redundant with the already-shipped
+  `WireGuardTunnelStatus`, which has no address/CIDR field at all —
+  unlike WireGuard peer allowed-IPs, deliberately **not** implemented
+  since it is already nested as `WireGuardPeerStatus.allowed_ips`.
+  pfSense-pkg-WireGuard is already installed on the LAB (prior,
+  separately authorized action), so package availability is not this
+  batch's blocker — the same read-only LAB service-account privilege
+  scope issue as Batches C/D is. Not registered as a public tool. Public
+  contract unchanged at 85 READ / 0 default WRITE.
+
 ## [0.5.1] - 2026-08-21
 
 **Documentation-accuracy and security-communication patch. NO MCP

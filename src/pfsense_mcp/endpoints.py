@@ -729,3 +729,16 @@ class Endpoints:
         verified=False,
         min_api_version=ApiVersion.V2,
     )
+    # v0.6.0 Phase B Batch E -- re-checked against the pinned schema for
+    # secrets before implementation (none found; address/mask/descr,
+    # none writeOnly). address/mask redacted by default (matching
+    # RoutingStaticRoute's convention). Confirmed NOT redundant with the
+    # already-shipped WireGuardTunnelStatus (no address field there at
+    # all). Requires pfSense-pkg-WireGuard (installed on this LAB, per
+    # the already-shipped STATUS_WIREGUARD_TUNNELS/PEERS entries below).
+    # Not yet LAB-verified for the same reason as STATUS_LOGS_SETTINGS.
+    VPN_WIREGUARD_TUNNEL_ADDRESSES = EndpointInfo(
+        path_suffix="/vpn/wireguard/tunnel/addresses",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
