@@ -110,7 +110,7 @@ def _fetch(url: str) -> str:
         if parts.scheme != "https" or parts.hostname not in ALLOWED_DOCUMENT_HOSTS:
             raise ValueError(f"refusing to fetch non-allow-listed URL: {current!r}")
         request = urllib.request.Request(current, headers={"User-Agent": _USER_AGENT})
-        response = urllib.request.urlopen(request, timeout=_TIMEOUT_SECONDS)
+        response = urllib.request.urlopen(request, timeout=_TIMEOUT_SECONDS)  # nosec B310 (scheme+host already checked above, every loop iteration)
         with response:
             if response.status in (301, 302, 303, 307, 308):
                 location = response.headers.get("Location")
