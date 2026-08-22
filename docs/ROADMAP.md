@@ -7,23 +7,24 @@ capability or authorizes a production change.
 
 ## Current baseline
 
-**2026-08-21 update — current immutable published baseline is v0.5.1**
-(PyPI and GitHub; see `CHANGELOG.md`'s `[0.5.1]` entry) — a
-documentation-accuracy and security-communication patch over `v0.5.0`
-(itself a major READ-capability expansion over the prior v0.4.2
-baseline: 42 → 84 tools, exactly a 100% increase). `v0.5.1` corrects a
-packaging-claim error found in `v0.5.0` after publication, completes
-package-dependency documentation, sharpens compatibility-evidence
-terminology, downgrades an overstated pfSense Plus 25.11 claim, and
-adds three new architecture diagrams. No WRITE capability changed at
-either release. The `v0.2.x`/`v0.3.0` sections immediately below are
-kept exactly as originally written, as an accurate historical record of
-what shipped and when — not rewritten to look cleaner. Treat "v0.3.0"
-in their text as the baseline *at the time those sections were
-written*, not the current one.
+**2026-08-22 update — current immutable published baseline is v0.7.0**
+(PyPI and GitHub; see `CHANGELOG.md`'s `[0.7.0]` entry) — the first
+release to add `pfsense_get_official_guidance`, a separate,
+structurally distinct official-documentation guidance tool (never a
+96th pfSense READ capability; see `docs/OFFICIAL_GUIDANCE_LAYER.md`).
+`v0.6.0` itself was a READ-capability expansion over the prior `v0.5.1`
+baseline (84 → 95 tools); `v0.5.0` was the major expansion before that
+(42 → 84 tools, exactly a 100% increase); `v0.5.1` was a documentation-
+accuracy and security-communication patch over `v0.5.0`. No WRITE
+capability changed across any of these releases. The `v0.2.x`/`v0.3.0`
+sections immediately below are kept exactly as originally written, as
+an accurate historical record of what shipped and when — not rewritten
+to look cleaner. Treat "v0.3.0" in their text as the baseline *at the
+time those sections were written*, not the current one.
 
-- Production MCP surface: **84 READ tools, 0 default-reachable WRITE
-  tools** — enforced mechanically on every CI run
+- Production MCP surface: **95 pfSense READ tools + 1 official-guidance
+  tool, 0 default-reachable WRITE tools** — the READ/WRITE split is
+  enforced mechanically on every CI run
   (`scripts/write_capability_check.py`), not merely documented.
 - **One WRITE capability now exists and is `verified=True`**:
   `set_firewall_alias_description_v1`

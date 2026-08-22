@@ -62,7 +62,7 @@ path.
 | Approved fixtures | Synthetic/sanitized integrity; no production identifiers or credentials |
 | Package artifacts and source | Integrity and absence of private/local files |
 | Recovery Contract state (future) | Integrity, confidentiality, freshness, target binding, durability |
-| Official-guidance registry/content (inert, `ADR-017`) | Integrity of the capability→document mapping; content provenance; never a source of authorization |
+| Official-guidance registry/content (`ADR-017`; reachable as of 2026-08-22 via `pfsense_get_official_guidance`) | Integrity of the capability→document mapping; content provenance; never a source of authorization |
 
 ## Trust boundaries
 
@@ -376,14 +376,15 @@ framework mitigation does not authorize activation.
 | Transport spoofing or malicious response | Production HTTPS/GET boundary remains unchanged and isolated | Exact mutation TLS/status/shape/read-back contract |
 | Capability escalation through bootstrap | Tier 1 imports absent; Engineer/profile/endpoints/policy are empty | Replace each zero-entry invariant only through explicit activation review |
 
-## Guidance-layer adversarial paths (inert, `ADR-017`)
+## Guidance-layer adversarial paths (`ADR-017`; reachable as of 2026-08-22)
 
-These paths apply to the inert `ADR-017` scaffolding and any future
-consumer (READ-tool output, Tier 1 PREPARE evidence). No consumer is
-authorized by this document or by `ADR-017`'s acceptance. This table is
-the record of `reports-ai/reviews/ADR_017_RED_TEAM.md`'s attack list and
-this design's response to each; see that review for full reasoning and
-any resulting revisions.
+These paths apply to the `ADR-017` guidance layer and any future
+consumer (Tier 1 PREPARE evidence, still unauthorized). As of
+2026-08-22, one consumer is authorized and live: `pfsense_get_official_guidance`
+(see TB9 above) — not a Tier 1 PREPARE consumer, not a pfSense READ
+capability. This table is the record of `reports-ai/reviews/ADR_017_RED_TEAM.md`'s
+attack list and this design's response to each; see that review for full
+reasoning and any resulting revisions.
 
 | Attack or fault | Current inert mitigation | Residual activation requirement |
 |---|---|---|

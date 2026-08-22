@@ -140,7 +140,7 @@ path.
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install 'pfsense-mcp-server==0.5.1'
+.venv/bin/python -m pip install --upgrade pfsense-mcp-server
 install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 # put the API key on the first line of that file, then:
 ```

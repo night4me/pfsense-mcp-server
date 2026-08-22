@@ -4,7 +4,8 @@
 strongly typed, read-only visibility into one pfSense appliance — without
 exposing raw shell access or a way to mutate the appliance by accident.
 
-**Current production contract: 95 READ tools. 0 WRITE tools.** That split
+**Current production contract: 95 pfSense READ tools + 1 official-
+guidance tool. 0 WRITE tools.** That split
 is deliberate: this project treats mutation as a safety-engineering
 problem, not a feature flag — the maintainer's own reasoning is in the
 README's
@@ -43,7 +44,8 @@ itself:
   has inventoried and *not yet* authorized. Start here if you're deciding
   whether to trust this project with appliance credentials.
 - **API reference** — the full MCP tool catalog this server currently
-  registers (95 READ tools, zero WRITE tools).
+  registers (95 pfSense READ tools, 1 official-guidance tool, zero WRITE
+  tools).
 - **Architecture (current production)** — how the active READ path is
   built: transport, typed response mapping, capability gating, tool
   registration.
