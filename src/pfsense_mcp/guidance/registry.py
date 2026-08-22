@@ -45,7 +45,30 @@ from .models import UNVERSIONED, DocumentSource, Edition, EvidenceLevel, Guidanc
 #: Bumped only when `_REGISTRY`'s content changes -- carried on every
 #: `GuidanceReference` as provenance (I5), never used to change which
 #: entries match.
-SNAPSHOT_VERSION = "guidance-registry-2026-08-08"
+SNAPSHOT_VERSION = "guidance-registry-2026-08-22"
+
+#: Shared, evidence-based `license_note` text for the 2026-08-22 corpus
+#: expansion below. Not boilerplate-copied blind: the underlying fact it
+#: states -- copyright holder, absence of an explicit documentation-reuse
+#: license -- was independently verified this session (fetched
+#: docs.netgate.com's page footer directly, and netgate.com's own
+#: "Website Terms & Conditions of Use" at
+#: https://www.netgate.com/company/web-terms, which covers www.netgate.com/
+#: store.netgate.com/www.pfSense.org and does not explicitly name
+#: docs.netgate.com). Every entry using this constant was individually
+#: checked against its own `canonical_url` at authoring time (Review
+#: checklist, Finding 5) -- what's shared is the licensing-fact citation,
+#: not the excerpt-to-source verification, matching I4's actual concern.
+_NETGATE_DOCS_LICENSE_NOTE = (
+    "Short quotation from Netgate pfSense documentation (docs.netgate.com), "
+    "for reference only -- not a full-page mirror. Footer: copyright "
+    "Electric Sheep Fencing LLC and Rubicon Communications LLC, all rights "
+    "reserved (checked 2026-08-22); netgate.com Website Terms omit "
+    "docs.netgate.com and state no quotation/fair-use permission. Rights "
+    "remain with the copyright holders; verify terms before broader reuse "
+    "(ADR-017 licensing self-challenge; not independently resolved beyond "
+    "this citation)."
+)
 
 #: The only trust label this accepted (bundled-snapshot-only) scope
 #: produces. TB-G3 (deferred) reserves other values for live-fetched
@@ -92,8 +115,355 @@ _ALIAS_DOC = DocumentSource(
     ),
 )
 
+#: Phase 16 initial corpus (2026-08-22): one verified entry per capability
+#: across the priority domain list (System/Interfaces/VLANs/Routing/
+#: Firewall/NAT/DHCP/DNS/IPsec/OpenVPN/WireGuard/Certificates/CARP/
+#: Logging), each fetched live from its cited `canonical_url` during this
+#: registry-authoring step and quoted verbatim (same review discipline as
+#: `_ALIAS_DOC` above). None claims `EXPLICIT_UNVERSIONED` or
+#: `EXPLICIT_VERSION_SCOPED` -- every fetched page was an undated
+#: `/latest/` page with no stated version scope, so each is honestly
+#: `INFERRED_FROM_CURRENT_DOCS` (can only ever reach `VERSION_UNCONFIRMED`,
+#: never `APPLICABLE`, per the accepted evidence-level cap) until a
+#: curator re-authors one with a genuine explicit version citation. The
+#: pfSense REST API (`SYSTEM_RESTAPI_SETTINGS_READ` and related
+#: capabilities) is deliberately NOT represented here: it is a
+#: community-maintained package (pfrest.org / github.com/Netgate/
+#: pfsense-api), not docs.netgate.com content, and so has no entry that
+#: could satisfy `ALLOWED_DOCUMENT_HOSTS` honestly -- this is a real
+#: `GUIDANCE_NOT_FOUND` gap, not an oversight (see the Phase 15 coverage
+#: mapping in `reports-ai/`).
+_FIREWALL_RULES_DOC = DocumentSource(
+    source_id="netgate_docs_firewall_rules",
+    title="Firewall",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/firewall/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt="Firewall rules control traffic passing through the firewall.",
+    content_hash="628009dafc6ea4920a3387571bf101d20a194c7e24664698bb30f873b4215a08",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_NAT_DOC = DocumentSource(
+    source_id="netgate_docs_nat",
+    title="Network Address Translation",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/nat/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "Network Address Translation (NAT) allows multiple computers using "
+        "IPv4 to be connected to the Internet using a single public IPv4 "
+        "address."
+    ),
+    content_hash="4f6be79f6c8d3e0dfbc2132b4d948699e4d038fffd8bcbb7ba4a01756a3f72c5",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_DHCP_DOC = DocumentSource(
+    source_id="netgate_docs_dhcp",
+    title="DHCP Server",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/services/dhcp/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "Dynamic Host Configuration Protocol (DHCP), allows a device such as "
+        "pfSense® software to dynamically allocate IP addresses to "
+        "clients from predefined pools of addresses."
+    ),
+    content_hash="8b9faf0eef4e0e0e56016903935e5ac301e6fc5e0b96bcc81b2605d90716fe67",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_DNS_RESOLVER_DOC = DocumentSource(
+    source_id="netgate_docs_dns_resolver",
+    title="DNS Resolver",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/services/dns/resolver.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "The DNS Resolver in pfSense® software utilizes unbound, which is "
+        "a validating, recursive, caching DNS resolver capable of using "
+        "DNSSEC, DNS over TLS, and a wide variety of options."
+    ),
+    content_hash="364811ff9c11b92bb55b06201f75ab86229c7e529b138ba917445fb02b4f9a3c",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_IPSEC_DOC = DocumentSource(
+    source_id="netgate_docs_ipsec",
+    title="IPsec",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/vpn/ipsec/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "IPsec provides a standards-based VPN implementation that is "
+        "compatible with a wide range of clients for mobile connectivity "
+        "and other devices for site-to-site connectivity."
+    ),
+    content_hash="2a895e5cfba8c3970bafb89febda40c47b08e9ddc29e1509a2dfde319f27d9fe",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_WIREGUARD_DOC = DocumentSource(
+    source_id="netgate_docs_wireguard",
+    title="WireGuard",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/vpn/wireguard/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt="WireGuard is a new VPN Layer 3 protocol designed for speed and simplicity.",
+    content_hash="8eaf8af49b7c9c43e0ec71602d2419d48b60d329258f1b42179c5f92b26c82ad",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_OPENVPN_DOC = DocumentSource(
+    source_id="netgate_docs_openvpn",
+    title="OpenVPN",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/vpn/openvpn/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "OpenVPN is an open source VPN solution which can provide access to "
+        "remote access clients and enable site-to-site connectivity."
+    ),
+    content_hash="9400b50964b3ac32f650fa716cb0b7db06f7de9e0af95f384f7e59a16e233d99",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_HA_CARP_DOC = DocumentSource(
+    source_id="netgate_docs_high_availability",
+    title="High Availability",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/highavailability/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "pfSense® software is one of very few open source solutions "
+        "offering enterprise-class high availability capabilities with "
+        "stateful failover, allowing the elimination of the firewall as a "
+        "single point of failure."
+    ),
+    content_hash="86e1e2e669786a6184445d016aba00085fc30b48f6a1c52e502baab632500149",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_CERTIFICATES_DOC = DocumentSource(
+    source_id="netgate_docs_certificates",
+    title="Certificate Manager",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/certificates/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "The Certificate Manager under System > Certificates, creates and "
+        "maintains certificate authority (CA), certificate, and certificate "
+        "revocation list (CRL) entries for use by the firewall."
+    ),
+    content_hash="db5e59c23b12a9b1acf85d7ad1a1a70a4916dfe7a5a86ab8c8da264e60dcdd26",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_INTERFACES_DOC = DocumentSource(
+    source_id="netgate_docs_interfaces",
+    title="Interface Types and Configuration",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/interfaces/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "pfSense® software is compatible with numerous types of network "
+        "interfaces, either using physical interfaces directly or by "
+        "employing other protocols such as PPP or VLANs."
+    ),
+    content_hash="2d91f94c4db6eb6d2fe05d24f81edc313c09a5009e3fa51a8eb6389ff29b51c6",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_VLAN_DOC = DocumentSource(
+    source_id="netgate_docs_vlan",
+    title="Virtual LANs (VLANs)",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/vlan/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "VLANs enable a switch to carry multiple discrete broadcast "
+        "domains, allowing a single switch to function as if it were "
+        "multiple switches."
+    ),
+    content_hash="461cba5f690683808e0b2a3216262adb7a44755844a718e40ade48b8692eb595",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_GATEWAYS_DOC = DocumentSource(
+    source_id="netgate_docs_gateways",
+    title="Gateways",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/routing/gateways.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "Gateways are the key to routing; They are routers on directly "
+        "connected networks through which a host can reach other networks."
+    ),
+    content_hash="ef7de5b121865ed979b38fedf6124ca37e15b6abd18a00886255b27301edbb7e",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
+_LOGGING_DOC = DocumentSource(
+    source_id="netgate_docs_logging",
+    title="System Logs",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/monitoring/logs/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    content_excerpt=(
+        "pfSense® software logs a lot of data by default, but does so "
+        "in a manner that attempts to avoid overflowing the storage on the "
+        "firewall."
+    ),
+    content_hash="69a64677873f28669075afaff93e42b555ebb3c4ef7cb9ec8abbec841951f82c",
+    license_note=(
+        "Short quotation from Netgate's official pfSense documentation, used "
+        "for contextual reference only -- not a full-page mirror. Full "
+        "content and rights remain with Netgate/Rubicon Communications LLC "
+        '(site-wide copyright: "All Rights Reserved", confirmed 2026-08-22). '
+        "Verify redistribution terms before any broader reuse (ADR-017 "
+        "licensing self-challenge; not independently resolved by this "
+        "project)."
+    ),
+)
+
 _REGISTRY: dict[Capability, tuple[DocumentSource, ...]] = {
     Capability.ALIAS_READ: (_ALIAS_DOC,),
+    Capability.FIREWALL_READ: (_FIREWALL_RULES_DOC,),
+    Capability.FIREWALL_NAT_READ: (_NAT_DOC,),
+    Capability.DHCP_SERVER_READ: (_DHCP_DOC,),
+    Capability.SERVICES_DNS_RESOLVER_READ: (_DNS_RESOLVER_DOC,),
+    Capability.STATUS_IPSEC_SA_READ: (_IPSEC_DOC,),
+    Capability.STATUS_WIREGUARD_TUNNEL_READ: (_WIREGUARD_DOC,),
+    Capability.STATUS_OPENVPN_SERVER_READ: (_OPENVPN_DOC,),
+    Capability.STATUS_CARP_READ: (_HA_CARP_DOC,),
+    Capability.SYSTEM_CERTIFICATE_READ: (_CERTIFICATES_DOC,),
+    Capability.INTERFACE_READ: (_INTERFACES_DOC,),
+    Capability.INTERFACE_VLAN_READ: (_VLAN_DOC,),
+    Capability.GATEWAY_READ: (_GATEWAYS_DOC,),
+    Capability.STATUS_LOGS_SETTINGS_READ: (_LOGGING_DOC,),
 }
 
 #: Empty by default -- the correct starting state, same as `_REGISTRY`
