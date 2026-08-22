@@ -417,28 +417,38 @@ A browsable version of the full documentation set below is published at
 
 ## Release status
 
-**v0.5.1 is the immutable production baseline, published on PyPI —
-84 READ tools, 0 WRITE tools.** A documentation-accuracy and
-security-communication patch over `v0.5.0` — no MCP capability change,
-no runtime security-semantic change, public contract byte-identical to
-`v0.5.0`. It corrects an error `v0.5.0` shipped with (an incorrect
-pfSense Plus REST API packaging claim, found via post-publication
-review), completes the package-dependency documentation, sharpens the
-compatibility evidence-tier terminology, downgrades an overstated
-pfSense Plus 25.11 classification, and adds three new architecture
-diagrams explaining the READ and protected-WRITE security paths. See
-`CHANGELOG.md`'s `[0.5.1]` entry for the complete list.
+**v0.6.0 is the immutable production baseline, published on PyPI —
+95 READ tools, 0 WRITE tools.** A READ-capability expansion release
+over `v0.5.1` — public READ tool count grew from 84 to 95 (config-
+history revisions, log settings, 8 apply-status endpoints, and
+WireGuard tunnel addresses), useful READ coverage against this
+project's own capability-audit denominator grew from roughly 80% to
+roughly 90%. No WRITE capability, capability semantic, or default
+reachability changed. Every new tool was exercised against this
+project's disposable LAB appliance before public registration; none
+have yet been exercised against production — see
+[Compatibility](#requirements--compatibility) for the precise,
+per-release evidence-tier distinction. See `CHANGELOG.md`'s `[0.6.0]`
+entry and `docs/ACCEPTANCE_v0.6.0.md` for the complete list and
+independently verified evidence.
 
-`v0.5.0` itself was a major READ-capability expansion over the prior
-`v0.4.2` baseline — exactly a 100% increase in public READ tool count
-(42 → 84) — driven by a comprehensive capability discovery audit that
-found the prior 42-tool contract covered only ~40% of the useful READ
-capability universe; this release covers roughly 80%. `v0.5.0`'s own
-tag, GitHub Release, and PyPI artifacts remain unmoved as an accurate
-historical record, including the packaging-claim error later found and
-corrected here — see `CHANGELOG.md`'s `[0.5.0]` entry for that
-release's complete, tool-by-tool list and every security-relevant
-finding along the way.
+`v0.5.1` itself was a documentation-accuracy and security-communication
+patch over `v0.5.0` — no MCP capability change, no runtime
+security-semantic change, public contract byte-identical to `v0.5.0`.
+It corrected an error `v0.5.0` shipped with (an incorrect pfSense Plus
+REST API packaging claim, found via post-publication review), completed
+the package-dependency documentation, sharpened the compatibility
+evidence-tier terminology, downgraded an overstated pfSense Plus 25.11
+classification, and added three new architecture diagrams explaining
+the READ and protected-WRITE security paths. `v0.5.0` itself was a
+major READ-capability expansion over the prior `v0.4.2` baseline —
+exactly a 100% increase in public READ tool count (42 → 84) — driven by
+a comprehensive capability discovery audit that found the prior
+42-tool contract covered only ~40% of the useful READ capability
+universe. Both releases' own tags, GitHub Releases, and PyPI artifacts
+remain unmoved as an accurate historical record — see `CHANGELOG.md`'s
+`[0.5.1]` and `[0.5.0]` entries for their complete, tool-by-tool lists
+and every security-relevant finding along the way.
 
 The one WRITE capability this repository has ever added
 (`set_firewall_alias_description_v1`) is `verified=True` following

@@ -7,6 +7,26 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-22
+
+**READ-capability expansion.** Public contract: **84 → 95 READ tools**
+(0 default WRITE, unchanged). Useful READ coverage: 84/105 (80.0%) →
+95/105 (90.5%) against this project's own capability-audit denominator
+(unchanged — every candidate added this release was already counted in
+that original 105, none legitimately expands it). 84 → 94 distinct READ
+privileges; 85 → 95 write-protected combined privileges. Every new tool
+was exercised against a real pfSense instance (LAB, this project's
+disposable CE 2.9.0 appliance) before public registration — 10 of the
+11 with an exact field-level key-set match against their typed model
+(`FIELD_MODEL_LIVE_VERIFIED`); the remaining one (WireGuard tunnel
+addresses) confirmed reachable and correctly authorized but returned an
+empty list on this LAB (`ENDPOINT_VERIFIED`), so its field shape rests
+on independent schema/security review rather than an observed
+populated item. No package was installed to support this release; the
+one package-conditional addition (WireGuard tunnel addresses) uses a
+package already present on the LAB from prior, separately authorized
+work.
+
 ### Added
 
 - **Schema field-drift regression protection (v0.6.0 Phase B, Batch A).**
@@ -140,6 +160,27 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   resolves privileges from this fixture). Fixed the resulting
   hardcoded-count cascade across test files, `docs/API.md`, and
   `docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`.
+
+### Fixed
+
+- **Stale tool-count/coverage claims across README, docs, and examples**,
+  found during this release's own release-readiness audit: the 84→95
+  increase above was reflected in `docs/API.md` and
+  `docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md` (updated as part of the
+  READ-capability work itself) but not yet in `README.md` (Key facts,
+  architecture diagram labels, capability-overview table and per-category
+  counts, package-conditional-tools note), `docs/ARCHITECTURE_DIAGRAMS.md`,
+  `docs/API_SURFACE_ARCHITECTURE.md`, `docs/CONFIGURATION.md`,
+  `docs/PYPI_RELEASE.md`, `docs/SECURITY_MODEL.md`, `docs/THREAT_MODEL.md`,
+  `docs/index.md`, or any of the 7 client-setup guides under `examples/`.
+  Evidence-tier distinctions were preserved rather than strengthened:
+  README's Plus 26.07 `PRODUCTION VERIFIED` row keeps its exact "82 of
+  84" historical claim unchanged (that pass predates this release's 11
+  additions) and now explicitly states those 11 tools are `LAB VERIFIED`
+  only, not production-verified. Historical, dated narrative describing
+  specific past batches/releases (e.g. `v0.5.0`'s own "42 → 84 tools"
+  delta) was left untouched, matching this project's established
+  release-immutability convention.
 
 ## [0.5.1] - 2026-08-21
 
