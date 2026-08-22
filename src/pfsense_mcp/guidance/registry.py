@@ -358,6 +358,7 @@ _LOGGING_DOC = DocumentSource(
 
 _REGISTRY: dict[Capability, tuple[DocumentSource, ...]] = {
     Capability.ALIAS_READ: (_ALIAS_DOC,),
+    Capability.SYSTEM_READ: (_SYSTEM_CONFIG_DOC,),
     Capability.FIREWALL_READ: (_FIREWALL_RULES_DOC,),
     Capability.FIREWALL_NAT_READ: (_NAT_DOC,),
     Capability.DHCP_SERVER_READ: (_DHCP_DOC,),
