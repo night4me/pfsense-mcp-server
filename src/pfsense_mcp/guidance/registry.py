@@ -56,7 +56,7 @@ from .models import UNVERSIONED, DocumentSource, Edition, EvidenceLevel, Guidanc
 #: Bumped only when `_REGISTRY`'s content changes -- carried on every
 #: `GuidanceReference` as provenance (I5), never used to change which
 #: entries match.
-SNAPSHOT_VERSION = "guidance-registry-2026-08-22b"
+SNAPSHOT_VERSION = "guidance-registry-2026-08-22c"
 
 #: Shared, evidence-based `license_note` text for the corpus below.
 #: Updated 2026-08-22 for the summary/verification-anchor provenance
@@ -425,6 +425,288 @@ _LOGGING_DOC = DocumentSource(
     license_note=_NETGATE_DOCS_LICENSE_NOTE,
 )
 
+#: Phase 17.3 corpus expansion (2026-08-22c, MCP exposure qualification task):
+#: 13 additional verified entries, each independently WebFetch-verified live
+#: (real page, on-topic, content genuinely supports the summary -- not a
+#: generic landing page or unrelated redirect) before authoring. Same
+#: review discipline as the initial 15-entry corpus.
+_VIRTUAL_IP_DOC = DocumentSource(
+    source_id="netgate_docs_virtual_ips",
+    title="Virtual IP Addresses",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/firewall/virtual-ip-addresses.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A Virtual IP (VIP) lets pfSense claim an additional IP address beyond an "
+        "interface's primary address, commonly used so NAT, CARP failover, or a local "
+        "service can bind to or be reached at that extra address independently of the "
+        "interface's main IP."
+    ),
+    summary_hash="ded0fdd4714b73c14229a45e95460df43d85a9581ea7927e659819415aec7afa",
+    source_verification_excerpt=(
+        "Some types of interfaces on pfSense® software can utilize more than one IP address at a time."
+    ),
+    source_verification_hash="4a4e6473dc514b8fa1bde3e118a9c56bf3f6716efb98329ce1f0897730ad0a74",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_STATIC_ROUTES_DOC = DocumentSource(
+    source_id="netgate_docs_static_routes",
+    title="Static Routes",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/routing/static-routes.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A static route tells pfSense to reach a specific remote network through a "
+        "router other than its default gateway. This is typically needed when an "
+        "internal router connects additional subnets that pfSense would not otherwise "
+        "know how to reach."
+    ),
+    summary_hash="c8583d655f482e4fe6b72c32171a82e441ed0d3137683ef1c8379f43777056bd",
+    source_verification_excerpt=(
+        "Static routes are used when hosts or networks are reachable through a router other than the default gateway."
+    ),
+    source_verification_hash="e717b1c1769eb66f718208e9afa896b60e0271f2d77054ece5b2c90054a4e367",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_GATEWAY_GROUPS_DOC = DocumentSource(
+    source_id="netgate_docs_gateway_groups",
+    title="Gateway Groups",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/routing/gateway-groups.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A gateway group combines two or more configured gateways into a single "
+        "selectable entity, letting a firewall rule or policy route across the group "
+        "for failover or load balancing rather than referencing one fixed gateway."
+    ),
+    summary_hash="43e78511fa9d54dd47de64d57d265e61f2c7803c4f6e9c9c0e2d43244b7a7464",
+    source_verification_excerpt=(
+        "Gateway groups are a set of gateways, but are treated as one entity in gateway fields of the GUI."
+    ),
+    source_verification_hash="cc601cc757e3c8206a888b7b09f554d7c1829cc664fd229c7cedf031f40c0695",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_LAGG_DOC = DocumentSource(
+    source_id="netgate_docs_lagg",
+    title="Link Aggregation (LAGG)",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/interfaces/lagg.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A LAGG interface combines two or more physical network interfaces into one "
+        "logical interface, using protocols such as LACP, failover, or round robin, "
+        "to gain additional bandwidth, redundancy, or both."
+    ),
+    summary_hash="3dc32cdf8e7509721eb329a22fcae2e90b34e3a55a91cd9e6a8b33ea8aa3b949",
+    source_verification_excerpt="Link aggregation is handled by lagg(4) type interfaces (LAGG) on pfSense® software.",
+    source_verification_hash="370ebb49abbabea0cbfd64f0b7811d4a2e07f708a831e290469c92ee41fb38c0",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_TRAFFIC_SHAPER_DOC = DocumentSource(
+    source_id="netgate_docs_traffic_shaper",
+    title="Traffic Shaper",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/trafficshaper/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "Traffic shaping lets pfSense prioritize certain kinds of network traffic "
+        "over others rather than processing every packet strictly first-in-first-out, "
+        "so latency-sensitive or higher-priority traffic gets bandwidth ahead of "
+        "lower-priority traffic."
+    ),
+    summary_hash="f0a66476554b2d8d3dbbce50b9dfa7c2d13d698eb7748e1bf457f9f16dc4fd19",
+    source_verification_excerpt="Traffic shaping, or network Quality of Service (QoS), is a means of prioritizing",
+    source_verification_hash="c42fcbd89f09878fe917472f54ecca226c7ddf3c6287f9bea35516c6ff03789b",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_TRAFFIC_SHAPER_LIMITERS_DOC = DocumentSource(
+    source_id="netgate_docs_traffic_shaper_limiters",
+    title="Limiters",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/trafficshaper/limiters.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "Limiters are pfSense's dummynet-based bandwidth-capping mechanism, an "
+        "alternative to ALTQ-based traffic shaping. They can rate-limit traffic per "
+        "IP address or network, which makes them well suited to capping how much "
+        "bandwidth an individual user or protocol can consume."
+    ),
+    summary_hash="6ea6dd55358c5c364f7ad0d4e5d3585b6b03a5cb9bcd6b9975330e219c1911ee",
+    source_verification_excerpt="Limiters are an alternate method of traffic shaping.",
+    source_verification_hash="e2827dfd244cba3c8600bcce0f82f467552f662d3d5ad6b961dc24e214a86a7d",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_NTP_DOC = DocumentSource(
+    source_id="netgate_docs_ntp",
+    title="NTP",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/services/ntpd/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "The NTP service runs an NTP daemon on pfSense that can synchronize the "
+        "firewall's own clock with upstream time servers and, when enabled, act as a "
+        "time server for clients on the local network."
+    ),
+    summary_hash="59f5cccdee31beb909ef7d6ce9e9a7658cc17774d2c35d9df1bf8043915ed3c3",
+    source_verification_excerpt=(
+        "The NTP service is a Network Time Protocol (NTP) daemon which will listen for requests from clients"
+    ),
+    source_verification_hash="38a6263483da951820635b81a0c30657a1c113cbff8fe4041360306a4d17bcff",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_USER_MANAGER_DOC = DocumentSource(
+    source_id="netgate_docs_user_manager",
+    title="User Manager",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/usermanager/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "The User Manager is where pfSense administrator and other local accounts "
+        "are created and managed. A local account can be used to log into the GUI, "
+        "authenticate for VPN services such as IPsec or OpenVPN, or authenticate to "
+        "the Captive Portal."
+    ),
+    summary_hash="490a6de5616e73fda72712cb4b863a14b13e5187b5247e6747f7f71520978c40",
+    source_verification_excerpt=(
+        "The User Manager in pfSense® software provides the ability to create and manage multiple user accounts."
+    ),
+    source_verification_hash="bf747dbce54bcb493aaa04a2bb06e8b5b23cf896a983d6d3c55a0ccdfbcee440",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_USER_GROUPS_DOC = DocumentSource(
+    source_id="netgate_docs_user_groups",
+    title="Local Groups",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/usermanager/groups.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A pfSense group lets an administrator assign a set of GUI privileges once "
+        "and apply it to many user accounts, instead of configuring the same "
+        "privileges on every individual account -- useful, for example, for a set of "
+        "firewall administrators or IPsec xauth users who should all share the same "
+        "access."
+    ),
+    summary_hash="65618c696c660f7f63a1db8cbaa13fd75344099a14a6db29167a99e882d46dd9",
+    source_verification_excerpt=(
+        "Groups manage sets of user privileges so they do not need to be maintained individually on every user account."
+    ),
+    source_verification_hash="42e9635d3103420895a2c9082a9d3b099192d8d11307b1ac809fb5dfa334773e",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_CERTIFICATE_AUTHORITIES_DOC = DocumentSource(
+    source_id="netgate_docs_certificate_authorities",
+    title="Certificate Authorities",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/certificates/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A Certificate Authority (CA) entry in pfSense's Certificate Manager signs "
+        "the certificates issued for a given deployment; VPN servers and clients use "
+        "the CA's own certificate to verify that a presented server or client "
+        "certificate is genuinely part of that trusted set."
+    ),
+    summary_hash="4a2c38ac8cc6d6661159b890bc1021360f2d85cd66e9937c301be557a33271c6",
+    source_verification_excerpt="This CA then signs all the individual certificates in a set.",
+    source_verification_hash="9f31263f2ee513a6eb8b8961cb3ff76af0d8fedb690592413d4802924b5420ba",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_CRL_DOC = DocumentSource(
+    source_id="netgate_docs_certificate_revocation_lists",
+    title="Certificate Revocation Lists",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/certificates/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A Certificate Revocation List (CRL) in pfSense records certificates that "
+        "have been compromised or otherwise invalidated before their normal "
+        "expiration. An application that checks the relevant CRL will treat a "
+        "revoked certificate as untrusted even though it has not expired."
+    ),
+    summary_hash="c9e95eff7ec14ada8b2347970d0c05cef8ea78dffeb13b79781d68e569a843ff",
+    source_verification_excerpt=(
+        "Certificate revocation lists (CRLs) are lists of certificates that "
+        "have been compromised or otherwise invalidated."
+    ),
+    source_verification_hash="b8b5e48615f8dc8879b9af16bfed898e30b0871e2a3a034440bca8c98af38963",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_TIME_BASED_RULES_DOC = DocumentSource(
+    source_id="netgate_docs_time_based_rules",
+    title="Time Based Rules",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/firewall/time-based-rules.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "A firewall schedule restricts a rule to specific days and/or time ranges. "
+        "Outside its configured schedule, the rule behaves as if it were not present "
+        "in the ruleset at all, rather than merely being disabled."
+    ),
+    summary_hash="e1c88fe3047ebe6b23ba64c90e76a6151920a3c916c0f7dfcc33bc2c9d55bbfc",
+    source_verification_excerpt=(
+        "Time based rules allow firewall rules to activate during specified days and/or time ranges."
+    ),
+    source_verification_hash="4869092e73de3f1f479fcbf25691e57844b5991b614f2d5742028b4b1aba2275",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
+_ACME_DOC = DocumentSource(
+    source_id="netgate_docs_acme",
+    title="ACME",
+    canonical_url="https://docs.netgate.com/pfsense/en/latest/packages/acme/index.html",
+    pfsense_edition=Edition.BOTH,
+    version_applicability=UNVERSIONED,
+    evidence_level=EvidenceLevel.INFERRED_FROM_CURRENT_DOCS,
+    retrieval_mode=RetrievalMode.BUNDLED_SNAPSHOT,
+    summary=(
+        "The ACME package lets pfSense automatically request and renew "
+        "certificates from any provider implementing the ACME protocol, most "
+        "commonly Let's Encrypt, rather than requiring an administrator to manually "
+        "obtain and install certificates."
+    ),
+    summary_hash="430a5ff0970d24fb07256d41524250513590b759499d2d5a1d1e94adbf2b31ea",
+    source_verification_excerpt=(
+        "The ACME package on pfSense software enables users to obtain certificates from providers who run servers "
+        "compatible with the Automatic Certificate Management Environment"
+    ),
+    source_verification_hash="bc2ee13104f287b558e8e45673b7dd5f5771e1f1f1e786b9bc04bc49626a17c5",
+    license_note=_NETGATE_DOCS_LICENSE_NOTE,
+)
+
 _REGISTRY: dict[Capability, tuple[DocumentSource, ...]] = {
     Capability.ALIAS_READ: (_ALIAS_DOC,),
     Capability.SYSTEM_READ: (_SYSTEM_CONFIG_DOC,),
@@ -441,6 +723,19 @@ _REGISTRY: dict[Capability, tuple[DocumentSource, ...]] = {
     Capability.INTERFACE_VLAN_READ: (_VLAN_DOC,),
     Capability.GATEWAY_READ: (_GATEWAYS_DOC,),
     Capability.STATUS_LOGS_SETTINGS_READ: (_LOGGING_DOC,),
+    Capability.FIREWALL_VIRTUAL_IP_READ: (_VIRTUAL_IP_DOC,),
+    Capability.ROUTING_STATIC_ROUTE_READ: (_STATIC_ROUTES_DOC,),
+    Capability.ROUTING_GATEWAY_GROUP_READ: (_GATEWAY_GROUPS_DOC,),
+    Capability.INTERFACE_LAGG_READ: (_LAGG_DOC,),
+    Capability.FIREWALL_TRAFFIC_SHAPER_READ: (_TRAFFIC_SHAPER_DOC,),
+    Capability.FIREWALL_TRAFFIC_SHAPERS_READ: (_TRAFFIC_SHAPER_LIMITERS_DOC,),
+    Capability.SERVICES_NTP_READ: (_NTP_DOC,),
+    Capability.USER_READ: (_USER_MANAGER_DOC,),
+    Capability.USER_GROUP_READ: (_USER_GROUPS_DOC,),
+    Capability.SYSTEM_CERTIFICATE_AUTHORITY_READ: (_CERTIFICATE_AUTHORITIES_DOC,),
+    Capability.SYSTEM_CRLS_READ: (_CRL_DOC,),
+    Capability.FIREWALL_SCHEDULE_READ: (_TIME_BASED_RULES_DOC,),
+    Capability.SERVICES_ACME_READ: (_ACME_DOC,),
 }
 
 #: Empty by default -- the correct starting state, same as `_REGISTRY`
