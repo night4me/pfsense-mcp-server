@@ -7,6 +7,62 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-22
+
+**First official-guidance MCP tool.** Public contract: **95 pfSense READ
+tools (unchanged) + 1 new official-guidance tool
+(`pfsense_get_official_guidance`), 0 default-reachable WRITE (unchanged)**.
+The guidance tool is not a 96th pfSense READ capability — it is a
+separate, structurally distinct tool class (`tool_class: "guidance"` in
+the public contract, `capability: null`), not gated by the
+`Capability`/privilege/profile system that governs appliance access, and
+does not add to, widen, or reinterpret the 95-tool READ surface, the 94
+distinct READ privileges, or the 1 implemented-but-default-unreachable
+WRITE tool — all three are byte-identical to `v0.6.0`.
+
+`pfsense_get_official_guidance(capability)` returns project-authored
+summaries of official Netgate/pfSense documentation for a given
+pfsense-mcp-server capability, from a deterministic, Git-tracked,
+PR-reviewed bundled registry (ADR-017/ADR-018) — never a live web
+fetch, never a runtime documentation retrieval of any kind. Every
+returned entry carries structural provenance: a canonical Netgate
+source URL, an evidence level, and an applicability state
+(`APPLICABLE`/`PARTIALLY_APPLICABLE`/`VERSION_UNCONFIRMED`/
+`EDITION_MISMATCH`/`STALE`/`NO_OFFICIAL_GUIDANCE_FOUND`) computed from
+the pfSense appliance's own observed edition/version — resolved by the
+tool itself through the exact same already-authenticated read path
+every other READ tool uses (`GET /api/v2/system/version`), never
+supplied by the caller and never guessed. Guidance output is fixed-schema
+data only: it carries no field of type capability, endpoint, method, or
+confirmation token, cannot invoke a tool, alter a capability, or
+authorize any action, and is returned as inert content even when a
+registry entry is adversarial. A fixed, non-overridable disclaimer field
+on every response states plainly that guidance is documentation, not
+observed live appliance state, and confers no authorization.
+
+### Fixed
+
+- **Server-startup failure-coupling, found during this release's own
+  release-readiness audit.** An eager import in
+  `pfsense_mcp/guidance/__init__.py` meant that importing
+  `GuidanceReference` alone (needed for the new tool's own Pydantic
+  schema) was enough to trigger the guidance registry's load-time
+  integrity self-check on the *server-startup* path for every profile
+  with any capability granted — a corrupted guidance registry entry
+  could have crashed the entire MCP server, taking all 95 READ tools
+  down with it. Fixed with a PEP 562 lazy `__getattr__`, verified by a
+  fresh-subprocess test; a corrupted registry entry now fails only that
+  one tool's own calls, never server startup or any other tool.
+- **Stale "guidance layer unwired"/"95 tools" claims**, found during the
+  same audit, across `README.md`, `docs/API.md`,
+  `docs/CONFIGURATION.md`, `docs/SECURITY_MODEL.md`,
+  `docs/THREAT_MODEL.md` (scope line, TB9, the guidance adversarial-paths
+  table, and the A7 threat entry), `docs/OFFICIAL_GUIDANCE_LAYER.md`,
+  `docs/VERSION_AWARE_GUIDANCE.md`, `docs/adr/ADR-017`,
+  `docs/adr/ADR-018`, the ADR index, and all 6 client example guides.
+  Fixed narrowly and additively; historical CHANGELOG/`v0.6.0`-specific
+  records were left untouched.
+
 ## [0.6.0] - 2026-08-22
 
 **READ-capability expansion.** Public contract: **84 → 95 READ tools**

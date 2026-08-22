@@ -26,7 +26,7 @@ import sys
 from pfsense_mcp.write_endpoints import WriteEndpoints
 
 #: The complete, exact set of endpoint names the durable owner roadmap
-#: decision (single first-WRITE product surface only, through v0.6.0)
+#: decision (single first-WRITE product surface only, through v0.7.0)
 #: currently authorizes. Any entry not in this set — or any expected
 #: entry missing from WriteEndpoints — fails this check.
 EXPECTED_ACTIVE_ENTRIES = frozenset({"FIREWALL_ALIAS_DESCRIPTION"})

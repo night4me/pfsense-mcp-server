@@ -122,7 +122,7 @@ def verify_sdist(path: Path) -> None:
                 "/LICENSE",
                 "/pyproject.toml",
                 "/README.md",
-                "/docs/ACCEPTANCE_v0.6.0.md",
+                "/docs/ACCEPTANCE_v0.7.0.md",
                 "/docs/PYPI_RELEASE.md",
                 "/docs/RECOVERY_CONTRACT_SPEC.md",
                 "/src/pfsense_mcp/server.py",
