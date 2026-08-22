@@ -14,7 +14,7 @@ scripting surface, or any way to change the appliance by accident.
 
 ## Key facts
 
-- **95 public READ tools. 0 public WRITE tools by default.**
+- **95 public READ tools, plus 1 documentation guidance tool. 0 public WRITE tools by default.**
 - Covers roughly **90% of the useful READ capability surface** identified
   by this project's own capability audit (267 OpenAPI paths / 243 GET
   operations reviewed, every one given an explicit disposition).
@@ -158,8 +158,8 @@ install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 ```
 
 Point your MCP client at that command — see [MCP client setup](#mcp-client-setup)
-below for client-specific guides — confirm it shows 95 READ tools and no
-WRITE tools, then try one of the [example prompts](#what-you-can-do)
+below for client-specific guides — confirm it shows 95 READ tools, 1
+guidance tool, and no WRITE tools, then try one of the [example prompts](#what-you-can-do)
 above. Full configuration reference, troubleshooting, and every
 environment variable: [`docs/CONFIGURATION.md`](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/).
 

@@ -837,10 +837,17 @@ same day this design was accepted. Kept below as the accurate record of
 what was specified and, per each numbered item, a note on what actually
 shipped — not rewritten to erase the sequencing.
 
-Still entirely offline and unwired: no MCP tool, no READ-tool schema
-change, no PREPARE/Tier 1 consumer, nothing calls
-`compose_guidance_evidence()`. Wiring it into a real consumer remains its
-own separate, explicit, not-yet-granted decision.
+Still entirely offline and unwired *for this bridge specifically*: no
+READ-tool schema change, no PREPARE/Tier 1 consumer, nothing calls
+`compose_guidance_evidence()`. Wiring the bridge into a real consumer
+remains its own separate, explicit, not-yet-granted decision. **Update
+(2026-08-22):** a different, narrower consumer now exists —
+`pfsense_get_official_guidance`, an owner-authorized MCP guidance tool,
+calls `lookup_guidance()` directly and returns `GuidanceReference` as-is;
+it does not go through this bridge or produce an `EvidenceReference`, so
+the claim above about `compose_guidance_evidence()` and Tier 1/PREPARE
+remains accurate. See `docs/adr/ADR-018-version-aware-guidance-resolution.md`'s
+implementation update for the full picture.
 
 ### Exact scope
 

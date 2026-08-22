@@ -46,9 +46,11 @@ separate, explicitly authorized future phase (see
 [the public roadmap](ROADMAP.md)), not a way to unlock anything today.
 
 `PFSENSE_ALLOWED_TOOLS` is an optional restriction applied after the
-selected profile. If absent, the auditor profile keeps all 95 tools. If
-present, only the comma-separated exact names in both the profile and the
-restriction register. Whitespace around names is ignored and duplicate
+selected profile. If absent, the auditor profile keeps all 95 READ tools
+plus the 1 documentation guidance tool (`pfsense_get_official_guidance`,
+96 total). If present, only the comma-separated exact names in both the
+profile and the restriction register — this applies uniformly to READ and
+guidance tool names alike. Whitespace around names is ignored and duplicate
 names are normalized. An explicitly empty value registers zero tools.
 Unknown names, empty list entries, wildcards, and prefix patterns fail
 closed at startup. The setting can only remove tools; it cannot grant a

@@ -1,9 +1,17 @@
 # ADR-017: Official pfSense/Netgate documentation guidance layer
 
-- **Status:** Accepted — architecture and inert scaffolding only; not
-  wired into any production READ tool output or any Tier 1 PREPARE path.
-  Live retrieval and semantic search are explicitly deferred, not part of
-  this acceptance.
+- **Status:** Accepted — architecture and inert scaffolding only, at
+  acceptance time not wired into any production READ tool output or any
+  Tier 1 PREPARE path. Live retrieval and semantic search are explicitly
+  deferred, not part of this acceptance, and remain deferred.
+  **Implementation update (2026-08-22):** this layer is no longer inert —
+  a single, narrowly-scoped, owner-authorized MCP guidance tool,
+  `pfsense_get_official_guidance` (not a Tier 1 PREPARE path, not a
+  pfSense READ capability), now consumes it in production. See
+  `docs/adr/ADR-018-version-aware-guidance-resolution.md`'s own
+  implementation update and `docs/THREAT_MODEL.md` TB9 for details; this
+  ADR's architecture was not redesigned to enable that, only consumed as
+  originally specified.
 - **Date:** 2026-08-08
 
 ## Context

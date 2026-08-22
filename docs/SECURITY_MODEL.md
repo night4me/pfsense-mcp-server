@@ -45,11 +45,15 @@ the active READ capability profile.
 ## Authorization
 
 The default `auditor` profile exposes the accepted READ capability set and
-grants zero WRITE capabilities. The `engineer` profile also has zero
-capabilities. Under these defaults no WRITE tool is registered and the
-production bootstrap does not construct a write client — the public MCP
-contract remains exactly the accepted READ-only tool set (95 tools, 0
-WRITE) unless an operator explicitly opts in (see below).
+grants zero WRITE capabilities. Under this default no WRITE tool is
+registered and the production bootstrap does not construct a write
+client — the public MCP contract remains exactly the accepted READ-only
+tool set (95 tools) plus the 1 documentation guidance tool
+(`pfsense_get_official_guidance`, not a pfSense READ capability, registered
+alongside the READ tools whenever the active profile grants any capability
+at all), with 0 WRITE tools, unless an operator explicitly opts in (see
+below). The `engineer` profile has zero capabilities, so it registers zero
+tools of any kind — no READ tools, no guidance tool, no WRITE tools.
 
 As of 2026-08-16, one WRITE endpoint is allow-listed —
 `FIREWALL_ALIAS_DESCRIPTION` (`PATCH` on a single alias's `descr` field

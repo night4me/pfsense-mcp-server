@@ -8,7 +8,10 @@ Scope: current local stdio MCP server, 95 READ tools (0 by default under
 an operator explicitly selects `write_protected` and the full Tier1
 security material is provisioned — see `docs/SECURITY_MODEL.md`'s
 "Recovery and WRITE status" for the current, accurate description), and
-the unreachable official-documentation guidance layer
+the official-documentation guidance layer -- as of 2026-08-22, reachable
+through exactly one additional, narrowly-scoped, separately-counted tool
+(`pfsense_get_official_guidance`; see TB9 below), not a pfSense appliance
+READ capability and not gated by the Capability/privilege/profile system
 
 **2026-08-16 update**: the paragraph immediately below, and any other
 passage in this document asserting that "no WRITE capability, endpoint,
@@ -37,10 +40,13 @@ is included in this analysis; as of 2026-08-16 one WRITE capability, endpoint,
 and executor path is active for `FIREWALL_ALIAS_DESCRIPTION` specifically
 (gated as described in the update note above) — this document's Tier 1
 sections describe the security properties that path is expected to uphold,
-not merely a hypothetical. The isolated official-
-documentation guidance layer (`ADR-017`) is included in this analysis on the
-same terms: it is inert scaffolding with no consumer, and this document does
-not authorize wiring it into any READ tool output or any Tier 1 PREPARE path.
+not merely a hypothetical. The official-documentation guidance layer
+(`ADR-017`/`ADR-018`) is included in this analysis on the same terms: as of
+2026-08-22 it has one real, narrowly-scoped consumer, the
+`pfsense_get_official_guidance` MCP tool (see TB9 below) — not a pfSense
+READ tool and not a Tier 1 PREPARE path. This document does not authorize
+wiring it into any pfSense READ tool's own output or any Tier 1 PREPARE
+path.
 
 ## Assets
 
@@ -136,7 +142,7 @@ properties this section describes remain the security properties that
 path is required to uphold, independently verified live twice
 (`ADR-026`).
 
-### TB9 — official documentation content to guidance output (inert, `ADR-017`)
+### TB9 — official documentation content to guidance output (`ADR-017`/`ADR-018`; reachable as of 2026-08-22 via `pfsense_get_official_guidance`)
 
 The guidance layer's registry is Git-tracked, PR-reviewed, load-once data;
 bundled excerpt content is treated as untrusted **content** even though its
@@ -144,9 +150,24 @@ bundled excerpt content is treated as untrusted **content** even though its
 this distinction is load-bearing, not cosmetic (see `OFFICIAL_GUIDANCE_LAYER.md`
 TB-G2). `GuidanceReference` output has no field of type capability, endpoint,
 method, or confirmation token, verified by an isolation test rather than by
-convention alone. Live retrieval and any registry-writable path are explicitly
-out of scope for the accepted architecture; there is currently no consumer of
-this layer's output.
+convention alone. Live retrieval and any registry-writable path remain
+explicitly out of scope for the accepted architecture (`RetrievalMode` has
+no `LIVE_FETCH` member; the maintainer-only corpus-drift audit script is
+never imported by production).
+
+**Updated 2026-08-22**: this layer is no longer unreachable. Candidate A
+(`reports-ai/GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md`) was
+owner-authorized and implemented: a single, narrowly-scoped MCP tool,
+`pfsense_get_official_guidance(capability)`, now calls `lookup_guidance()`
+directly, resolving appliance edition/version for applicability itself
+(tool-resolved, never model-supplied, fail-closed on any resolution
+failure -- see
+`reports-ai/OFFICIAL_GUIDANCE_TOOL_IMPLEMENTATION_2026-08-22.md`). Every
+mitigation below still holds unchanged, since none of them depended on
+the layer staying unreachable -- they were designed against exactly this
+threat class in advance. What changed is only that this table's
+"Residual activation requirement" column, for the one row it applies to,
+is now satisfied rather than pending; that row is annotated below.
 
 ## Attacker models
 
@@ -189,17 +210,22 @@ Not relevant to current reachability, but critical to Tier 1. May replay or
 substitute contracts, targets, intents, and rollback actions; race transitions;
 or exploit ambiguous network outcomes.
 
-### A7 — compromised or spoofed official-documentation source (inert, `ADR-017`)
+### A7 — compromised or spoofed official-documentation source (`ADR-017`; live-retrieval half still deferred)
 
-Not relevant to current reachability (no consumer exists), but modeled ahead
-of activation. Could attempt to have malicious or misleading content bundled
-into the registry (via A5's contributor path), or — only if the deferred
-live-retrieval extension is ever built — serve altered content from an
-otherwise-allow-listed domain. Goals include prompt injection against a
-future model consumer, steering a human toward an unsafe manual action, and
-(the specifically-designed-against outcome) attempting to have guidance
-content mistaken for authorization. See `OFFICIAL_GUIDANCE_LAYER.md` TB-G2/
-TB-G3 and the guidance-layer adversarial-paths table below.
+The live-retrieval/spoofed-domain half of this threat remains not relevant
+to current reachability, since no live retrieval path exists — only the
+Git-tracked bundled registry does. The bundled-content half is now reached
+by a real consumer (`pfsense_get_official_guidance`, updated 2026-08-22 —
+see TB9 below), so it is modeled as active, not merely ahead of
+activation: an attacker could attempt to have malicious or misleading
+content bundled into the registry (via A5's contributor path), which would
+now reach an actual MCP client, or — only if the deferred live-retrieval
+extension is ever built — serve altered content from an otherwise-
+allow-listed domain. Goals include prompt injection against the model
+consumer, steering a human toward an unsafe manual action, and (the
+specifically-designed-against outcome) attempting to have guidance content
+mistaken for authorization. See `OFFICIAL_GUIDANCE_LAYER.md` TB-G2/TB-G3
+and the guidance-layer adversarial-paths table below.
 
 ## STRIDE analysis
 
@@ -364,7 +390,7 @@ any resulting revisions.
 | Source spoofing (fake "official" domain) | Registry `canonical_url` is Git-reviewed, not runtime-discovered; no live fetch exists yet to spoof | Live retrieval (TB-G3) must enforce an exact hostname allow-list with no wildcard/redirect-following before it may exist |
 | Compromised or malicious documentation content | Bundled excerpts are PR-reviewed before merge; load-time content-hash self-check detects any post-review tamper of the shipped file | Live retrieval must independently hash-verify or trust-label unpinned content (TB-G3); no runtime check catches a malicious *reviewed* entry — residual A5 risk, same class already named elsewhere in this document |
 | Stale documentation presented as current | `version_applicability`/`snapshot_version` are explicit fields, never inferred | Consumer-side presentation must visibly label snapshot age; not resolved by this layer alone |
-| Wrong pfSense edition/version guidance | Edition/version ambiguity is never guessed: a registered entry whose edition/version cannot be confirmed is returned labeled `VERSION_UNCONFIRMED`/`EDITION_MISMATCH`/`STALE` (I6, revised 2026-08-09 — see `OFFICIAL_GUIDANCE_LAYER.md`), computed by `applicability.compute_entry_applicability()` and independently re-capped by `EvidenceLevel`; a favorable (`APPLICABLE`) state is only ever reached through explicit, matching evidence | The edition inference (`resolve_appliance_identity`) and the five-step decision procedure are now **implemented** (ADR-018, `3628ce3`) but remain entirely unwired — no MCP tool, no READ tool, no Tier 1 PREPARE consumer calls `lookup_guidance()` in production; activation is a separate, future, unauthorized decision per ADR-018's own "Activation requirements" |
+| Wrong pfSense edition/version guidance | Edition/version ambiguity is never guessed: a registered entry whose edition/version cannot be confirmed is returned labeled `VERSION_UNCONFIRMED`/`EDITION_MISMATCH`/`STALE` (I6, revised 2026-08-09 — see `OFFICIAL_GUIDANCE_LAYER.md`), computed by `applicability.compute_entry_applicability()` and independently re-capped by `EvidenceLevel`; a favorable (`APPLICABLE`) state is only ever reached through explicit, matching evidence | **Updated 2026-08-22**: the edition inference (`resolve_appliance_identity`) and the five-step decision procedure (ADR-018) are implemented and now **wired** — `pfsense_get_official_guidance` calls `lookup_guidance()` in production, resolving identity itself (tool-resolved, never model-supplied). No Tier 1 PREPARE consumer exists yet; that remains a separate, unauthorized decision. |
 | Guidance/observed-state disagreement | Guidance is a structurally separate field from observed state in every design output (never merged into one narrative) | A future consumer's presentation layer must preserve this separation; not enforceable by the guidance layer alone once content leaves it |
 | Prompt injection via document content | No instruction-bearing channel exists for excerpt text to reach (bounded, typed data field only); no WRITE capability exists for an injected instruction to escalate into | Even post-Phase-5, confirmation evidence binds to the contract's own digest, which never includes guidance content — injected text still cannot forge confirmation |
 | Poisoned cache/index | No cache or index exists in the accepted scope — the registry itself is the only lookup structure and is Git-tracked, not runtime-built | A future semantic-retrieval extension must define its own integrity story before it may exist |

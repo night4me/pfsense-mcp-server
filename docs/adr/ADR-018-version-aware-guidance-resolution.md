@@ -2,11 +2,27 @@
 
 Status: **Accepted** (2026-08-09) — architecture and trust boundaries
 only. See "Acceptance record" below for exactly what acceptance grants
-and what it explicitly does not. Nothing in this ADR is implemented yet;
-each piece still requires its own separate, explicit future approval
-before any line of code is written, per ADR-017's own "Live retrieval
-(TB-G3)" Activation requirement, which named exactly this document as a
-prerequisite.
+and what it explicitly does not. At acceptance time, nothing in this ADR
+was implemented yet; each piece required its own separate, explicit
+future approval before any line of code was written, per ADR-017's own
+"Live retrieval (TB-G3)" Activation requirement, which named exactly this
+document as a prerequisite.
+
+**Implementation update (2026-08-22)**: `resolve_appliance_identity()`
+(Finding 10) and `lookup_guidance()`'s version-aware resolution are now
+implemented and wired into production through one, owner-authorized,
+narrowly-scoped MCP tool, `pfsense_get_official_guidance` — see
+`reports-ai/OFFICIAL_GUIDANCE_TOOL_IMPLEMENTATION_2026-08-22.md` and
+`docs/THREAT_MODEL.md` TB9. This did not require reopening this ADR: the
+tool is exactly the "smallest future integration point" this ADR already
+described (a new orchestration/consumer, not a change to this ADR's own
+design), and every trust boundary and Activation requirement below was
+satisfied, not amended, before that consumer was authorized. Live
+retrieval (TB-G3 activation) and any change to `lookup_guidance()`'s
+exclude-vs-include policy remain unactivated, exactly as originally
+scoped; only the "READ-tool or PREPARE wiring" item changed status. The
+rest of this document is preserved as the original 2026-08-09 acceptance
+record and should be read as describing that point in time.
 
 **Revised after independent adversarial review**
 (`reports-ai/reviews/ADR_018_RED_TEAM.md`): 2 BLOCKING and 6 MATERIAL

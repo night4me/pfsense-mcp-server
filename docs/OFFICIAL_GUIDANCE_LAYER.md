@@ -154,9 +154,12 @@ context*, never for the system to *act on as permission*.
   ever reached through explicit, matching evidence — never returned as a
   guess. See `src/pfsense_mcp/guidance/registry.py`'s own module and
   `lookup_guidance()` docstrings for the authoritative current behavior;
-  this note summarizes it for the spec record. Still entirely unwired —
-  no MCP tool, no READ tool, no Tier 1 PREPARE consumer calls
-  `lookup_guidance()` in production.
+  this note summarizes it for the spec record. **Update (2026-08-22):**
+  `lookup_guidance()` is no longer unwired — one narrowly-scoped, owner-
+  authorized MCP tool, `pfsense_get_official_guidance`, calls it directly
+  in production (not a pfSense READ tool, no Tier 1 PREPARE consumer
+  exists). See `docs/adr/ADR-018-version-aware-guidance-resolution.md`'s
+  own implementation update and `docs/THREAT_MODEL.md` TB9.
 
 ## Trust boundaries
 
