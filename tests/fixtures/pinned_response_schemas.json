@@ -17,6 +17,40 @@
       "writeOnly": false
     }
   },
+  "DHCPServerApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
+  "DNSForwarderApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
+  "DNSResolverApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
+  "IPsecApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
+  "InterfaceApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    },
+    "pending_interfaces": {
+      "type": "array",
+      "writeOnly": false
+    }
+  },
   "LogSettings": {
     "auth": {
       "type": "boolean",
@@ -155,9 +189,27 @@
       "writeOnly": false
     }
   },
+  "RoutingApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
   "SystemTimezone": {
     "timezone": {
       "type": "string",
+      "writeOnly": false
+    }
+  },
+  "VirtualIPApply": {
+    "applied": {
+      "type": "boolean",
+      "writeOnly": false
+    }
+  },
+  "WireGuardApply": {
+    "applied": {
+      "type": "boolean",
       "writeOnly": false
     }
   },

@@ -68,6 +68,22 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   READ / 0 default WRITE. Registered in the Batch A schema-drift
   registry.
 
+- **Apply-status sweep, implemented and offline-tested (v0.6.0 Phase B,
+  Batch D — not yet registered).** Eight new models/client methods for
+  `firewall/virtual_ip/apply`, `interface/apply`, `routing/apply`,
+  `services/dhcp_server/apply`, `services/dns_forwarder/apply`,
+  `services/dns_resolver/apply`, `vpn/ipsec/apply`, `vpn/wireguard/apply`
+  — each independently re-verified against the pinned schema (all
+  trivial `{"applied": bool}` shapes; `interface/apply` additionally
+  has a flat `pending_interfaces: list[str]`; no secret material in
+  any). Mirrors the already-shipped `FirewallApplyStatus` pattern.
+  `applied`/`pending_interfaces` are modeled `| None` (schema-declared
+  `nullable: true`), deliberately not assumed non-null the way the
+  pre-existing `FirewallApplyStatus` is, since no live call has
+  confirmed any of these eight endpoints' actual behavior yet. None
+  registered as public tools — same LAB-access blocker as Batch C.
+  Public contract unchanged at 85 READ / 0 default WRITE.
+
 ## [0.5.1] - 2026-08-21
 
 **Documentation-accuracy and security-communication patch. NO MCP

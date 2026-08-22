@@ -25,11 +25,14 @@ from .models.dhcp_lease import DhcpLease
 from .models.dhcp_relay import DHCPRelay
 from .models.dhcp_server import DhcpServer
 from .models.dhcp_server_address_pool import DHCPServerAddressPool
+from .models.dhcp_server_apply import DHCPServerApply
 from .models.dhcp_server_custom_option import DHCPServerCustomOption
 from .models.dhcp_static_mapping import DhcpStaticMapping
 from .models.diagnostics_table import DiagnosticsTable
+from .models.dns_forwarder_apply import DNSForwarderApply
 from .models.dns_forwarder_host_override import DnsForwarderHostOverride
 from .models.dns_resolver_access_list import DnsResolverAccessList
+from .models.dns_resolver_apply import DNSResolverApply
 from .models.dns_resolver_domain_override import DnsResolverDomainOverride
 from .models.dns_resolver_host_override import DnsResolverHostOverride
 from .models.dns_resolver_settings import DnsResolverSettings
@@ -48,6 +51,7 @@ from .models.free_radius_eap import FreeRadiusEap
 from .models.free_radius_interface import FreeRADIUSInterface
 from .models.free_radius_mac import FreeRADIUSMAC
 from .models.gateways import GatewayConfig, GatewayStatus
+from .models.interface_apply import InterfaceApply
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
 from .models.interface_gre import InterfaceGRE
@@ -55,6 +59,7 @@ from .models.interface_group import InterfaceGroup
 from .models.interface_lagg import InterfaceLAGG
 from .models.interface_vlan import InterfaceVlan
 from .models.interfaces import InterfaceStatus
+from .models.ipsec_apply import IPsecApply
 from .models.ipsec_child_sa_status import IPsecChildSaStatus
 from .models.ipsec_phase1_encryption import IPsecPhase1Encryption
 from .models.ipsec_phase2 import IPsecPhase2
@@ -72,6 +77,7 @@ from .models.openvpn_server_status import OpenVpnServerStatus
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.restapi_access_list_entry import RESTAPIAccessListEntry
+from .models.routing_apply import RoutingApply
 from .models.routing_gateway_group import RoutingGatewayGroup
 from .models.routing_static_route import RoutingStaticRoute
 from .models.service_status import ServiceStatus
@@ -91,7 +97,9 @@ from .models.system_timezone import SystemTimezone
 from .models.system_tunable import SystemTunable
 from .models.system_version import SystemVersion
 from .models.traffic_shaper import TrafficShaper
+from .models.virtual_ip_apply import VirtualIPApply
 from .models.web_gui_settings import WebGUISettings
+from .models.wireguard_apply import WireGuardApply
 from .models.wireguard_peer_status import WireGuardPeerStatus
 from .models.wireguard_tunnel_status import WireGuardTunnelStatus
 from .rest_api_client import RestApiClient
@@ -1282,3 +1290,35 @@ class PfSenseClient:
     def get_status_logs_settings(self) -> LogSettings:
         raw = self._rest.get(Endpoints.STATUS_LOGS_SETTINGS)
         return _parse_object_response(raw, "/status/logs/settings", LogSettings.from_api)
+
+    def get_firewall_virtual_ip_apply_status(self) -> VirtualIPApply:
+        raw = self._rest.get(Endpoints.FIREWALL_VIRTUAL_IP_APPLY)
+        return _parse_object_response(raw, "/firewall/virtual_ip/apply", VirtualIPApply.from_api)
+
+    def get_interface_apply_status(self) -> InterfaceApply:
+        raw = self._rest.get(Endpoints.INTERFACE_APPLY)
+        return _parse_object_response(raw, "/interface/apply", InterfaceApply.from_api)
+
+    def get_routing_apply_status(self) -> RoutingApply:
+        raw = self._rest.get(Endpoints.ROUTING_APPLY)
+        return _parse_object_response(raw, "/routing/apply", RoutingApply.from_api)
+
+    def get_dhcp_server_apply_status(self) -> DHCPServerApply:
+        raw = self._rest.get(Endpoints.DHCP_SERVER_APPLY)
+        return _parse_object_response(raw, "/services/dhcp_server/apply", DHCPServerApply.from_api)
+
+    def get_dns_forwarder_apply_status(self) -> DNSForwarderApply:
+        raw = self._rest.get(Endpoints.DNS_FORWARDER_APPLY)
+        return _parse_object_response(raw, "/services/dns_forwarder/apply", DNSForwarderApply.from_api)
+
+    def get_dns_resolver_apply_status(self) -> DNSResolverApply:
+        raw = self._rest.get(Endpoints.DNS_RESOLVER_APPLY)
+        return _parse_object_response(raw, "/services/dns_resolver/apply", DNSResolverApply.from_api)
+
+    def get_ipsec_apply_status(self) -> IPsecApply:
+        raw = self._rest.get(Endpoints.VPN_IPSEC_APPLY)
+        return _parse_object_response(raw, "/vpn/ipsec/apply", IPsecApply.from_api)
+
+    def get_wireguard_apply_status(self) -> WireGuardApply:
+        raw = self._rest.get(Endpoints.VPN_WIREGUARD_APPLY)
+        return _parse_object_response(raw, "/vpn/wireguard/apply", WireGuardApply.from_api)

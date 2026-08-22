@@ -1,0 +1,10 @@
+{
+  "code": 200,
+  "data": {
+    "applied": false,
+    "pending_interfaces": ["wan", "lan"]
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

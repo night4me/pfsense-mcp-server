@@ -32,8 +32,16 @@ from lib.schema_drift import SchemaDriftError, assert_model_accounts_for_schema_
 from pydantic import BaseModel
 
 from pfsense_mcp.models.config_history_revision import ConfigHistoryRevision
+from pfsense_mcp.models.dhcp_server_apply import DHCPServerApply
+from pfsense_mcp.models.dns_forwarder_apply import DNSForwarderApply
+from pfsense_mcp.models.dns_resolver_apply import DNSResolverApply
+from pfsense_mcp.models.interface_apply import InterfaceApply
+from pfsense_mcp.models.ipsec_apply import IPsecApply
 from pfsense_mcp.models.log_settings import LogSettings
+from pfsense_mcp.models.routing_apply import RoutingApply
 from pfsense_mcp.models.system_timezone import SystemTimezone
+from pfsense_mcp.models.virtual_ip_apply import VirtualIPApply
+from pfsense_mcp.models.wireguard_apply import WireGuardApply
 from pfsense_mcp.models.wireguard_peer_status import WireGuardPeerStatus
 from pfsense_mcp.models.wireguard_tunnel_status import WireGuardTunnelStatus
 
@@ -61,6 +69,14 @@ _REGISTRY: tuple[tuple[type[BaseModel], str, frozenset[str]], ...] = (
     (SystemTimezone, "SystemTimezone", frozenset()),
     (WireGuardTunnelStatus, "WireGuardTunnelStatus", frozenset()),
     (WireGuardPeerStatus, "WireGuardPeerStatus", frozenset({"preshared_key"})),
+    (VirtualIPApply, "VirtualIPApply", frozenset()),
+    (InterfaceApply, "InterfaceApply", frozenset()),
+    (RoutingApply, "RoutingApply", frozenset()),
+    (DHCPServerApply, "DHCPServerApply", frozenset()),
+    (DNSForwarderApply, "DNSForwarderApply", frozenset()),
+    (DNSResolverApply, "DNSResolverApply", frozenset()),
+    (IPsecApply, "IPsecApply", frozenset()),
+    (WireGuardApply, "WireGuardApply", frozenset()),
 )
 
 

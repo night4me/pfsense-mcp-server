@@ -683,3 +683,49 @@ class Endpoints:
         verified=False,
         min_api_version=ApiVersion.V2,
     )
+    # v0.6.0 Phase B Batch D -- apply-status sweep. Each re-checked
+    # against the pinned schema for secrets before implementation (none
+    # found; single "applied" boolean, or that plus a flat interface-name
+    # array for InterfaceApply). No package required except
+    # VPN_WIREGUARD_APPLY (pfSense-pkg-WireGuard). Not yet LAB-verified
+    # for the same reason as STATUS_LOGS_SETTINGS above.
+    FIREWALL_VIRTUAL_IP_APPLY = EndpointInfo(
+        path_suffix="/firewall/virtual_ip/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    INTERFACE_APPLY = EndpointInfo(
+        path_suffix="/interface/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    ROUTING_APPLY = EndpointInfo(
+        path_suffix="/routing/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    DHCP_SERVER_APPLY = EndpointInfo(
+        path_suffix="/services/dhcp_server/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    DNS_FORWARDER_APPLY = EndpointInfo(
+        path_suffix="/services/dns_forwarder/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    DNS_RESOLVER_APPLY = EndpointInfo(
+        path_suffix="/services/dns_resolver/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    VPN_IPSEC_APPLY = EndpointInfo(
+        path_suffix="/vpn/ipsec/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    VPN_WIREGUARD_APPLY = EndpointInfo(
+        path_suffix="/vpn/wireguard/apply",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )

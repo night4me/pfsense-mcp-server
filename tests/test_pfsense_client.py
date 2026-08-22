@@ -9512,3 +9512,152 @@ def test_get_status_logs_settings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_status_logs_settings()
     assert sentinel not in str(excinfo.value)
+
+
+# --- v0.6.0 Phase B Batch D: apply-status sweep (implemented + offline-tested, unregistered) ---
+
+
+def _apply_status_client(fixture_name: str, path: str) -> tuple[PfSenseClient, MockTransport, dict]:
+    fixture = Path(__file__).parent / "fixtures" / fixture_name
+    payload = json.loads(fixture.read_text())
+    transport = MockTransport()
+    transport.register("GET", f"/api/v2{path}", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport, payload
+
+
+def test_get_firewall_virtual_ip_apply_status_maps_field():
+    client, transport, payload = _apply_status_client(
+        "firewall_virtual_ip_apply_response.json", "/firewall/virtual_ip/apply"
+    )
+    result = client.get_firewall_virtual_ip_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/firewall/virtual_ip/apply")]
+
+
+def test_get_interface_apply_status_maps_fields():
+    client, transport, payload = _apply_status_client("interface_apply_response.json", "/interface/apply")
+    result = client.get_interface_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert result.pending_interfaces == payload["data"]["pending_interfaces"]
+    assert transport.calls == [("GET", "/api/v2/interface/apply")]
+
+
+def test_get_routing_apply_status_maps_field():
+    client, transport, payload = _apply_status_client("routing_apply_response.json", "/routing/apply")
+    result = client.get_routing_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/routing/apply")]
+
+
+def test_get_dhcp_server_apply_status_maps_field():
+    client, transport, payload = _apply_status_client(
+        "services_dhcp_server_apply_response.json", "/services/dhcp_server/apply"
+    )
+    result = client.get_dhcp_server_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/services/dhcp_server/apply")]
+
+
+def test_get_dns_forwarder_apply_status_maps_field():
+    client, transport, payload = _apply_status_client(
+        "services_dns_forwarder_apply_response.json", "/services/dns_forwarder/apply"
+    )
+    result = client.get_dns_forwarder_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/services/dns_forwarder/apply")]
+
+
+def test_get_dns_resolver_apply_status_maps_field():
+    client, transport, payload = _apply_status_client(
+        "services_dns_resolver_apply_response.json", "/services/dns_resolver/apply"
+    )
+    result = client.get_dns_resolver_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/services/dns_resolver/apply")]
+
+
+def test_get_ipsec_apply_status_maps_field():
+    client, transport, payload = _apply_status_client("vpn_ipsec_apply_response.json", "/vpn/ipsec/apply")
+    result = client.get_ipsec_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/vpn/ipsec/apply")]
+
+
+def test_get_wireguard_apply_status_maps_field():
+    client, transport, payload = _apply_status_client("vpn_wireguard_apply_response.json", "/vpn/wireguard/apply")
+    result = client.get_wireguard_apply_status()
+    assert result.applied == payload["data"]["applied"]
+    assert transport.calls == [("GET", "/api/v2/vpn/wireguard/apply")]
+
+
+@pytest.mark.parametrize(
+    "fixture_name,path,call",
+    [
+        (
+            "firewall_virtual_ip_apply_response.json",
+            "/firewall/virtual_ip/apply",
+            "get_firewall_virtual_ip_apply_status",
+        ),
+        ("interface_apply_response.json", "/interface/apply", "get_interface_apply_status"),
+        ("routing_apply_response.json", "/routing/apply", "get_routing_apply_status"),
+        ("services_dhcp_server_apply_response.json", "/services/dhcp_server/apply", "get_dhcp_server_apply_status"),
+        (
+            "services_dns_forwarder_apply_response.json",
+            "/services/dns_forwarder/apply",
+            "get_dns_forwarder_apply_status",
+        ),
+        (
+            "services_dns_resolver_apply_response.json",
+            "/services/dns_resolver/apply",
+            "get_dns_resolver_apply_status",
+        ),
+        ("vpn_ipsec_apply_response.json", "/vpn/ipsec/apply", "get_ipsec_apply_status"),
+        ("vpn_wireguard_apply_response.json", "/vpn/wireguard/apply", "get_wireguard_apply_status"),
+    ],
+)
+def test_apply_status_missing_data_key_raises_shape_error(fixture_name, path, call):
+    client, _, payload = _apply_status_client(fixture_name, path)
+    del payload["data"]
+    transport = MockTransport()
+    transport.register("GET", f"/api/v2{path}", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    with pytest.raises(PfSenseResponseShapeError):
+        getattr(client, call)()
+
+
+@pytest.mark.parametrize(
+    "fixture_name,path,call",
+    [
+        (
+            "firewall_virtual_ip_apply_response.json",
+            "/firewall/virtual_ip/apply",
+            "get_firewall_virtual_ip_apply_status",
+        ),
+        ("interface_apply_response.json", "/interface/apply", "get_interface_apply_status"),
+        ("routing_apply_response.json", "/routing/apply", "get_routing_apply_status"),
+        ("services_dhcp_server_apply_response.json", "/services/dhcp_server/apply", "get_dhcp_server_apply_status"),
+        (
+            "services_dns_forwarder_apply_response.json",
+            "/services/dns_forwarder/apply",
+            "get_dns_forwarder_apply_status",
+        ),
+        (
+            "services_dns_resolver_apply_response.json",
+            "/services/dns_resolver/apply",
+            "get_dns_resolver_apply_status",
+        ),
+        ("vpn_ipsec_apply_response.json", "/vpn/ipsec/apply", "get_ipsec_apply_status"),
+        ("vpn_wireguard_apply_response.json", "/vpn/wireguard/apply", "get_wireguard_apply_status"),
+    ],
+)
+def test_apply_status_invalid_field_type_raises_shape_error(fixture_name, path, call):
+    client, _, payload = _apply_status_client(fixture_name, path)
+    payload["data"]["applied"] = "not-a-bool"
+    transport = MockTransport()
+    transport.register("GET", f"/api/v2{path}", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    with pytest.raises(PfSenseResponseShapeError):
+        getattr(client, call)()
