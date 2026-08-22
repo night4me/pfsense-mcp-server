@@ -82,6 +82,7 @@ class Capability(Enum):
     VPN_IPSEC_PHASE2_ENCRYPTION_READ = auto()
     VPN_OPENVPN_SERVER_READ = auto()
     VPN_OPENVPN_CSO_READ = auto()
+    DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -170,6 +171,7 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.VPN_IPSEC_PHASE2_ENCRYPTION_READ,
         Capability.VPN_OPENVPN_SERVER_READ,
         Capability.VPN_OPENVPN_CSO_READ,
+        Capability.DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ,
     }
 )
 

@@ -1635,6 +1635,85 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ",
+      "client_method": "get_config_history_revisions",
+      "description": "List configuration-history (backup) revisions: when each\n        change was made, its system-generated audit description, the\n        pfSense version at the time, and the backup file size. Metadata\n        only -- never the configuration content itself. Read-only.\n\n        limit: maximum number of revisions to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/diagnostics/config_history/revisions",
+        "symbol": "DIAGNOSTICS_CONFIG_HISTORY_REVISIONS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_diagnostics_config_history_revisionsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_diagnostics_config_history_revisions",
+      "output_schema": {
+        "$defs": {
+          "ConfigHistoryRevision": {
+            "properties": {
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "filesize": {
+                "title": "Filesize",
+                "type": "integer"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "time": {
+                "title": "Time",
+                "type": "integer"
+              },
+              "version": {
+                "title": "Version",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "time",
+              "description",
+              "version",
+              "filesize"
+            ],
+            "title": "ConfigHistoryRevision",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/ConfigHistoryRevision"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_diagnostics_config_history_revisionsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "DIAGNOSTICS_TABLES_READ",
       "client_method": "get_diagnostics_tables",
       "description": "List pfSense pf firewall tables (name and member IP/CIDR\n        entries), e.g. bogons, DHCP pools, and network aliases.\n        Read-only.",

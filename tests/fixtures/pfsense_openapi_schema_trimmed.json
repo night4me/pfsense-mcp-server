@@ -1430,6 +1430,11 @@
       "get": {
         "description": "<h3>Description:</h3>Reads all existing OpenVPN Client Specific Overrides.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNClientSpecificOverride<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-openvpn-csos-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
+    },
+    "/api/v2/diagnostics/config_history/revisions": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Configuration History Entries.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: ConfigHistoryRevision<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-diagnostics-config-history-revisions-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
     }
   }
 }

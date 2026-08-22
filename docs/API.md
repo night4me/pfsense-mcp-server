@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 84 READ, 0 WRITE
+Registered tools: 85 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -904,6 +904,20 @@ Common parameters:
 - **Security:** Table members disclose live policy/topology data and may include
   blocklists or internal networks.
 - **Example:** `{"name":"pfsense_get_diagnostics_tables","arguments":{"limit":20}}`
+
+### `pfsense_get_diagnostics_config_history_revisions`
+
+- **Purpose:** List configuration-history (backup) revisions: when each
+  change was made, pfSense's own system-generated audit description, the
+  pfSense version at the time, and the backup file size.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[ConfigHistoryRevision]`.
+- **Security:** Metadata only. Upstream Model source
+  (`ConfigHistoryRevision.inc`) confirmed to never read or return the
+  backup file's actual configuration content -- only filesystem-level
+  metadata (`get_backups()`). No secret or credential material is
+  present in this response shape.
+- **Example:** `{"name":"pfsense_get_diagnostics_config_history_revisions","arguments":{"limit":20}}`
 
 ## Server introspection
 

@@ -31,6 +31,26 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   capability, or public contract change. Public contract remains 84
   READ / 0 default WRITE.
 
+- **`pfsense_get_diagnostics_config_history_revisions` (v0.6.0 Phase B,
+  Batch B).** Lists configuration-history (backup) revisions: change
+  timestamp, pfSense's own system-generated audit description, the
+  pfSense version at the time, and the backup file size. Metadata only
+  — the v0.6.0 Phase A qualification independently confirmed, against
+  the upstream `ConfigHistoryRevision.inc` Model source (not just the
+  OpenAPI schema), that this endpoint's response never includes the
+  backup's actual configuration content, only filesystem-level metadata.
+  The underlying client method, typed model, and `Endpoints` entry
+  already existed (added 2026-08-16 for internal ADR-026 evidence
+  gathering, `verified=True` from that session's real LAB call); this
+  release adds only the public MCP tool registration. A fresh
+  confirmatory LAB call was attempted this session but could not be
+  completed (the read-only LAB service account's privilege scope did
+  not yet include this endpoint, and granting it required admin LAB
+  access not available in this session) — promotion rests on the
+  pre-existing 2026-08-16 evidence, disclosed explicitly rather than
+  overstated; see `docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`. Public
+  contract: 84 → 85 READ tools (0 default WRITE, unchanged).
+
 ## [0.5.1] - 2026-08-21
 
 **Documentation-accuracy and security-communication patch. NO MCP

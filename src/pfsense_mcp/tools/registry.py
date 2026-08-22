@@ -32,6 +32,7 @@ from .read import (
     dhcp_server_custom_options,
     dhcp_servers,
     dhcp_static_mappings,
+    diagnostics_config_history_revisions,
     diagnostics_tables,
     dns_forwarder_host_overrides,
     dns_resolver_access_lists,
@@ -137,6 +138,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_dhcp_server_custom_options",
         "pfsense_get_dhcp_servers",
         "pfsense_get_dhcp_static_mappings",
+        "pfsense_get_diagnostics_config_history_revisions",
         "pfsense_get_diagnostics_tables",
         "pfsense_get_dns_forwarder_host_overrides",
         "pfsense_get_dns_resolver_access_lists",
@@ -410,6 +412,8 @@ class ToolRegistry:
             self._register_vpn_openvpn_server_read()
         if Capability.VPN_OPENVPN_CSO_READ in self._capabilities:
             self._register_vpn_openvpn_cso_read()
+        if Capability.DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ in self._capabilities:
+            self._register_diagnostics_config_history_revision_read()
 
         self.register_all_write()
 
@@ -889,6 +893,11 @@ class ToolRegistry:
     def _register_vpn_openvpn_cso_read(self) -> None:
         fn = vpn_openvpn_csos.build(self._client)
         wrapped = audit_logged("pfsense_get_vpn_openvpn_csos", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_diagnostics_config_history_revision_read(self) -> None:
+        fn = diagnostics_config_history_revisions.build(self._client)
+        wrapped = audit_logged("pfsense_get_diagnostics_config_history_revisions", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

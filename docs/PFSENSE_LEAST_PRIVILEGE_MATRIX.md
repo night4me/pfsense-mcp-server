@@ -623,25 +623,24 @@ match despite the platform upgrade, both before and after installing
 | `pfsense_vpn_ipsec_phase2s` | `get_vpn_ipsec_phase2s` | `GET /api/v2/vpn/ipsec/phase2s` | `api-v2-vpn-ipsec-phase2s-get` | ✅ |
 | `pfsense_vpn_openvpn_csos` | `get_vpn_openvpn_csos` | `GET /api/v2/vpn/openvpn/csos` | `api-v2-vpn-openvpn-csos-get` | ✅ |
 | `pfsense_vpn_openvpn_servers` | `get_vpn_openvpn_servers` | `GET /api/v2/vpn/openvpn/servers` | `api-v2-vpn-openvpn-servers-get` | ✅ |
+| `pfsense_get_diagnostics_config_history_revisions` | `get_config_history_revisions` | `GET /api/v2/diagnostics/config_history/revisions` | `api-v2-diagnostics-config-history-revisions-get` | ✅ |
 
-**83 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 83`). A least-privilege
-READ-only identity holding exactly these 83 (never `page-all`) can serve
-every one of this project's 84 registered READ tools.
+**84 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 84`). A least-privilege
+READ-only identity holding exactly these 84 (never `page-all`) can serve
+every one of this project's 85 registered READ tools.
 
-## Additional client-only capability (not a registered MCP tool)
-
-`PfSenseClient.get_config_history_revisions()` exists and is fully
-implemented (added closing ADR-026 row 18) but **no file under
-`tools/read/` calls it** — it is unreachable through the MCP surface
-today, used only for internal evidence-gathering. **Not required for
-"current default READ-only operation" (item A)** — included here for
-completeness, since a future decision to expose it as an 85th tool would
-need this privilege:
-
-| Client method | pfSense endpoint | Required privilege | Live-confirmed |
-|---|---|---|---|
-| `get_config_history_revisions` | `GET /api/v2/diagnostics/config_history/revisions` | `api-v2-diagnostics-config-history-revisions-get` | ✅ |
+`get_diagnostics_config_history_revisions`'s privilege
+(`api-v2-diagnostics-config-history-revisions-get`) was originally
+live-confirmed 2026-08-16 while the client method existed only as an
+internal, unregistered evidence-gathering utility (ADR-026 row 18) — see
+`CHANGELOG.md`'s v0.6.0 entry for this promotion's own evidence trail
+(v0.6.0 Phase A qualification + Phase B Batch B). A fresh confirmatory
+live call was attempted during Batch B but could not be completed in
+that session (LAB read-only service-account privilege scope did not yet
+include this endpoint, and granting it required admin LAB access not
+available in that session) — promotion rests on the pre-existing,
+already-committed 2026-08-16 evidence, not a new one.
 
 ## WRITE privilege matrix (`set_firewall_alias_description_v1`)
 
