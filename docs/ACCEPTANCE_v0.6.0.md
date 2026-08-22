@@ -1,11 +1,33 @@
 # Acceptance — v0.6.0
 
-**Status: release-candidate — prepared, not yet tagged or published.**
-The `v0.6.0` git tag, GitHub Release, and PyPI upload do not yet exist as
-of this document. This document records the release-preparation state
-as of the exact commit it ships with; tag/Release/PyPI publication
-remain separate, explicit owner actions taken only after this document
-and that commit SHA have been reviewed.
+**Status: published — the `v0.6.0` tag and PyPI release point at this
+commit.** The annotated git tag `v0.6.0` was created and pushed pointing
+at commit `26bf6ae5743e5ac52a2b22066fed43dcd6feb54e`; the GitHub Release
+was published from that tag, which triggered the `publish.yml` OIDC
+trusted-publishing workflow (build + publish jobs both succeeded,
+including PEP 740 digital attestations). PyPI's JSON API and Simple
+Index both independently confirm `0.6.0` is live (Simple Index shows
+`/provenance` links for both the wheel and sdist). Before tagging, a
+genuine version-distinct upgrade test was performed: a fresh environment
+installed real PyPI `0.5.1` (confirmed 84 tools), then upgraded in place
+to the exact locally-built `26bf6ae` candidate artifact (confirmed
+byte-identical to the artifact `make release-check` itself built and
+hashed) — result: clean uninstall/reinstall, version `0.6.0`, 95 tools,
+0 default WRITE, both CLI entry points working, zero stale files or
+dist-info left over, and exactly the 21 expected new source files added
+with none removed. After publication, a second clean installation of
+`pfsense-mcp-server==0.6.0` from the real PyPI index (not the local
+build) was independently verified: reports version `0.6.0`, imports
+cleanly, exposes exactly 95 READ tools and 0 default WRITE tools, and
+both console entry points work correctly. The downloaded PyPI wheel's
+own SHA256 differs from the local reproducible-build hash; a full
+file-by-file content diff of both wheels' extracted contents found
+**zero files differ** — the difference is ZIP-container-level packaging
+non-determinism between the local build toolchain and the GitHub
+Actions runner's (timestamps/entry ordering), not a content or security
+difference, and was investigated to this conclusion rather than
+assumed. This status line was only written after that independent
+post-publication verification succeeded.
 
 ## Release scope
 
