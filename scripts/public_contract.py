@@ -30,6 +30,23 @@ CLIENT_SOURCE = ROOT / "src" / "pfsense_mcp" / "pfsense_client.py"
 # process state and make no pfSense API call. Currently just the one.
 LOCAL_ONLY_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_mcp_info"})
 
+# Official-guidance tools (owner-authorized 2026-08-22, Candidate A from
+# GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md). Deliberately its own
+# category, disjoint from LOCAL_ONLY_TOOL_NAMES: unlike pfsense_mcp_info,
+# a guidance tool DOES have a PfSenseClient dependency and DOES make one
+# pfSense API call (appliance-identity resolution) -- but that call is
+# made indirectly, through pfsense_mcp.guidance.appliance_identity's
+# resolve_appliance_identity(client) (ADR-018's one canonical assembly
+# point, which every future consumer must share rather than
+# reimplementing), not as a direct `client.<method>()` call inside the
+# tool's own source -- so it has zero *direct* client-attribute calls by
+# design, not by accident, and must not be miscounted as either "one
+# direct endpoint call" (the normal READ-tool shape) or "no pfSense
+# dependency at all" (LOCAL_ONLY_TOOL_NAMES's actual meaning). It is also
+# not owned by any single Capability (see _capability_ownership()) and is
+# never counted toward the 95 pfSense READ tools (see build_contract()).
+GUIDANCE_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_get_official_guidance"})
+
 
 def _client() -> PfSenseClient:
     rest = RestApiClient(MockTransport(), identity="snapshot", api_version=ApiVersion.V2)
@@ -56,9 +73,17 @@ def _single_attribute_calls(tree: ast.AST, owner: str) -> set[str]:
 def _tool_definitions() -> dict[str, tuple[str | None, str]]:
     """Map each tool name to (client_method, description).
 
-    Every tool has exactly one PfSenseClient method call except
-    pfsense_mcp_info, which has none by design (LOCAL_ONLY_TOOL_NAMES) —
-    it makes no pfSense API call at all, so client_method is None.
+    Every tool has exactly one direct `client.<method>()` call except:
+    - pfsense_mcp_info (LOCAL_ONLY_TOOL_NAMES) — has none by design, no
+      PfSenseClient dependency at all, so client_method is None.
+    - pfsense_get_official_guidance (GUIDANCE_TOOL_NAMES) — also has none
+      *directly in this file's AST*, but for a different reason: it DOES
+      depend on PfSenseClient, delegating its one identity-resolution
+      call through `resolve_appliance_identity(client)` rather than
+      calling `client.<method>()` inline (ADR-018's one canonical
+      assembly point). client_method is None here too, but this must
+      never be conflated with "no pfSense dependency" — see
+      GUIDANCE_TOOL_NAMES's own comment.
     """
     result: dict[str, tuple[str | None, str]] = {}
     for path in sorted(READ_TOOLS.glob("*.py")):
@@ -73,7 +98,8 @@ def _tool_definitions() -> dict[str, tuple[str | None, str]]:
             raise RuntimeError(f"Expected exactly one public tool in {path.relative_to(ROOT)}")
         function = functions[0]
         is_local_only = function.name in LOCAL_ONLY_TOOL_NAMES
-        expected_methods = 0 if is_local_only else 1
+        is_guidance = function.name in GUIDANCE_TOOL_NAMES
+        expected_methods = 0 if (is_local_only or is_guidance) else 1
         if len(methods) != expected_methods:
             raise RuntimeError(f"Expected {expected_methods} client method(s) in {path.relative_to(ROOT)}")
         description = ast.get_docstring(function, clean=False)
@@ -102,9 +128,19 @@ def _client_endpoints() -> dict[str, str]:
 
 
 def _capability_ownership() -> dict[str, str]:
+    """Every pfSense-appliance READ tool is owned by exactly one
+    Capability. Guidance tools (GUIDANCE_TOOL_NAMES) are deliberately
+    excluded here -- registered whenever *any* capability is granted
+    (see ToolRegistry.register_all()'s `if self._capabilities:` gate),
+    not owned by any single one, and would otherwise appear under every
+    capability's single-capability registration pass, corrupting this
+    duplicate-ownership check. `build_contract()` gives them their own
+    `tool_class` instead of a `capability` value."""
     ownership: dict[str, str] = {}
     for capability in sorted(SUPPORTED_CAPABILITIES_THIS_BUILD, key=lambda item: item.name):
         for tool in _registered_tools(frozenset({capability})):
+            if tool.name in GUIDANCE_TOOL_NAMES:
+                continue
             if tool.name in ownership:
                 raise RuntimeError(f"Tool has duplicate capability ownership: {tool.name}")
             ownership[tool.name] = capability.name
@@ -130,6 +166,7 @@ def build_contract() -> dict[str, Any]:
                 "minimum_api_version": endpoint.min_api_version.value,
                 "verified": endpoint.verified,
             }
+        is_guidance = tool.name in GUIDANCE_TOOL_NAMES
         tools.append(
             {
                 "name": tool.name,
@@ -142,7 +179,14 @@ def build_contract() -> dict[str, Any]:
                 "annotations": tool.annotations.model_dump(exclude_none=True, by_alias=True)
                 if tool.annotations is not None
                 else None,
-                "capability": capability_ownership[tool.name],
+                # "read" = a pfSense appliance READ capability, owned by
+                # exactly one Capability (95 of these). "guidance" = the
+                # official-guidance tool: not a pfSense appliance
+                # capability, not owned by any single Capability, counted
+                # SEPARATELY -- never blended into "96 READ tools"
+                # (owner instruction, 2026-08-22).
+                "tool_class": "guidance" if is_guidance else "read",
+                "capability": None if is_guidance else capability_ownership[tool.name],
                 "client_method": method,
                 "endpoint": endpoint_entry,
             }
@@ -183,7 +227,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"public_contract: contract drift detected in: {changed}")
         print("Review and approve the API change, then run: python scripts/public_contract.py --update")
         return 1
-    print(f"public_contract: OK ({len(actual['tools'])} tools)")
+    read_count = sum(1 for tool in actual["tools"] if tool["tool_class"] == "read")
+    guidance_count = sum(1 for tool in actual["tools"] if tool["tool_class"] == "guidance")
+    print(
+        f"public_contract: OK ({read_count} pfSense READ tools, {guidance_count} guidance tool(s), "
+        f"{len(actual['tools'])} total)"
+    )
     return 0
 
 

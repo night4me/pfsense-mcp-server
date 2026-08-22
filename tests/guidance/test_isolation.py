@@ -1,8 +1,14 @@
 """ADR-017 G4 / OFFICIAL_GUIDANCE_LAYER.md Required tests: the guidance
 package must have zero import path to any existing safety-authority code
-path, and no production module may consume it yet -- both directions
-proven by AST scan, not by docstring, mirroring
+path, proven by AST scan, not by docstring, mirroring
 `tests/tier1/test_isolation.py`'s pattern for a different subsystem.
+
+**Revised 2026-08-22** for the owner-authorized `pfsense_get_official_guidance`
+tool (Candidate A, `reports-ai/GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md`):
+exactly one production module, `src/pfsense_mcp/tools/read/official_guidance.py`,
+is now a deliberate, reviewed exception to "no production module imports
+the guidance package" -- every other production module still may not,
+verified below.
 """
 
 import ast
@@ -10,6 +16,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
 GUIDANCE_PACKAGE = ROOT / "src/pfsense_mcp/guidance"
+
+#: The one deliberate, reviewed exception (owner-authorized 2026-08-22).
+#: A change to this constant is itself the kind of thing that must be a
+#: reviewed diff, not a silent expansion -- see official_guidance.py's
+#: module docstring for the full rationale.
+ALLOWED_GUIDANCE_IMPORTER = "src/pfsense_mcp/tools/read/official_guidance.py"
 
 #: OFFICIAL_GUIDANCE_LAYER.md's Trust boundaries section, TB-G4 / G4:
 #: nothing capable of selecting a capability/endpoint/method or reaching
@@ -49,7 +61,7 @@ def test_guidance_package_has_no_safety_authority_import():
     assert offenders == []
 
 
-def test_guidance_package_is_not_imported_by_production_yet():
+def test_guidance_package_is_imported_by_exactly_one_reviewed_production_module():
     production = ROOT / "src/pfsense_mcp"
     offenders: list[str] = []
     for path in production.rglob("*.py"):
@@ -57,8 +69,21 @@ def test_guidance_package_is_not_imported_by_production_yet():
             continue
         imported = _imported_modules(_tree(path))
         if any(module == "pfsense_mcp.guidance" or module.startswith("pfsense_mcp.guidance.") for module in imported):
-            offenders.append(path.relative_to(ROOT).as_posix())
+            relative = path.relative_to(ROOT).as_posix()
+            if relative != ALLOWED_GUIDANCE_IMPORTER:
+                offenders.append(relative)
     assert offenders == []
+
+
+def test_official_guidance_module_actually_imports_the_guidance_package():
+    """The flip side of the test above: confirm `ALLOWED_GUIDANCE_IMPORTER`
+    is not a stale exception for a file that no longer imports guidance --
+    an unused exception would be exactly the kind of silent scope creep
+    this isolation test exists to catch."""
+    path = ROOT / ALLOWED_GUIDANCE_IMPORTER
+    assert path.is_file(), f"{ALLOWED_GUIDANCE_IMPORTER} no longer exists -- remove the exception"
+    imported = _imported_modules(_tree(path))
+    assert any(module == "pfsense_mcp.guidance" or module.startswith("pfsense_mcp.guidance.") for module in imported)
 
 
 def test_guidance_package_imports_no_network_module():

@@ -80,8 +80,8 @@ nav:
   - Architecture (current production):
       - Diagrams: ARCHITECTURE_DIAGRAMS.md
       - Recovery Contract specification: RECOVERY_CONTRACT_SPEC.md
-      - Official guidance layer (implemented, curated corpus, not wired to any tool, ADR-017): OFFICIAL_GUIDANCE_LAYER.md
-      - Version-aware Official Guidance (implemented, unwired, ADR-018): VERSION_AWARE_GUIDANCE.md
+      - Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017): OFFICIAL_GUIDANCE_LAYER.md
+      - Version-aware Official Guidance (implemented, ADR-018): VERSION_AWARE_GUIDANCE.md
       - API surface, capability discovery and extension (design only, ADR-019): API_SURFACE_ARCHITECTURE.md
       - Security posture provisioning (design only, ADR-021): SECURITY_POSTURE_PROVISIONING.md
       - Execution-authorization boundary (design only, ADR-022): EXECUTION_AUTHORIZATION_BOUNDARY.md

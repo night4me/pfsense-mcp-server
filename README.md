@@ -282,46 +282,69 @@ client-specific config file location and key differ.
 | Users / API identities | 3 | local users, user groups, API keys |
 | Services / Monitoring | 2 | service status, FreeRADIUS EAP |
 
-95 tools total. Full per-tool reference, parameters, and security notes:
+95 pfSense READ tools total (plus the separately-counted official
+guidance tool described below — never blended into this figure). Full
+per-tool reference, parameters, and security notes:
 [`docs/API.md`](https://night4me.github.io/pfsense-mcp-server/API/).
 
-## Official documentation guidance layer (offline, not yet wired to any tool)
+## Official documentation guidance layer
 
-A separate, in-progress subsystem (`src/pfsense_mcp/guidance/`,
+A subsystem (`src/pfsense_mcp/guidance/`,
 [ADR-017](https://night4me.github.io/pfsense-mcp-server/adr/ADR-017-official-guidance-layer/) /
 [ADR-018](https://night4me.github.io/pfsense-mcp-server/adr/ADR-018-version-aware-guidance-resolution/))
-provides a deterministic, capability-keyed lookup over a small, curated
+providing a deterministic, capability-keyed lookup over a small, curated
 registry of **project-authored summaries** of official Netgate/pfSense
 documentation (`docs.netgate.com` only) — meant to give a human or AI
 client *context* about what a capability is, never *authority* to act on
-it.
+it. As of 2026-08-22 this is reachable through exactly one MCP tool,
+`pfsense_get_official_guidance` (Candidate A from
+`reports-ai/GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md`,
+owner-authorized).
 
 - **What it is**: a Git-tracked, PR-reviewed registry mapping a
   capability (e.g. "firewall NAT") to one or more entries, each an
   independently-written summary (never a quotation) plus its canonical
-  source URL, edition (CE/Plus) applicability, and a version-confidence
-  label — never a full-page mirror, and never redistributed Netgate
-  prose. The only verbatim text kept anywhere is a short (≤300 char)
-  maintainer-only verification anchor, used solely to detect if a source
-  page has drifted; it is never returned to any consumer.
+  source URL, edition (CE/Plus) applicability, and an applicability state
+  — never a full-page mirror, and never redistributed Netgate prose. The
+  only verbatim text kept anywhere is a short (≤300 char) maintainer-only
+  verification anchor, used solely to detect if a source page has
+  drifted; it is never returned to any consumer, including this tool.
+- **The tool**: `pfsense_get_official_guidance(capability)` takes exactly
+  one input — a pfsense-mcp-server capability name (e.g.
+  `"FIREWALL_NAT_READ"`) — and returns the registered guidance for it,
+  structurally distinguished from live appliance state: every result
+  carries a fixed `disclaimer` field stating it is documentation
+  guidance, not observed state, and not an authorization. It is **not** a
+  pfSense appliance READ capability (no new `Capability` enum member was
+  added for it, and it is not gated by the capability/privilege/profile
+  system), **not** a WRITE capability, **not** an arbitrary documentation
+  search tool, URL fetcher, or web browser.
+- **Appliance identity is tool-resolved, never model-supplied**: the tool
+  itself calls the same already-authenticated pfSense client every other
+  READ tool uses (the existing `pfsense_get_system_version`-equivalent
+  call) to determine CE/Plus edition and version for applicability
+  resolution — the caller never supplies this. If that call fails for any
+  reason, the tool fails closed to "edition/version unknown" rather than
+  trusting an unverified guess.
 - **What it is not**: it does not read this server's own live pfSense
-  state, does not know anything about *your* appliance, and cannot grant,
-  expand, or imply any capability or WRITE authorization — its output
-  type has no field a capability, endpoint, HTTP method, or confirmation
-  token could be read from (enforced by AST-scanned isolation tests, not
-  only by convention).
-- **Network behavior**: zero runtime network calls. The registry is a
-  bundled snapshot, loaded once from source at import time. A separate,
-  maintainer-invoked script (`make guidance-corpus-audit`) periodically
-  re-fetches each cited URL to confirm the short verification anchor is
-  still present verbatim — a dev-time check, never something a running
-  server or an MCP tool call triggers.
-- **Current state**: real, tested code and a 28-capability curated corpus
-  exist (of 86 total READ capabilities), but **nothing in this layer is
-  reachable from any MCP tool today** — no tool's output includes
-  guidance, and there is no dedicated guidance-lookup tool. Wiring it
-  into the public surface is a deliberately separate, not-yet-made
-  decision (see the ADRs above).
+  configuration state, does not know anything else about *your*
+  appliance, and cannot grant, expand, or imply any capability or WRITE
+  authorization — its output type has no field a capability, endpoint,
+  HTTP method, or confirmation token could be read from (enforced by
+  AST-scanned isolation tests, not only by convention).
+- **Network behavior**: zero runtime documentation network calls. The
+  registry is a bundled snapshot, loaded once from source at import
+  time; the tool's only network call is the one appliance-identity
+  lookup described above. A separate, maintainer-invoked script
+  (`make guidance-corpus-audit`) periodically re-fetches each cited URL
+  to confirm the short verification anchor is still present verbatim — a
+  dev-time check, never something a running server or an MCP tool call
+  triggers.
+- **Current coverage**: 28 of 86 total READ capabilities (32.6% raw,
+  43.1% effective excluding capabilities with no independent
+  documentation concept). Honest, not padded — see
+  `reports-ai/GUIDANCE_COVERAGE_MAPPING_2026-08-22.md` for the full,
+  source-derived breakdown including category-level gaps.
 
 ## Security model
 

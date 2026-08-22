@@ -237,10 +237,18 @@ def test_resolve_privilege_missing_endpoint_fails_closed_never_falls_back_to_sou
 
 def test_read_profile_requirements_has_95_entries_with_exactly_one_local_only():
     requirements = read_profile_requirements()
-    assert len(requirements) == 95
+    # 95 pfSense READ tools + 1 guidance tool (official_guidance, owner-
+    # authorized 2026-08-22) = 96 entries. official_guidance is local-only
+    # from this mechanical derivation's point of view for the same reason
+    # mcp_info is: it makes no *direct* client.<method>() call in its own
+    # source (it delegates identity resolution through
+    # resolve_appliance_identity(client) instead) -- so it correctly
+    # requires no pfSense privilege of its own, consistent with it not
+    # being gated by the Capability/privilege/profile system at all.
+    assert len(requirements) == 96
     local_only = [r for r in requirements if r.url is None]
-    assert len(local_only) == 1
-    assert local_only[0].tool_name == "mcp_info"
+    assert len(local_only) == 2
+    assert {r.tool_name for r in local_only} == {"mcp_info", "official_guidance"}
 
 
 def test_read_profile_resolves_to_the_currently_verified_94_privileges(live_schema):

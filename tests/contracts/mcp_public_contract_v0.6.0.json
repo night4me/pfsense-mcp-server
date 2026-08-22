@@ -39,7 +39,8 @@
         ],
         "title": "AcmeSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -194,7 +195,8 @@
         ],
         "title": "pfsense_get_arp_tableOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -280,7 +282,8 @@
         ],
         "title": "pfsense_get_auth_keysOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -449,7 +452,8 @@
         ],
         "title": "BindSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -489,7 +493,8 @@
         ],
         "title": "CarpStatus",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -583,7 +588,8 @@
         ],
         "title": "pfsense_get_cron_jobsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -750,7 +756,8 @@
         ],
         "title": "pfsense_get_dhcp_leasesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -832,7 +839,8 @@
         ],
         "title": "DHCPRelay",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1056,7 +1064,8 @@
         ],
         "title": "pfsense_get_dhcp_server_address_poolsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1098,7 +1107,8 @@
         ],
         "title": "DHCPServerApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1167,7 +1177,8 @@
         ],
         "title": "pfsense_get_dhcp_server_custom_optionsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1468,7 +1479,8 @@
         ],
         "title": "pfsense_get_dhcp_serversOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1670,7 +1682,8 @@
         ],
         "title": "pfsense_get_dhcp_static_mappingsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1749,7 +1762,8 @@
         ],
         "title": "pfsense_get_diagnostics_config_history_revisionsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1821,7 +1835,8 @@
         ],
         "title": "pfsense_get_diagnostics_tablesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1863,7 +1878,8 @@
         ],
         "title": "DNSForwarderApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -1943,7 +1959,8 @@
         ],
         "title": "pfsense_get_dns_forwarder_host_overridesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2018,7 +2035,8 @@
         ],
         "title": "pfsense_get_dns_resolver_access_listsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2060,7 +2078,8 @@
         ],
         "title": "DNSResolverApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2139,7 +2158,8 @@
         ],
         "title": "pfsense_get_dns_resolver_domain_overridesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2234,7 +2254,8 @@
         ],
         "title": "pfsense_get_dns_resolver_host_overridesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2388,7 +2409,8 @@
         ],
         "title": "DnsResolverSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2506,7 +2528,8 @@
         ],
         "title": "EmailNotificationSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2553,7 +2576,8 @@
         ],
         "title": "FirewallAdvancedSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2664,7 +2688,8 @@
         ],
         "title": "pfsense_get_firewall_aliasesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2707,7 +2732,8 @@
         ],
         "title": "FirewallApplyStatus",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -2847,7 +2873,8 @@
         ],
         "title": "pfsense_get_firewall_nat_one_to_one_mappingsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -3043,7 +3070,8 @@
         ],
         "title": "pfsense_get_firewall_nat_outbound_mappingsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -3078,7 +3106,8 @@
         ],
         "title": "FirewallNatOutboundMode",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -3319,7 +3348,8 @@
         ],
         "title": "pfsense_get_firewall_nat_port_forwardsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -3734,7 +3764,8 @@
         ],
         "title": "pfsense_get_firewall_rulesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -3831,7 +3862,8 @@
         ],
         "title": "pfsense_get_firewall_schedulesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -4023,7 +4055,8 @@
         ],
         "title": "pfsense_get_firewall_statesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -4075,7 +4108,8 @@
         ],
         "title": "FirewallStatesSize",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -4638,7 +4672,8 @@
         ],
         "title": "pfsense_get_firewall_traffic_shaper_limitersOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5063,7 +5098,8 @@
         ],
         "title": "pfsense_get_firewall_traffic_shapersOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5105,7 +5141,8 @@
         ],
         "title": "VirtualIPApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5264,7 +5301,8 @@
         ],
         "title": "pfsense_get_firewall_virtual_ipsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5467,7 +5505,8 @@
         ],
         "title": "FreeRadiusEap",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5603,7 +5642,8 @@
         ],
         "title": "pfsense_get_gateway_statusOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5828,7 +5868,8 @@
         ],
         "title": "pfsense_get_gatewaysOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5885,7 +5926,8 @@
         ],
         "title": "InterfaceApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -5993,7 +6035,8 @@
         ],
         "title": "pfsense_get_interface_available_interfacesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -6077,7 +6120,8 @@
         ],
         "title": "pfsense_get_interface_bridgesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -6627,7 +6671,8 @@
         ],
         "title": "pfsense_get_interface_configsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -6804,7 +6849,8 @@
         ],
         "title": "pfsense_get_interface_gresOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -6876,7 +6922,8 @@
         ],
         "title": "pfsense_get_interface_groupsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -6975,7 +7022,8 @@
         ],
         "title": "pfsense_get_interface_laggsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7075,7 +7123,8 @@
         ],
         "title": "pfsense_get_interface_vlansOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7382,7 +7431,8 @@
         ],
         "title": "pfsense_get_interfacesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7424,7 +7474,8 @@
         ],
         "title": "IPsecApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7565,7 +7616,8 @@
         ],
         "title": "NtpSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7644,7 +7696,209 @@
         ],
         "title": "pfsense_get_ntp_time_serversOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": null,
+      "client_method": null,
+      "description": "Get project-authored official pfSense/Netgate documentation\n        guidance for a known pfsense-mcp-server capability, with\n        structural provenance (canonical Netgate source URL, edition/\n        version applicability, evidence level). Read-only.\n\n        This tool returns DOCUMENTATION GUIDANCE, never observed live\n        appliance state and never authorization for any action. For the\n        appliance's actual current configuration or status, use the\n        relevant pfsense_get_* READ tool instead.\n\n        The appliance edition/version used to resolve applicability are\n        obtained by this tool itself from the connected pfSense\n        appliance's own reported system version \u2014 never accepted as an\n        input parameter, and never supplied by the caller.\n\n        capability: the pfsense-mcp-server capability name to fetch\n        guidance for (e.g. \"FIREWALL_NAT_READ\"). Unknown names are\n        rejected rather than guessed at.\n        ",
+      "endpoint": null,
+      "input_schema": {
+        "properties": {
+          "capability": {
+            "title": "Capability",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capability"
+        ],
+        "title": "pfsense_get_official_guidanceArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_official_guidance",
+      "output_schema": {
+        "$defs": {
+          "ApplicabilityState": {
+            "description": "Closed, fail-safe applicability classification (ADR-018 S2).\n\nExactly the six members ADR-018's accepted text defines.\n`CONFLICTING_GUIDANCE` is deliberately **not** a member here --\nADR-018's own accepted design treats a registry-authoring conflict\nas a load-time integrity defect (see `applicability.py`'s\n`find_duplicate_scope_conflicts()`/`find_supersession_chain_defects()`),\nnot a per-lookup runtime state, because the registry is Git-tracked\nand PR-reviewed (TB-G1): a conflict is caught before any lookup ever\nruns, not represented as an answer a lookup can return.\n\nMoved here from `evidence.py` for the same circular-import reason as\n`EvidenceLevel` above -- `evidence.py` re-imports this name\nunchanged.",
+            "enum": [
+              "applicable",
+              "partially_applicable",
+              "version_unconfirmed",
+              "edition_mismatch",
+              "stale",
+              "no_official_guidance_found"
+            ],
+            "title": "ApplicabilityState",
+            "type": "string"
+          },
+          "Edition": {
+            "enum": [
+              "CE",
+              "Plus",
+              "both"
+            ],
+            "title": "Edition",
+            "type": "string"
+          },
+          "EvidenceLevel": {
+            "description": "How the registry curator came to know a document's version\nscope -- orthogonal to `ApplicabilityState` (ADR-018 Finding 5).\n\n`EXPLICIT_VERSION_SCOPED`: the source explicitly states which\nversion(s) this applies to.\n`EXPLICIT_UNVERSIONED`: the source explicitly states it applies\nregardless of version -- a real, affirmative claim, not silence.\n`INFERRED_FROM_CURRENT_DOCS`: an undated/`/latest/`-only page with\nno stated version scope at all -- the honest default for most\nreal-world entries; must never be treated as equivalent to\n`EXPLICIT_UNVERSIONED`.\n`UNKNOWN`: evidence strength itself could not be established.\n\nLives in `models.py`, not `evidence.py` (where ADR-018 Step 2\noriginally defined it) -- moved here by the ADR-018 guidance-bridge\nimplementation slice so `GuidanceReference` (this module) can use it\nwithout creating a circular import with `evidence.py` (which already\ndepends on `models.py` for `Edition`/`RetrievalMode`/bounded-field\nvalidators). `evidence.py` re-imports this name unchanged, so every\nexisting `from pfsense_mcp.guidance.evidence import EvidenceLevel`\nimport continues to work identically -- same class, same identity,\nonly its defining module moved.",
+            "enum": [
+              "explicit_version_scoped",
+              "explicit_unversioned",
+              "inferred_from_current_docs",
+              "unknown"
+            ],
+            "title": "EvidenceLevel",
+            "type": "string"
+          },
+          "GuidanceReference": {
+            "additionalProperties": false,
+            "description": "The only shape `lookup_guidance()` ever returns (G1). No field here\nis a capability, endpoint, HTTP method, or confirmation token -- there\nis nothing in this closed schema an authorization decision could be\nread out of.\n\nExtended by the ADR-018 guidance-bridge implementation slice\n(2026-08-09): `version_mismatch: bool` (always `False` in the\noriginal, exclude-only design) is replaced by the five new fields\nbelow, computed by `applicability.compute_entry_applicability()` and\nassembled by `registry.lookup_guidance()` -- the real behavior\nchange ADR-018 S2 and its own \"Acceptance record\" already named as\nneeding separate explicit approval before this signature shipped.\n`trust_label` is unchanged, still present here (only the separate\n`EvidenceReference` type, produced by `bridge.bridge_guidance_reference()`,\nomits it -- see that module for why).\n\n**Provenance-model revision (2026-08-22)**: `content_excerpt`/\n`content_hash` are replaced by `summary`/`summary_hash` (module\ndocstring). `DocumentSource.source_verification_excerpt`/\n`source_verification_hash` are deliberately **not** fields here --\nthat pair is maintainer-audit-only and never reaches any consumer.",
+            "properties": {
+              "applicability": {
+                "$ref": "#/$defs/ApplicabilityState"
+              },
+              "applicable_overlay_chain": {
+                "default": [],
+                "description": "ReleaseOverlay.overlay_id values applicable to this entry, ORDERED most-superseded first, current-truth last -- never flattened into an unordered set (ADR-018 Finding 6, at the per-entry level).",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Applicable Overlay Chain",
+                "type": "array"
+              },
+              "canonical_url": {
+                "title": "Canonical Url",
+                "type": "string"
+              },
+              "capability": {
+                "title": "Capability",
+                "type": "string"
+              },
+              "evidence_level": {
+                "$ref": "#/$defs/EvidenceLevel"
+              },
+              "observed_edition_used": {
+                "$ref": "#/$defs/ObservedEdition"
+              },
+              "observed_version_used": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Observed Version Used"
+              },
+              "pfsense_edition": {
+                "$ref": "#/$defs/Edition"
+              },
+              "retrieval_mode": {
+                "$ref": "#/$defs/RetrievalMode"
+              },
+              "snapshot_version": {
+                "title": "Snapshot Version",
+                "type": "string"
+              },
+              "source_id": {
+                "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$",
+                "title": "Source Id",
+                "type": "string"
+              },
+              "summary": {
+                "maxLength": 2000,
+                "title": "Summary",
+                "type": "string"
+              },
+              "summary_hash": {
+                "title": "Summary Hash",
+                "type": "string"
+              },
+              "title": {
+                "maxLength": 200,
+                "title": "Title",
+                "type": "string"
+              },
+              "trust_label": {
+                "title": "Trust Label",
+                "type": "string"
+              }
+            },
+            "required": [
+              "capability",
+              "source_id",
+              "title",
+              "canonical_url",
+              "summary",
+              "summary_hash",
+              "pfsense_edition",
+              "trust_label",
+              "applicability",
+              "evidence_level",
+              "observed_edition_used",
+              "observed_version_used",
+              "retrieval_mode",
+              "snapshot_version"
+            ],
+            "title": "GuidanceReference",
+            "type": "object"
+          },
+          "ObservedEdition": {
+            "description": "Closed, fail-safe representation of an *observed* appliance's\nedition -- distinct from `guidance.models.Edition`, which represents\n*document applicability* and includes a `BOTH` member meaningful only\nfor documentation, never for a real appliance's actual edition\n(ADR-018 Finding 1, BLOCKING in the original design). A real\nappliance is always exactly one edition or unknown, never both;\nnothing in this type can express `BOTH` for observed state.",
+            "enum": [
+              "known_ce",
+              "known_plus",
+              "unknown"
+            ],
+            "title": "ObservedEdition",
+            "type": "string"
+          },
+          "RetrievalMode": {
+            "enum": [
+              "bundled_snapshot"
+            ],
+            "title": "RetrievalMode",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "The only shape `pfsense_get_official_guidance` ever returns.\n\n`guidance` reuses `GuidanceReference` unchanged \u2014 ADR-017/018's own\nclosed, G1-compliant, already-tested type. No parallel schema and no\nparallel applicability logic is invented here; `source_verification_excerpt`\nis structurally absent from `GuidanceReference` (verified by\n`tests/guidance/test_models.py::test_guidance_reference_has_no_source_verification_excerpt_field`),\nso this tool cannot leak the maintainer-only verification anchor even\nby accident.\n\n`disclaimer` is a fixed `Literal`, not free text: a structural, not\nmerely prose-based, signal that this content is documentation\nguidance, never observed appliance state or authorization (owner\ninstruction, 2026-08-22).",
+        "properties": {
+          "disclaimer": {
+            "const": "This is official pfSense/Netgate documentation guidance, project-authored from official Netgate sources. It is NOT observed live appliance state and does NOT authorize any action. For current appliance configuration or status, use the relevant pfsense_get_* READ tool instead.",
+            "default": "This is official pfSense/Netgate documentation guidance, project-authored from official Netgate sources. It is NOT observed live appliance state and does NOT authorize any action. For current appliance configuration or status, use the relevant pfsense_get_* READ tool instead.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "guidance": {
+            "items": {
+              "$ref": "#/$defs/GuidanceReference"
+            },
+            "title": "Guidance",
+            "type": "array"
+          },
+          "requested_capability": {
+            "title": "Requested Capability",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested_capability",
+          "guidance"
+        ],
+        "title": "OfficialGuidanceResult",
+        "type": "object"
+      },
+      "tool_class": "guidance"
     },
     {
       "annotations": {
@@ -7686,7 +7940,8 @@
         ],
         "title": "RoutingApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7746,7 +8001,8 @@
         },
         "title": "DefaultGateway",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7879,7 +8135,8 @@
         ],
         "title": "pfsense_get_routing_gateway_groupsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -7981,7 +8238,8 @@
         ],
         "title": "pfsense_get_routing_static_routesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -8081,7 +8339,8 @@
         ],
         "title": "pfsense_get_service_statusOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -8138,7 +8397,8 @@
         ],
         "title": "SshSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -8489,7 +8749,8 @@
         ],
         "title": "pfsense_get_status_ipsec_child_sasOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -9119,7 +9380,8 @@
         ],
         "title": "pfsense_get_status_ipsec_sasOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -9445,7 +9707,8 @@
         ],
         "title": "LogSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -9676,7 +9939,8 @@
         ],
         "title": "pfsense_get_status_openvpn_clientsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -9884,7 +10148,8 @@
         ],
         "title": "pfsense_get_status_openvpn_server_connectionsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -9994,7 +10259,8 @@
         ],
         "title": "pfsense_get_status_openvpn_server_routesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -10359,7 +10625,8 @@
         ],
         "title": "pfsense_get_status_openvpn_serversOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -10529,7 +10796,8 @@
         ],
         "title": "pfsense_get_status_wireguard_peersOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -10842,7 +11110,8 @@
         ],
         "title": "pfsense_get_status_wireguard_tunnelsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -10945,7 +11214,8 @@
         ],
         "title": "pfsense_get_system_certificate_authoritiesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11091,7 +11361,8 @@
         ],
         "title": "pfsense_get_system_certificatesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11126,7 +11397,8 @@
         ],
         "title": "SystemConsole",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11265,7 +11537,8 @@
         ],
         "title": "pfsense_get_system_crlsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11334,7 +11607,8 @@
         ],
         "title": "SystemDNS",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11540,7 +11814,8 @@
         ],
         "title": "SystemHaSync",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11600,7 +11875,8 @@
         },
         "title": "SystemHostname",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11722,7 +11998,8 @@
         ],
         "title": "pfsense_get_system_package_availableOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11846,7 +12123,8 @@
         ],
         "title": "pfsense_get_system_packagesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -11946,7 +12224,8 @@
         ],
         "title": "pfsense_get_system_restapi_access_listOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12097,7 +12376,8 @@
         ],
         "title": "SystemRestApiSettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12189,7 +12469,8 @@
         ],
         "title": "SystemRestApiVersion",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12302,7 +12583,8 @@
         ],
         "title": "SystemStatus",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12337,7 +12619,8 @@
         ],
         "title": "SystemTimezone",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12411,7 +12694,8 @@
         ],
         "title": "pfsense_get_system_tunablesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12489,7 +12773,8 @@
         ],
         "title": "SystemVersion",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12541,7 +12826,8 @@
         ],
         "title": "WebGUISettings",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12657,7 +12943,8 @@
         ],
         "title": "pfsense_get_user_groupsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12815,7 +13102,8 @@
         ],
         "title": "pfsense_get_usersOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12894,7 +13182,8 @@
         ],
         "title": "pfsense_get_vpn_ipsec_phase1_encryptionsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -12958,7 +13247,8 @@
         ],
         "title": "pfsense_get_vpn_ipsec_phase2_encryptionsOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -13214,7 +13504,8 @@
         ],
         "title": "pfsense_get_vpn_ipsec_phase2sOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -13531,7 +13822,8 @@
         ],
         "title": "pfsense_get_vpn_openvpn_csosOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -14226,7 +14518,8 @@
         ],
         "title": "pfsense_get_vpn_openvpn_serversOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -14316,7 +14609,8 @@
         ],
         "title": "pfsense_get_vpn_wireguard_tunnel_addressesOutput",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -14358,7 +14652,8 @@
         ],
         "title": "WireGuardApply",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     },
     {
       "annotations": {
@@ -14404,7 +14699,7 @@
             "type": "integer"
           },
           "guidance_imported_this_process": {
-            "description": "Whether pfsense_mcp.guidance has been imported anywhere in this running process (sys.modules check). Expected to always be false \u2014 no READ tool or Tier 1 path consumes it yet. Same caveat as tier1_imported_this_process: observed runtime evidence, not a substitute for CI-enforced isolation.",
+            "description": "Whether pfsense_mcp.guidance has been imported anywhere in this running process (sys.modules check). As of the pfsense_get_official_guidance tool (2026-08-22), this is now expected to be true on any build where that tool registers \u2014 its module is the one deliberate, reviewed import of pfsense_mcp.guidance outside the guidance package itself and its own tests (tests/guidance/test_isolation.py enforces that no other production module does). Observed runtime evidence, not a substitute for that CI-enforced isolation.",
             "title": "Guidance Imported This Process",
             "type": "boolean"
           },
@@ -14417,6 +14712,11 @@
             "description": "The MCP transport this build serves over. Always 'stdio'.",
             "title": "Mcp Transport",
             "type": "string"
+          },
+          "registered_guidance_tool_count": {
+            "description": "Of registered_tool_count, how many are official-guidance tools (currently 0 or 1: pfsense_get_official_guidance). Counted separately from registered_read_tool_count on purpose \u2014 a guidance tool is not a pfSense appliance READ capability and must never be blended into that count.",
+            "title": "Registered Guidance Tool Count",
+            "type": "integer"
           },
           "registered_read_tool_count": {
             "description": "Of registered_tool_count, how many are READ tools.",
@@ -14455,6 +14755,7 @@
           "registered_tool_count",
           "registered_read_tool_count",
           "registered_write_tool_count",
+          "registered_guidance_tool_count",
           "active_capability_set",
           "active_write_capabilities",
           "active_write_endpoint_count",
@@ -14466,7 +14767,8 @@
         ],
         "title": "ServerIntrospection",
         "type": "object"
-      }
+      },
+      "tool_class": "read"
     }
   ]
 }

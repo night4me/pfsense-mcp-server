@@ -762,7 +762,16 @@ Proposed status. Each is its own future decision, exactly mirroring
 - [ ] **Live retrieval (TB-G3) activation** — this document resolves the
       design ADR-017 deferred, but activation is still its own decision,
       exactly as `OFFICIAL_GUIDANCE_LAYER.md` already required.
-- [ ] **Any READ-tool or PREPARE wiring** — same approval bar
+- [x] **A new, dedicated MCP tool exposing guidance directly** (not a
+      change to any existing READ tool's own output schema) —
+      owner-authorized and implemented 2026-08-22
+      (`pfsense_get_official_guidance`, see
+      `OFFICIAL_GUIDANCE_LAYER.md`'s Activation requirements for detail).
+      Appliance identity for applicability resolution uses this
+      document's own `resolve_appliance_identity()` (Step 1), called by
+      the tool itself, never supplied by the caller.
+- [ ] **Existing READ-tool output-schema wiring, or any Tier 1 PREPARE
+      wiring** — still not done. Same approval bar
       `OFFICIAL_GUIDANCE_LAYER.md` already set; Phase 5 gates apply to
       any PREPARE wiring specifically; the AND-veto-only structural rule
       (Finding 7) applies to any PREPARE wiring without exception.

@@ -34,7 +34,13 @@ READ_TOOLS_DIR = ROOT / "src/pfsense_mcp/tools/read"
 #: mcp_info.py is the one tool with no PfSenseClient dependency at all
 #: (it wraps a local snapshot callback instead) -- expected and
 #: documented at its own design review, not a violation of this rule.
-EXPECTED_ZERO_CLIENT_CALL_TOOLS = {"mcp_info.py"}
+#: official_guidance.py (2026-08-22) DOES have a PfSenseClient dependency
+#: and DOES make one pfSense API call, but delegates it through
+#: resolve_appliance_identity(client) rather than a direct client.X()
+#: call in its own body -- also zero *direct* calls, for a different,
+#: documented reason (see scripts/public_contract.py's GUIDANCE_TOOL_NAMES
+#: comment and official_guidance.py's own module docstring).
+EXPECTED_ZERO_CLIENT_CALL_TOOLS = {"mcp_info.py", "official_guidance.py"}
 
 _DYNAMIC_ATTRIBUTE_BUILTINS = {"getattr", "setattr", "hasattr"}
 
@@ -81,13 +87,15 @@ def test_every_tool_file_has_at_most_one_distinct_client_method_call() -> None:
     assert violations == {}, f"tool file(s) call more than one distinct client method: {violations}"
 
 
-def test_exactly_one_tool_file_has_zero_client_method_calls_and_it_is_the_expected_one() -> None:
+def test_exactly_two_tool_files_have_zero_client_method_calls_and_they_are_the_expected_ones() -> None:
     zero_call_files = {path.name for path in _tool_files() if len(_distinct_client_method_call_names(_tree(path))) == 0}
     assert zero_call_files == EXPECTED_ZERO_CLIENT_CALL_TOOLS
 
 
 def test_fifty_nine_tool_files_exist_matching_the_public_contract() -> None:
-    assert len(_tool_files()) == 95
+    # 95 pfSense READ tool files + 1 guidance tool file (official_guidance.py,
+    # owner-authorized 2026-08-22) -- all still live under tools/read/.
+    assert len(_tool_files()) == 96
 
 
 def test_no_tool_file_uses_getattr_setattr_or_hasattr() -> None:

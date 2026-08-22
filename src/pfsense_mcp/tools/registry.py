@@ -74,6 +74,7 @@ from .read import (
     mcp_info,
     ntp_settings,
     ntp_time_servers,
+    official_guidance,
     routing_apply_status,
     routing_gateway_default,
     routing_gateway_groups,
@@ -247,6 +248,17 @@ WRITE_TOOL_ANNOTATION_POLICY = ToolAnnotations(
 
 KNOWN_WRITE_TOOL_NAMES: frozenset[str] = frozenset({"set_firewall_alias_description_v1"})
 
+#: pfsense_get_official_guidance (owner-authorized 2026-08-22, Candidate A
+#: from GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md). Deliberately
+#: its own set, disjoint from KNOWN_READ_TOOL_NAMES: a guidance tool is
+#: not a pfSense appliance READ capability -- it is not gated by, and
+#: does not consume, the Capability/privilege/profile system, and must
+#: never be counted as a 96th READ tool. See official_guidance.py's
+#: module docstring for the full rationale.
+GUIDANCE_TOOL_ANNOTATION_POLICY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
+
+KNOWN_GUIDANCE_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_get_official_guidance"})
+
 
 class ToolRegistry:
     def __init__(
@@ -260,7 +272,7 @@ class ToolRegistry:
         profile_name: str = "unknown",
     ) -> None:
         unknown_tools = (
-            allowed_tools - (KNOWN_READ_TOOL_NAMES | KNOWN_WRITE_TOOL_NAMES)
+            allowed_tools - (KNOWN_READ_TOOL_NAMES | KNOWN_WRITE_TOOL_NAMES | KNOWN_GUIDANCE_TOOL_NAMES)
             if allowed_tools is not None
             else frozenset()
         )
@@ -280,6 +292,7 @@ class ToolRegistry:
         # can never drift from what was actually registered on self._mcp.
         self._registered_read_names: list[str] = []
         self._registered_write_names: list[str] = []
+        self._registered_guidance_names: list[str] = []
 
     def register_all(self) -> None:
         if Capability.SYSTEM_READ in self._capabilities:
@@ -455,6 +468,19 @@ class ToolRegistry:
         if Capability.VPN_WIREGUARD_TUNNEL_ADDRESS_READ in self._capabilities:
             self._register_vpn_wireguard_tunnel_address_read()
 
+        # Deliberately NOT gated by any *specific* Capability check (owner
+        # instruction, 2026-08-22): a guidance tool is not a pfSense
+        # appliance READ capability, so it must not consume the
+        # Capability/privilege/profile system that governs appliance
+        # access. It IS gated on "this profile grants at least one
+        # capability" -- preserving the existing, load-bearing invariant
+        # that a zero-capability profile (e.g. EngineerProfile) registers
+        # zero tools; guidance has nothing to be guidance *for* when
+        # nothing else is granted. Still respects PFSENSE_ALLOWED_TOOLS
+        # filtering, same as every other tool (_register_guidance_tool()).
+        if self._capabilities:
+            self._register_official_guidance()
+
         self.register_all_write()
 
     def register_all_write(self) -> None:
@@ -517,6 +543,17 @@ class ToolRegistry:
             return
         self._mcp.tool(annotations=annotation_policy.to_mcp())(wrapped)
         self._registered_read_names.append(wrapped.__name__)
+
+    def _register_guidance_tool(self, wrapped: Callable[..., object]) -> None:
+        """Mirrors `_register_read_tool()`'s `allowed_tools` filtering
+        exactly, but appends to `_registered_guidance_names` -- a
+        separate list, never `_registered_read_names` -- so
+        `pfsense_mcp_info`'s counts can never blend a guidance tool into
+        its READ-tool count (owner instruction, 2026-08-22)."""
+        if self._allowed_tools is not None and wrapped.__name__ not in self._allowed_tools:
+            return
+        self._mcp.tool(annotations=GUIDANCE_TOOL_ANNOTATION_POLICY)(wrapped)
+        self._registered_guidance_names.append(wrapped.__name__)
 
     def _register_system_read(self) -> None:
         fn = system_status.build(self._client)
@@ -734,6 +771,15 @@ class ToolRegistry:
         fn = mcp_info.build(self._build_introspection_snapshot)
         wrapped = audit_logged("pfsense_mcp_info", self._identity)(fn)
         self._register_read_tool(wrapped, annotation_policy=LOCAL_ONLY_ANNOTATION_POLICY)
+
+    def _register_official_guidance(self) -> None:
+        """pfsense_get_official_guidance (owner-authorized 2026-08-22).
+        Routed through `_register_guidance_tool()`, not
+        `_register_read_tool()` -- see that method's own docstring for
+        why this must never join `_registered_read_names`."""
+        fn = official_guidance.build(self._client)
+        wrapped = audit_logged("pfsense_get_official_guidance", self._identity)(fn)
+        self._register_guidance_tool(wrapped)
 
     def _register_interface_vlan_read(self) -> None:
         fn = interface_vlans.build(self._client)
@@ -1001,9 +1047,12 @@ class ToolRegistry:
         return ServerIntrospection(
             server_version=importlib.metadata.version("pfsense-mcp-server"),
             active_profile=self._profile_name,
-            registered_tool_count=len(self._registered_read_names) + len(self._registered_write_names),
+            registered_tool_count=len(self._registered_read_names)
+            + len(self._registered_write_names)
+            + len(self._registered_guidance_names),
             registered_read_tool_count=len(self._registered_read_names),
             registered_write_tool_count=len(self._registered_write_names),
+            registered_guidance_tool_count=len(self._registered_guidance_names),
             active_capability_set=tuple(sorted(capability.name for capability in self._capabilities)),
             active_write_capabilities=active_write_capabilities,
             active_write_endpoint_count=len(WriteEndpoints.active_entries()),

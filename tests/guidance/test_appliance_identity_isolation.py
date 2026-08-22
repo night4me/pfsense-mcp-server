@@ -193,8 +193,16 @@ def test_public_contract_remains_95_read_0_write() -> None:
     ToolRegistry(mcp, client, "test", AuditorProfile.capabilities, profile_name="auditor").register_all()
     tools = asyncio.run(mcp.list_tools())
 
-    read_tools = [t for t in tools if t.annotations.readOnlyHint]
+    # 2026-08-22: pfsense_get_official_guidance (owner-authorized Candidate A)
+    # is now registered unconditionally alongside the 95 pfSense READ tools --
+    # accounted for SEPARATELY here, never blended into the READ count, per
+    # explicit owner instruction (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md).
+    from pfsense_mcp.tools.registry import KNOWN_GUIDANCE_TOOL_NAMES, KNOWN_READ_TOOL_NAMES
+
+    read_tools = [t for t in tools if t.name in KNOWN_READ_TOOL_NAMES]
+    guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 95
+    assert len(tools) == 96
     assert len(read_tools) == 95
+    assert len(guidance_tools) == 1
     assert len(write_tools) == 0

@@ -367,11 +367,26 @@ never itself an error condition for the caller.
 
 ## Activation requirements
 
-None of the following are granted by this document or by ADR-017's
-acceptance. Each is its own future decision:
+None of the following were granted by this document or by ADR-017's
+original acceptance. Each was, and remains, its own separate decision:
 
-- [ ] **READ-tool output wiring** — requires the same explicit approval any
-      public MCP tool output-schema change requires (`AGENTS.md`).
+- [x] **A new, narrowly-scoped MCP tool exposing guidance directly**
+      (`pfsense_get_official_guidance(capability)`, not "READ-tool output
+      wiring" — no existing READ tool's schema was changed) — owner-
+      authorized 2026-08-22, implemented per
+      `reports-ai/GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md`'s
+      Candidate A recommendation and
+      `reports-ai/OFFICIAL_GUIDANCE_TOOL_IMPLEMENTATION_2026-08-22.md`.
+      Appliance identity for applicability resolution is tool-resolved
+      (via the same already-authenticated client every READ tool uses),
+      never model-supplied; fails closed to "unknown" on any resolution
+      failure. Accounted for separately from the 95 pfSense READ tools in
+      the public contract, never blended into that count.
+- [ ] **Existing READ-tool output-schema wiring** (attaching guidance to
+      an existing tool's own response) — still not done, still requires
+      the same explicit approval any public MCP tool output-schema change
+      requires (`AGENTS.md`); the tool added above is a new, separate
+      tool, not a change to any existing one.
 - [ ] **Live retrieval (TB-G3)** — requires its own ADR selecting the
       allow-listed domain(s), size bound, and hash-pinning/trust-labeling
       behavior in full, plus explicit activation approval (matching

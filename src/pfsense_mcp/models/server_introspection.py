@@ -28,6 +28,12 @@ class ServerIntrospection(BaseModel):
         description="Of registered_tool_count, how many are WRITE tools. Always 0 in this build — "
         "register_all_write() registers nothing."
     )
+    registered_guidance_tool_count: int = Field(
+        description="Of registered_tool_count, how many are official-guidance tools (currently "
+        "0 or 1: pfsense_get_official_guidance). Counted separately from "
+        "registered_read_tool_count on purpose — a guidance tool is not a pfSense appliance "
+        "READ capability and must never be blended into that count."
+    )
     active_capability_set: tuple[str, ...] = Field(
         description="Capability names granted to this server instance's active profile "
         "(the same set ToolRegistry used to decide what to register)."
@@ -60,8 +66,11 @@ class ServerIntrospection(BaseModel):
     )
     guidance_imported_this_process: bool = Field(
         description="Whether pfsense_mcp.guidance has been imported anywhere in this running "
-        "process (sys.modules check). Expected to always be false — no READ tool or Tier 1 "
-        "path consumes it yet. Same caveat as tier1_imported_this_process: observed runtime "
-        "evidence, not a substitute for CI-enforced isolation."
+        "process (sys.modules check). As of the pfsense_get_official_guidance tool "
+        "(2026-08-22), this is now expected to be true on any build where that tool registers "
+        "— its module is the one deliberate, reviewed import of pfsense_mcp.guidance outside "
+        "the guidance package itself and its own tests (tests/guidance/test_isolation.py "
+        "enforces that no other production module does). Observed runtime evidence, not a "
+        "substitute for that CI-enforced isolation."
     )
     mcp_transport: str = Field(description="The MCP transport this build serves over. Always 'stdio'.")

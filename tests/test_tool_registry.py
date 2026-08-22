@@ -1033,8 +1033,9 @@ def test_registry_registers_system_status_tool_when_capability_present():
     mcp = FakeMCP()
     registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_status"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registered_read_tool_uses_the_shared_annotation_policy():
@@ -1042,9 +1043,17 @@ def test_registered_read_tool_uses_the_shared_annotation_policy():
     registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
     registry.register_all()
 
-    assert len(mcp.annotations) == 1
+    # index 0: pfsense_get_system_status (READ_TOOL_ANNOTATION_POLICY).
+    # index 1: pfsense_get_official_guidance (GUIDANCE_TOOL_ANNOTATION_POLICY,
+    # a deliberately distinct policy -- see tools/registry.py).
+    assert len(mcp.annotations) == 2
     assert mcp.annotations[0].model_dump(exclude_none=True) == {
         "readOnlyHint": True,
+        "openWorldHint": True,
+    }
+    assert mcp.annotations[1].model_dump(exclude_none=True) == {
+        "readOnlyHint": True,
+        "destructiveHint": False,
         "openWorldHint": True,
     }
 
@@ -1137,8 +1146,9 @@ def test_registry_registers_interfaces_tool_when_capability_present():
     client = _client(with_interfaces=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_interfaces"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_interfaces_tool_without_capability():
@@ -1157,7 +1167,7 @@ def test_registry_registers_both_tools_when_both_capabilities_present():
     )
     registry.register_all()
     names = {fn.__name__ for fn in mcp.registered}
-    assert names == {"pfsense_get_system_status", "pfsense_get_interfaces"}
+    assert names == {"pfsense_get_system_status", "pfsense_get_interfaces", "pfsense_get_official_guidance"}
 
 
 def test_registered_interfaces_tool_invokes_client_and_redacts_by_default():
@@ -1180,7 +1190,7 @@ def test_registry_registers_both_gateway_tools_when_capability_present():
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.GATEWAY_READ}))
     registry.register_all()
     names = {fn.__name__ for fn in mcp.registered}
-    assert names == {"pfsense_get_gateways", "pfsense_get_gateway_status"}
+    assert names == {"pfsense_get_gateways", "pfsense_get_gateway_status", "pfsense_get_official_guidance"}
 
 
 def test_registry_does_not_register_gateway_tools_without_capability():
@@ -1229,6 +1239,7 @@ def test_registry_registers_all_firewall_tools_when_capability_present():
         "pfsense_get_firewall_states",
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_apply_status",
+        "pfsense_get_official_guidance",
     }
 
 
@@ -1297,8 +1308,9 @@ def test_registry_registers_firewall_aliases_tool_when_capability_present():
     client = _client(with_alias=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.ALIAS_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_firewall_aliases"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_firewall_aliases_tool_without_capability():
@@ -1328,8 +1340,9 @@ def test_registry_registers_service_status_tool_when_capability_present():
     client = _client(with_service=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICE_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_service_status"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_service_status_tool_without_capability():
@@ -1359,8 +1372,9 @@ def test_registry_registers_system_version_tool_when_capability_present():
     client = _client(with_system_version=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_INFO_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_version"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_system_version_tool_without_capability():
@@ -1389,8 +1403,9 @@ def test_registry_registers_interface_configs_tool_when_capability_present():
     client = _client(with_interface_configs=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_CONFIG_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_interface_configs"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_interface_configs_tool_without_capability():
@@ -1478,8 +1493,9 @@ def test_registry_registers_users_tool_when_capability_present():
     client = _client(with_users=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.USER_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_users"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_users_tool_without_capability():
@@ -1513,8 +1529,9 @@ def test_registry_registers_system_certificates_tool_when_capability_present():
     client = _client(with_system_certificates=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_CERTIFICATE_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_certificates"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_system_certificates_tool_without_capability():
@@ -1543,8 +1560,9 @@ def test_registry_registers_user_groups_tool_when_capability_present():
     client = _client(with_user_groups=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.USER_GROUP_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_user_groups"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_user_groups_tool_without_capability():
@@ -1573,8 +1591,9 @@ def test_registry_registers_dhcp_leases_tool_when_capability_present():
     client = _client(with_dhcp_leases=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_LEASE_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_dhcp_leases"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_dhcp_leases_tool_without_capability():
@@ -1603,8 +1622,9 @@ def test_registry_registers_dhcp_static_mappings_tool_when_capability_present():
     client = _client(with_dhcp_static_mappings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_STATIC_MAPPING_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_dhcp_static_mappings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_dhcp_static_mappings_tool_without_capability():
@@ -1633,8 +1653,9 @@ def test_registry_registers_dhcp_servers_tool_when_capability_present():
     client = _client(with_dhcp_servers=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DHCP_SERVER_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_dhcp_servers"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_dhcp_servers_tool_without_capability():
@@ -1663,8 +1684,9 @@ def test_registry_registers_interface_bridges_tool_when_capability_present():
     client = _client(with_interface_bridges=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.INTERFACE_VIRTUAL_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_interface_bridges"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_interface_bridges_tool_without_capability():
@@ -1692,8 +1714,9 @@ def test_registry_registers_carp_status_tool_when_capability_present():
     client = _client(with_carp_status=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.STATUS_CARP_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_carp_status"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_carp_status_tool_without_capability():
@@ -1720,8 +1743,9 @@ def test_registry_registers_system_restapi_settings_tool_when_capability_present
     client = _client(with_system_restapi_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_RESTAPI_SETTINGS_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_restapi_settings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_system_restapi_settings_tool_without_capability():
@@ -1748,8 +1772,9 @@ def test_registry_registers_system_hasync_tool_when_capability_present():
     client = _client(with_system_hasync=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_HA_SYNC_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_hasync"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_system_hasync_tool_without_capability():
@@ -1798,6 +1823,7 @@ def test_registry_registers_all_tools_when_all_capabilities_present():
         "pfsense_get_firewall_states",
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_apply_status",
+        "pfsense_get_official_guidance",
     }
 
 
@@ -1864,8 +1890,9 @@ def test_registry_registers_arp_table_tool_when_capability_present():
     client = _client(with_arp_table=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DIAGNOSTICS_ARP_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_arp_table"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_arp_table_tool_without_capability():
@@ -1893,8 +1920,9 @@ def test_registry_registers_firewall_traffic_shaper_limiters_tool_when_capabilit
     client = _client(with_traffic_shaper_limiters=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_TRAFFIC_SHAPER_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_firewall_traffic_shaper_limiters"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_firewall_traffic_shaper_limiters_tool_without_capability():
@@ -1922,8 +1950,9 @@ def test_registry_registers_firewall_advanced_settings_tool_when_capability_pres
     client = _client(with_firewall_advanced_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.FIREWALL_ADVANCED_SETTINGS_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_firewall_advanced_settings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_firewall_advanced_settings_tool_without_capability():
@@ -1950,8 +1979,9 @@ def test_registry_registers_system_packages_tool_when_capability_present():
     client = _client(with_system_packages=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_PACKAGE_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_packages"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_system_packages_tool_without_capability():
@@ -1979,8 +2009,9 @@ def test_registry_registers_system_tunables_tool_when_capability_present():
     client = _client(with_system_tunables=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_TUNABLE_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_system_tunables"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_system_tunables_tool_without_capability():
@@ -2008,8 +2039,9 @@ def test_registry_registers_email_notification_settings_tool_when_capability_pre
     client = _client(with_email_notification_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SYSTEM_NOTIFICATIONS_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_email_notification_settings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_email_notification_settings_tool_without_capability():
@@ -2051,8 +2083,9 @@ def test_registry_registers_bind_settings_tool_when_capability_present():
     client = _client(with_bind_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_BIND_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_bind_settings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_bind_settings_tool_without_capability():
@@ -2128,8 +2161,9 @@ def test_registry_registers_ssh_settings_tool_when_capability_present():
     client = _client(with_ssh_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_SSH_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_ssh_settings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_ssh_settings_tool_without_capability():
@@ -2156,8 +2190,9 @@ def test_registry_registers_cron_jobs_tool_when_capability_present():
     client = _client(with_cron_jobs=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_CRON_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_cron_jobs"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_cron_jobs_tool_without_capability():
@@ -2185,8 +2220,9 @@ def test_registry_registers_acme_settings_tool_when_capability_present():
     client = _client(with_acme_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_ACME_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_acme_settings"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_acme_settings_tool_without_capability():
@@ -2213,8 +2249,9 @@ def test_registry_registers_freeradius_eap_tool_when_capability_present():
     client = _client(with_freeradius_eap=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_FREERADIUS_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_freeradius_eap"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_freeradius_eap_tool_without_capability():
@@ -2241,8 +2278,9 @@ def test_registry_registers_diagnostics_tables_tool_when_capability_present():
     client = _client(with_diagnostics_tables=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.DIAGNOSTICS_TABLES_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_diagnostics_tables"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_diagnostics_tables_tool_without_capability():
@@ -2270,8 +2308,9 @@ def test_registry_registers_auth_keys_tool_when_capability_present():
     client = _client(with_auth_keys=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.AUTH_KEYS_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 1
+    assert len(mcp.registered) == 2
     assert mcp.registered[0].__name__ == "pfsense_get_auth_keys"
+    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
 
 
 def test_registry_does_not_register_auth_keys_tool_without_capability():
