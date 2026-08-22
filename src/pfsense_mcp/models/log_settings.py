@@ -6,6 +6,27 @@ call; independently re-verified during v0.6.0 Phase A qualification --
 34 fields total, all `boolean`/`string`/`integer`, `writeOnly: false`
 throughout, no `writeOnly` or secret-shaped field anywhere).
 
+**Widened to match a real v0.6.0 Phase B LAB call** (2026-08-22, this
+LAB's CE instance): the pinned schema declares
+`auth`/`dhcp`/`dpinger`/`filter`/`hostapd`/`ipprotocol`/`logall`/`ntpd`/
+`portalauth`/`ppp`/`remoteserver`/`remoteserver2`/`remoteserver3`/
+`resolver`/`routing`/`system`/`sourceip`/`vpn` `nullable: false`, but
+the live response returns `null` for every one of them on this LAB
+(categories never explicitly toggled/configured return unset rather
+than a default `false`/`""`). Live server behavior is trusted over the
+schema's stale non-nullable claim here, matching this project's own
+established precedent (`DnsResolverSettings.sslcertref`/`.tlsport`,
+`SystemRestApiVersion.install_version`). Field *set* is unchanged (all
+34 keys present in both the schema and the live response, confirmed via
+key-set diff, not just spot-checked) -- this is a nullability widening,
+not a new/removed field, so it does not implicate the Batch A schema-
+drift mechanism, which is name-based, not type-based, by design.
+`sourceip` was initially missed in this widening (caught by a second
+live parse attempt after the first fix, not assumed correct on the
+first pass) -- the concrete `ValidationError` this raised was itself
+evidence the fix wasn't yet complete, not a reason to accept a partial
+model.
+
 Content is entirely: which categories to log (`nologdefaultblock`,
 `auth`, `portalauth`, `dhcp`, `vpn`, etc. -- boolean toggles, not log
 content or credentials), rotation/retention
@@ -17,7 +38,8 @@ destination (`remoteserver`/`remoteserver2`/`remoteserver3`/`sourceip`/
 this to" settings) -- not the tunnel/gateway/peer *topology* fields this
 project does redact by default (e.g. `RoutingStaticRoute.gateway`,
 `IPsecPhase2.remoteid_address`). No `include_identifying_metadata` gate
-is needed here, consistent with that established distinction.
+is needed here, consistent with that established distinction -- a null
+value carries no information to redact in the first place.
 """
 
 from __future__ import annotations
@@ -44,24 +66,24 @@ class LogSettings(BaseModel):
     rotatecount: int
     logcompressiontype: str
     enableremotelogging: bool
-    ipprotocol: str
-    sourceip: str
-    remoteserver: str
-    remoteserver2: str
-    remoteserver3: str
-    logall: bool
-    filter: bool
-    dhcp: bool
-    auth: bool
-    portalauth: bool
-    vpn: bool
-    dpinger: bool
-    hostapd: bool
-    system: bool
-    resolver: bool
-    ppp: bool
-    routing: bool
-    ntpd: bool
+    ipprotocol: str | None
+    sourceip: str | None
+    remoteserver: str | None
+    remoteserver2: str | None
+    remoteserver3: str | None
+    logall: bool | None
+    filter: bool | None
+    dhcp: bool | None
+    auth: bool | None
+    portalauth: bool | None
+    vpn: bool | None
+    dpinger: bool | None
+    hostapd: bool | None
+    system: bool | None
+    resolver: bool | None
+    ppp: bool | None
+    routing: bool | None
+    ntpd: bool | None
 
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> "LogSettings":

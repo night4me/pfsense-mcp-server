@@ -5,7 +5,7 @@ adding appliance_identity.py to the guidance package changed nothing
 about the invariants that predate it: guidance's own registry/models
 machinery is not imported or activated by it, Tier 1 remains
 unreachable, WRITE state is unchanged, pfsense_mcp_info remains
-zero-pfSense-call, and the public MCP contract remains exactly 85 READ
+zero-pfSense-call, and the public MCP contract remains exactly 95 READ
 tools / 0 WRITE tools.
 """
 
@@ -173,7 +173,7 @@ def test_pfsense_mcp_info_remains_zero_pfsense_call() -> None:
     assert not any("pfsense_client" in m for m in imported)
 
 
-def test_public_contract_remains_85_read_0_write() -> None:
+def test_public_contract_remains_95_read_0_write() -> None:
     """End-to-end re-confirmation with the exact same mechanism
     scripts/public_contract.py uses, not a hand count."""
     import asyncio
@@ -195,6 +195,6 @@ def test_public_contract_remains_85_read_0_write() -> None:
 
     read_tools = [t for t in tools if t.annotations.readOnlyHint]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 85
-    assert len(read_tools) == 85
+    assert len(tools) == 95
+    assert len(read_tools) == 95
     assert len(write_tools) == 0

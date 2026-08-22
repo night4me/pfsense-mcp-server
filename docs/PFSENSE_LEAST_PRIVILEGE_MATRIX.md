@@ -624,11 +624,21 @@ match despite the platform upgrade, both before and after installing
 | `pfsense_vpn_openvpn_csos` | `get_vpn_openvpn_csos` | `GET /api/v2/vpn/openvpn/csos` | `api-v2-vpn-openvpn-csos-get` | ✅ |
 | `pfsense_vpn_openvpn_servers` | `get_vpn_openvpn_servers` | `GET /api/v2/vpn/openvpn/servers` | `api-v2-vpn-openvpn-servers-get` | ✅ |
 | `pfsense_get_diagnostics_config_history_revisions` | `get_config_history_revisions` | `GET /api/v2/diagnostics/config_history/revisions` | `api-v2-diagnostics-config-history-revisions-get` | ✅ |
+| `pfsense_get_status_logs_settings` | `get_status_logs_settings` | `GET /api/v2/status/logs/settings` | `api-v2-status-logs-settings-get` | ✅ |
+| `pfsense_get_firewall_virtual_ip_apply_status` | `get_firewall_virtual_ip_apply_status` | `GET /api/v2/firewall/virtual_ip/apply` | `api-v2-firewall-virtual-ip-apply-get` | ✅ |
+| `pfsense_get_interface_apply_status` | `get_interface_apply_status` | `GET /api/v2/interface/apply` | `api-v2-interface-apply-get` | ✅ |
+| `pfsense_get_routing_apply_status` | `get_routing_apply_status` | `GET /api/v2/routing/apply` | `api-v2-routing-apply-get` | ✅ |
+| `pfsense_get_dhcp_server_apply_status` | `get_dhcp_server_apply_status` | `GET /api/v2/services/dhcp_server/apply` | `api-v2-services-dhcp-server-apply-get` | ✅ |
+| `pfsense_get_dns_forwarder_apply_status` | `get_dns_forwarder_apply_status` | `GET /api/v2/services/dns_forwarder/apply` | `api-v2-services-dns-forwarder-apply-get` | ✅ |
+| `pfsense_get_dns_resolver_apply_status` | `get_dns_resolver_apply_status` | `GET /api/v2/services/dns_resolver/apply` | `api-v2-services-dns-resolver-apply-get` | ✅ |
+| `pfsense_get_ipsec_apply_status` | `get_ipsec_apply_status` | `GET /api/v2/vpn/ipsec/apply` | `api-v2-vpn-ipsec-apply-get` | ✅ |
+| `pfsense_get_wireguard_apply_status` | `get_wireguard_apply_status` | `GET /api/v2/vpn/wireguard/apply` | `api-v2-vpn-wireguard-apply-get` | ✅ |
+| `pfsense_get_vpn_wireguard_tunnel_addresses` | `get_vpn_wireguard_tunnel_addresses` | `GET /api/v2/vpn/wireguard/tunnel/addresses` | `api-v2-vpn-wireguard-tunnel-addresses-get` | ✅ |
 
-**84 distinct privileges, one per tool, zero sharing between tools** —
-confirmed programmatically (`len(set(privileges)) == 84`). A least-privilege
-READ-only identity holding exactly these 84 (never `page-all`) can serve
-every one of this project's 85 registered READ tools.
+**94 distinct privileges, one per tool, zero sharing between tools** —
+confirmed programmatically (`len(set(privileges)) == 94`). A least-privilege
+READ-only identity holding exactly these 94 (never `page-all`) can serve
+every one of this project's 95 registered READ tools.
 
 `get_diagnostics_config_history_revisions`'s privilege
 (`api-v2-diagnostics-config-history-revisions-get`) was originally
@@ -636,11 +646,31 @@ live-confirmed 2026-08-16 while the client method existed only as an
 internal, unregistered evidence-gathering utility (ADR-026 row 18) — see
 `CHANGELOG.md`'s v0.6.0 entry for this promotion's own evidence trail
 (v0.6.0 Phase A qualification + Phase B Batch B). A fresh confirmatory
-live call was attempted during Batch B but could not be completed in
-that session (LAB read-only service-account privilege scope did not yet
-include this endpoint, and granting it required admin LAB access not
-available in that session) — promotion rests on the pre-existing,
-already-committed 2026-08-16 evidence, not a new one.
+live call was not obtained during Batch B's own session (LAB read-only
+service-account privilege scope did not yet include this endpoint at
+that time); it was independently live-reconfirmed during the Phase B
+completion pass below, once the account was properly provisioned.
+
+**2026-08-22 Phase B completion**: after the read-only LAB service
+account (`pfsense-mcp`, id=2 — confirmed to be this project's
+intentionally-provisioned `write_protected`-profile service account,
+per `AI_CONTEXT.md`'s 2026-08-19 ADR-033 checkpoint, not a
+misconfigured or excessively-privileged account) was synced from its
+stale 42-privilege snapshot (dating to that same 2026-08-19
+provisioning) to the full current requirement, all 10 previously-pending
+Batch C/D/E candidates were live-verified in one pass: 9 returned an
+exact key-set match against their model (`FIELD_MODEL_LIVE_VERIFIED`);
+`get_vpn_wireguard_tunnel_addresses` returned `200, {"data": []}`
+(`ENDPOINT_VERIFIED` — no tunnel addresses configured on this LAB, so
+the item shape itself was not exercised live; its field-safety argument
+rests on the Phase A schema/security review, not an observed populated
+item). One real defect was found and fixed during this pass, not merely
+assumed correct: `LogSettings` needed 18 fields (including `sourceip`,
+missed in an earlier partial fix) widened from the schema's declared
+`nullable: false` to `Optional`, since this LAB genuinely returns `null`
+for every log category never explicitly configured — see
+`src/pfsense_mcp/models/log_settings.py`'s docstring for the full
+before/after account.
 
 ## WRITE privilege matrix (`set_firewall_alias_description_v1`)
 
@@ -669,11 +699,14 @@ appliance.
 
 ## Combined minimum set, READ + existing WRITE
 
-The 4 WRITE privileges are a strict subset of the 83 READ privileges
+The 4 WRITE privileges are a strict subset of the 94 READ privileges
 except for `api-v2-firewall-alias-patch` (the mutation itself, obviously
 WRITE-only) — `firewall-aliases-get`, `status-system-get`, and
 `system-hasync-get` are already required for the READ tools
 `pfsense_firewall_aliases`, `pfsense_system_status`, and
 `pfsense_system_hasync` respectively. A `write_protected`-profile
-identity therefore needs exactly **84 distinct privileges**: the 83 READ
-privileges plus the one additional `api-v2-firewall-alias-patch`.
+identity therefore needs exactly **95 distinct privileges**: the 94 READ
+privileges plus the one additional `api-v2-firewall-alias-patch`. This
+is independently confirmed live: the LAB's own `pfsense-mcp` service
+account (id=2), synced 2026-08-22 to exactly this set plus its
+pre-existing `api-v2-firewall-alias-patch`, holds 95 privileges total.

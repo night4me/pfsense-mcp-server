@@ -100,6 +100,47 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   scope issue as Batches C/D is. Not registered as a public tool. Public
   contract unchanged at 85 READ / 0 default WRITE.
 
+- **v0.6.0 Phase B completion: LAB-verified and registered all 10
+  previously-pending Batch C/D/E candidates.** The read-only LAB
+  service account (`pfsense-mcp`, id=2) was synced from a stale
+  42-privilege snapshot (dating to its original 2026-08-19 ADR-033
+  provisioning) to the current full requirement, after reconciling —
+  with direct evidence from `AI_CONTEXT.md`'s own provisioning
+  checkpoint, not assumption — that this account is the project's
+  single, intentionally-provisioned `write_protected`-profile service
+  account (hence its pre-existing `api-v2-firewall-alias-patch`
+  privilege, preserved throughout the sync). All 10 candidates were
+  then live-verified in one pass:
+  - `pfsense_get_status_logs_settings` — `FIELD_MODEL_LIVE_VERIFIED`.
+    Fixed a real defect found by the live call, not assumed correct:
+    `sourceip` needed the same `nullable: false`→`Optional` widening
+    already applied to 17 other fields, missed in the earlier partial
+    fix — a second live parse attempt (not a first-pass assumption)
+    caught it.
+  - `pfsense_get_firewall_virtual_ip_apply_status`,
+    `pfsense_get_interface_apply_status`,
+    `pfsense_get_routing_apply_status`,
+    `pfsense_get_dhcp_server_apply_status`,
+    `pfsense_get_dns_forwarder_apply_status`,
+    `pfsense_get_dns_resolver_apply_status`,
+    `pfsense_get_ipsec_apply_status`,
+    `pfsense_get_wireguard_apply_status` — all 8
+    `FIELD_MODEL_LIVE_VERIFIED`, exact key-set match, independently
+    confirmed per-endpoint (not inferred from one passing).
+  - `pfsense_get_vpn_wireguard_tunnel_addresses` —
+    `ENDPOINT_VERIFIED` (200, `{"data": []}` — no tunnel addresses
+    configured on this LAB; field safety rests on the Phase A
+    schema/security review, not an observed populated item).
+
+  Public contract: 85 → **95 READ tools** (0 default WRITE, unchanged).
+  Useful READ coverage: 95/105 (unchanged historical denominator, per
+  the Phase A correction). `tests/fixtures/pfsense_openapi_schema_trimmed.json`
+  extended with all 10 endpoints' real captured descriptions (needed
+  for the security-bootstrap/privilege-derivation test suite, which
+  resolves privileges from this fixture). Fixed the resulting
+  hardcoded-count cascade across test files, `docs/API.md`, and
+  `docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`.
+
 ## [0.5.1] - 2026-08-21
 
 **Documentation-accuracy and security-communication patch. NO MCP

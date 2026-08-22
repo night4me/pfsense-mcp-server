@@ -1063,6 +1063,48 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "DHCP_SERVER_APPLY_READ",
+      "client_method": "get_dhcp_server_apply_status",
+      "description": "Get pfSense pending DHCP server change status: whether all\n        DHCP server changes are applied. Read-only. Contains no\n        identifying metadata.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dhcp_server/apply",
+        "symbol": "DHCP_SERVER_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_dhcp_server_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dhcp_server_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "DHCPServerApply",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "DHCP_SERVER_CUSTOM_OPTION_READ",
       "client_method": "get_dhcp_server_custom_options",
       "description": "List DHCP server custom options across all configured DHCP\n        servers: option number, type, and value. Read-only.\n\n        limit: maximum number of custom options to return (1-100,\n        default 100).",
@@ -1786,6 +1828,48 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "DNS_FORWARDER_APPLY_READ",
+      "client_method": "get_dns_forwarder_apply_status",
+      "description": "Get pfSense pending DNS Forwarder change status: whether all\n        DNS Forwarder changes are applied. Read-only. Contains no\n        identifying metadata.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dns_forwarder/apply",
+        "symbol": "DNS_FORWARDER_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_dns_forwarder_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dns_forwarder_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "DNSForwarderApply",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "DNS_FORWARDER_HOST_OVERRIDE_READ",
       "client_method": "get_dns_forwarder_host_overrides",
       "description": "List dnsmasq (DNS Forwarder) host overrides, addresses,\n        aliases, and descriptions. Read-only.\n\n        limit: maximum number of overrides to return (1-100, default\n        100).",
@@ -1933,6 +2017,48 @@
           "result"
         ],
         "title": "pfsense_get_dns_resolver_access_listsOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "DNS_RESOLVER_APPLY_READ",
+      "client_method": "get_dns_resolver_apply_status",
+      "description": "Get pfSense pending DNS Resolver change status: whether all\n        DNS Resolver changes are applied. Read-only. Contains no\n        identifying metadata.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/dns_resolver/apply",
+        "symbol": "DNS_RESOLVER_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_dns_resolver_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_dns_resolver_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "DNSResolverApply",
         "type": "object"
       }
     },
@@ -4944,6 +5070,48 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "FIREWALL_VIRTUAL_IP_APPLY_READ",
+      "client_method": "get_firewall_virtual_ip_apply_status",
+      "description": "Get pfSense pending virtual IP change status: whether all\n        virtual IP changes are applied. Read-only. Contains no\n        identifying metadata.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/firewall/virtual_ip/apply",
+        "symbol": "FIREWALL_VIRTUAL_IP_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_firewall_virtual_ip_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_firewall_virtual_ip_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "VirtualIPApply",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "FIREWALL_VIRTUAL_IP_READ",
       "client_method": "get_firewall_virtual_ips",
       "description": "List pfSense virtual IPs (CARP/IP alias/proxy ARP/other):\n        interface, type, mode, and CARP status. The CARP shared secret\n        is never returned by this tool under any argument. Read-only.\n\n        include_identifying_metadata: if True, includes the literal\n        virtual IP address and CARP peer address. Defaults to False.\n\n        limit: maximum number of virtual IPs to return (1-100, default\n        100).",
@@ -5659,6 +5827,63 @@
           "result"
         ],
         "title": "pfsense_get_gatewaysOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "INTERFACE_APPLY_READ",
+      "client_method": "get_interface_apply_status",
+      "description": "Get pfSense pending interface change status: whether all\n        interfaces are applied, and which (if any) have pending\n        changes. Read-only. Contains no identifying metadata beyond\n        interface names.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/interface/apply",
+        "symbol": "INTERFACE_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_interface_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_interface_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          },
+          "pending_interfaces": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Interfaces"
+          }
+        },
+        "required": [
+          "applied",
+          "pending_interfaces"
+        ],
+        "title": "InterfaceApply",
         "type": "object"
       }
     },
@@ -7164,6 +7389,48 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "VPN_IPSEC_APPLY_READ",
+      "client_method": "get_ipsec_apply_status",
+      "description": "Get pfSense pending IPsec change status: whether all IPsec\n        changes are applied. Read-only. Contains no identifying\n        metadata.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/ipsec/apply",
+        "symbol": "VPN_IPSEC_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_ipsec_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_ipsec_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "IPsecApply",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SERVICES_NTP_READ",
       "client_method": "get_ntp_settings",
       "description": "Get pfSense NTP service settings: enabled state, listening\n        interfaces, poll intervals, and peer authentication\n        configuration. Read-only.",
@@ -7376,6 +7643,48 @@
           "result"
         ],
         "title": "pfsense_get_ntp_time_serversOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "ROUTING_APPLY_READ",
+      "client_method": "get_routing_apply_status",
+      "description": "Get pfSense pending routing change status: whether all\n        routing changes are applied. Read-only. Contains no\n        identifying metadata.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/routing/apply",
+        "symbol": "ROUTING_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_routing_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_routing_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "RoutingApply",
         "type": "object"
       }
     },
@@ -8809,6 +9118,332 @@
           "result"
         ],
         "title": "pfsense_get_status_ipsec_sasOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "STATUS_LOGS_SETTINGS_READ",
+      "client_method": "get_status_logs_settings",
+      "description": "Get pfSense logging configuration: which categories are\n        logged, log rotation/retention settings, and remote syslog\n        destination. Read-only. Contains no log content or\n        credentials.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/status/logs/settings",
+        "symbol": "STATUS_LOGS_SETTINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_status_logs_settingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_status_logs_settings",
+      "output_schema": {
+        "properties": {
+          "auth": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth"
+          },
+          "dhcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dhcp"
+          },
+          "disablelocallogging": {
+            "title": "Disablelocallogging",
+            "type": "boolean"
+          },
+          "dpinger": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dpinger"
+          },
+          "enableremotelogging": {
+            "title": "Enableremotelogging",
+            "type": "boolean"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter"
+          },
+          "filterdescriptions": {
+            "title": "Filterdescriptions",
+            "type": "integer"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "hostapd": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hostapd"
+          },
+          "ipprotocol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipprotocol"
+          },
+          "logall": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logall"
+          },
+          "logcompressiontype": {
+            "title": "Logcompressiontype",
+            "type": "string"
+          },
+          "logconfigchanges": {
+            "title": "Logconfigchanges",
+            "type": "boolean"
+          },
+          "logfilesize": {
+            "title": "Logfilesize",
+            "type": "integer"
+          },
+          "nentries": {
+            "title": "Nentries",
+            "type": "integer"
+          },
+          "nologbogons": {
+            "title": "Nologbogons",
+            "type": "boolean"
+          },
+          "nologdefaultblock": {
+            "title": "Nologdefaultblock",
+            "type": "boolean"
+          },
+          "nologdefaultpass": {
+            "title": "Nologdefaultpass",
+            "type": "boolean"
+          },
+          "nolognginx": {
+            "title": "Nolognginx",
+            "type": "boolean"
+          },
+          "nologprivatenets": {
+            "title": "Nologprivatenets",
+            "type": "boolean"
+          },
+          "ntpd": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ntpd"
+          },
+          "portalauth": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portalauth"
+          },
+          "ppp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ppp"
+          },
+          "rawfilter": {
+            "title": "Rawfilter",
+            "type": "boolean"
+          },
+          "remoteserver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoteserver"
+          },
+          "remoteserver2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoteserver2"
+          },
+          "remoteserver3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoteserver3"
+          },
+          "resolver": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolver"
+          },
+          "reverseorder": {
+            "title": "Reverseorder",
+            "type": "boolean"
+          },
+          "rotatecount": {
+            "title": "Rotatecount",
+            "type": "integer"
+          },
+          "routing": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Routing"
+          },
+          "sourceip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceip"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "vpn": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpn"
+          }
+        },
+        "required": [
+          "format",
+          "reverseorder",
+          "nentries",
+          "nologdefaultblock",
+          "nologdefaultpass",
+          "nologbogons",
+          "nologprivatenets",
+          "nolognginx",
+          "rawfilter",
+          "disablelocallogging",
+          "logconfigchanges",
+          "filterdescriptions",
+          "logfilesize",
+          "rotatecount",
+          "logcompressiontype",
+          "enableremotelogging",
+          "ipprotocol",
+          "sourceip",
+          "remoteserver",
+          "remoteserver2",
+          "remoteserver3",
+          "logall",
+          "filter",
+          "dhcp",
+          "auth",
+          "portalauth",
+          "vpn",
+          "dpinger",
+          "hostapd",
+          "system",
+          "resolver",
+          "ppp",
+          "routing",
+          "ntpd"
+        ],
+        "title": "LogSettings",
         "type": "object"
       }
     },
@@ -13590,6 +14225,138 @@
           "result"
         ],
         "title": "pfsense_get_vpn_openvpn_serversOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_WIREGUARD_TUNNEL_ADDRESS_READ",
+      "client_method": "get_vpn_wireguard_tunnel_addresses",
+      "description": "List WireGuard tunnel address assignments: description and\n        (optionally) the tunnel's own address/subnet mask. Read-only.\n        Requires pfSense-pkg-WireGuard.\n\n        include_identifying_metadata: if True, includes the literal\n        address/mask. Defaults to False.\n\n        limit: maximum number of tunnel addresses to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/wireguard/tunnel/addresses",
+        "symbol": "VPN_WIREGUARD_TUNNEL_ADDRESSES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_wireguard_tunnel_addressesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_wireguard_tunnel_addresses",
+      "output_schema": {
+        "$defs": {
+          "WireGuardTunnelAddress": {
+            "properties": {
+              "address": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Address"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Mask"
+              }
+            },
+            "required": [
+              "descr"
+            ],
+            "title": "WireGuardTunnelAddress",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/WireGuardTunnelAddress"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_wireguard_tunnel_addressesOutput",
+        "type": "object"
+      }
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_WIREGUARD_APPLY_READ",
+      "client_method": "get_wireguard_apply_status",
+      "description": "Get pfSense pending WireGuard change status: whether all\n        WireGuard changes are applied. Read-only. Contains no\n        identifying metadata. Requires pfSense-pkg-WireGuard.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/wireguard/apply",
+        "symbol": "VPN_WIREGUARD_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_wireguard_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_wireguard_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "WireGuardApply",
         "type": "object"
       }
     },

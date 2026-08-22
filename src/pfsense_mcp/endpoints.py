@@ -674,59 +674,66 @@ class Endpoints:
     # v0.6.0 Phase B Batch C -- re-checked against the pinned schema for
     # secrets before implementation (none found; 34 fields, all
     # boolean/string/integer, no field marked writeOnly). No package
-    # required (core status feature). Not yet LAB-verified: the
-    # read-only LAB service account's privilege scope does not yet
-    # include this endpoint, and granting it required admin LAB access
-    # unavailable this session -- see docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md.
+    # required (core status feature). LAB-verified FIELD_MODEL_LIVE_VERIFIED
+    # 2026-08-22 after the read-only LAB service account was synced to
+    # the current required privilege set: 200, exact 34-key match, no
+    # extra/missing fields. 18 fields (auth/dhcp/dpinger/filter/hostapd/
+    # ipprotocol/logall/ntpd/portalauth/ppp/remoteserver/remoteserver2/
+    # remoteserver3/resolver/routing/system/sourceip/vpn) widened to
+    # Optional after this live call: the pinned schema declares them
+    # non-nullable but the live LAB returns null for unconfigured
+    # categories.
     STATUS_LOGS_SETTINGS = EndpointInfo(
         path_suffix="/status/logs/settings",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # v0.6.0 Phase B Batch D -- apply-status sweep. Each re-checked
     # against the pinned schema for secrets before implementation (none
     # found; single "applied" boolean, or that plus a flat interface-name
     # array for InterfaceApply). No package required except
-    # VPN_WIREGUARD_APPLY (pfSense-pkg-WireGuard). Not yet LAB-verified
-    # for the same reason as STATUS_LOGS_SETTINGS above.
+    # VPN_WIREGUARD_APPLY (pfSense-pkg-WireGuard). LAB-verified
+    # FIELD_MODEL_LIVE_VERIFIED 2026-08-22 for all 8, independently: each
+    # returned 200 with an exact key-set match to its model, no
+    # extra/missing fields.
     FIREWALL_VIRTUAL_IP_APPLY = EndpointInfo(
         path_suffix="/firewall/virtual_ip/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     INTERFACE_APPLY = EndpointInfo(
         path_suffix="/interface/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     ROUTING_APPLY = EndpointInfo(
         path_suffix="/routing/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     DHCP_SERVER_APPLY = EndpointInfo(
         path_suffix="/services/dhcp_server/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     DNS_FORWARDER_APPLY = EndpointInfo(
         path_suffix="/services/dns_forwarder/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     DNS_RESOLVER_APPLY = EndpointInfo(
         path_suffix="/services/dns_resolver/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     VPN_IPSEC_APPLY = EndpointInfo(
         path_suffix="/vpn/ipsec/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     VPN_WIREGUARD_APPLY = EndpointInfo(
         path_suffix="/vpn/wireguard/apply",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # v0.6.0 Phase B Batch E -- re-checked against the pinned schema for
@@ -736,9 +743,12 @@ class Endpoints:
     # already-shipped WireGuardTunnelStatus (no address field there at
     # all). Requires pfSense-pkg-WireGuard (installed on this LAB, per
     # the already-shipped STATUS_WIREGUARD_TUNNELS/PEERS entries below).
-    # Not yet LAB-verified for the same reason as STATUS_LOGS_SETTINGS.
+    # LAB-verified ENDPOINT_VERIFIED 2026-08-22: 200, {"data": []} -- no
+    # WireGuard tunnel addresses configured on this LAB, so the item
+    # shape itself was not exercised live; field safety rests on the
+    # Phase A schema/security review, not on an observed populated item.
     VPN_WIREGUARD_TUNNEL_ADDRESSES = EndpointInfo(
         path_suffix="/vpn/wireguard/tunnel/addresses",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

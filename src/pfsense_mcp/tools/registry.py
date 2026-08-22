@@ -29,13 +29,16 @@ from .read import (
     dhcp_leases,
     dhcp_relay,
     dhcp_server_address_pools,
+    dhcp_server_apply_status,
     dhcp_server_custom_options,
     dhcp_servers,
     dhcp_static_mappings,
     diagnostics_config_history_revisions,
     diagnostics_tables,
+    dns_forwarder_apply_status,
     dns_forwarder_host_overrides,
     dns_resolver_access_lists,
+    dns_resolver_apply_status,
     dns_resolver_domain_overrides,
     dns_resolver_host_overrides,
     dns_resolver_settings,
@@ -53,10 +56,12 @@ from .read import (
     firewall_states_size,
     firewall_traffic_shaper_limiters,
     firewall_traffic_shapers,
+    firewall_virtual_ip_apply_status,
     firewall_virtual_ips,
     freeradius_eap,
     gateway_status,
     gateways,
+    interface_apply_status,
     interface_available_interfaces,
     interface_bridges,
     interface_configs,
@@ -65,9 +70,11 @@ from .read import (
     interface_laggs,
     interface_vlans,
     interfaces,
+    ipsec_apply_status,
     mcp_info,
     ntp_settings,
     ntp_time_servers,
+    routing_apply_status,
     routing_gateway_default,
     routing_gateway_groups,
     routing_static_routes,
@@ -75,6 +82,7 @@ from .read import (
     ssh_settings,
     status_ipsec_child_sas,
     status_ipsec_sas,
+    status_logs_settings,
     status_openvpn_clients,
     status_openvpn_server_connections,
     status_openvpn_server_routes,
@@ -105,6 +113,8 @@ from .read import (
     vpn_ipsec_phase2s,
     vpn_openvpn_csos,
     vpn_openvpn_servers,
+    vpn_wireguard_tunnel_addresses,
+    wireguard_apply_status,
 )
 from .write import set_firewall_alias_description
 
@@ -135,13 +145,16 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_dhcp_leases",
         "pfsense_get_dhcp_relay",
         "pfsense_get_dhcp_server_address_pools",
+        "pfsense_get_dhcp_server_apply_status",
         "pfsense_get_dhcp_server_custom_options",
         "pfsense_get_dhcp_servers",
         "pfsense_get_dhcp_static_mappings",
         "pfsense_get_diagnostics_config_history_revisions",
         "pfsense_get_diagnostics_tables",
+        "pfsense_get_dns_forwarder_apply_status",
         "pfsense_get_dns_forwarder_host_overrides",
         "pfsense_get_dns_resolver_access_lists",
+        "pfsense_get_dns_resolver_apply_status",
         "pfsense_get_dns_resolver_domain_overrides",
         "pfsense_get_dns_resolver_host_overrides",
         "pfsense_get_dns_resolver_settings",
@@ -159,10 +172,12 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_firewall_states_size",
         "pfsense_get_firewall_traffic_shaper_limiters",
         "pfsense_get_firewall_traffic_shapers",
+        "pfsense_get_firewall_virtual_ip_apply_status",
         "pfsense_get_firewall_virtual_ips",
         "pfsense_get_freeradius_eap",
         "pfsense_get_gateway_status",
         "pfsense_get_gateways",
+        "pfsense_get_interface_apply_status",
         "pfsense_get_interface_available_interfaces",
         "pfsense_get_interface_bridges",
         "pfsense_get_interface_configs",
@@ -171,8 +186,10 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_interface_laggs",
         "pfsense_get_interface_vlans",
         "pfsense_get_interfaces",
+        "pfsense_get_ipsec_apply_status",
         "pfsense_get_ntp_settings",
         "pfsense_get_ntp_time_servers",
+        "pfsense_get_routing_apply_status",
         "pfsense_get_routing_gateway_default",
         "pfsense_get_routing_gateway_groups",
         "pfsense_get_routing_static_routes",
@@ -180,6 +197,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_ssh_settings",
         "pfsense_get_status_ipsec_child_sas",
         "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_logs_settings",
         "pfsense_get_status_openvpn_clients",
         "pfsense_get_status_openvpn_server_connections",
         "pfsense_get_status_openvpn_server_routes",
@@ -210,6 +228,8 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_vpn_ipsec_phase2s",
         "pfsense_get_vpn_openvpn_csos",
         "pfsense_get_vpn_openvpn_servers",
+        "pfsense_get_vpn_wireguard_tunnel_addresses",
+        "pfsense_get_wireguard_apply_status",
         "pfsense_mcp_info",
     }
 )
@@ -414,6 +434,26 @@ class ToolRegistry:
             self._register_vpn_openvpn_cso_read()
         if Capability.DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ in self._capabilities:
             self._register_diagnostics_config_history_revision_read()
+        if Capability.STATUS_LOGS_SETTINGS_READ in self._capabilities:
+            self._register_status_logs_settings_read()
+        if Capability.FIREWALL_VIRTUAL_IP_APPLY_READ in self._capabilities:
+            self._register_firewall_virtual_ip_apply_read()
+        if Capability.INTERFACE_APPLY_READ in self._capabilities:
+            self._register_interface_apply_read()
+        if Capability.ROUTING_APPLY_READ in self._capabilities:
+            self._register_routing_apply_read()
+        if Capability.DHCP_SERVER_APPLY_READ in self._capabilities:
+            self._register_dhcp_server_apply_read()
+        if Capability.DNS_FORWARDER_APPLY_READ in self._capabilities:
+            self._register_dns_forwarder_apply_read()
+        if Capability.DNS_RESOLVER_APPLY_READ in self._capabilities:
+            self._register_dns_resolver_apply_read()
+        if Capability.VPN_IPSEC_APPLY_READ in self._capabilities:
+            self._register_vpn_ipsec_apply_read()
+        if Capability.VPN_WIREGUARD_APPLY_READ in self._capabilities:
+            self._register_vpn_wireguard_apply_read()
+        if Capability.VPN_WIREGUARD_TUNNEL_ADDRESS_READ in self._capabilities:
+            self._register_vpn_wireguard_tunnel_address_read()
 
         self.register_all_write()
 
@@ -898,6 +938,56 @@ class ToolRegistry:
     def _register_diagnostics_config_history_revision_read(self) -> None:
         fn = diagnostics_config_history_revisions.build(self._client)
         wrapped = audit_logged("pfsense_get_diagnostics_config_history_revisions", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_status_logs_settings_read(self) -> None:
+        fn = status_logs_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_status_logs_settings", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_firewall_virtual_ip_apply_read(self) -> None:
+        fn = firewall_virtual_ip_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_firewall_virtual_ip_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_interface_apply_read(self) -> None:
+        fn = interface_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_interface_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_routing_apply_read(self) -> None:
+        fn = routing_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_routing_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dhcp_server_apply_read(self) -> None:
+        fn = dhcp_server_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_dhcp_server_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dns_forwarder_apply_read(self) -> None:
+        fn = dns_forwarder_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_dns_forwarder_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_dns_resolver_apply_read(self) -> None:
+        fn = dns_resolver_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_dns_resolver_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_ipsec_apply_read(self) -> None:
+        fn = ipsec_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_ipsec_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_wireguard_apply_read(self) -> None:
+        fn = wireguard_apply_status.build(self._client)
+        wrapped = audit_logged("pfsense_get_wireguard_apply_status", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_wireguard_tunnel_address_read(self) -> None:
+        fn = vpn_wireguard_tunnel_addresses.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_wireguard_tunnel_addresses", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

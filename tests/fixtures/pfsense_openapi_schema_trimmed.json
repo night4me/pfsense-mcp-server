@@ -1435,6 +1435,56 @@
       "get": {
         "description": "<h3>Description:</h3>Reads all existing Configuration History Entries.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: ConfigHistoryRevision<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-diagnostics-config-history-revisions-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
       }
+    },
+    "/api/v2/status/logs/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Log Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: LogSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-logs-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/firewall/virtual_ip/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending virtual IP status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: VirtualIPApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-firewall-virtual-ip-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/interface/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending interfaces status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: InterfaceApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-interface-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/routing/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current Routing Apply.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: RoutingApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-routing-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dhcp_server/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending DHCP Server change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: DHCPServerApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dhcp-server-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dns_forwarder/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending DNS Forwarder change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: DNSForwarderApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-forwarder-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/dns_resolver/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending DNS Resolver change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: DNSResolverApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-dns-resolver-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/ipsec/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending IPsec change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: IPsecApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-ipsec-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/wireguard/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending WireGuard change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: WireGuardApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-apply-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/wireguard/tunnel/addresses": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing WireGuard Tunnel Addresses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: WireGuardTunnelAddress<br>**Parent model**: WireGuardTunnel<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-tunnel-addresses-get ]<br>**Required packages**: [ pfSense-pkg-WireGuard ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
     }
   }
 }

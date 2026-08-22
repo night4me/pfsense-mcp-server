@@ -83,6 +83,16 @@ class Capability(Enum):
     VPN_OPENVPN_SERVER_READ = auto()
     VPN_OPENVPN_CSO_READ = auto()
     DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ = auto()
+    STATUS_LOGS_SETTINGS_READ = auto()
+    FIREWALL_VIRTUAL_IP_APPLY_READ = auto()
+    INTERFACE_APPLY_READ = auto()
+    ROUTING_APPLY_READ = auto()
+    DHCP_SERVER_APPLY_READ = auto()
+    DNS_FORWARDER_APPLY_READ = auto()
+    DNS_RESOLVER_APPLY_READ = auto()
+    VPN_IPSEC_APPLY_READ = auto()
+    VPN_WIREGUARD_APPLY_READ = auto()
+    VPN_WIREGUARD_TUNNEL_ADDRESS_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -172,6 +182,16 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.VPN_OPENVPN_SERVER_READ,
         Capability.VPN_OPENVPN_CSO_READ,
         Capability.DIAGNOSTICS_CONFIG_HISTORY_REVISION_READ,
+        Capability.STATUS_LOGS_SETTINGS_READ,
+        Capability.FIREWALL_VIRTUAL_IP_APPLY_READ,
+        Capability.INTERFACE_APPLY_READ,
+        Capability.ROUTING_APPLY_READ,
+        Capability.DHCP_SERVER_APPLY_READ,
+        Capability.DNS_FORWARDER_APPLY_READ,
+        Capability.DNS_RESOLVER_APPLY_READ,
+        Capability.VPN_IPSEC_APPLY_READ,
+        Capability.VPN_WIREGUARD_APPLY_READ,
+        Capability.VPN_WIREGUARD_TUNNEL_ADDRESS_READ,
     }
 )
 

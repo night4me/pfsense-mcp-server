@@ -1078,13 +1078,11 @@ def test_vpn_openvpn_csos_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_OPENVPN_CSOS.path_suffix == "/vpn/openvpn/csos"
 
 
-def test_status_logs_settings_is_not_yet_verified():
-    """v0.6.0 Phase B Batch C: implemented and offline-tested, but LAB
-    verification could not be completed this session (the read-only LAB
-    service account's privilege scope does not yet include this
-    endpoint) -- matches the established WireGuard-package-blocker
-    precedent: verified=False until a live call actually succeeds."""
-    assert Endpoints.STATUS_LOGS_SETTINGS.verified is False
+def test_status_logs_settings_is_verified():
+    """v0.6.0 Phase B completion: LAB-verified FIELD_MODEL_LIVE_VERIFIED
+    2026-08-22 after the read-only LAB service account was synced to
+    the current required privilege set -- 200, exact 34-key match."""
+    assert Endpoints.STATUS_LOGS_SETTINGS.verified is True
 
 
 def test_status_logs_settings_path_suffix_has_no_api_prefix():
@@ -1095,8 +1093,8 @@ def test_status_logs_settings_path_suffix_is_the_singular_settings_endpoint():
     assert Endpoints.STATUS_LOGS_SETTINGS.path_suffix == "/status/logs/settings"
 
 
-def test_firewall_virtual_ip_apply_is_not_yet_verified():
-    assert Endpoints.FIREWALL_VIRTUAL_IP_APPLY.verified is False
+def test_firewall_virtual_ip_apply_is_verified():
+    assert Endpoints.FIREWALL_VIRTUAL_IP_APPLY.verified is True
 
 
 def test_firewall_virtual_ip_apply_path_suffix_has_no_api_prefix():
@@ -1107,8 +1105,8 @@ def test_firewall_virtual_ip_apply_path_suffix_is_correct():
     assert Endpoints.FIREWALL_VIRTUAL_IP_APPLY.path_suffix == "/firewall/virtual_ip/apply"
 
 
-def test_interface_apply_is_not_yet_verified():
-    assert Endpoints.INTERFACE_APPLY.verified is False
+def test_interface_apply_is_verified():
+    assert Endpoints.INTERFACE_APPLY.verified is True
 
 
 def test_interface_apply_path_suffix_has_no_api_prefix():
@@ -1119,8 +1117,8 @@ def test_interface_apply_path_suffix_is_correct():
     assert Endpoints.INTERFACE_APPLY.path_suffix == "/interface/apply"
 
 
-def test_routing_apply_is_not_yet_verified():
-    assert Endpoints.ROUTING_APPLY.verified is False
+def test_routing_apply_is_verified():
+    assert Endpoints.ROUTING_APPLY.verified is True
 
 
 def test_routing_apply_path_suffix_has_no_api_prefix():
@@ -1131,8 +1129,8 @@ def test_routing_apply_path_suffix_is_correct():
     assert Endpoints.ROUTING_APPLY.path_suffix == "/routing/apply"
 
 
-def test_dhcp_server_apply_is_not_yet_verified():
-    assert Endpoints.DHCP_SERVER_APPLY.verified is False
+def test_dhcp_server_apply_is_verified():
+    assert Endpoints.DHCP_SERVER_APPLY.verified is True
 
 
 def test_dhcp_server_apply_path_suffix_has_no_api_prefix():
@@ -1143,8 +1141,8 @@ def test_dhcp_server_apply_path_suffix_is_correct():
     assert Endpoints.DHCP_SERVER_APPLY.path_suffix == "/services/dhcp_server/apply"
 
 
-def test_dns_forwarder_apply_is_not_yet_verified():
-    assert Endpoints.DNS_FORWARDER_APPLY.verified is False
+def test_dns_forwarder_apply_is_verified():
+    assert Endpoints.DNS_FORWARDER_APPLY.verified is True
 
 
 def test_dns_forwarder_apply_path_suffix_has_no_api_prefix():
@@ -1155,8 +1153,8 @@ def test_dns_forwarder_apply_path_suffix_is_correct():
     assert Endpoints.DNS_FORWARDER_APPLY.path_suffix == "/services/dns_forwarder/apply"
 
 
-def test_dns_resolver_apply_is_not_yet_verified():
-    assert Endpoints.DNS_RESOLVER_APPLY.verified is False
+def test_dns_resolver_apply_is_verified():
+    assert Endpoints.DNS_RESOLVER_APPLY.verified is True
 
 
 def test_dns_resolver_apply_path_suffix_has_no_api_prefix():
@@ -1167,8 +1165,8 @@ def test_dns_resolver_apply_path_suffix_is_correct():
     assert Endpoints.DNS_RESOLVER_APPLY.path_suffix == "/services/dns_resolver/apply"
 
 
-def test_vpn_ipsec_apply_is_not_yet_verified():
-    assert Endpoints.VPN_IPSEC_APPLY.verified is False
+def test_vpn_ipsec_apply_is_verified():
+    assert Endpoints.VPN_IPSEC_APPLY.verified is True
 
 
 def test_vpn_ipsec_apply_path_suffix_has_no_api_prefix():
@@ -1179,8 +1177,8 @@ def test_vpn_ipsec_apply_path_suffix_is_correct():
     assert Endpoints.VPN_IPSEC_APPLY.path_suffix == "/vpn/ipsec/apply"
 
 
-def test_vpn_wireguard_apply_is_not_yet_verified():
-    assert Endpoints.VPN_WIREGUARD_APPLY.verified is False
+def test_vpn_wireguard_apply_is_verified():
+    assert Endpoints.VPN_WIREGUARD_APPLY.verified is True
 
 
 def test_vpn_wireguard_apply_path_suffix_has_no_api_prefix():
@@ -1191,8 +1189,11 @@ def test_vpn_wireguard_apply_path_suffix_is_correct():
     assert Endpoints.VPN_WIREGUARD_APPLY.path_suffix == "/vpn/wireguard/apply"
 
 
-def test_vpn_wireguard_tunnel_addresses_is_not_yet_verified():
-    assert Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.verified is False
+def test_vpn_wireguard_tunnel_addresses_is_verified():
+    """v0.6.0 Phase B completion: LAB-verified ENDPOINT_VERIFIED
+    2026-08-22 -- 200, {"data": []}, no WireGuard tunnel addresses
+    configured on this LAB."""
+    assert Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.verified is True
 
 
 def test_vpn_wireguard_tunnel_addresses_path_suffix_has_no_api_prefix():

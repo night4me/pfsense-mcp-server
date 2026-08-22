@@ -2,7 +2,7 @@
 
 Version: 0.4.0 release state
 Profile: `auditor`  
-Registered tools: 85 READ, 0 WRITE
+Registered tools: 95 READ, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
@@ -372,6 +372,24 @@ Common parameters:
 - **Security:** Literal network/gateway addresses are omitted by default.
 - **Example:** `{"name":"pfsense_get_routing_static_routes","arguments":{}}`
 
+### `pfsense_get_interface_apply_status`
+
+- **Purpose:** Get pending interface change status: whether all
+  interfaces are applied, and which (if any) have pending changes.
+- **Parameters:** None.
+- **Returns:** `InterfaceApply`.
+- **Security:** No identifying metadata beyond interface names.
+- **Example:** `{"name":"pfsense_get_interface_apply_status","arguments":{}}`
+
+### `pfsense_get_routing_apply_status`
+
+- **Purpose:** Get pending routing change status: whether all routing
+  changes are applied.
+- **Parameters:** None.
+- **Returns:** `RoutingApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_routing_apply_status","arguments":{}}`
+
 ## Firewall and NAT
 
 ### `pfsense_get_firewall_rules`
@@ -518,6 +536,15 @@ Common parameters:
   default. The CARP shared secret (`password`) is never returned under any
   argument.
 - **Example:** `{"name":"pfsense_get_firewall_virtual_ips","arguments":{}}`
+
+### `pfsense_get_firewall_virtual_ip_apply_status`
+
+- **Purpose:** Get pending virtual IP change status: whether all
+  virtual IP changes are applied.
+- **Parameters:** None.
+- **Returns:** `VirtualIPApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_firewall_virtual_ip_apply_status","arguments":{}}`
 
 ## VPN
 
@@ -666,6 +693,35 @@ Common parameters:
 - **Security:** Literal client common name and tunnel/local/remote
   network ranges plus DNS/NTP/WINS servers are omitted by default.
 - **Example:** `{"name":"pfsense_get_vpn_openvpn_csos","arguments":{}}`
+
+### `pfsense_get_ipsec_apply_status`
+
+- **Purpose:** Get pending IPsec change status: whether all IPsec
+  changes are applied.
+- **Parameters:** None.
+- **Returns:** `IPsecApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_ipsec_apply_status","arguments":{}}`
+
+### `pfsense_get_wireguard_apply_status`
+
+- **Purpose:** Get pending WireGuard change status: whether all
+  WireGuard changes are applied. Requires pfSense-pkg-WireGuard.
+- **Parameters:** None.
+- **Returns:** `WireGuardApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_wireguard_apply_status","arguments":{}}`
+
+### `pfsense_get_vpn_wireguard_tunnel_addresses`
+
+- **Purpose:** List WireGuard tunnel address assignments: description
+  and (optionally) the tunnel's own address/subnet mask. Requires
+  pfSense-pkg-WireGuard.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[WireGuardTunnelAddress]`.
+- **Security:** Literal address/mask are omitted by default.
+- **Example:** `{"name":"pfsense_get_vpn_wireguard_tunnel_addresses","arguments":{}}`
 
 ## Users and API identities
 
@@ -818,6 +874,33 @@ Common parameters:
   metadata; no zone-transfer credential is returned.
 - **Example:** `{"name":"pfsense_get_bind_settings","arguments":{}}`
 
+### `pfsense_get_dhcp_server_apply_status`
+
+- **Purpose:** Get pending DHCP server change status: whether all
+  DHCP server changes are applied.
+- **Parameters:** None.
+- **Returns:** `DHCPServerApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_dhcp_server_apply_status","arguments":{}}`
+
+### `pfsense_get_dns_forwarder_apply_status`
+
+- **Purpose:** Get pending DNS Forwarder change status: whether all
+  DNS Forwarder changes are applied.
+- **Parameters:** None.
+- **Returns:** `DNSForwarderApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_dns_forwarder_apply_status","arguments":{}}`
+
+### `pfsense_get_dns_resolver_apply_status`
+
+- **Purpose:** Get pending DNS Resolver change status: whether all
+  DNS Resolver changes are applied.
+- **Parameters:** None.
+- **Returns:** `DNSResolverApply`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_dns_resolver_apply_status","arguments":{}}`
+
 ## Services and scheduled operations
 
 ### `pfsense_get_service_status`
@@ -918,6 +1001,16 @@ Common parameters:
   metadata (`get_backups()`). No secret or credential material is
   present in this response shape.
 - **Example:** `{"name":"pfsense_get_diagnostics_config_history_revisions","arguments":{"limit":20}}`
+
+### `pfsense_get_status_logs_settings`
+
+- **Purpose:** Get pfSense logging configuration: which categories are
+  logged, log rotation/retention settings, and remote syslog
+  destination.
+- **Parameters:** None.
+- **Returns:** `LogSettings`.
+- **Security:** Contains no log content or credentials.
+- **Example:** `{"name":"pfsense_get_status_logs_settings","arguments":{}}`
 
 ## Server introspection
 
