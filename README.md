@@ -291,15 +291,19 @@ A separate, in-progress subsystem (`src/pfsense_mcp/guidance/`,
 [ADR-017](https://night4me.github.io/pfsense-mcp-server/adr/ADR-017-official-guidance-layer/) /
 [ADR-018](https://night4me.github.io/pfsense-mcp-server/adr/ADR-018-version-aware-guidance-resolution/))
 provides a deterministic, capability-keyed lookup over a small, curated
-set of short, attributed excerpts from official Netgate/pfSense
+registry of **project-authored summaries** of official Netgate/pfSense
 documentation (`docs.netgate.com` only) — meant to give a human or AI
 client *context* about what a capability is, never *authority* to act on
 it.
 
 - **What it is**: a Git-tracked, PR-reviewed registry mapping a
-  capability (e.g. "firewall NAT") to one or more short excerpts, each
-  carrying its canonical source URL, edition (CE/Plus) applicability, and
-  a version-confidence label — never a full-page mirror.
+  capability (e.g. "firewall NAT") to one or more entries, each an
+  independently-written summary (never a quotation) plus its canonical
+  source URL, edition (CE/Plus) applicability, and a version-confidence
+  label — never a full-page mirror, and never redistributed Netgate
+  prose. The only verbatim text kept anywhere is a short (≤300 char)
+  maintainer-only verification anchor, used solely to detect if a source
+  page has drifted; it is never returned to any consumer.
 - **What it is not**: it does not read this server's own live pfSense
   state, does not know anything about *your* appliance, and cannot grant,
   expand, or imply any capability or WRITE authorization — its output
@@ -309,14 +313,15 @@ it.
 - **Network behavior**: zero runtime network calls. The registry is a
   bundled snapshot, loaded once from source at import time. A separate,
   maintainer-invoked script (`make guidance-corpus-audit`) periodically
-  re-fetches each cited URL to confirm the pinned excerpt is still
-  present verbatim — a dev-time check, never something a running server
-  or an MCP tool call triggers.
-- **Current state**: real, tested code and an initial ~15-capability
-  curated corpus exist, but **nothing in this layer is reachable from any
-  MCP tool today** — no tool's output includes guidance, and there is no
-  dedicated guidance-lookup tool. Wiring it into the public surface is a
-  deliberately separate, not-yet-made decision (see the ADRs above).
+  re-fetches each cited URL to confirm the short verification anchor is
+  still present verbatim — a dev-time check, never something a running
+  server or an MCP tool call triggers.
+- **Current state**: real, tested code and a 28-capability curated corpus
+  exist (of 86 total READ capabilities), but **nothing in this layer is
+  reachable from any MCP tool today** — no tool's output includes
+  guidance, and there is no dedicated guidance-lookup tool. Wiring it
+  into the public surface is a deliberately separate, not-yet-made
+  decision (see the ADRs above).
 
 ## Security model
 
