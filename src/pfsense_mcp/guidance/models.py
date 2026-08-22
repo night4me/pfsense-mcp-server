@@ -257,15 +257,34 @@ class GuidanceReference(BaseModel):
     # never appeared in any public schema before this module (verified by
     # `reports-ai/reviews/ADR_017_RED_TEAM.md` Finding 6; do not repeat
     # that claim of precedent elsewhere without re-checking).
-    capability: str
+    capability: str = Field(
+        description="Echoes the capability this guidance was looked up for. Not a grant, gate, "
+        "or selection mechanism -- purely an echo of the request, carried for the consumer's "
+        "own bookkeeping."
+    )
     source_id: str = Field(pattern=SOURCE_ID_PATTERN)
-    title: str = Field(max_length=MAX_TITLE_LENGTH)
-    canonical_url: str
-    summary: str = Field(max_length=MAX_EXCERPT_LENGTH)
+    title: str = Field(max_length=MAX_TITLE_LENGTH, description="The official Netgate documentation page's own title.")
+    canonical_url: str = Field(
+        description="The official docs.netgate.com page this guidance is drawn from. "
+        "Provenance/citation only -- never fetched at request time."
+    )
+    summary: str = Field(
+        max_length=MAX_EXCERPT_LENGTH,
+        description="A PROJECT-AUTHORED explanation of the general pfSense feature named by "
+        "`capability` (never a Netgate quotation -- see `license_note` on the registry entry "
+        "this was drawn from). Describes what the feature is and how it generally works, NOT "
+        "this specific appliance's current configuration or live state. To find out whether "
+        "this feature is actually enabled/configured on the connected appliance, call the "
+        "matching pfsense_get_* READ tool instead.",
+    )
     summary_hash: str
     pfsense_edition: Edition
     trust_label: str
-    applicability: ApplicabilityState
+    applicability: ApplicabilityState = Field(
+        description="How well this guidance entry is believed to match the observed appliance's "
+        "edition/version -- a confidence classification about the DOCUMENTATION's applicability, "
+        "never a statement about the appliance's actual live configuration."
+    )
     evidence_level: EvidenceLevel
     applicable_overlay_chain: tuple[str, ...] = Field(
         default=(),
@@ -273,8 +292,16 @@ class GuidanceReference(BaseModel):
         "most-superseded first, current-truth last -- never flattened into an unordered set "
         "(ADR-018 Finding 6, at the per-entry level).",
     )
-    observed_edition_used: ObservedEdition
-    observed_version_used: str | None
+    observed_edition_used: ObservedEdition = Field(
+        description="The pfSense edition (CE/Plus/unknown) observed from the connected "
+        "appliance's own reported system version, used only to resolve `applicability` above -- "
+        "not a report of any feature-specific configuration state."
+    )
+    observed_version_used: str | None = Field(
+        description="The pfSense version string observed from the connected appliance, used "
+        "only to resolve `applicability` above -- not a report of any feature-specific "
+        "configuration state."
+    )
     retrieval_mode: RetrievalMode
     snapshot_version: str
 

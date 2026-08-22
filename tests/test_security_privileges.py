@@ -251,6 +251,27 @@ def test_read_profile_requirements_has_95_entries_with_exactly_one_local_only():
     assert {r.tool_name for r in local_only} == {"mcp_info", "official_guidance"}
 
 
+def test_official_guidance_identity_dependency_is_already_in_the_documented_read_privilege_set(live_schema):
+    """Release-readiness audit Section 9 (highest-priority privilege
+    question): pfsense_get_official_guidance itself requires zero pfSense
+    privilege (confirmed above -- url=None). Its one internal dependency,
+    resolve_appliance_identity()'s call to pfsense_get_system_version,
+    resolves to a real privilege that must already be a member of the
+    documented 94-privilege READ set -- proving the documented
+    least-privilege READ profile needs no new privilege for this tool to
+    work with full CE/Plus identity resolution, not merely assumed from
+    the fact that both are "READ tools"."""
+    requirements = read_profile_requirements()
+    version_requirement = next(r for r in requirements if r.tool_name == "system_version")
+    resolved = resolve_profile_privileges(live_schema, requirements)
+    version_resolved = next(r for r in resolved if r.url == version_requirement.url)
+    assert version_resolved.ok, version_resolved.error
+    assert version_resolved.privilege == "api-v2-system-version-get"
+
+    privileges = distinct_ok_privileges(resolved)
+    assert version_resolved.privilege in privileges
+
+
 def test_read_profile_resolves_to_the_currently_verified_94_privileges(live_schema):
     resolved = resolve_profile_privileges(live_schema, read_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]

@@ -35,6 +35,28 @@ and never fetches `docs.netgate.com` or any URL. `lookup_guidance()` is a
 pure, deterministic, offline function over the Git-tracked registry — the
 only network call this tool ever makes is the single, already-authorized
 appliance-identity call described above.
+
+**Failure independence (release-readiness audit, 2026-08-22): the
+`pfsense_mcp.guidance.registry`/`appliance_identity` imports are
+deliberately deferred to call time, inside `pfsense_get_official_guidance()`
+itself, not placed at this module's top level.** `registry.py` runs a
+load-time integrity self-check (`_check_registry_integrity()`) as a side
+effect of being imported — correct and desired for catching a corrupted
+registry entry, but only if that check's failure mode stays scoped to
+this one tool. Since `tools/registry.py` imports this module at its own
+top level (to register every tool during server startup), a module-level
+import here would put the guidance registry's integrity check on the
+*server startup* path for every profile with any capability granted —
+meaning a corrupted guidance registry entry could crash the entire MCP
+server, taking all 95 pfSense READ tools down with it. Deferring the
+import to call time means a corrupted registry can only ever fail this
+one tool's own calls, never server startup or any other tool -- verified
+directly in `tests/test_official_guidance_tool.py` (failure-independence
+tests).
+Only `GuidanceReference` (needed at module level for `OfficialGuidanceResult`'s
+own Pydantic field type, hence for MCP schema generation at registration
+time) is imported from `models.py` — which does not import `registry.py`
+and therefore never triggers its integrity check.
 """
 
 from __future__ import annotations
@@ -43,9 +65,7 @@ from typing import Callable, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from pfsense_mcp.guidance.appliance_identity import ObservedEdition, resolve_appliance_identity
 from pfsense_mcp.guidance.models import GuidanceReference
-from pfsense_mcp.guidance.registry import lookup_guidance
 
 from ...capabilities import Capability
 from ...errors import PfSenseMCPError
@@ -107,6 +127,12 @@ def build(client: PfSenseClient) -> Callable[..., OfficialGuidanceResult]:
         guidance for (e.g. "FIREWALL_NAT_READ"). Unknown names are
         rejected rather than guessed at.
         """
+        # Deferred to call time, deliberately -- see this module's
+        # docstring ("Failure independence") for why these two imports
+        # must never move to module level.
+        from pfsense_mcp.guidance.appliance_identity import ObservedEdition, resolve_appliance_identity
+        from pfsense_mcp.guidance.registry import lookup_guidance
+
         if capability not in Capability.__members__:
             raise ValueError(f"Unknown capability: {capability!r}")
         requested = Capability[capability]

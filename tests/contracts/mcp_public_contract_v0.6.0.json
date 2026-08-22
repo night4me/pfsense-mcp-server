@@ -7763,7 +7763,8 @@
             "description": "The only shape `lookup_guidance()` ever returns (G1). No field here\nis a capability, endpoint, HTTP method, or confirmation token -- there\nis nothing in this closed schema an authorization decision could be\nread out of.\n\nExtended by the ADR-018 guidance-bridge implementation slice\n(2026-08-09): `version_mismatch: bool` (always `False` in the\noriginal, exclude-only design) is replaced by the five new fields\nbelow, computed by `applicability.compute_entry_applicability()` and\nassembled by `registry.lookup_guidance()` -- the real behavior\nchange ADR-018 S2 and its own \"Acceptance record\" already named as\nneeding separate explicit approval before this signature shipped.\n`trust_label` is unchanged, still present here (only the separate\n`EvidenceReference` type, produced by `bridge.bridge_guidance_reference()`,\nomits it -- see that module for why).\n\n**Provenance-model revision (2026-08-22)**: `content_excerpt`/\n`content_hash` are replaced by `summary`/`summary_hash` (module\ndocstring). `DocumentSource.source_verification_excerpt`/\n`source_verification_hash` are deliberately **not** fields here --\nthat pair is maintainer-audit-only and never reaches any consumer.",
             "properties": {
               "applicability": {
-                "$ref": "#/$defs/ApplicabilityState"
+                "$ref": "#/$defs/ApplicabilityState",
+                "description": "How well this guidance entry is believed to match the observed appliance's edition/version -- a confidence classification about the DOCUMENTATION's applicability, never a statement about the appliance's actual live configuration."
               },
               "applicable_overlay_chain": {
                 "default": [],
@@ -7775,10 +7776,12 @@
                 "type": "array"
               },
               "canonical_url": {
+                "description": "The official docs.netgate.com page this guidance is drawn from. Provenance/citation only -- never fetched at request time.",
                 "title": "Canonical Url",
                 "type": "string"
               },
               "capability": {
+                "description": "Echoes the capability this guidance was looked up for. Not a grant, gate, or selection mechanism -- purely an echo of the request, carried for the consumer's own bookkeeping.",
                 "title": "Capability",
                 "type": "string"
               },
@@ -7786,7 +7789,8 @@
                 "$ref": "#/$defs/EvidenceLevel"
               },
               "observed_edition_used": {
-                "$ref": "#/$defs/ObservedEdition"
+                "$ref": "#/$defs/ObservedEdition",
+                "description": "The pfSense edition (CE/Plus/unknown) observed from the connected appliance's own reported system version, used only to resolve `applicability` above -- not a report of any feature-specific configuration state."
               },
               "observed_version_used": {
                 "anyOf": [
@@ -7797,6 +7801,7 @@
                     "type": "null"
                   }
                 ],
+                "description": "The pfSense version string observed from the connected appliance, used only to resolve `applicability` above -- not a report of any feature-specific configuration state.",
                 "title": "Observed Version Used"
               },
               "pfsense_edition": {
@@ -7815,6 +7820,7 @@
                 "type": "string"
               },
               "summary": {
+                "description": "A PROJECT-AUTHORED explanation of the general pfSense feature named by `capability` (never a Netgate quotation -- see `license_note` on the registry entry this was drawn from). Describes what the feature is and how it generally works, NOT this specific appliance's current configuration or live state. To find out whether this feature is actually enabled/configured on the connected appliance, call the matching pfsense_get_* READ tool instead.",
                 "maxLength": 2000,
                 "title": "Summary",
                 "type": "string"
@@ -7824,6 +7830,7 @@
                 "type": "string"
               },
               "title": {
+                "description": "The official Netgate documentation page's own title.",
                 "maxLength": 200,
                 "title": "Title",
                 "type": "string"
