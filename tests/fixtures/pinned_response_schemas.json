@@ -1,0 +1,114 @@
+{
+  "ConfigHistoryRevision": {
+    "description": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "filesize": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "time": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "version": {
+      "type": "string",
+      "writeOnly": false
+    }
+  },
+  "SystemTimezone": {
+    "timezone": {
+      "type": "string",
+      "writeOnly": false
+    }
+  },
+  "WireGuardPeerStatus": {
+    "allowed_ips": {
+      "type": "array",
+      "writeOnly": false
+    },
+    "descr": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "endpoint": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "latest_handshake": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "persistent_keepalive": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "preshared_key": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "public_key": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "transfer_rx": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "transfer_tx": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "tunnel_device": {
+      "type": "string",
+      "writeOnly": false
+    }
+  },
+  "WireGuardTunnelStatus": {
+    "descr": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "inpkts": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "listen_port": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "mtu": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "name": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "outpkts": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "peers": {
+      "type": "array",
+      "writeOnly": false
+    },
+    "public_key": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "status": {
+      "type": "string",
+      "writeOnly": false
+    },
+    "transfer_rx": {
+      "type": "integer",
+      "writeOnly": false
+    },
+    "transfer_tx": {
+      "type": "integer",
+      "writeOnly": false
+    }
+  }
+}

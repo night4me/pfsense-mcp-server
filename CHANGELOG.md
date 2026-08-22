@@ -7,6 +7,30 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Schema field-drift regression protection (v0.6.0 Phase B, Batch A).**
+  `scripts/lib/schema_drift.py` provides a general mechanism,
+  independently designed (not derived from the comparison project
+  investigated in the v0.6.0 competitive audit), that asserts every
+  field a pinned upstream OpenAPI schema component declares is either a
+  field this project's Pydantic response model already declares, or is
+  present in an explicit, reviewed `intentional_exclusions` allowlist
+  (e.g. `WireGuardPeerStatus.preshared_key`, deliberately never
+  modeled). This closes a real, previously-unguarded gap: a future
+  pfREST release adding a field to an already-modeled response object
+  would otherwise go completely unnoticed, since a Pydantic model
+  silently ignores unknown upstream keys by construction.
+  `tests/test_schema_field_drift.py` registers four already-shipped
+  models (`ConfigHistoryRevision`, `SystemTimezone`,
+  `WireGuardTunnelStatus`, `WireGuardPeerStatus`) against a small,
+  explicitly curated fixture (`tests/fixtures/pinned_response_schemas.json`)
+  and proves the mechanism itself fires correctly against synthetic
+  ordinary-field, secret-like-field, nested-model, exclusion-allowlist,
+  stale-exclusion, and schema-evolution (nullable) cases. No MCP tool,
+  capability, or public contract change. Public contract remains 84
+  READ / 0 default WRITE.
+
 ## [0.5.1] - 2026-08-21
 
 **Documentation-accuracy and security-communication patch. NO MCP
