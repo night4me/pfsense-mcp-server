@@ -9,6 +9,15 @@ that already-published, immutable PyPI artifact. README.md now uses an
 unpinned ``pip install --upgrade pfsense-mcp-server`` instead, which
 cannot go stale by construction -- this test guards against a future
 regression back to a hardcoded, driftable version pin.
+
+Scoped deliberately to the fenced code block directly under the
+"## Quick start" heading, not the whole document: found 2026-08-23 that
+an unscoped, whole-document regex false-positives on this project's own
+"Release status" prose, which quotes the historical stale command
+(backtick-quoted, describing what was wrong) as part of explaining the
+fix -- a legitimate historical reference, not a live install
+instruction, and exactly the false-positive class this test must not
+reject.
 """
 
 from __future__ import annotations
@@ -20,6 +29,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 PACKAGE_NAME = "pfsense-mcp-server"
+
+QUICK_START_FENCE = re.compile(r"^## Quick start\s*\n+```(?:\w+)?\s*\n(?P<body>.*?)```", re.DOTALL | re.MULTILINE)
 
 # Matches a `pip install` line naming this package, optionally pinned to
 # an exact version, e.g.:
@@ -34,16 +45,23 @@ def _current_version() -> str:
     return str(metadata["version"])
 
 
-def test_readme_has_an_install_command_for_this_package():
+def _quick_start_code_block() -> str:
     text = README.read_text(encoding="utf-8")
-    matches = INSTALL_LINE.findall(text)
-    assert matches, f"README.md has no 'pip install {PACKAGE_NAME}' line to validate"
+    match = QUICK_START_FENCE.search(text)
+    assert match, "README.md has no fenced code block directly under '## Quick start'"
+    return match.group("body")
+
+
+def test_readme_has_an_install_command_for_this_package():
+    body = _quick_start_code_block()
+    matches = INSTALL_LINE.findall(body)
+    assert matches, f"README.md's Quick start code block has no 'pip install {PACKAGE_NAME}' line to validate"
 
 
 def test_readme_install_command_never_pins_a_stale_version():
-    text = README.read_text(encoding="utf-8")
+    body = _quick_start_code_block()
     current = _current_version()
-    for match in INSTALL_LINE.finditer(text):
+    for match in INSTALL_LINE.finditer(body):
         pinned = match.group("version")
         if pinned is not None:
             assert pinned == current, (

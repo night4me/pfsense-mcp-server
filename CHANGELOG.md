@@ -7,6 +7,47 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-23
+
+**Documentation/packaging presentation correction. NO functional MCP/API/
+security change.** Public contract byte-identical to `v0.7.0`: **95
+pfSense READ tools + 1 official-guidance tool, 0 default-reachable
+WRITE**, confirmed by a `tests/contracts/mcp_public_contract_v0.7.1.json`
+snapshot that diffs to zero against `v0.7.0`'s own snapshot.
+
+Fixes a documentation/release-integrity defect found after `v0.7.0`
+published: README.md's Quick start still instructed
+`pip install 'pfsense-mcp-server==0.5.1'` — stale across two releases,
+and, because hatchling embeds README.md verbatim as the wheel/sdist
+`long_description` at build time, permanently frozen into the
+already-published, immutable `v0.7.0` PyPI artifact (PyPI's rendered
+project page cannot be edited in place — only a new release changes
+what it shows). This release exists solely to publish the correction.
+
+### Fixed
+
+- **README.md's Quick start install command** — replaced the stale
+  pinned `==0.5.1` with an unpinned `pip install --upgrade
+  pfsense-mcp-server`. No other install instruction in this repository
+  pins an exact release version, and this exact line had already gone
+  stale twice in a row (through `v0.6.0` and `v0.7.0`) — evidence a
+  pinned Quick start version is a recurring maintenance liability, not
+  a deliberate convention.
+- **Stale current-state documentation**, found during the same
+  repository-wide sweep: `docs/ROADMAP.md`'s "Current baseline" section
+  still named `v0.5.1`/84 tools as current (three releases stale);
+  `docs/index.md`'s two tool-count lines omitted the guidance tool;
+  three spots in `docs/THREAT_MODEL.md` (an assets-table row, a section
+  heading, and its intro sentence) still described the official-
+  guidance layer as inert/consumerless, missed by `v0.7.0`'s own
+  release-readiness audit. Fixed narrowly; historical CHANGELOG,
+  `ACCEPTANCE_v0.*.md`, dated compatibility-evidence rows, and other
+  release-immutable records were left untouched.
+- **Regression protection added**: `tests/test_readme_install_version.py`
+  asserts any pinned version in README.md's `pip install` line for this
+  package matches `pyproject.toml`'s current version, so a stale pin
+  cannot silently recur.
+
 ## [0.7.0] - 2026-08-22
 
 **First official-guidance MCP tool.** Public contract: **95 pfSense READ
