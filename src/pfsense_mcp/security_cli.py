@@ -1,28 +1,48 @@
 """`pfsense-mcp-security` -- the guided security-posture provisioning
-CLI named in `ADR-021` (Accepted). This file implements three
-entirely read-only/mutation-free subcommands:
+CLI named in `ADR-021` (Accepted). This file implements:
 
   - `discover` (`docs/SECURITY_POSTURE_PROVISIONING.md`'s Phase B):
     read-only discovery of both accepted axes' current state.
-  - `plan` (this session's slice, also Phase-B-class, entirely
-    mutation-free): `DISCOVER -> SELECT TARGET -> EVALUATE VALIDITY ->
-    ASSESS PREREQUISITES -> GENERATE PLAN`, stopping before
-    `PROVISIONING`. Bridges "what state do I have?" to "what would need
-    to happen to reach a selected target?" without performing any of
-    it -- see `security_plan.py`'s own module docstring for the full
-    mutation-free argument and the "a plan is never authorization"
-    invariant.
+  - `plan` (also Phase-B-class, entirely mutation-free): `DISCOVER ->
+    SELECT TARGET -> EVALUATE VALIDITY -> ASSESS PREREQUISITES ->
+    GENERATE PLAN`, stopping before `PROVISIONING`. Bridges "what state
+    do I have?" to "what would need to happen to reach a selected
+    target?" without performing any of it -- see `security_plan.py`'s
+    own module docstring for the full mutation-free argument and the
+    "a plan is never authorization" invariant.
   - `doctor` (`docs/ROADMAP.md`'s doctor/preflight item): read-only
     Tier 1 ceremony readiness check -- artifact-exchange path
     cleanliness plus witness readiness, one deterministic READY/
     NOT_READY verdict. See `security_doctor.py`'s own module docstring
     for the full design and its explicit, documented limitations.
+  - `bootstrap` (ADR-033 CLI Integration Slice 3): journal-aware,
+    locking, deterministic ADR-033 least-privilege service-account
+    provisioning orchestration. The only mutating subcommand in this
+    file. Composes the already-implemented, already-reviewed
+    security-bootstrap stack (fixed administrative context, crash-safe
+    journal, exclusive lock, `provision_service_account()`) via the one
+    function `security_bootstrap_orchestration.run_bootstrap_from_environment()`
+    exposes -- see that module's own docstring for the full control
+    flow, and for why this file must never import any of the
+    lower-level bootstrap-stack modules it composes directly. This file
+    is deliberately kept isolated from all of them, an isolation
+    boundary enforced by a dedicated regression test asserting on the
+    literal absence of their module names from this file's source text
+    -- so this docstring intentionally does not name them either.
+    **This subcommand has been verified offline only**
+    (synthetic/fake HTTP fixtures) -- no live
+    pfSense appliance has been contacted by this development task, and
+    running it against a real target is a separate, future, explicitly
+    authorized action. `pfsense-mcp-security setup` (a user-facing
+    interactive wizard) is reserved for a future slice and does not
+    exist yet; `bootstrap` is the deterministic, non-interactive,
+    lower-level command underneath it.
 
-**No selection-execution, provisioning, activation, or any other
-mutating subcommand exists yet** -- that is Phase C onward, each its
-own separate, future, explicitly-scoped authorization. None of
-`discover`, `plan`, or `doctor` performs any provisioning, repair, or
-mutation.
+`discover`, `plan`, and `doctor` perform no provisioning, repair, or
+mutation. `bootstrap` is the first and only subcommand that can mutate
+pfSense state (when later run against a real appliance) -- and even
+then, only ever the one fixed, least-privilege `pfsense-mcp` service
+account this codebase's ADR-033 architecture already scopes it to.
 
 This file does not import `pfsense_mcp.tier1` directly, or at all --
 every axis-discovery call goes through the one function
@@ -42,6 +62,11 @@ import json
 import sys
 from typing import Any, TextIO
 
+from .security_bootstrap_orchestration import (
+    BootstrapOrchestrationOutcome,
+    BootstrapOrchestrationResult,
+    run_bootstrap_from_environment,
+)
 from .security_discovery import (
     AnchorAssurance,
     AnchorAssuranceDiscovery,
@@ -68,6 +93,24 @@ _BLOCKED_TARGET_EXIT_CODE = 2
 # argparse's own existing exit 2 remains reserved for usage errors
 # (main()'s no-subcommand-matched fallback, unchanged below).
 _DOCTOR_NOT_READY_EXIT_CODE = 1
+
+# `bootstrap`'s exit-code model deliberately distinguishes more categories
+# than a generic "failed" -- see BootstrapOrchestrationOutcome's own
+# docstring for what each category actually proves. Codes are chosen to
+# not collide with argparse's own usage-error convention (2) or the
+# other subcommands' exit codes above, though `bootstrap`'s codes are
+# only meaningful relative to its own epilog, not shared across
+# subcommands.
+_BOOTSTRAP_EXIT_CODES: dict[BootstrapOrchestrationOutcome, int] = {
+    BootstrapOrchestrationOutcome.ALREADY_COMPLETE: 0,
+    BootstrapOrchestrationOutcome.COMPLETED: 0,
+    BootstrapOrchestrationOutcome.PROVISIONING_FAILED: 1,
+    BootstrapOrchestrationOutcome.PREFLIGHT_DERIVATION_FAILED: 2,
+    BootstrapOrchestrationOutcome.BLOCKED_LOCK_CONTENTION: 3,
+    BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION: 4,
+    BootstrapOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE: 5,
+    BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR: 6,
+}
 
 _CAPABILITY_POSTURE_CHOICES = [member.value for member in CapabilityPosture]
 # AnchorAssurance.UNKNOWN is deliberately excluded -- it is an
@@ -306,6 +349,69 @@ def _format_doctor_human(result: DoctorResult) -> str:
     return "\n".join(lines)
 
 
+def _bootstrap_result_to_dict(result: BootstrapOrchestrationResult) -> dict[str, Any]:
+    return {
+        "outcome": result.outcome.value,
+        # Already sanitized upstream (never a raw response body, never a
+        # secret) -- see security_bootstrap_orchestration.py's own
+        # docstring for the sanitization discipline this relies on.
+        "detail": result.detail,
+        "operation_id": result.operation_id,
+        "restart_decision": (
+            {
+                "classification": result.restart_decision.classification.value,
+                "operation_id": result.restart_decision.operation_id,
+                "recovery_action": (
+                    result.restart_decision.recovery_action.value if result.restart_decision.recovery_action else None
+                ),
+            }
+            if result.restart_decision is not None
+            else None
+        ),
+        "provisioning_outcome": result.provisioning_outcome.value if result.provisioning_outcome else None,
+        "provisioning_detail": result.provisioning_detail,
+        "notes": [
+            "This subcommand is the only mutating command in this CLI. It is verified offline only "
+            "(synthetic/fake HTTP fixtures) -- no live pfSense appliance has been contacted by the "
+            "development task that implemented it.",
+            "Never prints or logs an API key, password, or any other secret value. A freshly generated "
+            "service-account key is written only to the configured PFSENSE_SERVICE_API_KEY_FILE custody "
+            "path (owner-only permissions), never to stdout/stderr/JSON output.",
+        ],
+    }
+
+
+def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
+    lines = [
+        "pfsense-mcp-security: ADR-033 least-privilege service-account bootstrap orchestration",
+        "",
+        f"Outcome: {result.outcome.value}",
+        f"Detail:  {result.detail}",
+    ]
+    if result.operation_id is not None:
+        lines.append(f"Operation id: {result.operation_id}")
+    if result.restart_decision is not None:
+        decision = result.restart_decision
+        lines.append(f"Restart classification: {decision.classification.value}")
+        if decision.recovery_action is not None:
+            lines.append(f"Recovery action needed: {decision.recovery_action.value}")
+    if result.provisioning_outcome is not None:
+        lines.append(f"Engine outcome: {result.provisioning_outcome.value}")
+        lines.append(f"Engine detail:  {result.provisioning_detail}")
+    lines.append("")
+    lines.append(
+        "This subcommand is the only mutating command in this CLI. It is verified offline only "
+        "(synthetic/fake HTTP fixtures) -- no live pfSense appliance has been contacted by the "
+        "development task that implemented it."
+    )
+    lines.append(
+        "Never prints or logs an API key, password, or any other secret value. A freshly generated "
+        "service-account key is written only to the configured PFSENSE_SERVICE_API_KEY_FILE custody "
+        "path (owner-only permissions), never to stdout/stderr/JSON output."
+    )
+    return "\n".join(lines)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pfsense-mcp-security",
@@ -419,6 +525,60 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
     )
 
+    bootstrap_parser = subparsers.add_parser(
+        "bootstrap",
+        help=(
+            "ADR-033 least-privilege service-account bootstrap orchestration. The only mutating "
+            "subcommand in this CLI -- verified offline only."
+        ),
+        description=(
+            "Journal-aware, locking, deterministic orchestration of the already-implemented ADR-033 "
+            "security-bootstrap stack: creates or additively syncs the one fixed, least-privilege "
+            "pfsense-mcp service account against the target configured entirely through environment "
+            "variables (the same PFSENSE_*/PFSENSE_ADMIN_* variables build_admin_context() already "
+            "validates -- no separate flags exist for target/credentials). May provision real security "
+            "prerequisites when later run against a real appliance -- THIS implemented slice has been "
+            "verified offline only (synthetic/fake HTTP fixtures); no live execution is authorized by "
+            "the development task that built it. `pfsense-mcp-security setup` (a future interactive "
+            "wizard) is a separate, not-yet-implemented command; `bootstrap` is the deterministic, "
+            "non-interactive command underneath it. Supply secrets (admin API key, admin password, "
+            "journal integrity key) through the configured file paths, never inline -- shell history "
+            "would otherwise capture them."
+        ),
+        epilog=(
+            "Exit codes: 0 success (provisioning completed or was already correctly satisfied, or a "
+            "prior operation was already recorded and independently confirmed complete). "
+            "1 the engine ran but did not reach a verified successful state (covers authentication/"
+            "authorization failure, a duplicate/ambiguous existing account, a post-mutation "
+            "verification mismatch, and any unexpected error escaping the engine) -- see 'detail' and "
+            "'provisioning_detail' for the specific reason; the local lock is held pending manual "
+            "investigation. 2 the engine refused before any HTTP call (e.g. unsupported installed "
+            "pfSense REST API package version) -- proven zero network activity, but this alone does not "
+            "unblock a subsequent offline attempt against the same target (see notes). 3 another "
+            "process currently holds the local operation lock. 4 a prior operation's journal/lock state "
+            "requires human recovery attention before a new bootstrap may start -- see "
+            "'restart_decision'. 5 local journal/lock/custody-artifact state is corrupt or internally "
+            "inconsistent. 6 the environment/configuration itself was rejected before any lock or "
+            "journal was touched (missing/invalid variable, insecure file permissions, a schema that is "
+            "not fully source-cross-checked, etc.).\n\n"
+            "This offline-only build never supplies a live server observation to restart "
+            "classification: any pre-existing journal for the same target/account/profile is always "
+            "conservatively treated as requiring recovery attention on a later run, even one that ended "
+            "as cleanly as possible -- a deliberate, fail-closed limitation of this slice, not a bug. "
+            "Only a future, separately-authorized live-verification slice can safely distinguish "
+            "'already done, all good' from 'needs review' without manual state inspection.\n\n"
+            "Never prints, logs, or serializes an API key, password, or any other secret value. A "
+            "freshly generated service-account key is written only to the owner-only "
+            "PFSENSE_SERVICE_API_KEY_FILE custody path."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    bootstrap_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
     return parser
 
 
@@ -463,6 +623,15 @@ def _run_doctor(*, as_json: bool, env: dict[str, str] | None, out: TextIO) -> in
     return 0 if result.ready else _DOCTOR_NOT_READY_EXIT_CODE
 
 
+def _run_bootstrap(*, as_json: bool, env: dict[str, str] | None, out: TextIO) -> int:
+    result = run_bootstrap_from_environment(env)
+    if as_json:
+        print(json.dumps(_bootstrap_result_to_dict(result), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_bootstrap_human(result), file=out)
+    return _BOOTSTRAP_EXIT_CODES[result.outcome]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -479,6 +648,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "doctor":
         return _run_doctor(as_json=args.json, env=None, out=sys.stdout)
+    if args.command == "bootstrap":
+        return _run_bootstrap(as_json=args.json, env=None, out=sys.stdout)
 
     parser.print_help(sys.stderr)
     return 2
