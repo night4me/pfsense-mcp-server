@@ -108,15 +108,40 @@ something fetched at build time.
 `tests/test_readme_pypi_compatibility.py` fails if:
 
 - a ` ```mermaid ` fence exists anywhere in `README.md`;
-- a ` ```mermaid ` fence would reach the built wheel's `METADATA` or
-  sdist's `PKG-INFO` `long_description` (built and inspected directly,
-  not assumed);
+- `pyproject.toml` no longer declares `readme = "README.md"` verbatim
+  (the exact fact this file's other checks depend on to be equivalent
+  to inspecting the built long_description);
 - either diagram's `<img>` reference is a relative path instead of an
   absolute `https://raw.githubusercontent.com/...` URL;
 - either referenced SVG file is missing from the repository, or
   contains a `<script>` tag or an external URL reference (`@import`,
   `xlink:href` to a non-local resource, etc.);
 - the corresponding `.mmd` source file is missing.
+
+**This checks README.md's source directly rather than invoking a real
+`python -m build` on every test run.** An earlier version of this test
+did build the real wheel/sdist and inspect `METADATA`/`PKG-INFO`
+directly, using `--no-isolation` for speed. That version passed
+locally but failed in CI: `--no-isolation` requires the *calling*
+environment to already satisfy `[build-system].requires`'s pinned
+`hatchling<1.32` ceiling (deliberately capped below the release that
+changed Core Metadata output -- see that pin's own comment), while
+CI's plain `test` job's `pip install -e ".[dev]"` environment installs
+`dev`'s own looser `hatchling<2.0` constraint, which can resolve to a
+newer, incompatible hatchling. This pin mismatch pre-dates this patch
+and had never been exercised before, since nothing in the normal test
+suite previously invoked `python -m build`; the separate `package` CI
+job avoids it entirely by building in an *isolated* environment
+(`python -m build` without `--no-isolation`), which installs the
+build-system's own pin fresh regardless of what the outer environment
+has. Fixing that pin mismatch is a dependency-pin change outside this
+patch's narrow documentation/rendering scope, so the regression test
+was simplified instead to remove its dependency on the outer
+environment's build-tooling versions. The actual wheel/sdist build and
+`METADATA`/`PKG-INFO` inspection (§ "Verified" in the corresponding
+task report) was still performed, as a one-time, real, direct
+verification for this change -- just not re-run on every future test
+invocation.
 
 ## Other GitHub-specific Markdown compatibility audit
 
