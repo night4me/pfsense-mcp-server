@@ -1,15 +1,33 @@
 # Acceptance — v0.7.1
 
-**Status: release-candidate, ready for the Owner Approval Gate
-(`docs/PYPI_RELEASE.md`). Not yet tagged, not yet released, not yet
-published to PyPI.** This document accepts the `v0.7.1` release-candidate
-state at its preparation commit, once that commit passes the required
-local and remote gates (CI, CodeQL, `make release-check`) — all
-confirmed below. Creating the `v0.7.1` tag, publishing the GitHub
-Release, and uploading to PyPI each remain a separate, explicit owner
-decision, taken only after this document and the exact commit SHA it
-corresponds to have been reviewed. `v0.7.0`'s own tag, GitHub Release,
-and PyPI artifact remain unmoved as an accurate historical record.
+**Status: published — the `v0.7.1` tag and PyPI release point at this
+commit.** The annotated git tag `v0.7.1` was created and pushed pointing
+at commit `65201dc2385f0fe1b926ff52b28011b9ab8bcb5c`; the GitHub Release
+was published from that tag
+(<https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.7.1>),
+which triggered the `publish.yml` OIDC trusted-publishing workflow (run
+completed `success`). PyPI's JSON API and Simple Index both
+independently confirm `0.7.1` is live, neither artifact is yanked, and
+both the wheel and sdist carry `data-provenance` (PEP 740 attestation)
+links, matching every prior release. A clean installation of
+`pfsense-mcp-server==0.7.1` from the real PyPI index (not the local
+build) was independently verified: reports version `0.7.1`, both CLI
+entry points work, a real `FastMCP.list_tools()` call shows exactly 95
+pfSense READ tools + 1 guidance tool
+(`pfsense_get_official_guidance`) + 0 WRITE tools registered, and an
+offline `lookup_guidance()` call against the installed package returned
+a real entry (`retrieval_mode: BUNDLED_SNAPSHOT`). **The real, live
+PyPI 0.7.1 project page's rendered Quick start now shows
+`pip install --upgrade pfsense-mcp-server` and does not contain the
+stale `==0.5.1` pin** — fetched and inspected directly from
+`https://pypi.org/pypi/pfsense-mcp-server/0.7.1/json`, confirming the
+correction this release exists to publish actually took effect. The
+description still contains 4 legitimate historical references to
+`0.5.1` (explaining the fix and naming past releases), individually
+inspected and confirmed none are inside the Quick start block. This
+status line was only written after that independent post-publication
+verification succeeded. `v0.7.0`'s own tag, GitHub Release, and PyPI
+artifact remain unmoved as an accurate historical record.
 
 ## Release scope
 
