@@ -1,20 +1,40 @@
 """`pfsense-mcp-security setup apply` -- Slice 2 (READ-only apply) +
-Slice 3 (WRITE-protected apply, composing ADR-033 `bootstrap`).
+Slice 3 (WRITE-protected apply, composing ADR-033 `bootstrap`) + Slice 4
+(inline `RECOVERY_REQUIRED` delegation).
 
 Composes, never reimplements: `generate_setup_plan()`/
 `compute_setup_plan_digest()` (Slice 1, unchanged), `load_config()`/
 `load_api_key()`/`build_pfsense_client()` (the exact same dependency-
 construction path every real MCP server startup already uses via
-`application.py`), `run_doctor_checks()` (unchanged), and -- new in
-Slice 3 -- `security_bootstrap_orchestration.run_bootstrap_from_environment()`,
-the exact same sole gateway `security_cli.py`'s own `bootstrap`
-subcommand already uses to reach the deeper, already-reviewed ADR-033
-account-provisioning stack. This module reaches that stack only
-through that one orchestration function, never through any module it
-composes -- a dedicated structural test enforces that by name, treating
-this module as a second legitimate entry point into the orchestration
-bridge, alongside `security_cli.py` itself. Adds exactly one new primitive of its own:
-`security_setup_apply_confirmation`'s plan-bound HMAC token.
+`application.py`), `run_doctor_checks()` (unchanged), `security_bootstrap_orchestration.
+run_bootstrap_from_environment()` (Slice 3), and -- new in Slice 4 --
+`security_recovery_orchestration.run_recovery_from_environment()`, the
+exact same sole gateways `security_cli.py`'s own `bootstrap`/`recover`
+subcommands already use to reach the deeper, already-reviewed ADR-033
+stack. This module reaches that stack only through those two
+orchestration functions, never through any module either composes --
+a dedicated structural test enforces that by name, treating this
+module as a second legitimate entry point into both orchestration
+bridges, alongside `security_cli.py` itself. Adds exactly one new
+primitive of its own: `security_setup_apply_confirmation`'s plan-bound
+HMAC token.
+
+**Slice 4: inline `RECOVERY_REQUIRED` delegation**
+(`reports-ai/SETUP_WIZARD_DESIGN_2026-08-23.md` §10(b), option (b)).
+When `write_protected` bootstrap composition itself reports
+`BLOCKED_PRIOR_OPERATION`, this module additionally calls
+`run_recovery_from_environment(env)` with **no** `execute_action`/
+`confirm_token` -- the exact same read-only inspection bare
+`pfsense-mcp-security recover` performs by default -- and surfaces
+whatever it returns (`recovery_outcome`/`recovery_action`/
+`recovery_confirmation_token`) directly in `ApplyResult`, sparing the
+operator a second command just to see the detail. This module never
+supplies `execute_action`/`confirm_token` under any circumstance: doing
+so would synthesize or auto-confirm recovery on the operator's behalf,
+exactly what the design explicitly forbids. Executing recovery still
+always requires the operator's own separate, explicit
+`pfsense-mcp-security recover --execute <ACTION> --confirm <TOKEN>`
+invocation -- "the exact same way they would outside the wizard."
 
 **Posture scope, both now supported:**
 
@@ -96,6 +116,10 @@ from .security_bootstrap_orchestration import (
 )
 from .security_discovery import AnchorAssurance, CapabilityPosture
 from .security_doctor import run_doctor_checks
+from .security_recovery_orchestration import (
+    RecoveryOrchestrationResult,
+    run_recovery_from_environment,
+)
 from .security_setup_apply_confirmation import (
     ApplyConfirmationBinding,
     confirmation_token_matches,
@@ -153,6 +177,25 @@ class ApplyResult:
     plan_digest: str | None = None
     confirmation_token: str | None = None
     doctor_ready: bool | None = None
+    #: Slice 4 inline RECOVERY_REQUIRED delegation (design report §10(b)):
+    #: populated only when `outcome is BOOTSTRAP_RECOVERY_REQUIRED`, from
+    #: a read-only `run_recovery_from_environment(env)` inspection call
+    #: (never `execute_action`/`confirm_token` -- see this module's own
+    #: docstring). `recovery_outcome` is always the exact
+    #: `RecoveryOrchestrationOutcome` value that inspection returned,
+    #: never collapsed or reinterpreted -- it may be anything inspection
+    #: can return (`recovery_needed`, `recovery_already_complete`,
+    #: `blocked_ambiguous_recovery_state`, `blocked_candidate_not_identifiable`,
+    #: `blocked_configuration_error`, `blocked_corrupt_local_state`, or
+    #: even `no_recovery_needed` if state changed between the two
+    #: classify() calls). `recovery_confirmation_token` is present only
+    #: for `recovery_needed` -- the exact token a subsequent, separate
+    #: `pfsense-mcp-security recover --execute <ACTION> --confirm <TOKEN>`
+    #: invocation would need; this module never supplies it on the
+    #: operator's behalf.
+    recovery_outcome: str | None = None
+    recovery_action: str | None = None
+    recovery_confirmation_token: str | None = None
 
 
 def _read_confirm_key(path: Path) -> bytes:
@@ -344,10 +387,12 @@ def _run_write_protected_apply(
             )
 
     bootstrap_result = run_bootstrap_from_environment(env)
-    return _map_bootstrap_result(bootstrap_result, fresh_digest=fresh_digest)
+    return _map_bootstrap_result(bootstrap_result, env=env, fresh_digest=fresh_digest)
 
 
-def _map_bootstrap_result(result: BootstrapOrchestrationResult, *, fresh_digest: str) -> ApplyResult:
+def _map_bootstrap_result(
+    result: BootstrapOrchestrationResult, *, env: dict[str, str] | None, fresh_digest: str
+) -> ApplyResult:
     """Translates `BootstrapOrchestrationResult` into `ApplyResult` 1:1,
     never collapsing distinct outcomes and never inventing new meaning
     for any of them -- `result.detail` (already sanitized by the
@@ -364,12 +409,7 @@ def _map_bootstrap_result(result: BootstrapOrchestrationResult, *, fresh_digest:
     if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_LOCK_CONTENTION:
         return ApplyResult(ApplyOutcome.BOOTSTRAP_LOCK_CONTENTION, detail, plan_digest=fresh_digest)
     if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION:
-        return ApplyResult(
-            ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED,
-            f"{detail} Run `pfsense-mcp-security recover` to inspect and, if needed, resolve it -- "
-            "this command never attempts recovery itself.",
-            plan_digest=fresh_digest,
-        )
+        return _inline_recovery_inspection(env, bootstrap_detail=detail, fresh_digest=fresh_digest)
     if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE:
         return ApplyResult(ApplyOutcome.BOOTSTRAP_CORRUPT_LOCAL_STATE, detail, plan_digest=fresh_digest)
     if result.outcome is BootstrapOrchestrationOutcome.PREFLIGHT_DERIVATION_FAILED:
@@ -377,3 +417,38 @@ def _map_bootstrap_result(result: BootstrapOrchestrationResult, *, fresh_digest:
     if result.outcome is BootstrapOrchestrationOutcome.PROVISIONING_FAILED:
         return ApplyResult(ApplyOutcome.BOOTSTRAP_PROVISIONING_FAILED, detail, plan_digest=fresh_digest)
     raise AssertionError(f"unhandled BootstrapOrchestrationOutcome: {result.outcome}")  # pragma: no cover
+
+
+def _inline_recovery_inspection(env: dict[str, str] | None, *, bootstrap_detail: str, fresh_digest: str) -> ApplyResult:
+    """Slice 4: inline RECOVERY_REQUIRED delegation
+    (`reports-ai/SETUP_WIZARD_DESIGN_2026-08-23.md` §10(b), option (b)
+    "Delegate inline"). Reached only when bootstrap composition itself
+    already reported `BLOCKED_PRIOR_OPERATION` -- this function never
+    decides on its own that recovery is needed.
+
+    Calls `run_recovery_from_environment(env)` with **no**
+    `execute_action`/`confirm_token` -- the exact same read-only
+    inspection bare `pfsense-mcp-security recover` itself performs by
+    default. No lock is acquired, no journal is written, by that
+    function's own existing, unmodified contract. This function never
+    passes an `execute_action` or a `confirm_token` under any
+    circumstance -- doing so would be exactly the "synthesize, pre-fill,
+    or auto-supply the confirmation token on the operator's behalf" the
+    design explicitly forbids. Whatever `run_recovery_from_environment()`
+    returns is surfaced verbatim (`recovery_outcome`/`recovery_action`/
+    `recovery_confirmation_token`), never collapsed, reinterpreted, or
+    filtered -- including the (rare, TOCTOU) case where state changed
+    between bootstrap's own classify() and this one and inspection now
+    reports `no_recovery_needed`."""
+
+    recovery_result: RecoveryOrchestrationResult = run_recovery_from_environment(env)
+    return ApplyResult(
+        ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED,
+        f"{bootstrap_detail} Inline recovery inspection: {recovery_result.detail} To resolve, run "
+        "`pfsense-mcp-security recover --execute <ACTION> --confirm <TOKEN>` yourself -- this command "
+        "never attempts or auto-confirms recovery.",
+        plan_digest=fresh_digest,
+        recovery_outcome=recovery_result.outcome.value,
+        recovery_action=(recovery_result.recovery_action.value if recovery_result.recovery_action else None),
+        recovery_confirmation_token=recovery_result.confirmation_token,
+    )

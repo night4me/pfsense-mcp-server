@@ -26,7 +26,12 @@ itself unreachable from every other runtime entry point and from
 `_RUNTIME_ENTRY_POINTS` when it started composing
 `run_bootstrap_from_environment()` for `write_protected` apply -- it
 must never reach past that one bridge into the lower-level stack any
-more than `security_cli.py` itself may.
+more than `security_cli.py` itself may. Slice 4 (inline
+`RECOVERY_REQUIRED` delegation) extends the same proof to
+`security_recovery_orchestration.py`: `security_setup_apply.py` also
+composes `run_recovery_from_environment()` (inspection only) and is
+subject to the identical never-reach-past-the-bridge discipline
+`security_cli.py`'s own `recover` subcommand already was.
 """
 
 from __future__ import annotations
@@ -474,16 +479,20 @@ def test_confirmation_module_is_not_in_the_tier1_isolation_exemption_list():
     assert "security_recovery_confirmation.py" not in source
 
 
-def test_security_cli_is_the_sole_runtime_entry_point_wired_to_recovery_orchestration():
-    """Mirrors test_security_cli_is_the_sole_runtime_entry_point_wired_to_orchestration
-    for the `recover` subcommand: security_cli.py must reference
-    security_recovery_orchestration (the intended gateway) while every
-    OTHER runtime entry point, and every tool under tools/, must not."""
+def test_security_cli_and_setup_apply_are_the_only_entry_points_wired_to_recovery_orchestration():
+    """Mirrors test_security_cli_and_setup_apply_are_the_only_entry_points_wired_to_orchestration
+    for the `recover` subcommand: security_cli.py (for `recover` itself)
+    and security_setup_apply.py (for Slice 4's inline RECOVERY_REQUIRED
+    delegation) must both reference security_recovery_orchestration --
+    the two intended gateways -- while every OTHER runtime entry point,
+    and every tool under tools/, must not."""
 
     cli_path = ROOT / "src/pfsense_mcp/security_cli.py"
     assert "security_recovery_orchestration" in cli_path.read_text(encoding="utf-8")
+    assert "security_recovery_orchestration" in SETUP_APPLY_MODULE_PATH.read_text(encoding="utf-8")
 
-    other_entry_points = [path for path in _RUNTIME_ENTRY_POINTS if path != cli_path]
+    wired = {cli_path, SETUP_APPLY_MODULE_PATH}
+    other_entry_points = [path for path in _RUNTIME_ENTRY_POINTS if path not in wired]
     tools_dir = ROOT / "src/pfsense_mcp/tools"
     for path in [*other_entry_points, *sorted(tools_dir.rglob("*.py"))]:
         assert "security_recovery_orchestration" not in path.read_text(encoding="utf-8"), (
@@ -493,6 +502,11 @@ def test_security_cli_is_the_sole_runtime_entry_point_wired_to_recovery_orchestr
 
 def test_security_cli_never_references_security_recovery_confirmation_directly():
     source = (ROOT / "src/pfsense_mcp/security_cli.py").read_text(encoding="utf-8")
+    assert "security_recovery_confirmation" not in source
+
+
+def test_setup_apply_never_references_security_recovery_confirmation_directly():
+    source = SETUP_APPLY_MODULE_PATH.read_text(encoding="utf-8")
     assert "security_recovery_confirmation" not in source
 
 

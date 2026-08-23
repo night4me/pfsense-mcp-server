@@ -58,19 +58,26 @@ CLI named in `ADR-021` (Accepted). This file implements:
     a target is intent for a human to review, never execution
     authorization -- bare `setup` never mutates anything, and there is
     no inline "continue and apply" path from it.
-  - `setup apply` (Slice 2 read_only + Slice 3 write_protected): a
-    wholly separate, explicit command -- never reachable from bare
-    `setup`'s own flow -- that recomputes the plan fresh, refuses a
-    stale `--plan-digest`, refuses a wrong/missing `--confirm` token,
-    and only then acts. For `read_only`: one read-only connectivity
-    check against the operator's existing runtime pfSense
-    configuration, never a mutation. For `write_protected`: composes
-    `security_bootstrap_orchestration.run_bootstrap_from_environment()`
-    -- the exact same sole gateway `bootstrap` itself uses -- to
-    provision (or verify/repair) the one fixed ADR-033 service account;
-    for `anchor_assurance=hardware_witness` specifically, `doctor` is
-    checked and must be ready *before* that composed call is ever made.
-    Composes `security_setup_apply.run_setup_apply_from_environment()`,
+  - `setup apply` (Slice 2 read_only + Slice 3 write_protected + Slice
+    4 inline recovery delegation): a wholly separate, explicit command
+    -- never reachable from bare `setup`'s own flow -- that recomputes
+    the plan fresh, refuses a stale `--plan-digest`, refuses a
+    wrong/missing `--confirm` token, and only then acts. For
+    `read_only`: one read-only connectivity check against the
+    operator's existing runtime pfSense configuration, never a
+    mutation. For `write_protected`: composes `security_bootstrap_orchestration.
+    run_bootstrap_from_environment()` -- the exact same sole gateway
+    `bootstrap` itself uses -- to provision (or verify/repair) the one
+    fixed ADR-033 service account; for `anchor_assurance=hardware_witness`
+    specifically, `doctor` is checked and must be ready *before* that
+    composed call is ever made. If bootstrap composition itself reports
+    a prior operation needs attention, `security_recovery_orchestration.
+    run_recovery_from_environment()` is additionally composed --
+    read-only inspection only, never `--execute`/a confirmation token
+    -- to surface the exact recovery detail inline, sparing the
+    operator a second command just to see it; only the operator's own
+    separate `recover --execute/--confirm` invocation can ever resolve
+    it. Composes `security_setup_apply.run_setup_apply_from_environment()`,
     the one function this file imports for it.
 
 `discover`, `plan`, `doctor`, and bare `setup` perform no provisioning,
@@ -964,20 +971,25 @@ def _build_parser() -> argparse.ArgumentParser:
             "hardware-witness anchor is not ready -- checked after connectivity for read_only, checked "
             "before any bootstrap call for write_protected. 8 another process holds the local ADR-033 "
             "operation lock (write_protected only). 9 a prior bootstrap attempt for this target/account/"
-            "profile requires `pfsense-mcp-security recover` before a new one may start (write_protected "
-            "only) -- RECOVERY_REQUIRED, surfaced faithfully, never bypassed. 10 local ADR-033 journal/"
+            "profile requires recovery before a new one may start (write_protected only) -- "
+            "RECOVERY_REQUIRED, surfaced faithfully, never bypassed: a read-only recovery inspection "
+            "(the exact same one bare `pfsense-mcp-security recover` performs) is run inline and its "
+            "own recovery_action/confirmation_token are shown, but only the operator's own separate "
+            "`pfsense-mcp-security recover --execute <ACTION> --confirm <TOKEN>` invocation can ever "
+            "resolve it -- this command never supplies that token itself. 10 local ADR-033 journal/"
             "lock/custody state is corrupt or untrusted (write_protected only). 11 the engine refused "
             "before any HTTP call -- unsupported package version, or privilege derivation not fully "
             "source-cross-checked (write_protected only; proven zero network activity, but still "
             "requires human review before retrying). 12 the engine ran and did not reach a verified "
             "successful state (write_protected only); local state is held for human review.\n\n"
             "Never introduces a second mutating primitive: the only pfSense contact for read_only is "
-            "one read-only GET; the only thing write_protected ever composes is the exact same "
-            "`run_bootstrap_from_environment()` standalone `bootstrap` already calls, made only after "
-            "the confirmation token has already been verified.\n\n"
+            "one read-only GET; the only things write_protected ever composes are the exact same "
+            "`run_bootstrap_from_environment()` standalone `bootstrap` already calls and (inspection "
+            "only, exit 9) the exact same `run_recovery_from_environment()` standalone `recover` "
+            "already calls, made only after the confirmation token has already been verified.\n\n"
             "Never prints, logs, or serializes an API key, password, journal-integrity key, or any "
-            "other secret value -- the confirmation token is a derived confirmation artifact, not a "
-            "credential."
+            "other secret value -- the confirmation token and the recovery confirmation token are both "
+            "derived confirmation artifacts, not credentials."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -2081,6 +2093,9 @@ def _apply_result_to_dict(result: ApplyResult) -> dict[str, Any]:
         "plan_digest": result.plan_digest,
         "confirmation_token": result.confirmation_token,
         "doctor_ready": result.doctor_ready,
+        "recovery_outcome": result.recovery_outcome,
+        "recovery_action": result.recovery_action,
+        "recovery_confirmation_token": result.recovery_confirmation_token,
     }
 
 
@@ -2093,6 +2108,17 @@ def _format_apply_human(result: ApplyResult) -> str:
         lines.append(f"Confirmation token: {result.confirmation_token}")
     if result.doctor_ready is not None:
         lines.append(f"Doctor ready: {result.doctor_ready}")
+    if result.recovery_outcome is not None:
+        lines.append("")
+        lines.append(f"Inline recovery inspection outcome: {result.recovery_outcome}")
+        if result.recovery_action is not None:
+            lines.append(f"Recovery action needed: {result.recovery_action}")
+        if result.recovery_confirmation_token is not None:
+            lines.append(f"Recovery confirmation token: {result.recovery_confirmation_token}")
+            lines.append(
+                "To resolve, run: pfsense-mcp-security recover "
+                f"--execute {result.recovery_action} --confirm {result.recovery_confirmation_token}"
+            )
     return "\n".join(lines)
 
 

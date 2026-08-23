@@ -236,6 +236,50 @@ def test_human_output_contains_outcome_detail_digest_and_token(capsys, monkeypat
     assert f"Confirmation token: {'b' * 64}" in out
 
 
+def test_human_output_contains_inline_recovery_detail_and_the_exact_recover_command(capsys, monkeypatch):
+    _canned(
+        monkeypatch,
+        ApplyResult(
+            ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED,
+            "a prior operation needs attention",
+            plan_digest="a" * 64,
+            recovery_outcome="recovery_needed",
+            recovery_action="revoke_orphan_key",
+            recovery_confirmation_token="c" * 64,
+        ),
+    )
+
+    main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"])
+
+    out = capsys.readouterr().out
+    assert "bootstrap_recovery_required" in out
+    assert "Inline recovery inspection outcome: recovery_needed" in out
+    assert "Recovery action needed: revoke_orphan_key" in out
+    assert f"Recovery confirmation token: {'c' * 64}" in out
+    assert f"pfsense-mcp-security recover --execute revoke_orphan_key --confirm {'c' * 64}" in out
+
+
+def test_json_output_includes_recovery_fields(capsys, monkeypatch):
+    _canned(
+        monkeypatch,
+        ApplyResult(
+            ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED,
+            "detail",
+            plan_digest="a" * 64,
+            recovery_outcome="blocked_candidate_not_identifiable",
+            recovery_action=None,
+            recovery_confirmation_token=None,
+        ),
+    )
+
+    main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["recovery_outcome"] == "blocked_candidate_not_identifiable"
+    assert payload["recovery_action"] is None
+    assert payload["recovery_confirmation_token"] is None
+
+
 def test_json_output_is_valid_and_deterministic(capsys, monkeypatch):
     _canned(
         monkeypatch,
@@ -257,6 +301,9 @@ def test_json_output_is_valid_and_deterministic(capsys, monkeypatch):
         "plan_digest": "a" * 64,
         "confirmation_token": None,
         "doctor_ready": True,
+        "recovery_outcome": None,
+        "recovery_action": None,
+        "recovery_confirmation_token": None,
     }
 
 
