@@ -118,6 +118,25 @@ def test_rejects_token_with_trailing_whitespace():
     assert not confirmation_token_matches(token + "\n", binding, integrity_key=_KEY)
 
 
+def test_rejects_non_ascii_candidate_without_crashing():
+    """Regression: `hmac.compare_digest()` raises `TypeError` outright
+    for a `str` candidate containing non-ASCII characters. `candidate`
+    is untrusted operator input (a `--confirm` value) and must never
+    crash the comparison -- it must cleanly return `False`."""
+
+    binding = _binding()
+    assert not confirmation_token_matches("emoji😀not-a-real-token", binding, integrity_key=_KEY)
+
+
+def test_rejects_candidate_with_invalid_utf8_surrogate_without_crashing():
+    """Regression: argv on POSIX is decoded with `surrogateescape`, so
+    a `--confirm` value containing an invalid byte sequence can reach
+    this function as a `str` with a lone surrogate. Must not crash."""
+
+    binding = _binding()
+    assert not confirmation_token_matches("bad\udcffbyte", binding, integrity_key=_KEY)
+
+
 def test_domain_separation_from_recovery_confirmation():
     """A token derived for setup-apply must never be accepted by (or
     collide with) the recovery-confirmation domain, and vice versa --

@@ -126,6 +126,7 @@ from .security_bootstrap_orchestration import (
     BootstrapOrchestrationResult,
     run_bootstrap_from_environment,
 )
+from .security_client_config_write import WriteOutcome, WriteResult, run_client_config_write_from_environment
 from .security_discovery import (
     AnchorAssurance,
     AnchorAssuranceDiscovery,
@@ -235,6 +236,21 @@ _SETUP_APPLY_EXIT_CODES: dict[ApplyOutcome, int] = {
     ApplyOutcome.BOOTSTRAP_PREFLIGHT_DERIVATION_FAILED: 11,
     ApplyOutcome.BOOTSTRAP_PROVISIONING_FAILED: 12,
 }
+
+# `setup write-client-config`'s own exit-code model (Phase C), independently
+# numbered under its own epilog. 2 (PLAN_STALE) is assigned at the CLI-wiring
+# layer, not by `WriteOutcome` itself -- see `_run_setup_write_client_config()`
+# -- since only that layer regenerates the plan and can detect staleness.
+_CLIENT_CONFIG_WRITE_EXIT_CODES: dict[WriteOutcome, int] = {
+    WriteOutcome.WRITE_COMPLETED: 0,
+    WriteOutcome.INSPECT_CURRENT: 1,
+    WriteOutcome.CONFIRM_TOKEN_INVALID: 3,
+    WriteOutcome.BLOCKED_CONFIGURATION_ERROR: 4,
+    WriteOutcome.BLOCKED_MALFORMED_EXISTING_CONFIG: 5,
+    WriteOutcome.BLOCKED_PATH_UNSAFE: 6,
+    WriteOutcome.WRITE_VALIDATION_FAILED_ROLLED_BACK: 7,
+}
+_CLIENT_CONFIG_WRITE_PLAN_STALE_EXIT_CODE = 2
 
 # `setup`'s own exit-code model, independently numbered under its own
 # epilog like every other subcommand here. 3 is deliberately distinct
@@ -1031,6 +1047,107 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     apply_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
+    write_client_config_parser = setup_subparsers.add_parser(
+        "write-client-config",
+        help=(
+            "Phase C: write the MCP client configuration snippet Slice 6 already prints to a real "
+            "client config file, merge-only. Off by default -- requires its own explicit --confirm, "
+            "separate from any pfSense-side confirmation. Never a whole-file replacement."
+        ),
+        description=(
+            "Computes the exact same command/env values `setup`'s own print-only summary already "
+            "shows, merges only the `pfsense` server entry into the target client's config file "
+            "(creating it if absent), and refuses to touch a malformed existing file. Requires a "
+            "fresh --confirm token bound to the client, the exact config path, the current plan, and "
+            "the exact current on-disk content -- a file that changed since inspection, or a wrong "
+            "client/path, is refused by the binding itself, the same way a stale pfSense plan is "
+            "refused by `setup apply`. Backs up an existing file to <path>.bak (exclusive create -- "
+            "refuses if a backup from a prior interrupted attempt already exists) before an atomic "
+            "write, then reads the result back and restores the backup if it does not match exactly."
+        ),
+        epilog=(
+            "Exit codes: 0 the file was written (or created). 1 inspection only -- the proposed diff "
+            "and a confirmation token were shown, but --confirm was not supplied. 2 the recomputed "
+            "plan digest does not match --plan-digest -- current pfSense-side plan state has changed "
+            "since the plan was reviewed. 3 --confirm does not match this exact client/path/plan/"
+            "current-file-state -- refused before any file was touched (this also catches the file "
+            "having changed on disk since inspection). 4 the environment/configuration itself was "
+            "rejected (missing/invalid PFSENSE_* variable, missing/invalid "
+            "PFSENSE_SETUP_CONFIRM_KEY_FILE, claude-desktop's --config-path omitted -- it has no "
+            "documented default). 5 the existing file at the target path is not valid "
+            "JSON/TOML for its client -- refused before any write, never partially repaired. 6 the "
+            "target path is unsafe (a symbolic link, not a regular file, or not owned by the current "
+            "user). 7 the file was written but did not read back exactly as intended -- the original "
+            "was restored (or the new file removed, if none existed before); no lasting change was "
+            "made.\n\n"
+            "Never a whole-file replacement, ever: only the `mcp_servers.pfsense`/`mcpServers.pfsense` "
+            "entry is added or updated; every other server, table, and setting in the file is "
+            "preserved. Never makes a pfSense network call -- this command only ever touches a local "
+            "application-configuration file on this machine.\n\n"
+            "Never prints, logs, or serializes an API key, password, journal-integrity key, or any "
+            "other secret value -- the confirmation token is a derived confirmation artifact, not a "
+            "credential, and the generated snippet itself never contains a live secret value, only a "
+            "key-file *path* placeholder."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    write_client_config_parser.add_argument(
+        "--client",
+        choices=["claude-desktop", "codex"],
+        required=True,
+        help="Which client's config format/location to write. 'codex' also covers the ChatGPT desktop "
+        "app, which shares Codex CLI's own config file.",
+    )
+    write_client_config_parser.add_argument(
+        "--config-path",
+        default=None,
+        metavar="PATH",
+        help="Absolute override path. Required for claude-desktop (no documented default in this "
+        "project's own examples). Optional for codex (defaults to ~/.codex/config.toml).",
+    )
+    write_client_config_parser.add_argument(
+        "--capability-posture",
+        choices=_CAPABILITY_POSTURE_CHOICES,
+        required=True,
+        help="The exact target capability-posture axis value the plan being applied was generated for.",
+    )
+    write_client_config_parser.add_argument(
+        "--anchor-assurance",
+        choices=_ANCHOR_ASSURANCE_CHOICES,
+        required=True,
+        help="The exact target anchor-assurance axis value the plan being applied was generated for.",
+    )
+    write_client_config_parser.add_argument(
+        "--target-origin", default=None, help="Must match the value `setup` recorded."
+    )
+    write_client_config_parser.add_argument(
+        "--target-identity", default=None, help="Must match the value `setup` recorded."
+    )
+    write_client_config_parser.add_argument(
+        "--tls-mode", choices=["verify", "insecure"], default=None, help="Must match the value `setup` recorded."
+    )
+    write_client_config_parser.add_argument(
+        "--plan-digest",
+        default=None,
+        metavar="DIGEST",
+        help="The plan digest printed by a prior `setup`/`setup --non-interactive` run. Omit for inspection only.",
+    )
+    write_client_config_parser.add_argument(
+        "--confirm",
+        default=None,
+        metavar="TOKEN",
+        help=(
+            "The exact confirmation token a prior inspection printed for this client/path/plan/"
+            "file-state. Pass '-' to read it from stdin instead of the command line. Omit for "
+            "inspection only."
+        ),
+    )
+    write_client_config_parser.add_argument(
         "--json",
         action="store_true",
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
@@ -2329,6 +2446,117 @@ def _run_setup_apply(
     return _SETUP_APPLY_EXIT_CODES[result.outcome]
 
 
+def _write_result_to_dict(result: WriteResult) -> dict[str, Any]:
+    return {
+        "outcome": result.outcome.value,
+        "detail": result.detail,
+        "client_type": result.client_type,
+        "config_path": result.config_path,
+        "confirmation_token": result.confirmation_token,
+        "diff": result.diff,
+        "backup_path": result.backup_path,
+    }
+
+
+def _format_write_human(result: WriteResult) -> str:
+    lines = [f"pfsense-mcp-security setup write-client-config: {result.outcome.value}", "", result.detail]
+    if result.client_type is not None:
+        lines.append("")
+        lines.append(f"Client: {result.client_type}")
+    if result.config_path is not None:
+        lines.append(f"Config path: {result.config_path}")
+    if result.backup_path is not None:
+        lines.append(f"Backup: {result.backup_path}")
+    if result.diff:
+        lines.append("")
+        lines.append("Proposed diff:")
+        lines.append(result.diff.rstrip("\n"))
+    if result.confirmation_token is not None:
+        lines.append("")
+        lines.append(f"Confirmation token: {result.confirmation_token}")
+    return "\n".join(lines)
+
+
+def _resolve_client_config_confirm(confirm: str | None, *, in_: TextIO) -> str | None:
+    """Deliberately narrower than `_resolve_setup_apply_confirm()`: no
+    environment-variable fallback. Reusing `setup apply`'s own
+    `PFSENSE_SETUP_APPLY_CONFIRM_TOKEN` here would let a token meant to
+    confirm a pfSense-side mutation silently also confirm an unrelated
+    local file write (or vice versa) -- exactly the cross-domain
+    confusion `--confirm` being "separate from every pfSense-side
+    confirmation" (the design's own requirement) exists to prevent.
+    `--confirm -` (stdin) remains available for CI use."""
+
+    if confirm == "-":
+        return in_.readline().rstrip("\n")
+    return confirm
+
+
+def _print_write_result(result: WriteResult, *, as_json: bool, out: TextIO) -> None:
+    if as_json:
+        print(json.dumps(_write_result_to_dict(result), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_write_human(result), file=out)
+
+
+def _run_setup_write_client_config(
+    *,
+    client: str,
+    config_path: str | None,
+    capability_posture: str,
+    anchor_assurance: str,
+    target_origin: str | None,
+    target_identity: str | None,
+    tls_mode: str | None,
+    plan_digest: str | None,
+    confirm: str | None,
+    as_json: bool,
+    env: dict[str, str] | None,
+    out: TextIO,
+    in_: TextIO,
+) -> int:
+    try:
+        posture = CapabilityPosture(capability_posture)
+        anchor = AnchorAssurance(anchor_assurance)
+    except ValueError as exc:
+        result = WriteResult(WriteOutcome.BLOCKED_CONFIGURATION_ERROR, str(exc))
+        _print_write_result(result, as_json=as_json, out=out)
+        return _CLIENT_CONFIG_WRITE_EXIT_CODES[result.outcome]
+
+    plan = generate_setup_plan(
+        target_capability_posture=posture,
+        target_anchor_assurance=anchor,
+        target_origin=target_origin,
+        target_identity=target_identity,
+        tls_mode=tls_mode,
+        env=env,
+    )
+    fresh_digest = compute_setup_plan_digest(plan)
+
+    if plan_digest is not None and fresh_digest != plan_digest:
+        result = WriteResult(
+            WriteOutcome.BLOCKED_CONFIGURATION_ERROR,
+            "The recomputed plan digest does not match --plan-digest -- current pfSense-side plan "
+            "state has changed since this plan was generated. Run `setup --non-interactive` again to "
+            "get a current plan.",
+        )
+        _print_write_result(result, as_json=as_json, out=out)
+        return _CLIENT_CONFIG_WRITE_PLAN_STALE_EXIT_CODE
+
+    confirm_token = _resolve_client_config_confirm(confirm, in_=in_)
+    result = run_client_config_write_from_environment(
+        env,
+        client=client,
+        config_path_override=config_path,
+        command=_MCP_CLIENT_COMMAND_PLACEHOLDER,
+        env_vars=_mcp_client_env_vars(plan),
+        plan_digest=fresh_digest,
+        confirm_token=confirm_token,
+    )
+    _print_write_result(result, as_json=as_json, out=out)
+    return _CLIENT_CONFIG_WRITE_EXIT_CODES[result.outcome]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -2356,6 +2584,22 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "setup":
         if getattr(args, "setup_action", None) == "apply":
             return _run_setup_apply(
+                capability_posture=args.capability_posture,
+                anchor_assurance=args.anchor_assurance,
+                target_origin=args.target_origin,
+                target_identity=args.target_identity,
+                tls_mode=args.tls_mode,
+                plan_digest=args.plan_digest,
+                confirm=args.confirm,
+                as_json=args.json,
+                env=None,
+                out=sys.stdout,
+                in_=sys.stdin,
+            )
+        if getattr(args, "setup_action", None) == "write-client-config":
+            return _run_setup_write_client_config(
+                client=args.client,
+                config_path=args.config_path,
                 capability_posture=args.capability_posture,
                 anchor_assurance=args.anchor_assurance,
                 target_origin=args.target_origin,

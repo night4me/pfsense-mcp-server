@@ -95,4 +95,11 @@ def confirmation_token_matches(
     if not isinstance(candidate, str) or not candidate:
         return False
     expected = derive_confirmation_token(binding, integrity_key=integrity_key)
-    return hmac.compare_digest(candidate, expected)
+    # `hmac.compare_digest()` raises `TypeError` outright for a `str`
+    # argument containing non-ASCII characters -- `candidate` is
+    # untrusted operator input and must never crash the comparison.
+    # Bytes-like arguments have no such restriction and remain
+    # constant-time for equal-length inputs; `surrogateescape`
+    # round-trips argv values containing invalid UTF-8 byte sequences
+    # instead of raising a fresh encoding error.
+    return hmac.compare_digest(candidate.encode("utf-8", errors="surrogateescape"), expected.encode("ascii"))

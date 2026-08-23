@@ -237,6 +237,35 @@ def test_wrong_confirm_env_var_value_is_refused_exactly_like_a_wrong_flag_value(
     assert exit_code == 3
 
 
+def test_non_ascii_confirm_value_is_refused_not_crashed(tmp_path, monkeypatch):
+    """Regression (end-to-end, not canned): a `--confirm` value
+    containing non-ASCII characters used to crash with an unhandled
+    `TypeError` inside `hmac.compare_digest()` -- it must instead be
+    refused cleanly, exactly like any other wrong token."""
+
+    def _write_secure(path, value):
+        path.write_bytes(value)
+        path.chmod(0o600)
+
+    confirm_key = tmp_path / "confirm.key"
+    _write_secure(confirm_key, b"real-confirm-key-material")
+    monkeypatch.setenv("PFSENSE_SETUP_CONFIRM_KEY_FILE", str(confirm_key))
+
+    exit_code = main(
+        [
+            "setup",
+            "apply",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--confirm",
+            "emoji😀not-a-real-token",
+        ]
+    )
+    assert exit_code == 3
+
+
 # --- exit-code mapping, every outcome -------------------------------------
 
 
