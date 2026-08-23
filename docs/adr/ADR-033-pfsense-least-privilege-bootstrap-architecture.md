@@ -6,14 +6,21 @@
   provisioning sequence (§3's read-before-write/partial-failure model,
   §9's operation list) is **implemented, offline-tested only**, as of
   Phase C (2026-08-17) -- see "Implementation Phase C" below. §4
-  (`doctor` integration) and any CLI/runtime flow remain research/design
-  only. A later, explicitly owner-authorized Phase D LAB exercise partially
-  executed and left the recovery state documented below; it created no
-  standing live authority. **No current phase authorizes further live pfSense
-  provisioning, cleanup, any `pfsense-mcp-security setup`/`bootstrap`
-  subcommand, or wiring this engine into normal application startup.**
-  Owner-authorized 2026-08-17 (initial research pass), 2026-08-17
-  (Phase B), and 2026-08-17 (Phase C), each explicitly scoped, each
+  (`doctor` integration) remains research/design only -- `doctor` and
+  `bootstrap` remain deliberately separate subsystems. A later,
+  explicitly owner-authorized Phase D LAB exercise partially executed
+  and left the recovery state documented below; it created no standing
+  live authority. CLI/runtime integration Slices 1-3 (durable operation
+  journal, fixed administrative composition, and journal-aware locking
+  orchestration + the `pfsense-mcp-security bootstrap` subcommand) are
+  **implemented, offline-verified only**, as of 2026-08-23 -- see "CLI/
+  runtime integration Slice 3" below. **No current phase authorizes a
+  live bootstrap run against any real pfSense appliance (LAB or
+  production), any `pfsense-mcp-security setup` subcommand (not yet
+  implemented), or wiring this engine into normal application
+  startup/MCP tool registration.** Owner-authorized 2026-08-17 (initial
+  research pass), 2026-08-17 (Phase B), 2026-08-17 (Phase C), and
+  2026-08-23 (CLI Integration Slice 3), each explicitly scoped, each
   gating a later, separately-authorized implementation phase.
 - **Scope:** Establishes the exact current minimum privilege
   requirements (READ and existing WRITE), the authoritative derivation
@@ -863,3 +870,114 @@ startup, the MCP factory/server, and all tool modules. A separately authorized
 next slice must first compose journal-aware administrative actions and then
 register any human-invoked command; construction alone is not CLI wiring and
 does not grant permission to provision or recover.
+
+## CLI/runtime integration Slice 3: locking orchestration + `bootstrap` command
+
+Slice 3 (2026-08-23, offline-verified only) composes Slice 1's journal/lock
+primitives and Slice 2's fixed `AdministrativeContext` into one narrow
+orchestration function, `security_bootstrap_orchestration.run_bootstrap()`
+(and its environment-driven entry point,
+`run_bootstrap_from_environment()`), and exposes exactly one new CLI
+subcommand: `pfsense-mcp-security bootstrap`. This is a composition/
+productization slice, not a redesign -- it reuses `provision_service_account()`
+and the composition/journal/lock primitives exactly as already implemented
+and reviewed; no engine, client, recovery, or journal semantics changed.
+
+**Control flow.** `run_bootstrap()` first calls the context's own read-only
+`status.classify(authoritative=None)` -- the CLI's offline default always
+omits a live server observation, so per Slice 1's already-designed,
+already-tested `classify_restart()` behavior, *any* pre-existing journal is
+conservatively reported as requiring recovery attention, regardless of its
+specific state. Only `CLEAN_NO_OPERATION` proceeds to provisioning;
+`CLEAN_COMPLETED` is reported without touching the lock or journal; every
+other classification refuses to start. On `CLEAN_NO_OPERATION`, it acquires
+the exclusive lock (contention is reported distinctly and never silently
+retried or stolen), creates the journal, appends `PRE_SEND_READY` then
+`MUTATION_INTENT_RECORDED` unconditionally before calling the engine (the
+engine's single blocking call can perform anywhere from zero to several real
+HTTP mutations, and the orchestration cannot know in advance which), calls
+`provision_service_account()` inside one `try/except Exception`, and closes
+the journal based on the returned outcome: a verified success
+(`ALREADY_SATISFIED`, `ALREADY_SATISFIED_WITH_EXTRA_PRIVILEGES`,
+`PRIVILEGES_SYNCED`, `COMPLETED`) advances through `FINAL_VERIFICATION_PENDING`
+to `COMPLETED` and releases the lock; anything else
+(`DERIVATION_FAILED`, `BLOCKED_EXISTING_PARTIAL`, `FAILED`, or an unexpected
+exception) is closed at `MUTATION_RESULT_UNKNOWN` with the lock **held**,
+requiring human review before any further attempt against the same
+target/account/profile namespace.
+
+**A deliberate, documented offline-only limitation.** Because
+`classify_restart()` treats any pre-existing journal as `RECOVERY_REQUIRED`
+whenever `authoritative` is `None` -- which this offline slice's CLI always
+is -- there is no journal-closure strategy that lets a *second*, later
+`bootstrap` invocation against the same namespace proceed automatically,
+even one that ended as cleanly as possible (e.g. a purely local
+`DERIVATION_FAILED`, proven zero network activity). This is not a gap Slice
+3 needs to fix: it is the correct, fail-closed consequence of Slice 1's
+already-accepted design applied honestly to an offline-only caller. Only a
+future, separately-authorized live-verification slice -- one that can
+supply a real `AuthoritativeRestartObservation` -- can safely distinguish
+"already done, all good" from "needs review" without manual state
+inspection or cleanup. `run_bootstrap()`'s own tests exercise the granular
+classification (`MUTATION_SENT_RESULT_UNKNOWN`, `CLEAN_COMPLETED`, etc.) by
+injecting a synthetic `authoritative` observation, proving the plumbing is
+ready for that future slice without claiming this one performs live
+verification.
+
+**Custody-key persistence (the one genuine missing seam found).** On a
+`COMPLETED` outcome (a brand-new account with a freshly generated API key),
+the orchestration persists the revealed key to the already-validated
+`PFSENSE_SERVICE_API_KEY_FILE` custody path *before* closing the journal,
+reusing `pfsense_mcp.tier1.artifact_exchange.write_secure_new()`'s existing
+exclusive-creation, owner-only-permission discipline rather than
+introducing a second implementation of it. This was required because Slice
+2's own composition-time restart check
+(`test_custody_artifact_is_observed_internally_and_cannot_be_hidden` /
+`test_completed_operation_never_silently_reopens_bootstrap` in
+`tests/test_security_admin_composition.py`) already expects a completed
+journal and a present custody artifact to appear *together* -- nothing
+before Slice 3 ever wrote to that path.
+
+**CLI surface.** `pfsense-mcp-security bootstrap [--json]` -- the minimal
+surface derivable from the existing composition layer: `build_admin_context()`
+already reads its entire target/credential/schema configuration from the
+same `PFSENSE_*`/`PFSENSE_ADMIN_*` environment variables Slice 2 defined, so
+no additional flags for target, credentials, or profile selection were
+introduced (matching `discover`/`plan`/`doctor`'s own zero-required-flags
+pattern). A distinct posture/profile selector was considered and rejected as
+premature: this slice provisions only the one existing accepted
+`write_protected` capability posture Slice 2 already fixes; no other posture
+combination is wired. Exit codes distinguish success; provisioning failure
+(auth/authorization failure, duplicate-account detection, and post-mutation
+verification mismatch are all engine-level `FAILED` outcomes the CLI reports
+uniformly under this one code, since the engine itself does not expose a
+non-fragile way to sub-classify them further); preflight/derivation failure;
+lock contention; prior-operation-requires-recovery; corrupt local state; and
+configuration error -- see `security_cli.py`'s `bootstrap` subparser epilog
+for the authoritative, exact list. Never prints, logs, or serializes a
+secret; the CLI's `--json` output surfaces only paths, classifications, and
+already-sanitized detail strings.
+
+**Isolation preserved.** `security_cli.py` imports *only*
+`security_bootstrap_orchestration` -- never any of the five lower-level
+bootstrap-stack modules it composes -- keeping every existing isolation
+assertion in `tests/test_security_bootstrap_engine_isolation.py` (module
+names absent from all shipped runtime entry points and `tools/*`) true
+unmodified; only new, additive tests were needed to prove the new module
+is the sole gateway.
+
+**Recovery execution remains out of scope.** `security_bootstrap_recovery.py`'s
+two closed actions (`revoke_failed_bootstrap_api_key()`,
+`delete_dedicated_recovery_user()`) are never called by this orchestration.
+A `RECOVERY_REQUIRED`/`BLOCKED_PRIOR_OPERATION` result surfaces the
+classifier's `recovery_action` (when the journal names one) purely as
+information for a human -- no `recover` CLI verb exists in this build, and
+none is planned until a separately authorized future slice makes that a
+deliberate decision.
+
+**What Slice 3 does not authorize.** Live LAB bootstrap; live production
+bootstrap; credential creation on any real appliance; pfSense mutation;
+package installation; privilege changes beyond what Slice 2's fixed
+`write_protected` profile already derives; API-key creation against a real
+target; runtime MCP exposure changes; or the full `pfsense-mcp-security
+setup` interactive wizard (reserved, not yet designed in detail).

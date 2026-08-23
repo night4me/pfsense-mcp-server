@@ -373,7 +373,15 @@ lived experience rather than only theory:
   separate account creation (needs a password field even for
   API-key-only use) from API-key self-generation (requires a distinct,
   narrow, revocable bootstrap privilege the target account does not
-  otherwise need).
+  otherwise need). **`pfsense-mcp-security bootstrap`: implemented,
+  offline-verified only, 2026-08-23** (ADR-033 CLI Integration Slice 3)
+  — journal-aware, locking, deterministic orchestration of the engine
+  above, wired as the CLI's only mutating subcommand. No live pfSense
+  appliance has been contacted by this development task; see
+  [`ADR-033`](adr/ADR-033-pfsense-least-privilege-bootstrap-architecture.md)'s
+  "CLI/runtime integration Slice 3" section for the full design and
+  exit-code model. `pfsense-mcp-security setup` (the full interactive
+  wizard this bullet originally describes) remains unbuilt.
 - **Doctor/preflight** (`pfsense-mcp-security doctor`): **implemented
   2026-08-17** — a genuinely safe, separable, read-only command,
   independent of the rest of the wizard. Checks the four fixed Tier 1
