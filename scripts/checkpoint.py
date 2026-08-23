@@ -76,8 +76,18 @@ def get_git_status() -> dict[str, Any]:
     return {"clean": clean, "modified": modified, "staged": staged, "untracked": untracked}
 
 
-def get_pytest_totals() -> dict[str, int] | None:
-    rc, out = _run([sys.executable, "-m", "pytest", "-q"], timeout=180)
+# Mirrors Makefile's own XDIST_SERIAL_ONLY exactly (see that file's own
+# comment for why each test is here) -- duplicated, not imported, the
+# same deliberate choice scripts/verify_min_dependencies.py makes for
+# the same reason: if a new xdist-incompatible test is ever added to
+# the Makefile's own list, add it here too.
+_XDIST_SERIAL_ONLY = (
+    "tests/tier1/test_crypto.py::test_random_ciphertext_never_raises_anything_but_artifact_decryption_error",
+    "tests/tier1/test_acceptance_isolation.py::test_importing_mcp_entrypoints_never_loads_acceptance_module",
+)
+
+
+def _parse_pytest_summary(out: str) -> dict[str, int] | None:
     for line in reversed(out.splitlines()):
         if " in " in line and re.search(r"\d+ (passed|failed|error)", line):
             result: dict[str, int] = {}
@@ -87,8 +97,34 @@ def get_pytest_totals() -> dict[str, int] | None:
                     result[key] = int(m.group(1))
             result.setdefault("passed", 0)
             result.setdefault("skipped", 0)
+            result.setdefault("failed", 0)
             return result
-    return None if rc == 0 else {"passed": 0, "skipped": 0}
+    return None
+
+
+def get_pytest_totals() -> dict[str, int] | None:
+    """Runs the exact same xdist-parallel + serial-tail split
+    `make quick`/`make validate` already use (`Makefile`'s own
+    `XDIST_ARGS`/`XDIST_SERIAL_ONLY`), rather than a single serial
+    `pytest -q` -- the parallel pass alone roughly halves wall-clock
+    time, which is what keeps this comfortably inside its own timeout
+    under load, rather than the timeout number itself needing to grow."""
+
+    deselect_args = [arg for test_id in _XDIST_SERIAL_ONLY for arg in ("--deselect", test_id)]
+    rc, out = _run([sys.executable, "-m", "pytest", "-q", "-n", "6", "--dist=loadscope", *deselect_args], timeout=240)
+    parallel = _parse_pytest_summary(out)
+    if parallel is None:
+        return None if rc == 0 else {"passed": 0, "skipped": 0, "failed": 0}
+
+    rc_serial, out_serial = _run([sys.executable, "-m", "pytest", "-q", *_XDIST_SERIAL_ONLY], timeout=30)
+    serial = _parse_pytest_summary(out_serial)
+    if serial is not None:
+        for key in ("passed", "skipped", "failed"):
+            parallel[key] = parallel.get(key, 0) + serial.get(key, 0)
+    elif rc_serial != 0:
+        parallel["failed"] = parallel.get("failed", 0) + 1
+
+    return parallel
 
 
 def get_make_status(target: str) -> str:

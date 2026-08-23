@@ -300,3 +300,85 @@ def test_main_creates_checkpoint_dir_if_missing(tmp_path, monkeypatch):
 
     assert (repo / ".checkpoint").is_dir()
     assert (repo / ".checkpoint" / "state.json").is_file()
+
+
+# --- get_pytest_totals: xdist-parallel + serial-tail split ---------------
+
+
+def test_parse_pytest_summary_extracts_passed_skipped_failed():
+    result = cp._parse_pytest_summary("...\n4370 passed, 42 skipped, 1 failed in 165.94s (0:02:44)")
+    assert result == {"passed": 4370, "skipped": 42, "failed": 1}
+
+
+def test_parse_pytest_summary_defaults_missing_keys_to_zero():
+    result = cp._parse_pytest_summary("...\n6 passed in 0.43s")
+    assert result == {"passed": 6, "skipped": 0, "failed": 0}
+
+
+def test_parse_pytest_summary_returns_none_when_no_summary_line_found():
+    assert cp._parse_pytest_summary("no summary line here\njust noise") is None
+
+
+def test_get_pytest_totals_merges_parallel_and_serial_passes(monkeypatch):
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd: list[str], timeout: int) -> tuple[int, str]:
+        calls.append(cmd)
+        if "-n" in cmd:
+            return 0, "4370 passed, 42 skipped in 165.94s (0:02:44)"
+        return 0, "6 passed in 0.43s"
+
+    monkeypatch.setattr(cp, "_run", _fake_run)
+    totals = cp.get_pytest_totals()
+
+    assert totals == {"passed": 4376, "skipped": 42, "failed": 0}
+    assert len(calls) == 2
+    assert "-n" in calls[0] and "6" in calls[0] and "--dist=loadscope" in calls[0]
+    for test_id in cp._XDIST_SERIAL_ONLY:
+        assert test_id in calls[1]
+        # Deselected from the parallel pass, not omitted entirely --
+        # it appears in calls[0] only as the argument to --deselect.
+        deselect_index = calls[0].index(test_id) - 1
+        assert calls[0][deselect_index] == "--deselect"
+
+
+def test_get_pytest_totals_deselects_the_same_tests_the_serial_pass_runs(monkeypatch):
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd: list[str], timeout: int) -> tuple[int, str]:
+        calls.append(cmd)
+        return 0, "1 passed in 0.1s"
+
+    monkeypatch.setattr(cp, "_run", _fake_run)
+    cp.get_pytest_totals()
+
+    deselected = [calls[0][i + 1] for i, arg in enumerate(calls[0]) if arg == "--deselect"]
+    assert set(deselected) == set(cp._XDIST_SERIAL_ONLY)
+
+
+def test_get_pytest_totals_returns_none_when_parallel_pass_unparseable_and_exit_zero(monkeypatch):
+    def _fake_run(cmd: list[str], timeout: int) -> tuple[int, str]:
+        return 0, "no summary line here"
+
+    monkeypatch.setattr(cp, "_run", _fake_run)
+    assert cp.get_pytest_totals() is None
+
+
+def test_get_pytest_totals_returns_zero_dict_when_parallel_pass_fails_unparseably(monkeypatch):
+    def _fake_run(cmd: list[str], timeout: int) -> tuple[int, str]:
+        return 1, "some hard crash, no summary line"
+
+    monkeypatch.setattr(cp, "_run", _fake_run)
+    assert cp.get_pytest_totals() == {"passed": 0, "skipped": 0, "failed": 0}
+
+
+def test_get_pytest_totals_counts_a_serial_pass_crash_as_one_failure(monkeypatch):
+    def _fake_run(cmd: list[str], timeout: int) -> tuple[int, str]:
+        if "-n" in cmd:
+            return 0, "100 passed in 10s"
+        return 1, "serial pass crashed, no summary line"
+
+    monkeypatch.setattr(cp, "_run", _fake_run)
+    totals = cp.get_pytest_totals()
+
+    assert totals == {"passed": 100, "skipped": 0, "failed": 1}
