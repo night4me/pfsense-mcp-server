@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import hmac
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel
@@ -49,6 +51,20 @@ if TYPE_CHECKING:
     # here would become MCP-reachable the moment application.py wires
     # tier1_write_bridge.py in (Slice 4), even though it is not today.
     from .acceptance import AcceptanceExecutionContext
+
+# Same `Clock` seam already established independently in store.py and
+# authorization_consumption_store.py -- duplicated here rather than
+# imported (this codebase's own established precedent for small,
+# private tier1 primitives; see authorization_consumption_store.py's
+# own docstring) so this module keeps zero coupling to either store's
+# internals. Constructor-injectable for tests; every production caller
+# gets real UTC wall-clock time by construction, unchanged from before
+# this seam existed.
+Clock = Callable[[], datetime]
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class CapabilityAdapter(Protocol):
@@ -135,16 +151,33 @@ class MutationExecutor:
         policy: MutationPolicy,
         anti_rollback_anchor: AntiRollbackAnchor | None,
         encryption_key: bytes,
+        clock: Clock = _utc_now,
     ) -> None:
+        if not callable(clock):
+            raise ContractValidationError("Mutation executor clock is invalid.")
         self._store = store
         self._write_client = write_client
         self._read_client = read_client
         self._policy = policy
         self._anti_rollback_anchor = anti_rollback_anchor
         self._encryption_key = encryption_key
+        self._clock = clock
         # A newly-constructed executor never serves a call against an
         # unreconciled store (sealed_executor.md Lifecycle step 4).
         self._store.reconcile_interrupted()
+
+    def _now(self) -> datetime:
+        """The one authoritative time source `execute()`'s expiry check
+        reads -- real UTC wall-clock time by default (`clock` defaults
+        to `_utc_now`), constructor-injectable only for deterministic
+        testing. Fails closed on a naive or non-UTC value, matching
+        `SqliteRecoveryContractStore._now()`'s identical existing
+        discipline exactly."""
+
+        instant = self._clock()
+        if instant.tzinfo is None or instant.utcoffset() != timezone.utc.utcoffset(instant):
+            raise ContractValidationError("Mutation executor clock must return UTC.")
+        return instant
 
     def observe_reconciliation_target(
         self, contract_id: str, *, adapter: CapabilityAdapter
@@ -221,7 +254,7 @@ class MutationExecutor:
         contract = self._store.load(contract_id)
         if contract.state != RecoveryState.PREPARED:
             raise ContractConflictError("Recovery Contract is not PREPARED.")
-        if not contract.is_confirmed or contract.is_expired():
+        if not contract.is_confirmed or contract.is_expired(now=self._now()):
             raise ContractConflictError("Recovery Contract is unconfirmed or expired.")
 
         self._policy.authorize(

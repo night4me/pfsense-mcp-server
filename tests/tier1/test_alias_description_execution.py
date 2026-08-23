@@ -285,6 +285,18 @@ def _sealed_executor(store, client, write_client) -> MutationExecutor:
         ),
         anti_rollback_anchor=None,
         encryption_key=b"e" * 32,
+        # Same frozen NOW the store above is already constructed with
+        # (_store()'s own clock=lambda: NOW) -- without this, execute()'s
+        # expiry check fell through to real wall-clock time regardless of
+        # the store's clock (the exact gap ADR-034's follow-up production
+        # fix closes: MutationExecutor previously called
+        # contract.is_expired() with no `now=` at all). Two tests in this
+        # file exercise the real (non-mocked) execute() path and were
+        # intermittently failing in CI once the full suite's real elapsed
+        # runtime exceeded the 4-minute contract TTL by the time they ran
+        # -- this makes them fully deterministic, independent of suite
+        # wall time.
+        clock=lambda: NOW,
     )
 
 

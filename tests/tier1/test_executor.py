@@ -310,7 +310,8 @@ def _write_client(monkeypatch, *, verified: bool = True, http_method: str = _HTT
     return client, transport
 
 
-def _executor(store, write_client) -> MutationExecutor:
+def _executor(store, write_client, *, clock=None) -> MutationExecutor:
+    kwargs = {} if clock is None else {"clock": clock}
     return MutationExecutor(
         store=store,
         write_client=write_client,
@@ -318,6 +319,7 @@ def _executor(store, write_client) -> MutationExecutor:
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        **kwargs,
     )
 
 
@@ -1259,3 +1261,147 @@ def test_rollback_never_accepts_an_acceptance_context():
 
     params = inspect.signature(MutationExecutor.rollback).parameters
     assert "acceptance_context" not in params
+
+
+# --- MutationExecutor clock seam (ADR-034 follow-up, 2026-08-23) -----------
+#
+# MutationExecutor.execute() previously called contract.is_expired() with
+# no `now=` argument, so its expiry check always fell through to real
+# datetime.now(timezone.utc) regardless of any clock the store was given
+# -- undetectable in a fast, isolated test, but nondeterministic once a
+# long-running suite pushed real elapsed time past the contract's TTL
+# before this specific check ran (found via two real CI failures in
+# tests/tier1/test_alias_description_execution.py). MutationExecutor now
+# accepts an optional `clock` constructor parameter (default: real UTC
+# time, exactly matching prior behavior) and threads it into
+# contract.is_expired(now=...). These tests prove that seam directly;
+# test_alias_description_execution.py's own two tests are fixed
+# separately by injecting the same frozen clock they already use for the
+# store.
+
+
+def test_default_executor_clock_reads_real_utc_wall_clock_time(tmp_path):
+    # Matrix: A
+    store = _store(tmp_path)
+    executor = MutationExecutor(
+        store=store,
+        write_client=object(),
+        read_client=object(),
+        policy=_policy(),
+        anti_rollback_anchor=None,
+        encryption_key=_ENCRYPTION_KEY,
+    )
+    before = datetime.now(timezone.utc)
+    observed = executor._now()
+    after = datetime.now(timezone.utc)
+    assert before <= observed <= after
+
+
+def test_injected_frozen_clock_is_used_verbatim(tmp_path):
+    # Matrix: B
+    store = _store(tmp_path)
+    frozen = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    executor = MutationExecutor(
+        store=store,
+        write_client=object(),
+        read_client=object(),
+        policy=_policy(),
+        anti_rollback_anchor=None,
+        encryption_key=_ENCRYPTION_KEY,
+        clock=lambda: frozen,
+    )
+    assert executor._now() == frozen
+    assert executor._now() != datetime.now(timezone.utc)
+
+
+def test_unexpired_contract_succeeds_under_deterministic_clock(tmp_path, monkeypatch):
+    # Matrix: C
+    frozen = datetime.now(timezone.utc)
+    store = _store(tmp_path)
+    contract, intent = _build_contract(now=frozen)
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _SyntheticAdapter(
+        reads=[
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+        ]
+    )
+    # Executor clock reports a time still comfortably inside the 5-minute
+    # TTL _build_contract() sets -- proves execute() actually consults
+    # the injected clock (not just "no clock given"), since the default
+    # real-clock path would also pass here trivially.
+    executor = _executor(store, write_client, clock=lambda: contract.expires_at - timedelta(minutes=1))
+
+    outcome = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.VERIFIED
+
+
+def test_expired_contract_refuses_at_execute_under_deterministic_clock(tmp_path, monkeypatch):
+    # Matrix: D
+    frozen = datetime.now(timezone.utc)
+    store = _store(tmp_path)
+    contract, intent = _build_contract(now=frozen)
+    # Confirmed while still unexpired (store's own default clock is real
+    # time, and confirmation happens immediately in this test, so this
+    # succeeds regardless).
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    # Executor's own clock reports a time *after* expires_at -- proving
+    # the expiry check now genuinely depends on the injected clock, not
+    # merely on whatever real wall-clock time happens to be when the
+    # test runs.
+    executor = _executor(store, write_client, clock=lambda: contract.expires_at + timedelta(seconds=1))
+
+    with pytest.raises(ContractConflictError, match="unconfirmed or expired"):
+        executor.execute(contract.contract_id, adapter=_SyntheticAdapter(reads=[]), intent=intent)
+    assert transport.calls == []
+
+
+def test_executor_clock_rejects_non_callable():
+    # Matrix: F
+    with pytest.raises(ContractValidationError, match="clock is invalid"):
+        MutationExecutor(
+            store=object(),
+            write_client=object(),
+            read_client=object(),
+            policy=_policy(),
+            anti_rollback_anchor=None,
+            encryption_key=_ENCRYPTION_KEY,
+            clock="not-callable",
+        )
+
+
+def test_executor_now_fails_closed_on_naive_datetime(tmp_path):
+    # Matrix: F
+    store = _store(tmp_path)
+    executor = MutationExecutor(
+        store=store,
+        write_client=object(),
+        read_client=object(),
+        policy=_policy(),
+        anti_rollback_anchor=None,
+        encryption_key=_ENCRYPTION_KEY,
+        clock=lambda: datetime(2020, 1, 1),  # naive, no tzinfo
+    )
+    with pytest.raises(ContractValidationError, match="must return UTC"):
+        executor._now()
+
+
+def test_executor_now_fails_closed_on_non_utc_timezone(tmp_path):
+    # Matrix: F
+    store = _store(tmp_path)
+    non_utc = timezone(timedelta(hours=5))
+    executor = MutationExecutor(
+        store=store,
+        write_client=object(),
+        read_client=object(),
+        policy=_policy(),
+        anti_rollback_anchor=None,
+        encryption_key=_ENCRYPTION_KEY,
+        clock=lambda: datetime(2020, 1, 1, tzinfo=non_utc),
+    )
+    with pytest.raises(ContractValidationError, match="must return UTC"):
+        executor._now()
