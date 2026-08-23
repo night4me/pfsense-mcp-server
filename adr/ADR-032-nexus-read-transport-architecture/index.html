@@ -1,0 +1,5132 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-032-nexus-read-transport-architecture/">
+      
+      
+        <link rel="prev" href="../ADR-031-backend-target-identity-boundary/">
+      
+      
+        <link rel="next" href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live) - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adr-032-nexus-read-transport-architecture-phase-e-design-phase-f-implemented-offline-phase-g-stopped-before-live-access" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (implemented, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-controller-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Controller authentication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-device-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Device routing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-http-transport-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. HTTP transport behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-security-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Security boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-testing-strategy-design-for-phase-f-only-the-url-builders-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Testing strategy (design for Phase F; only the URL-builder's own
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-live-read-prerequisites-not-performed-this-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Live-read prerequisites (not performed this phase)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-was-implemented-this-phase-the-one-piece-that-is-provably-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was implemented this phase (the one piece that is provably not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unresolved-questions-blockers-for-phase-f" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unresolved questions / blockers for Phase F
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendation-go-no-go-for-phase-f" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendation: GO / NO-GO for Phase F
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-f-implementation-notes-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase F implementation notes (2026-08-17)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase F implementation notes (2026-08-17)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blockers-resolved-from-authoritative-source-this-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blockers resolved from authoritative source this phase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exact-production-files-added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exact production files added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-arbitrary-dispatch-and-mutation-reachability-are-prevented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How arbitrary dispatch and mutation reachability are prevented
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#carp-integration-test-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CARP integration test result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unresolved-upstream-findings-carried-forward-not-solved-this-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unresolved upstream findings (carried forward, not solved this phase)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#go-no-go-for-phase-g" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GO / NO-GO for Phase G
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-g-readiness-assessment-2026-08-17-stopped-before-live-access-as-designed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase G readiness assessment (2026-08-17) — STOPPED before live access, as designed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase G readiness assessment (2026-08-17) — STOPPED before live access, as designed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#least-privilege-rbac-findings-stage-a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Least-privilege / RBAC findings (Stage A)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisite-check-stage-b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisite check (Stage B)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-live-regression-gate-stage-c-precondition-run-anyway-as-part-of-the-readiness-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-live regression gate (Stage C precondition — run anyway, as part of the readiness assessment)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stages-df-not-reached" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stages D–F: not reached
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-controller-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Controller authentication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-device-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Device routing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-http-transport-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. HTTP transport behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-security-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Security boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-testing-strategy-design-for-phase-f-only-the-url-builders-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Testing strategy (design for Phase F; only the URL-builder's own
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-live-read-prerequisites-not-performed-this-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Live-read prerequisites (not performed this phase)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-was-implemented-this-phase-the-one-piece-that-is-provably-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was implemented this phase (the one piece that is provably not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unresolved-questions-blockers-for-phase-f" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unresolved questions / blockers for Phase F
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendation-go-no-go-for-phase-f" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendation: GO / NO-GO for Phase F
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-f-implementation-notes-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase F implementation notes (2026-08-17)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase F implementation notes (2026-08-17)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#blockers-resolved-from-authoritative-source-this-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blockers resolved from authoritative source this phase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exact-production-files-added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exact production files added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-arbitrary-dispatch-and-mutation-reachability-are-prevented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How arbitrary dispatch and mutation reachability are prevented
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#carp-integration-test-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CARP integration test result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unresolved-upstream-findings-carried-forward-not-solved-this-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unresolved upstream findings (carried forward, not solved this phase)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#go-no-go-for-phase-g" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GO / NO-GO for Phase G
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-g-readiness-assessment-2026-08-17-stopped-before-live-access-as-designed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase G readiness assessment (2026-08-17) — STOPPED before live access, as designed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase G readiness assessment (2026-08-17) — STOPPED before live access, as designed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#least-privilege-rbac-findings-stage-a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Least-privilege / RBAC findings (Stage A)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisite-check-stage-b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisite check (Stage B)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-live-regression-gate-stage-c-precondition-run-anyway-as-part-of-the-readiness-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-live regression gate (Stage C precondition — run anyway, as part of the readiness assessment)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stages-df-not-reached" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stages D–F: not reached
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-032-nexus-read-transport-architecture.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="adr-032-nexus-read-transport-architecture-phase-e-design-phase-f-implemented-offline-phase-g-stopped-before-live-access">ADR-032: Nexus READ transport architecture (Phase E design, Phase F implemented offline, Phase G stopped before live access)<a class="headerlink" href="#adr-032-nexus-read-transport-architecture-phase-e-design-phase-f-implemented-offline-phase-g-stopped-before-live-access" title="Permanent link">&para;</a></h1>
+<ul>
+<li><strong>Status:</strong> Phase E's design below is preserved unmodified as the
+  historical record it was accepted as. <strong>Update (Phase F, 2026-08-17):</strong>
+  owner-authorized narrowly-scoped implementation of the design's core
+  (<code>NexusSession</code>, <code>NexusTransport</code>) as real, offline-tested code —
+  <code>src/pfsense_mcp/backends/nexus/session.py</code>,
+  <code>src/pfsense_mcp/backends/nexus/transport.py</code>. <strong>Still not wired into
+  any runtime/backend-selection path</strong> and <strong>no live Nexus access was
+  performed</strong> — both remain exactly as forbidden this phase as they were
+  in Phase E. See the "Phase F implementation notes" section appended
+  at the end of this document for exactly what was built, what remains
+  unresolved, and the GO/NO-GO recommendation for a future Phase G.
+  <strong>Update (Phase G, 2026-08-17):</strong> owner-authorized live-read
+  readiness check. No real Nexus Controller/device/credential is
+  available in this environment — Phase G correctly stopped after its
+  prerequisite check, exactly as its own instructions defined as a
+  successful outcome. No live access of any kind was attempted. See
+  the "Phase G readiness assessment" section appended at the end of
+  this document for the least-privilege/RBAC research findings
+  gathered before stopping.</li>
+<li><strong>Scope:</strong> Specifies the minimum transport required to move
+  <code>NexusCarpStatusReader</code> (<code>src/pfsense_mcp/backends/nexus/carp_status.py</code>,
+  Phase D) from OFFLINE-TESTED toward LIVE-READ-VERIFIED. Makes no change
+  to Tier1 signed schemas, digest formats, or ADR-031. Does not make
+  Nexus WRITE reachable in any way, does not touch community backend
+  code, does not wire anything into <code>factory.py</code>/<code>tools/registry.py</code>/
+  <code>application.py</code>.</li>
+</ul>
+<h2 id="1-controller-authentication">1. Controller authentication<a class="headerlink" href="#1-controller-authentication" title="Permanent link">&para;</a></h2>
+<p>All findings below are re-confirmed against evidence already gathered
+directly from <code>Netgate/pfsense-api</code>'s own source in Phase B/D of this
+track (<code>example.py</code>, <code>helper_funcs.py</code>, <code>pfapi_openapi.yml</code>); GitHub's
+raw-content host rate-limited further fetches during this phase, so
+nothing here is newly re-verified beyond what was already captured
+verbatim earlier in this session — cited as such throughout.</p>
+<ul>
+<li><strong>FACT — login flow.</strong> <code>POST /login</code> with body
+  <code>LoginCredentials{username, password, secondfactor?}</code> — <code>username</code>
+  and <code>password</code> are <strong>base64-encoded</strong> (the schema's own field
+  descriptions say so explicitly), <code>secondfactor</code> optional (2FA code,
+  plain string, format undocumented). Response <code>200</code>:
+  <code>LoginResponse{token, user, version, alerts}</code>. Response <code>400</code>:
+  generic <code>Error{errcode, errlevel, errmsg, alerts}</code> — this project's
+  established two-status-code finding (Phase A) applies here too: a
+  failed login is <strong>not</strong> a distinct HTTP status, it's a <code>400</code> with
+  <code>Error</code> body, indistinguishable at the status-code level from any
+  other validation failure.</li>
+<li><strong>FACT — token representation.</strong> <code>token</code> is a JWT. Netgate's own
+  example code decodes it client-side to inspect claims:
+  <code>json.loads(base64.b64decode(token.split(".")[1] + '=='))</code>, reading
+  <code>sessInfo['exp']</code> for expiry. <strong>No JWT claim schema is published</strong> —
+  the only confirmed claim name is <code>exp</code> (Unix timestamp), observed by
+  direct client-side decoding in the official example, not documented
+  anywhere formally.</li>
+<li><strong>FACT — refresh-token delivery.</strong> "A JWT refresh token is also
+  applied to cookie" (the operation's own description text). The
+  example code confirms this is an <code>httpx</code> cookie jar
+  (<code>client.get_httpx_client().cookies</code>), carried forward into
+  subsequent <code>AuthenticatedClient</code> instances.</li>
+<li><strong>INFERENCE, not FACT — refresh-token lifetime.</strong> A code <em>comment</em> in
+  <code>example.py</code> says "Cookie jar contains the <strong>24-hour</strong> refresh
+  token" — this is Netgate's own example author's comment, not a
+  schema-enforced or documented guarantee. Treat "24 hours" as a
+  strong hint, not a value to hardcode as authoritative.</li>
+<li><strong>UNKNOWN — access-token lifetime.</strong> No fixed access-token TTL is
+  documented anywhere. It must be read from the JWT's own <code>exp</code> claim
+  at runtime; the official example's own refresh timer (below) does
+  not derive its cadence from the actual token expiry, so it cannot be
+  used as evidence of the real TTL either.</li>
+<li><strong>FACT — refresh mechanism.</strong> <code>POST /login/refresh</code> with body
+  <code>RefreshTokenParam{username}</code>, relying on the refresh-token cookie
+  already being attached to the request. Response <code>200</code>: a <strong>new</strong>
+  <code>LoginResponse</code> (same schema as login — a fresh access token, not a
+  distinct "refresh response" shape). Response <code>400</code>: <code>Error</code> — same
+  ambiguous-failure-mode caveat as login.
+  <strong>FACT — the operation's own description states the refresh-token
+  cookie "must be valid for a successful refresh"</strong> — i.e. this
+  endpoint cannot itself re-establish a session once the refresh token
+  has expired; a fresh <code>POST /login</code> is required at that point.</li>
+<li><strong>INFERENCE — refresh cadence.</strong> The official example refreshes
+  proactively every 4 minutes (<code>now - self.start &gt; 240</code>, checked via a
+  15-second polling timer), well before any plausible token expiry —
+  a defensive safety margin chosen by Netgate's own example author, not
+  a documented requirement. A real implementation should decode <code>exp</code>
+  and refresh with its own safety margin relative to the <em>actual</em>
+  claim, not blindly copy this constant.</li>
+<li><strong>Required credentials/configuration (FACT, from the schema +
+  examples):</strong> a Controller username/password (the example defaults to
+  <code>admin</code>, but any Controller account works), optionally a 2FA code.
+  <strong>No separate per-device credential exists for READ operations</strong> —
+  the same Controller-level session is reused across every device via
+  the confirmed base-path-prefix mechanism (Phase B), so a Nexus
+  transport's <em>credential</em> surface is exactly one username/password
+  pair, categorically different from the community backend's per-
+  appliance API key file.</li>
+</ul>
+<h2 id="2-device-routing">2. Device routing<a class="headerlink" href="#2-device-routing" title="Permanent link">&para;</a></h2>
+<p>Formalizing Phase B's confirmed finding precisely:</p>
+<div class="highlight"><pre><span></span><code>{CONTROLLER_URL}/api/device/{device_type}/{device_id}/api{operation_path}
+</code></pre></div>
+<ul>
+<li><strong>FACT.</strong> <code>device_type</code> is the literal string <code>"pfsense"</code> in every
+  official example (<code>helper_funcs.py::createDeviceApiChild</code>,
+  <code>example.py</code>). <strong>No enum or format constraint exists anywhere in the
+  OpenAPI schema for <code>device_type</code></strong> — checked directly this phase
+  (<code>ControlledDevice.device_type: {"type": "string"}</code>, no enum). Other
+  device types may exist in a broader Nexus context (the "Multi-
+  instance Management" framing doesn't claim pfSense-only); none were
+  observed. A transport should treat this as a <strong>required, explicit
+  configuration value</strong>, not a hardcoded constant, even though every
+  known use is <code>"pfsense"</code> — exactly matching the owner's instruction
+  that device identity must be explicit configuration, never inferred.</li>
+<li><strong>FACT.</strong> <code>device_id</code> is a plain, unconstrained string
+  (<code>ControlledDevice.device_id: {"type": "string"}</code>, no regex/format,
+  checked directly this phase) — obtained from <code>/mim/devices</code> (list) or
+  <code>/mim/devices/device/{device_id}</code> (single lookup, which itself uses
+  the same string as a path parameter). No UUID/length/character-set
+  guarantee is documented. Display code in the official examples
+  truncates it at 50 characters for a table column, which is a display
+  choice, not a length bound.</li>
+<li><strong>Security-relevant consequence (not previously stated this
+  explicitly): <code>device_id</code> must be validated and percent-encoded as an
+  opaque path segment before being concatenated into a URL.</strong> Because
+  it is unconstrained and, in the eventual real implementation, would
+  come from configuration (owner decision 2 — "device identity is
+  explicit configuration and never inferred ambiguously"), a transport
+  must reject a <code>device_id</code> containing a <code>/</code>, <code>..</code>, or other path-
+  altering sequence rather than silently URL-encoding around it — a
+  malformed identifier should fail closed at construction time, not
+  produce a URL that resolves somewhere unintended. This is exactly the
+  kind of "confused deputy via normalized target collision" concern
+  ADR-031 already flagged in the abstract; this ADR makes it concrete
+  for the one piece of routing state a READ-only transport actually
+  handles.</li>
+<li><strong>No exceptions found.</strong> Every operation in the schema — including
+  <code>/aliases</code>, <code>/system/status</code>, <code>/services/carp/status</code> — uses the same
+  bare <code>paths:</code> templates regardless of which base URL (Controller-only
+  vs. per-device) they're reached through; nothing schema-visible
+  changes behavior based on routing context. Re-confirmed this phase:
+  no CARP-specific routing exception exists.</li>
+</ul>
+<h2 id="3-http-transport-behavior">3. HTTP transport behavior<a class="headerlink" href="#3-http-transport-behavior" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>FACT, and a significant finding: every official Netgate example
+  disables TLS verification</strong> (<code>verify_ssl=False</code>, in both
+  <code>example.py</code> and <code>helper_funcs.py</code>, on every <code>Client</code>/
+  <code>AuthenticatedClient</code> construction, no exceptions). <strong>This ADR
+  explicitly rejects that default.</strong> It is inconsistent with this
+  project's own established posture (<code>tls.py</code>: <code>TLSMode.STRICT</code> is the
+  only mode that requires no extra configuration; <code>INSECURE</code> exists but
+  is documented as temporary and must be explicitly requested). A
+  Nexus transport must default to strict certificate verification and
+  require an explicit, separately-named opt-out (mirroring
+  <code>PFSENSE_TLS_MODE</code>/<code>resolve_verify()</code>'s existing shape) if insecure
+  verification is ever needed for a lab Controller — never inherit
+  Netgate's own example default silently.</li>
+<li><strong>FACT — timeouts observed in examples</strong> (not documented as
+  requirements, just what Netgate's own reference code uses):
+  main session client <code>httpx.Timeout(40, connect=10)</code>; per-device child
+  client default <code>timeout=120</code> (constructor parameter,
+  <code>connect=20</code> from a fixed inner default); a "clone" client used for
+  one-shot short-lived calls (<code>get_status</code> during discovery)
+  <code>timeout=30, connect=20</code>. Wide variance — not evidence of a
+  recommended value, evidence that Netgate's own examples special-case
+  timeout per call-site rather than using one constant. This project's
+  own community <code>HttpTransport</code> uses one fixed, explicit timeout
+  (<code>connect=10.0, read=30.0, write=10.0, pool=10.0</code>) for every call —
+  <strong>recommend the same discipline for Nexus</strong>: one explicit, documented
+  timeout constant, not per-call-site tuning, unless a specific
+  operation is later shown to need otherwise.</li>
+<li><strong>UNKNOWN — retry policy.</strong> No retry logic was found in any
+  official example (failures print and either exit or <code>continue</code> a
+  loop; nothing resembles exponential backoff or automatic retry). The
+  generated <code>pfapi</code> client library's own HTTP-call-wrapper internals
+  (<code>pfapi/api/*.py</code>, e.g. <code>pfapi/api/system/get_status.py</code>) were not
+  fetched this phase (rate-limited) and could theoretically add retry
+  behavior invisible in the example scripts — <strong>explicitly unresolved,
+  listed as a blocker below.</strong> This project's own existing philosophy
+  (fail-closed, no blind retry — see <code>write_api_client.py</code>'s docstring
+  and ADR-013's reconciliation authority) argues for <strong>no automatic
+  retry</strong> in the Nexus transport either, matching the community
+  backend's own <code>RestApiClient</code>, which does not retry.</li>
+<li><strong>UNKNOWN — redirect handling.</strong> Not addressed by any example or the
+  schema. Recommend explicitly disabling redirect-following
+  (<code>httpx.Client(follow_redirects=False)</code>), matching a fail-closed
+  default and avoiding any possibility of a redirect silently
+  retargeting a request to an unintended host.</li>
+<li><strong>FACT — error/status handling required.</strong> Confirmed twice now
+  (Phase A and re-confirmed this phase): exactly two HTTP status codes
+  are used across the entire schema, <code>200</code> and <code>400</code>. A Nexus transport
+  <strong>cannot</strong> reuse the community <code>RestApiClient</code>'s 401/403-by-status-
+  code auth-failure detection (<code>errors.py</code>'s <code>PfSenseAuthError</code> mapping)
+  — it must inspect the JSON body's <code>Error.errcode</code>/<code>errlevel</code> to
+  distinguish an authentication failure from a validation failure from
+  a not-found condition, none of which is currently formally enumerated
+  anywhere in the schema (no documented <code>errcode</code> value list was found).</li>
+<li><strong>Response decoding / malformed-response handling.</strong> Must mirror the
+  community backend's own fail-closed discipline exactly
+  (<code>rest_api_client.py::_try_parse_json</code> returns <code>None</code> on invalid
+  JSON, then <code>_request()</code> raises <code>PfSenseAPIError</code> if <code>body is None</code> or
+  not a dict) — a Nexus transport should raise the equivalent on
+  non-JSON or non-object response bodies, never attempt a partial
+  parse or best-effort field extraction.</li>
+<li><strong>Logging without credential/token leakage.</strong> Mirror
+  <code>errors.py</code>'s own stated rule ("No exception in this module may
+  include a credential value... Code that catches a lower-level
+  exception must construct a new, sanitized message") and
+  <code>rest_api_client.py</code>'s existing log lines (<code>identity=%s path=%s
+  status=%s</code>, never the body or headers). A Nexus transport's logging
+  must never emit the JWT access token, the refresh-token cookie value,
+  the base64-encoded username/password, or the raw response body of any
+  <code>/login</code>/<code>/login/refresh</code> call.</li>
+</ul>
+<h2 id="4-security-boundaries">4. Security boundaries<a class="headerlink" href="#4-security-boundaries" title="Permanent link">&para;</a></h2>
+<p>Restated as explicit, binding commitments for any future Phase F, not
+just design notes:</p>
+<ul>
+<li><strong>READ-only by construction.</strong> The transport interface (below)
+  exposes exactly one operation shape: <code>GET</code>, returning parsed JSON.
+  No method accepting a request body or a non-GET HTTP method may
+  exist on it.</li>
+<li><strong>No generic arbitrary-path dispatch.</strong> The transport must not expose
+  a <code>request(method, path)</code>-shaped public method the way
+  <code>Transport.request()</code> does internally for the community backend —
+  that protocol is already the reviewed community-backend chokepoint;
+  a Nexus equivalent must be its own narrow, capability-specific
+  surface (see Architecture, below), not a copy of the generic shape,
+  precisely because "generic dispatch" is one of this entire track's
+  standing hard boundaries.</li>
+<li><strong>No mutation methods, ever, in this design.</strong> Nothing in this ADR
+  specifies or hints at a POST/PUT/PATCH/DELETE call. <code>/services/carp/enabled</code>,
+  <code>/services/carp/maintenancemode</code>, and every other Nexus write-shaped
+  endpoint found across four phases of research are explicitly out of
+  scope and not referenced as anything but "endpoints that exist,"
+  never "endpoints this transport calls."</li>
+<li><strong>No mechanism that could accidentally make Nexus WRITE reachable.</strong>
+  The transport, as specified, cannot reach <code>tier1/executor.py</code> or
+  <code>write_api_client.py</code> — nothing in its design imports or references
+  either, and <code>tests/backends/test_isolation.py</code> (generalized in Phase
+  D to scan all of <code>backends/</code>) already enforces this structurally for
+  whatever code eventually lands here.</li>
+<li><strong>0 default-reachable WRITE preserved.</strong> This ADR authorizes no
+  runtime wiring of any kind; the 42/0 contract is unaffected by
+  definition, since nothing here is reachable from <code>factory.py</code>/
+  <code>tools/registry.py</code>/<code>application.py</code>.</li>
+<li><strong>ADR-031 remains the mandatory gate for Nexus WRITE.</strong> Nothing in
+  this document weakens, reinterprets, or works around ADR-031's
+  invariant. This ADR is READ-only-scoped by its own terms and does not
+  attempt to satisfy ADR-031's backend/device identity binding
+  requirement — that requirement is specifically about signed
+  authorization material, which no READ operation ever produces or
+  consumes.</li>
+</ul>
+<h2 id="5-architecture">5. Architecture<a class="headerlink" href="#5-architecture" title="Permanent link">&para;</a></h2>
+<p><strong>Smallest interfaces, mirroring the existing <code>Transport</code>/<code>RestApiClient</code>
+split exactly, so the pattern is familiar rather than novel:</strong></p>
+<div class="highlight"><pre><span></span><code>NexusSession            -- owns login, JWT/cookie state, refresh
+    |
+NexusTransport          -- GET-only, device-base-path-aware, wraps
+    |                       one authenticated httpx.Client per session
+    |                       (or per device-scoped child, mirroring
+    |                       RequestClient.createDeviceApiChild&#39;s own
+    |                       shape) -- never exposes method/path as
+    |                       caller-supplied arbitrary arguments
+    |
+NexusCarpStatusReader   -- UNCHANGED from Phase D. Still takes an
+                            injected fetch_raw: Callable[[], dict].
+                            Phase F&#39;s job is to supply a real
+                            fetch_raw = lambda: nexus_transport.
+                            get_json(&quot;/services/carp/status&quot;) closure
+                            (or equivalent), not to change this
+                            reader&#39;s own shape at all.
+</code></pre></div>
+<ul>
+<li><strong><code>NexusCarpStatusReader</code> never owns JWT/session/routing logic.</strong>
+  This is already true today (Phase D) by construction — it takes
+  <code>fetch_raw: Callable[[], dict[str, Any]]</code> and calls it, nothing more.
+  Phase F's entire job is producing a <code>fetch_raw</code> closure backed by a
+  real <code>NexusTransport</code>; <strong>the reader itself requires zero changes.</strong>
+  This is the single strongest piece of evidence that Phase D's "smallest
+  isolated adapter" scoping decision was correct: the seam between
+  business logic and transport was already exactly where it needed to
+  be before this transport design work even started.</li>
+<li><strong>Backend isolation preserved.</strong> <code>NexusSession</code>/<code>NexusTransport</code>
+  would live under <code>src/pfsense_mcp/backends/nexus/</code> (alongside
+  <code>carp_status.py</code>), never imported by <code>factory.py</code>, <code>pfsense_client.py</code>,
+  <code>rest_api_client.py</code>, <code>transport/http.py</code>, or any community-backend
+  file — <code>tests/backends/test_isolation.py</code> already enforces the
+  "nothing outside <code>backends/</code> imports <code>backends/</code>" half of this; a
+  Phase F implementation gets that guarantee for free.</li>
+<li><strong>No coupling into community backend code.</strong> <code>NexusTransport</code> does
+  <strong>not</strong> implement the existing <code>Transport</code> Protocol
+  (<code>transport/base.py</code>) — that protocol's <code>request(method, path, *,
+  body)</code> shape is deliberately generic in a way this ADR's own Section
+  4 says a Nexus transport must not be. A new, narrower, GET-only
+  protocol is warranted, not reuse of the existing one merely because
+  it's already there.</li>
+<li><strong>Proposed production files (Phase F, not created by this ADR):</strong></li>
+<li><code>src/pfsense_mcp/backends/nexus/session.py</code> — <code>NexusSession</code>:
+    login, JWT decode (<code>exp</code> extraction only — no other claim
+    interpretation), refresh-before-expiry, credential handling. Takes
+    a controller URL + username + password (+ optional 2FA) at
+    construction; never logs any of them.</li>
+<li><code>src/pfsense_mcp/backends/nexus/transport.py</code> — <code>NexusTransport</code>:
+    GET-only, takes a <code>NexusSession</code> plus <code>device_type</code>/<code>device_id</code>,
+    builds the base path via a validated URL-builder (see below),
+    issues one HTTP GET per call, decodes JSON, raises on non-2xx or
+    malformed body. Exposes exactly one public method, something like
+    <code>get_json(operation_path: str) -&gt; dict[str, Any]</code> — still narrower
+    than the community <code>Transport.request()</code>, since it hardcodes GET
+    and forbids a body, but even this is a slightly wider surface than
+    <code>NexusCarpStatusReader</code> needs alone; <strong>Phase F should decide
+    whether an even narrower, single-purpose method per capability is
+    preferable</strong> to a shared <code>get_json(path)</code> — flagged as an open
+    question below, not resolved here.</li>
+<li><code>src/pfsense_mcp/backends/nexus/routing.py</code> — the URL-builder
+    (see "What was implemented this phase," below — a first version of
+    this file already exists and is the one piece of this ADR turned
+    into real, tested code this phase, since it is provably not "the
+    transport": no network I/O, no session state, no credentials).</li>
+<li><strong>Exact configuration additions Phase F would eventually need</strong>
+  (naming illustrative, not committed): <code>PFSENSE_NEXUS_CONTROLLER_URL</code>,
+  <code>PFSENSE_NEXUS_USERNAME</code>, <code>PFSENSE_NEXUS_PASSWORD_FILE</code> (never a
+  plain env var for a password, matching this project's existing
+  <code>PFSENSE_API_KEY_FILE</code> file-based-credential convention),
+  <code>PFSENSE_NEXUS_DEVICE_TYPE</code>, <code>PFSENSE_NEXUS_DEVICE_ID</code>, and a TLS-mode
+  setting mirroring <code>PFSENSE_TLS_MODE</code> (defaulting to strict,
+  explicitly rejecting Netgate's own example default). None of these
+  are added to <code>config.py</code> by this ADR — stated as a requirement for
+  Phase F.</li>
+</ul>
+<h2 id="6-testing-strategy-design-for-phase-f-only-the-url-builders-own">6. Testing strategy (design for Phase F; only the URL-builder's own<a class="headerlink" href="#6-testing-strategy-design-for-phase-f-only-the-url-builders-own" title="Permanent link">&para;</a></h2>
+<p>tests are implemented this phase — see below)</p>
+<p>Deterministic, offline, fixture/mock-based — no real network calls in
+any of these, mirroring how <code>tests/backends/nexus/test_carp_status.py</code>
+already tests <code>normalize_carp_status()</code>/<code>NexusCarpStatusReader</code> without
+any HTTP dependency:</p>
+<ul>
+<li><strong>Successful authentication</strong> — mock the login HTTP call, assert
+  <code>NexusSession</code> extracts the token and schedules/knows how to
+  determine refresh timing from a synthetic <code>exp</code> claim.</li>
+<li><strong>Authentication failure</strong> — mock a <code>400</code>/<code>Error</code>-shaped login
+  response, assert a clear, typed exception (not a generic one),
+  credential values never appear in the exception message.</li>
+<li><strong>Expired token/session behavior</strong> — construct a <code>NexusSession</code> with
+  a synthetic already-expired <code>exp</code>, assert it refuses to use the stale
+  token and either refreshes or fails closed rather than sending a
+  request with a token it knows is expired.</li>
+<li><strong>Device URL construction</strong> — the one piece of this design already
+  implemented and tested this phase; see below for the actual test
+  list (valid ids, encoding, rejection of path-altering characters).</li>
+<li><strong>Malformed identifiers</strong> — <code>device_id</code>/<code>device_type</code> containing <code>/</code>,
+  <code>..</code>, control characters, empty string — must all be rejected before
+  any URL is constructed, never silently encoded around.</li>
+<li><strong>TLS/timeout/network failures</strong> — mock <code>httpx.ConnectError</code>/
+  <code>httpx.TimeoutException</code>/<code>httpx.TransportError</code> at the transport
+  layer, assert translation into this project's own typed exceptions
+  (mirroring <code>HttpTransport.request()</code>'s existing pattern exactly, not
+  inventing new exception types where the existing <code>errors.py</code>
+  hierarchy already covers the case).</li>
+<li><strong>Non-2xx responses</strong> — mock a <code>400</code> with a real <code>Error</code>-shaped body,
+  assert the transport raises with the <code>errcode</code>/<code>errmsg</code> surfaced in
+  the exception, never silently swallowed.</li>
+<li><strong>Malformed JSON</strong> — mock a response body that isn't valid JSON at
+  all, assert fail-closed (mirroring <code>_try_parse_json</code>'s existing
+  <code>None</code>-on-failure + caller-raises pattern).</li>
+<li><strong>Missing CARP fields</strong> — already fully covered today by Phase D's
+  <code>test_nexus_carp_status.py</code> at the normalization layer; Phase F needs
+  no new tests here, only an end-to-end test proving the real
+  <code>NexusTransport</code> → <code>normalize_carp_status()</code> wiring produces the same
+  result as the existing fixture-based unit tests.</li>
+<li><strong>Prevention of arbitrary endpoint dispatch</strong> — a structural test
+  (mirroring <code>tests/backends/test_isolation.py</code>'s AST-based approach)
+  asserting <code>NexusTransport</code> exposes no method accepting a caller-
+  supplied HTTP method, and that its path-accepting method(s), if any,
+  cannot be reached with anything other than the literal, hardcoded
+  <code>/services/carp/status</code>-style constants this codebase defines itself
+  — never a caller-supplied string.</li>
+<li><strong>Prevention of WRITE reachability</strong> — extend the existing
+  <code>test_backends_package_defines_no_write_shaped_members</code> (already
+  scans all of <code>backends/</code>) to also assert no HTTP method other than
+  <code>"GET"</code> appears as a literal anywhere under <code>backends/nexus/</code>.</li>
+<li><strong>Secret/token redaction</strong> — assert that stringifying/logging a
+  <code>NexusSession</code> or any exception it raises never contains the literal
+  password, base64-encoded credential, or JWT token substring, using a
+  synthetic known-value fixture and asserting its absence from every
+  log line and exception message produced during a simulated failure.</li>
+</ul>
+<h2 id="7-live-read-prerequisites-not-performed-this-phase">7. Live-read prerequisites (not performed this phase)<a class="headerlink" href="#7-live-read-prerequisites-not-performed-this-phase" title="Permanent link">&para;</a></h2>
+<p>Before any real <code>GET</code> could be issued against a live Nexus Controller:</p>
+<ul>
+<li>A running Netgate Nexus Controller (pfSense Plus 25.07+, confirmed
+  Phase A) reachable from wherever the transport runs.</li>
+<li>At least one pfSense Plus device registered with that Controller
+  (confirmed two-step registration process, Phase B: device shares
+  "Registration Data," Controller imports it, exports "Activation Data"
+  back) and in <code>state: "active"</code> (or <code>"online"</code>, per the example
+  scripts' own check — the exact live-state string was not indepen-
+  dently reconciled between the OpenAPI schema's documented enum
+  (<code>active, error, offline, rebooting, pending</code>) and the example
+  scripts' runtime check for <code>"online"</code>; this is itself a small,
+  concrete, checkable-only-with-live-access discrepancy worth resolving
+  in Phase F, not resolvable from static sources alone).</li>
+<li>A Controller-level username/password (and 2FA code, if the Controller
+  account requires it) with sufficient privilege to call
+  <code>/services/carp/status</code> for the target device — the exact privilege
+  model for Nexus Controller accounts (equivalent to the community
+  backend's REST-API privilege strings, ADR-026) was <strong>not</strong> researched
+  this phase and is a real gap: Phase F should not assume a Controller
+  admin account is required, but has no evidence yet of a narrower
+  scoped-account option either.</li>
+<li>Explicit owner authorization for the live call itself, separate from
+  authorization to write the transport code — matching this entire
+  track's standing pattern (every prior phase's live-validation step
+  was skipped, never silently attempted, when credentials weren't
+  already available).</li>
+</ul>
+<p><strong>None of the above is available in this environment. No live Nexus
+Controller/device/credential exists in this session's reach — this
+matches every prior phase's finding and this ADR performs no live
+access of any kind.</strong></p>
+<h2 id="what-was-implemented-this-phase-the-one-piece-that-is-provably-not">What was implemented this phase (the one piece that is provably not<a class="headerlink" href="#what-was-implemented-this-phase-the-one-piece-that-is-provably-not" title="Permanent link">&para;</a></h2>
+<p>"the transport")</p>
+<p><code>src/pfsense_mcp/backends/nexus/routing.py</code> —
+<code>build_device_base_path(device_type: str, device_id: str) -&gt; str</code>. Pure,
+stateless, zero network I/O, zero credentials, zero session state:
+formats and validates the confirmed
+<code>/api/device/{device_type}/{device_id}/api</code> path segment (the
+Controller's own base URL is a separate, caller-supplied prefix, kept
+out of this function entirely — it's pure path-segment construction,
+not URL assembly). Rejects (raises <code>ValueError</code>, matching this
+project's existing <code>PfSenseRequestValidationError</code>-style fail-closed
+input validation, though this function lives below any pfSense-error-
+model layer so uses the plain, standard exception) any <code>device_type</code>/
+<code>device_id</code> that is empty or contains <code>/</code>, <code>..</code>, whitespace, or any
+character outside a conservative allow-list — proving the "malformed
+identifiers must be rejected before URL construction" requirement from
+Sections 2 and 6 with real, executable code, not just a design promise.
+This is deliberately the <em>only</em> production code this phase adds:
+everything else above (session, transport, config) remains
+specification only, exactly as authorized.</p>
+<h2 id="unresolved-questions-blockers-for-phase-f">Unresolved questions / blockers for Phase F<a class="headerlink" href="#unresolved-questions-blockers-for-phase-f" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Real access-token TTL (JWT <code>exp</code> semantics beyond the one confirmed
+   claim name) — not documented, only observable with a live token.</li>
+<li>Whether the generated <code>pfapi</code> client library's own HTTP call wrappers
+   (<code>pfapi/api/*.py</code>) add retry/backoff behavior invisible in the
+   example scripts — not fetched this phase (rate-limited), should be
+   checked before Phase F rather than assumed either way.</li>
+<li>Redirect-handling default — no evidence either way; this ADR
+   recommends disabling it but that is a recommendation, not a
+   confirmed requirement.</li>
+<li>The <code>active</code> (schema) vs. <code>"online"</code> (example-script runtime check)
+   device-state string discrepancy — only resolvable against a live
+   Controller.</li>
+<li>Nexus Controller account privilege model for scoping a READ-only
+   credential (this track's own least-privilege standard, ADR-026,
+   has no established Nexus equivalent yet) — not researched this
+   phase at all.</li>
+<li>Whether <code>NexusTransport</code> should expose one shared <code>get_json(path)</code>
+   or a narrower per-capability method — explicitly left open in
+   Section 5, a real design choice for Phase F, not a gap in this
+   phase's research.</li>
+</ol>
+<h2 id="recommendation-go-no-go-for-phase-f">Recommendation: GO / NO-GO for Phase F<a class="headerlink" href="#recommendation-go-no-go-for-phase-f" title="Permanent link">&para;</a></h2>
+<p><strong>Conditional GO</strong>, narrowly scoped. The routing mechanism (Section 2),
+the security boundary (Section 4), and the reader/transport seam
+(Section 5) are specified precisely enough to implement without further
+research. The TLS-default deviation from Netgate's own examples
+(Section 3) is resolved and non-negotiable (strict verification,
+explicit opt-out only). The credential/configuration model (Section 5)
+is concrete enough to add to <code>config.py</code> without ambiguity.</p>
+<p><strong>What should not be treated as resolved going into Phase F:</strong>
+unresolved questions 1–3 (token TTL, generated-client retry behavior,
+redirect policy) should be either confirmed against source before
+writing code, or explicitly accepted as documented assumptions in
+Phase F's own commit message if a live Controller remains unavailable
+to verify them. Unresolved question 5 (Nexus account privilege
+scoping) is the one gap serious enough to flag as a real blocker for
+<em>live</em> validation specifically — Phase F can and should implement and
+offline-test the full transport regardless, but should not treat
+"credentials become available" as sufficient on its own to authorize a
+live read; a least-privilege Nexus account should be designed first,
+matching this track's own established standard rather than defaulting
+to a Controller admin account out of convenience.</p>
+<h2 id="phase-f-implementation-notes-2026-08-17">Phase F implementation notes (2026-08-17)<a class="headerlink" href="#phase-f-implementation-notes-2026-08-17" title="Permanent link">&para;</a></h2>
+<h3 id="blockers-resolved-from-authoritative-source-this-phase">Blockers resolved from authoritative source this phase<a class="headerlink" href="#blockers-resolved-from-authoritative-source-this-phase" title="Permanent link">&para;</a></h3>
+<p>Fetched <code>Netgate/pfsense-api</code>'s actual generated Python client source
+(<code>py/pfapi/client.py</code>, <code>py/pfapi/api/login/login.py</code>) via the GitHub
+Contents API (<code>raw.githubusercontent.com</code> was rate-limiting this
+session; <code>api.github.com</code> was not) — this decisively resolves two of
+Phase E's three "unresolved questions":</p>
+<ul>
+<li><strong>Retry behavior: CONFIRMED, none.</strong> <code>login.py</code>'s <code>sync_detailed()</code>
+  issues exactly one <code>client.get_httpx_client().request(**kwargs)</code> call
+  with no wrapping retry/backoff logic anywhere in <code>client.py</code> or the
+  call-site. This project's <code>NexusSession</code>/<code>NexusTransport</code> match:
+  zero retries, confirmed by <code>test_login_issues_exactly_one_request_on_failure_no_retry</code>
+  and <code>test_single_request_on_failure_no_retry</code>.</li>
+<li><strong>Redirect behavior: CONFIRMED, <code>follow_redirects=False</code> by default.</strong>
+  <code>Client</code>/<code>AuthenticatedClient</code>'s own <code>attrs</code> field definition:
+  <code>_follow_redirects: bool = field(default=False, ...)</code>. This project's
+  transport matches exactly, confirmed by
+  <code>test_client_does_not_follow_redirects</code> in both <code>test_session.py</code>
+  and <code>test_transport.py</code>.</li>
+<li><strong>A related, unprompted finding:</strong> the generated client's own
+  <code>_parse_response()</code> (in <code>login.py</code>, and presumably every other
+  generated call-site) returns <code>None</code> silently for any status code
+  outside the documented <code>200</code>/<code>400</code> unless
+  <code>Client.raise_on_unexpected_status=True</code> is explicitly set (default
+  <code>False</code>). This project's <code>NexusSession</code>/<code>NexusTransport</code> deliberately
+  do <strong>not</strong> replicate that default — both raise (<code>PfSenseAuthError</code>/
+  <code>PfSenseAPIError</code>) on any non-200, matching this project's own
+  fail-closed posture rather than Netgate's own generated client's
+  fail-silent one.</li>
+</ul>
+<p><strong>Access-token TTL beyond the <code>exp</code> claim remains genuinely unresolved</strong>
+— no live token was available to inspect, and no further source
+revealed a fixed duration. <code>NexusSession</code> never assumes one: it decodes
+<code>exp</code> from the actual token issued at login and refuses to proceed
+(<code>PfSenseAuthError</code>) if that claim is missing or malformed, exactly the
+"fail closed if token expiry cannot be safely determined" requirement.</p>
+<h3 id="exact-production-files-added">Exact production files added<a class="headerlink" href="#exact-production-files-added" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src/pfsense_mcp/backends/nexus/session.py</code> — <code>NexusSession</code>. Owns
+  <code>POST /login</code> and <code>POST /login/refresh</code> — the only two mutation-
+  shaped HTTP verbs this entire Nexus track is permitted to issue, and
+  the only two anywhere in this module or <code>transport.py</code>. Decodes the
+  JWT <code>exp</code> claim (base64url, no signature verification — the
+  Controller is the signer of a token this session itself just
+  received, not a third party's claim being trusted) and refreshes
+  proactively 30 seconds before expiry, or immediately if already past
+  it. Never logs, reprs, or raises an exception containing the
+  password, the base64-encoded credential, or the token value.</li>
+<li><code>src/pfsense_mcp/backends/nexus/transport.py</code> — <code>NexusTransport</code> +
+  <code>NexusEndpointInfo</code> + <code>NexusEndpoints</code>. GET-only: exactly one public
+  method, <code>get_json()</code>, which only accepts a <code>NexusEndpointInfo</code>
+  instance (currently exactly one: <code>NexusEndpoints.CARP_STATUS</code>) —
+  never a caller-supplied raw string. No method on the class accepts
+  an HTTP method argument, and the class never calls <code>.post()</code>/
+  <code>.put()</code>/<code>.patch()</code>/<code>.delete()</code> on its underlying <code>httpx.Client</code>
+  (enforced by a structural test reading the module's own source).
+  Uses <code>routing.py::build_device_base_path()</code> (Phase E) at
+  construction time, so a malformed <code>device_type</code>/<code>device_id</code> fails
+  before any HTTP client is even created. Takes the session as a
+  narrow <code>_TokenProvider</code> Protocol (one method,
+  <code>get_valid_access_token() -&gt; str</code>), not the concrete <code>NexusSession</code>
+  class — matching <code>backends/ports.py</code>'s own established narrow-
+  Protocol dependency-injection pattern, and meaning this module never
+  needs to import <code>session.py</code> at all.</li>
+</ul>
+<p>Both classes default <code>verify=True</code> (strict TLS) and set
+<code>follow_redirects=False</code> explicitly — deliberately not inheriting
+Netgate's own example code's <code>verify_ssl=False</code> default (ADR-032
+Section 3's non-negotiable finding). Both use the same explicit
+timeout shape the community backend's own <code>HttpTransport</code> already uses
+(<code>connect=10.0, read=30.0, write=10.0, pool=10.0</code>), overridable per
+instance.</p>
+<p><strong>No configuration was added to <code>config.py</code>.</strong> No <code>PFSENSE_NEXUS_*</code>
+environment variable exists anywhere in this codebase as a result of
+this phase — <code>NexusSession</code>/<code>NexusTransport</code> take their controller
+URL, credentials, and device identity as explicit constructor
+arguments only, with no wiring to any settings/config layer.</p>
+<h3 id="how-arbitrary-dispatch-and-mutation-reachability-are-prevented">How arbitrary dispatch and mutation reachability are prevented<a class="headerlink" href="#how-arbitrary-dispatch-and-mutation-reachability-are-prevented" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>NexusTransport.get_json()</code> raises <code>TypeError</code> if passed anything
+  other than a <code>NexusEndpointInfo</code> instance (<code>test_get_json_rejects_raw_string_path</code>).</li>
+<li>An AST-level test (<code>test_no_endpointinfo_constructed_outside_nexusendpoints</code>)
+  proves <code>NexusEndpointInfo(...)</code> is never constructed anywhere in
+  <code>transport.py</code> outside the <code>NexusEndpoints</code> class body itself — so
+  even though <code>get_json()</code>'s own type check alone couldn't stop a
+  caller from building an off-allow-list <code>NexusEndpointInfo</code> by hand
+  (documented explicitly by
+  <code>test_get_json_rejects_arbitrary_endpoint_info_look_alike</code>, which
+  shows this mechanically succeeds), no code anywhere in this
+  repository ever does that — the real guarantee is architectural
+  (nothing produces such a value), not purely a runtime check.</li>
+<li><code>test_transport_has_no_mutation_verb_methods</code> and
+  <code>test_transport_source_never_calls_httpx_mutation_methods</code> together
+  prove, structurally, that <code>NexusTransport</code> has no POST/PUT/PATCH/
+  DELETE capability at all, at either the method-name or source-code-
+  call level.</li>
+<li><code>tests/backends/test_isolation.py</code> (generalized in Phase D to scan
+  every file under <code>backends/</code>) continues to cover both new files
+  automatically — re-run and confirmed passing this phase without any
+  change to that test file itself.</li>
+</ul>
+<h3 id="carp-integration-test-result">CARP integration test result<a class="headerlink" href="#carp-integration-test-result" title="Permanent link">&para;</a></h3>
+<p><code>tests/backends/nexus/test_carp_integration.py</code> (5 tests, all offline/
+respx-mocked) proves the full chain —
+<code>NexusSession.login()</code> → <code>NexusTransport.get_json()</code> →
+<code>normalize_carp_status()</code>/<code>NexusCarpStatusReader.get_carp_status()</code> —
+produces the correct <code>CarpStatus</code> on a well-formed response, fails
+closed (<code>PfSenseResponseShapeError</code>) on a missing or wrong-typed CARP
+field propagated all the way through the real transport (not just the
+normalization function in isolation, which Phase D already covered),
+and that a login failure propagates before any CARP request is even
+attempted. This wiring exists in test code only — not exposed in
+production code, not registered as a tool, not reachable through
+<code>factory.py</code>/<code>tools/registry.py</code>/<code>application.py</code>, or any backend-
+selection path.</p>
+<h3 id="unresolved-upstream-findings-carried-forward-not-solved-this-phase">Unresolved upstream findings (carried forward, not solved this phase)<a class="headerlink" href="#unresolved-upstream-findings-carried-forward-not-solved-this-phase" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Real access-token TTL beyond the <code>exp</code> claim — still unresolved,
+   requires a live token to observe.</li>
+<li>The <code>active</code> (schema) vs. <code>"online"</code> (example-script runtime check)
+   device-state string discrepancy — untouched this phase, per the
+   owner's explicit instruction not to add device-state policy unless
+   required by the transport (it wasn't — this transport never reads
+   or reasons about device state).</li>
+<li>Nexus Controller account privilege-scoping model — still not
+   researched, remains a live-validation prerequisite only, does not
+   block anything implemented this phase.</li>
+</ol>
+<h3 id="go-no-go-for-phase-g">GO / NO-GO for Phase G<a class="headerlink" href="#go-no-go-for-phase-g" title="Permanent link">&para;</a></h3>
+<p><strong>NO-GO on runtime wiring or live access — not authorized, not
+attempted, matches Phase F's own explicit scope.</strong> For a future,
+separately-authorized Phase G specifically about connecting this
+transport to a real Nexus Controller: <strong>conditional GO</strong>, narrower
+than Phase F itself. The transport's own correctness is now backed by
+102 offline tests (session, transport, routing, CARP integration,
+isolation) rather than design documentation alone. What Phase G would
+still need before any live call: (a) real Controller/device/credential
+access (explicitly not available in this environment, per every prior
+phase's finding), (b) resolution or explicit acceptance of the
+access-token-TTL unknown against a real token, (c) a designed,
+least-privilege Nexus account rather than defaulting to a Controller
+admin credential out of convenience — this remains the one gap serious
+enough to gate live validation specifically, unchanged from Phase E's
+own recommendation.</p>
+<h2 id="phase-g-readiness-assessment-2026-08-17-stopped-before-live-access-as-designed">Phase G readiness assessment (2026-08-17) — STOPPED before live access, as designed<a class="headerlink" href="#phase-g-readiness-assessment-2026-08-17-stopped-before-live-access-as-designed" title="Permanent link">&para;</a></h2>
+<p>Owner-authorized "Nexus Phase G — live-read readiness and controlled
+validation." The mandatory sequence was A (pre-live security/readiness
+investigation) → B (prerequisite check) → C (controlled live auth) →
+D (controlled CARP READ) → E (evidence/report) → F (stop), with an
+explicit instruction not to advance past any stage that cannot be
+completed safely. <strong>Stopped after stage B: no real Nexus Controller,
+device, or credential is available in this environment — the same
+finding as every prior phase in this track (A through F).</strong> Per the
+owner's own explicit framing, this is "a successful Phase G outcome,"
+not a failure — Stages C through F (controlled authentication,
+controlled live READ, token-expiry finding against a real token) were
+correctly never attempted.</p>
+<h3 id="least-privilege-rbac-findings-stage-a">Least-privilege / RBAC findings (Stage A)<a class="headerlink" href="#least-privilege-rbac-findings-stage-a" title="Permanent link">&para;</a></h3>
+<p>Fetched <code>Netgate/pfsense-api</code>'s <code>py/pfapi/api/system/list_user_privileges.py</code>
+directly (<code>GET /system/users/privs</code>) — its docstring is itself
+authoritative (generated from the OpenAPI operation description, the
+same schema this entire track has treated as authoritative throughout):</p>
+<blockquote>
+<p>"In pfSense, the user privileges are applied to the user's login to
+the legacy user interface. When pfSense acts as a Multi-instance
+Management Controller, MIM privileges are defined by the group's
+name. When the Controller runs as a separate entity, group
+privileges are used as roles in Multi-instance management and
+define the entitlements of the user belonging to the group. Apart
+from the superuser (or admin) role, all roles can be made granular
+with read, modify and delete attributes. <strong>A role without these
+attributes is considered to be granted them all.</strong>"</p>
+</blockquote>
+<p>And, separately, from the schema's SAML group-mapping documentation
+(<code>group_map</code> field description, <code>pfapi_openapi.yml</code>):</p>
+<blockquote>
+<p>"a Nexus MIM administrator must belong to a 'mim_' role... for
+example: <code>{"admins": "mim_superuser", "logging": "mim_logs"}</code>"</p>
+</blockquote>
+<p>and, from <code>nexus_group_prefix</code>'s own field description:</p>
+<blockquote>
+<p>"LDAP group CN prefix for Nexus MIM roles (default 'mim_'). The
+default group names used for Nexus MIM are defined as
+<code>&lt;prefix&gt;&lt;role&gt;_&lt;permission&gt;</code> names."</p>
+</blockquote>
+<p><strong>Answers to the six questions asked, each labeled FACT / INFERENCE /
+UNKNOWN:</strong></p>
+<ol>
+<li><strong>Can a read-only/restricted account authenticate through
+   <code>POST /login</code>? — FACT: yes.</strong> Login is authentication only, gated
+   on valid Controller credentials; nothing in the schema or the
+   generated client conditions <code>/login</code> itself on any privilege level.
+   The role/group model then gates what an authenticated session can
+   subsequently do.</li>
+<li><strong>What privileges are required to read device CARP status? —
+   UNKNOWN, genuine gap.</strong> The naming convention is confirmed
+   (<code>mim_&lt;role&gt;_&lt;permission&gt;</code>, e.g. <code>mim_superuser</code>, <code>mim_logs</code>), and
+   the general mechanism (roles other than superuser can be scoped to
+   read/modify/delete) is confirmed, but no full enumeration of valid
+   <code>&lt;role&gt;</code> segments exists in any source inspected — there is no
+   confirmed <code>mim_carp_read</code> or <code>mim_devices_read</code> (or equivalent)
+   string anywhere in the schema, docs, or example code. This gap is
+   documented rather than guessed, per the owner's explicit
+   instruction.</li>
+<li><strong>Does Controller-level authentication implicitly grant broader
+   device API capabilities? — INFERENCE, not confirmed either way.</strong>
+   No schema field or documentation states whether a granted role's
+   entitlement is Controller-global (applies identically to every
+   managed device) or can be narrower. Given no per-device
+   role-assignment endpoint was found across this entire track's
+   research (Phases A, B, E), the more likely reading is that roles
+   are Controller-global rather than natively per-device-scoped — but
+   this is an inference from absence of evidence, not a confirmed fact.</li>
+<li><strong>Can permissions be scoped by device? — UNKNOWN, genuine gap.</strong> No
+   supporting evidence found either way.</li>
+<li><strong>Can API access be restricted independently from UI access? —
+   INFERENCE, partially supported.</strong> The docstring's own framing
+   (legacy pfSense privileges govern GUI login; MIM roles govern
+   Controller/API entitlements) suggests these are at least partially
+   separate privilege systems, but no explicit statement confirms full
+   independence.</li>
+<li><strong>Security implications of storing these credentials:</strong> The role
+   model is coarse-grained (named roles/groups, not the community
+   REST API's fine-grained per-endpoint privilege strings such as
+   <code>api-v2-firewall-aliases-get</code> — ADR-026) and <strong>defaults to full
+   read/modify/delete access unless a role is explicitly scoped
+   otherwise</strong>. Combined with findings 2–4 above, a credential
+   provisioned for a future live validation would carry a materially
+   less precisely-bounded blast radius than the community backend's
+   already-proven 4-privilege scoped identity, unless a specific
+   narrowly-scoped <code>mim_*_read</code>-style role can be confirmed to exist
+   and be assignable — which this phase could not confirm. <strong>No user,
+   group, or permission was created, modified, or even attempted this
+   phase</strong>, per the owner's explicit instruction.</li>
+</ol>
+<h3 id="prerequisite-check-stage-b">Prerequisite check (Stage B)<a class="headerlink" href="#prerequisite-check-stage-b" title="Permanent link">&para;</a></h3>
+<p>Checked, narrowly, for legitimately-available Nexus-specific
+configuration: process environment (<code>env | grep -i nexus</code>, <code>grep -i
+controller</code> — no matches) and any obvious project-level config file
+naming pattern (none found; the one <code>.env</code>-shaped file present in this
+project, <code>.lab-t1.env</code>, is the pre-existing community-backend LAB
+credential file used throughout this project's Tier1 WRITE work — a
+different purpose, deliberately not opened, per the explicit
+instruction not to search broadly for secrets unrelated to this task).
+<strong>No Controller URL, device_type, device_id, or credential of any kind
+is available.</strong> Per the owner's own explicit closing instruction, this
+is where Phase G stops.</p>
+<h3 id="pre-live-regression-gate-stage-c-precondition-run-anyway-as-part-of-the-readiness-assessment">Pre-live regression gate (Stage C precondition — run anyway, as part of the readiness assessment)<a class="headerlink" href="#pre-live-regression-gate-stage-c-precondition-run-anyway-as-part-of-the-readiness-assessment" title="Permanent link">&para;</a></h3>
+<p>Even though Stage B's negative result means Stage C (controlled
+authentication) is correctly never reached, the regression gate itself
+was still run, since "is the isolated stack currently green and ready"
+is exactly what a genuine readiness assessment should answer: full
+pytest suite 2927 passed (0 failed); <code>tests/backends/</code> (the entire
+package, community-adjacent tests included) 102 passed, broken down —
+routing 21, session 28, transport 22 (includes the <code>_TokenProvider</code>
+Protocol fix from Phase F), CARP integration 5, CARP normalization
+(Phase D) 16 = <strong>92, exactly <code>tests/backends/nexus/</code> on its own</strong> —
+plus 10 tests outside that subdirectory but still under
+<code>tests/backends/</code>: backend isolation 2, port-Protocol structural
+tests 4 (<code>test_ports.py</code>), and the Phase B/C infeasibility regression
+guards 2+2 (<code>test_nexus_gateway_status_infeasibility.py</code>,
+<code>test_nexus_firewall_alias_infeasibility.py</code>) = 102 total. Both "92"
+and "102" are correct simultaneously; they were never in conflict,
+only differently scoped (owner-requested reconciliation, Phase G
+follow-up, 2026-08-17). 42 tools; 0 of 3
+WRITE capabilities default-reachable; no file under <code>factory.py</code>,
+<code>tools/registry.py</code>, or <code>application.py</code> references <code>backends</code> at all;
+zero diff against <code>f76577c</code> under <code>tier1/</code> or
+<code>ADR-031-backend-target-identity-boundary.md</code>.</p>
+<h3 id="stages-df-not-reached">Stages D–F: not reached<a class="headerlink" href="#stages-df-not-reached" title="Permanent link">&para;</a></h3>
+<p>No controlled authentication, no live CARP READ, and no token-expiry
+finding against a real token were attempted, per Stage B's negative
+result and the owner's own explicit instruction not to simulate
+success or substitute another API.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

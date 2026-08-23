@@ -1,0 +1,5212 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/NEXUS_COMPATIBILITY_MATRIX/">
+      
+      
+        <link rel="prev" href="../ROADMAP/">
+      
+      
+        <link rel="next" href="../V0.3.0_MILESTONE/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Nexus compatibility matrix (research only, Phase A) - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#netgate-nexus-official-api-read-tool-compatibility-matrix" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Nexus compatibility matrix (research only, Phase A)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (implemented, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#phase-d-update-2026-08-17-first-passing-slice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase D update (2026-08-17) — first passing slice
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase D update (2026-08-17) — first passing slice">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-was-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was implemented
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-c-update-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase C update (2026-08-17)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-update-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B update (2026-08-17)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methodology-and-honesty-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methodology and honesty notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notable-cross-cutting-findings-apply-to-many-rows-above" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notable cross-cutting findings (apply to many rows above)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-pfsense_get_gateway_status-field-by-field-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B: pfsense_get_gateway_status field-by-field diff
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classification-legend-used-from-phase-b-onward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification legend used from Phase B onward
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#phase-d-update-2026-08-17-first-passing-slice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase D update (2026-08-17) — first passing slice
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase D update (2026-08-17) — first passing slice">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-was-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was implemented
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-c-update-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase C update (2026-08-17)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-update-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B update (2026-08-17)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methodology-and-honesty-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methodology and honesty notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notable-cross-cutting-findings-apply-to-many-rows-above" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notable cross-cutting findings (apply to many rows above)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-pfsense_get_gateway_status-field-by-field-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B: pfsense_get_gateway_status field-by-field diff
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classification-legend-used-from-phase-b-onward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification legend used from Phase B onward
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/NEXUS_COMPATIBILITY_MATRIX.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="netgate-nexus-official-api-read-tool-compatibility-matrix">Netgate Nexus / official API — READ-tool compatibility matrix<a class="headerlink" href="#netgate-nexus-official-api-read-tool-compatibility-matrix" title="Permanent link">&para;</a></h1>
+<p><strong>Status: research artifact, through Phase D. <code>pfsense_get_carp_status</code>
+now has a concrete, tested, but NOT runtime-wired Nexus adapter — see
+"Phase D update" below for exactly what that does and does not mean.
+Nothing else in this document is wired into the running server; no
+public MCP behavior changed.</strong></p>
+<h2 id="phase-d-update-2026-08-17-first-passing-slice">Phase D update (2026-08-17) — first passing slice<a class="headerlink" href="#phase-d-update-2026-08-17-first-passing-slice" title="Permanent link">&para;</a></h2>
+<p><code>pfsense_get_carp_status</code> was the owner-chosen candidate after Phase C's
+<code>firewall_aliases</code> result, specifically because <code>CarpStatus</code> is this
+project's simplest domain model with <strong>no <code>id: int</code> field</strong> — the pattern
+that blocked both prior slices.</p>
+<p>Traced end-to-end: <code>tools/read/carp_status.py</code> →
+<code>PfSenseClient.get_carp_status()</code> → <code>RestApiClient.get(Endpoints.STATUS_CARP)</code>
+(<code>GET /api/v2/status/carp</code>) → <code>_parse_object_response()</code> (requires a
+top-level <code>"data"</code> object key) → <code>CarpStatus.from_api()</code>, which reads
+<code>data["enable"]</code> and <code>data["maintenance_mode"]</code> — two required boolean
+dict keys, no defaults.</p>
+<p>Compared against Nexus <code>GET /services/carp/status</code>
+(<code>operationId</code> not set; response schema <code>CARPStatus</code>) — and, critically,
+against <strong>Netgate's own official generated Python client</strong>
+(<code>py/pfapi/models/carp_status.py</code> in <code>Netgate/pfsense-api</code>), fetched and
+read directly rather than relying on the OpenAPI YAML alone, because the
+YAML's bare <code>type: boolean</code> with no <code>required[]</code> entry doesn't by itself
+say whether a field is reliably present:</p>
+<div class="highlight"><pre><span></span><code><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">Unset</span> <span class="o">=</span> <span class="n">UNSET</span>
+<span class="n">maintenancemode_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">Unset</span> <span class="o">=</span> <span class="n">UNSET</span>
+</code></pre></div>
+<p>This is decisive, from source: Nexus's own client explicitly models both
+fields as possibly <strong>absent entirely</strong> (<code>Unset</code>), not merely nullable —
+confirming the same ambiguity the owner asked to check for
+("behavior when CARP is disabled, unavailable, partially configured, or
+absent").</p>
+<table>
+<thead>
+<tr>
+<th>community field</th>
+<th>required?</th>
+<th>Nexus field</th>
+<th>Nexus type</th>
+<th>Nexus required?</th>
+<th>semantic equivalence</th>
+<th>transformation</th>
+<th>confidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enable: bool</code></td>
+<td>required key, no default</td>
+<td><code>enabled</code></td>
+<td><code>bool \| Unset</code></td>
+<td>optional/possibly-absent</td>
+<td>High — both represent "is the CARP service itself turned on for this appliance"; <code>/services/carp/enabled</code> (POST) is literally "Enable/Disable the CARP service," the same concept the GET status field reflects</td>
+<td>direct rename, <strong>when present</strong></td>
+<td>High</td>
+</tr>
+<tr>
+<td><code>maintenance_mode: bool</code></td>
+<td>required key, no default</td>
+<td><code>maintenancemode_enabled</code></td>
+<td><code>bool \| Unset</code></td>
+<td>optional/possibly-absent</td>
+<td>High — both represent the standard pfSense/CARP-protocol "persistent maintenance mode" concept (forces this node's VIPs to BACKUP); <code>/services/carp/maintenancemode</code> (POST) names the same concept</td>
+<td>direct rename, <strong>when present</strong></td>
+<td>High</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why this passes where gateway status/firewall aliases did not:</strong> those
+two had required community fields with <strong>zero possible source under any
+circumstance</strong> (no <code>id</code> concept exists anywhere in their Nexus schemas).
+Here, both fields exist, are named unambiguously, and match the community
+concept with high confidence — domain knowledge (CARP enable/maintenance
+mode are standard, specific pfSense/CARP-protocol terms, not generic
+words like "status" that could mean several things) plus the paired
+POST-toggle-endpoint names (<code>/services/carp/enabled</code>,
+<code>/services/carp/maintenancemode</code>) corroborating the GET field semantics
+independently. The only open question is <em>reliability of presence</em>, which
+is a <strong>fail-closed problem, not a fabrication problem</strong>: unlike a field
+with no source at all, "sometimes absent" can be handled correctly by
+refusing to guess when it's missing, exactly as the community backend's
+own <code>_parse_object_response()</code> already refuses on any missing required
+key. That is what was implemented — see below.</p>
+<p><strong>One additional, pre-existing nuance found and left as-is, not a new
+gap:</strong> <code>CarpStatus</code>'s plain Pydantic <code>bool</code> fields already perform lax
+coercion (<code>"true"</code>/<code>"false"</code> strings, <code>1</code>/<code>0</code>, etc. are accepted) — this
+is existing, shared behavior of the community backend's own model, not
+something this adapter adds or could avoid without diverging from how
+the community backend itself already behaves. Adversarial tests exercise
+genuinely non-coercible malformed values instead (a list, a nested
+object) to confirm real fail-closed behavior without asserting something
+false about the shared model's own pre-existing leniency.</p>
+<p><strong>Routing/device semantics:</strong> consistent with Phase B's confirmed
+mechanism — same base-path-prefix scheme, no CARP-specific routing
+behavior found or expected.</p>
+<h3 id="what-was-implemented">What was implemented<a class="headerlink" href="#what-was-implemented" title="Permanent link">&para;</a></h3>
+<p>The <strong>smallest isolated READ-only adapter</strong>, per explicit owner scope:</p>
+<ul>
+<li><code>CarpStatusReader</code> added to <code>src/pfsense_mcp/backends/ports.py</code>.</li>
+<li><code>src/pfsense_mcp/backends/nexus/carp_status.py</code>: a pure
+  <code>normalize_carp_status(raw: dict) -&gt; CarpStatus</code> function (fail-closed:
+  raises <code>PfSenseResponseShapeError</code> — the exact same exception type the
+  community backend's own <code>_parse_object_response()</code> raises — on any
+  missing key, <code>None</code>, or non-coercible type) plus
+  <code>NexusCarpStatusReader</code>, a thin class taking an <strong>injected</strong>
+  <code>fetch_raw: Callable[[], dict]</code> and calling
+  <code>normalize_carp_status(self._fetch_raw())</code>.</li>
+</ul>
+<p><strong>What was deliberately NOT built, and why:</strong> any actual Nexus HTTP
+transport — login/JWT session handling, refresh-token lifecycle, or the
+<code>{controller}/api/device/pfsense/{device_id}/api/services/carp/status</code>
+base-path construction Phase B confirmed. That is separate, materially
+larger infrastructure work applicable to <em>every</em> future Nexus capability,
+not specific to CARP status — building it now would be exactly the
+"unrelated refactoring" the owner's Phase D authorization explicitly
+excluded. <code>NexusCarpStatusReader</code> takes a raw dict via injection
+precisely so this remains true: the reader is fully testable and
+review-complete today, and plugging in a real fetch function later is a
+separate, explicit, future decision — not a change to this code.</p>
+<p><strong>Not wired anywhere.</strong> <code>factory.py</code>, <code>tools/registry.py</code>, and
+<code>application.py</code> are unaffected — <code>pfsense_mcp.backends</code> (including
+<code>nexus/</code>) remains structurally unreachable from any of them, enforced by
+<code>tests/backends/test_isolation.py</code>, generalized this phase to scan every
+file under <code>backends/</code>, not just <code>ports.py</code>.</p>
+<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h3>
+<p>26 tests in <code>tests/backends/</code> (16 new this phase, in
+<code>tests/backends/nexus/test_carp_status.py</code>): both-true, both-false,
+mixed, extra Nexus-only fields ignored, missing <code>enabled</code>, missing
+<code>maintenancemode_enabled</code>, both missing, empty body, non-coercible wrong
+type for each field, explicit JSON <code>null</code> for each field, reader calls
+the injected fetch function and normalizes correctly, reader propagates
+the fail-closed error from a malformed fetch, reader satisfies
+<code>CarpStatusReader</code> structurally, and construction alone must not
+eagerly invoke <code>fetch_raw</code>.</p>
+<p><strong>No live validation performed.</strong> No Nexus Controller/device/credential
+is available in this environment — same as every prior phase.</p>
+<h2 id="phase-c-update-2026-08-17">Phase C update (2026-08-17)<a class="headerlink" href="#phase-c-update-2026-08-17" title="Permanent link">&para;</a></h2>
+<p><code>pfsense_get_firewall_aliases</code> was the owner-chosen replacement first-slice
+candidate after Phase B's gateway-status result. Traced end-to-end
+(<code>tools/read/firewall_aliases.py</code> → <code>PfSenseClient.get_firewall_aliases()</code>
+→ <code>RestApiClient.get(Endpoints.FIREWALL_ALIASES)</code>, <code>GET /api/v2/firewall/aliases?limit=N</code>
+→ <code>_parse_list_response()</code> → <code>FirewallAlias.from_api()</code>, which reads
+<code>data["descr"]</code>, <code>data["id"]</code>, <code>data["name"]</code>, <code>data["type"]</code>,
+<code>data["address"]</code>, <code>data["detail"]</code> — all six as required dict keys, no
+<code>.get()</code> defaults, identical fail-closed discipline to <code>GatewayStatus</code>).</p>
+<p>Compared field-by-field against Nexus <code>GET /aliases</code> (<code>operationId:
+FirewallGetAliases</code>, response schema <code>FWAliases</code> → <code>aliases:
+list[FWAlias]</code> + a <strong>second, separately-shaped</strong> <code>system_aliases:
+list[FWSystemAlias]</code> collection) and <code>GET /aliases/{id}</code> (single-alias
+lookup, <code>{id}</code> is <code>type: string</code> in the path — confirmed almost certainly
+the alias's own <code>name</code> used as an identifier, not a distinct numeric ID,
+consistent with <code>example-set-alias.py</code>'s own logic which checks aliases by
+<code>.name</code>, never by any numeric field).</p>
+<p><strong>Result: does not pass the owner's compatibility bar ("complete,
+deterministic, lossless enough for the existing contract, and
+fail-closed"). Classified PARTIAL. No adapter implemented</strong>, per explicit
+owner instruction not to invent/default required fields to force a fit.</p>
+<table>
+<thead>
+<tr>
+<th>community field</th>
+<th>required?</th>
+<th>Nexus field (<code>FWAlias</code>)</th>
+<th>Nexus type</th>
+<th>Nexus required?</th>
+<th>equivalence</th>
+<th>transformation needed</th>
+<th>confidence</th>
+<th>known difference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id: int</code></td>
+<td>required key, no default</td>
+<td><em>(none)</em></td>
+<td>—</td>
+<td>—</td>
+<td><strong>NONE</strong></td>
+<td>impossible without fabrication</td>
+<td>—</td>
+<td>No integer identifier anywhere in <code>FWAlias</code> or <code>FWSystemAlias</code>. The <code>/aliases/{id}</code> path parameter is a string and is almost certainly <code>name</code>, not a numeric ID — third independent confirmation (after gateways in Phase B, packages checked this phase) that this project's domain models' <code>id: int</code> convention has no Nexus counterpart anywhere checked so far.</td>
+</tr>
+<tr>
+<td><code>name: str</code></td>
+<td>required, no default</td>
+<td><code>name</code></td>
+<td>string</td>
+<td><strong>required</strong></td>
+<td>Direct</td>
+<td>passthrough</td>
+<td>High</td>
+<td>Clean match — the one field that maps cleanly.</td>
+</tr>
+<tr>
+<td><code>descr: str</code></td>
+<td>required, no default</td>
+<td><code>descr</code></td>
+<td>string</td>
+<td>optional</td>
+<td>Partial</td>
+<td>passthrough if present</td>
+<td>Medium</td>
+<td>Community requires this key to exist; Nexus may omit it entirely (e.g. plausibly for <code>urltable</code>-type aliases with no free-text description). A real omission would <code>KeyError</code>.</td>
+</tr>
+<tr>
+<td><code>type: str</code></td>
+<td>required, no default (community only ever produces <code>host</code>/<code>network</code>/<code>port</code> in practice, per <code>tier1/alias_description.py::_ALIAS_TYPES</code>)</td>
+<td><code>type</code></td>
+<td>string, documented enum <code>host, network, url, urltable, urltable_ports, port, or url_ports</code></td>
+<td>optional</td>
+<td>Partial</td>
+<td>passthrough if present</td>
+<td>Medium</td>
+<td>Nexus's enum is a <strong>superset</strong> with 4 values (<code>url</code>, <code>urltable</code>, <code>urltable_ports</code>, <code>url_ports</code>) this project's Tier1 WRITE side does not recognize at all (READ-side <code>type</code> itself is an unconstrained <code>str</code>, so it would not fail to parse — but a caller expecting only the 3 known types could be surprised). Also optional in Nexus vs. required in community.</td>
+</tr>
+<tr>
+<td><code>address: list[str] \| None</code></td>
+<td>required key</td>
+<td><code>address</code></td>
+<td><strong>string</strong> ("space separated list of addresses")</td>
+<td>optional</td>
+<td>Partial</td>
+<td>split on whitespace</td>
+<td>Low-Medium</td>
+<td>Type mismatch: community wants an already-split list; Nexus provides one space-separated string requiring parsing, with unspecified behavior for multiple/leading/trailing spaces or an alias with zero members. Also optional — could be entirely absent.</td>
+</tr>
+<tr>
+<td><code>detail: list[str] \| None</code></td>
+<td>required key</td>
+<td><code>detail</code></td>
+<td><strong>string</strong> (singular, not a list)</td>
+<td>optional</td>
+<td><strong>Ambiguous</strong></td>
+<td>unclear</td>
+<td>Low</td>
+<td>Structural mismatch, not just a type mismatch: community expects a list of per-member annotations parallel to <code>address</code>; Nexus's plain <code>detail</code> is one string. A better semantic match may be <code>targets: list[FWTarget]</code> (each with its own <code>name</code>+<code>descr</code>) — a <em>different field entirely</em>, requiring a genuine design decision (which source is authoritative?) rather than a mechanical rename, and the schema gives no guidance on whether <code>address</code>/<code>detail</code> and <code>targets</code> are populated consistently with each other.</td>
+</tr>
+<tr>
+<td><em>(none)</em></td>
+<td>—</td>
+<td><code>system_aliases: list[FWSystemAlias]</code></td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Structural difference: Nexus separates system-defined aliases from user aliases into two differently-shaped collections (<code>FWSystemAlias</code> has <code>url</code>/<code>table</code>/<code>if_ident</code>/<code>if_assigned_name</code> instead of <code>targets</code>). Whether the current community endpoint's flat list includes system aliases at all was not confirmed either way — a genuine ambiguity, not just an extra field to ignore.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Routing/device semantics:</strong> consistent with Phase B's confirmed finding
+— the same <code>{controller}/api/device/pfsense/{device_id}/api/aliases</code>
+base-path-prefix mechanism applies uniformly; no alias-specific routing
+behavior was found or expected.</p>
+<p><strong>Conclusion:</strong> 1 required field (<code>id</code>) has zero source at all — the same
+severity as gateway_status's worst gap. 2 more (<code>descr</code>, <code>type</code>) are
+optional-in-Nexus vs. required-in-community, a real (if less severe) fail-
+closed risk. 2 more (<code>address</code>, <code>detail</code>) require non-trivial, genuinely
+ambiguous transformation rather than a mechanical rename. Only <code>name</code> is a
+confident, clean match. This does not meet the owner's explicit bar for
+implementation. See
+<code>tests/backends/test_nexus_firewall_alias_infeasibility.py</code> for the
+permanent regression guard encoding this finding.</p>
+<p><strong>Recommended next candidate (Phase D):</strong> <em>(acted on — see the "Phase D
+update" section above the Phase C section for the result: this
+recommendation passed.)</em> <code>pfsense_get_carp_status</code>
+(<code>CarpStatus</code>) — checked this phase specifically because the <code>id: int</code>
+pattern has now blocked two consecutive slices (gateways, aliases) and a
+third model (<code>SystemPackage</code>) was spot-checked and found to have the same
+required <code>id: int</code> with no Nexus source. <code>CarpStatus</code> is the simplest
+domain model in the entire 42-tool surface with <strong>no <code>id</code> field at all</strong> —
+exactly two required booleans (<code>enable</code>, <code>maintenance_mode</code>) — and Nexus
+has a plausibly-matching <code>GET /services/carp/status</code> endpoint (found in
+Phase A, not yet schema-diffed). This is a genuine structural reason to
+expect a better outcome, not just an untested guess.</p>
+<h2 id="phase-b-update-2026-08-17">Phase B update (2026-08-17)<a class="headerlink" href="#phase-b-update-2026-08-17" title="Permanent link">&para;</a></h2>
+<p>Two things changed since Phase A; everything else in this document is
+Phase A's original, unmodified research.</p>
+<ol>
+<li><strong>Device routing: CONFIRMED.</strong> Phase A's biggest open question — how a
+   request through Nexus authoritatively targets one specific managed
+   pfSense appliance — is resolved, directly from Netgate's own official
+   example source code in the <code>Netgate/pfsense-api</code> repository
+   (<code>helper_funcs.py</code>, <code>example.py</code>), not inferred from the OpenAPI schema
+   (which does not capture this at all — see why, below).</li>
+</ol>
+<p><strong>Mechanism:</strong> device targeting is a URL <strong>base-path prefix</strong>, not a
+   path parameter, header, or JWT claim:</p>
+<div class="highlight"><pre><span></span><code>{CONTROLLER_URL}/api/device/{device_type}/{device_id}/api{operation_path}
+</code></pre></div>
+<p>e.g. <code>{CONTROLLER_URL}/api/device/pfsense/{device_id}/api/system/status</code>.
+   <code>device_type</code> is literally the string <code>"pfsense"</code> in every example.
+   <code>device_id</code> is the string identifier from <code>ControlledDevice.device_id</code>
+   (confirming the string-not-integer identifier finding from ADR-030).
+   The same Controller-level JWT bearer token and refresh-token cookie
+   jar obtained from <code>POST /login</code> is reused unchanged across every
+   per-device client — <code>helper_funcs.py::RequestClient.createDeviceApiChild(device_id)</code>
+   constructs a new <code>AuthenticatedClient</code> with only the <code>base_url</code> changed,
+   not a new login. Every example explicitly checks <code>device.state ==
+   "online"</code> before issuing a per-device call and skips otherwise.</p>
+<p>This also explains why Phase A's schema-only search found nothing: the
+   <em>same</em> <code>paths:</code> templates (e.g. <code>/system/status</code>) are used against
+   <em>two</em> different base URLs (the bare Controller base for <code>/mim/*</code>
+   operations, or a per-device base for everything else) — which base URL
+   is in play is a client-construction-time decision entirely outside
+   what the OpenAPI document's <code>paths</code>/<code>parameters</code> sections can express,
+   consistent with the schema's own <code>servers: null</code>.</p>
+<ol>
+<li><strong><code>pfsense_get_gateway_status</code>: downgraded from ADAPTABLE to PARTIAL</strong>
+   after a genuine field-by-field diff (Phase A only checked property
+   <em>names</em>, not <code>required[]</code> or exact types). See the dedicated section
+   below. The Phase 4 concrete adapter was <strong>stopped, not implemented</strong> —
+   a faithful, non-fabricating implementation is not achievable with the
+   current model. <code>docs/adr/ADR-031-backend-target-identity-boundary.md</code>
+   was added, independent of this outcome.</li>
+</ol>
+<p>No other row's classification changed this pass — the rest of Phase A's
+findings below were not re-verified this pass and should not be assumed
+current beyond what's stated.</p>
+<p>This matrix compares every one of the current 42 default-profile MCP READ
+tools against the <em>official</em> Netgate API schema (<code>Netgate/pfsense-api</code>,
+<code>pfapi_openapi.yml</code>, OpenAPI 3.0.3, <code>info.version: "1.0"</code>, description:
+"Nexus Multi-instance Management APIs"), fetched directly from
+<code>https://raw.githubusercontent.com/Netgate/pfsense-api/main/pfapi_openapi.yml</code>
+and parsed programmatically (486 paths, 755 operations). This is <strong>not</strong> the
+same product as the community <code>pfSense-pkg-RESTAPI</code> package this project's
+existing backend already uses — it is Netgate's own, Plus-only,
+Controller-mediated multi-instance API.</p>
+<h2 id="methodology-and-honesty-notes">Methodology and honesty notes<a class="headerlink" href="#methodology-and-honesty-notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Every current-side fact (tool names, <code>Endpoints.path_suffix</code> values,
+  domain model required fields) was re-derived directly from <code>src/</code> on
+  commit <code>0ce37ab0c7d4d99421146e4d45085fe8ed6cb467</code>, not recalled from prior conversation or reports-ai.</li>
+<li>Every Nexus-side fact was extracted by loading the actual schema YAML with
+  <code>pyyaml</code> and inspecting <code>paths</code>/<code>components.schemas</code> programmatically —
+  not inferred from path names alone.</li>
+<li><strong>No entry is classified DIRECT.</strong> For every tool where a plausible Nexus
+  endpoint exists, deep-enough inspection found at least one genuine
+  semantic gap (a required field on the current Pydantic model with no
+  confirmed source field in the Nexus schema, an identifier-shape mismatch,
+  or a structural difference such as per-interface vs. flat collections).
+  Where that inspection was not completed to the same depth, the entry is
+  marked ADAPTABLE with confidence noted, not DIRECT.</li>
+<li>UNKNOWN means genuinely insufficient evidence was gathered this pass, not
+  "probably unsupported." UNSUPPORTED means a positive search was made and
+  no candidate was found.</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>Updated in Phase B: <code>pfsense_get_gateway_status</code> moved ADAPTABLE → PARTIAL.</p>
+<table>
+<thead>
+<tr>
+<th>Classification</th>
+<th>Count (Phase A)</th>
+<th>Count (Phase B)</th>
+<th>Count (Phase C)</th>
+<th>Count (Phase D)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DIRECT</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ADAPTABLE</td>
+<td>32</td>
+<td>31</td>
+<td>30</td>
+<td>30</td>
+</tr>
+<tr>
+<td>PARTIAL</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td>UNSUPPORTED</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>LOCAL</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>42</strong></td>
+<td><strong>42</strong></td>
+<td><strong>42</strong></td>
+<td><strong>42</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Phase D's totals are unchanged from Phase C: <code>carp_status</code> was already
+ADAPTABLE and stays ADAPTABLE — the DIRECT/ADAPTABLE/PARTIAL/etc. axis
+tracks <em>schema compatibility</em>, not <em>implementation status</em>, which is a
+separate fact recorded per-row and in the SCHEMA-MAPPED/OFFLINE-TESTED/
+LIVE-READ-VERIFIED legend below. <code>carp_status</code> is the only row that has
+reached OFFLINE-TESTED so far.</p>
+<p>(<code>system_status</code>, <code>firewall_rules</code>, <code>dhcp_static_mappings</code> are PARTIAL from
+Phase A; <code>gateway_status</code> is PARTIAL as of Phase B; <code>firewall_aliases</code> is
+PARTIAL as of Phase C — see each row and the dedicated diff sections
+below for why.)</p>
+<h2 id="full-matrix">Full matrix<a class="headerlink" href="#full-matrix" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>MCP tool</th>
+<th>Current endpoint (<code>Endpoints.*</code>)</th>
+<th>Current method</th>
+<th>Candidate Nexus path(s)</th>
+<th>Nexus method(s)</th>
+<th>Classification</th>
+<th>Confidence</th>
+<th>Key semantic differences</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pfsense_get_system_status</code></td>
+<td><code>SYSTEM_STATUS</code> (<code>/status/system</code>)</td>
+<td>GET</td>
+<td><code>/system/status</code></td>
+<td>GET</td>
+<td><strong>PARTIAL</strong></td>
+<td>High</td>
+<td>Nexus <code>SystemStatus</code> schema has no field corresponding to the current model's required <code>disk_usage: int</code>, and no <code>temp_c</code>/<code>temp_f</code> equivalent at all. <code>ram</code>/<code>fram</code>/<code>swap</code>/<code>fswap</code> are untyped-unit integers (no documented unit), <code>cpu</code> is a string (likely a model name, not a usage percentage) — the current model's <code>cpu_usage: float</code> has no confirmed source. <code>up</code> is a string of undocumented format. Full reproduction is not possible from this schema as published.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_interface_configs</code></td>
+<td><code>INTERFACES</code> (<code>/interfaces</code>)</td>
+<td>GET</td>
+<td><code>/interfaces</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td><code>InterfaceSimple</code> has <code>ipaddr</code>/<code>ipaddrv6</code>/<code>mac</code>/<code>descr</code>/<code>enable</code> — reasonable config-field overlap. Not schema-diffed field-by-field against the current <code>InterfaceConfig</code> model.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_interfaces</code></td>
+<td><code>STATUS_INTERFACES</code> (<code>/status/interfaces</code>)</td>
+<td>GET</td>
+<td>none confirmed</td>
+<td>—</td>
+<td><strong>UNKNOWN</strong></td>
+<td>—</td>
+<td>This tool returns live link/status data (<code>InterfaceStatus</code>). The <code>/interfaces</code> schema found is configuration-shaped (no link/media/up-down field observed); <code>/system/status/ifstats</code> was found but not inspected. Insufficient evidence to classify.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_gateways</code></td>
+<td><code>ROUTING_GATEWAYS</code> (<code>/routing/gateways</code>)</td>
+<td>GET</td>
+<td><code>/system/gateways</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td><code>Gateways.gateways</code> structure not diffed field-by-field against <code>GatewayConfig</code>'s ~20 required fields.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_gateway_status</code></td>
+<td><code>STATUS_GATEWAYS</code> (<code>/status/gateways</code>)</td>
+<td>GET</td>
+<td><code>/system/gateways/status</code> (<code>operationId: GetGatewaysStatus</code>)</td>
+<td>GET</td>
+<td><strong>PARTIAL</strong> (downgraded from ADAPTABLE in Phase B)</td>
+<td>High</td>
+<td>See the dedicated field-by-field diff below. 4 of 9 required community fields have zero source in Nexus; the 3 that exist conceptually are type-mismatched strings, not floats. Phase 4's concrete adapter was stopped rather than fabricate values.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_rules</code></td>
+<td><code>FIREWALL_RULES</code> (<code>/firewall/rules</code>)</td>
+<td>GET</td>
+<td><code>/firewall/rules/interface</code>, <code>/firewall/rules/interface/{interface}</code></td>
+<td>GET</td>
+<td><strong>PARTIAL</strong></td>
+<td>High</td>
+<td>Structural mismatch: current tool returns one flat rule list; Nexus requires enumerating interfaces first, then one call per interface, then aggregating — a real multi-call transformation, not just field renaming.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_states</code></td>
+<td><code>FIREWALL_STATES</code> (<code>/firewall/states</code>)</td>
+<td>GET</td>
+<td><code>/diag/states</code></td>
+<td>GET (also DELETE — do not use)</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; response schema not inspected this pass.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_states_size</code></td>
+<td><code>FIREWALL_STATES_SIZE</code> (<code>/firewall/states/size</code>)</td>
+<td>GET</td>
+<td>none found</td>
+<td>—</td>
+<td>UNSUPPORTED</td>
+<td>High (positive search)</td>
+<td>No state-table size/count endpoint found anywhere in the 486-path schema.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_apply_status</code></td>
+<td><code>FIREWALL_APPLY_STATUS</code> (<code>/firewall/apply</code>)</td>
+<td>GET</td>
+<td><code>/system/config/dirty</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Real scope difference: Nexus's dirty-state check is system-wide across all "subsystems," not scoped to the firewall subsystem the way the current endpoint is.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_aliases</code></td>
+<td><code>FIREWALL_ALIASES</code> (<code>/firewall/aliases</code>)</td>
+<td>GET</td>
+<td><code>/aliases</code> (<code>operationId: FirewallGetAliases</code>)</td>
+<td>GET</td>
+<td><strong>PARTIAL</strong> (downgraded from ADAPTABLE in Phase C)</td>
+<td>High</td>
+<td>See the dedicated field-by-field diff below. <code>id</code> has zero source (same pattern as gateway_status); <code>descr</code>/<code>type</code> optional-in-Nexus vs. required-in-community; <code>address</code>/<code>detail</code> have real type/structural mismatches. No adapter implemented.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_service_status</code></td>
+<td><code>STATUS_SERVICES</code> (<code>/status/services</code>)</td>
+<td>GET</td>
+<td><code>/services/status</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; response schema not inspected this pass.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_system_version</code></td>
+<td><code>SYSTEM_VERSION</code> (<code>/system/version</code>)</td>
+<td>GET</td>
+<td>embedded in <code>/system/status</code> (<code>SystemStatus.rev</code>, <code>.osver</code>)</td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>No standalone version endpoint; version-like fields exist but are untyped strings nested in the broader status object, requiring extraction.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_nat_port_forwards</code></td>
+<td><code>FIREWALL_NAT_PORT_FORWARDS</code></td>
+<td>GET</td>
+<td><code>/firewall/nat/port-forward</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_nat_outbound_mode</code></td>
+<td><code>FIREWALL_NAT_OUTBOUND_MODE</code></td>
+<td>GET</td>
+<td><code>/firewall/nat/outbound</code></td>
+<td>GET (note: <code>/firewall/nat/outbound/mode</code> is <strong>POST-only</strong> in Nexus — a write/apply action, not a mode-read)</td>
+<td>ADAPTABLE</td>
+<td>Low</td>
+<td>The current tool reads a mode value; whether Nexus's GET on <code>/firewall/nat/outbound</code> includes a <code>mode</code> field was not confirmed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_users</code></td>
+<td><code>USERS</code> (<code>/users</code>)</td>
+<td>GET</td>
+<td><code>/system/users</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_system_certificates</code></td>
+<td><code>SYSTEM_CERTIFICATES</code></td>
+<td>GET</td>
+<td><code>/system/certificates</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Nexus has a notably richer certificate surface (export-cert/export-key/export-p12/renew as separate operations); base collection endpoint exists.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_user_groups</code></td>
+<td><code>USER_GROUPS</code> (<code>/user/groups</code>)</td>
+<td>GET</td>
+<td><code>/system/users/group</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dhcp_leases</code></td>
+<td><code>STATUS_DHCP_LEASES</code></td>
+<td>GET</td>
+<td><code>/services/dhcp/leases</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dhcp_static_mappings</code></td>
+<td><code>DHCP_SERVER_STATIC_MAPPINGS</code></td>
+<td>GET</td>
+<td><code>/services/dhcp-server/{version}/static-mappings/{iface}</code></td>
+<td>GET</td>
+<td><strong>PARTIAL</strong></td>
+<td>High</td>
+<td>Structural mismatch: requires iterating <code>{version}</code> (v4/v6) × <code>{iface}</code> and aggregating, vs. the current single flat list.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dhcp_servers</code></td>
+<td><code>DHCP_SERVERS</code></td>
+<td>GET</td>
+<td><code>/services/dhcp-server</code>, <code>/services/dhcp-server/{version}/interface</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; shape not diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_interface_bridges</code></td>
+<td><code>INTERFACE_BRIDGES</code></td>
+<td>GET</td>
+<td><code>/interfaces/bridge</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_carp_status</code></td>
+<td><code>STATUS_CARP</code> (<code>/status/carp</code>)</td>
+<td>GET</td>
+<td><code>/services/carp/status</code> (response schema <code>CARPStatus</code>)</td>
+<td>GET</td>
+<td><strong>ADAPTABLE — PASSED, adapter implemented</strong> (Phase D)</td>
+<td>High</td>
+<td>Both required fields (<code>enable</code>/<code>maintenance_mode</code>) map cleanly to Nexus's <code>enabled</code>/<code>maintenancemode_enabled</code> with high-confidence semantic equivalence, confirmed against Netgate's own generated client. Not runtime-wired — see the dedicated Phase D section above.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_system_restapi_settings</code></td>
+<td><code>SYSTEM_RESTAPI_SETTINGS</code></td>
+<td>GET</td>
+<td>none</td>
+<td>—</td>
+<td>UNSUPPORTED</td>
+<td>High</td>
+<td>This tool exposes settings for the community <code>pfSense-pkg-RESTAPI</code> package specifically. That package/concept does not exist under Nexus's own, separate auth/API model.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_system_hasync</code></td>
+<td><code>SYSTEM_HASYNC</code></td>
+<td>GET</td>
+<td>none found</td>
+<td>—</td>
+<td>UNSUPPORTED</td>
+<td>High (positive search)</td>
+<td>Searched for <code>pfsync</code>/<code>hasync</code>/<code>sync peer</code>/<code>failover</code> — no match. CARP <em>status</em> exists (<code>/services/carp/status</code>, <code>/services/carp/enabled</code>) but the HA-sync <em>configuration</em> (sync interface, sync peer IP) this tool exposes was not found. This is also the exact endpoint whose privilege (<code>api-v2-system-hasync-get</code>) is one of the 4 privileges the existing Tier1 scoped credential holds — see the security note below.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dns_resolver_host_overrides</code></td>
+<td><code>DNS_RESOLVER_HOST_OVERRIDES</code></td>
+<td>GET</td>
+<td><code>/services/dnsresolver</code> (likely a sub-field)</td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low</td>
+<td>No standalone host-overrides endpoint found; likely nested inside the general resolver-settings object — not confirmed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dns_resolver_settings</code></td>
+<td><code>DNS_RESOLVER_SETTINGS</code></td>
+<td>GET</td>
+<td><code>/services/dnsresolver</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_arp_table</code></td>
+<td><code>DIAGNOSTICS_ARP_TABLE</code></td>
+<td>GET</td>
+<td><code>/diag/arp</code></td>
+<td>GET (also DELETE — do not use)</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Clear name/purpose match; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_traffic_shaper_limiters</code></td>
+<td><code>FIREWALL_TRAFFIC_SHAPER_LIMITERS</code></td>
+<td>GET</td>
+<td><code>/firewall/traffic-shaper/limiter</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_advanced_settings</code></td>
+<td><code>FIREWALL_ADVANCED_SETTINGS</code></td>
+<td>GET</td>
+<td><code>/system/advanced/firewall</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_system_packages</code></td>
+<td><code>SYSTEM_PACKAGES</code></td>
+<td>GET</td>
+<td><code>/system/package/installed</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium-High</td>
+<td><code>Package</code> schema (<code>name</code>, <code>version</code>, <code>installed_version</code>, <code>available_version</code>, <code>update_available</code>, <code>dependencies</code>) overlaps well conceptually with the current <code>SystemPackage</code> model; not diffed field-by-field.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_system_tunables</code></td>
+<td><code>SYSTEM_TUNABLES</code></td>
+<td>GET</td>
+<td><code>/system/advanced/sysctl</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Good name/purpose match (pfSense "tunables" are sysctl values); not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_email_notification_settings</code></td>
+<td><code>SYSTEM_NOTIFICATIONS_EMAIL_SETTINGS</code></td>
+<td>GET</td>
+<td><code>/system/advanced/notifications</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td><code>AdvNotifications.notifications</code> contains <code>smtp*</code> fields but is a combined object also covering Pushover/Slack/Telegram/cert-expiry notification — requires extracting the SMTP-only subset.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_bind_settings</code></td>
+<td><code>BIND_SETTINGS</code></td>
+<td>GET</td>
+<td>none confirmed</td>
+<td>—</td>
+<td><strong>UNKNOWN</strong></td>
+<td>—</td>
+<td>The current model's fields (<code>bind_dnssec_validation</code>, <code>bind_forwarder</code>, <code>bind_forwarder_ips</code>, <code>bind_custom_options</code>) suggest literal BIND-DNS-server configuration. Nexus has <code>/services/dnsmasq</code> and <code>/services/coredns</code> (pfSense's actual built-in resolver/forwarder options) but no confirmed BIND-specific endpoint, and the dnsmasq/coredns schemas were not inspected to check for overlap. Not classified UNSUPPORTED because the search was not exhaustive enough to be a confident negative.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_ntp_settings</code></td>
+<td><code>NTP_SETTINGS</code></td>
+<td>GET</td>
+<td><code>/services/ntp</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td><code>ServicesNtpConfig.settings</code> has a clear overlapping field set (<code>enable</code>, <code>servers</code>, <code>ntpmaxpeers</code>, etc.).</td>
+</tr>
+<tr>
+<td><code>pfsense_get_ntp_time_servers</code></td>
+<td><code>NTP_TIME_SERVERS</code></td>
+<td>GET</td>
+<td>embedded in <code>/services/ntp</code> (<code>settings.servers</code>)</td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>No standalone endpoint; time servers are a field within the general NTP settings object, requiring extraction.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_ssh_settings</code></td>
+<td><code>SERVICES_SSH</code></td>
+<td>GET</td>
+<td>embedded in <code>/system/advanced/admin</code> (<code>SystemAdvAdmin</code>: <code>enablesshd</code>, <code>sshport</code>, <code>sshdkeyonly</code>, <code>sshdagentforwarding</code>)</td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>No standalone SSH endpoint; SSH config is a subset of the broader "admin access" settings object.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_cron_jobs</code></td>
+<td><code>CRON_JOBS</code></td>
+<td>GET</td>
+<td>none found</td>
+<td>—</td>
+<td>UNSUPPORTED</td>
+<td>High (positive search)</td>
+<td>No cron/scheduled-task endpoint found anywhere in the schema.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_acme_settings</code></td>
+<td><code>ACME_SETTINGS</code></td>
+<td>GET</td>
+<td><code>/services/acme</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Endpoint exists (also has richer per-account-key/per-cert sub-resources); base object not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_freeradius_eap</code></td>
+<td><code>FREERADIUS_EAP</code></td>
+<td>GET</td>
+<td><code>/ports/freeradius/eap</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Low-Medium</td>
+<td>Endpoint exists under the <code>/ports/</code> namespace (suggesting a package/plugin-dependent feature in Nexus too); not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_diagnostics_tables</code></td>
+<td><code>DIAGNOSTICS_TABLES</code></td>
+<td>GET</td>
+<td><code>/diag/tables</code>, <code>/diag/tables/{table_name}</code></td>
+<td>GET</td>
+<td>ADAPTABLE</td>
+<td>Medium</td>
+<td>Clear name/purpose match; not schema-diffed.</td>
+</tr>
+<tr>
+<td><code>pfsense_get_auth_keys</code></td>
+<td><code>AUTH_KEYS</code></td>
+<td>GET</td>
+<td>none</td>
+<td>—</td>
+<td>UNSUPPORTED</td>
+<td>High</td>
+<td>Fundamentally different auth model: Nexus authenticates via <code>POST /login</code> → JWT access + refresh token (username/password + optional 2FA), not per-user long-lived API keys. There is no concept in this schema equivalent to "list a user's API keys."</td>
+</tr>
+<tr>
+<td><code>pfsense_mcp_info</code></td>
+<td>n/a (local process introspection)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><strong>LOCAL</strong></td>
+<td>—</td>
+<td>No upstream call of any kind; unaffected by backend choice.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="notable-cross-cutting-findings-apply-to-many-rows-above">Notable cross-cutting findings (apply to many rows above)<a class="headerlink" href="#notable-cross-cutting-findings-apply-to-many-rows-above" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Identifier-shape mismatch.</strong> The current domain models and the Tier1
+   execution-target layer (<code>tier1/transport_target.py::ResolvedTransportTarget.numeric_locator: int</code>)
+   assume pfSense-REST-API-style integer indices. Every Nexus identifier
+   inspected this pass is either a string name (<code>GatewayStatus</code> has no
+   <code>id</code>, only <code>name</code>/<code>gateway</code>), a <code>device_id</code> string (MIM device registry),
+   or a <code>refid</code> string (certificates) — no confirmed integer-index
+   identifier scheme anywhere in the Nexus schema. This is a real
+   architectural incompatibility for the WRITE side, not just a READ
+   nuance — see Phase 4/ADR.</li>
+<li><strong>No pagination.</strong> Three representative large-collection endpoints
+   (<code>/services/dhcp/leases</code>, <code>/system/users</code>, <code>/firewall/rules/interface/{interface}</code>)
+   have zero pagination parameters. Collections appear to be returned in
+   full.</li>
+<li><strong>Two-value HTTP status model.</strong> All 755 operations in the schema use
+   only <code>200</code> and <code>400</code> as documented response codes — no distinct
+   401/403/404/500. Error classification (auth failure vs. not-found vs.
+   validation) would have to come from the JSON body's <code>Error.errcode</code>/
+   <code>errlevel</code> fields, not the HTTP status code the current <code>RestApiClient</code>
+   relies on (<code>errors.py</code> maps 401/403 → <code>PfSenseAuthError</code> by status code
+   today).</li>
+<li><strong>JWT/session auth, not a static API key.</strong> <code>POST /login</code> with
+   base64-encoded username/password (+ optional <code>secondfactor</code>) returns a
+   JWT access token plus a refresh-token cookie, refreshable via
+   <code>POST /login/refresh</code>. This does not map onto the current
+   <code>PFSENSE_API_KEY_FILE</code> / static-credential model at all — a Nexus
+   backend would need its own credential lifecycle (login + periodic
+   refresh), not a drop-in swap of the API key file.</li>
+</ol>
+<h2 id="phase-b-pfsense_get_gateway_status-field-by-field-diff">Phase B: <code>pfsense_get_gateway_status</code> field-by-field diff<a class="headerlink" href="#phase-b-pfsense_get_gateway_status-field-by-field-diff" title="Permanent link">&para;</a></h2>
+<p>Current implementation traced end-to-end: <code>tools/read/gateway_status.py</code>
+→ <code>PfSenseClient.get_gateway_status()</code> → <code>RestApiClient.get(Endpoints.STATUS_GATEWAYS)</code>
+(<code>GET /api/v2/status/gateways</code>) → <code>_parse_list_response()</code> (requires a
+top-level <code>"data"</code> list key; any missing/malformed entry raises
+<code>PfSenseResponseShapeError</code>, fail-closed) → <code>GatewayStatus.from_api()</code>,
+which reads <code>data["id"]</code>, <code>data["name"]</code>, <code>data["delay"]</code>, <code>data["stddev"]</code>,
+<code>data["loss"]</code>, <code>data["status"]</code>, <code>data["substatus"]</code>, <code>data["srcip"]</code>,
+<code>data["monitorip"]</code> — <strong>all nine as required dict keys, no <code>.get()</code>
+defaults</strong> (<code>srcip</code>/<code>monitorip</code> are read unconditionally even when
+<code>include_identifying_metadata=False</code>; they're just nulled out afterward,
+not skipped). Any missing key raises <code>KeyError</code>, wrapped into
+<code>PfSenseResponseShapeError</code> by <code>_parse_list_response()</code>'s <code>except</code> clause.</p>
+<p>Nexus side: <code>GET /system/gateways/status</code> (<code>operationId: GetGatewaysStatus</code>)
+→ <code>GatewaysStatus.gateways: list[GatewayStatus]</code>. The Nexus <code>GatewayStatus</code>
+schema's own <code>required: [name, gateway]</code> — <strong>only two of ten properties are
+required; everything else, including <code>delay</code>/<code>stddev</code>/<code>loss</code>/<code>status</code>, is
+optional.</strong></p>
+<table>
+<thead>
+<tr>
+<th>community field</th>
+<th>required?</th>
+<th>Nexus field</th>
+<th>Nexus type</th>
+<th>Nexus required?</th>
+<th>equivalence</th>
+<th>transformation needed</th>
+<th>confidence</th>
+<th>known difference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id: int</code></td>
+<td>required key, no default</td>
+<td><em>(none)</em></td>
+<td>—</td>
+<td>—</td>
+<td><strong>NONE</strong></td>
+<td>impossible without fabrication</td>
+<td>—</td>
+<td>No integer identifier anywhere in <code>GatewayStatus</code>, <code>GatewaysStatus</code>, or the adjacent <code>GroupStatus</code> schema (also checked — gateway <em>groups</em>/tiers, not per-gateway IDs).</td>
+</tr>
+<tr>
+<td><code>name: str \| None</code></td>
+<td>required key (nullable value)</td>
+<td><code>name</code></td>
+<td>string</td>
+<td><strong>required</strong></td>
+<td>Direct</td>
+<td>passthrough</td>
+<td>High</td>
+<td>Clean match.</td>
+</tr>
+<tr>
+<td><code>delay: float</code></td>
+<td>required key, no default</td>
+<td><code>delay</code></td>
+<td><strong>string</strong></td>
+<td>optional</td>
+<td>Partial</td>
+<td>strip units/parse; format undocumented</td>
+<td>Low</td>
+<td>Type mismatch (string vs. required float); unclear what a down/unmonitored gateway reports (may be absent entirely, since the field is optional).</td>
+</tr>
+<tr>
+<td><code>stddev: float</code></td>
+<td>required key, no default</td>
+<td><code>stddev</code></td>
+<td><strong>string</strong></td>
+<td>optional</td>
+<td>Partial</td>
+<td>same as <code>delay</code></td>
+<td>Low</td>
+<td>Same issue.</td>
+</tr>
+<tr>
+<td><code>loss: float</code></td>
+<td>required key, no default</td>
+<td><code>loss</code></td>
+<td><strong>string</strong></td>
+<td>optional</td>
+<td>Partial</td>
+<td>same as <code>delay</code>, likely <code>"N%"</code>-formatted</td>
+<td>Low</td>
+<td>Same issue.</td>
+</tr>
+<tr>
+<td><code>status: str \| None</code></td>
+<td>required key (nullable value)</td>
+<td><code>status</code></td>
+<td>string</td>
+<td>optional</td>
+<td>Partial</td>
+<td>passthrough if present</td>
+<td>Medium</td>
+<td>Optional in Nexus vs. a required (if nullable) key in the community model; no enum values documented on either side to confirm value-set compatibility.</td>
+</tr>
+<tr>
+<td><code>substatus: str \| None</code></td>
+<td>required key (nullable value)</td>
+<td><em>(none)</em></td>
+<td>—</td>
+<td>—</td>
+<td><strong>NONE</strong></td>
+<td>impossible without fabrication</td>
+<td>—</td>
+<td>No <code>substatus</code> concept anywhere in the schema.</td>
+</tr>
+<tr>
+<td><code>srcip: str \| None</code> (identifying)</td>
+<td>required key even when unused</td>
+<td><em>(none confirmed)</em></td>
+<td>—</td>
+<td>—</td>
+<td><strong>NONE</strong></td>
+<td>impossible without fabrication</td>
+<td>—</td>
+<td>No field observed corresponding to "the source IP used for monitoring."</td>
+</tr>
+<tr>
+<td><code>monitorip: str \| None</code> (identifying)</td>
+<td>required key even when unused</td>
+<td><code>monitor</code>?</td>
+<td>string</td>
+<td>optional</td>
+<td>Unconfirmed</td>
+<td>passthrough <em>if</em> <code>monitor</code> is confirmed to be the monitored target IP</td>
+<td>Low</td>
+<td><code>monitor</code> exists and is plausibly the same concept, but this was not confirmed against a real response — could equally be a monitor <em>method</em> or <em>interface</em> name.</td>
+</tr>
+<tr>
+<td><em>(none)</em></td>
+<td>—</td>
+<td><code>gateway</code></td>
+<td>string</td>
+<td>required</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Nexus-only field, likely the gateway's own IP/interface identifier — a better identity candidate than the missing <code>id</code>, but not what the current model expects.</td>
+</tr>
+<tr>
+<td><em>(none)</em></td>
+<td>—</td>
+<td><code>defaultgw</code></td>
+<td>boolean</td>
+<td>optional</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Nexus-only; no direct community <code>GatewayStatus</code> counterpart (default-gateway-ness lives elsewhere in the community model).</td>
+</tr>
+<tr>
+<td><em>(none)</em></td>
+<td>—</td>
+<td><code>descr</code>, <code>display</code></td>
+<td>string</td>
+<td>optional</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>Nexus-only, no community counterpart needed.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion: 4 of 9 required community fields (<code>id</code>, <code>substatus</code>,
+<code>srcip</code>, <code>monitorip</code>) have zero confirmed source in the Nexus response,
+full stop — not "different format," not present at all.</strong> The 3 fields
+that do exist conceptually (<code>delay</code>/<code>stddev</code>/<code>loss</code>) require undocumented
+string parsing and are themselves optional on the Nexus side, unlike the
+community model's required floats. Only <code>name</code> is a clean, confident
+match. <strong>A faithful, non-fabricating implementation of the current
+<code>GatewayStatus</code> model against this Nexus endpoint is not achievable as
+written.</strong> <code>pfsense_get_gateway_status</code> is downgraded PARTIAL, and the
+Phase 4 concrete adapter was stopped rather than invent values for the
+missing fields — see <code>tests/backends/test_nexus_gateway_status_infeasibility.py</code>,
+which encodes this finding as a permanent regression guard.</p>
+<h2 id="classification-legend-used-from-phase-b-onward">Classification legend used from Phase B onward<a class="headerlink" href="#classification-legend-used-from-phase-b-onward" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>SCHEMA-MAPPED</strong> — a candidate Nexus endpoint/schema was identified and
+  compared field-by-field against the current domain model.</li>
+<li><strong>OFFLINE-TESTED</strong> — a concrete adapter exists and has offline
+  fixture/adversarial test coverage, but has never made a real network
+  call.</li>
+<li><strong>LIVE-READ-VERIFIED</strong> — a concrete adapter's output was compared
+  against a real Nexus Controller/device. <em>(Not attempted for any row —
+  no Nexus Controller/device/credential available in any phase so far;
+  the relevant live-validation phase was skipped each time per its own
+  stated conditions.)</em></li>
+</ul>
+<p><code>pfsense_get_gateway_status</code> and <code>pfsense_get_firewall_aliases</code> both
+reached <strong>SCHEMA-MAPPED</strong> only (no adapter implemented — see their
+respective diff sections for why).</p>
+<p><code>pfsense_get_carp_status</code> reached <strong>OFFLINE-TESTED</strong> (Phase D, deepened
+Phase F): <code>NexusCarpStatusReader</code> exists with 16 adversarial tests
+(Phase D), and as of Phase F a real <code>NexusSession</code>/<code>NexusTransport</code>
+also exist (<code>docs/adr/ADR-032-nexus-read-transport-architecture.md</code>'s
+"Phase F implementation notes"), with 97 further tests (session,
+transport, routing, and a 5-test CARP integration seam proving the
+full login → device-scoped GET → normalization chain) — all offline,
+<code>respx</code>-mocked, zero real network calls. <strong>Still not LIVE-READ-VERIFIED</strong>:
+no live Nexus Controller/device/credential is available in this
+environment (unchanged since Phase A), and this code is still not
+wired into <code>factory.py</code>/<code>tools/registry.py</code>/<code>application.py</code> in any
+way — that remains a deliberate, unauthorized-this-phase step for a
+future Phase G.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -445,6 +445,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -584,6 +588,62 @@
     
   
     Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
   
 
     
@@ -883,7 +943,7 @@
   <span class="md-ellipsis">
     
   
-    Official guidance layer (inert scaffolding, ADR-017)
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
   
 
     
@@ -911,7 +971,7 @@
   <span class="md-ellipsis">
     
   
-    Version-aware Official Guidance (design only, ADR-018)
+    Version-aware Official Guidance (implemented, ADR-018)
   
 
     
@@ -1269,6 +1329,111 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#doctorpreflight-slice-implemented-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Doctor/preflight slice — implemented (2026-08-17)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Doctor/preflight slice — implemented (2026-08-17)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-doctor-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What doctor checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-doctor-deliberately-does-not-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What doctor deliberately does not check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exit codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operator-remediation-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator remediation guidance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-guarantees_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-doctorpreflight-slice-deliberately-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the doctor/preflight slice deliberately does not do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#open-design-questions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1342,6 +1507,8 @@
   
     
     
+      
+        
       
         
       
@@ -1487,6 +1654,34 @@
     
   
     Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
   
 
     
@@ -1741,6 +1936,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1749,7 +1952,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1771,14 +1974,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2602,6 +2805,118 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2651,10 +2966,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
         
           
-          <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
             
   
   
@@ -2672,8 +2987,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_12">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3357,6 +3672,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -3649,6 +3974,146 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3920,6 +4385,111 @@
     <span class="md-ellipsis">
       
         What the planning slice deliberately does not do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctorpreflight-slice-implemented-2026-08-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Doctor/preflight slice — implemented (2026-08-17)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Doctor/preflight slice — implemented (2026-08-17)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-doctor-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What doctor checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-doctor-deliberately-does-not-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What doctor deliberately does not check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exit codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operator-remediation-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator remediation guidance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-only-guarantees_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-doctorpreflight-slice-deliberately-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the doctor/preflight slice deliberately does not do
       
     </span>
   </a>
@@ -4672,6 +5242,158 @@ rather than reinventing it.</p>
 <li>No repair/reconciliation of a detected mismatch or indeterminate
   current state — both are reported as blocking findings, never acted
   on.</li>
+</ul>
+<h2 id="doctorpreflight-slice-implemented-2026-08-17">Doctor/preflight slice — implemented (2026-08-17)<a class="headerlink" href="#doctorpreflight-slice-implemented-2026-08-17" title="Permanent link">&para;</a></h2>
+<p>A third <code>pfsense-mcp-security</code> subcommand, <code>doctor</code>, layered on top of
+<code>discover_anchor_assurance()</code> (Phase B's own witness-readiness
+evidence, reused completely unchanged) plus new, narrowly-scoped
+filesystem checks over the four fixed Tier 1 artifact-exchange paths
+<code>tier1/production_runtime.py</code> defines. Answers one question directly:
+<strong>can an operator safely begin a new Tier 1 signing ceremony right
+now?</strong> Two real incidents motivated it (see <code>docs/ROADMAP.md</code>'s
+"Ceremony TTL/operator UX" section): a pre-positioned stale
+<code>confirmation-signed.bin</code> left over from a completed ceremony, and a
+signer whose local witness-store snapshot had gone stale, reporting
+<code>provisioned_mismatch</code>. Both are exactly what <code>doctor</code> now catches
+before an operator spends a ceremony's own limited validity window
+finding out the hard way.</p>
+<h3 id="what-doctor-checks">What <code>doctor</code> checks<a class="headerlink" href="#what-doctor-checks" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Artifact-exchange path cleanliness</strong> (4 checks, one per fixed
+   path): the signed-authorization inbox, the pending-confirmation
+   outbox, the signed-confirmation inbox, and the (W3 Slice 5A)
+   authorization-preview outbox must each be <strong>absent</strong> before a fresh
+   ceremony begins — a leftover file at any of these paths silently
+   blocks the next ceremony's own write, because artifact writes use
+   <code>write_secure_new()</code>'s exclusive-create discipline and never
+   overwrite. For each configured path, <code>doctor</code> verifies: the env var
+   is set; the configured value is an absolute path; the containing
+   directory exists and is writable; and no file (including a broken
+   symlink) already exists at the exact path.</li>
+<li><strong>Witness readiness</strong> (1 check): reuses
+   <code>security_discovery.discover_anchor_assurance()</code> verbatim — no
+   second witness client, no new TPM/network code. A ceremony is
+   witness-ready only when the resulting <code>evidence_state</code> is exactly
+   <code>provisioned_verified</code>; every other state (including
+   <code>provisioned_mismatch</code>, the same anomaly <code>discover</code> itself already
+   flags) is reported as not ready.</li>
+</ol>
+<h3 id="what-doctor-deliberately-does-not-check">What <code>doctor</code> deliberately does not check<a class="headerlink" href="#what-doctor-deliberately-does-not-check" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The full <code>build_production_runtime()</code> prerequisite set — store
+  configuration, encryption/authority key files, the consumption
+  store, and so on. A <code>doctor</code> result of <code>READY</code> means "the
+  artifact-exchange paths are clean and the witness is currently
+  verified," not "every precondition <code>build_production_runtime()</code>
+  itself checks is satisfied."</li>
+<li>Whether the operator has a valid, unexpired authorization/
+  confirmation artifact in hand — that is the ceremony's own concern,
+  not a preflight question.</li>
+<li>Anything about pfSense itself (connectivity, credentials, the target
+  alias's current state) — <code>doctor</code> never constructs a <code>PfSenseClient</code>
+  or makes a network call to pfSense.</li>
+</ul>
+<h3 id="usage_2">Usage<a class="headerlink" href="#usage_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>$ pfsense-mcp-security doctor
+pfsense-mcp-security: Tier 1 ceremony readiness check (read-only, diagnostic only)
+
+Overall: NOT READY
+
+  [OK] Signed PlanAuthorizationV2 inbox (artifact_exchange.authorization_inbox)
+        /var/lib/pfsense-mcp/exchange/authorization-signed.bin is absent, as expected before a new ceremony.
+  [OK] Unsigned PendingConfirmationRequest outbox (artifact_exchange.confirmation_pending)
+        /var/lib/pfsense-mcp/exchange/confirmation-pending.bin is absent, as expected before a new ceremony.
+  [FAIL] Signed ConfirmationEvidence inbox (artifact_exchange.confirmation_signed)
+        A file already exists at /var/lib/pfsense-mcp/exchange/confirmation-signed.bin -- likely left over
+        from a previous ceremony. Archive or remove it by hand before starting a new one; doctor never does
+        this automatically.
+  [OK] Non-authorizing AuthorizationPreview outbox (artifact_exchange.authorization_preview)
+        /var/lib/pfsense-mcp/exchange/authorization-preview.bin is absent, as expected before a new ceremony.
+  [OK] TPM anti-rollback witness readiness (witness_readiness)
+        Witness verified and matches the persisted baseline (value=4).
+
+Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state was changed.
+</code></pre></div>
+<p><code>pfsense-mcp-security doctor --json</code> emits the same information as
+deterministic, sorted-key JSON for automation, with each check's
+<code>status</code> one of <code>pass</code>/<code>fail</code>/<code>not_configured</code> (deliberately three-way,
+not a bool — "you haven't configured this yet" and "you configured it
+and it's currently broken" call for different operator action, even
+though both make the overall result <code>NOT READY</code>).</p>
+<h3 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h3>
+<p>Deliberately different from <code>discover</code>/<code>plan</code>, which exit <code>0</code> even when
+"entirely unconfigured" — <code>doctor</code>'s whole purpose is a binary
+readiness gate for automation, so an unconfigured host is genuinely
+<code>NOT READY</code>, not a clean report of nothing-to-do.</p>
+<ul>
+<li><code>0</code> — every check passed (<code>READY</code>).</li>
+<li><code>1</code> — one or more checks failed or are not configured (<code>NOT READY</code>).</li>
+<li><code>2</code> — usage error (argparse's own existing convention, unchanged).</li>
+</ul>
+<h3 id="operator-remediation-guidance">Operator remediation guidance<a class="headerlink" href="#operator-remediation-guidance" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A <code>FAIL</code> on an artifact-path check names the exact file. Confirm the
+  prior ceremony genuinely completed (or was abandoned) before moving
+  it aside by hand — <code>doctor</code> never does this for you, on purpose.</li>
+<li>A <code>FAIL</code> on the witness-readiness check with <code>evidence_state=
+  provisioned_mismatch</code> is the same security-relevant anomaly
+  <code>discover</code> already surfaces — investigate before proceeding; do not
+  attempt a ceremony against a witness whose live value disagrees with
+  the persisted baseline.</li>
+<li>A <code>FAIL</code> with any other <code>evidence_state</code> (<code>configuration_invalid</code>,
+  <code>store_error</code>, <code>configured_unprovisioned</code>, <code>provisioned_unverified</code>,
+  <code>provisioned_unreachable</code>) means the witness could not be positively
+  confirmed current — run <code>pfsense-mcp-security discover</code> for the full
+  diagnostic detail behind the summary.</li>
+</ul>
+<h3 id="read-only-guarantees_2">Read-only guarantees<a class="headerlink" href="#read-only-guarantees_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Never imports <code>pfsense_mcp.tier1</code> in any form — proven structurally
+  by <code>tests/test_security_doctor_isolation.py</code>, mirroring
+  <code>tests/test_security_discovery_isolation.py</code>'s own approach. Unlike
+  <code>security_discovery.py</code>, this module is not a tier1-isolation
+  exemption at all; it has no need to be.</li>
+<li>The four fixed artifact-exchange env var names are a deliberate,
+  comment-linked <em>duplication</em> of <code>production_runtime.py</code>'s own
+  constants, never an import — <code>tests/test_security_doctor.py::
+  test_artifact_path_env_var_names_match_production_runtime</code> fails
+  loudly if the two ever drift apart.</li>
+<li>Never deletes, moves, archives, or overwrites a file — every
+  artifact-path check only reads filesystem metadata
+  (<code>Path.exists()</code>/<code>Path.is_dir()</code>/<code>os.access()</code>), proven by dedicated
+  tests that plant a stale artifact, run <code>doctor</code>, and assert the file
+  is byte-for-byte unchanged afterward.</li>
+<li>Never mutates witness or store state — delegates entirely to
+  <code>discover_anchor_assurance()</code>, itself already proven never to call
+  <code>advance()</code> or any provisioning primitive; a dedicated test's fake
+  witness anchor raises if <code>advance()</code> is ever called, proof rather
+  than mere omission.</li>
+<li>No secrets, private keys, tokens, or artifact contents appear in any
+  check's <code>detail</code> text — only file paths (operationally necessary for
+  "archive/remove this file") and the same non-sensitive witness
+  counter value <code>discover</code> already prints.</li>
+</ul>
+<h3 id="files_2">Files<a class="headerlink" href="#files_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>src/pfsense_mcp/security_doctor.py</code> (new) — the readiness-check data
+  model and logic: the four artifact-path checks, the witness-readiness
+  check, the combined <code>DoctorResult</code>. No <code>pfsense_mcp.tier1</code> import.</li>
+<li><code>src/pfsense_mcp/security_cli.py</code> (modified) — new <code>doctor</code> subcommand:
+  argument parsing, human/<code>--json</code> formatting, exit-code handling.</li>
+<li><code>tests/test_security_doctor.py</code>, <code>tests/test_security_doctor_isolation.py</code>
+  (new); <code>tests/test_security_cli.py</code> (modified, <code>doctor</code>-subcommand
+  coverage added).</li>
+</ul>
+<h3 id="what-the-doctorpreflight-slice-deliberately-does-not-do">What the doctor/preflight slice deliberately does not do<a class="headerlink" href="#what-the-doctorpreflight-slice-deliberately-does-not-do" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No automatic cleanup of a stale artifact, ever — <code>doctor</code> diagnoses,
+  an operator (or a future, separately-authorized command) decides
+  what to do about it.</li>
+<li>No witness/store repair or reconciliation of any kind.</li>
+<li>Does not check the full <code>build_production_runtime()</code> prerequisite
+  set (see "What <code>doctor</code> deliberately does not check" above) — a
+  possible, separately-scoped future extension, not attempted here.</li>
+<li>No <code>--fix</code>/<code>--clean</code>/<code>--repair</code> flag of any kind on this subcommand.</li>
 </ul>
 <h2 id="open-design-questions">Open design questions<a class="headerlink" href="#open-design-questions" title="Permanent link">&para;</a></h2>
 <p><strong>All six of <code>ADR-021</code>'s original open questions are resolved</strong> — see

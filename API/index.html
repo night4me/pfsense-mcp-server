@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/API/">
       
       
-        <link rel="prev" href="../WRITE_ENDPOINT_RISK_MATRIX/">
+        <link rel="prev" href="../ADR033_PHASE_D_LAB_RUNBOOK/">
       
       
         <link rel="next" href="../API_REVIEW/">
@@ -445,6 +445,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -584,6 +588,62 @@
     
   
     Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
   
 
     
@@ -810,10 +870,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_system_package_available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_package_available
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_system_tunables" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_system_tunables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_certificate_authorities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_certificate_authorities
       
     </span>
   </a>
@@ -832,10 +914,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_system_crls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_crls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_restapi_access_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_restapi_access_list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_system_restapi_settings" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_system_restapi_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_restapi_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_restapi_version
       
     </span>
   </a>
@@ -858,6 +973,61 @@
     <span class="md-ellipsis">
       
         pfsense_get_carp_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_hostname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_timezone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_timezone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_dns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_dns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_console
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_webgui_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_webgui_settings
       
     </span>
   </a>
@@ -915,6 +1085,61 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_interface_vlans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_vlans
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_available_interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_available_interfaces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_gres" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_gres
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_laggs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_laggs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_gateways" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -937,10 +1162,65 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_routing_gateway_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_gateway_groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_routing_gateway_default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_gateway_default
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_arp_table" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_arp_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_routing_static_routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_static_routes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_routing_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_apply_status
       
     </span>
   </a>
@@ -1042,6 +1322,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_nat_outbound_mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_nat_outbound_mappings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_nat_one_to_one_mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_nat_one_to_one_mappings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_firewall_traffic_shaper_limiters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1053,10 +1355,247 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_traffic_shapers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_traffic_shapers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_schedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_schedules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_firewall_advanced_settings" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_firewall_advanced_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_virtual_ips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_virtual_ips
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_virtual_ip_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_virtual_ip_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vpn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VPN
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VPN">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_ipsec_sas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_ipsec_sas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_ipsec_child_sas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_ipsec_child_sas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_ipsec_phase2s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_ipsec_phase2s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_ipsec_phase1_encryptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_ipsec_phase1_encryptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_ipsec_phase2_encryptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_ipsec_phase2_encryptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_wireguard_tunnels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_wireguard_tunnels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_wireguard_peers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_wireguard_peers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_servers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_clients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_server_connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_server_connections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_server_routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_server_routes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_openvpn_servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_openvpn_servers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_openvpn_csos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_openvpn_csos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_ipsec_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_ipsec_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_wireguard_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_wireguard_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_wireguard_tunnel_addresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_wireguard_tunnel_addresses
       
     </span>
   </a>
@@ -1164,10 +1703,76 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_server_address_pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_server_address_pools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_server_custom_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_server_custom_options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_relay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_relay
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_dns_resolver_host_overrides" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_dns_resolver_host_overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_resolver_domain_overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_resolver_domain_overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_resolver_access_lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_resolver_access_lists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_forwarder_host_overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_forwarder_host_overrides
       
     </span>
   </a>
@@ -1190,6 +1795,39 @@
     <span class="md-ellipsis">
       
         pfsense_get_bind_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_server_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_server_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_forwarder_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_forwarder_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_resolver_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_resolver_apply_status
       
     </span>
   </a>
@@ -1323,6 +1961,28 @@
     <span class="md-ellipsis">
       
         pfsense_get_diagnostics_tables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_diagnostics_config_history_revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_diagnostics_config_history_revisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_logs_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_logs_settings
       
     </span>
   </a>
@@ -1550,7 +2210,7 @@
   <span class="md-ellipsis">
     
   
-    Official guidance layer (inert scaffolding, ADR-017)
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
   
 
     
@@ -1578,7 +2238,7 @@
   <span class="md-ellipsis">
     
   
-    Version-aware Official Guidance (design only, ADR-018)
+    Version-aware Official Guidance (implemented, ADR-018)
   
 
     
@@ -1691,6 +2351,8 @@
   
     
     
+      
+        
       
         
       
@@ -1836,6 +2498,34 @@
     
   
     Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
   
 
     
@@ -2090,6 +2780,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -2098,7 +2796,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -2120,14 +2818,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2951,6 +3649,118 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3000,10 +3810,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
         
           
-          <label class="md-nav__link" for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
             
   
   
@@ -3021,8 +3831,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_12">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3706,6 +4516,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -3998,6 +4818,146 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4088,10 +5048,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_system_package_available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_package_available
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_system_tunables" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_system_tunables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_certificate_authorities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_certificate_authorities
       
     </span>
   </a>
@@ -4110,10 +5092,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_system_crls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_crls
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_restapi_access_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_restapi_access_list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_system_restapi_settings" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_system_restapi_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_restapi_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_restapi_version
       
     </span>
   </a>
@@ -4136,6 +5151,61 @@
     <span class="md-ellipsis">
       
         pfsense_get_carp_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_hostname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_timezone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_timezone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_dns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_dns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_console
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_system_webgui_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_system_webgui_settings
       
     </span>
   </a>
@@ -4193,6 +5263,61 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_interface_vlans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_vlans
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_available_interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_available_interfaces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_gres" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_gres
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_laggs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_laggs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_gateways" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4215,10 +5340,65 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_routing_gateway_groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_gateway_groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_routing_gateway_default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_gateway_default
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_arp_table" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_arp_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_routing_static_routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_static_routes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_interface_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_interface_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_routing_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_routing_apply_status
       
     </span>
   </a>
@@ -4320,6 +5500,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_nat_outbound_mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_nat_outbound_mappings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_nat_one_to_one_mappings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_nat_one_to_one_mappings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_firewall_traffic_shaper_limiters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4331,10 +5533,247 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_traffic_shapers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_traffic_shapers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_schedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_schedules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_firewall_advanced_settings" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_firewall_advanced_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_virtual_ips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_virtual_ips
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_firewall_virtual_ip_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_firewall_virtual_ip_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vpn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VPN
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VPN">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_ipsec_sas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_ipsec_sas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_ipsec_child_sas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_ipsec_child_sas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_ipsec_phase2s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_ipsec_phase2s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_ipsec_phase1_encryptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_ipsec_phase1_encryptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_ipsec_phase2_encryptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_ipsec_phase2_encryptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_wireguard_tunnels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_wireguard_tunnels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_wireguard_peers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_wireguard_peers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_servers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_clients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_server_connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_server_connections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_openvpn_server_routes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_openvpn_server_routes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_openvpn_servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_openvpn_servers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_openvpn_csos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_openvpn_csos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_ipsec_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_ipsec_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_wireguard_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_wireguard_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_wireguard_tunnel_addresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_wireguard_tunnel_addresses
       
     </span>
   </a>
@@ -4442,10 +5881,76 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_server_address_pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_server_address_pools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_server_custom_options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_server_custom_options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_relay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_relay
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pfsense_get_dns_resolver_host_overrides" class="md-nav__link">
     <span class="md-ellipsis">
       
         pfsense_get_dns_resolver_host_overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_resolver_domain_overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_resolver_domain_overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_resolver_access_lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_resolver_access_lists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_forwarder_host_overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_forwarder_host_overrides
       
     </span>
   </a>
@@ -4468,6 +5973,39 @@
     <span class="md-ellipsis">
       
         pfsense_get_bind_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dhcp_server_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dhcp_server_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_forwarder_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_forwarder_apply_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_dns_resolver_apply_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_dns_resolver_apply_status
       
     </span>
   </a>
@@ -4607,6 +6145,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pfsense_get_diagnostics_config_history_revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_diagnostics_config_history_revisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pfsense_get_status_logs_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_status_logs_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4679,7 +6239,7 @@
 <h1 id="mcp-tool-reference">MCP tool reference<a class="headerlink" href="#mcp-tool-reference" title="Permanent link">&para;</a></h1>
 <p>Version: 0.4.0 release state
 Profile: <code>auditor</code><br />
-Registered tools: 42 READ, 0 WRITE</p>
+Registered tools: 95 READ, 1 guidance, 0 WRITE</p>
 <p>The normalized public contract is checked into
 <code>tests/contracts/mcp_public_contract_v0.4.0.json</code>. It records tool names,
 descriptions, input/output schemas, annotations, capability ownership, client
@@ -4749,6 +6309,15 @@ security behavior.</p>
   surface; results are bounded but not redacted.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_system_packages","arguments":{"limit":20}}</code></li>
 </ul>
+<h3 id="pfsense_get_system_package_available"><code>pfsense_get_system_package_available</code><a class="headerlink" href="#pfsense_get_system_package_available" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List packages available for installation: name, version,
+  description, and installed status.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[AvailablePackage]</code>.</li>
+<li><strong>Security:</strong> Package catalog metadata only; not redacted.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_package_available","arguments":{"limit":20}}</code></li>
+</ul>
 <h3 id="pfsense_get_system_tunables"><code>pfsense_get_system_tunables</code><a class="headerlink" href="#pfsense_get_system_tunables" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Purpose:</strong> List FreeBSD system tunables with descriptions and current
@@ -4758,6 +6327,18 @@ security behavior.</p>
 <li><strong>Security:</strong> Tunables can reveal hardening and network-stack configuration;
   no credential value is returned.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_system_tunables","arguments":{"limit":25}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_certificate_authorities"><code>pfsense_get_system_certificate_authorities</code><a class="headerlink" href="#pfsense_get_system_certificate_authorities" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List trusted Certificate Authorities: description,
+  trust/serial settings, and the CA certificate itself.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[SystemCertificateAuthority]</code>.</li>
+<li><strong>Security:</strong> Public CA certificates are not secrets but can identify
+  internal PKI. The CA private key (<code>prv</code>) is never returned -- it is not
+  modeled at all, mirroring <code>pfsense_get_system_certificates</code>'s own
+  treatment of the same distinction.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_certificate_authorities","arguments":{"limit":10}}</code></li>
 </ul>
 <h3 id="pfsense_get_system_certificates"><code>pfsense_get_system_certificates</code><a class="headerlink" href="#pfsense_get_system_certificates" title="Permanent link">&para;</a></h3>
 <ul>
@@ -4770,6 +6351,27 @@ security behavior.</p>
   returned.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_system_certificates","arguments":{"limit":10}}</code></li>
 </ul>
+<h3 id="pfsense_get_system_crls"><code>pfsense_get_system_crls</code><a class="headerlink" href="#pfsense_get_system_crls" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List Certificate Revocation Lists (CRLs).</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[CertificateRevocationList]</code>.</li>
+<li><strong>Security:</strong> CRLs are inherently public documents by design. No
+  <code>prv</code>-equivalent field exists on this component; the nested revoked-
+  certificate entries never include the revoked certificate's private
+  key (<code>prv</code>, marked <code>writeOnly</code> in the upstream schema and never
+  modeled at all).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_crls","arguments":{"limit":10}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_restapi_access_list"><code>pfsense_get_system_restapi_access_list</code><a class="headerlink" href="#pfsense_get_system_restapi_access_list" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List the REST API's own IP allow/deny access list entries.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[RESTAPIAccessListEntry]</code>.</li>
+<li><strong>Security:</strong> Literal network CIDRs are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_restapi_access_list","arguments":{"limit":10}}</code></li>
+</ul>
 <h3 id="pfsense_get_system_restapi_settings"><code>pfsense_get_system_restapi_settings</code><a class="headerlink" href="#pfsense_get_system_restapi_settings" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Purpose:</strong> Return pfSense REST API service state, transport/security
@@ -4779,6 +6381,16 @@ security behavior.</p>
 <li><strong>Security:</strong> HA synchronization host metadata is optional and omitted by
   default. HA passwords are excluded unconditionally.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_system_restapi_settings","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_restapi_version"><code>pfsense_get_system_restapi_version</code><a class="headerlink" href="#pfsense_get_system_restapi_version" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the installed pfSense REST API package's current
+  version, latest available version, and update availability.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>SystemRestApiVersion</code>.</li>
+<li><strong>Security:</strong> Version/update metadata only; no credentials or topology
+  data.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_restapi_version","arguments":{}}</code></li>
 </ul>
 <h3 id="pfsense_get_system_hasync"><code>pfsense_get_system_hasync</code><a class="headerlink" href="#pfsense_get_system_hasync" title="Permanent link">&para;</a></h3>
 <ul>
@@ -4798,6 +6410,52 @@ security behavior.</p>
 <li><strong>Security:</strong> Reveals HA role/health but no peer credential or mutation
   control.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_carp_status","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_hostname"><code>pfsense_get_system_hostname</code><a class="headerlink" href="#pfsense_get_system_hostname" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the current system hostname and domain.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>.</li>
+<li><strong>Returns:</strong> <code>SystemHostname</code>.</li>
+<li><strong>Security:</strong> Literal hostname/domain are omitted by default (a
+  conservative-posture judgment call, not a schema-confirmed secret).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_hostname","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_timezone"><code>pfsense_get_system_timezone</code><a class="headerlink" href="#pfsense_get_system_timezone" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the current system timezone.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>SystemTimezone</code>.</li>
+<li><strong>Security:</strong> General configuration value; not redacted.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_timezone","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_dns"><code>pfsense_get_system_dns</code><a class="headerlink" href="#pfsense_get_system_dns" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the current system DNS settings: override policy,
+  local-vs-remote resolution preference, and remote DNS servers.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>.</li>
+<li><strong>Returns:</strong> <code>SystemDNS</code>.</li>
+<li><strong>Security:</strong> Literal remote DNS server addresses are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_dns","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_console"><code>pfsense_get_system_console</code><a class="headerlink" href="#pfsense_get_system_console" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return whether a password is required to access the system
+  console.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>SystemConsole</code>.</li>
+<li><strong>Security:</strong> A boolean flag only, not the password itself; not redacted.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_console","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_system_webgui_settings"><code>pfsense_get_system_webgui_settings</code><a class="headerlink" href="#pfsense_get_system_webgui_settings" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the current web GUI listener settings: protocol,
+  port, and assigned TLS certificate reference.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>WebGUISettings</code>.</li>
+<li><strong>Security:</strong> Listener/service posture only; no credential or key
+  material (<code>sslcertref</code> is a certificate reference, not the certificate
+  itself).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_system_webgui_settings","arguments":{}}</code></li>
 </ul>
 <h2 id="interfaces-routing-and-neighbors">Interfaces, routing, and neighbors<a class="headerlink" href="#interfaces-routing-and-neighbors" title="Permanent link">&para;</a></h2>
 <h3 id="pfsense_get_interfaces"><code>pfsense_get_interfaces</code><a class="headerlink" href="#pfsense_get_interfaces" title="Permanent link">&para;</a></h3>
@@ -4829,6 +6487,60 @@ security behavior.</p>
   credentials.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_bridges","arguments":{"limit":20}}</code></li>
 </ul>
+<h3 id="pfsense_get_interface_vlans"><code>pfsense_get_interface_vlans</code><a class="headerlink" href="#pfsense_get_interface_vlans" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List 802.1Q VLAN interfaces: parent interface, VLAN tag,
+  priority code point, and resulting VLAN interface identifier.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[InterfaceVlan]</code>.</li>
+<li><strong>Security:</strong> Interface/VLAN identifiers only; no address or credential
+  material.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_vlans","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_interface_groups"><code>pfsense_get_interface_groups</code><a class="headerlink" href="#pfsense_get_interface_groups" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List interface groups: group name, member interfaces, and
+  description. Useful for interpreting firewall rules that target a group
+  rather than a single interface.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[InterfaceGroup]</code>.</li>
+<li><strong>Security:</strong> Interface identifiers only; no address or credential
+  material.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_groups","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_interface_available_interfaces"><code>pfsense_get_interface_available_interfaces</code><a class="headerlink" href="#pfsense_get_interface_available_interfaces" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List all interfaces available for assignment on this pfSense
+  appliance (not just already-assigned ones): interface identifier, in-use
+  status, and hardware boot message.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[AvailableInterface]</code>.</li>
+<li><strong>Security:</strong> Literal MAC addresses are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_available_interfaces","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_interface_gres"><code>pfsense_get_interface_gres</code><a class="headerlink" href="#pfsense_get_interface_gres" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List GRE tunnel interfaces: interface identifier and
+  description.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[InterfaceGRE]</code>.</li>
+<li><strong>Security:</strong> Literal tunnel-endpoint addresses (remote address,
+  local/remote tunnel addresses and networks, IPv4 and IPv6) are omitted by
+  default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_gres","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_interface_laggs"><code>pfsense_get_interface_laggs</code><a class="headerlink" href="#pfsense_get_interface_laggs" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List LAGG (link aggregation) interfaces: LAGG interface
+  identifier, member interfaces, protocol, and description.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[InterfaceLAGG]</code>.</li>
+<li><strong>Security:</strong> Interface identifiers only; no address or credential
+  material.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_laggs","arguments":{"limit":20}}</code></li>
+</ul>
 <h3 id="pfsense_get_gateways"><code>pfsense_get_gateways</code><a class="headerlink" href="#pfsense_get_gateways" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Purpose:</strong> List configured gateways and monitoring settings.</li>
@@ -4846,6 +6558,25 @@ security behavior.</p>
   data can reveal connectivity incidents.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_gateway_status","arguments":{}}</code></li>
 </ul>
+<h3 id="pfsense_get_routing_gateway_groups"><code>pfsense_get_routing_gateway_groups</code><a class="headerlink" href="#pfsense_get_routing_gateway_groups" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List gateway groups: name, failover trigger, description, and
+  prioritized member gateways.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[RoutingGatewayGroup]</code>.</li>
+<li><strong>Security:</strong> Literal gateway names and virtual IPs in each group's
+  priority list are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_routing_gateway_groups","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_routing_gateway_default"><code>pfsense_get_routing_gateway_default</code><a class="headerlink" href="#pfsense_get_routing_gateway_default" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the current default IPv4/IPv6 gateway assignment.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>.</li>
+<li><strong>Returns:</strong> <code>DefaultGateway</code>.</li>
+<li><strong>Security:</strong> Literal default gateway names are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_routing_gateway_default","arguments":{}}</code></li>
+</ul>
 <h3 id="pfsense_get_arp_table"><code>pfsense_get_arp_table</code><a class="headerlink" href="#pfsense_get_arp_table" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Purpose:</strong> List ARP neighbors with IP address, MAC address, hostname,
@@ -4855,6 +6586,34 @@ security behavior.</p>
 <li><strong>Security:</strong> This is sensitive live topology and device-identity data. The
   caller must be trusted even though the request is read-only.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_arp_table","arguments":{"limit":25}}</code></li>
+</ul>
+<h3 id="pfsense_get_routing_static_routes"><code>pfsense_get_routing_static_routes</code><a class="headerlink" href="#pfsense_get_routing_static_routes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List configured static routes: destination network, gateway,
+  and description.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[RoutingStaticRoute]</code>.</li>
+<li><strong>Security:</strong> Literal network/gateway addresses are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_routing_static_routes","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_interface_apply_status"><code>pfsense_get_interface_apply_status</code><a class="headerlink" href="#pfsense_get_interface_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending interface change status: whether all
+  interfaces are applied, and which (if any) have pending changes.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>InterfaceApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata beyond interface names.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_interface_apply_status","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_routing_apply_status"><code>pfsense_get_routing_apply_status</code><a class="headerlink" href="#pfsense_get_routing_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending routing change status: whether all routing
+  changes are applied.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>RoutingApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_routing_apply_status","arguments":{}}</code></li>
 </ul>
 <h2 id="firewall-and-nat">Firewall and NAT<a class="headerlink" href="#firewall-and-nat" title="Permanent link">&para;</a></h2>
 <h3 id="pfsense_get_firewall_rules"><code>pfsense_get_firewall_rules</code><a class="headerlink" href="#pfsense_get_firewall_rules" title="Permanent link">&para;</a></h3>
@@ -4924,6 +6683,32 @@ security behavior.</p>
 <li><strong>Security:</strong> Reveals policy mode but no mapping endpoints or credentials.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_nat_outbound_mode","arguments":{}}</code></li>
 </ul>
+<h3 id="pfsense_get_firewall_nat_outbound_mappings"><code>pfsense_get_firewall_nat_outbound_mappings</code><a class="headerlink" href="#pfsense_get_firewall_nat_outbound_mappings" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List outbound NAT mappings: interface, protocol, NAT port
+  behavior, and pool options.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[FirewallNatOutboundMapping]</code>.</li>
+<li><strong>Security:</strong> Literal sources, destinations, and NAT targets are omitted by
+  default. Live-verified 2026-08-20 against production (zero mappings
+  configured at verification time; field-level compatibility confirmed via
+  an exact live-schema match to the pinned v2.10 reference).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_nat_outbound_mappings","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_firewall_nat_one_to_one_mappings"><code>pfsense_get_firewall_nat_one_to_one_mappings</code><a class="headerlink" href="#pfsense_get_firewall_nat_one_to_one_mappings" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List 1:1 NAT mappings: interface, protocol family, NAT
+  reflection, and bi-directional NAT state.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[FirewallNatOneToOneMapping]</code>.</li>
+<li><strong>Security:</strong> Literal external/source/destination addresses are omitted by
+  default. Live-verified 2026-08-20 against production (zero mappings
+  configured at verification time; field-level compatibility confirmed via
+  an exact live-schema match to the pinned v2.10 reference).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_nat_one_to_one_mappings","arguments":{"limit":20}}</code></li>
+</ul>
 <h3 id="pfsense_get_firewall_traffic_shaper_limiters"><code>pfsense_get_firewall_traffic_shaper_limiters</code><a class="headerlink" href="#pfsense_get_firewall_traffic_shaper_limiters" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Purpose:</strong> List limiter bandwidth, scheduling, masking, and queue settings.</li>
@@ -4932,6 +6717,27 @@ security behavior.</p>
 <li><strong>Security:</strong> Reveals traffic policy and capacity; does not return packet
   contents or credentials.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_traffic_shaper_limiters","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_firewall_traffic_shapers"><code>pfsense_get_firewall_traffic_shapers</code><a class="headerlink" href="#pfsense_get_firewall_traffic_shapers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List traffic shapers: interface, scheduler algorithm,
+  bandwidth, and child queues.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[TrafficShaper]</code>.</li>
+<li><strong>Security:</strong> Reveals traffic policy and capacity; does not return packet
+  contents or credentials. Not redacted (interface identifiers and
+  bandwidth-shaping data, no addresses).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_traffic_shapers","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_firewall_schedules"><code>pfsense_get_firewall_schedules</code><a class="headerlink" href="#pfsense_get_firewall_schedules" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List time-based firewall schedules: name, description,
+  active state, and configured time ranges.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[FirewallSchedule]</code>.</li>
+<li><strong>Security:</strong> Reveals rule-scheduling policy; no addresses or credentials
+  are returned.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_schedules","arguments":{"limit":20}}</code></li>
 </ul>
 <h3 id="pfsense_get_firewall_advanced_settings"><code>pfsense_get_firewall_advanced_settings</code><a class="headerlink" href="#pfsense_get_firewall_advanced_settings" title="Permanent link">&para;</a></h3>
 <ul>
@@ -4942,6 +6748,203 @@ security behavior.</p>
 <li><strong>Security:</strong> Reveals hardening posture; no alias URL contents or credentials
   are returned.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_advanced_settings","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_firewall_virtual_ips"><code>pfsense_get_firewall_virtual_ips</code><a class="headerlink" href="#pfsense_get_firewall_virtual_ips" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List virtual IPs (CARP/IP alias/proxy ARP/other): interface,
+  type, mode, and CARP status.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[FirewallVirtualIp]</code>.</li>
+<li><strong>Security:</strong> Literal virtual IP/CARP peer addresses are omitted by
+  default. The CARP shared secret (<code>password</code>) is never returned under any
+  argument.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_virtual_ips","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_firewall_virtual_ip_apply_status"><code>pfsense_get_firewall_virtual_ip_apply_status</code><a class="headerlink" href="#pfsense_get_firewall_virtual_ip_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending virtual IP change status: whether all
+  virtual IP changes are applied.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>VirtualIPApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_firewall_virtual_ip_apply_status","arguments":{}}</code></li>
+</ul>
+<h2 id="vpn">VPN<a class="headerlink" href="#vpn" title="Permanent link">&para;</a></h2>
+<h3 id="pfsense_get_status_ipsec_sas"><code>pfsense_get_status_ipsec_sas</code><a class="headerlink" href="#pfsense_get_status_ipsec_sas" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live IPsec security association (SA/tunnel) status:
+  state, algorithms, timers, and nested child SAs.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[IPsecSaStatus]</code>.</li>
+<li><strong>Security:</strong> Literal local/remote host and ID addresses (at both the
+  tunnel and nested child-SA level) are omitted by default. No key
+  material is present in status data.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_ipsec_sas","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_ipsec_child_sas"><code>pfsense_get_status_ipsec_child_sas</code><a class="headerlink" href="#pfsense_get_status_ipsec_child_sas" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live IPsec child SA status: state, algorithms,
+  byte/packet counters, and rekey timers.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[IPsecChildSaStatus]</code>.</li>
+<li><strong>Security:</strong> Literal local/remote traffic-selector subnets are
+  omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_ipsec_child_sas","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_ipsec_phase2s"><code>pfsense_get_vpn_ipsec_phase2s</code><a class="headerlink" href="#pfsense_get_vpn_ipsec_phase2s" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List IPsec Phase 2 entries: mode, protocol,
+  encryption/hash options, and rekey timing.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[IPsecPhase2]</code>.</li>
+<li><strong>Security:</strong> Literal local/NAT/remote endpoint addresses and the
+  monitoring ping host are omitted by default. The IPsec PSK is never
+  present on Phase 2 (it lives only on Phase 1, which is not exposed).</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_ipsec_phase2s","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_ipsec_phase1_encryptions"><code>pfsense_get_vpn_ipsec_phase1_encryptions</code><a class="headerlink" href="#pfsense_get_vpn_ipsec_phase1_encryptions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List IPsec Phase 1 encryption algorithm/hash/DH-group
+  capability options.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[IPsecPhase1Encryption]</code>.</li>
+<li><strong>Security:</strong> Pure algorithm/cipher capability reference data; not
+  redacted.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_ipsec_phase1_encryptions","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_ipsec_phase2_encryptions"><code>pfsense_get_vpn_ipsec_phase2_encryptions</code><a class="headerlink" href="#pfsense_get_vpn_ipsec_phase2_encryptions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List IPsec Phase 2 encryption algorithm capability
+  options.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[IPsecPhase2Encryption]</code>.</li>
+<li><strong>Security:</strong> Pure algorithm capability reference data; not
+  redacted.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_ipsec_phase2_encryptions","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_wireguard_tunnels"><code>pfsense_get_status_wireguard_tunnels</code><a class="headerlink" href="#pfsense_get_status_wireguard_tunnels" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live WireGuard tunnel status: link state, traffic
+  counters, and nested peer status.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[WireGuardTunnelStatus]</code>.</li>
+<li><strong>Security:</strong> Literal peer endpoint/allowed-IP addresses nested under
+  each tunnel are omitted by default. Private/preshared key material is
+  never returned under any argument.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_wireguard_tunnels","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_wireguard_peers"><code>pfsense_get_status_wireguard_peers</code><a class="headerlink" href="#pfsense_get_status_wireguard_peers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live WireGuard peer status: handshake time, traffic
+  counters, and public key.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[WireGuardPeerStatus]</code>.</li>
+<li><strong>Security:</strong> Literal peer endpoint address and allowed-IP ranges are
+  omitted by default. The preshared key is never returned under any
+  argument.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_wireguard_peers","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_openvpn_servers"><code>pfsense_get_status_openvpn_servers</code><a class="headerlink" href="#pfsense_get_status_openvpn_servers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live OpenVPN server status: mode, port, and nested
+  connection/route status.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[OpenVpnServerStatus]</code>.</li>
+<li><strong>Security:</strong> Literal client identity/address fields nested under each
+  server's connections and routes are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_openvpn_servers","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_openvpn_clients"><code>pfsense_get_status_openvpn_clients</code><a class="headerlink" href="#pfsense_get_status_openvpn_clients" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live OpenVPN client status: connection state and
+  virtual/remote address details.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[OpenVpnClientStatus]</code>.</li>
+<li><strong>Security:</strong> Literal local/remote/virtual addresses are omitted by
+  default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_openvpn_clients","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_openvpn_server_connections"><code>pfsense_get_status_openvpn_server_connections</code><a class="headerlink" href="#pfsense_get_status_openvpn_server_connections" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live, flat, all-servers OpenVPN client connection
+  status: cipher, byte counters, and connect time.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[OpenVpnServerConnectionStatus]</code>.</li>
+<li><strong>Security:</strong> Literal client common name, username, and remote/virtual
+  addresses are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_openvpn_server_connections","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_openvpn_server_routes"><code>pfsense_get_status_openvpn_server_routes</code><a class="headerlink" href="#pfsense_get_status_openvpn_server_routes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List live, flat, all-servers OpenVPN client route status.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[OpenVpnServerRouteStatus]</code>.</li>
+<li><strong>Security:</strong> Literal client common name and remote/virtual addresses
+  are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_openvpn_server_routes","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_openvpn_servers"><code>pfsense_get_vpn_openvpn_servers</code><a class="headerlink" href="#pfsense_get_vpn_openvpn_servers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List OpenVPN server configurations: mode, protocol,
+  TLS/cert references, ciphers, and topology.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[OpenVpnServer]</code>.</li>
+<li><strong>Security:</strong> Literal tunnel/local/remote network ranges, DNS/NTP/WINS
+  servers, and server-bridge DHCP range are omitted by default.
+  <code>caref</code>/<code>certref</code> are CA/certificate references, never certificate or
+  key material.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_openvpn_servers","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_openvpn_csos"><code>pfsense_get_vpn_openvpn_csos</code><a class="headerlink" href="#pfsense_get_vpn_openvpn_csos" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List OpenVPN client-specific overrides: per-client
+  tunnel settings, allowed servers, and DNS/NTP/WINS pushes.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[OpenVpnClientSpecificOverride]</code>.</li>
+<li><strong>Security:</strong> Literal client common name and tunnel/local/remote
+  network ranges plus DNS/NTP/WINS servers are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_openvpn_csos","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_ipsec_apply_status"><code>pfsense_get_ipsec_apply_status</code><a class="headerlink" href="#pfsense_get_ipsec_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending IPsec change status: whether all IPsec
+  changes are applied.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>IPsecApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_ipsec_apply_status","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_wireguard_apply_status"><code>pfsense_get_wireguard_apply_status</code><a class="headerlink" href="#pfsense_get_wireguard_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending WireGuard change status: whether all
+  WireGuard changes are applied. Requires pfSense-pkg-WireGuard.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>WireGuardApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_wireguard_apply_status","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_wireguard_tunnel_addresses"><code>pfsense_get_vpn_wireguard_tunnel_addresses</code><a class="headerlink" href="#pfsense_get_vpn_wireguard_tunnel_addresses" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List WireGuard tunnel address assignments: description
+  and (optionally) the tunnel's own address/subnet mask. Requires
+  pfSense-pkg-WireGuard.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>;
+  <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[WireGuardTunnelAddress]</code>.</li>
+<li><strong>Security:</strong> Literal address/mask are omitted by default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_wireguard_tunnel_addresses","arguments":{}}</code></li>
 </ul>
 <h2 id="users-and-api-identities">Users and API identities<a class="headerlink" href="#users-and-api-identities" title="Permanent link">&para;</a></h2>
 <h3 id="pfsense_get_users"><code>pfsense_get_users</code><a class="headerlink" href="#pfsense_get_users" title="Permanent link">&para;</a></h3>
@@ -5003,6 +7006,39 @@ security behavior.</p>
   credential fields are not modeled.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_dhcp_servers","arguments":{"limit":20}}</code></li>
 </ul>
+<h3 id="pfsense_get_dhcp_server_address_pools"><code>pfsense_get_dhcp_server_address_pools</code><a class="headerlink" href="#pfsense_get_dhcp_server_address_pools" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List DHCP server address pools (additional scopes) across all
+  configured DHCP servers: range, gateway, DNS/NTP/WINS servers, and MAC
+  allow/deny lists.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[DHCPServerAddressPool]</code>.</li>
+<li><strong>Security:</strong> Reveals internal address planning and device identities;
+  credential fields are not modeled. Not redacted, matching
+  <code>pfsense_get_dhcp_servers</code>' own established convention for this
+  capability class.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dhcp_server_address_pools","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_dhcp_server_custom_options"><code>pfsense_get_dhcp_server_custom_options</code><a class="headerlink" href="#pfsense_get_dhcp_server_custom_options" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List DHCP server custom options across all configured DHCP
+  servers: option number, type, and value.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[DHCPServerCustomOption]</code>.</li>
+<li><strong>Security:</strong> Admin-authored configuration data only; no credential
+  material.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dhcp_server_custom_options","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_dhcp_relay"><code>pfsense_get_dhcp_relay</code><a class="headerlink" href="#pfsense_get_dhcp_relay" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Return the current DHCP Relay configuration: enabled state,
+  downstream interfaces, and CARP failover selector.</li>
+<li><strong>Parameters:</strong> <code>include_identifying_metadata: boolean = false</code>.</li>
+<li><strong>Returns:</strong> <code>DHCPRelay</code>.</li>
+<li><strong>Security:</strong> Literal relay target server addresses are omitted by
+  default.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dhcp_relay","arguments":{}}</code></li>
+</ul>
 <h3 id="pfsense_get_dns_resolver_host_overrides"><code>pfsense_get_dns_resolver_host_overrides</code><a class="headerlink" href="#pfsense_get_dns_resolver_host_overrides" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Purpose:</strong> List Unbound host overrides, addresses, aliases, and
@@ -5011,6 +7047,34 @@ security behavior.</p>
 <li><strong>Returns:</strong> <code>list[DnsResolverHostOverride]</code>.</li>
 <li><strong>Security:</strong> Hostnames and addresses disclose internal DNS/topology data.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_dns_resolver_host_overrides","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_dns_resolver_domain_overrides"><code>pfsense_get_dns_resolver_domain_overrides</code><a class="headerlink" href="#pfsense_get_dns_resolver_domain_overrides" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List Unbound (DNS Resolver) domain overrides: forwarding
+  target address and DNS-over-TLS settings.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[DnsResolverDomainOverride]</code>.</li>
+<li><strong>Security:</strong> Hostnames and addresses disclose internal DNS/topology data.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dns_resolver_domain_overrides","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_dns_resolver_access_lists"><code>pfsense_get_dns_resolver_access_lists</code><a class="headerlink" href="#pfsense_get_dns_resolver_access_lists" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List Unbound (DNS Resolver) access lists: allow/deny action
+  and the network ranges each list applies to.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[DnsResolverAccessList]</code>.</li>
+<li><strong>Security:</strong> Network ranges disclose internal topology data; no
+  credential is involved.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dns_resolver_access_lists","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_dns_forwarder_host_overrides"><code>pfsense_get_dns_forwarder_host_overrides</code><a class="headerlink" href="#pfsense_get_dns_forwarder_host_overrides" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List dnsmasq (DNS Forwarder) host overrides, addresses,
+  aliases, and descriptions.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[DnsForwarderHostOverride]</code>.</li>
+<li><strong>Security:</strong> Hostnames and addresses disclose internal DNS/topology data.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dns_forwarder_host_overrides","arguments":{"limit":20}}</code></li>
 </ul>
 <h3 id="pfsense_get_dns_resolver_settings"><code>pfsense_get_dns_resolver_settings</code><a class="headerlink" href="#pfsense_get_dns_resolver_settings" title="Permanent link">&para;</a></h3>
 <ul>
@@ -5030,6 +7094,33 @@ security behavior.</p>
 <li><strong>Security:</strong> Listen addresses and service posture are sensitive network
   metadata; no zone-transfer credential is returned.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_bind_settings","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_dhcp_server_apply_status"><code>pfsense_get_dhcp_server_apply_status</code><a class="headerlink" href="#pfsense_get_dhcp_server_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending DHCP server change status: whether all
+  DHCP server changes are applied.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>DHCPServerApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dhcp_server_apply_status","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_dns_forwarder_apply_status"><code>pfsense_get_dns_forwarder_apply_status</code><a class="headerlink" href="#pfsense_get_dns_forwarder_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending DNS Forwarder change status: whether all
+  DNS Forwarder changes are applied.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>DNSForwarderApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dns_forwarder_apply_status","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_dns_resolver_apply_status"><code>pfsense_get_dns_resolver_apply_status</code><a class="headerlink" href="#pfsense_get_dns_resolver_apply_status" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pending DNS Resolver change status: whether all
+  DNS Resolver changes are applied.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>DNSResolverApply</code>.</li>
+<li><strong>Security:</strong> No identifying metadata.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_dns_resolver_apply_status","arguments":{}}</code></li>
 </ul>
 <h2 id="services-and-scheduled-operations">Services and scheduled operations<a class="headerlink" href="#services-and-scheduled-operations" title="Permanent link">&para;</a></h2>
 <h3 id="pfsense_get_service_status"><code>pfsense_get_service_status</code><a class="headerlink" href="#pfsense_get_service_status" title="Permanent link">&para;</a></h3>
@@ -5115,6 +7206,30 @@ security behavior.</p>
 <li><strong>Security:</strong> Table members disclose live policy/topology data and may include
   blocklists or internal networks.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_diagnostics_tables","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_diagnostics_config_history_revisions"><code>pfsense_get_diagnostics_config_history_revisions</code><a class="headerlink" href="#pfsense_get_diagnostics_config_history_revisions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> List configuration-history (backup) revisions: when each
+  change was made, pfSense's own system-generated audit description, the
+  pfSense version at the time, and the backup file size.</li>
+<li><strong>Parameters:</strong> <code>limit: integer = 100</code>.</li>
+<li><strong>Returns:</strong> <code>list[ConfigHistoryRevision]</code>.</li>
+<li><strong>Security:</strong> Metadata only. Upstream Model source
+  (<code>ConfigHistoryRevision.inc</code>) confirmed to never read or return the
+  backup file's actual configuration content -- only filesystem-level
+  metadata (<code>get_backups()</code>). No secret or credential material is
+  present in this response shape.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_diagnostics_config_history_revisions","arguments":{"limit":20}}</code></li>
+</ul>
+<h3 id="pfsense_get_status_logs_settings"><code>pfsense_get_status_logs_settings</code><a class="headerlink" href="#pfsense_get_status_logs_settings" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get pfSense logging configuration: which categories are
+  logged, log rotation/retention settings, and remote syslog
+  destination.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>LogSettings</code>.</li>
+<li><strong>Security:</strong> Contains no log content or credentials.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_status_logs_settings","arguments":{}}</code></li>
 </ul>
 <h2 id="server-introspection">Server introspection<a class="headerlink" href="#server-introspection" title="Permanent link">&para;</a></h2>
 <h3 id="pfsense_mcp_info"><code>pfsense_mcp_info</code><a class="headerlink" href="#pfsense_mcp_info" title="Permanent link">&para;</a></h3>

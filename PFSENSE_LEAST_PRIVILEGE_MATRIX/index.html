@@ -1,0 +1,5253 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/PFSENSE_LEAST_PRIVILEGE_MATRIX/">
+      
+      
+        <link rel="prev" href="../WRITE_ENDPOINT_RISK_MATRIX/">
+      
+      
+        <link rel="next" href="../ADR033_PHASE_D_LAB_RUNBOOK/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>pfSense least-privilege matrix (READ + WRITE) - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pfsense-least-privilege-matrix-read-and-write" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              pfSense least-privilege matrix (READ + WRITE)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install & quick start (GitHub README)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Client setup examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#method-evidence-tier-1-of-3-see-adr-033-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method (evidence tier 1 of 3 — see ADR-033 §"Evidence")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-tier-2-live-openapi-schema-corroboration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence tier 2: live OpenAPI schema corroboration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-privilege-matrix-95-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        READ privilege matrix (95 tools)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#write-privilege-matrix-set_firewall_alias_description_v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WRITE privilege matrix (set_firewall_alias_description_v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combined-minimum-set-read-existing-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined minimum set, READ + existing WRITE
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (implemented, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#method-evidence-tier-1-of-3-see-adr-033-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method (evidence tier 1 of 3 — see ADR-033 §"Evidence")
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-tier-2-live-openapi-schema-corroboration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence tier 2: live OpenAPI schema corroboration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-privilege-matrix-95-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        READ privilege matrix (95 tools)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#write-privilege-matrix-set_firewall_alias_description_v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WRITE privilege matrix (set_firewall_alias_description_v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combined-minimum-set-read-existing-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined minimum set, READ + existing WRITE
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="pfsense-least-privilege-matrix-read-and-write">pfSense least-privilege matrix — READ and WRITE<a class="headerlink" href="#pfsense-least-privilege-matrix-read-and-write" title="Permanent link">&para;</a></h1>
+<p><strong>Status: does not authorize provisioning, user creation, or privilege
+assignment against any pfSense appliance.</strong> Companion data to
+<a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/"><code>ADR-033</code></a>,
+which covers the bootstrap architecture this matrix feeds. See that ADR
+for the full design; this document is the raw evidence table plus its
+derivation methodology.</p>
+<p><strong>2026-08-20 — outbound-NAT/1:1-NAT mappings live-verified and registered</strong>:
+<code>PfSenseClient.get_firewall_nat_outbound_mappings()</code>/
+<code>get_firewall_nat_one_to_one_mappings()</code>, their models, and their
+<code>Endpoints</code> entries (<code>FIREWALL_NAT_OUTBOUND_MAPPINGS</code>/<code>FIREWALL_NAT_ONE_
+TO_ONE_MAPPINGS</code>) were added offline (2026-08-20 earlier this same day,
+derived from the pinned v2.10 OpenAPI schema) and deliberately held back
+from <code>tools/registry.py</code>/<code>KNOWN_READ_TOOL_NAMES</code> until live-verified,
+per <code>tests/test_public_contract.py::test_public_contract_is_complete_
+and_security_preserving</code>'s requirement that every <em>registered</em> tool's
+endpoint be <code>verified=True</code>. Owner then authorized a narrowly-scoped
+live production READ verification of exactly these two endpoints: both
+GETs succeeded against the production appliance (pfSense Plus
+26.07-RELEASE) with zero configured mappings in either category at
+verification time. Field-level type/nullability compatibility was
+confirmed via an exact, byte-for-byte match between the live OpenAPI
+schema's <code>OutboundNATMapping</code>/<code>OneToOneNATMapping</code> components (and both
+endpoints' full "Allowed privileges" description text) and the pinned
+v2.10 reference this project's models were already derived from — not
+by parsing a live instance, since none exist on the target appliance.
+Both <code>Endpoints</code> entries are now <code>verified=True</code>; both tools are now
+registered. <strong>41 READ / 42 combined become 43 READ / 44 combined</strong>
+throughout this document as of this pass.</p>
+<p><strong>2026-08-20 — interface VLANs / static routes LAB-verified and
+registered</strong> (READ Expansion phase, offline discovery-audit P0
+candidates): <code>PfSenseClient.get_interface_vlans()</code>/
+<code>get_routing_static_routes()</code>, their models, and their <code>Endpoints</code>
+entries (<code>INTERFACE_VLANS</code>/<code>ROUTING_STATIC_ROUTES</code>) were added offline
+earlier the same day, derived from the pinned v2.10 OpenAPI schema, and
+held back from <code>tools/registry.py</code> until live-verified. Owner then
+authorized READ-only verification against the <strong>LAB</strong> appliance
+(<code>https://pfsense-test.lab.invalid</code>, pfSense CE 2.8.1-RELEASE — a
+distinct identity from production, confirmed before any request).
+The LAB's REST API package reported version v2.10 — an exact,
+byte-for-byte schema match (267/267 paths) against the pinned
+reference these models were derived from. Both typed GETs succeeded
+(HTTP 200, correct <code>{"data": [...]}</code> envelope) with zero configured
+VLANs/static routes on the LAB appliance at verification time —
+<code>ENDPOINT_VERIFIED</code>, not <code>FIELD_MODEL_LIVE_VERIFIED</code> (no populated
+object to exercise field parsing); field-type compatibility is backed
+by the schema-component match above, the same method already
+established for the NAT mappings. Both <code>Endpoints</code> entries are now
+<code>verified=True</code>; both tools are now registered. <strong>43 READ / 44
+combined become 45 READ / 46 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-20 — interface groups / firewall schedules / REST API version
+LAB-verified and registered</strong> (READ Expansion phase, Batch 2 —
+zero-redaction P0 candidates): <code>PfSenseClient.get_interface_groups()</code>/
+<code>get_firewall_schedules()</code>/<code>get_system_restapi_version()</code>, their
+models, and their <code>Endpoints</code> entries (<code>INTERFACE_GROUPS</code>/
+<code>FIREWALL_SCHEDULES</code>/<code>SYSTEM_RESTAPI_VERSION</code>) were implemented and
+LAB-verified in the same pass as the interface-VLAN/static-route
+addition above, against the same LAB appliance. <code>interface/groups</code> and
+<code>firewall/schedules</code> returned zero configured objects
+(<code>ENDPOINT_VERIFIED</code> only). <code>system/restapi/version</code> returned a fully
+populated singleton object — <code>FIELD_MODEL_LIVE_VERIFIED</code> — which also
+confirmed <code>install_version</code> is genuinely absent from the live response
+(not merely null), so that field is modeled as optional rather than
+required. All three <code>Endpoints</code> entries are now <code>verified=True</code>; all
+three tools are now registered. <strong>45 READ / 46 combined become 48
+READ / 49 combined</strong> throughout this document as of this pass.</p>
+<p><strong>2026-08-20 — firewall virtual IPs / certificate authorities
+LAB-verified and registered</strong> (READ Expansion phase, Batch 3 —
+redaction-bearing P0 candidates): <code>PfSenseClient.get_firewall_virtual_ips()</code>/
+<code>get_system_certificate_authorities()</code>, their models, and their
+<code>Endpoints</code> entries (<code>FIREWALL_VIRTUAL_IPS</code>/
+<code>SYSTEM_CERTIFICATE_AUTHORITIES</code>) were implemented and LAB-verified
+against the same LAB appliance. Both candidates carry a confirmed
+secret field in the pinned schema (<code>VirtualIP.password</code>, the CARP
+shared advertisement secret; <code>CertificateAuthority.prv</code>, the CA
+private key) — both are <strong>never modeled at all</strong>, mirroring the
+already-shipped <code>SystemCertificate</code> model's own established treatment
+of the identical <code>prv</code> distinction, not merely redacted behind a flag.
+<code>firewall/virtual_ips</code> returned zero configured objects
+(<code>ENDPOINT_VERIFIED</code> only). <code>system/certificate_authorities</code> returned
+one real, populated object — the LAB's own internal CA —
+<code>FIELD_MODEL_LIVE_VERIFIED</code>; the parsed model had no <code>prv</code> attribute
+at all, proven by construction rather than by inspecting and discarding
+a captured value. Both <code>Endpoints</code> entries are now <code>verified=True</code>;
+both tools are now registered. <strong>48 READ / 49 combined become 50
+READ / 51 combined</strong> throughout this document as of this pass.</p>
+<p><strong>2026-08-21 — IPsec SA/child-SA status LAB-verified and registered</strong>
+(P1 Batch A, partial — operational/status value): the LAB appliance was
+upgraded to pfSense CE 2.9.0-RELEASE (FreeBSD 16.0-CURRENT,
+<code>pfSense-pkg-RESTAPI</code> v2.10 reinstalled, same 267-path schema) ahead of
+this batch; a required pre-batch regression check of all 51 existing
+public tools found and fixed 2 nullability compatibility issues
+(<code>DhcpServer</code>, <code>DnsResolverSettings</code> — see <code>CHANGELOG.md</code>), unrelated to
+this batch's own candidates. <code>PfSenseClient.get_status_ipsec_sas()</code>/
+<code>get_status_ipsec_child_sas()</code>, their models, and their <code>Endpoints</code>
+entries (<code>STATUS_IPSEC_SAS</code>/<code>STATUS_IPSEC_CHILD_SAS</code>) were implemented
+and LAB-verified against the upgraded LAB appliance — both returned
+zero configured SAs (<code>ENDPOINT_VERIFIED</code> only). <code>IPsecSaStatus.child_sas</code>
+is schema-confirmed to embed full <code>IPsecChildSaStatus</code> objects and is
+constructed through that model's own <code>from_api()</code> for every nested
+item, not passed through as a raw dict. <code>local_host</code>/<code>remote_host</code>/
+<code>local_id</code>/<code>remote_id</code> (on <code>IPsecSaStatus</code>) and <code>local_ts</code>/<code>remote_ts</code>
+(on <code>IPsecChildSaStatus</code>, including within nested <code>child_sas</code> items)
+are redacted by default. Both <code>Endpoints</code> entries are now
+<code>verified=True</code>; both tools are now registered. <strong>50 READ / 51
+combined become 52 READ / 53 combined</strong> throughout this document as of
+this pass.</p>
+<p>The same batch also implemented <code>status/wireguard/tunnels</code>/
+<code>status/wireguard/peers</code> (<code>WireGuardTunnelStatus</code>/<code>WireGuardPeerStatus</code>
+models, offline-tested) but LAB verification was initially <strong>blocked</strong>:
+this LAB did not have <code>pfSense-pkg-WireGuard</code> installed (HTTP 404,
+<code>response_id=MODEL_MISSING_REQUIRED_PACKAGE</code>, observed directly).
+<code>WireGuardPeerStatus.preshared_key</code> is confirmed present in the schema
+(in the <em>status</em> object, not merely config) and is <strong>never modeled at
+all</strong>, matching the <code>VirtualIP.password</code>/<code>CertificateAuthority.prv</code>
+precedent — this exclusion is independent of, and unaffected by, the
+verification blocker. <code>WireGuardTunnelStatus.peers</code> is schema-confirmed
+to embed full <code>WireGuardPeerStatus</code> objects; it is constructed through
+that model's own <code>from_api()</code> for every nested item specifically so the
+<code>preshared_key</code> exclusion holds for the nested case too (a raw-dict
+passthrough there would have leaked it).</p>
+<p><strong>2026-08-21 (same day, later) — WireGuard status LAB-verified and
+registered after owner-authorized package installation.</strong> The owner
+explicitly authorized installing <code>pfSense-pkg-WireGuard</code> on this LAB
+for non-production READ verification only. Preflight: reconfirmed LAB
+identity (<code>pfsense-test.lab.invalid</code>, pfSense CE 2.9.0-RELEASE) is
+distinct from production; identified the LAB as Proxmox VM 250
+("pfSense-LAB", the only pfSense-named guest in the cluster — no
+production VM exists there to confuse it with) and took a fresh
+snapshot (<code>pre-wireguard-ce290</code>) as a rollback point before any change;
+confirmed <code>pfSense-pkg-WireGuard</code> (version <code>0.2.13_4</code>) as the correct,
+available package for this CE 2.9.0 install with no unmet dependencies.
+Installed via <code>POST /api/v2/system/package</code> (a one-off authenticated
+LAB administrative call, made outside and independent of this
+project's own <code>WriteApiClient</code>/<code>WriteEndpoints</code> allow-list mechanism,
+which remains untouched and still empty except
+<code>FIREWALL_ALIAS_DESCRIPTION</code> — this was not a WRITE-capability
+expansion of the shipped server). Post-install: confirmed pfSense/
+pfREST healthy, re-ran a 52-tool regression subset (all existing
+public tools except the local-only <code>pfsense_mcp_info</code>) with zero
+regressions, then both WireGuard status endpoints succeeded live (HTTP
+200, correct envelope, zero configured tunnels/peers —
+<code>ENDPOINT_VERIFIED</code>); the raw response bodies were inspected directly
+and contained no unexpected fields. Both <code>Endpoints</code> entries are now
+<code>verified=True</code>; both tools are now registered. <strong>52 READ / 53
+combined become 54 READ / 55 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — OpenVPN status cluster
+LAB-verified and registered (P1 Batch B).</strong> Before implementing, the
+open question of whether <code>OpenVpnServerStatus</code>'s nested <code>conns</code>/<code>routes</code>
+duplicate the standalone <code>status/openvpn/server/connections</code>/<code>routes</code>
+endpoints was resolved via the pinned schema's own <code>Parent model</code>
+declaration: both standalone endpoints declare <code>Parent model:
+OpenVPNServerStatus</code>, the identical structural relationship already
+established as non-redundant between <code>IPsecSaStatus</code>/<code>IPsecChildSaStatus</code>
+in Batch A — implemented as four genuinely independent, non-duplicative
+endpoints on that basis (live OpenVPN data was unavailable on this LAB
+either way to settle it empirically). <code>PfSenseClient.
+get_status_openvpn_servers()</code>/<code>get_status_openvpn_clients()</code>/
+<code>get_status_openvpn_server_connections()</code>/<code>get_status_openvpn_server_routes()</code>,
+their models, and their <code>Endpoints</code> entries were implemented and
+LAB-verified — all four returned zero configured objects
+(<code>ENDPOINT_VERIFIED</code> only; no package required, a base pfSense
+feature). <code>common_name</code>/<code>remote_host</code>/<code>user_name</code>/<code>virtual_addr</code>/
+<code>virtual_addr6</code> (real per-connection human/device identity data, not
+merely topology, on <code>OpenVpnServerConnectionStatus</code>) and the analogous
+<code>common_name</code>/<code>remote_host</code>/<code>virtual_addr</code> (on <code>OpenVpnServerRouteStatus</code>)
+and <code>local_host</code>/<code>remote_host</code>/<code>virtual_addr</code>/<code>virtual_addr6</code> (on
+<code>OpenVpnClientStatus</code>) are redacted by default. <code>OpenVpnServerStatus.conns</code>/
+<code>.routes</code> are schema-confirmed to embed full <code>OpenVpnServerConnectionStatus</code>/
+<code>OpenVpnServerRouteStatus</code> objects and are constructed through those
+models' own <code>from_api()</code> for every item, so the redaction gates hold
+for the nested case too. All four <code>Endpoints</code> entries are now
+<code>verified=True</code>; all four tools are now registered. <strong>54 READ / 55
+combined become 58 READ / 59 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — DNS Forwarder/Resolver extras
+LAB-verified and registered (P1 Batch C).</strong> <code>services/dns_forwarder/
+host_overrides</code>, <code>services/dns_resolver/domain_overrides</code>, and
+<code>services/dns_resolver/access_lists</code> were re-checked against the
+pinned schema for secret fields (none found — <code>DNSForwarderHostOverride</code>,
+<code>DNSResolverDomainOverride</code>, and <code>DNSResolverAccessList</code> are all
+address/policy data, no credential material) and modeled following the
+existing shipped <code>DnsResolverHostOverride</code> precedent: full field
+visibility, no <code>include_identifying_metadata</code> redaction, since
+address/network data is core content for this capability class (the
+same rationale already documented for <code>DhcpServer</code>). <code>PfSenseClient.
+get_dns_forwarder_host_overrides()</code>/<code>get_dns_resolver_domain_overrides()</code>/
+<code>get_dns_resolver_access_lists()</code>, their models, and their <code>Endpoints</code>
+entries were implemented and LAB-verified — all three returned zero
+configured objects (<code>ENDPOINT_VERIFIED</code>; no package required, base
+pfSense/dnsmasq/Unbound features). All three <code>Endpoints</code> entries are now
+<code>verified=True</code>; all three tools are now registered. <strong>58 READ / 59
+combined become 61 READ / 62 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — interface extras LAB-verified
+and registered (P1 Batch D).</strong> <code>interface/available_interfaces</code>,
+<code>interface/gres</code>, and <code>interface/laggs</code> were re-checked against the
+pinned schema for secret fields (none found). <code>AvailableInterface.mac</code>
+and 7 of <code>InterfaceGRE</code>'s 11 fields (tunnel-endpoint addresses) are
+redacted by default, matching <code>InterfaceStatus.macaddr</code> and
+<code>RoutingStaticRoute</code>'s established conventions; <code>InterfaceLAGG</code>'s
+<code>members</code>/<code>laggif</code> stay visible, matching <code>InterfaceBridge</code>'s
+established no-redaction precedent. <code>PfSenseClient.
+get_interface_available_interfaces()</code>/<code>get_interface_gres()</code>/
+<code>get_interface_laggs()</code>, their models, and their <code>Endpoints</code> entries
+were implemented, offline-tested, and left unregistered for one commit
+(matching the P1 Batch A WireGuard precedent) before LAB verification.
+LAB-verified: <code>interface/available_interfaces</code> returned
+<code>FIELD_MODEL_LIVE_VERIFIED</code> — 2 real populated objects (the LAB's
+actual <code>vtnet0</code>/<code>vtnet1</code> WAN/LAN interfaces), with redaction confirmed
+against real data (default call returned <code>mac=None</code> for both;
+<code>include_identifying_metadata=True</code> returned the literal addresses);
+<code>interface/gres</code> and <code>interface/laggs</code> both returned zero configured
+objects (<code>ENDPOINT_VERIFIED</code> only). All three <code>Endpoints</code> entries are
+now <code>verified=True</code>; all three tools are now registered. <strong>61 READ / 62
+combined become 64 READ / 65 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — routing/DHCP extras LAB-verified
+and registered (P1 Batch E).</strong> <code>routing/gateway/groups</code>,
+<code>routing/gateway/default</code>, <code>services/dhcp_relay</code>,
+<code>services/dhcp_server/address_pools</code>, and
+<code>services/dhcp_server/custom_options</code> were re-checked against the
+pinned schema for secret fields (none found).
+<code>RoutingGatewayGroupPriority.gateway</code>/<code>.virtual_ip</code> and
+<code>DefaultGateway.defaultgw4</code>/<code>.defaultgw6</code> (gateway name references)
+and <code>DHCPRelay.server</code> (literal relay target addresses) are redacted
+by default, matching <code>RoutingStaticRoute.gateway</code> and
+<code>GatewayConfig.gateway</code>'s established conventions.
+<code>DHCPServerAddressPool</code>/<code>DHCPServerCustomOption</code> are schema-declared
+children of <code>DHCPServer</code> (<code>Parent model: DHCPServer</code>) and follow that
+resource's own established no-redaction convention instead. <code>PfSenseClient.
+get_routing_gateway_groups()</code>/<code>get_routing_gateway_default()</code>/
+<code>get_dhcp_relay()</code>/<code>get_dhcp_server_address_pools()</code>/
+<code>get_dhcp_server_custom_options()</code>, their models, and their
+<code>Endpoints</code> entries were implemented, offline-tested, and left
+unregistered for one commit (matching the P1 Batch A WireGuard
+precedent) before LAB verification. LAB verification found a genuine
+CE 2.9.0 nullability discrepancy — <code>DHCPRelay.interface</code> returned
+<code>null</code> on the LAB's unconfigured DHCP Relay despite the pinned schema
+declaring it <code>nullable: false</code> — fixed by widening the field before
+promoting, matching the <code>SystemRestApiVersion.install_version</code>/
+<code>DhcpServer</code> precedent. All five candidates reached
+<code>ENDPOINT_VERIFIED</code> (zero configured gateway groups/address
+pools/custom options; <code>routing/gateway/default</code> and <code>services/dhcp_relay</code>
+both returned real singleton objects but with every field null/disabled
+on this LAB — no populated non-null value observed). All five
+<code>Endpoints</code> entries are now <code>verified=True</code>; all five tools are now
+registered. <strong>64 READ / 65 combined become 69 READ / 70 combined</strong>
+throughout this document as of this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — system identity/config cluster
+LAB-verified and registered (P1 Batch F).</strong> <code>system/hostname</code>,
+<code>system/timezone</code>, <code>system/dns</code>, <code>system/console</code>, and
+<code>system/webgui/settings</code> were re-checked against the pinned schema for
+secret fields (none found). <code>SystemHostname.hostname</code>/<code>.domain</code> are
+redacted by default (a conservative-posture judgment call, not a
+schema-confirmed secret — they identify the specific managed
+appliance/network) and <code>SystemDNS.dnsserver</code> (literal DNS server
+addresses) is redacted by default, matching
+<code>RoutingStaticRoute.gateway</code>/<code>GatewayConfig.gateway</code>'s established
+conventions. <code>WebGUISettings</code> was independently re-verified
+secret-free during this batch's own re-check (<code>protocol</code>/<code>port</code>/
+<code>sslcertref</code> only — <code>sslcertref</code> is a certificate reference, not key
+material). <code>PfSenseClient.get_system_hostname()</code>/<code>get_system_timezone()</code>/
+<code>get_system_dns()</code>/<code>get_system_console()</code>/<code>get_system_webgui_settings()</code>,
+their models, and their <code>Endpoints</code> entries were implemented,
+offline-tested, and left unregistered for one commit (matching the P1
+Batch A WireGuard precedent) before LAB verification. LAB verification
+found real populated data for all five: <code>system/hostname</code> returned
+<code>FIELD_MODEL_LIVE_VERIFIED</code> (<code>hostname="pfSenseLAB"</code>,
+<code>domain="test.arpa"</code>), <code>system/timezone</code> returned
+<code>FIELD_MODEL_LIVE_VERIFIED</code> (<code>"Etc/UTC"</code>), <code>system/console</code> returned
+<code>FIELD_MODEL_LIVE_VERIFIED</code> (<code>passwd_protect_console=False</code>),
+<code>system/webgui/settings</code> returned <code>FIELD_MODEL_LIVE_VERIFIED</code> (a real
+populated <code>sslcertref</code>), and <code>system/dns</code> returned <code>ENDPOINT_VERIFIED</code>
+(<code>dnsserver</code>/<code>dnslocalhost</code> both null — no remote DNS servers
+configured on this LAB). All five <code>Endpoints</code> entries are now
+<code>verified=True</code>; all five tools are now registered. <strong>69 READ / 70
+combined become 74 READ / 75 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — REST API + PKI metadata
+LAB-verified and registered (P1 Batch G).</strong> <code>system/restapi/access_list</code>,
+<code>system/crls</code>, and <code>system/package/available</code> were re-checked against
+the pinned schema for secret fields.
+<code>RESTAPIAccessListEntry.network</code> (the REST API's own literal IP
+allow/deny CIDR) is redacted by default, matching
+<code>GatewayConfig.gateway</code>'s established convention. Found during
+re-verification that <code>CertificateRevocationListRevokedCertificate</code> has
+five schema fields marked <code>writeOnly: true</code> — <code>crt</code>, <code>caref</code>, <code>descr</code>,
+<code>type</code>, and <strong><code>prv</code>, confirmed to be the revoked certificate's X509
+private key</strong> — none of these are ever present in a real GET response,
+and none are modeled, matching the
+<code>CertificateAuthority.prv</code>/<code>SystemCertificate.prv</code> precedent exactly
+rather than trusting the schema's <code>writeOnly</code> promise alone (proven by
+construction — an offline test injects <code>prv</code> into the raw response
+in-memory and confirms it is absent from the parsed model, never in a
+committed fixture). <code>PfSenseClient.get_system_restapi_access_list()</code>/
+<code>get_system_crls()</code>/<code>get_system_package_available()</code>, their models, and
+their <code>Endpoints</code> entries were implemented, offline-tested, and left
+unregistered for one commit (matching the P1 Batch A WireGuard
+precedent) before LAB verification. LAB verification found real
+populated data: <code>system/restapi/access_list</code> returned
+<code>FIELD_MODEL_LIVE_VERIFIED</code> (2 real entries, the default allow-all
+IPv4/IPv6 rules; redaction confirmed against real data — default call
+returned <code>network=None</code> for both), <code>system/crls</code> returned
+<code>ENDPOINT_VERIFIED</code> (zero configured CRLs on this LAB), and
+<code>system/package/available</code> returned <code>FIELD_MODEL_LIVE_VERIFIED</code> (69
+real available packages). All three <code>Endpoints</code> entries are now
+<code>verified=True</code>; all three tools are now registered. <strong>74 READ / 75
+combined become 77 READ / 78 combined</strong> throughout this document as of
+this pass.</p>
+<p><strong>2026-08-21 (same day, later still) — service/traffic policy cluster,
+partial (P1 Batch H).</strong> <code>firewall/traffic_shapers</code>,
+<code>services/freeradius/interfaces</code>, <code>services/freeradius/macs</code>, and
+<code>services/service_watchdogs</code> were re-checked against the pinned schema
+for secret fields (none found). <code>firewall/traffic_shapers</code> requires no
+package (base pfSense feature); the other three require
+<code>pfSense-pkg-freeradius3</code>/<code>pfSense-pkg-Service_Watchdog</code>, confirmed
+NOT installed on this LAB via the already-shipped
+<code>pfsense_get_system_packages</code> tool (only <code>pfSense-pkg-WireGuard</code> is
+installed) — implemented and offline-tested per the
+package-conditional-candidate rule, but left <code>verified=False</code> and
+unregistered pending an owner decision on installing either package
+(only <code>pfSense-pkg-WireGuard</code> installation was ever explicitly
+authorized). <code>TrafficShaper</code>/<code>TrafficShaperQueue</code> carry no redaction
+(pure QoS/bandwidth-shaping configuration, no addresses);
+<code>TrafficShaperQueue.queue</code> is schema-confirmed to embed full
+<code>TrafficShaperQueue</code> objects and is constructed through that model's
+own <code>from_api()</code> for every item, with 21 of its 27 fields treated as
+genuinely possibly-absent via <code>.get()</code> (each documented as only
+available for a specific <code>scheduler</code> type or sibling boolean flag).
+<code>FreeRADIUSInterface.addr</code> and <code>FreeRADIUSMAC.mac</code>/5 <code>framed_*</code>
+address fields are redacted by default once registered, matching
+<code>GatewayConfig.gateway</code>/<code>InterfaceStatus.macaddr</code>'s established
+conventions. <code>firewall/traffic_shapers</code> LAB-verified <code>ENDPOINT_VERIFIED</code>
+(zero configured traffic shapers on this LAB); its <code>Endpoints</code> entry is
+now <code>verified=True</code> and its tool is now registered. <strong>77 READ / 78
+combined become 78 READ / 79 combined</strong> throughout this document as of
+this pass. The FreeRADIUS/Service_Watchdog trio remains implemented,
+offline-tested, and unregistered pending the owner's package-installation
+decision.</p>
+<p><strong>2026-08-21 (same day, later still) — IPsec Phase 2 + encryption
+capability lists LAB-verified and registered (P1 Batch I).</strong>
+<code>vpn/ipsec/phase2s</code>, <code>vpn/ipsec/phase1/encryptions</code>, and
+<code>vpn/ipsec/phase2/encryptions</code> were re-checked against the pinned
+schema for secret fields. Re-confirmed the IPsec PSK lives only on
+<code>IPsecPhase1</code>, already REJECTed separately — no secret material is
+present on Phase 2 itself. <code>IPsecPhase2.localid_address</code>/
+<code>.natlocalid_address</code>/<code>.remoteid_address</code>/<code>.pinghost</code> (endpoint and
+monitoring target addresses) are redacted by default, matching
+<code>RoutingStaticRoute.gateway</code>'s established convention.
+<code>encryption_algorithm_option</code> is schema-documented as only available
+when <code>protocol</code> is <code>'esp'</code> and is treated as genuinely possibly-absent
+via <code>.get()</code>, matching the <code>InterfaceLAGG</code> precedent; it is
+schema-confirmed to embed full <code>IPsecPhase2Encryption</code> objects and is
+constructed through that model's own <code>from_api()</code> for every item.
+<code>IPsecPhase1Encryption</code>/<code>IPsecPhase2Encryption</code> are pure
+algorithm/cipher capability reference data, no redaction needed.
+<code>PfSenseClient.get_vpn_ipsec_phase2s()</code>/
+<code>get_vpn_ipsec_phase1_encryptions()</code>/<code>get_vpn_ipsec_phase2_encryptions()</code>,
+their models, and their <code>Endpoints</code> entries were implemented,
+offline-tested, and left unregistered for one commit (matching the P1
+Batch A WireGuard precedent) before LAB verification. All three
+LAB-verified <code>ENDPOINT_VERIFIED</code> (zero configured Phase 2 entries; the
+encryption capability lists were also empty on this LAB, since no
+IPsec Phase 1 is configured to derive options from). All three
+<code>Endpoints</code> entries are now <code>verified=True</code>; all three tools are now
+registered. <strong>78 READ / 79 combined become 81 READ / 82 combined</strong>
+throughout this document as of this pass.</p>
+<p><strong>OpenVPN server config + client-specific overrides LAB-verified and
+registered (P1 Batch J).</strong> <code>vpn/openvpn/servers</code> and <code>vpn/openvpn/csos</code>
+were re-checked against the pinned schema for secret fields — neither
+<code>OpenVPNServer</code> nor <code>OpenVPNClientSpecificOverride</code> has any field marked
+<code>writeOnly</code>, unlike the Batch G CRL case. <code>caref</code>/<code>certref</code> are
+CA/certificate references, not certificate/key material.
+<code>tlsauth_keydir</code> is re-confirmed (a fourth time across sessions) to be
+a direction-flag enum, not key material. Network/address fields
+(tunnel/local/remote networks, DNS/NTP/WINS servers, server-bridge DHCP
+range on the server model; common name plus the same address-field set
+on the client-specific-override model) are redacted by default,
+matching <code>RoutingStaticRoute.gateway</code>'s established convention. The
+singular <code>vpn/openvpn/server</code> endpoint is redundant with the plural
+<code>vpn/openvpn/servers</code> (same model) and is deliberately not implemented,
+matching the established NAT-mappings precedent. <code>PfSenseClient.get_vpn_openvpn_servers()</code>/
+<code>get_vpn_openvpn_csos()</code>, their models, and their <code>Endpoints</code> entries
+were implemented, offline-tested, and left unregistered for one commit
+(matching the P1 Batch A WireGuard precedent) before LAB verification.
+Both LAB-verified <code>ENDPOINT_VERIFIED</code> (zero configured OpenVPN servers
+and zero client-specific overrides on this LAB). Both <code>Endpoints</code>
+entries are now <code>verified=True</code>; both tools are now registered.
+<strong>81 READ / 82 combined become 83 READ / 84 combined</strong> throughout this
+document as of this pass.</p>
+<p><strong>Implementation Phase B (2026-08-17)</strong>: every value below is now
+reproduced by real, tested, pure production code —
+<code>src/pfsense_mcp/security_privileges.py</code>'s
+<code>read_profile_requirements()</code>/<code>write_protected_profile_requirements()</code>
+plus <code>resolve_privilege()</code>'s schema+source cross-check — rather than
+being a hand-maintained table that could silently drift from the actual
+codebase. This document's own values remain the regression evidence
+those functions are tested against
+(<code>tests/test_security_privileges.py</code>), not a second, independent source
+of truth.</p>
+<p><strong>Implementation Phase C (2026-08-17)</strong>: this document's values are now
+also the exact target privilege set <code>src/pfsense_mcp/
+security_bootstrap_engine.py</code>'s <code>provision_service_account()</code> grants —
+never a second, hard-coded copy; the engine calls the same
+<code>read_profile_requirements()</code>/<code>write_protected_profile_requirements()</code>
+functions this matrix's own regression tests exercise. Still
+offline-tested only; see <code>ADR-033</code>'s "Implementation Phase C" section
+for the full provisioning-sequence writeup and its GO/NO-GO for a
+future live-validation phase.</p>
+<h2 id="method-evidence-tier-1-of-3-see-adr-033-evidence">Method (evidence tier 1 of 3 — see ADR-033 §"Evidence")<a class="headerlink" href="#method-evidence-tier-1-of-3-see-adr-033-evidence" title="Permanent link">&para;</a></h2>
+<p>Every privilege string below is the output of the installed pfSense REST
+API package's own <code>Core/Endpoint.inc::get_method_priv_name()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="x">private function get_method_priv_name(string $method): string {</span>
+<span class="x">    $priv_name_prefix = str_replace(&#39;/&#39;, &#39;-&#39;, $this-&gt;url) . &#39;-&#39;;</span>
+<span class="x">    $priv_name_prefix = str_replace(&#39;_&#39;, &#39;-&#39;, $priv_name_prefix);</span>
+<span class="x">    if (str_starts_with($priv_name_prefix, &#39;-&#39;)) {</span>
+<span class="x">        $priv_name_prefix = substr($priv_name_prefix, offset: 1);</span>
+<span class="x">    }</span>
+<span class="x">    return $priv_name_prefix . strtolower($method);</span>
+<span class="x">}</span>
+</code></pre></div>
+<p>(<code>pfrest/pfSense-pkg-RESTAPI</code>, <code>Core/Endpoint.inc</code>, confirmed <strong>byte-identical</strong>
+across every tag from <code>v2.7.7</code> through <code>v2.10.0</code> — the current latest
+tag as of this research pass, 2026-08-17. The algorithm has not changed
+across this project's entire lifetime.)</p>
+<p>Concretely: take the endpoint's URL (e.g. <code>/api/v2/status/system</code>),
+replace every <code>/</code> and <code>_</code> with <code>-</code>, strip the resulting leading <code>-</code>,
+append the lowercase HTTP method. <code>/api/v2/status/dhcp_server/leases</code>
+(GET) → <code>api-v2-status-dhcp-server-leases-get</code>.</p>
+<p><strong>Authorization is an ANY-match, not an ALL-match.</strong> <code>Core/Auth.inc</code>'s
+<code>authorize()</code> checks <code>array_intersect($this-&gt;required_privileges,
+$this-&gt;client_privileges)</code> — holding <em>either</em> <code>page-all</code> <em>or</em> the
+endpoint's own narrow privilege is sufficient. This is what makes a true
+least-privilege identity (holding only the narrow privileges, never
+<code>page-all</code>) architecturally valid, not merely a documentation
+convention this project has chosen to follow.</p>
+<p><strong><code>requires_page_all_privilege</code> exists and matters.</strong> A small number of
+endpoints package-wide (1 of 268 checked this pass:
+<code>/api/v2/system/restapi/settings/sync</code>, a POST-only sync action) hard-code
+<code>page-all</code> as the <em>only</em> accepted privilege — no narrow alternative
+exists for them. <strong>None of the 94 endpoints this project's 95 READ
+tools use require <code>page-all</code></strong>, confirmed by direct inspection of every
+matching <code>Endpoints/*.inc</code> file at the pinned tag (including the two
+outbound-NAT/1:1-NAT mapping endpoints, the interface-VLAN/static-route/
+group, firewall-schedule/virtual-IP, REST-API-version, and
+certificate-authority endpoints, the IPsec SA/child-SA and WireGuard
+tunnel/peer status endpoints, the OpenVPN server/client/connection/
+route status endpoints, the DNS Forwarder host-override/DNS Resolver
+domain-override/access-list endpoints, the interface available-
+interfaces/GRE/LAGG endpoints, the routing-gateway-group/default and
+DHCP relay/address-pool/custom-option endpoints, the system
+hostname/timezone/DNS/console/webgui-settings endpoints, the REST
+API access-list/CRLs/available-packages endpoints, firewall traffic
+shapers, the IPsec Phase 2/encryption capability lists trio, and the
+OpenVPN server-config/client-specific-override pair, each of which
+offers a narrow alternative alongside <code>page-all</code>). This must be
+re-checked for any <em>future</em> tool added against a new endpoint — it is
+not a general guarantee.</p>
+<h2 id="evidence-tier-2-live-openapi-schema-corroboration">Evidence tier 2: live OpenAPI schema corroboration<a class="headerlink" href="#evidence-tier-2-live-openapi-schema-corroboration" title="Permanent link">&para;</a></h2>
+<p>Independently, the REST API package's own <code>Schemas/OpenAPISchema.inc</code>
+embeds each operation's exact allowed-privileges list directly in the
+generated schema's <code>description</code> field:
+<code>"**Allowed privileges**: [ page-all, api-v2-status-system-get ]"</code>.
+<strong>Every single privilege string below was cross-checked against this
+exact text in a real OpenAPI schema previously captured live from the
+disposable LAB appliance</strong> (<code>pfsense_openapi_schema.json</code>, captured
+during the ADR-026 least-privilege provisioning work) — not merely
+computed from the algorithm above. All 42 matched exactly; zero
+mismatches, zero endpoints missing from the live schema. The two
+outbound-NAT/1:1-NAT mapping endpoints added 2026-08-20 were
+independently cross-checked the same way, but against a live schema
+freshly fetched from the <strong>production</strong> appliance during an
+owner-authorized live READ verification, not the original LAB capture
+— also an exact match, zero mismatches (43 of 43 now, including these
+two).</p>
+<p>This corroboration matters for a second reason beyond double-checking
+arithmetic: the live schema is generated by the <strong>actually installed</strong>
+package on the <strong>actual target appliance</strong>, so agreement between the
+algorithm (run against pinned GitHub source) and the live schema
+(generated by the real running instance) is itself evidence that the
+installed version's privilege-naming behavior matches the pinned
+source this document reasons about. The interface-VLAN/static-route
+pair, the interface-group/firewall-schedule/REST-API-version trio, the
+firewall-virtual-IP/certificate-authority pair, the IPsec SA/child-SA
+status pair, the WireGuard tunnel/peer status pair, the OpenVPN
+server/client/connection/route status four, the DNS Forwarder/
+Resolver extras three, the interface available-interfaces/GRE/LAGG
+three, the routing-gateway-group/default and DHCP relay/address-
+pool/custom-option five, the system hostname/timezone/DNS/
+console/webgui-settings five, the REST API access-list/CRLs/
+available-packages three, firewall traffic shapers, the IPsec
+Phase 2/encryption capability lists trio, and the OpenVPN
+server-config/client-specific-override pair, were cross-checked against
+a live schema freshly fetched from the <strong>LAB</strong> appliance
+(<code>pfsense-test.lab.invalid</code>) during owner-authorized LAB READ
+verification passes — also an exact match, zero mismatches (83 of 83
+now, including all forty). The IPsec, WireGuard, OpenVPN, DNS,
+interface-extras, routing/DHCP, system-identity, REST-API/PKI,
+traffic-shaper/IPsec-Phase-2, and OpenVPN-server-config groups' LAB
+cross-checks were against the upgraded pfSense CE 2.9.0 appliance
+specifically; its REST API package schema remained an exact 267-path
+match despite the platform upgrade, both before and after installing
+<code>pfSense-pkg-WireGuard</code>.</p>
+<h2 id="read-privilege-matrix-95-tools">READ privilege matrix (95 tools)<a class="headerlink" href="#read-privilege-matrix-95-tools" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>MCP tool</th>
+<th><code>PfSenseClient</code> method</th>
+<th>pfSense endpoint</th>
+<th>Required privilege</th>
+<th>Live-confirmed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pfsense_acme_settings</code></td>
+<td><code>get_acme_settings</code></td>
+<td><code>GET /api/v2/services/acme/settings</code></td>
+<td><code>api-v2-services-acme-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_arp_table</code></td>
+<td><code>get_arp_table</code></td>
+<td><code>GET /api/v2/diagnostics/arp_table</code></td>
+<td><code>api-v2-diagnostics-arp-table-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_auth_keys</code></td>
+<td><code>get_auth_keys</code></td>
+<td><code>GET /api/v2/auth/keys</code></td>
+<td><code>api-v2-auth-keys-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_bind_settings</code></td>
+<td><code>get_bind_settings</code></td>
+<td><code>GET /api/v2/services/bind/settings</code></td>
+<td><code>api-v2-services-bind-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_carp_status</code></td>
+<td><code>get_carp_status</code></td>
+<td><code>GET /api/v2/status/carp</code></td>
+<td><code>api-v2-status-carp-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_cron_jobs</code></td>
+<td><code>get_cron_jobs</code></td>
+<td><code>GET /api/v2/services/cron/jobs</code></td>
+<td><code>api-v2-services-cron-jobs-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dhcp_leases</code></td>
+<td><code>get_dhcp_leases</code></td>
+<td><code>GET /api/v2/status/dhcp_server/leases</code></td>
+<td><code>api-v2-status-dhcp-server-leases-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dhcp_relay</code></td>
+<td><code>get_dhcp_relay</code></td>
+<td><code>GET /api/v2/services/dhcp_relay</code></td>
+<td><code>api-v2-services-dhcp-relay-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dhcp_server_address_pools</code></td>
+<td><code>get_dhcp_server_address_pools</code></td>
+<td><code>GET /api/v2/services/dhcp_server/address_pools</code></td>
+<td><code>api-v2-services-dhcp-server-address-pools-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dhcp_server_custom_options</code></td>
+<td><code>get_dhcp_server_custom_options</code></td>
+<td><code>GET /api/v2/services/dhcp_server/custom_options</code></td>
+<td><code>api-v2-services-dhcp-server-custom-options-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dhcp_servers</code></td>
+<td><code>get_dhcp_servers</code></td>
+<td><code>GET /api/v2/services/dhcp_servers</code></td>
+<td><code>api-v2-services-dhcp-servers-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dhcp_static_mappings</code></td>
+<td><code>get_dhcp_static_mappings</code></td>
+<td><code>GET /api/v2/services/dhcp_server/static_mappings</code></td>
+<td><code>api-v2-services-dhcp-server-static-mappings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_diagnostics_tables</code></td>
+<td><code>get_diagnostics_tables</code></td>
+<td><code>GET /api/v2/diagnostics/tables</code></td>
+<td><code>api-v2-diagnostics-tables-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dns_forwarder_host_overrides</code></td>
+<td><code>get_dns_forwarder_host_overrides</code></td>
+<td><code>GET /api/v2/services/dns_forwarder/host_overrides</code></td>
+<td><code>api-v2-services-dns-forwarder-host-overrides-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dns_resolver_access_lists</code></td>
+<td><code>get_dns_resolver_access_lists</code></td>
+<td><code>GET /api/v2/services/dns_resolver/access_lists</code></td>
+<td><code>api-v2-services-dns-resolver-access-lists-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dns_resolver_domain_overrides</code></td>
+<td><code>get_dns_resolver_domain_overrides</code></td>
+<td><code>GET /api/v2/services/dns_resolver/domain_overrides</code></td>
+<td><code>api-v2-services-dns-resolver-domain-overrides-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dns_resolver_host_overrides</code></td>
+<td><code>get_dns_resolver_host_overrides</code></td>
+<td><code>GET /api/v2/services/dns_resolver/host_overrides</code></td>
+<td><code>api-v2-services-dns-resolver-host-overrides-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_dns_resolver_settings</code></td>
+<td><code>get_dns_resolver_settings</code></td>
+<td><code>GET /api/v2/services/dns_resolver/settings</code></td>
+<td><code>api-v2-services-dns-resolver-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_email_notification_settings</code></td>
+<td><code>get_email_notification_settings</code></td>
+<td><code>GET /api/v2/system/notifications/email_settings</code></td>
+<td><code>api-v2-system-notifications-email-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_advanced_settings</code></td>
+<td><code>get_firewall_advanced_settings</code></td>
+<td><code>GET /api/v2/firewall/advanced_settings</code></td>
+<td><code>api-v2-firewall-advanced-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_aliases</code></td>
+<td><code>get_firewall_aliases</code></td>
+<td><code>GET /api/v2/firewall/aliases</code></td>
+<td><code>api-v2-firewall-aliases-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_apply_status</code></td>
+<td><code>get_firewall_apply_status</code></td>
+<td><code>GET /api/v2/firewall/apply</code></td>
+<td><code>api-v2-firewall-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_nat_one_to_one_mappings</code></td>
+<td><code>get_firewall_nat_one_to_one_mappings</code></td>
+<td><code>GET /api/v2/firewall/nat/one_to_one/mappings</code></td>
+<td><code>api-v2-firewall-nat-one-to-one-mappings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_nat_outbound_mappings</code></td>
+<td><code>get_firewall_nat_outbound_mappings</code></td>
+<td><code>GET /api/v2/firewall/nat/outbound/mappings</code></td>
+<td><code>api-v2-firewall-nat-outbound-mappings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_nat_outbound_mode</code></td>
+<td><code>get_firewall_nat_outbound_mode</code></td>
+<td><code>GET /api/v2/firewall/nat/outbound/mode</code></td>
+<td><code>api-v2-firewall-nat-outbound-mode-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_nat_port_forwards</code></td>
+<td><code>get_firewall_nat_port_forwards</code></td>
+<td><code>GET /api/v2/firewall/nat/port_forwards</code></td>
+<td><code>api-v2-firewall-nat-port-forwards-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_rules</code></td>
+<td><code>get_firewall_rules</code></td>
+<td><code>GET /api/v2/firewall/rules</code></td>
+<td><code>api-v2-firewall-rules-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_schedules</code></td>
+<td><code>get_firewall_schedules</code></td>
+<td><code>GET /api/v2/firewall/schedules</code></td>
+<td><code>api-v2-firewall-schedules-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_states</code></td>
+<td><code>get_firewall_states</code></td>
+<td><code>GET /api/v2/firewall/states</code></td>
+<td><code>api-v2-firewall-states-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_states_size</code></td>
+<td><code>get_firewall_states_size</code></td>
+<td><code>GET /api/v2/firewall/states/size</code></td>
+<td><code>api-v2-firewall-states-size-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_traffic_shaper_limiters</code></td>
+<td><code>get_firewall_traffic_shaper_limiters</code></td>
+<td><code>GET /api/v2/firewall/traffic_shaper/limiters</code></td>
+<td><code>api-v2-firewall-traffic-shaper-limiters-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_traffic_shapers</code></td>
+<td><code>get_firewall_traffic_shapers</code></td>
+<td><code>GET /api/v2/firewall/traffic_shapers</code></td>
+<td><code>api-v2-firewall-traffic-shapers-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_firewall_virtual_ips</code></td>
+<td><code>get_firewall_virtual_ips</code></td>
+<td><code>GET /api/v2/firewall/virtual_ips</code></td>
+<td><code>api-v2-firewall-virtual-ips-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_freeradius_eap</code></td>
+<td><code>get_freeradius_eap</code></td>
+<td><code>GET /api/v2/services/freeradius/eap</code></td>
+<td><code>api-v2-services-freeradius-eap-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_gateway_status</code></td>
+<td><code>get_gateway_status</code></td>
+<td><code>GET /api/v2/status/gateways</code></td>
+<td><code>api-v2-status-gateways-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_gateways</code></td>
+<td><code>get_gateways</code></td>
+<td><code>GET /api/v2/routing/gateways</code></td>
+<td><code>api-v2-routing-gateways-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_available_interfaces</code></td>
+<td><code>get_interface_available_interfaces</code></td>
+<td><code>GET /api/v2/interface/available_interfaces</code></td>
+<td><code>api-v2-interface-available-interfaces-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_bridges</code></td>
+<td><code>get_interface_bridges</code></td>
+<td><code>GET /api/v2/interface/bridges</code></td>
+<td><code>api-v2-interface-bridges-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_configs</code></td>
+<td><code>get_interface_configs</code></td>
+<td><code>GET /api/v2/interfaces</code></td>
+<td><code>api-v2-interfaces-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_gres</code></td>
+<td><code>get_interface_gres</code></td>
+<td><code>GET /api/v2/interface/gres</code></td>
+<td><code>api-v2-interface-gres-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_groups</code></td>
+<td><code>get_interface_groups</code></td>
+<td><code>GET /api/v2/interface/groups</code></td>
+<td><code>api-v2-interface-groups-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_laggs</code></td>
+<td><code>get_interface_laggs</code></td>
+<td><code>GET /api/v2/interface/laggs</code></td>
+<td><code>api-v2-interface-laggs-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interface_vlans</code></td>
+<td><code>get_interface_vlans</code></td>
+<td><code>GET /api/v2/interface/vlans</code></td>
+<td><code>api-v2-interface-vlans-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_interfaces</code></td>
+<td><code>get_interfaces</code></td>
+<td><code>GET /api/v2/status/interfaces</code></td>
+<td><code>api-v2-status-interfaces-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_mcp_info</code></td>
+<td><em>(none — local only)</em></td>
+<td><em>(no pfSense call)</em></td>
+<td><em>(none required)</em></td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>pfsense_ntp_settings</code></td>
+<td><code>get_ntp_settings</code></td>
+<td><code>GET /api/v2/services/ntp/settings</code></td>
+<td><code>api-v2-services-ntp-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_ntp_time_servers</code></td>
+<td><code>get_ntp_time_servers</code></td>
+<td><code>GET /api/v2/services/ntp/time_servers</code></td>
+<td><code>api-v2-services-ntp-time-servers-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_routing_gateway_default</code></td>
+<td><code>get_routing_gateway_default</code></td>
+<td><code>GET /api/v2/routing/gateway/default</code></td>
+<td><code>api-v2-routing-gateway-default-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_routing_gateway_groups</code></td>
+<td><code>get_routing_gateway_groups</code></td>
+<td><code>GET /api/v2/routing/gateway/groups</code></td>
+<td><code>api-v2-routing-gateway-groups-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_routing_static_routes</code></td>
+<td><code>get_routing_static_routes</code></td>
+<td><code>GET /api/v2/routing/static_routes</code></td>
+<td><code>api-v2-routing-static-routes-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_service_status</code></td>
+<td><code>get_service_status</code></td>
+<td><code>GET /api/v2/status/services</code></td>
+<td><code>api-v2-status-services-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_ssh_settings</code></td>
+<td><code>get_ssh_settings</code></td>
+<td><code>GET /api/v2/services/ssh</code></td>
+<td><code>api-v2-services-ssh-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_ipsec_child_sas</code></td>
+<td><code>get_status_ipsec_child_sas</code></td>
+<td><code>GET /api/v2/status/ipsec/child_sas</code></td>
+<td><code>api-v2-status-ipsec-child-sas-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_ipsec_sas</code></td>
+<td><code>get_status_ipsec_sas</code></td>
+<td><code>GET /api/v2/status/ipsec/sas</code></td>
+<td><code>api-v2-status-ipsec-sas-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_openvpn_clients</code></td>
+<td><code>get_status_openvpn_clients</code></td>
+<td><code>GET /api/v2/status/openvpn/clients</code></td>
+<td><code>api-v2-status-openvpn-clients-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_openvpn_server_connections</code></td>
+<td><code>get_status_openvpn_server_connections</code></td>
+<td><code>GET /api/v2/status/openvpn/server/connections</code></td>
+<td><code>api-v2-status-openvpn-server-connections-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_openvpn_server_routes</code></td>
+<td><code>get_status_openvpn_server_routes</code></td>
+<td><code>GET /api/v2/status/openvpn/server/routes</code></td>
+<td><code>api-v2-status-openvpn-server-routes-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_openvpn_servers</code></td>
+<td><code>get_status_openvpn_servers</code></td>
+<td><code>GET /api/v2/status/openvpn/servers</code></td>
+<td><code>api-v2-status-openvpn-servers-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_wireguard_peers</code></td>
+<td><code>get_status_wireguard_peers</code></td>
+<td><code>GET /api/v2/status/wireguard/peers</code></td>
+<td><code>api-v2-status-wireguard-peers-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_status_wireguard_tunnels</code></td>
+<td><code>get_status_wireguard_tunnels</code></td>
+<td><code>GET /api/v2/status/wireguard/tunnels</code></td>
+<td><code>api-v2-status-wireguard-tunnels-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_certificate_authorities</code></td>
+<td><code>get_system_certificate_authorities</code></td>
+<td><code>GET /api/v2/system/certificate_authorities</code></td>
+<td><code>api-v2-system-certificate-authorities-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_certificates</code></td>
+<td><code>get_system_certificates</code></td>
+<td><code>GET /api/v2/system/certificates</code></td>
+<td><code>api-v2-system-certificates-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_console</code></td>
+<td><code>get_system_console</code></td>
+<td><code>GET /api/v2/system/console</code></td>
+<td><code>api-v2-system-console-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_crls</code></td>
+<td><code>get_system_crls</code></td>
+<td><code>GET /api/v2/system/crls</code></td>
+<td><code>api-v2-system-crls-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_dns</code></td>
+<td><code>get_system_dns</code></td>
+<td><code>GET /api/v2/system/dns</code></td>
+<td><code>api-v2-system-dns-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_hasync</code></td>
+<td><code>get_system_hasync</code></td>
+<td><code>GET /api/v2/system/hasync</code></td>
+<td><code>api-v2-system-hasync-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_hostname</code></td>
+<td><code>get_system_hostname</code></td>
+<td><code>GET /api/v2/system/hostname</code></td>
+<td><code>api-v2-system-hostname-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_package_available</code></td>
+<td><code>get_system_package_available</code></td>
+<td><code>GET /api/v2/system/package/available</code></td>
+<td><code>api-v2-system-package-available-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_packages</code></td>
+<td><code>get_system_packages</code></td>
+<td><code>GET /api/v2/system/packages</code></td>
+<td><code>api-v2-system-packages-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_restapi_access_list</code></td>
+<td><code>get_system_restapi_access_list</code></td>
+<td><code>GET /api/v2/system/restapi/access_list</code></td>
+<td><code>api-v2-system-restapi-access-list-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_restapi_settings</code></td>
+<td><code>get_system_restapi_settings</code></td>
+<td><code>GET /api/v2/system/restapi/settings</code></td>
+<td><code>api-v2-system-restapi-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_restapi_version</code></td>
+<td><code>get_system_restapi_version</code></td>
+<td><code>GET /api/v2/system/restapi/version</code></td>
+<td><code>api-v2-system-restapi-version-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_status</code></td>
+<td><code>get_system_status</code></td>
+<td><code>GET /api/v2/status/system</code></td>
+<td><code>api-v2-status-system-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_timezone</code></td>
+<td><code>get_system_timezone</code></td>
+<td><code>GET /api/v2/system/timezone</code></td>
+<td><code>api-v2-system-timezone-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_tunables</code></td>
+<td><code>get_system_tunables</code></td>
+<td><code>GET /api/v2/system/tunables</code></td>
+<td><code>api-v2-system-tunables-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_version</code></td>
+<td><code>get_system_version</code></td>
+<td><code>GET /api/v2/system/version</code></td>
+<td><code>api-v2-system-version-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_system_webgui_settings</code></td>
+<td><code>get_system_webgui_settings</code></td>
+<td><code>GET /api/v2/system/webgui/settings</code></td>
+<td><code>api-v2-system-webgui-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_user_groups</code></td>
+<td><code>get_user_groups</code></td>
+<td><code>GET /api/v2/user/groups</code></td>
+<td><code>api-v2-user-groups-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_users</code></td>
+<td><code>get_users</code></td>
+<td><code>GET /api/v2/users</code></td>
+<td><code>api-v2-users-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_vpn_ipsec_phase1_encryptions</code></td>
+<td><code>get_vpn_ipsec_phase1_encryptions</code></td>
+<td><code>GET /api/v2/vpn/ipsec/phase1/encryptions</code></td>
+<td><code>api-v2-vpn-ipsec-phase1-encryptions-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_vpn_ipsec_phase2_encryptions</code></td>
+<td><code>get_vpn_ipsec_phase2_encryptions</code></td>
+<td><code>GET /api/v2/vpn/ipsec/phase2/encryptions</code></td>
+<td><code>api-v2-vpn-ipsec-phase2-encryptions-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_vpn_ipsec_phase2s</code></td>
+<td><code>get_vpn_ipsec_phase2s</code></td>
+<td><code>GET /api/v2/vpn/ipsec/phase2s</code></td>
+<td><code>api-v2-vpn-ipsec-phase2s-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_vpn_openvpn_csos</code></td>
+<td><code>get_vpn_openvpn_csos</code></td>
+<td><code>GET /api/v2/vpn/openvpn/csos</code></td>
+<td><code>api-v2-vpn-openvpn-csos-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_vpn_openvpn_servers</code></td>
+<td><code>get_vpn_openvpn_servers</code></td>
+<td><code>GET /api/v2/vpn/openvpn/servers</code></td>
+<td><code>api-v2-vpn-openvpn-servers-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_diagnostics_config_history_revisions</code></td>
+<td><code>get_config_history_revisions</code></td>
+<td><code>GET /api/v2/diagnostics/config_history/revisions</code></td>
+<td><code>api-v2-diagnostics-config-history-revisions-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_status_logs_settings</code></td>
+<td><code>get_status_logs_settings</code></td>
+<td><code>GET /api/v2/status/logs/settings</code></td>
+<td><code>api-v2-status-logs-settings-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_firewall_virtual_ip_apply_status</code></td>
+<td><code>get_firewall_virtual_ip_apply_status</code></td>
+<td><code>GET /api/v2/firewall/virtual_ip/apply</code></td>
+<td><code>api-v2-firewall-virtual-ip-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_interface_apply_status</code></td>
+<td><code>get_interface_apply_status</code></td>
+<td><code>GET /api/v2/interface/apply</code></td>
+<td><code>api-v2-interface-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_routing_apply_status</code></td>
+<td><code>get_routing_apply_status</code></td>
+<td><code>GET /api/v2/routing/apply</code></td>
+<td><code>api-v2-routing-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dhcp_server_apply_status</code></td>
+<td><code>get_dhcp_server_apply_status</code></td>
+<td><code>GET /api/v2/services/dhcp_server/apply</code></td>
+<td><code>api-v2-services-dhcp-server-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dns_forwarder_apply_status</code></td>
+<td><code>get_dns_forwarder_apply_status</code></td>
+<td><code>GET /api/v2/services/dns_forwarder/apply</code></td>
+<td><code>api-v2-services-dns-forwarder-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_dns_resolver_apply_status</code></td>
+<td><code>get_dns_resolver_apply_status</code></td>
+<td><code>GET /api/v2/services/dns_resolver/apply</code></td>
+<td><code>api-v2-services-dns-resolver-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_ipsec_apply_status</code></td>
+<td><code>get_ipsec_apply_status</code></td>
+<td><code>GET /api/v2/vpn/ipsec/apply</code></td>
+<td><code>api-v2-vpn-ipsec-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_wireguard_apply_status</code></td>
+<td><code>get_wireguard_apply_status</code></td>
+<td><code>GET /api/v2/vpn/wireguard/apply</code></td>
+<td><code>api-v2-vpn-wireguard-apply-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>pfsense_get_vpn_wireguard_tunnel_addresses</code></td>
+<td><code>get_vpn_wireguard_tunnel_addresses</code></td>
+<td><code>GET /api/v2/vpn/wireguard/tunnel/addresses</code></td>
+<td><code>api-v2-vpn-wireguard-tunnel-addresses-get</code></td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>94 distinct privileges, one per tool, zero sharing between tools</strong> —
+confirmed programmatically (<code>len(set(privileges)) == 94</code>). A least-privilege
+READ-only identity holding exactly these 94 (never <code>page-all</code>) can serve
+every one of this project's 95 registered READ tools.</p>
+<p><code>get_diagnostics_config_history_revisions</code>'s privilege
+(<code>api-v2-diagnostics-config-history-revisions-get</code>) was originally
+live-confirmed 2026-08-16 while the client method existed only as an
+internal, unregistered evidence-gathering utility (ADR-026 row 18) — see
+<code>CHANGELOG.md</code>'s v0.6.0 entry for this promotion's own evidence trail
+(v0.6.0 Phase A qualification + Phase B Batch B). A fresh confirmatory
+live call was not obtained during Batch B's own session (LAB read-only
+service-account privilege scope did not yet include this endpoint at
+that time); it was independently live-reconfirmed during the Phase B
+completion pass below, once the account was properly provisioned.</p>
+<p><strong>2026-08-22 Phase B completion</strong>: after the read-only LAB service
+account (<code>pfsense-mcp</code>, id=2 — confirmed to be this project's
+intentionally-provisioned <code>write_protected</code>-profile service account,
+per <code>AI_CONTEXT.md</code>'s 2026-08-19 ADR-033 checkpoint, not a
+misconfigured or excessively-privileged account) was synced from its
+stale 42-privilege snapshot (dating to that same 2026-08-19
+provisioning) to the full current requirement, all 10 previously-pending
+Batch C/D/E candidates were live-verified in one pass: 9 returned an
+exact key-set match against their model (<code>FIELD_MODEL_LIVE_VERIFIED</code>);
+<code>get_vpn_wireguard_tunnel_addresses</code> returned <code>200, {"data": []}</code>
+(<code>ENDPOINT_VERIFIED</code> — no tunnel addresses configured on this LAB, so
+the item shape itself was not exercised live; its field-safety argument
+rests on the Phase A schema/security review, not an observed populated
+item). One real defect was found and fixed during this pass, not merely
+assumed correct: <code>LogSettings</code> needed 18 fields (including <code>sourceip</code>,
+missed in an earlier partial fix) widened from the schema's declared
+<code>nullable: false</code> to <code>Optional</code>, since this LAB genuinely returns <code>null</code>
+for every log category never explicitly configured — see
+<code>src/pfsense_mcp/models/log_settings.py</code>'s docstring for the full
+before/after account.</p>
+<h2 id="write-privilege-matrix-set_firewall_alias_description_v1">WRITE privilege matrix (<code>set_firewall_alias_description_v1</code>)<a class="headerlink" href="#write-privilege-matrix-set_firewall_alias_description_v1" title="Permanent link">&para;</a></h2>
+<p><strong>Re-derived independently this pass</strong> (not merely copied forward) from
+the same pinned source and the same live schema, as the task's "do not
+assume previously documented privilege IDs remain correct" instruction
+required — and found <strong>unchanged</strong> from the values already live-provisioned
+and live-verified in
+<a href="../adr/ADR-026-first-write-capability-adapter/"><code>ADR-026</code></a>:</p>
+<table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>pfSense endpoint</th>
+<th>Required privilege</th>
+<th>Live-confirmed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read current alias state before mutation</td>
+<td><code>GET /api/v2/firewall/aliases</code></td>
+<td><code>api-v2-firewall-aliases-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>The mutation itself</td>
+<td><code>PATCH /api/v2/firewall/alias</code></td>
+<td><code>api-v2-firewall-alias-patch</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>System status (production runtime dependency)</td>
+<td><code>GET /api/v2/status/system</code></td>
+<td><code>api-v2-status-system-get</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>HA-sync check (conditional — see ADR-026)</td>
+<td><code>GET /api/v2/system/hasync</code></td>
+<td><code>api-v2-system-hasync-get</code></td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p>These 4, plus the already-documented, already-revoked, one-time
+bootstrap privilege <code>api-v2-auth-key-post</code> (needed only for a new
+identity to self-generate its first API key — see ADR-033 §"Bootstrap
+security model" and the historical
+<code>reports-ai/reviews/SLICE6_LEAST_PRIVILEGE_PROVISIONING_2026-08-16.md</code>
+transcript), are the complete set this project has ever needed to
+provision for WRITE, live-tested twice against the disposable LAB
+appliance.</p>
+<h2 id="combined-minimum-set-read-existing-write">Combined minimum set, READ + existing WRITE<a class="headerlink" href="#combined-minimum-set-read-existing-write" title="Permanent link">&para;</a></h2>
+<p>The 4 WRITE privileges are a strict subset of the 94 READ privileges
+except for <code>api-v2-firewall-alias-patch</code> (the mutation itself, obviously
+WRITE-only) — <code>firewall-aliases-get</code>, <code>status-system-get</code>, and
+<code>system-hasync-get</code> are already required for the READ tools
+<code>pfsense_firewall_aliases</code>, <code>pfsense_system_status</code>, and
+<code>pfsense_system_hasync</code> respectively. A <code>write_protected</code>-profile
+identity therefore needs exactly <strong>95 distinct privileges</strong>: the 94 READ
+privileges plus the one additional <code>api-v2-firewall-alias-patch</code>. This
+is independently confirmed live: the LAB's own <code>pfsense-mcp</code> service
+account (id=2), synced 2026-08-22 to exactly this set plus its
+pre-existing <code>api-v2-firewall-alias-patch</code>, holds 95 privileges total.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
