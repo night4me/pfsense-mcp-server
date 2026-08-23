@@ -16,6 +16,12 @@ never by importing and trusting runtime behavior -- that:
 
 Mirrors `tests/test_security_privileges_isolation.py`'s and
 `tests/test_security_doctor_isolation.py`'s established structure.
+
+The final section (ADR-033 CLI Integration Slice 3) adds the equivalent
+proof for `security_bootstrap_orchestration.py`: it is the *sole*
+gateway `security_cli.py` may use to reach anything above, and it is
+itself unreachable from every other runtime entry point and from
+`tools/*`.
 """
 
 from __future__ import annotations
@@ -29,6 +35,18 @@ ENGINE_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_engine.py"
 RECOVERY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_recovery.py"
 TRANSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_auth_transition.py"
 COMPOSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_admin_composition.py"
+ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_orchestration.py"
+
+# The five lower-level module names security_cli.py (and every other
+# runtime entry point / tool) must never reference directly -- only
+# ORCHESTRATION_MODULE_PATH itself may import from them.
+_FORBIDDEN_LOWER_LEVEL_MODULE_NAMES = (
+    "security_bootstrap_engine",
+    "security_bootstrap_client",
+    "security_bootstrap_recovery",
+    "security_auth_transition",
+    "security_admin_composition",
+)
 
 _RUNTIME_ENTRY_POINTS = (
     ROOT / "src/pfsense_mcp/server.py",
@@ -79,6 +97,14 @@ _TRANSITION_EXPECTED_PUBLIC_SURFACE = {
     "AuthTransitionResult",
     "BasicAuthAvailability",
     "AuthMethodTransitionCoordinator",
+}
+
+_ORCHESTRATION_EXPECTED_PUBLIC_SURFACE = {
+    "BootstrapOrchestrationError",
+    "BootstrapOrchestrationOutcome",
+    "BootstrapOrchestrationResult",
+    "run_bootstrap",
+    "run_bootstrap_from_environment",
 }
 
 
@@ -233,3 +259,91 @@ def test_basic_auth_transport_remains_unwired_from_runtime_entry_points():
     for entry_point in _RUNTIME_ENTRY_POINTS:
         source = entry_point.read_text(encoding="utf-8")
         assert "BasicAuthHttpTransport" not in source, f"{entry_point.name} wires BasicAuthHttpTransport"
+
+
+# --- ADR-033 CLI Integration Slice 3: security_bootstrap_orchestration.py --
+
+
+def test_orchestration_module_exists():
+    assert ORCHESTRATION_MODULE_PATH.is_file()
+
+
+def test_orchestration_public_surface_is_exactly_the_reviewed_api():
+    assert _public_surface(ORCHESTRATION_MODULE_PATH) == _ORCHESTRATION_EXPECTED_PUBLIC_SURFACE
+
+
+def test_orchestration_never_calls_transport_request_directly():
+    source = ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+
+
+def test_orchestration_does_not_register_commands_or_expose_mcp_tools():
+    source = ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert "@app.command" not in source
+    assert "add_parser(" not in source
+    assert "mcp.tool" not in source
+    assert "FastMCP" not in source
+
+
+def test_orchestration_module_does_not_import_pfsense_mcp_tier1_or_a_raw_http_library():
+    imported = _imports(ORCHESTRATION_MODULE_PATH)
+    offending = {
+        module
+        for module in imported
+        for root in _FORBIDDEN_IMPORT_ROOTS
+        if module == root or module.startswith(f"{root}.")
+    }
+    assert not offending, f"security_bootstrap_orchestration.py imports forbidden module(s): {offending}"
+
+
+def test_orchestration_module_is_not_in_the_tier1_isolation_exemption_list():
+    isolation_test_path = ROOT / "tests/tier1/test_isolation.py"
+    source = isolation_test_path.read_text(encoding="utf-8")
+    assert "security_bootstrap_orchestration.py" not in source
+
+
+def test_security_cli_is_the_sole_runtime_entry_point_wired_to_orchestration():
+    """security_cli.py must reference the orchestration module (it is the
+    intended gateway) while every OTHER runtime entry point, and every
+    tool under tools/, must not -- proving `bootstrap` is reachable only
+    through the one reviewed subcommand, not through any other surface."""
+
+    cli_path = ROOT / "src/pfsense_mcp/security_cli.py"
+    assert "security_bootstrap_orchestration" in cli_path.read_text(encoding="utf-8")
+
+    other_entry_points = [path for path in _RUNTIME_ENTRY_POINTS if path != cli_path]
+    tools_dir = ROOT / "src/pfsense_mcp/tools"
+    for path in [*other_entry_points, *sorted(tools_dir.rglob("*.py"))]:
+        assert "security_bootstrap_orchestration" not in path.read_text(encoding="utf-8"), (
+            f"{path} references security_bootstrap_orchestration"
+        )
+
+
+def test_security_cli_never_references_any_lower_level_bootstrap_module_by_name():
+    """Redundant with test_no_shipped_runtime_entry_point_references_the_bootstrap_engine_or_client
+    and test_composition_is_absent_from_all_runtime_cli_doctor_and_tool_imports
+    above (which already cover security_cli.py as one of _RUNTIME_ENTRY_POINTS)
+    -- kept as an explicit, named assertion of the Slice 3 design decision
+    (security_cli.py imports only the orchestration module, never any
+    module it composes) rather than relying solely on the pre-existing,
+    more general sweep."""
+
+    source = (ROOT / "src/pfsense_mcp/security_cli.py").read_text(encoding="utf-8")
+    for name in _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES:
+        assert name not in source, f"security_cli.py references {name}"
+
+
+def test_orchestration_module_itself_reaches_the_lower_level_stack():
+    """The inverse of the above: orchestration.py is *expected* to import
+    from the lower-level stack (that is its entire purpose) -- confirms
+    this isn't accidentally also isolated into uselessness."""
+
+    imported = _imports(ORCHESTRATION_MODULE_PATH)
+    assert "security_admin_composition" in imported
+    assert "security_bootstrap_engine" in imported
+    assert "security_operation_journal" in imported
+
+
+def test_basic_auth_transport_remains_unwired_from_orchestration_module():
+    source = ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert "BasicAuthHttpTransport" not in source
