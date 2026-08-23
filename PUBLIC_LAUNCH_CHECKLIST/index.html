@@ -4034,6 +4034,17 @@ mechanism actually used: <code>mkdocs gh-deploy</code> (builds and pushes a
 <code>gh-pages</code> branch — GitHub auto-enabled Pages on detecting that branch
 on the now-public repo). Redeployment after a docs change is still
 manual; nothing currently automates re-running <code>mkdocs gh-deploy</code>.</p>
+<p><strong>Incident, 2026-08-23:</strong> that manual-only gap let the live site drift
+silently for months — it was still serving the v0.4.2-era, 42-tool
+description while <code>main</code> had reached v0.7.1, and one README link
+(<code>PFSENSE_LEAST_PRIVILEGE_MATRIX</code>) 404'd because the page didn't exist
+in that stale build. Found via an external report, corrected the same
+day (<code>mkdocs gh-deploy</code> re-run from <code>main</code> at <code>9bd7235</code>), and a
+read-only detector (<code>make docs-freshness-check</code> /
+<code>.github/workflows/docs-freshness.yml</code>, weekly + on every docs-affecting
+push to <code>main</code>) now fails loudly if this recurs — it does not deploy
+anything itself. Full detail:
+<code>reports-ai/GITHUB_PAGES_RECOVERY_2026-08-23.md</code>.</p>
 <ul>
 <li>[x] Enable GitHub Pages.</li>
 <li>[x] Update <code>pyproject.toml</code>'s <code>Documentation</code> URL from the <code>docs/</code>
