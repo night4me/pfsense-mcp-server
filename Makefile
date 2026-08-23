@@ -6,7 +6,7 @@
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
-        docs-build docs-serve sbom min-deps-check witness-daemon-check guidance-corpus-audit
+        docs-build docs-serve docs-freshness-check sbom min-deps-check witness-daemon-check guidance-corpus-audit
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -283,14 +283,25 @@ checkpoint:
 # build failure, catching exactly the class of regression a raw
 # heading/file rename can silently introduce. Builds to site/
 # (git-ignored, like dist/) -- never committed. This does not deploy
-# anything: enabling a public GitHub Pages deployment remains a
-# separate, explicit owner decision (see reports-ai's Push
-# authorization note), not something building the site locally implies.
+# anything: GitHub Pages is live (https://night4me.github.io/pfsense-mcp-server/)
+# but redeploying it after a docs change is `mkdocs gh-deploy`, run
+# manually -- see docs-freshness-check below for the drift this can
+# leave undetected, and mkdocs.yml's own comment for the deploy
+# procedure. Enabling *automatic* deployment on every push remains a
+# separate, explicit owner decision, not something building the site
+# locally implies.
 docs-build:
 	@$(PYTHON) -m mkdocs build --strict
 
 docs-serve:
 	@$(PYTHON) -m mkdocs serve
+
+# Detects (never fixes) drift between the live gh-pages deployment and
+# current docs/mkdocs.yml -- see scripts/docs_pages_freshness_check.py's
+# own docstring for the full mechanism. Requires network access (a
+# read-only fetch of the gh-pages ref), unlike release-check.
+docs-freshness-check:
+	@$(PYTHON) scripts/docs_pages_freshness_check.py
 
 # Maintainer-invoked audit (task Phase 18): verify every guidance registry
 # entry's pinned excerpt is still present, verbatim, on its live

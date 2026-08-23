@@ -89,6 +89,18 @@ mechanism actually used: `mkdocs gh-deploy` (builds and pushes a
 on the now-public repo). Redeployment after a docs change is still
 manual; nothing currently automates re-running `mkdocs gh-deploy`.
 
+**Incident, 2026-08-23:** that manual-only gap let the live site drift
+silently for months — it was still serving the v0.4.2-era, 42-tool
+description while `main` had reached v0.7.1, and one README link
+(`PFSENSE_LEAST_PRIVILEGE_MATRIX`) 404'd because the page didn't exist
+in that stale build. Found via an external report, corrected the same
+day (`mkdocs gh-deploy` re-run from `main` at `9bd7235`), and a
+read-only detector (`make docs-freshness-check` /
+`.github/workflows/docs-freshness.yml`, weekly + on every docs-affecting
+push to `main`) now fails loudly if this recurs — it does not deploy
+anything itself. Full detail:
+`reports-ai/GITHUB_PAGES_RECOVERY_2026-08-23.md`.
+
 - [x] Enable GitHub Pages.
 - [x] Update `pyproject.toml`'s `Documentation` URL from the `docs/`
       source-tree link to the deployed site URL above.

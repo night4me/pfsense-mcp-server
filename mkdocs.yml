@@ -46,11 +46,24 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
 
-# GitHub Pages is enabled and live (site_url above), deployed via
-# `mkdocs gh-deploy` to the `gh-pages` branch -- re-run that command to
-# redeploy after a docs change; nothing currently does this
-# automatically. `make docs-build`/CI's `docs` job remain the
-# build-quality gate only (mkdocs build --strict); neither one deploys.
+# GitHub Pages is enabled and live (site_url above), deployed via:
+#
+#   mkdocs gh-deploy --strict -m "Deploy docs from main (<short-sha>) [<full-sha>]"
+#
+# to the `gh-pages` branch -- re-run that exact command (embedding the
+# current commit both ways) to redeploy after a docs change; nothing
+# currently does this automatically. `make docs-build`/CI's `docs` job
+# remain the build-quality gate only (mkdocs build --strict); neither
+# one deploys. `make docs-freshness-check` (weekly in CI, and on every
+# docs-affecting push to main via
+# .github/workflows/docs-freshness.yml) fails loudly -- but never
+# deploys anything itself -- if a docs/mkdocs.yml change lands without
+# a redeploy; it depends on every `gh-deploy` using the exact `-m`
+# message format above so it can recover the deployed SHA from
+# `gh-pages`'s own history. Found and corrected once already
+# (2026-08-23): the live site had silently drifted since v0.4.2 while
+# main reached v0.7.1 -- see docs/PUBLIC_LAUNCH_CHECKLIST.md's
+# "Incident, 2026-08-23" note.
 #
 # Nav hierarchy is deliberate: Getting Started and Security come before
 # Architecture, so a new visitor reaches "how do I run this" and "why

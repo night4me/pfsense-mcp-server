@@ -1,0 +1,41 @@
+name: Docs Pages freshness
+
+# Detects (never fixes) drift between the live GitHub Pages deployment
+# and current docs/mkdocs.yml on main -- see
+# scripts/docs_pages_freshness_check.py's own docstring for the exact
+# mechanism. GitHub Pages here is deployed manually via `mkdocs
+# gh-deploy` (mkdocs.yml's own comment); nothing redeploys it
+# automatically. This workflow never deploys anything itself -- it only
+# fails loudly (and, for the scheduled run, notifies via GitHub's
+# default failed-scheduled-workflow email) when the live site has
+# fallen behind, so that drift is caught within a week rather than
+# silently persisting across releases (found and corrected 2026-08-23,
+# after the live site had been stale since v0.4.2 while main reached
+# v0.7.1).
+#
+# Read-only: contents: read only, no deploy credentials, no write
+# permission. Cannot itself publish to gh-pages under any code path.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check gh-pages freshness
+        run: python3 scripts/docs_pages_freshness_check.py
