@@ -1058,3 +1058,211 @@ def test_top_level_help_lists_setup_and_documents_no_setup_apply(capsys):
         main(["--help"])
     out = capsys.readouterr().out
     assert "setup" in out
+
+
+# ===========================================================================
+# MCP client configuration snippet (Slice 6, print-only)
+# ===========================================================================
+
+
+def test_mcp_client_config_present_in_json_for_a_safe_to_proceed_read_only_plan(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"],
+    )
+    payload = json.loads(out)
+    snippet = payload["mcp_client_config"]
+    assert snippet["mcpServers"]["pfsense"]["env"]["PFSENSE_TLS_MODE"] == "strict"
+    assert snippet["mcpServers"]["pfsense"]["command"].startswith("/absolute/path/to/pfsense-mcp-server")
+
+
+def test_mcp_client_config_json_stays_present_but_human_output_omits_it_when_not_safe_to_proceed(monkeypatch):
+    """write_protected + none is never a valid ADR-021 target (mutation
+    must stay blocked without a witness). `--json` output stays fully
+    unabridged (matching this codebase's own "internal identifiers
+    remain fully available via --json" convention) -- only human-mode
+    output selectively omits the snippet, to avoid printing premature
+    connection guidance for a target that cannot actually be used yet."""
+
+    _exit_code, json_out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "write_protected",
+            "--anchor-assurance",
+            "none",
+            "--json",
+        ],
+    )
+    payload = json.loads(json_out)
+    assert payload["posture_plan"]["safe_to_proceed"] is False
+    assert payload["mcp_client_config"]["mcpServers"]["pfsense"]["env"]["PFSENSE_IDENTITY"] == "pfsense-mcp"
+
+    _exit_code, human_out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "write_protected", "--anchor-assurance", "none"],
+    )
+    assert "MCP client configuration" not in human_out
+    assert '"mcpServers"' not in human_out
+
+
+def test_mcp_client_config_uses_service_account_identity_for_write_protected(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "write_protected",
+            "--anchor-assurance",
+            "hardware_witness",
+            "--target-identity",
+            "human-admin-account",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    if payload["posture_plan"]["safe_to_proceed"]:
+        identity = payload["mcp_client_config"]["mcpServers"]["pfsense"]["env"]["PFSENSE_IDENTITY"]
+        assert identity == "pfsense-mcp"
+        assert identity != "human-admin-account"
+
+
+def test_mcp_client_config_uses_operator_identity_for_read_only(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--target-identity",
+            "my-readonly-key",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    assert payload["mcp_client_config"]["mcpServers"]["pfsense"]["env"]["PFSENSE_IDENTITY"] == "my-readonly-key"
+
+
+def test_mcp_client_config_falls_back_to_placeholder_identity_when_none_entered(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"],
+    )
+    payload = json.loads(out)
+    identity = payload["mcp_client_config"]["mcpServers"]["pfsense"]["env"]["PFSENSE_IDENTITY"]
+    assert identity == "api-mcp-admin"
+
+
+def test_mcp_client_config_tls_mode_translates_insecure(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--tls-mode",
+            "insecure",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    assert payload["mcp_client_config"]["mcpServers"]["pfsense"]["env"]["PFSENSE_TLS_MODE"] == "insecure"
+
+
+def test_mcp_client_config_tls_mode_translates_verify_to_strict(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--tls-mode",
+            "verify",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    assert payload["mcp_client_config"]["mcpServers"]["pfsense"]["env"]["PFSENSE_TLS_MODE"] == "strict"
+
+
+def test_mcp_client_config_present_in_human_output_with_print_only_disclaimer(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none"],
+    )
+    assert "MCP client configuration (print-only" in out
+    assert "nothing is written to any file" in out
+    assert '"mcpServers"' in out
+
+
+def test_mcp_client_config_never_writes_any_file(monkeypatch, tmp_path):
+    before = set(tmp_path.iterdir())
+    monkeypatch.chdir(tmp_path)
+    _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"],
+    )
+    _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "write_protected",
+            "--anchor-assurance",
+            "hardware_witness",
+        ],
+    )
+    after = set(tmp_path.iterdir())
+    assert before == after
+
+
+def test_no_secret_shaped_env_value_ever_appears_in_the_mcp_client_config_snippet(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "write_protected",
+            "--anchor-assurance",
+            "hardware_witness",
+            "--json",
+        ],
+        env={"PFSENSE_ADMIN_API_KEY": "totally-secret-value-should-never-appear"},
+    )
+    assert "totally-secret-value-should-never-appear" not in out
+
+
+def test_mcp_client_config_snippet_matches_the_documented_examples_shape(monkeypatch):
+    """Structural proof the generated snippet is exactly the shape
+    `examples/claude-desktop.md` already documents -- one server named
+    'pfsense', with exactly `command` + `env`, and exactly the four
+    PFSENSE_* env vars that example already shows."""
+
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"],
+    )
+    payload = json.loads(out)
+    servers = payload["mcp_client_config"]["mcpServers"]
+    assert set(servers) == {"pfsense"}
+    assert set(servers["pfsense"]) == {"command", "env"}
+    assert set(servers["pfsense"]["env"]) == {
+        "PFSENSE_API_URL",
+        "PFSENSE_IDENTITY",
+        "PFSENSE_API_KEY_FILE",
+        "PFSENSE_TLS_MODE",
+    }

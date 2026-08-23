@@ -150,6 +150,7 @@ from .security_recovery_orchestration import (
 )
 from .security_setup_apply import ApplyOutcome, ApplyResult, run_setup_apply_from_environment
 from .security_setup_plan import (
+    INTENDED_SERVICE_ACCOUNT_IDENTITY,
     PrivilegePlan,
     SetupPlan,
     TargetDescriptor,
@@ -1140,6 +1141,71 @@ def _version_evidence_to_dict(version_evidence: VersionEvidence) -> dict[str, An
     }
 
 
+#: Slice 6 (`reports-ai/SETUP_WIZARD_DESIGN_2026-08-23.md` §14):
+#: print-only MCP client configuration generation. Every placeholder
+#: below is copied verbatim from `examples/claude-desktop.md`'s own
+#: already-reviewed snippet -- never reinvented. `setup` has no way to
+#: discover the actual install path or the actual API-key custody path
+#: (no earlier slice collects either), so both remain the exact same
+#: illustrative placeholder text the example docs already use;
+#: detecting them would be new environment-introspection scope this
+#: slice does not need.
+_MCP_CLIENT_COMMAND_PLACEHOLDER = "/absolute/path/to/pfsense-mcp-server/.venv/bin/pfsense-mcp-server"
+_MCP_CLIENT_ORIGIN_PLACEHOLDER = "https://pfsense.example.invalid"
+_MCP_CLIENT_IDENTITY_PLACEHOLDER = "api-mcp-admin"
+_MCP_CLIENT_KEY_FILE_PLACEHOLDER = "/absolute/private/path/pfsense-api.key"
+
+
+def _mcp_client_tls_mode(plan: SetupPlan) -> str:
+    """Translates `setup`'s own wizard-facing `--tls-mode` vocabulary
+    (`verify`/`insecure`) into the real runtime `PfSenseConfig`/`TLSMode`
+    vocabulary (`strict`/`auto`/`insecure`) the generated snippet must
+    actually be valid for -- these are deliberately different
+    vocabularies (`setup`'s own `--tls-mode` choices are `verify`/
+    `insecure` only; `TLSMode` also has `auto`), so this is a real
+    translation, not a pass-through."""
+
+    if plan.target.tls_mode == "insecure":
+        return "insecure"
+    return "strict"
+
+
+def _mcp_client_config_snippet(plan: SetupPlan) -> dict[str, Any]:
+    """The exact `mcpServers` block `examples/claude-desktop.md` already
+    documents, populated from this plan's own recorded target values
+    where available. For `write_protected`, the identity is the fixed
+    ADR-033 service account (`INTENDED_SERVICE_ACCOUNT_IDENTITY`) --
+    once `setup apply`/`bootstrap` actually provisions it, that is the
+    correct least-privilege identity for the MCP server's own runtime
+    credential; suggesting the *administrator* identity used to
+    provision it would be exactly the privilege-escalation mistake
+    ADR-033 exists to prevent. For `read_only` (bring-your-own-key),
+    the operator's own entered identity is used instead, since no
+    dedicated account is ever provisioned for that posture. Print-only,
+    forever the default (owner decision 8) -- `setup` never writes this
+    to any file."""
+
+    posture = plan.privilege_plan.intended_capability_posture
+    identity = (
+        INTENDED_SERVICE_ACCOUNT_IDENTITY
+        if posture is CapabilityPosture.WRITE_PROTECTED
+        else (plan.target.identity or _MCP_CLIENT_IDENTITY_PLACEHOLDER)
+    )
+    return {
+        "mcpServers": {
+            "pfsense": {
+                "command": _MCP_CLIENT_COMMAND_PLACEHOLDER,
+                "env": {
+                    "PFSENSE_API_URL": plan.target.origin or _MCP_CLIENT_ORIGIN_PLACEHOLDER,
+                    "PFSENSE_IDENTITY": identity,
+                    "PFSENSE_API_KEY_FILE": _MCP_CLIENT_KEY_FILE_PLACEHOLDER,
+                    "PFSENSE_TLS_MODE": _mcp_client_tls_mode(plan),
+                },
+            }
+        }
+    }
+
+
 def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
     return {
         "schema_version": plan.schema_version,
@@ -1157,6 +1223,10 @@ def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
         # own module docstring.
         "setup_plan_digest": compute_setup_plan_digest(plan),
         "setup_plan_digest_schema_version": SETUP_PLAN_DIGEST_SCHEMA_VERSION,
+        # Slice 6: always present, always print-only -- never written to
+        # any file by this codebase. See _mcp_client_config_snippet()'s
+        # own docstring for exactly what is (and is not) populated.
+        "mcp_client_config": _mcp_client_config_snippet(plan),
     }
 
 
@@ -1303,6 +1373,12 @@ def _format_setup_human(plan: SetupPlan) -> str:
             reason = "see --json for detail"
         lines.append("")
         lines.append(f"! This selection cannot be completed yet: {reason}")
+    if plan.posture_plan.safe_to_proceed:
+        lines.append("")
+        lines.append("MCP client configuration (print-only -- copy into your client's config,")
+        lines.append("nothing is written to any file by this command):")
+        lines.append("")
+        lines.append(json.dumps(_mcp_client_config_snippet(plan), indent=2, sort_keys=True))
     lines.append("")
     short_plan_id = compute_setup_plan_digest(plan)[:_HUMAN_PLAN_ID_LENGTH]
     lines.append(f"Plan ID: {short_plan_id}  (full plan digest and technical detail available via --json)")
