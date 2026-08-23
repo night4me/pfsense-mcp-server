@@ -140,6 +140,103 @@ def test_omitting_confirm_forwards_none(monkeypatch):
     assert captured["confirm_token"] is None
 
 
+# --- Slice 7: PFSENSE_SETUP_APPLY_CONFIRM_TOKEN env-var fallback ------------
+#
+# A purely additive way to supply --confirm's value that keeps it out of
+# argv/`ps`/shell history -- the standard CI-secret-injection convention,
+# complementing --confirm - (stdin) for pipelines where piping between
+# steps is awkward. Never required, never consulted when --confirm was
+# given explicitly (including "-"), never weakens any existing gate.
+
+
+def test_confirm_env_var_used_when_flag_omitted_entirely(monkeypatch):
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.APPLY_COMPLETED, "done"))
+    monkeypatch.setenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", "token-from-env")
+
+    main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+
+    assert captured["confirm_token"] == "token-from-env"
+
+
+def test_explicit_confirm_flag_wins_over_env_var(monkeypatch):
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.APPLY_COMPLETED, "done"))
+    monkeypatch.setenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", "token-from-env-should-be-ignored")
+
+    main(
+        [
+            "setup",
+            "apply",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--confirm",
+            "token-from-flag",
+        ]
+    )
+
+    assert captured["confirm_token"] == "token-from-flag"
+
+
+def test_confirm_dash_stdin_wins_over_env_var(monkeypatch):
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.APPLY_COMPLETED, "done"))
+    monkeypatch.setenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", "token-from-env-should-be-ignored")
+    monkeypatch.setattr("sys.stdin", io.StringIO("token-from-stdin\n"))
+
+    main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none", "--confirm", "-"])
+
+    assert captured["confirm_token"] == "token-from-stdin"
+
+
+def test_empty_confirm_env_var_is_treated_as_absent(monkeypatch):
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.INSPECT_PLAN_CURRENT, "detail"))
+    monkeypatch.setenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", "")
+
+    main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+
+    assert captured["confirm_token"] is None
+
+
+def test_whitespace_only_confirm_env_var_is_treated_as_absent(monkeypatch):
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.INSPECT_PLAN_CURRENT, "detail"))
+    monkeypatch.setenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", "   ")
+
+    main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+
+    assert captured["confirm_token"] is None
+
+
+def test_confirm_env_var_absent_and_flag_omitted_still_inspects(monkeypatch):
+    monkeypatch.delenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", raising=False)
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.INSPECT_PLAN_CURRENT, "detail"))
+
+    main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+
+    assert captured["confirm_token"] is None
+
+
+def test_wrong_confirm_env_var_value_is_refused_exactly_like_a_wrong_flag_value(tmp_path, monkeypatch):
+    """End-to-end (not canned): a wrong token supplied only via the env
+    var must be refused by the real orchestration layer exactly like a
+    wrong --confirm flag value would be -- proves the env-var path does
+    not bypass token verification, only how the value arrives."""
+
+    def _write_secure(path, value):
+        path.write_bytes(value)
+        path.chmod(0o600)
+
+    confirm_key = tmp_path / "confirm.key"
+    _write_secure(confirm_key, b"real-confirm-key-material")
+    monkeypatch.setenv("PFSENSE_SETUP_CONFIRM_KEY_FILE", str(confirm_key))
+
+    inspect_exit = main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"])
+    assert inspect_exit == 1
+
+    monkeypatch.setenv("PFSENSE_SETUP_APPLY_CONFIRM_TOKEN", "0" * 64)
+    exit_code = main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"])
+    assert exit_code == 3
+
+
 # --- exit-code mapping, every outcome -------------------------------------
 
 

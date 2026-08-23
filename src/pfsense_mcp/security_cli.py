@@ -112,6 +112,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import sys
 from dataclasses import dataclass
@@ -1023,7 +1024,10 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="TOKEN",
         help=(
             "The exact confirmation token a prior inspection printed for this plan. Pass '-' to read it "
-            "from stdin instead of the command line. Omit for inspection only."
+            "from stdin instead of the command line. Omit for inspection only, unless "
+            f"{_SETUP_APPLY_CONFIRM_TOKEN_ENV_VAR} is set (checked only when this flag is omitted "
+            "entirely; an explicit --confirm always wins) -- the CI-friendly way to supply it without "
+            "shell history/process-list exposure when piping to stdin is impractical."
         ),
     )
     apply_parser.add_argument(
@@ -2259,6 +2263,40 @@ def _format_apply_human(result: ApplyResult) -> str:
     return "\n".join(lines)
 
 
+#: Slice 7 (automation hardening): an additional, purely additive way
+#: to supply `--confirm`'s value that keeps it out of argv/`ps`/shell
+#: history entirely -- the standard CI-secret-injection convention
+#: (GitHub Actions/GitLab CI variables, etc. all inject as environment
+#: variables), complementing `--confirm -` (stdin) for pipelines where
+#: piping between steps is awkward. Never required, never the only way
+#: to supply a token, and never consulted when `--confirm` is
+#: explicitly given on the command line (including `-`) -- an explicit
+#: flag always wins over an ambient environment variable.
+_SETUP_APPLY_CONFIRM_TOKEN_ENV_VAR = "PFSENSE_SETUP_APPLY_CONFIRM_TOKEN"  # nosec B105 -- an env var name, not a credential
+
+
+def _resolve_setup_apply_confirm(confirm: str | None, *, env: dict[str, str] | None, in_: TextIO) -> str | None:
+    """Resolves the effective `--confirm` value, in strict precedence
+    order: an explicit `--confirm -` reads stdin; an explicit
+    `--confirm <TOKEN>` is used verbatim; only when `--confirm` was
+    *omitted entirely* does `PFSENSE_SETUP_APPLY_CONFIRM_TOKEN` get a
+    chance to supply it (an empty/whitespace-only env var is treated as
+    absent, matching this codebase's own `_required()`-style discipline
+    elsewhere) -- an operator explicitly typing `--confirm` (even a
+    wrong or empty value passed some other way) is never silently
+    overridden by an ambient environment variable."""
+
+    if confirm == "-":
+        return in_.readline().rstrip("\n")
+    if confirm is not None:
+        return confirm
+    source = env if env is not None else os.environ
+    from_env = source.get(_SETUP_APPLY_CONFIRM_TOKEN_ENV_VAR)
+    if from_env is not None and from_env.strip():
+        return from_env
+    return None
+
+
 def _run_setup_apply(
     *,
     capability_posture: str,
@@ -2273,9 +2311,7 @@ def _run_setup_apply(
     out: TextIO,
     in_: TextIO,
 ) -> int:
-    # '-' reads the token from stdin rather than the command line/process
-    # argv, matching `recover --confirm -`'s own established precedent.
-    confirm_token = in_.readline().rstrip("\n") if confirm == "-" else confirm
+    confirm_token = _resolve_setup_apply_confirm(confirm, env=env, in_=in_)
     result = run_setup_apply_from_environment(
         env,
         target_capability_posture=capability_posture,
