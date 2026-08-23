@@ -1,16 +1,20 @@
 """Focused + adversarial tests for `pfsense-mcp-security setup`
-(`pfsense_mcp.security_cli`, Slice 1 + the Slice 1 UX correction).
+(`pfsense_mcp.security_cli`, Slice 1 + the two Slice 1 UX corrections).
 Proves, at the actual CLI surface: the guided, numbered-menu wizard
 never lets an invalid or unavailable choice reach the plan model; bare
 setup/interactive planning/non-interactive setup all cannot mutate;
 malformed arguments cannot reach mutation code; Back/Quit/EOF/Ctrl+C
 all terminate or navigate cleanly from every step; progressive
 disclosure holds (read-only never asks a write-protection question,
-switching modes clears irrelevant state); REST-version/OpenAPI-schema
-input is absent from the normal happy path and only reachable via
-Advanced options; secrets are absent from every output surface; and no
-live network call of any kind is ever made, using a hostile transport
-that raises immediately if `httpx.Client` is ever constructed."""
+switching modes clears irrelevant state); step numbering is consistent
+("Step N of M") across the whole numbered sequence, including Review;
+Advanced discovery-input configuration is never a mandatory stop on the
+default happy path and is reached only as an explicit choice from
+Review; secrets are absent from every output surface; the human-mode
+completion screen shows only a short Plan ID, never the full digest;
+and no live network call of any kind is ever made, using a hostile
+transport that raises immediately if `httpx.Client` is ever
+constructed."""
 
 from __future__ import annotations
 
@@ -48,13 +52,15 @@ def _answers(*parts: str) -> str:
 
 #: A complete, valid answer sequence for the read-only happy path:
 #: usage=1 (read-only), address=192.0.2.1, confirm-https=1,
-#: name=Home pfSense, connection=1 (verify), advanced=1 (defaults),
-#: review=1 (generate).
-_READ_ONLY_HAPPY_PATH = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+#: name=Home pfSense, connection=1 (verify), review=1 (generate).
+#: Advanced options is never part of this sequence -- it is reached
+#: only as an explicit choice from Review (see the "Advanced options"
+#: section below).
+_READ_ONLY_HAPPY_PATH = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "1")
 
 #: usage=2 (write_protected), protection=1 (hardware witness), then the
-#: same firewall/connection/advanced/review sequence.
-_WRITE_PROTECTED_HAPPY_PATH = _answers("2", "1", "192.0.2.1", "1", "Lab pfSense", "1", "1", "1")
+#: same firewall/connection/review sequence.
+_WRITE_PROTECTED_HAPPY_PATH = _answers("2", "1", "192.0.2.1", "1", "Lab pfSense", "1", "1")
 
 
 # ===========================================================================
@@ -117,6 +123,16 @@ def test_hostile_transport_write_protected_happy_path_never_constructs_an_httpx_
     assert "setup plan created" in out
 
 
+def test_hostile_transport_advanced_options_path_never_constructs_an_httpx_client(monkeypatch, tmp_path):
+    _install_hostile_httpx(monkeypatch)
+    schema_file = tmp_path / "schema.json"
+    schema_file.write_text(json.dumps({"paths": {}}), encoding="utf-8")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "3", "2", "2.10", str(schema_file), "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
+    assert exit_code == 0
+    assert "setup plan created" in out
+
+
 # ===========================================================================
 # Happy paths
 # ===========================================================================
@@ -130,7 +146,7 @@ def test_read_only_happy_path_completes_with_friendly_summary(monkeypatch):
     assert "Address:     https://192.0.2.1" in out
     assert "Connection:  Verify TLS certificate" in out
     assert "No changes were made to pfSense." in out
-    assert "Setup plan digest:" in out
+    assert "Plan ID:" in out
 
 
 def test_write_protected_happy_path_uses_hardware_witness_and_completes(monkeypatch):
@@ -141,6 +157,60 @@ def test_write_protected_happy_path_uses_hardware_witness_and_completes(monkeypa
     assert "No changes were made to pfSense." in out
 
 
+def test_read_only_happy_path_requires_exactly_six_answers(monkeypatch):
+    """Documents the actual happy-path decision count now that Advanced
+    options is no longer a mandatory stop: usage, address,
+    confirm-https, name, connection, review -- 6 real prompts, matching
+    the original design goal of "approximately 3-4 real operator
+    decisions" (address/confirm-https/name are all part of the single
+    "Firewall" step)."""
+
+    assert _READ_ONLY_HAPPY_PATH.count("\n") == 6
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "setup plan created" in out
+
+
+# ===========================================================================
+# Step numbering consistency ("Step N of M")
+# ===========================================================================
+
+
+def test_read_only_path_shows_step_n_of_4_throughout(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "Step 1 of 4 -- Usage" in out
+    assert "Step 2 of 4 -- Firewall" in out
+    assert "Step 3 of 4 -- Connection" in out
+    assert "Step 4 of 4 -- Review" in out
+
+
+def test_write_protected_path_shows_step_n_of_5_throughout(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_WRITE_PROTECTED_HAPPY_PATH)
+    assert exit_code == 0
+    assert "Step 1 of 4 -- Usage" in out  # total unknown before mode is chosen -- defaults to read-only's 4
+    assert "Step 2 of 5 -- Protection" in out
+    assert "Step 3 of 5 -- Firewall" in out
+    assert "Step 4 of 5 -- Connection" in out
+    assert "Step 5 of 5 -- Review" in out
+
+
+def test_advanced_options_step_is_never_numbered(monkeypatch, tmp_path):
+    """Advanced configuration is explicitly not a mandatory normal-flow
+    step (it is reached only as an explicit Review menu choice) -- it
+    must never carry a "Step N of M" heading of its own."""
+
+    schema_file = tmp_path / "schema.json"
+    schema_file.write_text(json.dumps({"paths": {}}), encoding="utf-8")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "3", "2", "2.10", str(schema_file), "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
+    assert exit_code == 0
+    assert "Advanced options" in out
+    for line in out.splitlines():
+        if "Advanced options" in line:
+            assert not line.strip().startswith("Step")
+
+
 # ===========================================================================
 # Numbered choices, defaults, invalid input
 # ===========================================================================
@@ -149,28 +219,28 @@ def test_write_protected_happy_path_uses_hardware_witness_and_completes(monkeypa
 def test_default_enter_selects_read_only_at_usage(monkeypatch):
     # blank line at usage -> default (1, read-only); rest is the normal
     # read-only happy path minus the explicit "1".
-    answers = _answers("", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Mode:        Read-only" in out
 
 
 def test_invalid_numeric_selection_reprompts_without_crashing(monkeypatch):
-    answers = _answers("9", "1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("9", "1", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Please enter a number from 1 to 2." in out
 
 
 def test_arbitrary_text_at_numeric_menu_reprompts(monkeypatch):
-    answers = _answers("banana", "1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("banana", "1", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Please enter a number from 1 to 2." in out
 
 
 def test_repeated_invalid_input_eventually_succeeds(monkeypatch):
-    answers = _answers("x", "y", "z", "0", "99", "1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("x", "y", "z", "0", "99", "1", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert out.count("Please enter a number from 1 to 2.") == 5
@@ -178,16 +248,18 @@ def test_repeated_invalid_input_eventually_succeeds(monkeypatch):
 
 
 def test_whitespace_only_input_at_menu_is_treated_as_default(monkeypatch):
-    answers = _answers("   ", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("   ", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Mode:        Read-only" in out
 
 
 def test_unavailable_option_selection_explains_and_reprompts(monkeypatch):
-    # write_protected -> protection menu -> select "2" (software, not
-    # available) -> must explain and re-prompt, never silently select it.
-    answers = _answers("2", "2", "1", "192.0.2.1", "1", "Lab pfSense", "1", "1", "1")
+    # usage=2 (write_protected) -> protection menu -> select "2"
+    # (software, not available) -> must explain and re-prompt, never
+    # silently select it -> protection=1 (hardware witness) -> normal
+    # rest of the write_protected flow.
+    answers = _answers("2", "2", "1", "192.0.2.1", "1", "Lab pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "is not available yet in this build" in out
@@ -202,7 +274,7 @@ def test_unavailable_option_selection_explains_and_reprompts(monkeypatch):
 def test_read_only_branch_never_asks_protection_question(monkeypatch):
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
     assert exit_code == 0
-    assert "Step 2 -- Protection" not in out
+    assert "-- Protection" not in out
     assert "How should approved changes be protected?" not in out
     assert "Hardware TPM witness" not in out
 
@@ -210,7 +282,7 @@ def test_read_only_branch_never_asks_protection_question(monkeypatch):
 def test_write_protected_branch_shows_protection_question(monkeypatch):
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_WRITE_PROTECTED_HAPPY_PATH)
     assert exit_code == 0
-    assert "Step 2 -- Protection" in out
+    assert "Step 2 of 5 -- Protection" in out
     assert "Hardware TPM witness" in out
 
 
@@ -218,7 +290,7 @@ def test_switching_write_protected_to_read_only_clears_protection_state(monkeypa
     # usage=2 (write_protected) -> protection=1 (hardware witness) ->
     # firewall address: 'b' (back to protection) -> protection: 'b'
     # (back to usage) -> usage=1 (read_only) -> normal read-only flow.
-    answers = _answers("2", "1", "b", "b", "1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("2", "1", "b", "b", "1", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Mode:        Read-only" in out
@@ -236,20 +308,20 @@ def test_switching_write_protected_to_read_only_clears_protection_state(monkeypa
 def test_back_at_firewall_returns_to_protection_for_write_protected(monkeypatch):
     # usage=2, protection=1, firewall-address='b' (back to protection),
     # protection=1 again, then complete normally.
-    answers = _answers("2", "1", "b", "1", "192.0.2.1", "1", "Lab pfSense", "1", "1", "1")
+    answers = _answers("2", "1", "b", "1", "192.0.2.1", "1", "Lab pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
-    assert out.count("Step 2 -- Protection") == 2
+    assert out.count("Step 2 of 5 -- Protection") == 2
     assert "Address:     https://192.0.2.1" in out
 
 
 def test_back_at_firewall_returns_to_usage_for_read_only(monkeypatch):
     # usage=1, firewall-address='b' (back to usage, since read-only has
     # no protection step), usage=1 again, then complete normally.
-    answers = _answers("1", "b", "1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("1", "b", "1", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
-    assert out.count("Step 1 -- Usage") == 2
+    assert out.count("Step 1 of 4 -- Usage") == 2
 
 
 def test_quit_at_usage_cancels_cleanly(monkeypatch):
@@ -261,22 +333,23 @@ def test_quit_at_usage_cancels_cleanly(monkeypatch):
 
 
 def test_quit_at_review_exit_option_cancels_cleanly(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "1", "3")
+    # Review's menu is now Generate(1)/Go back(2)/Advanced options(3)/Exit(4).
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "4")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 3
     assert "Setup cancelled." in out
 
 
 def test_quit_shortcut_at_review_cancels_cleanly(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "1", "q")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "q")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 3
     assert "Setup cancelled." in out
 
 
-@pytest.mark.parametrize("truncate_at", [0, 1, 2, 3, 4, 5, 6])
+@pytest.mark.parametrize("truncate_at", [0, 1, 2, 3, 4, 5])
 def test_eof_at_every_step_of_the_happy_path_cancels_cleanly(monkeypatch, truncate_at):
-    full = ["1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1"]
+    full = ["1", "192.0.2.1", "1", "Home pfSense", "1", "1"]
     answers = _answers(*full[:truncate_at])
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 3
@@ -301,28 +374,43 @@ def test_keyboard_interrupt_during_prompting_cancels_cleanly(monkeypatch):
 
 
 def test_review_back_then_modify_then_regenerate(monkeypatch):
-    # Complete the read-only happy path up to Review, choose "Go back"
-    # (option 2, which returns to the immediately preceding shown step
-    # -- Advanced options), back out of Advanced too (to Connection),
-    # change the TLS choice to insecure via Advanced connection
-    # settings, then regenerate.
+    """The exact regression scenario this UX polish task named
+    explicitly: Review -> Go back -> change an earlier choice -> return
+    to Review -> generate plan -> the resulting plan reflects the
+    changed value. Back from Review now lands directly on Connection
+    (Advanced options is no longer an intervening step in the main
+    sequence), so this no longer needs to navigate through it."""
+
     answers = _answers(
         "1",  # usage: read-only
         "192.0.2.1",
         "1",  # confirm https
         "Home pfSense",
         "1",  # connection: verify TLS
-        "1",  # advanced: defaults
-        "2",  # review: go back -> lands on Advanced options
-        "b",  # advanced: back -> lands on Connection
+        "2",  # review: go back -> lands directly on Connection
         "2",  # connection: advanced connection settings
         "2",  # skip TLS verification
-        "1",  # advanced: defaults (re-shown)
         "1",  # review: generate plan
     )
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Connection:  Skip TLS verification (not recommended)" in out
+
+
+def test_wizard_signal_string_never_leaks_into_any_output(monkeypatch):
+    """Regression guard for the `_WizardSignal.BACK` leakage bug found
+    during the previous UX correction (`_WizardSignal` is a `str`
+    subclass, so an `isinstance(x, str)` check could not distinguish a
+    real value from a BACK/QUIT sentinel -- fixed with explicit `is`
+    identity checks everywhere a prompt result is consumed). Exercises
+    'b' at the address prompt, the exact path that leaked before, then
+    asserts the sentinel's own repr never appears anywhere in output."""
+
+    answers = _answers("1", "b", "1", "192.0.2.1", "1", "Home pfSense", "1", "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
+    assert exit_code == 0
+    assert "_WizardSignal" not in out
+    assert "Address:     https://192.0.2.1" in out
 
 
 # ===========================================================================
@@ -331,7 +419,7 @@ def test_review_back_then_modify_then_regenerate(monkeypatch):
 
 
 def test_bare_host_offers_https_confirmation(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Use HTTPS?" in out
@@ -340,7 +428,7 @@ def test_bare_host_offers_https_confirmation(monkeypatch):
 
 
 def test_address_with_explicit_scheme_skips_https_confirmation(monkeypatch):
-    answers = _answers("1", "https://fw.example.test", "Home pfSense", "1", "1", "1")
+    answers = _answers("1", "https://fw.example.test", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Use HTTPS?" not in out
@@ -348,7 +436,7 @@ def test_address_with_explicit_scheme_skips_https_confirmation(monkeypatch):
 
 
 def test_malformed_address_reprompts_without_claiming_reachability(monkeypatch):
-    answers = _answers("1", "not a valid address", "192.0.2.1", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("1", "not a valid address", "192.0.2.1", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "That doesn't look like a valid address" in out
@@ -356,7 +444,7 @@ def test_malformed_address_reprompts_without_claiming_reachability(monkeypatch):
 
 
 def test_declining_https_confirmation_reprompts_for_address(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "2", "192.0.2.5", "1", "Home pfSense", "1", "1", "1")
+    answers = _answers("1", "192.0.2.1", "2", "192.0.2.5", "1", "Home pfSense", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Address:     https://192.0.2.5" in out
@@ -368,7 +456,7 @@ def test_declining_https_confirmation_reprompts_for_address(monkeypatch):
 
 
 def test_tls_advanced_path_allows_insecure_and_marks_it_not_recommended(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "2", "1", "1")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "2", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Advanced · Not recommended" in out
@@ -376,7 +464,7 @@ def test_tls_advanced_path_allows_insecure_and_marks_it_not_recommended(monkeypa
 
 
 def test_tls_advanced_path_can_still_choose_verify(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "1", "1", "1")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "1", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Connection:  Verify TLS certificate" in out
@@ -392,8 +480,30 @@ def test_operator_never_types_verify_or_insecure_literal(monkeypatch):
     assert "insecure\n" not in out
 
 
+def test_review_wording_for_verify_choice_names_a_future_connection(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "TLS verification will be required when setup connects to pfSense." in out
+
+
+def test_review_wording_for_insecure_choice_never_claims_verification_is_required(monkeypatch):
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "2", "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
+    assert exit_code == 0
+    assert "TLS verification will be skipped when setup connects to pfSense." in out
+    assert "TLS verification will be required" not in out
+
+
+def test_review_wording_never_implies_a_live_connection_already_happened(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "is verified" not in out.lower()
+    assert "was verified" not in out.lower()
+
+
 # ===========================================================================
-# REST version / OpenAPI schema absent from the normal happy path
+# REST version / OpenAPI schema absent from the normal happy path;
+# reachable only via the explicit "Advanced options" choice at Review
 # ===========================================================================
 
 
@@ -409,20 +519,62 @@ def test_openapi_schema_prompt_absent_from_normal_happy_path(monkeypatch):
     assert "OpenAPI schema file path" not in out
 
 
+def test_advanced_options_never_shown_between_connection_and_review(monkeypatch):
+    """The exact "must not interrupt the default flow" requirement:
+    the normal READ-only path proceeds directly from Connection to
+    Review, never stopping at an "Advanced options" menu in between."""
+
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    connection_index = out.index("Step 3 of 4 -- Connection")
+    review_index = out.index("Step 4 of 4 -- Review")
+    between = out[connection_index:review_index]
+    assert "Advanced options" not in between
+    assert "Configure advanced discovery inputs" not in between
+
+
+def test_advanced_options_reachable_as_explicit_choice_from_review(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "3) Advanced options" in out
+
+
 def test_advanced_options_path_configures_schema_and_version(monkeypatch, tmp_path):
     schema_file = tmp_path / "schema.json"
     schema_file.write_text(json.dumps({"paths": {}}), encoding="utf-8")
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "2", "2.10", str(schema_file), "1")
+    # connection(1) -> review(3=Advanced options) -> advanced-menu(2=configure)
+    # -> version(2.10) -> schema(path) -> [back at review] review(1=generate)
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "3", "2", "2.10", str(schema_file), "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Configure advanced discovery inputs" in out
     assert "setup plan created" in out
 
 
-def test_advanced_options_default_skips_schema_and_version(monkeypatch):
-    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+def test_advanced_options_reached_from_review_can_be_skipped_with_defaults(monkeypatch):
+    # connection(1) -> review(3=Advanced options) -> advanced-menu(1=defaults)
+    # -> [back at review, unchanged] review(1=generate)
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "3", "1", "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Continue with recommended defaults" in out
+    assert "Mode:        Read-only" in out
+
+
+def test_advanced_options_configured_values_appear_in_json_output(monkeypatch, tmp_path):
+    schema_file = tmp_path / "schema.json"
+    schema_file.write_text(json.dumps({"paths": {}}), encoding="utf-8")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "1", "3", "2", "2.10", str(schema_file), "1")
+    exit_code, out = _run(monkeypatch, ["setup", "--json"], stdin_text=answers)
+    assert exit_code == 0
+    # Interactive + --json still mixes prompt text with the JSON payload
+    # on the same stream (a pre-existing, documented limitation of
+    # combining the two, not something this task changes) -- extract
+    # just the JSON object from the tail of the output.
+    json_start = out.index("{\n")
+    payload = json.loads(out[json_start:])
+    assert payload["version_evidence"]["declared_package_version"] == "2.10.0"
+    assert payload["privilege_plan"]["schema_provided"] is True
 
 
 # ===========================================================================
@@ -438,18 +590,20 @@ def test_review_screen_shown_before_plan_generation(monkeypatch):
     assert review_index < created_index
 
 
-def test_review_screen_never_implies_live_tls_verification(monkeypatch):
-    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
-    assert exit_code == 0
-    assert "intended to be verified when" in out
-    assert "live connection support is used" in out
-
-
 def test_review_screen_states_planning_only_and_nothing_changes(monkeypatch):
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
     assert exit_code == 0
     assert "This is a planning step only." in out
     assert "No pfSense settings, accounts, credentials, or local" in out
+
+
+def test_review_menu_offers_generate_back_advanced_and_exit_in_order(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "1) Generate plan" in out
+    assert "2) Go back and change selections" in out
+    assert "3) Advanced options" in out
+    assert "4) Exit" in out
 
 
 # ===========================================================================
@@ -469,6 +623,57 @@ def test_no_wide_table_or_multi_column_layout(monkeypatch):
     assert exit_code == 0
     assert "\t" not in out
     assert "|" not in out
+
+
+# ===========================================================================
+# Plan ID / digest presentation
+# ===========================================================================
+
+
+def test_human_output_shows_only_a_short_plan_id_not_the_full_digest(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "Plan ID:" in out
+    plan_id_line = next(line for line in out.splitlines() if line.startswith("Plan ID:"))
+    plan_id = plan_id_line.split("Plan ID:", 1)[1].strip().split()[0]
+    assert len(plan_id) == 12
+    int(plan_id, 16)  # raises if not hex
+    assert "Setup plan digest:" not in out
+
+
+def test_json_output_still_contains_the_full_64_character_digest(monkeypatch):
+    exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"],
+    )
+    assert exit_code == 0
+    payload = json.loads(out)
+    assert len(payload["setup_plan_digest"]) == 64
+
+
+def test_short_plan_id_is_a_prefix_of_the_full_digest(monkeypatch):
+    exit_code, human_out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none"],
+    )
+    assert exit_code == 0
+    plan_id_line = next(line for line in human_out.splitlines() if line.startswith("Plan ID:"))
+    short_plan_id = plan_id_line.split("Plan ID:", 1)[1].strip().split()[0]
+
+    _exit_code, json_out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--json",
+        ],
+    )
+    full_digest = json.loads(json_out)["setup_plan_digest"]
+    assert full_digest.startswith(short_plan_id)
 
 
 # ===========================================================================
@@ -625,8 +830,9 @@ def test_no_invalid_finite_choice_value_reaches_the_plan_model(monkeypatch):
     """Every interactive menu selection funnels through `_prompt_menu()`,
     which only ever returns a validated index or a `_WizardSignal` --
     never raw operator text. This test drives a hostile sequence of
-    garbage at every single menu in the wizard and asserts the final
-    plan still only ever contains the two real posture/anchor values."""
+    garbage at every single menu in the default flow and asserts the
+    final plan still only ever contains the two real posture/anchor
+    values."""
 
     answers = _answers(
         "garbage",
@@ -639,8 +845,6 @@ def test_no_invalid_finite_choice_value_reaches_the_plan_model(monkeypatch):
         "-1",
         "1",  # connection
         "nope",
-        "1",  # advanced
-        "0",
         "1",  # review
     )
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)

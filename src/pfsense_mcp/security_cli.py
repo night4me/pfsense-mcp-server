@@ -1035,16 +1035,53 @@ def _human_connection_label(plan: SetupPlan) -> str:
     return "Not specified"
 
 
+#: How many leading hex characters of the full plan digest to show in
+#: human-mode output -- a short, glanceable Plan ID, never the
+#: authoritative identity value itself. The full, authoritative digest
+#: (`compute_setup_plan_digest(plan)`, unabridged) remains available
+#: via `--json` and is never computed differently or weakened by this
+#: truncation -- this constant only controls how many of its own
+#: leading characters this file's human-mode formatter chooses to
+#: print.
+_HUMAN_PLAN_ID_LENGTH = 12
+
+
+def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
+    """The "Next step" guidance for the human-mode completion screen.
+    Slice 1: planning only -- there is no `setup apply` command yet, so
+    this can only describe what a future apply step *will* do, never
+    name an exact command. Deliberately split into its own function,
+    taking the already-generated `plan` as a parameter it does not yet
+    use: a future slice that adds `setup apply` can replace this
+    function's return value with the exact actionable command (e.g.
+    referencing `plan`'s own digest/Plan ID) without needing to change
+    anything else in `_format_setup_human()`. Every line here must stay
+    truthful for what Slice 1 actually does -- planning only, no live
+    connection, no changes."""
+
+    del plan  # not yet used -- kept as a parameter for the future slice described above
+    return (
+        "This setup has only been planned.",
+        "",
+        "A future apply step will verify the live pfSense",
+        "connection and required privileges before making any",
+        "authorized configuration changes.",
+        "",
+        "Nothing has been changed yet.",
+    )
+
+
 def _format_setup_human(plan: SetupPlan) -> str:
     """The default human-readable rendering for every human-mode setup
     output -- both the interactive wizard's completion screen and
     `--non-interactive` without `--json`. Deliberately does not surface
     internal identifiers (`capability_posture`, `anchor_assurance`,
-    `schema_provided`, plan-digest internals, ...) -- those remain fully
-    available, unabridged, via `--json` (`_setup_plan_to_dict()`, never
-    changed by this function). This function only changes *presentation*
-    of an already-complete `SetupPlan`; it adds no new fields and drops
-    no data from the plan model itself."""
+    `schema_provided`, the full plan-digest value, ...) -- those remain
+    fully available, unabridged, via `--json` (`_setup_plan_to_dict()`,
+    never changed by this function). This function only changes
+    *presentation* of an already-complete `SetupPlan`; it adds no new
+    fields and drops no data from the plan model itself, and never
+    recomputes the digest differently than `--json` does."""
 
     status_word = _human_status_word(plan)
     lines = [
@@ -1061,13 +1098,7 @@ def _format_setup_human(plan: SetupPlan) -> str:
     lines.append("No changes were made to pfSense.")
     lines.append("")
     lines.append("Next step")
-    lines.append("This setup has only been planned.")
-    lines.append("")
-    lines.append("A future apply step will verify the live pfSense")
-    lines.append("connection and required privileges before making any")
-    lines.append("authorized configuration changes.")
-    lines.append("")
-    lines.append("Nothing has been changed yet.")
+    lines.extend(_next_step_lines(plan))
     if not plan.posture_plan.safe_to_proceed:
         if plan.posture_plan.blocking_findings:
             reason = plan.posture_plan.blocking_findings[0]
@@ -1078,9 +1109,8 @@ def _format_setup_human(plan: SetupPlan) -> str:
         lines.append("")
         lines.append(f"! This selection cannot be completed yet: {reason}")
     lines.append("")
-    lines.append(f"Setup plan digest: {compute_setup_plan_digest(plan)}")
-    lines.append("(Full technical detail, including plan-digest internals and every")
-    lines.append("unsupported-step note, is available via --json.)")
+    short_plan_id = compute_setup_plan_digest(plan)[:_HUMAN_PLAN_ID_LENGTH]
+    lines.append(f"Plan ID: {short_plan_id}  (full plan digest and technical detail available via --json)")
     return "\n".join(lines)
 
 
@@ -1180,8 +1210,48 @@ _STEP_USAGE = "usage"
 _STEP_PROTECTION = "protection"
 _STEP_FIREWALL = "firewall"
 _STEP_CONNECTION = "connection"
-_STEP_ADVANCED = "advanced"
 _STEP_REVIEW = "review"
+
+_STEP_LABELS = {
+    _STEP_USAGE: "Usage",
+    _STEP_PROTECTION: "Protection",
+    _STEP_FIREWALL: "Firewall",
+    _STEP_CONNECTION: "Connection",
+    _STEP_REVIEW: "Review",
+}
+
+
+def _step_sequence(mode: str | None) -> tuple[str, ...]:
+    """The numbered core wizard steps for the given mode -- `Protection`
+    only appears for `write_protected` (progressive disclosure: a
+    read-only operator is never shown it, and it never counts toward
+    "of N" for that path). Advanced discovery-input configuration is
+    deliberately never part of this sequence: it is not a mandatory
+    normal-flow step, only an explicit, optional action offered from
+    the Review step (see `_step_review()`)."""
+
+    if mode == "write_protected":
+        return (_STEP_USAGE, _STEP_PROTECTION, _STEP_FIREWALL, _STEP_CONNECTION, _STEP_REVIEW)
+    return (_STEP_USAGE, _STEP_FIREWALL, _STEP_CONNECTION, _STEP_REVIEW)
+
+
+def _print_step_heading(out: TextIO, state: _WizardState, step: str) -> None:
+    """Prints the shared "Step N of M -- Label" heading every numbered
+    step uses, computed from `_step_sequence()` so the total is always
+    consistent with whatever is actually about to be asked -- 4 for the
+    read-only path (Usage/Firewall/Connection/Review), 5 for
+    write_protected (with Protection inserted). Before `state.mode` is
+    known (the very first time `Step 1 -- Usage` is shown), `mode` is
+    `None`, which `_step_sequence()` treats the same as read-only (4) --
+    the correct, honest default, since read-only is this wizard's own
+    recommended/default choice."""
+
+    sequence = _step_sequence(state.mode)
+    total = len(sequence)
+    index = sequence.index(step) + 1
+    print(file=out)
+    print("pfSense MCP Security Setup", file=out)
+    print(f"Step {index} of {total} -- {_STEP_LABELS[step]}", file=out)
 
 
 def _prompt_menu(
@@ -1346,12 +1416,11 @@ def _prompt_address(out: TextIO, in_: TextIO) -> str | _WizardSignal:
 
 
 def _step_usage(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
-    print(file=out)
-    print("pfSense MCP Security Setup", file=out)
+    _print_step_heading(out, state, _STEP_USAGE)
     choice = _prompt_menu(
         out,
         in_,
-        "Step 1 -- Usage",
+        "",
         "How do you want to use pfSense MCP?",
         [
             _MenuOption(
@@ -1376,9 +1445,7 @@ def _step_usage(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
 
 
 def _step_protection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
-    print(file=out)
-    print("pfSense MCP Security Setup", file=out)
-    print("Step 2 -- Protection", file=out)
+    _print_step_heading(out, state, _STEP_PROTECTION)
     choice = _prompt_menu(
         out,
         in_,
@@ -1411,10 +1478,7 @@ def _step_protection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSi
 
 
 def _step_firewall(out: TextIO, in_: TextIO, state: _WizardState, prefill: _WizardPrefill) -> _WizardSignal:
-    print(file=out)
-    print("pfSense MCP Security Setup", file=out)
-    label = "Step 2 -- Firewall" if state.mode != "write_protected" else "Step 3 -- Firewall"
-    print(label, file=out)
+    _print_step_heading(out, state, _STEP_FIREWALL)
 
     if prefill.target_origin is not None:
         state.address = prefill.target_origin
@@ -1452,10 +1516,7 @@ def _step_firewall(out: TextIO, in_: TextIO, state: _WizardState, prefill: _Wiza
 
 
 def _step_connection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
-    print(file=out)
-    print("pfSense MCP Security Setup", file=out)
-    label = "Step 3 -- Connection" if state.mode != "write_protected" else "Step 4 -- Connection"
-    print(label, file=out)
+    _print_step_heading(out, state, _STEP_CONNECTION)
     while True:
         choice = _prompt_menu(
             out,
@@ -1601,10 +1662,10 @@ def _print_review(out: TextIO, state: _WizardState, prefill: _WizardPrefill) -> 
     print("Connection", file=out)
     if state.tls_choice == "insecure":
         print("  Skip TLS verification (not recommended)", file=out)
+        print("  TLS verification will be skipped when setup connects to pfSense.", file=out)
     else:
         print("  Verify TLS certificate", file=out)
-    print("  Server identity is intended to be verified when", file=out)
-    print("  live connection support is used.", file=out)
+        print("  TLS verification will be required when setup connects to pfSense.", file=out)
     print(file=out)
     print("This is a planning step only.", file=out)
     print(file=out)
@@ -1613,27 +1674,53 @@ def _print_review(out: TextIO, state: _WizardState, prefill: _WizardPrefill) -> 
 
 
 def _step_review(out: TextIO, in_: TextIO, state: _WizardState, prefill: _WizardPrefill) -> _WizardSignal:
-    _print_review(out, state, prefill)
-    choice = _prompt_menu(
-        out,
-        in_,
-        "",
-        "",
-        [
-            _MenuOption("Generate plan", tag="Recommended"),
-            _MenuOption("Go back and change selections"),
-            _MenuOption("Exit"),
-        ],
-        default=1,
-        allow_back=False,
-    )
-    if choice is _WizardSignal.QUIT:
-        return _WizardSignal.QUIT
-    if choice == 1:
-        return _WizardSignal.NEXT
-    if choice == 2:
-        return _WizardSignal.BACK
-    return _WizardSignal.QUIT
+    """Review is the last numbered step. Advanced discovery-input
+    configuration (`_step_advanced()`) is deliberately reached only from
+    here, as an explicit, optional menu choice -- never a mandatory stop
+    on the way to Review (see `_step_sequence()`'s own docstring). Both
+    completing and backing out of that nested advanced sub-flow simply
+    redisplay Review; only Generate/Go back/Exit can leave this
+    function."""
+
+    while True:
+        _print_step_heading(out, state, _STEP_REVIEW)
+        _print_review(out, state, prefill)
+        choice = _prompt_menu(
+            out,
+            in_,
+            "",
+            "",
+            [
+                _MenuOption("Generate plan", tag="Recommended"),
+                _MenuOption("Go back and change selections"),
+                _MenuOption(
+                    "Advanced options",
+                    description=(
+                        "Manually provide saved schema/version evidence for",
+                        "development or troubleshooting.",
+                    ),
+                ),
+                _MenuOption("Exit"),
+            ],
+            default=1,
+            allow_back=False,
+        )
+        if choice is _WizardSignal.QUIT:
+            return _WizardSignal.QUIT
+        if choice == 1:
+            return _WizardSignal.NEXT
+        if choice == 2:
+            return _WizardSignal.BACK
+        if choice == 3:
+            advanced_signal = _step_advanced(out, in_, state)
+            if advanced_signal is _WizardSignal.QUIT:
+                return _WizardSignal.QUIT
+            # NEXT (configured, or chose "continue with defaults") and
+            # BACK (backed out of the advanced sub-menu) both simply
+            # redisplay Review -- neither ever leaves this function on
+            # their own.
+            continue
+        return _WizardSignal.QUIT  # choice == 4, Exit
 
 
 def _next_step(current: str, state: _WizardState) -> str:
@@ -1644,8 +1731,6 @@ def _next_step(current: str, state: _WizardState) -> str:
     if current == _STEP_FIREWALL:
         return _STEP_CONNECTION
     if current == _STEP_CONNECTION:
-        return _STEP_ADVANCED
-    if current == _STEP_ADVANCED:
         return _STEP_REVIEW
     raise AssertionError(current)
 
@@ -1678,11 +1763,6 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
             state.tls_choice = prefill.tls_mode
             current = _next_step(current, state)
             continue
-        if current == _STEP_ADVANCED and (
-            prefill.schema_file is not None or prefill.declared_package_version is not None
-        ):
-            current = _next_step(current, state)
-            continue
 
         if current == _STEP_USAGE:
             signal = _step_usage(out, in_, state)
@@ -1692,8 +1772,6 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
             signal = _step_firewall(out, in_, state, prefill)
         elif current == _STEP_CONNECTION:
             signal = _step_connection(out, in_, state)
-        elif current == _STEP_ADVANCED:
-            signal = _step_advanced(out, in_, state)
         elif current == _STEP_REVIEW:
             signal = _step_review(out, in_, state, prefill)
         else:
