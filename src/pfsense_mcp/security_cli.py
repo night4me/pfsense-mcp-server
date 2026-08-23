@@ -1170,20 +1170,20 @@ def _mcp_client_tls_mode(plan: SetupPlan) -> str:
     return "strict"
 
 
-def _mcp_client_config_snippet(plan: SetupPlan) -> dict[str, Any]:
-    """The exact `mcpServers` block `examples/claude-desktop.md` already
-    documents, populated from this plan's own recorded target values
-    where available. For `write_protected`, the identity is the fixed
-    ADR-033 service account (`INTENDED_SERVICE_ACCOUNT_IDENTITY`) --
-    once `setup apply`/`bootstrap` actually provisions it, that is the
-    correct least-privilege identity for the MCP server's own runtime
-    credential; suggesting the *administrator* identity used to
+def _mcp_client_env_vars(plan: SetupPlan) -> dict[str, str]:
+    """The four `PFSENSE_*` values shared verbatim by every documented
+    client format (`examples/claude-desktop.md`'s JSON, and
+    `examples/codex-cli.md`/`examples/chatgpt.md`'s shared TOML) --
+    computed once so the JSON and TOML snippet builders never drift
+    against each other. For `write_protected`, the identity is the
+    fixed ADR-033 service account (`INTENDED_SERVICE_ACCOUNT_IDENTITY`)
+    -- once `setup apply`/`bootstrap` actually provisions it, that is
+    the correct least-privilege identity for the MCP server's own
+    runtime credential; suggesting the *administrator* identity used to
     provision it would be exactly the privilege-escalation mistake
     ADR-033 exists to prevent. For `read_only` (bring-your-own-key),
     the operator's own entered identity is used instead, since no
-    dedicated account is ever provisioned for that posture. Print-only,
-    forever the default (owner decision 8) -- `setup` never writes this
-    to any file."""
+    dedicated account is ever provisioned for that posture."""
 
     posture = plan.privilege_plan.intended_capability_posture
     identity = (
@@ -1192,18 +1192,70 @@ def _mcp_client_config_snippet(plan: SetupPlan) -> dict[str, Any]:
         else (plan.target.identity or _MCP_CLIENT_IDENTITY_PLACEHOLDER)
     )
     return {
+        "PFSENSE_API_URL": plan.target.origin or _MCP_CLIENT_ORIGIN_PLACEHOLDER,
+        "PFSENSE_IDENTITY": identity,
+        "PFSENSE_API_KEY_FILE": _MCP_CLIENT_KEY_FILE_PLACEHOLDER,
+        "PFSENSE_TLS_MODE": _mcp_client_tls_mode(plan),
+    }
+
+
+def _mcp_client_config_snippet(plan: SetupPlan) -> dict[str, Any]:
+    """The exact `mcpServers` block `examples/claude-desktop.md`
+    already documents. Print-only, forever the default (owner decision
+    8) -- `setup` never writes this to any file."""
+
+    return {
         "mcpServers": {
             "pfsense": {
                 "command": _MCP_CLIENT_COMMAND_PLACEHOLDER,
-                "env": {
-                    "PFSENSE_API_URL": plan.target.origin or _MCP_CLIENT_ORIGIN_PLACEHOLDER,
-                    "PFSENSE_IDENTITY": identity,
-                    "PFSENSE_API_KEY_FILE": _MCP_CLIENT_KEY_FILE_PLACEHOLDER,
-                    "PFSENSE_TLS_MODE": _mcp_client_tls_mode(plan),
-                },
+                "env": _mcp_client_env_vars(plan),
             }
         }
     }
+
+
+def _toml_escape_string(value: str) -> str:
+    """Minimal, correct TOML basic-string escaping -- backslash,
+    double-quote, and the standard short control-character escapes;
+    every other control character falls back to `\\u00XX`. Operator-
+    entered `target.identity`/`target.origin` values are untrusted
+    input to this function, not just the fixed placeholders."""
+
+    escapes = {"\\": "\\\\", '"': '\\"', "\b": "\\b", "\t": "\\t", "\n": "\\n", "\f": "\\f", "\r": "\\r"}
+    result = []
+    for character in value:
+        if character in escapes:
+            result.append(escapes[character])
+        elif ord(character) < 0x20 or ord(character) == 0x7F:
+            result.append(f"\\u{ord(character):04x}")
+        else:
+            result.append(character)
+    return "".join(result)
+
+
+def _mcp_client_config_toml(plan: SetupPlan) -> str:
+    """The exact `[mcp_servers.pfsense]` TOML table
+    `examples/codex-cli.md` already documents, shared verbatim by the
+    ChatGPT desktop app per `examples/chatgpt.md` ("the desktop app,
+    Codex CLI, and Codex IDE extension share that configuration on the
+    same host"). Deliberately a *different* format from
+    `_mcp_client_config_snippet()`'s own JSON `mcpServers` block, not a
+    reformatting of it -- Claude Desktop's config is JSON, Codex/
+    ChatGPT's is TOML, and printing JSON for the latter two would be
+    unusable as-is. Same env values either way, via
+    `_mcp_client_env_vars()`. Print-only, forever the default (owner
+    decision 8) -- `setup` never writes this to any file."""
+
+    env_vars = _mcp_client_env_vars(plan)
+    lines = [
+        "[mcp_servers.pfsense]",
+        f'command = "{_toml_escape_string(_MCP_CLIENT_COMMAND_PLACEHOLDER)}"',
+        "required = true",
+        "",
+        "[mcp_servers.pfsense.env]",
+    ]
+    lines.extend(f'{key} = "{_toml_escape_string(value)}"' for key, value in env_vars.items())
+    return "\n".join(lines)
 
 
 def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
@@ -1226,7 +1278,12 @@ def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
         # Slice 6: always present, always print-only -- never written to
         # any file by this codebase. See _mcp_client_config_snippet()'s
         # own docstring for exactly what is (and is not) populated.
+        # JSON form for Claude Desktop; the TOML form (Codex CLI/ChatGPT
+        # desktop, a genuinely different config format, not a
+        # reformatting of the JSON one) is a plain string since JSON
+        # cannot represent TOML syntax natively.
         "mcp_client_config": _mcp_client_config_snippet(plan),
+        "mcp_client_config_toml": _mcp_client_config_toml(plan),
     }
 
 
@@ -1378,7 +1435,11 @@ def _format_setup_human(plan: SetupPlan) -> str:
         lines.append("MCP client configuration (print-only -- copy into your client's config,")
         lines.append("nothing is written to any file by this command):")
         lines.append("")
+        lines.append("Claude Desktop (JSON):")
         lines.append(json.dumps(_mcp_client_config_snippet(plan), indent=2, sort_keys=True))
+        lines.append("")
+        lines.append("Codex CLI / ChatGPT desktop (shared TOML config):")
+        lines.append(_mcp_client_config_toml(plan))
     lines.append("")
     short_plan_id = compute_setup_plan_digest(plan)[:_HUMAN_PLAN_ID_LENGTH]
     lines.append(f"Plan ID: {short_plan_id}  (full plan digest and technical detail available via --json)")

@@ -1266,3 +1266,140 @@ def test_mcp_client_config_snippet_matches_the_documented_examples_shape(monkeyp
         "PFSENSE_API_KEY_FILE",
         "PFSENSE_TLS_MODE",
     }
+
+
+# ===========================================================================
+# MCP client configuration: TOML form (Codex CLI / ChatGPT desktop)
+#
+# examples/codex-cli.md and examples/chatgpt.md both document a TOML
+# config format (`~/.codex/config.toml`, shared by both clients per
+# chatgpt.md's own text), not the JSON `mcpServers` block Claude
+# Desktop uses -- discovered during this run's own Phase A4 live/local
+# client-config validation pass. Printing JSON for Codex/ChatGPT would
+# be unusable as-is, so a second, genuinely different-format snippet is
+# generated alongside the JSON one, sharing the same env values.
+# ===========================================================================
+
+
+def test_mcp_client_config_toml_present_in_json_output(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"],
+    )
+    payload = json.loads(out)
+    assert "mcp_client_config_toml" in payload
+    assert "[mcp_servers.pfsense]" in payload["mcp_client_config_toml"]
+    assert "[mcp_servers.pfsense.env]" in payload["mcp_client_config_toml"]
+
+
+def test_mcp_client_config_toml_parses_as_valid_toml_and_matches_json_values(monkeypatch):
+    import tomllib
+
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--target-identity",
+            "my-readonly-key",
+            "--target-origin",
+            "https://pfsense.lab.example",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    parsed = tomllib.loads(payload["mcp_client_config_toml"])
+    toml_server = parsed["mcp_servers"]["pfsense"]
+    json_server = payload["mcp_client_config"]["mcpServers"]["pfsense"]
+    assert toml_server["command"] == json_server["command"]
+    assert toml_server["required"] is True
+    assert toml_server["env"] == json_server["env"]
+    assert toml_server["env"]["PFSENSE_IDENTITY"] == "my-readonly-key"
+
+
+def test_mcp_client_config_toml_escapes_special_characters_and_still_parses(monkeypatch):
+    import tomllib
+
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--target-identity",
+            'weird"quote\\and\\backslash',
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    parsed = tomllib.loads(payload["mcp_client_config_toml"])
+    assert parsed["mcp_servers"]["pfsense"]["env"]["PFSENSE_IDENTITY"] == 'weird"quote\\and\\backslash'
+
+
+def test_mcp_client_config_toml_present_in_human_output_with_correct_label(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "read_only", "--anchor-assurance", "none"],
+    )
+    assert "Claude Desktop (JSON):" in out
+    assert "Codex CLI / ChatGPT desktop (shared TOML config):" in out
+    assert "[mcp_servers.pfsense]" in out
+    assert "required = true" in out
+
+
+def test_mcp_client_config_toml_absent_from_human_output_when_not_safe_to_proceed(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup", "--non-interactive", "--capability-posture", "write_protected", "--anchor-assurance", "none"],
+    )
+    assert "[mcp_servers.pfsense]" not in out
+    assert "Codex CLI / ChatGPT desktop" not in out
+
+
+def test_mcp_client_config_toml_uses_service_account_identity_for_write_protected(monkeypatch):
+    import tomllib
+
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "write_protected",
+            "--anchor-assurance",
+            "hardware_witness",
+            "--target-identity",
+            "human-admin-account",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    if payload["posture_plan"]["safe_to_proceed"]:
+        parsed = tomllib.loads(payload["mcp_client_config_toml"])
+        identity = parsed["mcp_servers"]["pfsense"]["env"]["PFSENSE_IDENTITY"]
+        assert identity == "pfsense-mcp"
+        assert identity != "human-admin-account"
+
+
+def test_no_secret_shaped_env_value_ever_appears_in_the_mcp_client_config_toml(monkeypatch):
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "write_protected",
+            "--anchor-assurance",
+            "hardware_witness",
+            "--json",
+        ],
+        env={"PFSENSE_ADMIN_API_KEY": "totally-secret-value-should-never-appear"},
+    )
+    assert "totally-secret-value-should-never-appear" not in out
