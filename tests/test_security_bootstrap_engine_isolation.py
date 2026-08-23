@@ -19,9 +19,14 @@ Mirrors `tests/test_security_privileges_isolation.py`'s and
 
 The final section (ADR-033 CLI Integration Slice 3) adds the equivalent
 proof for `security_bootstrap_orchestration.py`: it is the *sole*
-gateway `security_cli.py` may use to reach anything above, and it is
+gateway `security_cli.py` and (as of `setup apply`'s own Slice 3,
+`security_setup_apply.py`) may use to reach anything above, and it is
 itself unreachable from every other runtime entry point and from
-`tools/*`.
+`tools/*`. `security_setup_apply.py` joined
+`_RUNTIME_ENTRY_POINTS` when it started composing
+`run_bootstrap_from_environment()` for `write_protected` apply -- it
+must never reach past that one bridge into the lower-level stack any
+more than `security_cli.py` itself may.
 """
 
 from __future__ import annotations
@@ -38,6 +43,7 @@ COMPOSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_admin_composition.py"
 ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_orchestration.py"
 CONFIRMATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_recovery_confirmation.py"
 RECOVERY_ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_recovery_orchestration.py"
+SETUP_APPLY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_setup_apply.py"
 
 # The five lower-level module names security_cli.py (and every other
 # runtime entry point / tool) must never reference directly -- only
@@ -57,6 +63,12 @@ _RUNTIME_ENTRY_POINTS = (
     ROOT / "src/pfsense_mcp/factory.py",
     ROOT / "src/pfsense_mcp/security_cli.py",
     ROOT / "src/pfsense_mcp/security_doctor.py",
+    # security_setup_apply.py composes run_bootstrap_from_environment()
+    # for write_protected apply (Slice 3) -- it is legitimately wired to
+    # the orchestration bridge (see the dedicated tests below), but must
+    # never reach past it into the lower-level stack, exactly like
+    # security_cli.py itself.
+    ROOT / "src/pfsense_mcp/security_setup_apply.py",
 )
 
 _FORBIDDEN_IMPORT_ROOTS = {
@@ -327,16 +339,23 @@ def test_orchestration_module_is_not_in_the_tier1_isolation_exemption_list():
     assert "security_bootstrap_orchestration.py" not in source
 
 
-def test_security_cli_is_the_sole_runtime_entry_point_wired_to_orchestration():
-    """security_cli.py must reference the orchestration module (it is the
-    intended gateway) while every OTHER runtime entry point, and every
-    tool under tools/, must not -- proving `bootstrap` is reachable only
-    through the one reviewed subcommand, not through any other surface."""
+def test_security_cli_and_setup_apply_are_the_only_entry_points_wired_to_orchestration():
+    """security_cli.py (for `bootstrap`) and security_setup_apply.py (for
+    `setup apply`'s write_protected branch, Slice 3) must both reference
+    the orchestration module -- they are the two intended gateways --
+    while every OTHER runtime entry point, and every tool under tools/,
+    must not. Proves `run_bootstrap_from_environment()` is reachable
+    only through these two reviewed surfaces, both themselves reachable
+    only via the `pfsense-mcp-security` CLI's own public subcommands
+    (`bootstrap` directly, `setup apply --capability-posture
+    write_protected` indirectly)."""
 
     cli_path = ROOT / "src/pfsense_mcp/security_cli.py"
     assert "security_bootstrap_orchestration" in cli_path.read_text(encoding="utf-8")
+    assert "security_bootstrap_orchestration" in SETUP_APPLY_MODULE_PATH.read_text(encoding="utf-8")
 
-    other_entry_points = [path for path in _RUNTIME_ENTRY_POINTS if path != cli_path]
+    wired = {cli_path, SETUP_APPLY_MODULE_PATH}
+    other_entry_points = [path for path in _RUNTIME_ENTRY_POINTS if path not in wired]
     tools_dir = ROOT / "src/pfsense_mcp/tools"
     for path in [*other_entry_points, *sorted(tools_dir.rglob("*.py"))]:
         assert "security_bootstrap_orchestration" not in path.read_text(encoding="utf-8"), (
@@ -356,6 +375,17 @@ def test_security_cli_never_references_any_lower_level_bootstrap_module_by_name(
     source = (ROOT / "src/pfsense_mcp/security_cli.py").read_text(encoding="utf-8")
     for name in _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES:
         assert name not in source, f"security_cli.py references {name}"
+
+
+def test_setup_apply_never_references_any_lower_level_bootstrap_module_by_name():
+    """The equivalent explicit assertion for security_setup_apply.py
+    (its own Slice 3 design decision): it imports only the orchestration
+    module for write_protected apply, never any module that module
+    itself composes."""
+
+    source = SETUP_APPLY_MODULE_PATH.read_text(encoding="utf-8")
+    for name in _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES:
+        assert name not in source, f"security_setup_apply.py references {name}"
 
 
 def test_orchestration_module_itself_reaches_the_lower_level_stack():

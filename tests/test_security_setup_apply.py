@@ -275,24 +275,29 @@ def test_token_derived_for_one_target_identity_is_rejected_for_another_even_with
 # --- posture support -------------------------------------------------------
 
 
-def test_write_protected_posture_is_not_supported_even_with_a_valid_token(tmp_path, monkeypatch):
+def test_write_protected_never_touches_the_read_only_pfsense_client(tmp_path, monkeypatch):
+    """write_protected composes run_bootstrap_from_environment() only --
+    it must never call build_pfsense_client() (that's read_only's own,
+    entirely separate code path). See tests/test_security_setup_apply_write_protected.py
+    for the full write_protected adversarial matrix (Slice 3)."""
+
     calls: list[str] = []
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.build_pfsense_client",
         lambda config, api_key: calls.append("called") or (_FakeTransport(), _FakeClient()),
     )
-    env = _base_env(tmp_path, with_pfsense_config=True)
+    env = _base_env(tmp_path, with_pfsense_config=False)
     digest, token = _current_token(
-        tmp_path, env, target_capability_posture="write_protected", target_anchor_assurance="hardware_witness"
+        tmp_path, env, target_capability_posture="write_protected", target_anchor_assurance="none"
     )
     result = run_setup_apply_from_environment(
         env,
         target_capability_posture="write_protected",
-        target_anchor_assurance="hardware_witness",
+        target_anchor_assurance="none",
         plan_digest=digest,
         confirm_token=token,
     )
-    assert result.outcome is ApplyOutcome.NOT_SUPPORTED_FOR_POSTURE
+    assert result.outcome is ApplyOutcome.BLOCKED_CONFIGURATION_ERROR
     assert calls == []
 
 

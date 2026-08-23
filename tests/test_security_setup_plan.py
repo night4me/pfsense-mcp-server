@@ -71,7 +71,8 @@ def test_write_protected_posture_reports_dedicated_account_provisioning_as_imple
 def test_unsupported_steps_always_name_recovery_secret_generation_mcp_config_and_tls():
     """Never silently pretend architectural-only functionality exists --
     every plan must explicitly state these four gaps regardless of the
-    selected target."""
+    selected target. `setup apply` itself is no longer one of these gaps
+    (Slice 2 implemented it for read_only, Slice 3 for write_protected)."""
 
     plan = generate_setup_plan(
         target_capability_posture=CapabilityPosture.READ_ONLY, target_anchor_assurance=AnchorAssurance.NONE
@@ -82,7 +83,15 @@ def test_unsupported_steps_always_name_recovery_secret_generation_mcp_config_and
     assert "Secret generation" in joined
     assert "MCP client configuration writing" in joined
     assert "TLS/reachability verification" in joined
-    assert "setup apply" in joined
+
+
+def test_write_protected_unsupported_steps_names_tier1_witness_scope_caveat():
+    plan = generate_setup_plan(
+        target_capability_posture=CapabilityPosture.WRITE_PROTECTED, target_anchor_assurance=AnchorAssurance.NONE
+    )
+    joined = " ".join(plan.unsupported_steps)
+    assert "Tier 1" in joined
+    assert "does not by itself" in joined
 
 
 def test_target_reachability_is_never_verified():

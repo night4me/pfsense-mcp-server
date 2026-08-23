@@ -58,27 +58,36 @@ CLI named in `ADR-021` (Accepted). This file implements:
     a target is intent for a human to review, never execution
     authorization -- bare `setup` never mutates anything, and there is
     no inline "continue and apply" path from it.
-  - `setup apply` (Slice 2, read_only posture only): a wholly separate,
-    explicit command -- never reachable from bare `setup`'s own flow --
-    that recomputes the plan fresh, refuses a stale `--plan-digest`,
-    refuses a wrong/missing `--confirm` token, and only then performs
-    one read-only connectivity check against the operator's existing
-    runtime pfSense configuration. Composes
-    `security_setup_apply.run_setup_apply_from_environment()`, the one
-    function this file imports for it. Never mutates pfSense state in
-    any outcome -- `write_protected` posture is refused before any
-    pfSense contact (not yet implemented by this command).
+  - `setup apply` (Slice 2 read_only + Slice 3 write_protected): a
+    wholly separate, explicit command -- never reachable from bare
+    `setup`'s own flow -- that recomputes the plan fresh, refuses a
+    stale `--plan-digest`, refuses a wrong/missing `--confirm` token,
+    and only then acts. For `read_only`: one read-only connectivity
+    check against the operator's existing runtime pfSense
+    configuration, never a mutation. For `write_protected`: composes
+    `security_bootstrap_orchestration.run_bootstrap_from_environment()`
+    -- the exact same sole gateway `bootstrap` itself uses -- to
+    provision (or verify/repair) the one fixed ADR-033 service account;
+    for `anchor_assurance=hardware_witness` specifically, `doctor` is
+    checked and must be ready *before* that composed call is ever made.
+    Composes `security_setup_apply.run_setup_apply_from_environment()`,
+    the one function this file imports for it.
 
-`discover`, `plan`, `doctor`, bare `setup`, and `setup apply` all
-perform no provisioning, repair, or mutation. `bootstrap` and `recover`
-are the only two subcommands that can mutate pfSense state (when
-later run against a real appliance) -- and even then, only ever the
-one fixed, least-privilege `pfsense-mcp` service account this
-codebase's ADR-033 architecture already scopes both to. `setup apply`
-is the first `setup`-family command to make a live network call at
-all (one read-only GET, `read_only` posture only, only after its
-confirmation token has already been verified) -- it is still never a
-mutation, and it never runs for any other posture.
+`discover`, `plan`, `doctor`, and bare `setup` perform no provisioning,
+repair, or mutation. `bootstrap`, `recover`, and `setup apply` (for
+`write_protected` only) are the only subcommands that can mutate
+pfSense state (when later run against a real appliance) -- and even
+then, only ever the one fixed, least-privilege `pfsense-mcp` service
+account this codebase's ADR-033 architecture already scopes all three
+to. `setup apply` never introduces a second mutating primitive of its
+own: its `write_protected` branch is pure composition of the exact
+same `run_bootstrap_from_environment()` standalone `bootstrap` already
+calls, and its `read_only` branch's one live call is a harmless GET.
+Provisioning this account through `setup apply` does not, by itself,
+make any new WRITE tool reachable through the MCP server -- the public
+MCP contract (95 READ + 1 guidance + 0 default-reachable WRITE) is
+unaffected; see `security_setup_apply.py`'s own module docstring for
+why.
 
 This file does not import `pfsense_mcp.tier1` directly, or at all --
 every axis-discovery call goes through the one function
@@ -202,10 +211,20 @@ _SETUP_APPLY_EXIT_CODES: dict[ApplyOutcome, int] = {
     ApplyOutcome.INSPECT_PLAN_CURRENT: 1,
     ApplyOutcome.PLAN_STALE: 2,
     ApplyOutcome.CONFIRM_TOKEN_INVALID: 3,
-    ApplyOutcome.NOT_SUPPORTED_FOR_POSTURE: 4,
+    # 4 is deliberately retired, not reused: Slice 2's NOT_SUPPORTED_FOR_POSTURE
+    # occupied it and was removed once Slice 3 made write_protected apply
+    # exist too -- see ApplyOutcome's own docstring.
     ApplyOutcome.BLOCKED_CONFIGURATION_ERROR: 5,
     ApplyOutcome.CONNECTIVITY_FAILED: 6,
     ApplyOutcome.DOCTOR_NOT_READY: 7,
+    # write_protected, via run_bootstrap_from_environment() composition (Slice 3):
+    ApplyOutcome.BOOTSTRAP_ALREADY_COMPLETE: 0,
+    ApplyOutcome.BOOTSTRAP_COMPLETED: 0,
+    ApplyOutcome.BOOTSTRAP_LOCK_CONTENTION: 8,
+    ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED: 9,
+    ApplyOutcome.BOOTSTRAP_CORRUPT_LOCAL_STATE: 10,
+    ApplyOutcome.BOOTSTRAP_PREFLIGHT_DERIVATION_FAILED: 11,
+    ApplyOutcome.BOOTSTRAP_PROVISIONING_FAILED: 12,
 }
 
 # `setup`'s own exit-code model, independently numbered under its own
@@ -818,8 +837,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Guided, non-mutating discovery + plan-only setup wizard. Bare `setup` never mutates "
             "pfSense state, never provisions anything, never executes -- produces a reviewable "
-            "SetupPlan only. `setup apply` (Slice 2, read_only posture only) is a wholly separate, "
-            "explicit command -- see `setup apply --help`."
+            "SetupPlan only. `setup apply` (a wholly separate, explicit command; supports both "
+            "read_only and write_protected postures) is never reachable from this flow -- see "
+            "`setup apply --help`."
         ),
         description=(
             "DISCOVER -> (interactively, or via flags) SELECT TARGET/POSTURE/ANCHOR -> GENERATE SETUP "
@@ -909,37 +929,52 @@ def _build_parser() -> argparse.ArgumentParser:
     apply_parser = setup_subparsers.add_parser(
         "apply",
         help=(
-            "Slice 2: apply a read_only plan -- verifies live connectivity using the operator's "
-            "existing runtime credentials. Never mutates pfSense state. write_protected is not yet "
-            "supported by this command."
+            "Apply a read_only or write_protected plan. read_only verifies live connectivity using "
+            "the operator's existing runtime credentials -- never a mutation. write_protected "
+            "composes the existing `bootstrap` command to provision the one fixed ADR-033 service "
+            "account -- never a new, independent mutating primitive."
         ),
         description=(
             "Recomputes the plan fresh from current state, refuses if it does not match --plan-digest "
             "(the state you reviewed has changed), refuses if --confirm does not match the exact "
-            "plan/target/posture, and only then performs one read-only connectivity check against the "
-            "pfSense target configured via the normal runtime PFSENSE_API_URL/PFSENSE_IDENTITY/"
-            "PFSENSE_API_KEY_FILE/PFSENSE_TLS_* environment variables -- the exact same configuration "
-            "the MCP server itself would use to start. Omitting --confirm (or --plan-digest) performs "
-            "inspection only: it shows the current plan and the exact token a real apply would need, "
-            "without touching pfSense at all."
+            "plan/target/posture, and only then acts. For read_only: one read-only connectivity check "
+            "against the pfSense target configured via the normal runtime PFSENSE_API_URL/"
+            "PFSENSE_IDENTITY/PFSENSE_API_KEY_FILE/PFSENSE_TLS_* environment variables -- the exact "
+            "same configuration the MCP server itself would use to start. For write_protected: composes "
+            "`pfsense-mcp-security bootstrap`'s own orchestration to provision (or verify/repair) the "
+            "dedicated least-privilege service account, using the same ADR-033 administrative "
+            "environment variables standalone `bootstrap` already requires; for anchor_assurance="
+            "hardware_witness, `doctor` must report ready before this call is ever made. A prior "
+            "incomplete/failed bootstrap for this target/account/profile is refused (exit 9) and points "
+            "at `pfsense-mcp-security recover` -- never bypassed, retried, or resolved automatically. "
+            "Omitting --confirm (or --plan-digest) performs inspection only: it shows the current plan "
+            "and the exact token a real apply would need, without touching pfSense at all."
         ),
         epilog=(
-            "Exit codes: 0 apply completed (connectivity verified; read_only performs no provisioning "
-            "so nothing was changed). 1 inspection only -- the plan is current and a confirmation token "
-            "was shown, but --confirm was not supplied, so nothing was applied. 2 the recomputed plan "
-            "digest does not match --plan-digest -- current state has changed since the plan was "
-            "reviewed; refused before the confirmation token is even considered. 3 --confirm does not "
-            "match this exact plan/target/posture -- refused before any pfSense contact. 4 the "
-            "requested posture is not read_only -- protected-write apply is not implemented by this "
-            "command; use `pfsense-mcp-security bootstrap` directly. 5 the environment/configuration "
+            "Exit codes: 0 apply completed (read_only: connectivity verified, nothing changed; "
+            "write_protected: the ADR-033 service account is now provisioned or was already so). "
+            "1 inspection only -- the plan is current and a confirmation token was shown, but --confirm "
+            "was not supplied, so nothing was applied. 2 the recomputed plan digest does not match "
+            "--plan-digest -- current state has changed since the plan was reviewed; refused before the "
+            "confirmation token is even considered. 3 --confirm does not match this exact "
+            "plan/target/posture -- refused before any pfSense contact. 5 the environment/configuration "
             "itself was rejected before any pfSense contact (missing/invalid PFSENSE_* variable, "
             "missing/invalid PFSENSE_SETUP_CONFIRM_KEY_FILE, insecure file permissions). 6 the one "
-            "read-only connectivity check failed. 7 connectivity succeeded but `doctor` reports the "
-            "requested hardware-witness anchor is not ready.\n\n"
-            "Never mutates pfSense state in any outcome, for any posture, always: the only pfSense "
-            "contact this command ever makes is one read-only GET, made only after the confirmation "
-            "token has already been verified, only for the read_only posture. There is no write-capable "
-            "code path in this command at all.\n\n"
+            "read-only connectivity check failed (read_only only). 7 `doctor` reports the requested "
+            "hardware-witness anchor is not ready -- checked after connectivity for read_only, checked "
+            "before any bootstrap call for write_protected. 8 another process holds the local ADR-033 "
+            "operation lock (write_protected only). 9 a prior bootstrap attempt for this target/account/"
+            "profile requires `pfsense-mcp-security recover` before a new one may start (write_protected "
+            "only) -- RECOVERY_REQUIRED, surfaced faithfully, never bypassed. 10 local ADR-033 journal/"
+            "lock/custody state is corrupt or untrusted (write_protected only). 11 the engine refused "
+            "before any HTTP call -- unsupported package version, or privilege derivation not fully "
+            "source-cross-checked (write_protected only; proven zero network activity, but still "
+            "requires human review before retrying). 12 the engine ran and did not reach a verified "
+            "successful state (write_protected only); local state is held for human review.\n\n"
+            "Never introduces a second mutating primitive: the only pfSense contact for read_only is "
+            "one read-only GET; the only thing write_protected ever composes is the exact same "
+            "`run_bootstrap_from_environment()` standalone `bootstrap` already calls, made only after "
+            "the confirmation token has already been verified.\n\n"
             "Never prints, logs, or serializes an API key, password, journal-integrity key, or any "
             "other secret value -- the confirmation token is a derived confirmation artifact, not a "
             "credential."
@@ -1160,28 +1195,16 @@ _HUMAN_PLAN_ID_LENGTH = 12
 
 def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
     """The "Next step" guidance for the human-mode completion screen.
-    For a `read_only` plan, `setup apply` now exists (Slice 2) -- shows
-    the exact command, built from this plan's own recorded values, an
-    operator can copy verbatim to inspect (and then apply) it. For
-    `write_protected`, apply does not support that posture yet, so the
-    wording stays generic, truthfully describing only what exists
-    today. Deliberately split into its own function so a future slice
-    that adds `write_protected` apply support can replace only that
-    branch's wording without touching anything else in
-    `_format_setup_human()`."""
+    `setup apply` now exists for both postures (Slice 2 read_only,
+    Slice 3 write_protected) -- shows the exact command, built from
+    this plan's own recorded values, an operator can copy verbatim to
+    inspect (and then apply) it. Wording differs only in what the
+    command actually *does*: read_only verifies connectivity;
+    write_protected provisions the ADR-033 service account via the
+    existing `bootstrap` machinery."""
 
-    if plan.privilege_plan.intended_capability_posture is not CapabilityPosture.READ_ONLY:
-        return (
-            "This setup has only been planned.",
-            "",
-            "`setup apply` does not yet support the write_protected",
-            "posture. A future slice will compose it with the existing",
-            "`pfsense-mcp-security bootstrap` command.",
-            "",
-            "Nothing has been changed yet.",
-        )
-
-    command_tokens = ["--capability-posture", "read_only"]
+    posture = plan.privilege_plan.intended_capability_posture
+    command_tokens = ["--capability-posture", posture.value]
     command_tokens += ["--anchor-assurance", plan.posture_plan.target_anchor_assurance.value]
     if plan.target.origin:
         command_tokens += ["--target-origin", plan.target.origin]
@@ -1198,16 +1221,36 @@ def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
         suffix = "" if is_last else " \\"
         command_lines.append(f"    {flag} {shlex.quote(value)}{suffix}")
 
+    action_lines: tuple[str, ...]
+    confirm_lines: tuple[str, ...]
+    if posture is CapabilityPosture.READ_ONLY:
+        action_lines = (
+            "To verify live connectivity (no pfSense changes are made),",
+            "run:",
+        )
+        confirm_lines = (
+            "That command alone only inspects and prints a confirmation",
+            "token; add --confirm <TOKEN> to it to actually verify.",
+        )
+    else:
+        action_lines = (
+            "To provision the dedicated least-privilege ADR-033 service",
+            "account (requires the same PFSENSE_ADMIN_* environment",
+            "`pfsense-mcp-security bootstrap` already needs), run:",
+        )
+        confirm_lines = (
+            "That command alone only inspects and prints a confirmation",
+            "token; add --confirm <TOKEN> to it to actually provision.",
+        )
+
     return (
         "This setup has only been planned. Nothing has been changed yet.",
         "",
-        "To verify live connectivity (no pfSense changes are made),",
-        "run:",
+        *action_lines,
         "",
         *command_lines,
         "",
-        "That command alone only inspects and prints a confirmation",
-        "token; add --confirm <TOKEN> to it to actually verify.",
+        *confirm_lines,
     )
 
 

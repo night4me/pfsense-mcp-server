@@ -163,14 +163,44 @@ def test_exit_code_confirm_token_invalid(monkeypatch):
     assert main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"]) == 3
 
 
-def test_exit_code_not_supported_for_posture(monkeypatch):
-    _canned(monkeypatch, ApplyResult(ApplyOutcome.NOT_SUPPORTED_FOR_POSTURE, "unsupported"))
-    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 4
-
-
 def test_exit_code_blocked_configuration_error(monkeypatch):
     _canned(monkeypatch, ApplyResult(ApplyOutcome.BLOCKED_CONFIGURATION_ERROR, "blocked"))
     assert main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none"]) == 5
+
+
+def test_exit_code_bootstrap_already_complete(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_ALREADY_COMPLETE, "already complete"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 0
+
+
+def test_exit_code_bootstrap_completed(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_COMPLETED, "completed"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 0
+
+
+def test_exit_code_bootstrap_lock_contention(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_LOCK_CONTENTION, "lock held"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 8
+
+
+def test_exit_code_bootstrap_recovery_required(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED, "recovery required"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 9
+
+
+def test_exit_code_bootstrap_corrupt_local_state(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_CORRUPT_LOCAL_STATE, "corrupt"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 10
+
+
+def test_exit_code_bootstrap_preflight_derivation_failed(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_PREFLIGHT_DERIVATION_FAILED, "derivation failed"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 11
+
+
+def test_exit_code_bootstrap_provisioning_failed(monkeypatch):
+    _canned(monkeypatch, ApplyResult(ApplyOutcome.BOOTSTRAP_PROVISIONING_FAILED, "provisioning failed"))
+    assert main(["setup", "apply", "--capability-posture", "write_protected", "--anchor-assurance", "none"]) == 12
 
 
 def test_exit_code_connectivity_failed(monkeypatch):

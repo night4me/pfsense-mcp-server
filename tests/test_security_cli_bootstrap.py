@@ -157,9 +157,18 @@ def test_bootstrap_help_documents_exit_codes_and_offline_only_and_setup_boundary
     assert "future interactive" in out
 
 
-def test_bootstrap_module_docstring_lists_bootstrap_and_recover_as_the_two_mutating_subcommands():
+def test_bootstrap_module_docstring_lists_the_mutating_subcommands():
+    """Updated for Slice 3: `setup apply` (write_protected only) joins
+    `bootstrap`/`recover` as a third path that can mutate pfSense state,
+    always via the exact same composed `run_bootstrap_from_environment()`
+    call and the same one fixed service account -- never a new,
+    independent mutating primitive."""
+
     joined = " ".join(security_cli.__doc__.split())
-    assert "bootstrap` and `recover` are the only two subcommands that can mutate pfSense state" in joined
+    assert (
+        "`bootstrap`, `recover`, and `setup apply` (for `write_protected` only) are the only "
+        "subcommands that can mutate pfSense state"
+    ) in joined
 
 
 # --- end-to-end: real main() -> real orchestration -> stubbed engine call --

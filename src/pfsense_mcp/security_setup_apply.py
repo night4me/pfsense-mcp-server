@@ -1,30 +1,69 @@
-"""`pfsense-mcp-security setup apply` -- Slice 2: READ-only apply.
+"""`pfsense-mcp-security setup apply` -- Slice 2 (READ-only apply) +
+Slice 3 (WRITE-protected apply, composing ADR-033 `bootstrap`).
 
 Composes, never reimplements: `generate_setup_plan()`/
 `compute_setup_plan_digest()` (Slice 1, unchanged), `load_config()`/
 `load_api_key()`/`build_pfsense_client()` (the exact same dependency-
 construction path every real MCP server startup already uses via
-`application.py`), and `run_doctor_checks()` (unchanged). Adds exactly
-one new primitive: `security_setup_apply_confirmation`'s plan-bound
-HMAC token.
+`application.py`), `run_doctor_checks()` (unchanged), and -- new in
+Slice 3 -- `security_bootstrap_orchestration.run_bootstrap_from_environment()`,
+the exact same sole gateway `security_cli.py`'s own `bootstrap`
+subcommand already uses to reach the deeper, already-reviewed ADR-033
+account-provisioning stack. This module reaches that stack only
+through that one orchestration function, never through any module it
+composes -- a dedicated structural test enforces that by name, treating
+this module as a second legitimate entry point into the orchestration
+bridge, alongside `security_cli.py` itself. Adds exactly one new primitive of its own:
+`security_setup_apply_confirmation`'s plan-bound HMAC token.
 
-Scope, deliberately narrow (this run's own owner decisions + the
-design report's own Slice 2 definition, `reports-ai/SETUP_WIZARD_DESIGN_2026-08-23.md`
-Section 20 item 2): **read_only posture only**. `write_protected`
-returns `NOT_SUPPORTED_FOR_POSTURE` before any pfSense contact --
-WRITE-protected apply (composing `bootstrap`, and RECOVERY_REQUIRED
-inline delegation for it) is a later slice, not this module's job.
+**Posture scope, both now supported:**
 
-**Zero pfSense mutation, in every outcome, always.** The only pfSense
-call this module ever makes is one read-only `GET`
-(`PfSenseClient.get_system_status()`), for the read_only posture only,
-made only after the confirmation token has already been verified --
-proving the operator's existing runtime configuration (the exact same
-`PFSENSE_API_URL`/`PFSENSE_IDENTITY`/`PFSENSE_API_KEY_FILE`/TLS
-settings the real MCP server would use) actually connects, nothing
-more. This module never imports `write_api_client`/`WriteApiClient`/
-`build_write_client` -- there is no write-capable code path anywhere
-in it.
+- `read_only`: one read-only `GET` (`PfSenseClient.get_system_status()`)
+  against the operator's existing bring-your-own-key runtime
+  configuration. Never mutates anything.
+- `write_protected` (Slice 3): composes `run_bootstrap_from_environment()`
+  to provision (or verify/repair) the fixed ADR-033 least-privilege
+  service account, using the operator's separately-configured ADR-033
+  admin credentials (`PFSENSE_ADMIN_*`/`PFSENSE_SERVICE_API_KEY_FILE`/
+  etc. -- the exact same env vars standalone `bootstrap` already
+  requires). This composition does **not** by itself make any new WRITE
+  tool reachable through the MCP server -- the public MCP contract (95
+  READ + 1 guidance + 0 default-reachable WRITE) is unaffected by
+  provisioning this account; Tier 1's own store/witness provisioning
+  remains a separate, still-manual prerequisite for the resulting
+  account's privileges to ever become operationally exercised writes
+  (`reports-ai/SETUP_WIZARD_DESIGN_2026-08-23.md` Section 20 item 3).
+  For `anchor_assurance=hardware_witness` specifically, `run_doctor_checks()`
+  gates *before* `run_bootstrap_from_environment()` is ever called --
+  blocking, not informational, since (unlike `read_only`'s harmless GET)
+  a write_protected apply's one composed call can acquire a lock and
+  write a journal. `none`/`software` anchor values proceed to bootstrap
+  composition unconditionally, exactly mirroring `read_only`'s own
+  anchor-agnostic doctor treatment from Slice 2.
+
+**RECOVERY_REQUIRED is surfaced faithfully, never bypassed.** This
+module never constructs its own `AdministrativeContext`, never
+classifies restart state itself, never opens or reopens a recovery
+journal, and never synthesizes or bypasses a recovery confirmation
+token -- `run_bootstrap_from_environment()`'s own existing, already-
+reviewed refusal (`BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION`)
+is passed straight through as `ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED`,
+pointing the operator at the separate, already-implemented
+`pfsense-mcp-security recover` command. This module always calls
+`run_bootstrap_from_environment()` with `authoritative=None` (the same
+offline default `bootstrap` itself uses), so any pre-existing journal
+for this target/account/profile is conservatively treated exactly as
+that module's own docstring already documents -- no new leniency, no
+new automatic recovery attempt, added here.
+
+**Zero pfSense mutation for `read_only`, in every outcome, always.**
+For `write_protected`, the one composed call is
+`run_bootstrap_from_environment()` -- itself already fully reviewed,
+journal-aware, and lock-guarded (`security_bootstrap_orchestration.py`'s
+own module docstring). This module never imports `write_api_client`/
+`WriteApiClient`/`build_write_client` -- there is no code path to the
+generic MCP WRITE-tool machinery anywhere in it; the ADR-033 mutation
+pathway is a separate, independently-reviewed subsystem.
 
 A plan digest and a confirmation token are never treated as
 interchangeable: the digest is recomputed fresh from current discovery
@@ -50,6 +89,11 @@ from .errors import (
 )
 from .factory import build_pfsense_client
 from .secure_file import open_nofollow, validate_descriptor
+from .security_bootstrap_orchestration import (
+    BootstrapOrchestrationOutcome,
+    BootstrapOrchestrationResult,
+    run_bootstrap_from_environment,
+)
 from .security_discovery import AnchorAssurance, CapabilityPosture
 from .security_doctor import run_doctor_checks
 from .security_setup_apply_confirmation import (
@@ -68,16 +112,33 @@ class ApplyOutcome(str, Enum):
     Deliberately exhaustive and independently numbered at the CLI layer
     (`security_cli.py`'s own `_SETUP_APPLY_EXIT_CODES`) -- mirrors
     `RecoveryOrchestrationOutcome`'s own discipline: no outcome is ever
-    collapsed into a generic "failed"."""
+    collapsed into a generic "failed".
+
+    There is deliberately no `NOT_SUPPORTED_FOR_POSTURE` value (Slice 2
+    had one; Slice 3 removed it): `CapabilityPosture` has exactly two
+    members and both are now fully supported by this function, so that
+    branch became genuinely unreachable rather than merely unlikely --
+    keeping a documented-but-dead exit code would have been actively
+    misleading to a reader of `setup apply --help`."""
 
     INSPECT_PLAN_CURRENT = "inspect_plan_current"
     PLAN_STALE = "plan_stale"
     CONFIRM_TOKEN_INVALID = "confirm_token_invalid"  # nosec B105 -- an outcome enum value, not a credential
-    NOT_SUPPORTED_FOR_POSTURE = "not_supported_for_posture"
     BLOCKED_CONFIGURATION_ERROR = "blocked_configuration_error"
     CONNECTIVITY_FAILED = "connectivity_failed"
     DOCTOR_NOT_READY = "doctor_not_ready"
     APPLY_COMPLETED = "apply_completed"
+    #: `write_protected`, via `run_bootstrap_from_environment()`'s own
+    #: `BootstrapOrchestrationOutcome` -- see `_map_bootstrap_result()`.
+    BOOTSTRAP_ALREADY_COMPLETE = "bootstrap_already_complete"
+    BOOTSTRAP_COMPLETED = "bootstrap_completed"
+    BOOTSTRAP_LOCK_CONTENTION = "bootstrap_lock_contention"
+    #: The faithful, non-bypassed surfacing of ADR-033 RECOVERY_REQUIRED-
+    #: shaped state -- see this module's own docstring.
+    BOOTSTRAP_RECOVERY_REQUIRED = "bootstrap_recovery_required"
+    BOOTSTRAP_CORRUPT_LOCAL_STATE = "bootstrap_corrupt_local_state"
+    BOOTSTRAP_PREFLIGHT_DERIVATION_FAILED = "bootstrap_preflight_derivation_failed"
+    BOOTSTRAP_PROVISIONING_FAILED = "bootstrap_provisioning_failed"
 
 
 class ApplyError(Exception):
@@ -96,12 +157,12 @@ class ApplyResult:
 
 def _read_confirm_key(path: Path) -> bytes:
     """Local disk read only, same O_NOFOLLOW + owner-only-permission +
-    bounded-size discipline `config.py`'s own API-key loading and
-    `security_admin_composition.py`'s own journal-integrity-key loading
-    already use -- reused via `secure_file.py`'s shared primitives,
-    duplicated as a thin wrapper rather than importing either of those
-    two modules directly (keeping this module's own dependency graph
-    exactly as narrow as its actual job needs)."""
+    bounded-size discipline `config.py`'s own API-key loading and the
+    ADR-033 admin stack's own journal-integrity-key loading already use
+    -- reused via `secure_file.py`'s shared primitives, duplicated as a
+    thin wrapper rather than importing either of those two modules
+    directly (keeping this module's own dependency graph exactly as
+    narrow as its actual job needs)."""
 
     descriptor = open_nofollow(path, on_error=ApplyError)
     try:
@@ -142,11 +203,15 @@ def run_setup_apply_from_environment(
     here is a mutating primitive in its own right. Order of operations
     is deliberate and fail-closed: recompute the plan and check
     staleness *before* even loading the confirmation key; verify the
-    confirmation token *before* checking posture support; check posture
-    support *before* touching pfSense config/credentials at all; load
-    config/credentials *before* the one live GET; the live GET always
-    happens *before* `doctor` (connectivity is the more fundamental
-    fact). No step after a failure is ever reached."""
+    confirmation token *before* branching on posture at all; only then
+    does posture decide which already-reviewed primitive is composed --
+    `read_only` loads pfSense config/credentials before its one live
+    GET, with `doctor` checked after (connectivity is the more
+    fundamental fact for a harmless read); `write_protected` checks
+    `doctor` *before* composing `run_bootstrap_from_environment()` for
+    `anchor=hardware_witness` (a missing prerequisite must fail closed
+    before a lock/journal-touching call, not after). No step after a
+    failure is ever reached."""
 
     try:
         posture = CapabilityPosture(target_capability_posture)
@@ -202,13 +267,8 @@ def run_setup_apply_from_environment(
             plan_digest=fresh_digest,
         )
 
-    if posture is not CapabilityPosture.READ_ONLY:
-        return ApplyResult(
-            ApplyOutcome.NOT_SUPPORTED_FOR_POSTURE,
-            "Protected-write apply is not implemented in this slice. Use `pfsense-mcp-security "
-            "bootstrap` directly for ADR-033 account provisioning, or wait for a future setup slice.",
-            plan_digest=fresh_digest,
-        )
+    if posture is CapabilityPosture.WRITE_PROTECTED:
+        return _run_write_protected_apply(env, anchor=anchor, fresh_digest=fresh_digest)
 
     try:
         config = load_config(env)
@@ -245,3 +305,75 @@ def run_setup_apply_from_environment(
         plan_digest=fresh_digest,
         doctor_ready=doctor_result.ready,
     )
+
+
+def _run_write_protected_apply(
+    env: dict[str, str] | None, *, anchor: AnchorAssurance, fresh_digest: str
+) -> ApplyResult:
+    """The `write_protected` branch -- reached only after plan
+    freshness and the confirmation token have already been verified.
+
+    For `anchor_assurance=hardware_witness`, `doctor` is checked
+    *before* `run_bootstrap_from_environment()` is called at all --
+    blocking, not informational (unlike Slice 2's read_only ordering,
+    where the one live call is a harmless GET): a write_protected
+    apply's composed call can acquire a lock and write a journal, so
+    failing closed on a missing prerequisite happens before any of
+    that, per this run's own requirement to fail closed on missing
+    prerequisites ahead of a mutating call. `none`/`software` anchors
+    proceed unconditionally, mirroring read_only's own anchor-agnostic
+    treatment.
+
+    `run_bootstrap_from_environment()` is called with its own default
+    `authoritative=None` -- the exact same offline default standalone
+    `bootstrap` itself uses -- so a prior incomplete/failed bootstrap
+    attempt against this target/account/profile is refused exactly as
+    conservatively as it already is for standalone `bootstrap`, never
+    more leniently."""
+
+    if anchor is AnchorAssurance.HARDWARE_WITNESS:
+        doctor_result = run_doctor_checks(env)
+        if not doctor_result.ready:
+            return ApplyResult(
+                ApplyOutcome.DOCTOR_NOT_READY,
+                "The hardware witness anchor is not ready per `doctor` -- refusing to start bootstrap "
+                "provisioning before any lock or journal is touched. Run `pfsense-mcp-security doctor` "
+                "for detail.",
+                plan_digest=fresh_digest,
+                doctor_ready=False,
+            )
+
+    bootstrap_result = run_bootstrap_from_environment(env)
+    return _map_bootstrap_result(bootstrap_result, fresh_digest=fresh_digest)
+
+
+def _map_bootstrap_result(result: BootstrapOrchestrationResult, *, fresh_digest: str) -> ApplyResult:
+    """Translates `BootstrapOrchestrationResult` into `ApplyResult` 1:1,
+    never collapsing distinct outcomes and never inventing new meaning
+    for any of them -- `result.detail` (already sanitized by the
+    orchestration/engine layers) is passed through verbatim or lightly
+    extended, never replaced."""
+
+    detail = result.detail
+    if result.outcome is BootstrapOrchestrationOutcome.ALREADY_COMPLETE:
+        return ApplyResult(ApplyOutcome.BOOTSTRAP_ALREADY_COMPLETE, detail, plan_digest=fresh_digest)
+    if result.outcome is BootstrapOrchestrationOutcome.COMPLETED:
+        return ApplyResult(ApplyOutcome.BOOTSTRAP_COMPLETED, detail, plan_digest=fresh_digest)
+    if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR:
+        return ApplyResult(ApplyOutcome.BLOCKED_CONFIGURATION_ERROR, detail, plan_digest=fresh_digest)
+    if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_LOCK_CONTENTION:
+        return ApplyResult(ApplyOutcome.BOOTSTRAP_LOCK_CONTENTION, detail, plan_digest=fresh_digest)
+    if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION:
+        return ApplyResult(
+            ApplyOutcome.BOOTSTRAP_RECOVERY_REQUIRED,
+            f"{detail} Run `pfsense-mcp-security recover` to inspect and, if needed, resolve it -- "
+            "this command never attempts recovery itself.",
+            plan_digest=fresh_digest,
+        )
+    if result.outcome is BootstrapOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE:
+        return ApplyResult(ApplyOutcome.BOOTSTRAP_CORRUPT_LOCAL_STATE, detail, plan_digest=fresh_digest)
+    if result.outcome is BootstrapOrchestrationOutcome.PREFLIGHT_DERIVATION_FAILED:
+        return ApplyResult(ApplyOutcome.BOOTSTRAP_PREFLIGHT_DERIVATION_FAILED, detail, plan_digest=fresh_digest)
+    if result.outcome is BootstrapOrchestrationOutcome.PROVISIONING_FAILED:
+        return ApplyResult(ApplyOutcome.BOOTSTRAP_PROVISIONING_FAILED, detail, plan_digest=fresh_digest)
+    raise AssertionError(f"unhandled BootstrapOrchestrationOutcome: {result.outcome}")  # pragma: no cover

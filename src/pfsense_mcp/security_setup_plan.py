@@ -179,8 +179,9 @@ def _privilege_plan(
         dedicated_account_provisioning_implemented = True
         provisioning_note = (
             "A dedicated least-privilege administrative bootstrap account can be provisioned via the "
-            "existing `pfsense-mcp-security bootstrap` command (ADR-033). This plan does not run it -- "
-            "`setup` never executes anything in this slice."
+            "existing `pfsense-mcp-security bootstrap` command (ADR-033), or via `pfsense-mcp-security "
+            "setup apply --capability-posture write_protected` (composes the same bootstrap machinery). "
+            "This plan itself does not run either -- bare `setup` never executes anything."
         )
         requirements = write_protected_profile_requirements()
     else:
@@ -317,22 +318,30 @@ def generate_setup_plan(
     )
 
     unsupported_steps: list[str] = [
-        "TLS/reachability verification: not implemented in this slice -- no live network call is made "
-        "by `setup` at all; the target origin/identity/TLS mode are recorded exactly as entered, "
-        "unverified.",
-        "Secret generation: not implemented in this slice (approved in principle for a later slice).",
+        "TLS/reachability verification: not implemented by `setup` itself -- no live network call is "
+        "made by this planning step at all; the target origin/identity/TLS mode are recorded exactly "
+        "as entered, unverified. `setup apply` does verify connectivity, but only for a plan already "
+        "reviewed and confirmed -- see `setup apply --help`.",
+        "Secret generation: not implemented (approved in principle for a later slice).",
         "MCP client configuration writing: not implemented -- print-only is the permanent default; "
         "`setup` never writes Claude/Codex/ChatGPT configuration files.",
-        "ADR-033 RECOVERY_REQUIRED detection: not implemented in this slice (this module never "
-        "constructs an administrative context). If a previous `bootstrap` attempt may have failed, run "
-        "`pfsense-mcp-security recover` directly to inspect and, if needed, resolve it.",
-        "`setup apply` (actual execution of this plan): does not exist in this slice -- `setup` only "
-        "ever plans, never executes.",
+        "ADR-033 RECOVERY_REQUIRED detection: not implemented by `setup` itself (this module never "
+        "constructs an administrative context). If a previous `bootstrap` (or `setup apply "
+        "--capability-posture write_protected`) attempt may have failed, run `pfsense-mcp-security "
+        "recover` directly to inspect and, if needed, resolve it -- `setup apply` surfaces this "
+        "faithfully rather than detecting it itself.",
     ]
     if target_capability_posture is CapabilityPosture.READ_ONLY:
         unsupported_steps.append(
             "Dedicated least-privilege READ-only account provisioning: not implemented -- see "
             "privilege_plan.provisioning_note."
+        )
+    else:
+        unsupported_steps.append(
+            "Provisioning this ADR-033 account (via `bootstrap` or `setup apply`) does not by itself "
+            "make any new WRITE tool reachable through the MCP server -- Tier 1's own store/witness "
+            "provisioning remains a separate, still-manual prerequisite for this account's privileges "
+            "to ever become operationally exercised writes."
         )
 
     notes: tuple[str, ...] = (
