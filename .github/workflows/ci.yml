@@ -34,8 +34,9 @@ jobs:
           .venv/bin/python -m ruff check .
       - name: mypy
         run: .venv/bin/python -m mypy src/pfsense_mcp scripts witness_daemon
-      - name: Complete offline pytest suite
-        run: .venv/bin/python -m pytest -q
+      # `make quick`'s own [4/11] stage runs the complete pytest suite
+      # (now xdist-accelerated) -- a standalone pytest step here would be a
+      # second, redundant full-suite run in the same environment/SHA.
       - name: Architecture checks
         run: make quick
 

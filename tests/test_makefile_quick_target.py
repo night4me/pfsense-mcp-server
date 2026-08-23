@@ -151,7 +151,15 @@ def test_quick_does_call_the_expected_scripts():
         "write_capability_check.py",
     ):
         assert expected in block, f"quick's recipe is missing the expected call to {expected}"
-    assert re.search(r"pytest\s+-q\s*$", block, re.MULTILINE), "quick's recipe is missing a bare `pytest -q` run"
+    # quick's pytest step runs under xdist (the bulk of the suite, in
+    # parallel) plus a small serial pass for the tests that cannot safely
+    # collect under xdist -- see AGENTS.md's "Test parallelism" note.
+    assert re.search(r"pytest\s+-q\s+\$\(XDIST_ARGS\)\s*$", block, re.MULTILINE), (
+        "quick's recipe is missing the xdist-parallel pytest run"
+    )
+    assert re.search(r"pytest\s+-q\s+\$\(XDIST_SERIAL_ONLY\)\s*$", block, re.MULTILINE), (
+        "quick's recipe is missing the serial-only pytest run"
+    )
 
 
 def test_bandit_command_defined_only_in_shared_security_static_target():
@@ -175,8 +183,11 @@ def test_bandit_command_defined_only_in_shared_security_static_target():
 def test_quick_pytest_invocation_has_no_junit_flag_on_the_same_line():
     block = _target_block(_makefile_text(), "quick")
     pytest_lines = [line for line in block.splitlines() if "$(PYTHON) -m pytest" in line]
-    assert len(pytest_lines) == 1
-    assert "--junit-xml" not in pytest_lines[0]
+    # One xdist-parallel run plus one serial-only run (see AGENTS.md's
+    # "Test parallelism" note) -- neither generates a JUnit report; only
+    # validate's `test` target does, for validate_junit.py's stage checks.
+    assert len(pytest_lines) == 2
+    assert all("--junit-xml" not in line for line in pytest_lines)
 
 
 def test_makefile_uses_no_print_directory_for_recursive_make_calls():

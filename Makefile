@@ -11,6 +11,22 @@
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
 
+# Tests that cannot safely collect under pytest-xdist -- kept out of the
+# parallel worker pool and run in a small serial pass instead. See
+# AGENTS.md's "Test parallelism" note for why each one is here; do not add
+# to this list to work around a flake without root-causing it first.
+#   - test_random_ciphertext_...: its @pytest.mark.parametrize list calls
+#     os.urandom() at collection time, so each xdist worker subprocess
+#     collects different bytes and different parametrize IDs.
+#   - test_importing_mcp_entrypoints_never_loads_acceptance_module: asserts
+#     a fresh, untouched sys.modules state by design -- inherently a
+#     first-import-only test.
+XDIST_SERIAL_ONLY := \
+	tests/tier1/test_crypto.py::test_random_ciphertext_never_raises_anything_but_artifact_decryption_error \
+	tests/tier1/test_acceptance_isolation.py::test_importing_mcp_entrypoints_never_loads_acceptance_module
+XDIST_DESELECT := $(foreach t,$(XDIST_SERIAL_ONLY),--deselect $(t))
+XDIST_ARGS := -n 6 --dist=loadscope $(XDIST_DESELECT)
+
 validate: syntax-check lint typecheck test live-skip-check \
           endpoint-registry-check profile-registration-check get-only-check \
           tools-write-check security-scan git-identity-check security-static-check fixture-safety-check query-param-check \
@@ -51,9 +67,11 @@ typecheck:
 	@echo "  OK"
 
 test:
-	@echo "[ 4/20] Full pytest suite ......................"
+	@echo "[ 4/20] Full pytest suite (xdist -n 6 + serial isolation pass) ."
 	@mkdir -p .validate
-	@$(PYTHON) -m pytest -q --junit-xml=$(REPORT)
+	@$(PYTHON) -m pytest -q $(XDIST_ARGS) --junit-xml=.validate/report_parallel.xml
+	@$(PYTHON) -m pytest -q $(XDIST_SERIAL_ONLY) --junit-xml=.validate/report_serial.xml
+	@$(PYTHON) scripts/merge_junit_reports.py .validate/report_parallel.xml .validate/report_serial.xml --output $(REPORT)
 	@echo "  OK"
 
 live-skip-check: test
@@ -163,8 +181,9 @@ quick:
 	@echo "[3/11] Incremental mypy ......................................."
 	@$(MAKE) --no-print-directory _mypy
 	@echo "  OK"
-	@echo "[4/11] Complete default pytest suite .........................."
-	@$(PYTHON) -m pytest -q
+	@echo "[4/11] Complete default pytest suite (xdist -n 6 + serial) ....."
+	@$(PYTHON) -m pytest -q $(XDIST_ARGS)
+	@$(PYTHON) -m pytest -q $(XDIST_SERIAL_ONLY)
 	@echo "  OK"
 	@echo "[5/11] GET-only static enforcement ............................"
 	@$(PYTHON) scripts/get_only_check.py

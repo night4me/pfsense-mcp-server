@@ -52,6 +52,34 @@ The standard verification set is Ruff format/check, mypy, pytest,
 Prefer focused diffs, strong typing, consistent style, and no unnecessary
 refactoring.
 
+### Long-running validation
+
+`pytest`, `make quick`, `make validate`, `make release-check`,
+`min-deps-check`, and `reproducible-build` are allowed to finish naturally.
+Do not wrap them in an arbitrary shell `timeout` unless the repository
+itself already requires one (network-facing steps only — see
+`.github/workflows/publish.yml`'s `timeout-minutes`). Do not infer failure
+from elapsed wall-clock time alone, and do not treat the loss of an
+interactive orchestration wrapper's output as proof the underlying process
+died. If a command may outlive the current session, run it detached with
+persistent stdout/stderr logging (e.g. `nohup <cmd> > /tmp/<name>.log 2>&1 &
+disown`, retaining the PID via `echo $!`), and recover/inspect that PID and
+log on return rather than starting a duplicate run. Never rerun an expensive
+validation merely because output was lost if the original process may still
+be running — only rerun after proving the previous process terminated and
+its result cannot be recovered.
+
+### Test parallelism
+
+The default test suite (`make quick`'s `[4/11]` stage, `make validate`'s
+`[4/20]` stage) runs under `pytest-xdist` (`-n 6 --dist=loadscope`) plus a
+small serial pass for the handful of tests that cannot safely collect in
+parallel — see `XDIST_SERIAL_ONLY` in the `Makefile`. Do not add a test to
+that serial list to silence a flake without first root-causing whether it is
+a genuine collection-order/shared-state hazard (as the two current entries
+are) or an actual production concurrency defect, in which case stop and
+report rather than reaching for the serial list as a workaround.
+
 ## File ownership invariant
 
 Codex itself must run as the normal repository operator, `tomfrode:tomfrode`,

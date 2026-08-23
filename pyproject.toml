@@ -52,6 +52,7 @@ dev = [
     "build>=1.2,<2.0",
     "hatchling>=1.25,<2.0",
     "pytest-cov>=5.0,<8.0",
+    "pytest-xdist>=3.8,<4.0",
     "bandit>=1.7,<2.0",
     "twine>=5.0,<7.0",
 ]
@@ -177,10 +178,13 @@ skip_covered = false
 exclude_dirs = [
     "tests",
     # Reviewed local-only tooling: subprocess calls use fixed argv with
-    # shell=False; validate_junit parses only pytest's local report.
+    # shell=False; validate_junit and merge_junit_reports each parse only
+    # pytest's own local report, generated moments earlier in the same
+    # `make test`/`make quick` run, never external/untrusted XML.
     "scripts/checkpoint.py",
     "scripts/git_identity_check.py",
     "scripts/git_report.py",
+    "scripts/merge_junit_reports.py",
     "scripts/scaffold_capability.py",
     "scripts/security_scan.py",
     "scripts/validate_junit.py",

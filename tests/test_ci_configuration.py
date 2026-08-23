@@ -23,8 +23,12 @@ def _top_level_permissions(text: str) -> dict[str, str]:
 def test_ci_has_supported_python_matrix_and_required_offline_checks():
     text = _workflow_text(CI)
     assert 'python-version: ["3.11", "3.12", "3.13"]' in text
-    for command in ("ruff format --check", "ruff check", "mypy", "pytest -q", "make quick"):
+    for command in ("ruff format --check", "ruff check", "mypy", "make quick"):
         assert command in text
+    # The full offline pytest suite is required, but only via `make quick`'s
+    # own [4/11] stage now -- a standalone `pytest -q` CI step would be a
+    # second, redundant full-suite run in the same job/environment/SHA.
+    assert "pytest -q" not in text
     assert "make coverage" in text
     assert "verify_distribution.py" in text
     assert "make security-static" in text
