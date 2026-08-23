@@ -1,15 +1,30 @@
 # Acceptance — v0.7.2
 
-**Status: release-candidate, ready for the Owner Approval Gate
-(`docs/PYPI_RELEASE.md`). Not yet tagged, not yet released, not yet
-published to PyPI.** This document accepts the `v0.7.2` release-candidate
-state at its preparation commit, once that commit passes the required
-local and remote gates (CI, CodeQL, `make release-check`) — all
-confirmed below. Creating the `v0.7.2` tag, publishing the GitHub
-Release, and uploading to PyPI each remain a separate, explicit owner
-decision, taken only after this document and the exact commit SHA it
-corresponds to have been reviewed. `v0.7.1`'s own tag, GitHub Release,
-and PyPI artifact remain unmoved as an accurate historical record.
+**Status: published — the `v0.7.2` tag and PyPI release point at this
+commit.** The annotated git tag `v0.7.2` was created and pushed pointing
+at commit `a1e4877d81e35df1e18e4e828bcaecb13338dbbd`; the GitHub Release
+was published from that tag
+(<https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.7.2>),
+which triggered the `publish.yml` OIDC trusted-publishing workflow (run
+completed `success`, including PEP 740 attestation generation). PyPI's
+JSON API confirms `0.7.2` is `info.version` and the latest entry in
+`releases`, neither artifact yanked. A clean installation of
+`pfsense-mcp-server==0.7.2` from the real PyPI index (not the local
+build) was independently verified in a fresh, isolated environment:
+reports version `0.7.2`, `import pfsense_mcp.server` succeeds, the
+`pfsense-mcp-server` CLI entry point fails closed with a clean
+"configuration error" message (no traceback) when required environment
+variables are absent, the `pfsense-mcp-security` CLI entry point works
+and lists the `bootstrap` subcommand, a real
+`FastMCP.list_tools()`-equivalent call (constructing `ToolRegistry`
+exactly as `scripts/public_contract.py` does, against the installed
+package) shows exactly 96 registered tools with the guidance tool
+present and zero WRITE-shaped tool names registered, and
+`pfsense_mcp.guidance.registry.lookup_guidance` imports and is callable
+offline. This status line was only written after that independent
+post-publication verification succeeded. `v0.7.1`'s own tag, GitHub
+Release, and PyPI artifact remain unmoved as an accurate historical
+record.
 
 ## Release scope
 
