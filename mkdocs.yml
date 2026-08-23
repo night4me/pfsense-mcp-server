@@ -145,6 +145,7 @@ nav:
           - ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B): adr/ADR-031-backend-target-identity-boundary.md
           - ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live): adr/ADR-032-nexus-read-transport-architecture.md
           - ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired): adr/ADR-033-pfsense-least-privilege-bootstrap-architecture.md
+          - ADR-034 README Mermaid to static-SVG PyPI compatibility patch: adr/ADR-034-mermaid-pypi-compatibility.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

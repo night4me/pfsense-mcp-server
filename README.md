@@ -103,23 +103,14 @@ enabled by implementation.
 
 **The READ trust path, in one diagram:**
 
-```mermaid
-flowchart LR
-    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 95, no dispatcher)"]
-    B --> C["Capability / profile gate<br/>(auditor: READ only)"]
-    C --> D["Least-privilege mapping<br/>(exact pfSense privilege)"]
-    D --> E["One fixed typed<br/>client method"]
-    E --> F["pfREST GET<br/>(GET-only, enforced)"]
-    F --> G[("pfSense appliance")]
-    G --> H["Typed model boundary<br/>(secret fields excluded<br/>by construction)"]
-    H --> I["Safe MCP result"]
+<!-- Rendered from assets/diagrams/read-trust-path.mmd -- see that file to
+     edit the diagram source, then regenerate this image. README.md
+     intentionally never uses a live Mermaid fenced code block: GitHub
+     renders one, but PyPI's long_description renderer does not, and
+     previously showed the raw Mermaid source as a plain code block
+     instead -- see docs/adr/ADR-034-mermaid-pypi-compatibility.md. -->
 
-    style A fill:#eee,stroke:#333
-    style G fill:#eee,stroke:#333
-    style C fill:#fff3cd,stroke:#856404
-    style D fill:#fff3cd,stroke:#856404
-    style H fill:#d1e7dd,stroke:#0f5132
-```
+![READ trust path: AI/MCP client through stdio, an explicitly registered MCP tool, capability/profile gate, least-privilege mapping, one fixed typed client method, a GET-only pfREST call, the pfSense appliance, a typed model boundary excluding secret fields, to a safe MCP result](https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/read-trust-path.svg)
 
 Every one of the 95 tools takes this same path — no exceptions, no
 alternate route. The yellow boxes are hard gates (fail closed, not
@@ -397,22 +388,12 @@ not simply an API credential placed behind an MCP tool.
 
 **The authorization path, in one diagram:**
 
-```mermaid
-flowchart LR
-    A["Default profile:<br/>0 WRITE tools<br/>(not reachable)"] -.->|"explicit operator<br/>opt-in required"| B["write_protected profile<br/>+ full Tier 1 material<br/>provisioned"]
-    B --> C["Off-host signed<br/>authorization + confirmation<br/>(separate identities)"]
-    C --> D["6 fail-closed gates<br/>(signature, expiry, digest,<br/>freshness, one-time use)"]
-    D --> E["Sealed MutationExecutor<br/>(only path that ever sends)"]
-    E --> F["Authoritative read-back"]
-    F --> G{"Outcome?"}
-    G -->|"confirmed"| H["VERIFIED"]
-    G -->|"ambiguous"| I["RECONCILIATION<br/>(never blind retry)"]
+<!-- Rendered from assets/diagrams/write-authorization-path.mmd -- see
+     that file to edit the diagram source, then regenerate this image.
+     Same PyPI-compatibility reason as the READ-path diagram above --
+     see docs/adr/ADR-034-mermaid-pypi-compatibility.md. -->
 
-    style A fill:#f8d7da,stroke:#842029
-    style H fill:#d1e7dd,stroke:#0f5132
-    style I fill:#fff3cd,stroke:#856404
-    style E fill:#cfe2ff,stroke:#084298
-```
+![Authorization path: the default profile has 0 WRITE tools and is not reachable; an explicit operator opt-in provisions the write_protected profile plus full Tier 1 material; that requires off-host signed authorization and confirmation from separate identities, six fail-closed gates, a sealed MutationExecutor that is the only path that ever sends, and an authoritative read-back whose outcome is either VERIFIED or, if ambiguous, RECONCILIATION -- never a blind retry](https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/write-authorization-path.svg)
 
 **Implemented, verified, and default-reachable are three different
 things — do not conflate them.** This path is *implemented* (real code,

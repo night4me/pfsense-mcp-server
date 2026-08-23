@@ -1,0 +1,15 @@
+flowchart LR
+    A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 95, no dispatcher)"]
+    B --> C["Capability / profile gate<br/>(auditor: READ only)"]
+    C --> D["Least-privilege mapping<br/>(exact pfSense privilege)"]
+    D --> E["One fixed typed<br/>client method"]
+    E --> F["pfREST GET<br/>(GET-only, enforced)"]
+    F --> G[("pfSense appliance")]
+    G --> H["Typed model boundary<br/>(secret fields excluded<br/>by construction)"]
+    H --> I["Safe MCP result"]
+
+    style A fill:#eee,stroke:#333
+    style G fill:#eee,stroke:#333
+    style C fill:#fff3cd,stroke:#856404
+    style D fill:#fff3cd,stroke:#856404
+    style H fill:#d1e7dd,stroke:#0f5132
