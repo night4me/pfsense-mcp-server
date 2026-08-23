@@ -47,25 +47,38 @@ CLI named in `ADR-021` (Accepted). This file implements:
     `bootstrap`'s own isolation discipline. **Verified offline only**;
     no live pfSense appliance has been contacted by the development task
     that implemented it.
-  - `setup` (`pfsense-mcp-security setup` Slice 1): non-mutating,
+  - `setup` (`pfsense-mcp-security setup`): non-mutating,
     interactive-by-default discovery + plan-only wizard. Composes
     `discover`/`plan`'s own already-implemented machinery plus ADR-033
     account/privilege content via the one bridge module
     `security_setup_plan.py` exposes -- performs zero I/O of its own
     (no filesystem, no network) and never constructs an administrative
     context, so it cannot detect ADR-033 `RECOVERY_REQUIRED` state; the
-    generated plan says so explicitly and points at `recover`. There is
-    no `setup apply` in this build -- selecting a target is intent for
-    a human to review, never execution authorization, and applying a
-    plan (a future, separately authorized slice) will always be a
-    wholly separate invocation, never a continuation of `setup` itself.
+    generated plan says so explicitly and points at `recover`. Selecting
+    a target is intent for a human to review, never execution
+    authorization -- bare `setup` never mutates anything, and there is
+    no inline "continue and apply" path from it.
+  - `setup apply` (Slice 2, read_only posture only): a wholly separate,
+    explicit command -- never reachable from bare `setup`'s own flow --
+    that recomputes the plan fresh, refuses a stale `--plan-digest`,
+    refuses a wrong/missing `--confirm` token, and only then performs
+    one read-only connectivity check against the operator's existing
+    runtime pfSense configuration. Composes
+    `security_setup_apply.run_setup_apply_from_environment()`, the one
+    function this file imports for it. Never mutates pfSense state in
+    any outcome -- `write_protected` posture is refused before any
+    pfSense contact (not yet implemented by this command).
 
-`discover`, `plan`, `doctor`, and `setup` perform no provisioning,
-repair, or mutation. `bootstrap` and `recover` are the only two
-subcommands that can mutate pfSense state (when later run against a
-real appliance) -- and even then, only ever the one fixed,
-least-privilege `pfsense-mcp` service account this codebase's ADR-033
-architecture already scopes both to.
+`discover`, `plan`, `doctor`, bare `setup`, and `setup apply` all
+perform no provisioning, repair, or mutation. `bootstrap` and `recover`
+are the only two subcommands that can mutate pfSense state (when
+later run against a real appliance) -- and even then, only ever the
+one fixed, least-privilege `pfsense-mcp` service account this
+codebase's ADR-033 architecture already scopes both to. `setup apply`
+is the first `setup`-family command to make a live network call at
+all (one read-only GET, `read_only` posture only, only after its
+confirmation token has already been verified) -- it is still never a
+mutation, and it never runs for any other posture.
 
 This file does not import `pfsense_mcp.tier1` directly, or at all --
 every axis-discovery call goes through the one function
@@ -83,6 +96,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from dataclasses import dataclass
 from enum import Enum
@@ -118,6 +132,7 @@ from .security_recovery_orchestration import (
     RecoveryOrchestrationResult,
     run_recovery_from_environment,
 )
+from .security_setup_apply import ApplyOutcome, ApplyResult, run_setup_apply_from_environment
 from .security_setup_plan import (
     PrivilegePlan,
     SetupPlan,
@@ -175,6 +190,22 @@ _RECOVERY_EXIT_CODES: dict[RecoveryOrchestrationOutcome, int] = {
     RecoveryOrchestrationOutcome.BLOCKED_CANDIDATE_NOT_IDENTIFIABLE: 7,
     RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE: 8,
     RecoveryOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE: 9,
+}
+
+# `setup apply`'s exit-code model, independently numbered from every
+# other subcommand's (same established per-subcommand-own-epilog
+# convention). Every member of `ApplyOutcome` has an explicit entry
+# here on purpose -- a KeyError on an unhandled outcome would be a
+# genuine defect, not something to guard with a silent default.
+_SETUP_APPLY_EXIT_CODES: dict[ApplyOutcome, int] = {
+    ApplyOutcome.APPLY_COMPLETED: 0,
+    ApplyOutcome.INSPECT_PLAN_CURRENT: 1,
+    ApplyOutcome.PLAN_STALE: 2,
+    ApplyOutcome.CONFIRM_TOKEN_INVALID: 3,
+    ApplyOutcome.NOT_SUPPORTED_FOR_POSTURE: 4,
+    ApplyOutcome.BLOCKED_CONFIGURATION_ERROR: 5,
+    ApplyOutcome.CONNECTIVITY_FAILED: 6,
+    ApplyOutcome.DOCTOR_NOT_READY: 7,
 }
 
 # `setup`'s own exit-code model, independently numbered under its own
@@ -785,9 +816,10 @@ def _build_parser() -> argparse.ArgumentParser:
     setup_parser = subparsers.add_parser(
         "setup",
         help=(
-            "Guided, non-mutating discovery + plan-only setup wizard (Slice 1). Never mutates pfSense "
-            "state, never provisions anything, never executes -- produces a reviewable SetupPlan only. "
-            "There is no `setup apply` in this build."
+            "Guided, non-mutating discovery + plan-only setup wizard. Bare `setup` never mutates "
+            "pfSense state, never provisions anything, never executes -- produces a reviewable "
+            "SetupPlan only. `setup apply` (Slice 2, read_only posture only) is a wholly separate, "
+            "explicit command -- see `setup apply --help`."
         ),
         description=(
             "DISCOVER -> (interactively, or via flags) SELECT TARGET/POSTURE/ANCHOR -> GENERATE SETUP "
@@ -867,6 +899,86 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Optional, manually-declared pfSense-restapi package version. Never probed live by this slice.",
     )
     setup_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
+    setup_subparsers = setup_parser.add_subparsers(dest="setup_action")
+
+    apply_parser = setup_subparsers.add_parser(
+        "apply",
+        help=(
+            "Slice 2: apply a read_only plan -- verifies live connectivity using the operator's "
+            "existing runtime credentials. Never mutates pfSense state. write_protected is not yet "
+            "supported by this command."
+        ),
+        description=(
+            "Recomputes the plan fresh from current state, refuses if it does not match --plan-digest "
+            "(the state you reviewed has changed), refuses if --confirm does not match the exact "
+            "plan/target/posture, and only then performs one read-only connectivity check against the "
+            "pfSense target configured via the normal runtime PFSENSE_API_URL/PFSENSE_IDENTITY/"
+            "PFSENSE_API_KEY_FILE/PFSENSE_TLS_* environment variables -- the exact same configuration "
+            "the MCP server itself would use to start. Omitting --confirm (or --plan-digest) performs "
+            "inspection only: it shows the current plan and the exact token a real apply would need, "
+            "without touching pfSense at all."
+        ),
+        epilog=(
+            "Exit codes: 0 apply completed (connectivity verified; read_only performs no provisioning "
+            "so nothing was changed). 1 inspection only -- the plan is current and a confirmation token "
+            "was shown, but --confirm was not supplied, so nothing was applied. 2 the recomputed plan "
+            "digest does not match --plan-digest -- current state has changed since the plan was "
+            "reviewed; refused before the confirmation token is even considered. 3 --confirm does not "
+            "match this exact plan/target/posture -- refused before any pfSense contact. 4 the "
+            "requested posture is not read_only -- protected-write apply is not implemented by this "
+            "command; use `pfsense-mcp-security bootstrap` directly. 5 the environment/configuration "
+            "itself was rejected before any pfSense contact (missing/invalid PFSENSE_* variable, "
+            "missing/invalid PFSENSE_SETUP_CONFIRM_KEY_FILE, insecure file permissions). 6 the one "
+            "read-only connectivity check failed. 7 connectivity succeeded but `doctor` reports the "
+            "requested hardware-witness anchor is not ready.\n\n"
+            "Never mutates pfSense state in any outcome, for any posture, always: the only pfSense "
+            "contact this command ever makes is one read-only GET, made only after the confirmation "
+            "token has already been verified, only for the read_only posture. There is no write-capable "
+            "code path in this command at all.\n\n"
+            "Never prints, logs, or serializes an API key, password, journal-integrity key, or any "
+            "other secret value -- the confirmation token is a derived confirmation artifact, not a "
+            "credential."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    apply_parser.add_argument(
+        "--capability-posture",
+        choices=_CAPABILITY_POSTURE_CHOICES,
+        required=True,
+        help="The exact target capability-posture axis value the plan being applied was generated for.",
+    )
+    apply_parser.add_argument(
+        "--anchor-assurance",
+        choices=_ANCHOR_ASSURANCE_CHOICES,
+        required=True,
+        help="The exact target anchor-assurance axis value the plan being applied was generated for.",
+    )
+    apply_parser.add_argument("--target-origin", default=None, help="Must match the value `setup` recorded.")
+    apply_parser.add_argument("--target-identity", default=None, help="Must match the value `setup` recorded.")
+    apply_parser.add_argument(
+        "--tls-mode", choices=["verify", "insecure"], default=None, help="Must match the value `setup` recorded."
+    )
+    apply_parser.add_argument(
+        "--plan-digest",
+        default=None,
+        metavar="DIGEST",
+        help="The plan digest printed by a prior `setup`/`setup --non-interactive` run. Omit for inspection only.",
+    )
+    apply_parser.add_argument(
+        "--confirm",
+        default=None,
+        metavar="TOKEN",
+        help=(
+            "The exact confirmation token a prior inspection printed for this plan. Pass '-' to read it "
+            "from stdin instead of the command line. Omit for inspection only."
+        ),
+    )
+    apply_parser.add_argument(
         "--json",
         action="store_true",
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
@@ -1048,26 +1160,54 @@ _HUMAN_PLAN_ID_LENGTH = 12
 
 def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
     """The "Next step" guidance for the human-mode completion screen.
-    Slice 1: planning only -- there is no `setup apply` command yet, so
-    this can only describe what a future apply step *will* do, never
-    name an exact command. Deliberately split into its own function,
-    taking the already-generated `plan` as a parameter it does not yet
-    use: a future slice that adds `setup apply` can replace this
-    function's return value with the exact actionable command (e.g.
-    referencing `plan`'s own digest/Plan ID) without needing to change
-    anything else in `_format_setup_human()`. Every line here must stay
-    truthful for what Slice 1 actually does -- planning only, no live
-    connection, no changes."""
+    For a `read_only` plan, `setup apply` now exists (Slice 2) -- shows
+    the exact command, built from this plan's own recorded values, an
+    operator can copy verbatim to inspect (and then apply) it. For
+    `write_protected`, apply does not support that posture yet, so the
+    wording stays generic, truthfully describing only what exists
+    today. Deliberately split into its own function so a future slice
+    that adds `write_protected` apply support can replace only that
+    branch's wording without touching anything else in
+    `_format_setup_human()`."""
 
-    del plan  # not yet used -- kept as a parameter for the future slice described above
+    if plan.privilege_plan.intended_capability_posture is not CapabilityPosture.READ_ONLY:
+        return (
+            "This setup has only been planned.",
+            "",
+            "`setup apply` does not yet support the write_protected",
+            "posture. A future slice will compose it with the existing",
+            "`pfsense-mcp-security bootstrap` command.",
+            "",
+            "Nothing has been changed yet.",
+        )
+
+    command_tokens = ["--capability-posture", "read_only"]
+    command_tokens += ["--anchor-assurance", plan.posture_plan.target_anchor_assurance.value]
+    if plan.target.origin:
+        command_tokens += ["--target-origin", plan.target.origin]
+    if plan.target.identity:
+        command_tokens += ["--target-identity", plan.target.identity]
+    if plan.target.tls_mode:
+        command_tokens += ["--tls-mode", plan.target.tls_mode]
+    command_tokens += ["--plan-digest", compute_setup_plan_digest(plan)]
+
+    command_lines = ["  pfsense-mcp-security setup apply \\"]
+    for index in range(0, len(command_tokens), 2):
+        flag, value = command_tokens[index], command_tokens[index + 1]
+        is_last = index + 2 >= len(command_tokens)
+        suffix = "" if is_last else " \\"
+        command_lines.append(f"    {flag} {shlex.quote(value)}{suffix}")
+
     return (
-        "This setup has only been planned.",
+        "This setup has only been planned. Nothing has been changed yet.",
         "",
-        "A future apply step will verify the live pfSense",
-        "connection and required privileges before making any",
-        "authorized configuration changes.",
+        "To verify live connectivity (no pfSense changes are made),",
+        "run:",
         "",
-        "Nothing has been changed yet.",
+        *command_lines,
+        "",
+        "That command alone only inspects and prints a confirmation",
+        "token; add --confirm <TOKEN> to it to actually verify.",
     )
 
 
@@ -1891,6 +2031,62 @@ def _run_setup(
     return 0
 
 
+def _apply_result_to_dict(result: ApplyResult) -> dict[str, Any]:
+    return {
+        "outcome": result.outcome.value,
+        "detail": result.detail,
+        "plan_digest": result.plan_digest,
+        "confirmation_token": result.confirmation_token,
+        "doctor_ready": result.doctor_ready,
+    }
+
+
+def _format_apply_human(result: ApplyResult) -> str:
+    lines = [f"pfsense-mcp-security setup apply: {result.outcome.value}", "", result.detail]
+    if result.plan_digest is not None:
+        lines.append("")
+        lines.append(f"Plan digest: {result.plan_digest}")
+    if result.confirmation_token is not None:
+        lines.append(f"Confirmation token: {result.confirmation_token}")
+    if result.doctor_ready is not None:
+        lines.append(f"Doctor ready: {result.doctor_ready}")
+    return "\n".join(lines)
+
+
+def _run_setup_apply(
+    *,
+    capability_posture: str,
+    anchor_assurance: str,
+    target_origin: str | None,
+    target_identity: str | None,
+    tls_mode: str | None,
+    plan_digest: str | None,
+    confirm: str | None,
+    as_json: bool,
+    env: dict[str, str] | None,
+    out: TextIO,
+    in_: TextIO,
+) -> int:
+    # '-' reads the token from stdin rather than the command line/process
+    # argv, matching `recover --confirm -`'s own established precedent.
+    confirm_token = in_.readline().rstrip("\n") if confirm == "-" else confirm
+    result = run_setup_apply_from_environment(
+        env,
+        target_capability_posture=capability_posture,
+        target_anchor_assurance=anchor_assurance,
+        target_origin=target_origin,
+        target_identity=target_identity,
+        tls_mode=tls_mode,
+        plan_digest=plan_digest,
+        confirm_token=confirm_token,
+    )
+    if as_json:
+        print(json.dumps(_apply_result_to_dict(result), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_apply_human(result), file=out)
+    return _SETUP_APPLY_EXIT_CODES[result.outcome]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -1916,6 +2112,20 @@ def main(argv: list[str] | None = None) -> int:
             execute=args.execute, confirm=args.confirm, as_json=args.json, env=None, out=sys.stdout, in_=sys.stdin
         )
     if args.command == "setup":
+        if getattr(args, "setup_action", None) == "apply":
+            return _run_setup_apply(
+                capability_posture=args.capability_posture,
+                anchor_assurance=args.anchor_assurance,
+                target_origin=args.target_origin,
+                target_identity=args.target_identity,
+                tls_mode=args.tls_mode,
+                plan_digest=args.plan_digest,
+                confirm=args.confirm,
+                as_json=args.json,
+                env=None,
+                out=sys.stdout,
+                in_=sys.stdin,
+            )
         if args.non_interactive and (args.capability_posture is None or args.anchor_assurance is None):
             parser.error("--non-interactive requires --capability-posture and --anchor-assurance")
         return _run_setup(
