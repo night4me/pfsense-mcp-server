@@ -436,3 +436,73 @@ def test_context_has_no_public_mutating_or_generic_dispatch_surface(admin_env: d
     assert "recover" not in public
     assert "delete" not in public
     assert "patch" not in public
+
+
+def test_recovery_operation_types_get_a_journal_path_distinct_from_bootstrap(admin_env: dict[str, str]):
+    bootstrap_context = build_admin_context(admin_env)
+    orphan_key_context = build_admin_context(admin_env, operation_type=AdministrativeOperationType.RECOVER_ORPHAN_KEY)
+    dedicated_user_context = build_admin_context(
+        admin_env, operation_type=AdministrativeOperationType.RECOVER_DEDICATED_USER
+    )
+
+    assert bootstrap_context.journal_path != orphan_key_context.journal_path
+    assert bootstrap_context.journal_path != dedicated_user_context.journal_path
+    assert orphan_key_context.journal_path != dedicated_user_context.journal_path
+    assert bootstrap_context.lock_path != orphan_key_context.lock_path
+    assert bootstrap_context.lock_path != dedicated_user_context.lock_path
+
+
+def test_recovery_namespace_is_deterministic_across_constructions(admin_env: dict[str, str]):
+    first = build_admin_context(admin_env, operation_type=AdministrativeOperationType.RECOVER_ORPHAN_KEY)
+    second = build_admin_context(admin_env, operation_type=AdministrativeOperationType.RECOVER_ORPHAN_KEY)
+
+    assert first.journal_path == second.journal_path
+    assert first.lock_path == second.lock_path
+
+
+def test_bootstrap_default_journal_path_is_unchanged_by_the_operation_type_parameter(admin_env: dict[str, str]):
+    # The exact byte-for-byte compatibility guarantee this change depends
+    # on: passing no operation_type at all (every pre-existing caller)
+    # must produce identical paths to passing it explicitly as BOOTSTRAP.
+    implicit = build_admin_context(admin_env)
+    explicit = build_admin_context(admin_env, operation_type=AdministrativeOperationType.BOOTSTRAP)
+
+    assert implicit.journal_path == explicit.journal_path
+    assert implicit.lock_path == explicit.lock_path
+
+
+def test_recovery_typed_context_never_reads_bootstraps_existing_journal(admin_env: dict[str, str]):
+    bootstrap_context = build_admin_context(admin_env)
+    _create(bootstrap_context)
+    _append(
+        bootstrap_context,
+        DurableOperationState.PRE_SEND_READY,
+        AdministrativeTransactionState.NOT_STARTED,
+        timestamp=T1,
+    )
+    _append(
+        bootstrap_context,
+        DurableOperationState.MUTATION_INTENT_RECORDED,
+        AdministrativeTransactionState.NOT_STARTED,
+        timestamp=T2,
+    )
+    _append(
+        bootstrap_context,
+        DurableOperationState.RECOVERY_REQUIRED,
+        AdministrativeTransactionState.NOT_STARTED,
+        timestamp=T3,
+        recovery=RecoveryAction.REVOKE_ORPHAN_KEY,
+    )
+
+    # A freshly constructed recovery-typed context, against the same
+    # target/env, sees a clean slate -- proving its own journal path
+    # never touches (or is polluted by) the bootstrap journal that just
+    # reached the terminal RECOVERY_REQUIRED state.
+    orphan_key_context = build_admin_context(admin_env, operation_type=AdministrativeOperationType.RECOVER_ORPHAN_KEY)
+    decision = orphan_key_context.status.classify(authoritative=None)
+    assert decision.classification is RestartClassification.CLEAN_NO_OPERATION
+
+    # And the original bootstrap journal is untouched by that construction.
+    bootstrap_decision = bootstrap_context.status.classify(authoritative=None)
+    assert bootstrap_decision.classification is RestartClassification.RECOVERY_REQUIRED
+    assert bootstrap_decision.recovery_action is RecoveryAction.REVOKE_ORPHAN_KEY

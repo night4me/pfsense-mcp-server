@@ -27,6 +27,7 @@ from .config import PfSenseConfig, load_api_key, load_config
 from .errors import ConfigurationError
 from .secure_file import open_nofollow, validate_descriptor
 from .security_auth_transition import AuthMethodTransitionCoordinator, ReconnectPolicy
+from .security_bootstrap_client import ObservedApiKey, ObservedUser
 from .security_bootstrap_engine import (
     ProvisioningResult,
     TargetProfile,
@@ -37,6 +38,8 @@ from .security_bootstrap_recovery import (
     RECOVERY_USER_DESCRIPTION,
     RecoveryDeletionEvidence,
     delete_dedicated_recovery_user,
+    identify_dedicated_recovery_user_candidate,
+    identify_orphan_api_key_candidate,
     revoke_failed_bootstrap_api_key,
 )
 from .security_operation_journal import (
@@ -142,7 +145,22 @@ class _FixedMutationComponents:
     bootstrap_call: Callable[[], ProvisioningResult] = field(repr=False)
     revoke_orphan_key_call: Callable[[], RecoveryDeletionEvidence] = field(repr=False)
     delete_dedicated_user_call: Callable[[], RecoveryDeletionEvidence] = field(repr=False)
+    #: Read-only identification, never a mutation -- shares the exact
+    #: same selection logic `revoke_orphan_key_call`/`delete_dedicated_user_call`
+    #: apply on their own first read (see `identify_orphan_api_key_candidate()`/
+    #: `identify_dedicated_recovery_user_candidate()`'s own docstrings). A
+    #: recovery orchestration layer uses these to resolve the current
+    #: candidate object for confirmation-token binding, without needing its
+    #: own transport-construction access.
+    identify_orphan_key_candidate: Callable[[], ObservedApiKey] = field(repr=False)
+    identify_dedicated_user_candidate: Callable[[], ObservedUser] = field(repr=False)
     auth_transition_factory: Callable[[], AuthMethodTransitionCoordinator] = field(repr=False)
+    #: The already-validated journal integrity key, exposed so a recovery
+    #: orchestration layer can derive/verify a confirmation token bound to
+    #: the same key that already authenticates every journal/lock record
+    #: -- avoids re-reading the secret file a second time and avoids a new
+    #: secret/credential of its own.
+    journal_integrity_key: bytes = field(repr=False)
 
 
 class AdministrativeStatusService:
@@ -442,18 +460,35 @@ def load_admin_composition_config(source: Mapping[str, str]) -> AdminComposition
     return config
 
 
-def _namespace(config: AdminCompositionConfig) -> str:
-    payload = {
+def _namespace(
+    config: AdminCompositionConfig,
+    *,
+    operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+) -> str:
+    payload: dict[str, str] = {
         "target_origin": config.target.base_url,
         "target_identity": config.target.identity,
         "account_identity": _ACCOUNT_NAME,
         "approved_profile": _PROFILE,
     }
+    # `operation_type` is deliberately omitted from the payload for the
+    # BOOTSTRAP default, so every existing bootstrap namespace/journal/lock
+    # path is byte-for-byte unchanged by this parameter's existence. Only a
+    # non-default operation_type (the two ADR-033 recovery actions) adds a
+    # new key, giving each its own fresh journal/lock file distinct from
+    # bootstrap's -- see RECOVER_ORPHAN_KEY/RECOVER_DEDICATED_USER's own
+    # docstring in security_operation_journal.py for why recovery must
+    # never continue the original operation's journal (RECOVERY_REQUIRED
+    # is a deliberately terminal DurableOperationState).
+    if operation_type is not AdministrativeOperationType.BOOTSTRAP:
+        payload["operation_type"] = operation_type.value
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(b"pfsense-mcp-adr033-admin-namespace-v1\x00" + canonical).hexdigest()
 
 
-def build_admin_context(source: Mapping[str, str]) -> AdministrativeContext:
+def build_admin_context(
+    source: Mapping[str, str], *, operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP
+) -> AdministrativeContext:
     """Construct one target-bound admin stack without network or mutation."""
 
     config = load_admin_composition_config(source)
@@ -475,7 +510,7 @@ def build_admin_context(source: Mapping[str, str]) -> AdministrativeContext:
     _load_admin_api_key(config.target)
     _read_secret_text(config.administrator_password_file, label="Administrator password file")
 
-    namespace = _namespace(config)
+    namespace = _namespace(config, operation_type=operation_type)
     binding = AdminTargetBinding(
         target_origin=config.target.base_url,
         target_identity=config.target.identity,
@@ -562,6 +597,22 @@ def build_admin_context(source: Mapping[str, str]) -> AdministrativeContext:
         finally:
             transport.close()
 
+    def identify_orphan_key() -> ObservedApiKey:
+        transport = keyauth_factory()
+        try:
+            return identify_orphan_api_key_candidate(admin_transport=transport, api_version=ApiVersion.V2)
+        finally:
+            transport.close()
+
+    def identify_dedicated_user() -> ObservedUser:
+        transport = keyauth_factory()
+        try:
+            return identify_dedicated_recovery_user_candidate(
+                admin_transport=transport, schema=schema, api_version=ApiVersion.V2
+            )
+        finally:
+            transport.close()
+
     def auth_transition_factory() -> AuthMethodTransitionCoordinator:
         return AuthMethodTransitionCoordinator(
             keyauth_transport_factory=keyauth_factory,
@@ -576,7 +627,10 @@ def build_admin_context(source: Mapping[str, str]) -> AdministrativeContext:
         bootstrap_call=bootstrap_call,
         revoke_orphan_key_call=revoke_call,
         delete_dedicated_user_call=delete_call,
+        identify_orphan_key_candidate=identify_orphan_key,
+        identify_dedicated_user_candidate=identify_dedicated_user,
         auth_transition_factory=auth_transition_factory,
+        journal_integrity_key=integrity_key,
     )
     return AdministrativeContext(
         config=config,

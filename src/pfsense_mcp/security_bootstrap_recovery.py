@@ -81,6 +81,82 @@ def _by_unique_id(objects: tuple[_ObservedObject, ...], *, operation: str) -> di
     return mapped
 
 
+def _select_orphan_api_key(keys: tuple[ObservedApiKey, ...], *, operation: str) -> ObservedApiKey:
+    _by_unique_id(keys, operation=operation)
+    matches = _matching_recovery_keys(keys)
+    if len(matches) != 1:
+        raise BootstrapProvisioningError(
+            f"{operation}: expected exactly one matching orphan key; no mutation performed."
+        )
+    return matches[0]
+
+
+def _select_dedicated_recovery_user(
+    users: tuple[ObservedUser, ...], *, expected_privileges: frozenset[str], operation: str
+) -> ObservedUser:
+    _by_unique_id(users, operation=operation)
+    matches = _matching_recovery_users(users)
+    if len(matches) != 1:
+        raise BootstrapProvisioningError(f"{operation}: expected exactly one matching account; no mutation performed.")
+    selected = matches[0]
+    if (
+        selected.descr != RECOVERY_USER_DESCRIPTION
+        or selected.disabled
+        or selected.scope != "user"
+        or selected.priv != expected_privileges
+        or "page-all" in selected.priv
+    ):
+        raise BootstrapProvisioningError(
+            f"{operation}: account identity or least-privilege profile mismatch; no mutation performed."
+        )
+    return selected
+
+
+def _check_no_owned_key(keys: tuple[ObservedApiKey, ...], *, operation: str) -> None:
+    _by_unique_id(keys, operation=operation)
+    if any(key.username is None for key in keys):
+        raise BootstrapProvisioningError(f"{operation}: API-key ownership was unavailable; no mutation performed.")
+    if any(key.username == RECOVERY_USERNAME for key in keys):
+        raise BootstrapProvisioningError(
+            f"{operation}: account still owns one or more API keys; no mutation performed."
+        )
+
+
+def identify_orphan_api_key_candidate(
+    *, admin_transport: Transport, api_version: ApiVersion = ApiVersion.V2
+) -> ObservedApiKey:
+    """Read-only: identify the exact orphan key `revoke_failed_bootstrap_api_key()`
+    would select, without mutating anything -- shares `_select_orphan_api_key()`
+    with that function's own first-read step, so there is exactly one
+    implementation of "what counts as the orphan key", never duplicated.
+    Raises `BootstrapProvisioningError` under precisely the same condition
+    that function's first read would refuse to proceed under. Never makes
+    a mutating call."""
+
+    client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
+    keys = client._list_auth_keys_for_recovery()
+    return _select_orphan_api_key(keys, operation="identify_orphan_api_key_candidate")
+
+
+def identify_dedicated_recovery_user_candidate(
+    *, admin_transport: Transport, schema: dict[str, object], api_version: ApiVersion = ApiVersion.V2
+) -> ObservedUser:
+    """Read-only: identify the exact account `delete_dedicated_recovery_user()`
+    would select, including the same "does it still own a key" precondition
+    that function's own first-read phase checks -- shared, not duplicated.
+    Never makes a mutating call."""
+
+    expected_privileges = _derive_exact_target(schema)
+    client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
+    users = client.list_users()
+    selected = _select_dedicated_recovery_user(
+        users, expected_privileges=expected_privileges, operation="identify_dedicated_recovery_user_candidate"
+    )
+    keys = client._list_auth_keys_for_recovery()
+    _check_no_owned_key(keys, operation="identify_dedicated_recovery_user_candidate")
+    return selected
+
+
 def revoke_failed_bootstrap_api_key(
     *,
     admin_transport: Transport,
@@ -98,13 +174,7 @@ def revoke_failed_bootstrap_api_key(
 
     client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
     initial = client._list_auth_keys_for_recovery()
-    _by_unique_id(initial, operation="revoke_failed_bootstrap_api_key")
-    matches = _matching_recovery_keys(initial)
-    if len(matches) != 1:
-        raise BootstrapProvisioningError(
-            "revoke_failed_bootstrap_api_key: expected exactly one matching orphan key; no mutation performed."
-        )
-    selected = matches[0]
+    selected = _select_orphan_api_key(initial, operation="revoke_failed_bootstrap_api_key")
 
     fresh = client._list_auth_keys_for_recovery()
     fresh_by_id = _by_unique_id(fresh, operation="revoke_failed_bootstrap_api_key")
@@ -149,34 +219,11 @@ def delete_dedicated_recovery_user(
     expected_privileges = _derive_exact_target(schema)
     client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
     initial_users = client.list_users()
-    _by_unique_id(initial_users, operation="delete_dedicated_recovery_user")
-    matches = _matching_recovery_users(initial_users)
-    if len(matches) != 1:
-        raise BootstrapProvisioningError(
-            "delete_dedicated_recovery_user: expected exactly one matching account; no mutation performed."
-        )
-    selected = matches[0]
-    if (
-        selected.descr != RECOVERY_USER_DESCRIPTION
-        or selected.disabled
-        or selected.scope != "user"
-        or selected.priv != expected_privileges
-        or "page-all" in selected.priv
-    ):
-        raise BootstrapProvisioningError(
-            "delete_dedicated_recovery_user: account identity or least-privilege profile mismatch; "
-            "no mutation performed."
-        )
+    selected = _select_dedicated_recovery_user(
+        initial_users, expected_privileges=expected_privileges, operation="delete_dedicated_recovery_user"
+    )
     initial_keys = client._list_auth_keys_for_recovery()
-    _by_unique_id(initial_keys, operation="delete_dedicated_recovery_user")
-    if any(key.username is None for key in initial_keys):
-        raise BootstrapProvisioningError(
-            "delete_dedicated_recovery_user: API-key ownership was unavailable; no mutation performed."
-        )
-    if any(key.username == RECOVERY_USERNAME for key in initial_keys):
-        raise BootstrapProvisioningError(
-            "delete_dedicated_recovery_user: account still owns one or more API keys; no mutation performed."
-        )
+    _check_no_owned_key(initial_keys, operation="delete_dedicated_recovery_user")
 
     fresh_users = client.list_users()
     fresh_users_by_id = _by_unique_id(fresh_users, operation="delete_dedicated_recovery_user")

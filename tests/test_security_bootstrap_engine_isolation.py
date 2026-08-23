@@ -36,6 +36,8 @@ RECOVERY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_recovery.py"
 TRANSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_auth_transition.py"
 COMPOSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_admin_composition.py"
 ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_orchestration.py"
+CONFIRMATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_recovery_confirmation.py"
+RECOVERY_ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_recovery_orchestration.py"
 
 # The five lower-level module names security_cli.py (and every other
 # runtime entry point / tool) must never reference directly -- only
@@ -46,6 +48,7 @@ _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES = (
     "security_bootstrap_recovery",
     "security_auth_transition",
     "security_admin_composition",
+    "security_recovery_confirmation",
 )
 
 _RUNTIME_ENTRY_POINTS = (
@@ -85,6 +88,8 @@ _RECOVERY_EXPECTED_PUBLIC_SURFACE = {
     "RecoveryDeletionEvidence",
     "revoke_failed_bootstrap_api_key",
     "delete_dedicated_recovery_user",
+    "identify_orphan_api_key_candidate",
+    "identify_dedicated_recovery_user_candidate",
 }
 
 _TRANSITION_EXPECTED_PUBLIC_SURFACE = {
@@ -105,6 +110,20 @@ _ORCHESTRATION_EXPECTED_PUBLIC_SURFACE = {
     "BootstrapOrchestrationResult",
     "run_bootstrap",
     "run_bootstrap_from_environment",
+}
+
+_CONFIRMATION_EXPECTED_PUBLIC_SURFACE = {
+    "RecoveryIncidentBinding",
+    "object_fingerprint",
+    "derive_confirmation_token",
+    "confirmation_token_matches",
+}
+
+_RECOVERY_ORCHESTRATION_EXPECTED_PUBLIC_SURFACE = {
+    "RecoveryOrchestrationError",
+    "RecoveryOrchestrationOutcome",
+    "RecoveryOrchestrationResult",
+    "run_recovery_from_environment",
 }
 
 
@@ -141,6 +160,8 @@ def test_both_modules_exist():
     assert RECOVERY_MODULE_PATH.is_file()
     assert TRANSITION_MODULE_PATH.is_file()
     assert COMPOSITION_MODULE_PATH.is_file()
+    assert CONFIRMATION_MODULE_PATH.is_file()
+    assert RECOVERY_ORCHESTRATION_MODULE_PATH.is_file()
 
 
 def test_neither_module_imports_pfsense_mcp_tier1_or_a_raw_http_library():
@@ -168,6 +189,9 @@ def test_no_shipped_runtime_entry_point_references_the_bootstrap_engine_or_clien
         assert "security_bootstrap_client" not in source, f"{entry_point.name} references security_bootstrap_client"
         assert "security_bootstrap_recovery" not in source, f"{entry_point.name} references security_bootstrap_recovery"
         assert "security_auth_transition" not in source, f"{entry_point.name} references security_auth_transition"
+        assert "security_recovery_confirmation" not in source, (
+            f"{entry_point.name} references security_recovery_confirmation"
+        )
         assert "security_admin_composition" not in source, f"{entry_point.name} references security_admin_composition"
 
 
@@ -180,6 +204,7 @@ def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
         assert "security_bootstrap_recovery" not in source, f"{path} references security_bootstrap_recovery"
         assert "security_auth_transition" not in source, f"{path} references security_auth_transition"
         assert "security_admin_composition" not in source, f"{path} references security_admin_composition"
+        assert "security_recovery_confirmation" not in source, f"{path} references security_recovery_confirmation"
 
 
 def test_composition_is_absent_from_all_runtime_cli_doctor_and_tool_imports():
@@ -346,4 +371,115 @@ def test_orchestration_module_itself_reaches_the_lower_level_stack():
 
 def test_basic_auth_transport_remains_unwired_from_orchestration_module():
     source = ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert "BasicAuthHttpTransport" not in source
+
+
+# --- ADR-033 recovery CLI: security_recovery_confirmation.py / security_recovery_orchestration.py --
+
+
+def test_confirmation_module_never_imports_pfsense_mcp_tier1_or_a_raw_http_library():
+    imported = _imports(CONFIRMATION_MODULE_PATH)
+    offending = {
+        module
+        for module in imported
+        for root in _FORBIDDEN_IMPORT_ROOTS
+        if module == root or module.startswith(f"{root}.")
+    }
+    assert not offending, f"security_recovery_confirmation.py imports forbidden module(s): {offending}"
+
+
+def test_confirmation_module_never_calls_transport_request_or_bootstrap_engine():
+    source = CONFIRMATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+    assert "security_bootstrap_engine" not in source
+    assert "provision_service_account" not in source
+    # No `Transport` *import* (the module's docstring discusses the
+    # concept in prose, which is fine) -- the real property is that it
+    # never constructs or holds one.
+    imported = _imports(CONFIRMATION_MODULE_PATH)
+    assert not any(module.endswith("transport") or ".transport." in module for module in imported)
+
+
+def test_confirmation_public_surface_is_exactly_the_reviewed_api():
+    assert _public_surface(CONFIRMATION_MODULE_PATH) == _CONFIRMATION_EXPECTED_PUBLIC_SURFACE
+
+
+def test_recovery_orchestration_public_surface_is_exactly_the_reviewed_api():
+    assert _public_surface(RECOVERY_ORCHESTRATION_MODULE_PATH) == _RECOVERY_ORCHESTRATION_EXPECTED_PUBLIC_SURFACE
+
+
+def test_recovery_orchestration_never_calls_transport_request_directly():
+    source = RECOVERY_ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+
+
+def test_recovery_orchestration_does_not_register_commands_or_expose_mcp_tools():
+    source = RECOVERY_ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
+    assert "@app.command" not in source
+    assert "add_parser(" not in source
+    assert "mcp.tool" not in source
+    assert "FastMCP" not in source
+
+
+def test_recovery_orchestration_module_does_not_import_pfsense_mcp_tier1_or_a_raw_http_library():
+    imported = _imports(RECOVERY_ORCHESTRATION_MODULE_PATH)
+    offending = {
+        module
+        for module in imported
+        for root in _FORBIDDEN_IMPORT_ROOTS
+        if module == root or module.startswith(f"{root}.")
+    }
+    assert not offending, f"security_recovery_orchestration.py imports forbidden module(s): {offending}"
+
+
+def test_recovery_orchestration_module_is_not_in_the_tier1_isolation_exemption_list():
+    isolation_test_path = ROOT / "tests/tier1/test_isolation.py"
+    source = isolation_test_path.read_text(encoding="utf-8")
+    assert "security_recovery_orchestration.py" not in source
+
+
+def test_confirmation_module_is_not_in_the_tier1_isolation_exemption_list():
+    isolation_test_path = ROOT / "tests/tier1/test_isolation.py"
+    source = isolation_test_path.read_text(encoding="utf-8")
+    assert "security_recovery_confirmation.py" not in source
+
+
+def test_security_cli_is_the_sole_runtime_entry_point_wired_to_recovery_orchestration():
+    """Mirrors test_security_cli_is_the_sole_runtime_entry_point_wired_to_orchestration
+    for the `recover` subcommand: security_cli.py must reference
+    security_recovery_orchestration (the intended gateway) while every
+    OTHER runtime entry point, and every tool under tools/, must not."""
+
+    cli_path = ROOT / "src/pfsense_mcp/security_cli.py"
+    assert "security_recovery_orchestration" in cli_path.read_text(encoding="utf-8")
+
+    other_entry_points = [path for path in _RUNTIME_ENTRY_POINTS if path != cli_path]
+    tools_dir = ROOT / "src/pfsense_mcp/tools"
+    for path in [*other_entry_points, *sorted(tools_dir.rglob("*.py"))]:
+        assert "security_recovery_orchestration" not in path.read_text(encoding="utf-8"), (
+            f"{path} references security_recovery_orchestration"
+        )
+
+
+def test_security_cli_never_references_security_recovery_confirmation_directly():
+    source = (ROOT / "src/pfsense_mcp/security_cli.py").read_text(encoding="utf-8")
+    assert "security_recovery_confirmation" not in source
+
+
+def test_recovery_orchestration_module_itself_reaches_the_lower_level_recovery_stack():
+    """The inverse of the isolation checks above: recovery_orchestration.py
+    is *expected* to import from security_admin_composition,
+    security_bootstrap_recovery, and security_recovery_confirmation (that
+    is its entire purpose) -- confirms this isn't accidentally also
+    isolated into uselessness."""
+
+    imported = _imports(RECOVERY_ORCHESTRATION_MODULE_PATH)
+    assert "security_admin_composition" in imported
+    assert "security_bootstrap_recovery" in imported
+    assert "security_recovery_confirmation" in imported
+    assert "security_operation_journal" in imported
+
+
+def test_basic_auth_transport_remains_unwired_from_recovery_orchestration_module():
+    source = RECOVERY_ORCHESTRATION_MODULE_PATH.read_text(encoding="utf-8")
     assert "BasicAuthHttpTransport" not in source

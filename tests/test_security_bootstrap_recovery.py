@@ -14,6 +14,8 @@ from pfsense_mcp.security_bootstrap_recovery import (
     RECOVERY_USER_DESCRIPTION,
     RECOVERY_USERNAME,
     delete_dedicated_recovery_user,
+    identify_dedicated_recovery_user_candidate,
+    identify_orphan_api_key_candidate,
     revoke_failed_bootstrap_api_key,
 )
 from pfsense_mcp.security_privileges import (
@@ -358,4 +360,51 @@ def test_delete_user_malformed_schema_fails_before_network():
     transport = SequenceTransport()
     with pytest.raises(BootstrapProvisioningError, match="source-cross-checked"):
         delete_dedicated_recovery_user(admin_transport=transport, schema={})
+    assert transport.calls == []
+
+
+def test_identify_orphan_api_key_candidate_matches_revoke_selection_and_never_mutates():
+    transport = SequenceTransport()
+    unrelated = _key(3, username="other-service", descr="unrelated")
+    selected = _key()
+    transport.register("GET", _KEYS, _data_list(unrelated, selected))
+
+    candidate = identify_orphan_api_key_candidate(admin_transport=transport)
+
+    assert candidate.id == selected["id"]
+    assert transport.calls == [("GET", _KEYS)]
+
+
+def test_identify_orphan_api_key_candidate_refuses_zero_or_ambiguous_match():
+    transport = SequenceTransport()
+    transport.register("GET", _KEYS, _data_list(_key(), _key(8)))
+
+    with pytest.raises(BootstrapProvisioningError, match="exactly one"):
+        identify_orphan_api_key_candidate(admin_transport=transport)
+
+
+def test_identify_dedicated_recovery_user_candidate_matches_delete_selection_and_never_mutates():
+    transport = SequenceTransport()
+    transport.register("GET", _USERS, _data_list(_user()))
+    transport.register("GET", _KEYS, _data_list())
+
+    candidate = identify_dedicated_recovery_user_candidate(admin_transport=transport, schema=_schema())
+
+    assert candidate.id == _user()["id"]
+    assert transport.calls == [("GET", _USERS), ("GET", _KEYS)]
+
+
+def test_identify_dedicated_recovery_user_candidate_refuses_when_key_still_owned():
+    transport = SequenceTransport()
+    transport.register("GET", _USERS, _data_list(_user()))
+    transport.register("GET", _KEYS, _data_list(_key()))
+
+    with pytest.raises(BootstrapProvisioningError, match="still owns"):
+        identify_dedicated_recovery_user_candidate(admin_transport=transport, schema=_schema())
+
+
+def test_identify_dedicated_recovery_user_candidate_malformed_schema_fails_before_network():
+    transport = SequenceTransport()
+    with pytest.raises(BootstrapProvisioningError, match="source-cross-checked"):
+        identify_dedicated_recovery_user_candidate(admin_transport=transport, schema={})
     assert transport.calls == []

@@ -58,7 +58,7 @@ def test_bootstrap_success_human_output_exit_zero(capsys, monkeypatch):
     out = capsys.readouterr().out
     assert "Outcome: completed" in out
     assert "op-1" in out
-    assert "only mutating command" in out
+    assert "can mutate pfSense state" in out
 
 
 def test_bootstrap_json_output_is_valid_and_deterministic(capsys, monkeypatch):
@@ -157,8 +157,9 @@ def test_bootstrap_help_documents_exit_codes_and_offline_only_and_setup_boundary
     assert "future interactive" in out
 
 
-def test_bootstrap_module_docstring_lists_it_as_the_only_mutating_subcommand():
-    assert "only mutating subcommand" in " ".join(security_cli.__doc__.split())
+def test_bootstrap_module_docstring_lists_bootstrap_and_recover_as_the_two_mutating_subcommands():
+    joined = " ".join(security_cli.__doc__.split())
+    assert "bootstrap` and `recover` are the only two subcommands that can mutate pfSense state" in joined
 
 
 # --- end-to-end: real main() -> real orchestration -> stubbed engine call --

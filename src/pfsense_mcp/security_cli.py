@@ -17,8 +17,7 @@ CLI named in `ADR-021` (Accepted). This file implements:
     for the full design and its explicit, documented limitations.
   - `bootstrap` (ADR-033 CLI Integration Slice 3): journal-aware,
     locking, deterministic ADR-033 least-privilege service-account
-    provisioning orchestration. The only mutating subcommand in this
-    file. Composes the already-implemented, already-reviewed
+    provisioning orchestration. Composes the already-implemented, already-reviewed
     security-bootstrap stack (fixed administrative context, crash-safe
     journal, exclusive lock, `provision_service_account()`) via the one
     function `security_bootstrap_orchestration.run_bootstrap_from_environment()`
@@ -37,12 +36,23 @@ CLI named in `ADR-021` (Accepted). This file implements:
     interactive wizard) is reserved for a future slice and does not
     exist yet; `bootstrap` is the deterministic, non-interactive,
     lower-level command underneath it.
+  - `recover`: ADR-033 recovery-execution orchestration -- inspects the
+    existing bootstrap incident and, only with an explicit `--execute
+    <ACTION>` plus the exact confirmation token a prior inspection just
+    printed, executes one of the two closed recovery actions
+    (`revoke_failed_bootstrap_api_key()`/`delete_dedicated_recovery_user()`).
+    Standalone -- not folded into `bootstrap` or a future `setup`
+    wizard. Composes `security_recovery_orchestration.run_recovery_from_environment()`,
+    the one function this file imports for it, exactly mirroring
+    `bootstrap`'s own isolation discipline. **Verified offline only**;
+    no live pfSense appliance has been contacted by the development task
+    that implemented it.
 
 `discover`, `plan`, and `doctor` perform no provisioning, repair, or
-mutation. `bootstrap` is the first and only subcommand that can mutate
-pfSense state (when later run against a real appliance) -- and even
-then, only ever the one fixed, least-privilege `pfsense-mcp` service
-account this codebase's ADR-033 architecture already scopes it to.
+mutation. `bootstrap` and `recover` are the only two subcommands that can
+mutate pfSense state (when later run against a real appliance) -- and
+even then, only ever the one fixed, least-privilege `pfsense-mcp` service
+account this codebase's ADR-033 architecture already scopes both to.
 
 This file does not import `pfsense_mcp.tier1` directly, or at all --
 every axis-discovery call goes through the one function
@@ -84,6 +94,12 @@ from .security_plan import (
     generate_security_posture_plan,
 )
 from .security_plan_digest import PLAN_DIGEST_SCHEMA_VERSION, compute_plan_digest
+from .security_recovery_orchestration import (
+    RecoveryAction,
+    RecoveryOrchestrationOutcome,
+    RecoveryOrchestrationResult,
+    run_recovery_from_environment,
+)
 
 _MISMATCH_EXIT_CODE = 2
 _BLOCKED_TARGET_EXIT_CODE = 2
@@ -110,6 +126,29 @@ _BOOTSTRAP_EXIT_CODES: dict[BootstrapOrchestrationOutcome, int] = {
     BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION: 4,
     BootstrapOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE: 5,
     BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR: 6,
+}
+
+# `recover`'s exit-code model, independently numbered from `bootstrap`'s
+# (matching that command's own established precedent that each
+# subcommand's codes are only meaningful relative to its own epilog, not
+# shared across subcommands) -- see RecoveryOrchestrationOutcome's own
+# docstring for what each category actually proves. Every member of that
+# enum has an explicit entry here on purpose: a KeyError on an
+# unhandled outcome would be a genuine defect, not something to guard
+# with a silent default.
+_RECOVERY_EXIT_CODES: dict[RecoveryOrchestrationOutcome, int] = {
+    RecoveryOrchestrationOutcome.NO_RECOVERY_NEEDED: 0,
+    RecoveryOrchestrationOutcome.RECOVERY_ALREADY_COMPLETE: 0,
+    RecoveryOrchestrationOutcome.RECOVERY_COMPLETED: 0,
+    RecoveryOrchestrationOutcome.RECOVERY_NEEDED: 1,
+    RecoveryOrchestrationOutcome.EXECUTE_ACTION_MISMATCH: 2,
+    RecoveryOrchestrationOutcome.BLOCKED_LOCK_CONTENTION: 3,
+    RecoveryOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR: 4,
+    RecoveryOrchestrationOutcome.RECOVERY_EXECUTION_FAILED: 5,
+    RecoveryOrchestrationOutcome.EXECUTE_TOKEN_INVALID: 6,
+    RecoveryOrchestrationOutcome.BLOCKED_CANDIDATE_NOT_IDENTIFIABLE: 7,
+    RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE: 8,
+    RecoveryOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE: 9,
 }
 
 _CAPABILITY_POSTURE_CHOICES = [member.value for member in CapabilityPosture]
@@ -371,7 +410,7 @@ def _bootstrap_result_to_dict(result: BootstrapOrchestrationResult) -> dict[str,
         "provisioning_outcome": result.provisioning_outcome.value if result.provisioning_outcome else None,
         "provisioning_detail": result.provisioning_detail,
         "notes": [
-            "This subcommand is the only mutating command in this CLI. It is verified offline only "
+            "This subcommand (along with `recover`) can mutate pfSense state. It is verified offline only "
             "(synthetic/fake HTTP fixtures) -- no live pfSense appliance has been contacted by the "
             "development task that implemented it.",
             "Never prints or logs an API key, password, or any other secret value. A freshly generated "
@@ -400,7 +439,7 @@ def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
         lines.append(f"Engine detail:  {result.provisioning_detail}")
     lines.append("")
     lines.append(
-        "This subcommand is the only mutating command in this CLI. It is verified offline only "
+        "This subcommand (along with `recover`) can mutate pfSense state. It is verified offline only "
         "(synthetic/fake HTTP fixtures) -- no live pfSense appliance has been contacted by the "
         "development task that implemented it."
     )
@@ -409,6 +448,71 @@ def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
         "service-account key is written only to the configured PFSENSE_SERVICE_API_KEY_FILE custody "
         "path (owner-only permissions), never to stdout/stderr/JSON output."
     )
+    return "\n".join(lines)
+
+
+def _recover_result_to_dict(result: RecoveryOrchestrationResult) -> dict[str, Any]:
+    evidence = result.evidence
+    return {
+        "outcome": result.outcome.value,
+        # Already sanitized upstream -- see security_recovery_orchestration.py's
+        # own docstring for the sanitization discipline this relies on.
+        "detail": result.detail,
+        "operation_id": result.operation_id,
+        "recovery_action": result.recovery_action.value if result.recovery_action is not None else None,
+        # A derived confirmation artifact, never a credential.
+        "confirmation_token": result.confirmation_token,
+        "evidence": (
+            {
+                "object_kind": evidence.object_kind,
+                "selected_id": evidence.selected_id,
+                "objects_before": evidence.objects_before,
+                "objects_after": evidence.objects_after,
+                "verified_absent": evidence.verified_absent,
+                "unrelated_objects_preserved": evidence.unrelated_objects_preserved,
+            }
+            if evidence is not None
+            else None
+        ),
+        "notes": [
+            "Default (no --execute) is read-only inspection only -- makes no pfSense mutation.",
+            "Execution requires both --execute <ACTION> and the exact confirmation token this "
+            "inspection just printed; a missing, wrong, stale, or cross-target/object/action/incident "
+            "token is refused before any mutating HTTP call.",
+            "Never prints or logs an API key, password, or any other secret value.",
+        ],
+    }
+
+
+def _format_recover_human(result: RecoveryOrchestrationResult) -> str:
+    lines = [
+        "pfsense-mcp-security: ADR-033 recovery-execution orchestration",
+        "",
+        f"Outcome: {result.outcome.value}",
+        f"Detail:  {result.detail}",
+    ]
+    if result.operation_id is not None:
+        lines.append(f"Operation id: {result.operation_id}")
+    if result.recovery_action is not None:
+        lines.append(f"Recovery action: {result.recovery_action.value}")
+    if result.confirmation_token is not None and result.recovery_action is not None:
+        lines.append(f"Confirmation token: {result.confirmation_token}")
+        lines.append(
+            f"To execute: pfsense-mcp-security recover --execute {result.recovery_action.value} "
+            f"--confirm {result.confirmation_token}"
+        )
+    if result.evidence is not None:
+        lines.append(f"Object kind: {result.evidence.object_kind}")
+        lines.append(f"Objects before/after: {result.evidence.objects_before}/{result.evidence.objects_after}")
+        lines.append(f"Verified absent: {result.evidence.verified_absent}")
+    lines.append("")
+    lines.append("Default (no --execute) is read-only inspection only -- makes no pfSense mutation.")
+    lines.append(
+        "Execution requires both --execute <ACTION> and the exact confirmation token this inspection "
+        "just printed; a missing, wrong, stale, or cross-target/object/action/incident token is refused "
+        "before any mutating HTTP call."
+    )
+    lines.append("Never prints or logs an API key, password, or any other secret value.")
     return "\n".join(lines)
 
 
@@ -527,10 +631,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     bootstrap_parser = subparsers.add_parser(
         "bootstrap",
-        help=(
-            "ADR-033 least-privilege service-account bootstrap orchestration. The only mutating "
-            "subcommand in this CLI -- verified offline only."
-        ),
+        help=("ADR-033 least-privilege service-account bootstrap orchestration. Verified offline only."),
         description=(
             "Journal-aware, locking, deterministic orchestration of the already-implemented ADR-033 "
             "security-bootstrap stack: creates or additively syncs the one fixed, least-privilege "
@@ -574,6 +675,73 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     bootstrap_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
+    recover_parser = subparsers.add_parser(
+        "recover",
+        help=(
+            "ADR-033 recovery-execution orchestration: inspect, and only with an explicit --execute "
+            "plus the exact confirmation token, execute one of the two closed recovery actions. "
+            "Standalone -- verified offline only."
+        ),
+        description=(
+            "Default (no flags): read-only inspection only. Classifies the existing bootstrap "
+            "incident, and if recovery is required, reports the exact action needed, the affected "
+            "object, and prints a confirmation token bound to this exact target/action/object/incident. "
+            "Makes no pfSense mutation. Execution requires BOTH --execute <ACTION> and --confirm "
+            "<TOKEN> (or --confirm - to read the token from stdin) -- a token from a stale, "
+            "cross-target, cross-object, cross-action, or different-incident inspection is refused "
+            "before any mutating HTTP call. Reuses the already-implemented, already-reviewed "
+            "revoke_failed_bootstrap_api_key()/delete_dedicated_recovery_user() primitives verbatim -- "
+            "this command sequences them, never reimplements their HTTP/verification logic. "
+            "Standalone -- not folded into `bootstrap` or a future `setup` wizard. Configured entirely "
+            "through the same PFSENSE_*/PFSENSE_ADMIN_* environment variables `bootstrap` already uses."
+        ),
+        epilog=(
+            "Exit codes: 0 no recovery needed, already recorded complete, or execution succeeded and "
+            "verified. 1 recovery is needed and was reported (inspection only, not yet executed) -- "
+            "not an error, distinguished from 0 so a monitoring script can alert on it. 2 --execute "
+            "does not match the action this incident actually requires -- refused before any HTTP "
+            "call. 3 another operation holds the recovery-typed lock. 4 the environment/configuration "
+            "itself was rejected before any lock or journal was touched. 5 execution was attempted "
+            "(all gates passed) and the underlying recovery primitive failed -- no mutation was "
+            "performed, per that primitive's own fail-closed contract; the lock is held pending manual "
+            "review. 6 the confirmation token is missing, malformed, or does not match the current "
+            "target/action/object/incident -- refused before any HTTP call. 7 the read-only "
+            "candidate-identification read found zero or more than one matching object. 8 a prior "
+            "recovery attempt for this incident is itself in a non-terminal state (crashed, ambiguous, "
+            "or otherwise incomplete) -- no automatic retry is ever attempted; manual review is "
+            "required. 9 local recovery journal/lock state is corrupt or unauthenticated.\n\n"
+            "Never executes merely because recovery is required: execution always requires the "
+            "explicit --execute and a fresh, currently-valid --confirm token together. Never prints, "
+            "logs, or serializes an API key, password, or any other secret value -- the confirmation "
+            "token is a derived confirmation artifact, not a credential."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    recover_parser.add_argument(
+        "--execute",
+        choices=[action.value for action in RecoveryAction],
+        default=None,
+        metavar="ACTION",
+        help=(
+            "Execute the named recovery action. Requires --confirm. Refused before any HTTP call if it "
+            "does not match the action this incident currently requires."
+        ),
+    )
+    recover_parser.add_argument(
+        "--confirm",
+        default=None,
+        metavar="TOKEN",
+        help=(
+            "The exact confirmation token a prior inspection printed for this action. Pass '-' to read "
+            "it from stdin instead of the command line. Required together with --execute."
+        ),
+    )
+    recover_parser.add_argument(
         "--json",
         action="store_true",
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
@@ -632,6 +800,30 @@ def _run_bootstrap(*, as_json: bool, env: dict[str, str] | None, out: TextIO) ->
     return _BOOTSTRAP_EXIT_CODES[result.outcome]
 
 
+def _run_recover(
+    *,
+    execute: str | None,
+    confirm: str | None,
+    as_json: bool,
+    env: dict[str, str] | None,
+    out: TextIO,
+    in_: TextIO,
+) -> int:
+    execute_action = RecoveryAction(execute) if execute is not None else None
+    # '-' reads the token from stdin rather than the command line/process
+    # argv (visible in shell history and to other local processes via
+    # /proc) -- the token is not a secret credential, but this keeps
+    # controlled-automation use consistent with how this codebase already
+    # prefers file/stdin-sourced input over inline secrets elsewhere.
+    confirm_token = in_.readline().rstrip("\n") if confirm == "-" else confirm
+    result = run_recovery_from_environment(env, execute_action=execute_action, confirm_token=confirm_token)
+    if as_json:
+        print(json.dumps(_recover_result_to_dict(result), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_recover_human(result), file=out)
+    return _RECOVERY_EXIT_CODES[result.outcome]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -650,6 +842,12 @@ def main(argv: list[str] | None = None) -> int:
         return _run_doctor(as_json=args.json, env=None, out=sys.stdout)
     if args.command == "bootstrap":
         return _run_bootstrap(as_json=args.json, env=None, out=sys.stdout)
+    if args.command == "recover":
+        if args.confirm is not None and args.execute is None:
+            parser.error("--confirm requires --execute")
+        return _run_recover(
+            execute=args.execute, confirm=args.confirm, as_json=args.json, env=None, out=sys.stdout, in_=sys.stdin
+        )
 
     parser.print_help(sys.stderr)
     return 2
