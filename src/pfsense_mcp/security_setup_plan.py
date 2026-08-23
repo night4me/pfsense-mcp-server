@@ -144,18 +144,29 @@ class SetupPlan:
 
 
 def _parse_declared_version(value: str) -> tuple[int, int, int] | None:
-    """Pure, total, never raises. Accepts only a plain `X.Y.Z` decimal
-    triple; anything else (empty, malformed, negative, non-numeric,
-    wrong arity) is reported as unparseable rather than guessed at."""
+    """Pure, total, never raises. Accepts an `X.Y.Z` decimal triple, an
+    `X.Y` pair (patch implicitly `0` -- the natural, common way pfSense
+    versions are actually written, e.g. "2.10"), and an optional leading
+    `v`/`V` (e.g. "v2.10.0"). This is a parsing-ergonomics improvement
+    only: it never widens the *verified* compatibility range itself
+    (`check_package_version_support()` is unchanged) and never accepts
+    anything ambiguous -- non-numeric components, the wrong arity, or a
+    negative/malformed value are still reported as unparseable rather
+    than guessed at."""
 
-    parts = value.strip().split(".")
-    if len(parts) != 3:
+    text = value.strip()
+    if text[:1] in ("v", "V"):
+        text = text[1:]
+    parts = text.split(".")
+    if len(parts) not in (2, 3):
         return None
     numbers: list[int] = []
     for part in parts:
         if not part.isdigit():
             return None
         numbers.append(int(part))
+    if len(numbers) == 2:
+        numbers.append(0)
     return (numbers[0], numbers[1], numbers[2])
 
 
@@ -228,8 +239,12 @@ def _version_evidence(*, schema: dict[str, Any] | None, declared_package_version
             schema_provided=schema is not None,
             declared_package_version=declared_package_version,
             package_version_supported=None,
-            version_note="The declared package version could not be parsed as a plain X.Y.Z decimal triple.",
+            version_note=(
+                "The declared package version could not be parsed. Expected a decimal version such "
+                "as 2.10 or 2.10.0, with an optional leading 'v'."
+            ),
         )
+    canonical = ".".join(map(str, parsed))
     finding = check_package_version_support(parsed)
     supported = finding is None
     verified_range = (
@@ -242,7 +257,7 @@ def _version_evidence(*, schema: dict[str, Any] | None, declared_package_version
     )
     return VersionEvidence(
         schema_provided=schema is not None,
-        declared_package_version=declared_package_version,
+        declared_package_version=canonical,
         package_version_supported=supported,
         version_note=note,
     )

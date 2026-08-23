@@ -84,8 +84,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, TextIO
+from urllib.parse import urlsplit
 
 from .security_bootstrap_orchestration import (
     BootstrapOrchestrationOutcome,
@@ -998,70 +1001,87 @@ def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
     }
 
 
+_STATUS_WORD_READY = "Ready"
+_STATUS_WORD_NEEDS_ATTENTION = "Needs attention"
+_STATUS_WORD_NOT_AVAILABLE_YET = "Not available yet"
+
+_STATUS_MARKERS = {
+    _STATUS_WORD_READY: "✓ Ready",
+    _STATUS_WORD_NEEDS_ATTENTION: "! Needs attention",
+    _STATUS_WORD_NOT_AVAILABLE_YET: "○ Not available yet",
+}
+
+
+def _human_status_word(plan: SetupPlan) -> str:
+    status = plan.posture_plan.overall_status
+    if status in (PlanOverallStatus.ALREADY_SATISFIED, PlanOverallStatus.PLAN_GENERATED):
+        return _STATUS_WORD_READY
+    if status is PlanOverallStatus.BLOCKED_NOT_IMPLEMENTED:
+        return _STATUS_WORD_NOT_AVAILABLE_YET
+    return _STATUS_WORD_NEEDS_ATTENTION
+
+
+def _human_mode_label(plan: SetupPlan) -> str:
+    if plan.privilege_plan.intended_capability_posture is CapabilityPosture.READ_ONLY:
+        return "Read-only"
+    return "Protected write"
+
+
+def _human_connection_label(plan: SetupPlan) -> str:
+    if plan.target.tls_mode == "insecure":
+        return "Skip TLS verification (not recommended)"
+    if plan.target.tls_mode == "verify":
+        return "Verify TLS certificate"
+    return "Not specified"
+
+
 def _format_setup_human(plan: SetupPlan) -> str:
+    """The default human-readable rendering for every human-mode setup
+    output -- both the interactive wizard's completion screen and
+    `--non-interactive` without `--json`. Deliberately does not surface
+    internal identifiers (`capability_posture`, `anchor_assurance`,
+    `schema_provided`, plan-digest internals, ...) -- those remain fully
+    available, unabridged, via `--json` (`_setup_plan_to_dict()`, never
+    changed by this function). This function only changes *presentation*
+    of an already-complete `SetupPlan`; it adds no new fields and drops
+    no data from the plan model itself."""
+
+    status_word = _human_status_word(plan)
     lines = [
-        "pfsense-mcp-security setup: setup plan (analysis only -- never mutates, never provisions, never executes)",
+        f"{_STATUS_MARKERS[status_word]}: setup plan created",
         "",
-        f"Setup plan digest (schema v{SETUP_PLAN_DIGEST_SCHEMA_VERSION}): {compute_setup_plan_digest(plan)}  "
-        "(plan identity only -- not authorization)",
-        f"Target:  origin={plan.target.origin}  identity={plan.target.identity}  tls_mode={plan.target.tls_mode}  "
-        f"reachability_verified={plan.target.reachability_verified}",
-        "",
-        "== Capability posture / anchor assurance plan ==",
-        _format_plan_human(plan.posture_plan),
-        "",
-        "== Privilege plan (ADR-033 account/privilege content) ==",
-        f"  intended_capability_posture:                {plan.privilege_plan.intended_capability_posture.value}",
-        f"  intended_account_identity:                  {plan.privilege_plan.intended_account_identity}",
-        "  dedicated_account_provisioning_implemented: "
-        f"{plan.privilege_plan.dedicated_account_provisioning_implemented}",
-        f"  provisioning_note:                          {plan.privilege_plan.provisioning_note}",
-        f"  schema_provided:                            {plan.privilege_plan.schema_provided}",
-        f"  required_privileges:                        {plan.privilege_plan.required_privileges}",
-        f"  unresolved_requirement_tool_names:           {plan.privilege_plan.unresolved_requirement_tool_names}",
-        "",
-        "== Version evidence ==",
-        f"  {plan.version_evidence.version_note}",
-        "",
-        "== Planned local artifacts ==",
+        f"Mode:        {_human_mode_label(plan)}",
     ]
-    lines.extend(f"  - {line}" for line in plan.planned_local_artifacts)
+    if plan.target.identity:
+        lines.append(f"Firewall:    {plan.target.identity}")
+    if plan.target.origin:
+        lines.append(f"Address:     {plan.target.origin}")
+    lines.append(f"Connection:  {_human_connection_label(plan)}")
     lines.append("")
-    lines.append("== Planned pfSense-side actions (never executed by `setup`) ==")
-    lines.extend(f"  - {line}" for line in plan.planned_pfsense_actions)
+    lines.append("No changes were made to pfSense.")
     lines.append("")
-    lines.append("== Planned postconditions ==")
-    lines.extend(f"  - {line}" for line in plan.planned_postconditions)
+    lines.append("Next step")
+    lines.append("This setup has only been planned.")
     lines.append("")
-    lines.append("== NOT implemented / out of scope for this slice ==")
-    lines.extend(f"  - {line}" for line in plan.unsupported_steps)
+    lines.append("A future apply step will verify the live pfSense")
+    lines.append("connection and required privileges before making any")
+    lines.append("authorized configuration changes.")
     lines.append("")
-    lines.extend(f"NOTE: {line}" for line in plan.notes)
+    lines.append("Nothing has been changed yet.")
+    if not plan.posture_plan.safe_to_proceed:
+        if plan.posture_plan.blocking_findings:
+            reason = plan.posture_plan.blocking_findings[0]
+        elif plan.posture_plan.validity_evidence:
+            reason = plan.posture_plan.validity_evidence[0]
+        else:
+            reason = "see --json for detail"
+        lines.append("")
+        lines.append(f"! This selection cannot be completed yet: {reason}")
+    lines.append("")
+    lines.append(f"Setup plan digest: {compute_setup_plan_digest(plan)}")
+    lines.append("(Full technical detail, including plan-digest internals and every")
+    lines.append("unsupported-step note, is available via --json.)")
     return "\n".join(lines)
-
-
-def _prompt(out: TextIO, in_: TextIO, message: str, *, choices: list[str] | None = None) -> str | None:
-    """Blocking, line-oriented prompt over the injected `in_`/`out`
-    streams (never `sys.stdin`/`sys.stdout` directly -- keeps this
-    function fully testable without touching real stdio, exactly
-    mirroring `_run_recover()`'s own `in_.readline()` discipline for
-    `--confirm -`). Returns `None` on a blank line or EOF (`""` from
-    `readline()`) -- both mean "skip this prompt," never an error."""
-
-    suffix = f" [{'/'.join(choices)}]" if choices else ""
-    while True:
-        print(f"{message}{suffix} (blank to skip): ", file=out, end="")
-        out.flush()
-        line = in_.readline()
-        if line == "":
-            return None
-        value = line.strip()
-        if value == "":
-            return None
-        if choices is not None and value not in choices:
-            print(f"  invalid choice: {value!r}", file=out)
-            continue
-        return value
 
 
 def _load_local_schema_file(path: str, *, out: TextIO) -> dict[str, Any] | None:
@@ -1088,6 +1108,624 @@ def _load_local_schema_file(path: str, *, out: TextIO) -> dict[str, Any] | None:
     return parsed
 
 
+class _WizardSignal(str, Enum):
+    """What a wizard step function did. `NEXT` advances to whatever step
+    follows; `BACK` returns to the immediately preceding *shown* step
+    (a step skipped because a flag pre-filled it is never a `BACK`
+    target -- see `_run_wizard()`'s history handling); `QUIT` cancels the
+    whole wizard (explicit Quit, or EOF, which always means Quit,
+    regardless of whether Quit was offered as a shortcut at that
+    particular prompt)."""
+
+    NEXT = "next"
+    BACK = "back"
+    QUIT = "quit"
+
+
+@dataclass(frozen=True)
+class _MenuOption:
+    label: str
+    description: tuple[str, ...] = ()
+    tag: str | None = None
+    available: bool = True
+
+
+@dataclass
+class _WizardState:
+    """Mutable wizard-in-progress selections, in plain human terms --
+    never `CapabilityPosture`/`AnchorAssurance` enum members. Translated
+    to the real plan-generation vocabulary only once, at the very end of
+    `_run_wizard()` (`_derive_anchor_assurance()`), so every intermediate
+    step function only ever deals with the human-facing choices this
+    file's own UI copy describes."""
+
+    mode: str | None = None  # "read_only" | "write_protected"
+    protection: str | None = None  # "hardware_witness" | "software" | None
+    address: str | None = None
+    name: str | None = None
+    tls_choice: str | None = None  # "verify" | "insecure"
+    declared_package_version: str | None = None
+    schema_file: str | None = None
+
+
+@dataclass(frozen=True)
+class _WizardPrefill:
+    """Values already supplied via CLI flags in interactive mode -- each
+    non-`None` field here means the corresponding wizard step is never
+    shown at all (its value is applied directly), matching the
+    established `plan`/original Slice-1 precedent that an explicit flag
+    always wins over a prompt, never the other way around."""
+
+    capability_posture: str | None
+    anchor_assurance: str | None
+    target_origin: str | None
+    target_identity: str | None
+    tls_mode: str | None
+    schema_file: str | None
+    declared_package_version: str | None
+
+
+@dataclass(frozen=True)
+class _WizardResult:
+    capability_posture: str
+    anchor_assurance: str
+    target_origin: str | None
+    target_identity: str | None
+    tls_mode: str | None
+    schema_file: str | None
+    declared_package_version: str | None
+
+
+_STEP_USAGE = "usage"
+_STEP_PROTECTION = "protection"
+_STEP_FIREWALL = "firewall"
+_STEP_CONNECTION = "connection"
+_STEP_ADVANCED = "advanced"
+_STEP_REVIEW = "review"
+
+
+def _prompt_menu(
+    out: TextIO,
+    in_: TextIO,
+    heading: str,
+    subheading: str,
+    options: list[_MenuOption],
+    *,
+    default: int = 1,
+    allow_back: bool = True,
+) -> int | _WizardSignal:
+    """One numbered-choice menu prompt. Never crashes, never lets an
+    invalid or unavailable selection escape as a return value, never
+    silently substitutes a different choice for an invalid one -- always
+    re-prompts with a short explanation instead. EOF always returns
+    `QUIT` regardless of `allow_back`/whether 'q' was offered at this
+    particular menu -- Ctrl+C/EOF must terminate cleanly from every
+    step (`_run_setup()`'s own top-level `except KeyboardInterrupt`
+    handles the terminal-SIGINT case; this function handles the
+    `readline() == ""` EOF case)."""
+
+    while True:
+        print(file=out)
+        if heading:
+            print(heading, file=out)
+        if subheading:
+            print(subheading, file=out)
+        print(file=out)
+        for index, option in enumerate(options, start=1):
+            tag = f"  [{option.tag}]" if option.tag else ""
+            print(f"  {index}) {option.label}{tag}", file=out)
+            for line in option.description:
+                print(f"     {line}", file=out)
+        print(file=out)
+        nav = [f"1-{len(options)}", f"Enter={default}"]
+        if allow_back:
+            nav.append("b=Back")
+        nav.append("q=Quit")
+        print(f"Select [{', '.join(nav)}]: ", file=out, end="")
+        out.flush()
+        line = in_.readline()
+        if line == "":
+            return _WizardSignal.QUIT
+        raw = line.strip()
+        if raw == "":
+            selected_index = default
+        elif raw.lower() == "q":
+            return _WizardSignal.QUIT
+        elif allow_back and raw.lower() == "b":
+            return _WizardSignal.BACK
+        elif raw.isdigit() and 1 <= int(raw) <= len(options):
+            selected_index = int(raw)
+        else:
+            print(f"  Please enter a number from 1 to {len(options)}.", file=out)
+            continue
+        selected = options[selected_index - 1]
+        if not selected.available:
+            print(f"  '{selected.label}' is not available yet in this build. Please choose another option.", file=out)
+            continue
+        return selected_index
+
+
+def _prompt_text(
+    out: TextIO,
+    in_: TextIO,
+    heading: str,
+    help_lines: tuple[str, ...],
+    *,
+    example: str | None = None,
+    required: bool = True,
+    allow_back: bool = True,
+) -> str | _WizardSignal:
+    """One free-text prompt. EOF always returns `QUIT` (see
+    `_prompt_menu()`'s docstring for why)."""
+
+    print(file=out)
+    print(heading, file=out)
+    print(file=out)
+    for line in help_lines:
+        print(line, file=out)
+    if example:
+        print(f"Example: {example}", file=out)
+    print(file=out)
+    while True:
+        nav = ["b=Back", "q=Quit"] if allow_back else ["q=Quit"]
+        print(f"{heading} ({', '.join(nav)}): ", file=out, end="")
+        out.flush()
+        line = in_.readline()
+        if line == "":
+            return _WizardSignal.QUIT
+        raw = line.strip()
+        if raw.lower() == "q":
+            return _WizardSignal.QUIT
+        if allow_back and raw.lower() == "b":
+            return _WizardSignal.BACK
+        if raw == "" and required:
+            print("  This field is required.", file=out)
+            continue
+        return raw
+
+
+def _normalize_address(raw: str) -> tuple[str, bool]:
+    """Pure, local syntax normalization only -- never claims the result
+    is reachable or that a server exists at it. A bare host/IP is
+    assumed to mean HTTPS (the recommended, normal-flow default); an
+    already-schemed address is returned unchanged."""
+
+    if "://" in raw:
+        return raw, True
+    return f"https://{raw}", False
+
+
+def _looks_like_a_valid_address(url: str) -> bool:
+    """Pure local structural check (scheme + host present, no embedded
+    whitespace) -- never a reachability check, never a network call."""
+
+    if " " in url or "\t" in url:
+        return False
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return bool(parts.scheme) and bool(parts.netloc)
+
+
+def _prompt_address(out: TextIO, in_: TextIO) -> str | _WizardSignal:
+    while True:
+        result = _prompt_text(
+            out,
+            in_,
+            "pfSense address",
+            ("Enter the HTTPS address of your pfSense firewall.",),
+            example="https://192.0.2.1",
+        )
+        if result is _WizardSignal.QUIT or result is _WizardSignal.BACK:
+            return result
+        normalized, had_scheme = _normalize_address(result)
+        if not _looks_like_a_valid_address(normalized):
+            print("  That doesn't look like a valid address. Please try again.", file=out)
+            print("  Example: https://192.0.2.1", file=out)
+            continue
+        if had_scheme:
+            return normalized
+        choice = _prompt_menu(
+            out,
+            in_,
+            "",
+            "Use HTTPS?",
+            [
+                _MenuOption(f"Use {normalized}", tag="Recommended"),
+                _MenuOption("Enter another address"),
+            ],
+            default=1,
+            allow_back=False,
+        )
+        if choice is _WizardSignal.QUIT:
+            return _WizardSignal.QUIT
+        if choice == 1:
+            return normalized
+        # choice == 2: re-prompt for the address from scratch.
+
+
+def _step_usage(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
+    print(file=out)
+    print("pfSense MCP Security Setup", file=out)
+    choice = _prompt_menu(
+        out,
+        in_,
+        "Step 1 -- Usage",
+        "How do you want to use pfSense MCP?",
+        [
+            _MenuOption(
+                "Read-only",
+                description=("View status and configuration without allowing pfSense changes.",),
+                tag="Recommended",
+            ),
+            _MenuOption(
+                "Protected write",
+                description=("Allows explicitly approved changes through the protected security path.",),
+            ),
+        ],
+        default=1,
+        allow_back=False,
+    )
+    if choice is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    state.mode = "read_only" if choice == 1 else "write_protected"
+    if state.mode == "read_only":
+        state.protection = None
+    return _WizardSignal.NEXT
+
+
+def _step_protection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
+    print(file=out)
+    print("pfSense MCP Security Setup", file=out)
+    print("Step 2 -- Protection", file=out)
+    choice = _prompt_menu(
+        out,
+        in_,
+        "",
+        "How should approved changes be protected?",
+        [
+            _MenuOption(
+                "Hardware TPM witness",
+                description=(
+                    "Adds independent hardware-backed verification for",
+                    "approved changes. Requires separate witness hardware.",
+                ),
+                tag="Advanced",
+            ),
+            _MenuOption(
+                "Software protection",
+                description=("Protects approved changes using local security controls.",),
+                tag="Not available yet",
+                available=False,
+            ),
+        ],
+        default=1,
+    )
+    if choice is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    if choice is _WizardSignal.BACK:
+        return _WizardSignal.BACK
+    state.protection = "hardware_witness" if choice == 1 else "software"
+    return _WizardSignal.NEXT
+
+
+def _step_firewall(out: TextIO, in_: TextIO, state: _WizardState, prefill: _WizardPrefill) -> _WizardSignal:
+    print(file=out)
+    print("pfSense MCP Security Setup", file=out)
+    label = "Step 2 -- Firewall" if state.mode != "write_protected" else "Step 3 -- Firewall"
+    print(label, file=out)
+
+    if prefill.target_origin is not None:
+        state.address = prefill.target_origin
+    elif state.address is None:
+        result = _prompt_address(out, in_)
+        if result is _WizardSignal.QUIT:
+            return _WizardSignal.QUIT
+        if result is _WizardSignal.BACK:
+            return _WizardSignal.BACK
+        state.address = result
+
+    if prefill.target_identity is not None:
+        state.name = prefill.target_identity
+        return _WizardSignal.NEXT
+
+    result = _prompt_text(
+        out,
+        in_,
+        "Firewall name",
+        (
+            "Choose a friendly name used to identify this firewall",
+            "in plans and reports.",
+        ),
+        example="Home pfSense",
+    )
+    if result is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    if result is _WizardSignal.BACK:
+        if prefill.target_origin is not None:
+            return _WizardSignal.BACK
+        state.address = None
+        return _step_firewall(out, in_, state, prefill)
+    state.name = result
+    return _WizardSignal.NEXT
+
+
+def _step_connection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
+    print(file=out)
+    print("pfSense MCP Security Setup", file=out)
+    label = "Step 3 -- Connection" if state.mode != "write_protected" else "Step 4 -- Connection"
+    print(label, file=out)
+    while True:
+        choice = _prompt_menu(
+            out,
+            in_,
+            "",
+            "Connection security",
+            [
+                _MenuOption(
+                    "Verify TLS certificate",
+                    description=("Verifies the identity of the pfSense server.",),
+                    tag="Recommended",
+                ),
+                _MenuOption(
+                    "Advanced connection settings",
+                    description=("Configure non-standard connection behavior.",),
+                ),
+            ],
+            default=1,
+        )
+        if choice is _WizardSignal.QUIT:
+            return _WizardSignal.QUIT
+        if choice is _WizardSignal.BACK:
+            return _WizardSignal.BACK
+        if choice == 1:
+            state.tls_choice = "verify"
+            return _WizardSignal.NEXT
+        sub_choice = _prompt_menu(
+            out,
+            in_,
+            "",
+            "Advanced connection settings",
+            [
+                _MenuOption("Verify TLS certificate", tag="Recommended"),
+                _MenuOption(
+                    "Skip TLS verification",
+                    description=(
+                        "Skips verifying the pfSense server's identity. Only",
+                        "use this for trusted local/lab networks.",
+                    ),
+                    tag="Advanced · Not recommended",
+                ),
+            ],
+            default=1,
+        )
+        if sub_choice is _WizardSignal.QUIT:
+            return _WizardSignal.QUIT
+        if sub_choice is _WizardSignal.BACK:
+            continue
+        state.tls_choice = "verify" if sub_choice == 1 else "insecure"
+        return _WizardSignal.NEXT
+
+
+def _step_advanced(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
+    print(file=out)
+    print("Advanced options", file=out)
+    choice = _prompt_menu(
+        out,
+        in_,
+        "",
+        "",
+        [
+            _MenuOption(
+                "Continue with recommended defaults",
+                description=("Suitable for normal installations.",),
+                tag="Recommended",
+            ),
+            _MenuOption(
+                "Configure advanced discovery inputs",
+                description=(
+                    "Manually provide saved schema/version evidence for",
+                    "development or troubleshooting.",
+                ),
+            ),
+        ],
+        default=1,
+    )
+    if choice is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    if choice is _WizardSignal.BACK:
+        return _WizardSignal.BACK
+    if choice == 1:
+        return _WizardSignal.NEXT
+
+    version_result = _prompt_text(
+        out,
+        in_,
+        "pfSense REST API package version",
+        ("Optional -- leave blank to skip.",),
+        example="2.10.0",
+        required=False,
+        allow_back=False,
+    )
+    if version_result is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    state.declared_package_version = version_result or None
+
+    schema_result = _prompt_text(
+        out,
+        in_,
+        "Saved OpenAPI schema file path",
+        ("Optional -- leave blank to skip.",),
+        example="/path/to/schema.json",
+        required=False,
+        allow_back=False,
+    )
+    if schema_result is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    state.schema_file = schema_result or None
+    return _WizardSignal.NEXT
+
+
+def _derive_anchor_assurance(state: _WizardState) -> str:
+    if state.mode == "read_only":
+        return AnchorAssurance.NONE.value
+    return state.protection or AnchorAssurance.HARDWARE_WITNESS.value
+
+
+def _effective_anchor_assurance(state: _WizardState, prefill: _WizardPrefill) -> str:
+    return prefill.anchor_assurance or _derive_anchor_assurance(state)
+
+
+def _print_review(out: TextIO, state: _WizardState, prefill: _WizardPrefill) -> None:
+    print(file=out)
+    print("Review setup plan", file=out)
+    print(file=out)
+    print("Mode", file=out)
+    if state.mode == "read_only":
+        print("  Read-only", file=out)
+        print("  AI can inspect pfSense but cannot change it.", file=out)
+    else:
+        print("  Protected write", file=out)
+        anchor = _effective_anchor_assurance(state, prefill)
+        if anchor == AnchorAssurance.HARDWARE_WITNESS.value:
+            print("  Approved changes are protected by hardware TPM witness", file=out)
+            print("  verification.", file=out)
+        else:
+            print(f"  Approved changes are protected ({anchor}).", file=out)
+    print(file=out)
+    print("Firewall", file=out)
+    print(f"  {state.name or '(not set)'}", file=out)
+    print(f"  {state.address or '(not set)'}", file=out)
+    print(file=out)
+    print("Connection", file=out)
+    if state.tls_choice == "insecure":
+        print("  Skip TLS verification (not recommended)", file=out)
+    else:
+        print("  Verify TLS certificate", file=out)
+    print("  Server identity is intended to be verified when", file=out)
+    print("  live connection support is used.", file=out)
+    print(file=out)
+    print("This is a planning step only.", file=out)
+    print(file=out)
+    print("No pfSense settings, accounts, credentials, or local", file=out)
+    print("configuration files will be changed.", file=out)
+
+
+def _step_review(out: TextIO, in_: TextIO, state: _WizardState, prefill: _WizardPrefill) -> _WizardSignal:
+    _print_review(out, state, prefill)
+    choice = _prompt_menu(
+        out,
+        in_,
+        "",
+        "",
+        [
+            _MenuOption("Generate plan", tag="Recommended"),
+            _MenuOption("Go back and change selections"),
+            _MenuOption("Exit"),
+        ],
+        default=1,
+        allow_back=False,
+    )
+    if choice is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    if choice == 1:
+        return _WizardSignal.NEXT
+    if choice == 2:
+        return _WizardSignal.BACK
+    return _WizardSignal.QUIT
+
+
+def _next_step(current: str, state: _WizardState) -> str:
+    if current == _STEP_USAGE:
+        return _STEP_PROTECTION if state.mode == "write_protected" else _STEP_FIREWALL
+    if current == _STEP_PROTECTION:
+        return _STEP_FIREWALL
+    if current == _STEP_FIREWALL:
+        return _STEP_CONNECTION
+    if current == _STEP_CONNECTION:
+        return _STEP_ADVANCED
+    if current == _STEP_ADVANCED:
+        return _STEP_REVIEW
+    raise AssertionError(current)
+
+
+def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardResult | None:
+    """Drives the guided, numbered-menu wizard end to end. Returns
+    `None` if the operator cancelled (explicit Quit, EOF) at any step --
+    `_run_setup()` treats that identically to the non-interactive
+    "required value missing" case: no plan is generated, exit code
+    `_SETUP_ABORTED_EXIT_CODE`. Never performs I/O beyond `in_`/`out`;
+    never imports or calls anything that could mutate pfSense state --
+    this function only ever populates a `_WizardResult`, the same plain
+    strings `generate_setup_plan()` already accepted from flags."""
+
+    state = _WizardState()
+    history: list[str] = []
+    current = _STEP_USAGE
+
+    while True:
+        if current == _STEP_USAGE and prefill.capability_posture is not None:
+            state.mode = prefill.capability_posture
+            if state.mode == "read_only":
+                state.protection = None
+            current = _next_step(current, state)
+            continue
+        if current == _STEP_PROTECTION and prefill.anchor_assurance is not None:
+            current = _next_step(current, state)
+            continue
+        if current == _STEP_CONNECTION and prefill.tls_mode is not None:
+            state.tls_choice = prefill.tls_mode
+            current = _next_step(current, state)
+            continue
+        if current == _STEP_ADVANCED and (
+            prefill.schema_file is not None or prefill.declared_package_version is not None
+        ):
+            current = _next_step(current, state)
+            continue
+
+        if current == _STEP_USAGE:
+            signal = _step_usage(out, in_, state)
+        elif current == _STEP_PROTECTION:
+            signal = _step_protection(out, in_, state)
+        elif current == _STEP_FIREWALL:
+            signal = _step_firewall(out, in_, state, prefill)
+        elif current == _STEP_CONNECTION:
+            signal = _step_connection(out, in_, state)
+        elif current == _STEP_ADVANCED:
+            signal = _step_advanced(out, in_, state)
+        elif current == _STEP_REVIEW:
+            signal = _step_review(out, in_, state, prefill)
+        else:
+            raise AssertionError(current)
+
+        if signal is _WizardSignal.QUIT:
+            return None
+        if signal is _WizardSignal.BACK:
+            if not history:
+                continue
+            current = history.pop()
+            continue
+
+        history.append(current)
+        if current == _STEP_REVIEW:
+            break
+        current = _next_step(current, state)
+
+    advanced_locked = prefill.schema_file is not None or prefill.declared_package_version is not None
+    return _WizardResult(
+        capability_posture=prefill.capability_posture or state.mode or CapabilityPosture.READ_ONLY.value,
+        anchor_assurance=_effective_anchor_assurance(state, prefill),
+        target_origin=state.address if prefill.target_origin is None else prefill.target_origin,
+        target_identity=state.name if prefill.target_identity is None else prefill.target_identity,
+        tls_mode=prefill.tls_mode or state.tls_choice,
+        schema_file=prefill.schema_file if advanced_locked else state.schema_file,
+        declared_package_version=(
+            prefill.declared_package_version if advanced_locked else state.declared_package_version
+        ),
+    )
+
+
 def _run_setup(
     *,
     non_interactive: bool,
@@ -1105,38 +1743,42 @@ def _run_setup(
 ) -> int:
     """Never mutates pfSense state, never provisions anything, never
     executes anything -- in every mode, always. Interactive prompting
-    (when `non_interactive` is `False`) only ever reads lines from
-    `in_` and writes prompts to `out`; it never performs a pfSense
-    request of any kind. `--non-interactive` skips prompting entirely
-    but reaches the exact same, single `generate_setup_plan()` call --
-    there is no separate "automation" code path that could silently
-    behave differently."""
+    (when `non_interactive` is `False`) is a guided, numbered-menu
+    wizard (`_run_wizard()`) that only ever reads lines from `in_` and
+    writes prompts to `out`; it never performs a pfSense request of any
+    kind. `--non-interactive` skips the wizard entirely but reaches the
+    exact same, single `generate_setup_plan()` call -- there is no
+    separate "automation" code path that could silently behave
+    differently. A real terminal SIGINT (Ctrl+C) during interactive
+    prompting raises `KeyboardInterrupt`, caught here and treated
+    identically to an explicit Quit -- no traceback, no partial plan."""
 
     if not non_interactive:
-        print(
-            "pfsense-mcp-security setup: interactive discovery + plan-only wizard. Nothing you enter "
-            "here mutates pfSense state or provisions anything -- this command only ever produces a "
-            "plan for you to review. Press Enter to skip any prompt.",
-            file=out,
+        prefill = _WizardPrefill(
+            capability_posture=capability_posture,
+            anchor_assurance=anchor_assurance,
+            target_origin=target_origin,
+            target_identity=target_identity,
+            tls_mode=tls_mode,
+            schema_file=schema_file,
+            declared_package_version=declared_package_version,
         )
-        if capability_posture is None:
-            capability_posture = _prompt(out, in_, "Target capability posture", choices=_CAPABILITY_POSTURE_CHOICES)
-        if anchor_assurance is None:
-            anchor_assurance = _prompt(out, in_, "Target anchor assurance", choices=_ANCHOR_ASSURANCE_CHOICES)
-        if target_origin is None:
-            target_origin = _prompt(
-                out, in_, "pfSense target origin (e.g. a base URL) -- recorded only, never verified"
-            )
-        if target_identity is None:
-            target_identity = _prompt(out, in_, "A human-meaningful label for the target -- recorded only")
-        if tls_mode is None:
-            tls_mode = _prompt(
-                out, in_, "Declared TLS intent -- recorded only, never verified", choices=["verify", "insecure"]
-            )
-        if schema_file is None:
-            schema_file = _prompt(out, in_, "Local path to a previously-saved pfSense OpenAPI schema JSON file, if any")
-        if declared_package_version is None:
-            declared_package_version = _prompt(out, in_, "Declared pfSense-restapi package version (X.Y.Z), if known")
+        try:
+            wizard_result = _run_wizard(out, in_, prefill)
+        except KeyboardInterrupt:
+            wizard_result = None
+        if wizard_result is None:
+            print(file=out)
+            print("Setup cancelled.", file=out)
+            print("No changes were made.", file=out)
+            return _SETUP_ABORTED_EXIT_CODE
+        capability_posture = wizard_result.capability_posture
+        anchor_assurance = wizard_result.anchor_assurance
+        target_origin = wizard_result.target_origin
+        target_identity = wizard_result.target_identity
+        tls_mode = wizard_result.tls_mode
+        schema_file = wizard_result.schema_file
+        declared_package_version = wizard_result.declared_package_version
 
     if capability_posture is None or anchor_assurance is None:
         print(
