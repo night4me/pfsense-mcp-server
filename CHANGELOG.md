@@ -7,6 +7,75 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-23
+
+**Tier 1 correctness fix and validation-pipeline improvement. No MCP
+capability change.** Public contract byte-identical to `v0.7.1`: **95
+pfSense READ tools + 1 official-guidance tool, 0 default-reachable
+WRITE**, confirmed by a `tests/contracts/mcp_public_contract_v0.7.2.json`
+snapshot that diffs to zero against `v0.7.1`'s own snapshot.
+
+### Fixed
+
+- **`MutationExecutor` real-wall-clock expiry check** — `execute()`
+  called `RecoveryContract.is_expired()` with no explicit `now=`
+  argument, so it silently fell through to real
+  `datetime.now(timezone.utc)` regardless of any deterministic clock
+  the surrounding test/store already used. Under a long-running test
+  suite this occasionally caused a 4-minute contract TTL to expire
+  before the two real-executor tests in
+  `test_alias_description_execution.py` reached it, producing an
+  intermittent `ContractConflictError` unrelated to any real
+  authorization problem. Fixed with the same constructor-injectable
+  `Clock` seam already used by `SqliteRecoveryContractStore` and
+  `SqliteAuthorizationConsumptionStore` — `MutationExecutor` now
+  defaults to real UTC wall-clock time exactly as before (the only
+  production construction site, `production_runtime.py`, does not
+  inject a clock) and fails closed on a naive or non-UTC value. No
+  expiry semantics, TTL values, authorization logic, or state-machine
+  transitions changed.
+- **README.md's Mermaid diagrams rendering as raw source text on
+  PyPI** — GitHub renders fenced `` ```mermaid `` blocks natively;
+  PyPI's `readme_renderer` does not, so the live PyPI project page
+  showed the raw diagram source as a code block. Both diagrams
+  (READ trust path, WRITE authorization path) replaced with
+  pre-rendered SVG images (`assets/diagrams/*.svg`), referenced by an absolute
+  `raw.githubusercontent.com` URL since PyPI has no file tree for a
+  relative path to resolve against. The Mermaid source remains the
+  maintained source of truth in `assets/diagrams/*.mmd`. See
+  `docs/adr/ADR-034-mermaid-pypi-compatibility.md`.
+- **GitHub Pages documentation staleness** — the published docs site
+  was last deployed from a commit 92 commits behind `main` (still
+  describing a 42-tool, `v0.3.x`-era state). Redeployed from current
+  `main`. Added a read-only staleness detector
+  (`scripts/docs_pages_freshness_check.py`, weekly + on-docs-push CI
+  check) that cannot itself deploy anything — automatic deployment on
+  every docs change remains a separate, explicit owner decision.
+
+### Added
+
+- **`pfsense-mcp-security bootstrap` CLI subcommand** (ADR-033 CLI
+  Integration Slice 3) — a journal-aware, locking bootstrap-
+  orchestration layer composing the already-implemented ADR-033
+  security-bootstrap primitives into one operator-facing command. This
+  is a CLI-only administrative tool, invoked outside the MCP server
+  process; it registers no MCP tool, adds nothing to the public MCP
+  contract, and does not change READ or WRITE reachability.
+
+### Changed
+
+- **Validation-pipeline performance**: the full offline pytest suite
+  now runs under `pytest-xdist` (`-n 6 --dist=loadscope`), cutting
+  local wall-clock time from ~146s to ~65s (~55%) with zero test
+  coverage loss — two tests that cannot safely collect under xdist
+  (collection-time random parametrize values; a test asserting a
+  fresh, untouched `sys.modules` state) run in a small serial pass
+  instead. `make quick` and `make validate` are correspondingly
+  faster (~75s and ~77s). Also removed a genuine redundancy from CI:
+  the `test` job ran the full suite twice in the same job/SHA (a
+  standalone `pytest -q` step immediately followed by `make quick`'s
+  own pytest stage) — the standalone step was removed.
+
 ## [0.7.1] - 2026-08-23
 
 **Documentation/packaging presentation correction. NO functional MCP/API/

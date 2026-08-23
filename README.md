@@ -459,19 +459,24 @@ A browsable version of the full documentation set below is published at
 
 ## Release status
 
-**v0.7.1 is the immutable production baseline, published on PyPI —
+**v0.7.2 is the immutable production baseline, published on PyPI —
 95 pfSense READ tools + 1 official-guidance tool, 0 WRITE tools.** A
-documentation/packaging presentation correction over `v0.7.0` — no MCP
-capability change, no runtime security-semantic change, public contract
-byte-identical to `v0.7.0`. It corrects a stale Quick start install
-command `v0.7.0` shipped with (`pip install
-'pfsense-mcp-server==0.5.1'`, unnoticed across two releases and
-permanently baked into `v0.7.0`'s own published PyPI project page,
-since PyPI cannot re-render an already-published artifact's
-description) and a handful of stale current-state documentation
-references found during the same sweep. See `CHANGELOG.md`'s `[0.7.1]`
-entry and `docs/ACCEPTANCE_v0.7.1.md` for the complete, independently
-verified evidence.
+Tier 1 correctness fix and validation-pipeline improvement over
+`v0.7.1` — no MCP capability change, public contract byte-identical to
+`v0.7.1`. Fixes a real-wall-clock timing gap in `MutationExecutor`'s
+recovery-contract expiry check (production code now threads an
+explicit, constructor-injectable UTC clock through, defaulting to real
+time exactly as before), cuts the full offline pytest suite from ~146s
+to ~65s via `pytest-xdist` with zero coverage loss, removes a redundant
+duplicate full-suite run from CI, adds a new `pfsense-mcp-security
+bootstrap` CLI subcommand (ADR-033 CLI Integration Slice 3 — an
+operator-facing security-bootstrap orchestration tool, not an MCP tool
+and not part of the public MCP contract), redeploys and adds staleness
+detection for the public documentation site, and fixes README.md's
+Mermaid diagrams rendering as raw source text on PyPI (replaced with
+checked-in static SVGs). See `CHANGELOG.md`'s `[0.7.2]` entry and
+`docs/ACCEPTANCE_v0.7.2.md` for the complete, independently verified
+evidence.
 
 `v0.7.0` itself was the first release to add
 `pfsense_get_official_guidance` — a separate, structurally distinct MCP
