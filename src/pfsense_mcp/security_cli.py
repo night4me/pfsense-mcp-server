@@ -32,37 +32,51 @@ CLI named in `ADR-021` (Accepted). This file implements:
     (synthetic/fake HTTP fixtures) -- no live
     pfSense appliance has been contacted by this development task, and
     running it against a real target is a separate, future, explicitly
-    authorized action. `pfsense-mcp-security setup` (a user-facing
-    interactive wizard) is reserved for a future slice and does not
-    exist yet; `bootstrap` is the deterministic, non-interactive,
+    authorized action. `pfsense-mcp-security setup` (a user-facing,
+    non-mutating discovery/planning wizard; see below) never runs
+    `bootstrap` itself -- `bootstrap` remains the deterministic, non-interactive,
     lower-level command underneath it.
   - `recover`: ADR-033 recovery-execution orchestration -- inspects the
     existing bootstrap incident and, only with an explicit `--execute
     <ACTION>` plus the exact confirmation token a prior inspection just
     printed, executes one of the two closed recovery actions
     (`revoke_failed_bootstrap_api_key()`/`delete_dedicated_recovery_user()`).
-    Standalone -- not folded into `bootstrap` or a future `setup`
-    wizard. Composes `security_recovery_orchestration.run_recovery_from_environment()`,
+    Standalone -- not folded into `bootstrap` or `setup`. Composes
+    `security_recovery_orchestration.run_recovery_from_environment()`,
     the one function this file imports for it, exactly mirroring
     `bootstrap`'s own isolation discipline. **Verified offline only**;
     no live pfSense appliance has been contacted by the development task
     that implemented it.
+  - `setup` (`pfsense-mcp-security setup` Slice 1): non-mutating,
+    interactive-by-default discovery + plan-only wizard. Composes
+    `discover`/`plan`'s own already-implemented machinery plus ADR-033
+    account/privilege content via the one bridge module
+    `security_setup_plan.py` exposes -- performs zero I/O of its own
+    (no filesystem, no network) and never constructs an administrative
+    context, so it cannot detect ADR-033 `RECOVERY_REQUIRED` state; the
+    generated plan says so explicitly and points at `recover`. There is
+    no `setup apply` in this build -- selecting a target is intent for
+    a human to review, never execution authorization, and applying a
+    plan (a future, separately authorized slice) will always be a
+    wholly separate invocation, never a continuation of `setup` itself.
 
-`discover`, `plan`, and `doctor` perform no provisioning, repair, or
-mutation. `bootstrap` and `recover` are the only two subcommands that can
-mutate pfSense state (when later run against a real appliance) -- and
-even then, only ever the one fixed, least-privilege `pfsense-mcp` service
-account this codebase's ADR-033 architecture already scopes both to.
+`discover`, `plan`, `doctor`, and `setup` perform no provisioning,
+repair, or mutation. `bootstrap` and `recover` are the only two
+subcommands that can mutate pfSense state (when later run against a
+real appliance) -- and even then, only ever the one fixed,
+least-privilege `pfsense-mcp` service account this codebase's ADR-033
+architecture already scopes both to.
 
 This file does not import `pfsense_mcp.tier1` directly, or at all --
 every axis-discovery call goes through the one function
 `security_discovery.discover_security_posture()` exposes (`plan` calls
 it only indirectly, via `security_plan.generate_security_posture_plan()`;
 `doctor` calls it only indirectly, via
-`security_doctor.run_doctor_checks()`), keeping the tier1-package-
-isolation exemption's surface to exactly `security_discovery.py`,
-matching `tier1_anchor_check.py`'s own established discipline for
-`application.py`.
+`security_doctor.run_doctor_checks()`; `setup` calls it only
+indirectly, via `security_setup_plan.generate_setup_plan()`), keeping
+the tier1-package-isolation exemption's surface to exactly
+`security_discovery.py`, matching `tier1_anchor_check.py`'s own
+established discipline for `application.py`.
 """
 
 from __future__ import annotations
@@ -70,6 +84,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 from typing import Any, TextIO
 
 from .security_bootstrap_orchestration import (
@@ -100,6 +115,14 @@ from .security_recovery_orchestration import (
     RecoveryOrchestrationResult,
     run_recovery_from_environment,
 )
+from .security_setup_plan import (
+    PrivilegePlan,
+    SetupPlan,
+    TargetDescriptor,
+    VersionEvidence,
+    generate_setup_plan,
+)
+from .security_setup_plan_digest import SETUP_PLAN_DIGEST_SCHEMA_VERSION, compute_setup_plan_digest
 
 _MISMATCH_EXIT_CODE = 2
 _BLOCKED_TARGET_EXIT_CODE = 2
@@ -150,6 +173,15 @@ _RECOVERY_EXIT_CODES: dict[RecoveryOrchestrationOutcome, int] = {
     RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE: 8,
     RecoveryOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE: 9,
 }
+
+# `setup`'s own exit-code model, independently numbered under its own
+# epilog like every other subcommand here. 3 is deliberately distinct
+# from `plan`'s reused 2 (invalid/anomalous target): it means
+# interactive prompting was abandoned (EOF, or the operator supplied no
+# value for a required prompt) before a plan could even be generated --
+# a materially different, non-mutating outcome from "a plan was
+# generated but the target itself is invalid."
+_SETUP_ABORTED_EXIT_CODE = 3
 
 _CAPABILITY_POSTURE_CHOICES = [member.value for member in CapabilityPosture]
 # AnchorAssurance.UNKNOWN is deliberately excluded -- it is an
@@ -747,6 +779,96 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
     )
 
+    setup_parser = subparsers.add_parser(
+        "setup",
+        help=(
+            "Guided, non-mutating discovery + plan-only setup wizard (Slice 1). Never mutates pfSense "
+            "state, never provisions anything, never executes -- produces a reviewable SetupPlan only. "
+            "There is no `setup apply` in this build."
+        ),
+        description=(
+            "DISCOVER -> (interactively, or via flags) SELECT TARGET/POSTURE/ANCHOR -> GENERATE SETUP "
+            "PLAN, then stop. Composes the already-implemented `discover`/`plan` machinery plus ADR-033 "
+            "account/privilege content -- never a second, independent implementation of either. "
+            "Interactive by default (prompts for anything not supplied via flags, and every prompt may "
+            "be left blank to skip it); pass --non-interactive for deterministic, prompt-free "
+            "automation (requires --capability-posture and --anchor-assurance)."
+        ),
+        epilog=(
+            "Exit codes: 0 a plan was generated, including 'already satisfied' and 'valid target but "
+            "not yet implemented' -- neither is a usage error, the same convention `plan` already uses. "
+            "2 the requested target combination is invalid, or the current state shows a detected "
+            "anomaly or indeterminate evidence -- the same meaning `plan`'s own exit code 2 already "
+            "has. 3 interactive prompting was abandoned (EOF, or the operator gave no value for a "
+            "required prompt) before a plan could be generated -- nothing was planned, nothing was "
+            "mutated.\n\n"
+            "This command NEVER mutates pfSense state and NEVER provisions, activates, deactivates, "
+            "generates a secret, or writes MCP client configuration, in every mode, always -- selecting "
+            "a target here is intent for a human to review, not execution authorization. There is no "
+            "'continue and apply' path from this command: applying a plan (a future, separately "
+            "authorized slice) will always be a wholly separate, explicit invocation, never a "
+            "continuation of this one.\n\n"
+            "Never performs a live network call of any kind -- --schema-file, if given, is read from "
+            "local disk only, never fetched. If a previous `pfsense-mcp-security bootstrap` attempt may "
+            "have failed and left RECOVERY_REQUIRED state, this command does not detect it -- run "
+            "`pfsense-mcp-security recover` directly to inspect."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    setup_parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Never prompt; every required value must be supplied via flags.",
+    )
+    setup_parser.add_argument(
+        "--capability-posture",
+        choices=_CAPABILITY_POSTURE_CHOICES,
+        default=None,
+        help="Target capability-posture axis value. Prompted for if omitted and interactive.",
+    )
+    setup_parser.add_argument(
+        "--anchor-assurance",
+        choices=_ANCHOR_ASSURANCE_CHOICES,
+        default=None,
+        help="Target anchor-assurance axis value. Prompted for if omitted and interactive.",
+    )
+    setup_parser.add_argument(
+        "--target-origin",
+        default=None,
+        help="pfSense target origin (e.g. a base URL), recorded exactly as entered -- never verified by this slice.",
+    )
+    setup_parser.add_argument(
+        "--target-identity",
+        default=None,
+        help="A human-meaningful label for the target, recorded exactly as entered.",
+    )
+    setup_parser.add_argument(
+        "--tls-mode",
+        choices=["verify", "insecure"],
+        default=None,
+        help="Declared TLS intent, recorded exactly as entered -- never verified by this slice.",
+    )
+    setup_parser.add_argument(
+        "--schema-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional local path to a previously-saved pfSense OpenAPI schema JSON file. Read from "
+            "local disk only -- never fetched over the network by this slice."
+        ),
+    )
+    setup_parser.add_argument(
+        "--declared-package-version",
+        default=None,
+        metavar="X.Y.Z",
+        help="Optional, manually-declared pfSense-restapi package version. Never probed live by this slice.",
+    )
+    setup_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
     return parser
 
 
@@ -824,6 +946,231 @@ def _run_recover(
     return _RECOVERY_EXIT_CODES[result.outcome]
 
 
+def _target_to_dict(target: TargetDescriptor) -> dict[str, Any]:
+    return {
+        "origin": target.origin,
+        "identity": target.identity,
+        "tls_mode": target.tls_mode,
+        "reachability_verified": target.reachability_verified,
+    }
+
+
+def _privilege_plan_to_dict(privilege_plan: PrivilegePlan) -> dict[str, Any]:
+    return {
+        "intended_capability_posture": privilege_plan.intended_capability_posture.value,
+        "intended_account_identity": privilege_plan.intended_account_identity,
+        "dedicated_account_provisioning_implemented": privilege_plan.dedicated_account_provisioning_implemented,
+        "provisioning_note": privilege_plan.provisioning_note,
+        "schema_provided": privilege_plan.schema_provided,
+        "required_privileges": (
+            list(privilege_plan.required_privileges) if privilege_plan.required_privileges is not None else None
+        ),
+        "unresolved_requirement_tool_names": list(privilege_plan.unresolved_requirement_tool_names),
+    }
+
+
+def _version_evidence_to_dict(version_evidence: VersionEvidence) -> dict[str, Any]:
+    return {
+        "schema_provided": version_evidence.schema_provided,
+        "declared_package_version": version_evidence.declared_package_version,
+        "package_version_supported": version_evidence.package_version_supported,
+        "version_note": version_evidence.version_note,
+    }
+
+
+def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
+    return {
+        "schema_version": plan.schema_version,
+        "target": _target_to_dict(plan.target),
+        "posture_plan": _plan_to_dict(plan.posture_plan),
+        "privilege_plan": _privilege_plan_to_dict(plan.privilege_plan),
+        "version_evidence": _version_evidence_to_dict(plan.version_evidence),
+        "planned_local_artifacts": list(plan.planned_local_artifacts),
+        "planned_pfsense_actions": list(plan.planned_pfsense_actions),
+        "planned_postconditions": list(plan.planned_postconditions),
+        "unsupported_steps": list(plan.unsupported_steps),
+        "notes": list(plan.notes),
+        # Mirrors `plan`'s own "plan_digest" field exactly: plan identity
+        # only -- never authorization. See security_setup_plan_digest.py's
+        # own module docstring.
+        "setup_plan_digest": compute_setup_plan_digest(plan),
+        "setup_plan_digest_schema_version": SETUP_PLAN_DIGEST_SCHEMA_VERSION,
+    }
+
+
+def _format_setup_human(plan: SetupPlan) -> str:
+    lines = [
+        "pfsense-mcp-security setup: setup plan (analysis only -- never mutates, never provisions, never executes)",
+        "",
+        f"Setup plan digest (schema v{SETUP_PLAN_DIGEST_SCHEMA_VERSION}): {compute_setup_plan_digest(plan)}  "
+        "(plan identity only -- not authorization)",
+        f"Target:  origin={plan.target.origin}  identity={plan.target.identity}  tls_mode={plan.target.tls_mode}  "
+        f"reachability_verified={plan.target.reachability_verified}",
+        "",
+        "== Capability posture / anchor assurance plan ==",
+        _format_plan_human(plan.posture_plan),
+        "",
+        "== Privilege plan (ADR-033 account/privilege content) ==",
+        f"  intended_capability_posture:                {plan.privilege_plan.intended_capability_posture.value}",
+        f"  intended_account_identity:                  {plan.privilege_plan.intended_account_identity}",
+        "  dedicated_account_provisioning_implemented: "
+        f"{plan.privilege_plan.dedicated_account_provisioning_implemented}",
+        f"  provisioning_note:                          {plan.privilege_plan.provisioning_note}",
+        f"  schema_provided:                            {plan.privilege_plan.schema_provided}",
+        f"  required_privileges:                        {plan.privilege_plan.required_privileges}",
+        f"  unresolved_requirement_tool_names:           {plan.privilege_plan.unresolved_requirement_tool_names}",
+        "",
+        "== Version evidence ==",
+        f"  {plan.version_evidence.version_note}",
+        "",
+        "== Planned local artifacts ==",
+    ]
+    lines.extend(f"  - {line}" for line in plan.planned_local_artifacts)
+    lines.append("")
+    lines.append("== Planned pfSense-side actions (never executed by `setup`) ==")
+    lines.extend(f"  - {line}" for line in plan.planned_pfsense_actions)
+    lines.append("")
+    lines.append("== Planned postconditions ==")
+    lines.extend(f"  - {line}" for line in plan.planned_postconditions)
+    lines.append("")
+    lines.append("== NOT implemented / out of scope for this slice ==")
+    lines.extend(f"  - {line}" for line in plan.unsupported_steps)
+    lines.append("")
+    lines.extend(f"NOTE: {line}" for line in plan.notes)
+    return "\n".join(lines)
+
+
+def _prompt(out: TextIO, in_: TextIO, message: str, *, choices: list[str] | None = None) -> str | None:
+    """Blocking, line-oriented prompt over the injected `in_`/`out`
+    streams (never `sys.stdin`/`sys.stdout` directly -- keeps this
+    function fully testable without touching real stdio, exactly
+    mirroring `_run_recover()`'s own `in_.readline()` discipline for
+    `--confirm -`). Returns `None` on a blank line or EOF (`""` from
+    `readline()`) -- both mean "skip this prompt," never an error."""
+
+    suffix = f" [{'/'.join(choices)}]" if choices else ""
+    while True:
+        print(f"{message}{suffix} (blank to skip): ", file=out, end="")
+        out.flush()
+        line = in_.readline()
+        if line == "":
+            return None
+        value = line.strip()
+        if value == "":
+            return None
+        if choices is not None and value not in choices:
+            print(f"  invalid choice: {value!r}", file=out)
+            continue
+        return value
+
+
+def _load_local_schema_file(path: str, *, out: TextIO) -> dict[str, Any] | None:
+    """Local disk read only -- never a network fetch. A missing,
+    unreadable, malformed, or non-object schema file is never a fatal
+    error: it is optional supplementary evidence for the privilege
+    plan, so this function reports a clear warning and returns `None`
+    rather than raising, letting the rest of setup's plan generation
+    proceed without it."""
+
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"warning: could not read --schema-file {path!r}: {exc}; continuing without schema evidence", file=out)
+        return None
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        print(f"warning: --schema-file {path!r} is not valid JSON: {exc}; continuing without schema evidence", file=out)
+        return None
+    if not isinstance(parsed, dict):
+        print(f"warning: --schema-file {path!r} is not a JSON object; continuing without schema evidence", file=out)
+        return None
+    return parsed
+
+
+def _run_setup(
+    *,
+    non_interactive: bool,
+    capability_posture: str | None,
+    anchor_assurance: str | None,
+    target_origin: str | None,
+    target_identity: str | None,
+    tls_mode: str | None,
+    schema_file: str | None,
+    declared_package_version: str | None,
+    as_json: bool,
+    env: dict[str, str] | None,
+    out: TextIO,
+    in_: TextIO,
+) -> int:
+    """Never mutates pfSense state, never provisions anything, never
+    executes anything -- in every mode, always. Interactive prompting
+    (when `non_interactive` is `False`) only ever reads lines from
+    `in_` and writes prompts to `out`; it never performs a pfSense
+    request of any kind. `--non-interactive` skips prompting entirely
+    but reaches the exact same, single `generate_setup_plan()` call --
+    there is no separate "automation" code path that could silently
+    behave differently."""
+
+    if not non_interactive:
+        print(
+            "pfsense-mcp-security setup: interactive discovery + plan-only wizard. Nothing you enter "
+            "here mutates pfSense state or provisions anything -- this command only ever produces a "
+            "plan for you to review. Press Enter to skip any prompt.",
+            file=out,
+        )
+        if capability_posture is None:
+            capability_posture = _prompt(out, in_, "Target capability posture", choices=_CAPABILITY_POSTURE_CHOICES)
+        if anchor_assurance is None:
+            anchor_assurance = _prompt(out, in_, "Target anchor assurance", choices=_ANCHOR_ASSURANCE_CHOICES)
+        if target_origin is None:
+            target_origin = _prompt(
+                out, in_, "pfSense target origin (e.g. a base URL) -- recorded only, never verified"
+            )
+        if target_identity is None:
+            target_identity = _prompt(out, in_, "A human-meaningful label for the target -- recorded only")
+        if tls_mode is None:
+            tls_mode = _prompt(
+                out, in_, "Declared TLS intent -- recorded only, never verified", choices=["verify", "insecure"]
+            )
+        if schema_file is None:
+            schema_file = _prompt(out, in_, "Local path to a previously-saved pfSense OpenAPI schema JSON file, if any")
+        if declared_package_version is None:
+            declared_package_version = _prompt(out, in_, "Declared pfSense-restapi package version (X.Y.Z), if known")
+
+    if capability_posture is None or anchor_assurance is None:
+        print(
+            "setup: no plan generated -- capability posture and anchor assurance are both required "
+            "(use --capability-posture/--anchor-assurance, or answer both prompts interactively).",
+            file=out,
+        )
+        return _SETUP_ABORTED_EXIT_CODE
+
+    schema = _load_local_schema_file(schema_file, out=out) if schema_file else None
+
+    plan = generate_setup_plan(
+        target_capability_posture=CapabilityPosture(capability_posture),
+        target_anchor_assurance=AnchorAssurance(anchor_assurance),
+        target_origin=target_origin,
+        target_identity=target_identity,
+        tls_mode=tls_mode,
+        schema=schema,
+        declared_package_version=declared_package_version,
+        env=env,
+    )
+    if as_json:
+        print(json.dumps(_setup_plan_to_dict(plan), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_setup_human(plan), file=out)
+    if plan.posture_plan.overall_status in (
+        PlanOverallStatus.BLOCKED_INVALID_TARGET,
+        PlanOverallStatus.BLOCKED_ANOMALY_DETECTED,
+        PlanOverallStatus.BLOCKED_INDETERMINATE_CURRENT_STATE,
+    ):
+        return _BLOCKED_TARGET_EXIT_CODE
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -847,6 +1194,23 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--confirm requires --execute")
         return _run_recover(
             execute=args.execute, confirm=args.confirm, as_json=args.json, env=None, out=sys.stdout, in_=sys.stdin
+        )
+    if args.command == "setup":
+        if args.non_interactive and (args.capability_posture is None or args.anchor_assurance is None):
+            parser.error("--non-interactive requires --capability-posture and --anchor-assurance")
+        return _run_setup(
+            non_interactive=args.non_interactive,
+            capability_posture=args.capability_posture,
+            anchor_assurance=args.anchor_assurance,
+            target_origin=args.target_origin,
+            target_identity=args.target_identity,
+            tls_mode=args.tls_mode,
+            schema_file=args.schema_file,
+            declared_package_version=args.declared_package_version,
+            as_json=args.json,
+            env=None,
+            out=sys.stdout,
+            in_=sys.stdin,
         )
 
     parser.print_help(sys.stderr)

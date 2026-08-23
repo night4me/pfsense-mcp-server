@@ -244,7 +244,7 @@ def test_help_documents_exit_codes_and_offline_only_and_standalone_boundary(caps
 def test_module_docstring_lists_recover_as_standalone_and_offline_verified():
     joined = " ".join(security_cli.__doc__.split())
     assert "`recover`:" in joined
-    assert "Standalone -- not folded into `bootstrap` or a future `setup` wizard." in joined
+    assert "Standalone -- not folded into `bootstrap` or `setup`." in joined
     assert "Verified offline only" in joined
 
 

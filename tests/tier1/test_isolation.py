@@ -100,6 +100,18 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # two exposed functions. See
     # tests/test_tier1_write_bridge_isolation.py for the matching
     # stronger, dedicated tests.
+    # security_setup_plan_digest.py is the seventh such exception
+    # (2026-08-23, `pfsense-mcp-security setup` Slice 1: canonical
+    # `SetupPlan` digest computation). Like security_plan_digest.py, the
+    # only pfsense_mcp.tier1 import here is `canonical`
+    # (`DigestPurpose`/`digest_value`/`CanonicalValue`) -- pure,
+    # stateless canonicalization/hashing with zero I/O, zero mutation.
+    # `security_setup_plan.py` (the sibling plan-generation module this
+    # digest module hashes) does NOT import pfsense_mcp.tier1 at all --
+    # mirroring the security_plan.py/security_plan_digest.py split
+    # exactly. See tests/test_security_setup_plan_digest_isolation.py
+    # for the matching stronger, dedicated tests, including that this is
+    # the *only* pfsense_mcp.tier1 submodule this file ever imports.
     exempt = {
         "tier1_anchor_check.py",
         "security_discovery.py",
@@ -107,6 +119,7 @@ def test_tier1_is_not_imported_outside_its_inert_package():
         "security_authorization.py",
         "security_authorization_verifier.py",
         "tier1_write_bridge.py",
+        "security_setup_plan_digest.py",
     }
     production = ROOT / "src/pfsense_mcp"
     offenders = [

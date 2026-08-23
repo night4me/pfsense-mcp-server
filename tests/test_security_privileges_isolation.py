@@ -189,7 +189,20 @@ def test_neither_module_is_in_the_tier1_isolation_exemption_list():
 def test_security_privileges_not_yet_wired_into_security_cli():
     """This phase is explicitly library-only -- no CLI subcommand was
     added. If a future phase wires this in, this test should be updated
-    deliberately, not silently pass either way."""
+    deliberately, not silently pass either way.
+
+    Deliberate update (`pfsense-mcp-security setup` Slice 1,
+    2026-08-23): `security_cli.py` now reaches `security_privileges`
+    *indirectly*, exclusively through the new bridge module
+    `security_setup_plan.py` (mirroring the existing
+    `security_bootstrap_orchestration.py`/
+    `security_recovery_orchestration.py` isolation pattern) -- this
+    assertion (`security_cli.py`'s own source text never containing the
+    literal substring "security_privileges") remains correct and is
+    left unchanged; see
+    `tests/test_security_setup_plan_isolation.py::test_security_cli_never_imports_security_privileges_directly()`
+    for the matching, explicit positive proof of the new indirect
+    reachability path."""
 
     cli_source = (ROOT / "src/pfsense_mcp/security_cli.py").read_text(encoding="utf-8")
     assert "security_privileges" not in cli_source

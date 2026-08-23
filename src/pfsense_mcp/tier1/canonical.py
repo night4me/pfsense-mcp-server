@@ -64,6 +64,14 @@ class DigestPurpose(str, Enum):
     #: INTENT, TARGET_*, SNAPSHOT, IDEMPOTENCY, PLAN, and authorization
     #: domains; none of those digests can be substituted for this one.
     EXECUTION_INTENT = "execution-intent"
+    #: `pfsense-mcp-security setup` Slice 1 -- identifies one complete
+    #: `SetupPlan` (`security_setup_plan.py`). Domain-separated from
+    #: `PLAN` (which identifies a narrower `SecurityPosturePlan`, one of
+    #: `SetupPlan`'s own inputs) and every other purpose above; a setup
+    #: plan digest and a posture plan digest can never be confused with
+    #: each other even where their payloads overlap. Additive only --
+    #: does not change any existing member's meaning.
+    SETUP_PLAN = "setup-plan"
 
 
 _DOMAIN_PREFIX = "pfSense-MCP/Tier1/v1"
