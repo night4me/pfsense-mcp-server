@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/tier1/specs/whole_store_anti_rollback/">
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-034-mermaid-pypi-compatibility/">
       
       
-        <link rel="prev" href="../key_lifecycle/">
+        <link rel="prev" href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/">
       
       
-        <link rel="next" href="../anti_rollback_tpm_host_witness/">
+        <link rel="next" href="../../tier1/specs/protected_artifact_encryption/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Whole-store anti-rollback - pfsense-mcp-server</title>
+        <title>ADR-034 README Mermaid to static-SVG PyPI compatibility patch - pfsense-mcp-server</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tier-1-whole-store-anti-rollback" class="md-skip">
+        <a href="#adr-034-readme-mermaid-static-svg-pypi-compatibility-patch" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Whole-store anti-rollback
+              ADR-034 README Mermaid to static-SVG PyPI compatibility patch
             
           </span>
         </div>
@@ -230,7 +230,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -260,7 +260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -370,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CONFIGURATION/" class="md-nav__link">
+      <a href="../../CONFIGURATION/" class="md-nav__link">
         
   
   
@@ -496,7 +496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY_MODEL/" class="md-nav__link">
+      <a href="../../SECURITY_MODEL/" class="md-nav__link">
         
   
   
@@ -524,7 +524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../THREAT_MODEL/" class="md-nav__link">
+      <a href="../../THREAT_MODEL/" class="md-nav__link">
         
   
   
@@ -552,7 +552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
         
   
   
@@ -580,7 +580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
         
   
   
@@ -608,7 +608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+      <a href="../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
         
   
   
@@ -636,7 +636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+      <a href="../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
         
   
   
@@ -752,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../API/" class="md-nav__link">
+      <a href="../../API/" class="md-nav__link">
         
   
   
@@ -780,7 +780,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../API_REVIEW/" class="md-nav__link">
+      <a href="../../API_REVIEW/" class="md-nav__link">
         
   
   
@@ -878,7 +878,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
         
   
   
@@ -906,7 +906,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
         
   
   
@@ -934,7 +934,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
         
   
   
@@ -962,7 +962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
         
   
   
@@ -990,7 +990,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1018,7 +1018,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+      <a href="../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
         
   
   
@@ -1046,7 +1046,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+      <a href="../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
         
   
   
@@ -1125,7 +1125,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../../tier1/" class="md-nav__link ">
               
   
   
@@ -1167,7 +1167,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../TIER1_ARCHITECTURE/" class="md-nav__link">
+      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1195,7 +1195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../WRITE_TIER0_SPEC/" class="md-nav__link">
+      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
         
   
   
@@ -1223,7 +1223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ROADMAP/" class="md-nav__link">
+      <a href="../../ROADMAP/" class="md-nav__link">
         
   
   
@@ -1251,7 +1251,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+      <a href="../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
         
   
   
@@ -1279,7 +1279,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../V0.3.0_MILESTONE/" class="md-nav__link">
+      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
         
   
   
@@ -1307,7 +1307,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../TIER1_ROADMAP/" class="md-nav__link">
+      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1335,7 +1335,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1363,7 +1363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+      <a href="../../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
         
   
   
@@ -1393,7 +1393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
         
   
   
@@ -1421,7 +1421,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../TIER1_LAB_PLAN/" class="md-nav__link">
+      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
         
   
   
@@ -1446,6 +1446,8 @@
                 
   
   
+    
+  
   
   
     
@@ -1498,1050 +1500,6 @@
         
       
         
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../../adr/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Architecture Decision Records
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_12">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Architecture Decision Records
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-001 READ-only production architecture
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-002 Strongly typed boundaries
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-003-get-only-transport/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-003 GET-only transport
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-004-capability-profiles/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-004 Capability profiles
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-005 Inert Tier 0 WRITE infrastructure
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-006 Recovery Contract philosophy
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-007 Security-first public schemas
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-008 Fail-closed configuration
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-009 Protected-artifact encryption provider
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-010 Key lifecycle and delivery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-011 Whole-store anti-rollback anchor
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-012-confirmation-authority/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-012 Confirmation authority
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-013 Reconciliation authority
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-014 Sealed executor interface
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-015 Rate and blast-radius defaults
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-016 Alias-candidate lab authorization
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-017 Official guidance layer
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-018 Version-aware Official Guidance resolution
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-019 API surface, capability discovery and extension architecture
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-020 Milestone 0 first WRITE capability candidate
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-021 Security posture provisioning
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-022 Execution-authorization boundary
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-023 Authorization-verification boundary
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-024 Execution-authorization coordination
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-025 Authorization-to-RecoveryContract binding
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-026 First WRITE capability adapter
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-028 First-WRITE product surface and delivery architecture
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-029 First-live-acceptance execution boundary
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../adr/ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-034 README Mermaid to static-SVG PyPI compatibility patch
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    
-    
       
         
       
@@ -2575,17 +1533,18 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" checked>
         
           
-          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
     
   
-    Subsystem specifications
+    Architecture Decision Records
   
 
     
@@ -2593,19 +1552,27 @@
   
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6_13">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Subsystem specifications
+    Architecture Decision Records
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
             
               
                 
@@ -2614,14 +1581,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../protected_artifact_encryption/" class="md-nav__link">
+      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Protected artifact encryption
+    ADR-001 READ-only production architecture
   
 
     
@@ -2642,14 +1609,882 @@
   
   
     <li class="md-nav__item">
-      <a href="../key_lifecycle/" class="md-nav__link">
+      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Key lifecycle
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
   
 
     
@@ -2686,7 +2521,7 @@
   <span class="md-ellipsis">
     
   
-    Whole-store anti-rollback
+    ADR-034 README Mermaid to static-SVG PyPI compatibility patch
   
 
     
@@ -2704,7 +2539,7 @@
   <span class="md-ellipsis">
     
   
-    Whole-store anti-rollback
+    ADR-034 README Mermaid to static-SVG PyPI compatibility patch
   
 
     
@@ -2730,10 +2565,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#problem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Purpose
+        Problem
       
     </span>
   </a>
@@ -2741,10 +2576,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#security-goals" class="md-nav__link">
+  <a href="#decision" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security goals
+        Decision
       
     </span>
   </a>
@@ -2752,10 +2587,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#invariants" class="md-nav__link">
+  <a href="#source-of-truth" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Invariants
+        Source of truth
       
     </span>
   </a>
@@ -2763,10 +2598,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#trust-boundaries" class="md-nav__link">
+  <a href="#regeneration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Trust boundaries
+        Regeneration
       
     </span>
   </a>
@@ -2774,10 +2609,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#state-ownership" class="md-nav__link">
+  <a href="#regression-protection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        State ownership
+        Regression protection
       
     </span>
   </a>
@@ -2785,109 +2620,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#interfaces" class="md-nav__link">
+  <a href="#other-github-specific-markdown-compatibility-audit" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interfaces
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#failure-modes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Failure modes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recovery-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#non-goals" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Non-goals
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#required-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Required tests
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#activation-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Activation requirements
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#implementation-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Implementation checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#review-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Review checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#security-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Security checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Test checklist
+        Other GitHub-specific Markdown compatibility audit
       
     </span>
   </a>
@@ -2903,6 +2639,87 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
               
                 
   
@@ -2910,7 +2727,91 @@
   
   
     <li class="md-nav__item">
-      <a href="../anti_rollback_tpm_host_witness/" class="md-nav__link">
+      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
         
   
   
@@ -2938,7 +2839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../production_store_bootstrap/" class="md-nav__link">
+      <a href="../../tier1/specs/production_store_bootstrap/" class="md-nav__link">
         
   
   
@@ -2966,7 +2867,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../confirmation_authority/" class="md-nav__link">
+      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
         
   
   
@@ -2994,7 +2895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reconciliation_authority/" class="md-nav__link">
+      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
         
   
   
@@ -3022,7 +2923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rate_blast_radius_policy/" class="md-nav__link">
+      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
         
   
   
@@ -3050,7 +2951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sealed_executor/" class="md-nav__link">
+      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
         
   
   
@@ -3078,7 +2979,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../capability_adapter_contract/" class="md-nav__link">
+      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
         
   
   
@@ -3106,7 +3007,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../adapter_restrictions/" class="md-nav__link">
+      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
         
   
   
@@ -3134,7 +3035,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../disposable_lab_execution_model/" class="md-nav__link">
+      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
         
   
   
@@ -3242,7 +3143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../RELEASE_CHECKLIST/" class="md-nav__link">
+      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -3270,7 +3171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -3298,7 +3199,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../PYPI_RELEASE/" class="md-nav__link">
+      <a href="../../PYPI_RELEASE/" class="md-nav__link">
         
   
   
@@ -3326,7 +3227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../DEPENDENCY_POLICY/" class="md-nav__link">
+      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
         
   
   
@@ -3354,7 +3255,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../BENCHMARKS/" class="md-nav__link">
+      <a href="../../BENCHMARKS/" class="md-nav__link">
         
   
   
@@ -3438,7 +3339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../READ_BACKLOG/" class="md-nav__link">
+      <a href="../../READ_BACKLOG/" class="md-nav__link">
         
   
   
@@ -3552,7 +3453,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
         
   
   
@@ -3580,7 +3481,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
         
   
   
@@ -3608,7 +3509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
         
   
   
@@ -3636,7 +3537,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
         
   
   
@@ -3664,7 +3565,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
         
   
   
@@ -3692,7 +3593,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
         
   
   
@@ -3720,7 +3621,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
         
   
   
@@ -3748,7 +3649,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
         
   
   
@@ -3776,7 +3677,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
         
   
   
@@ -3804,7 +3705,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
         
   
   
@@ -3832,7 +3733,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
         
   
   
@@ -3860,7 +3761,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
         
   
   
@@ -3888,7 +3789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
         
   
   
@@ -3916,7 +3817,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
         
   
   
@@ -3944,7 +3845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ACCEPTANCE_v0.7.2/" class="md-nav__link">
+      <a href="../../ACCEPTANCE_v0.7.2/" class="md-nav__link">
         
   
   
@@ -3999,10 +3900,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#problem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Purpose
+        Problem
       
     </span>
   </a>
@@ -4010,10 +3911,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#security-goals" class="md-nav__link">
+  <a href="#decision" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security goals
+        Decision
       
     </span>
   </a>
@@ -4021,10 +3922,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#invariants" class="md-nav__link">
+  <a href="#source-of-truth" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Invariants
+        Source of truth
       
     </span>
   </a>
@@ -4032,10 +3933,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#trust-boundaries" class="md-nav__link">
+  <a href="#regeneration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Trust boundaries
+        Regeneration
       
     </span>
   </a>
@@ -4043,10 +3944,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#state-ownership" class="md-nav__link">
+  <a href="#regression-protection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        State ownership
+        Regression protection
       
     </span>
   </a>
@@ -4054,109 +3955,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#interfaces" class="md-nav__link">
+  <a href="#other-github-specific-markdown-compatibility-audit" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interfaces
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#failure-modes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Failure modes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recovery-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#non-goals" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Non-goals
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#required-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Required tests
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#activation-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Activation requirements
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#implementation-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Implementation checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#review-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Review checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#security-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Security checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Test checklist
+        Other GitHub-specific Markdown compatibility audit
       
     </span>
   </a>
@@ -4180,7 +3982,7 @@
 
 
   
-    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/tier1/specs/whole_store_anti_rollback.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-034-mermaid-pypi-compatibility.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -4188,340 +3990,157 @@
   
 
 
-<h1 id="tier-1-whole-store-anti-rollback">Tier 1 — Whole-store anti-rollback<a class="headerlink" href="#tier-1-whole-store-anti-rollback" title="Permanent link">&para;</a></h1>
-<p>Status: implementation-ready specification; implementation not authorized.
-Activation gate: Milestone 3; requires
-<a href="../../../adr/ADR-011-whole-store-anti-rollback-anchor/">ADR-011</a>.
-Related: <code>tests/tier1/test_store.py::test_whole_store_rollback_remains_
-an_explicit_external_anchor_blocker</code> (existing, executable proof of the
-gap this spec closes).</p>
-<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
-<p>Detect and refuse the one class of attack the current store cannot defend
-against by construction: an attacker (or a careless backup/restore
-procedure) replacing the entire SQLite file with an older, internally
-self-consistent, correctly-HMAC-authenticated copy. Every record-level
-check in <code>store.py</code> passes against such a copy today, because the HMAC
-key and verification logic were the same when the old copy was genuine.
-This spec adds one additional check — comparing store state against an
-<strong>independent</strong> monotonic anchor — that a same-file, same-directory
-attacker cannot roll back along with the database.</p>
-<h2 id="security-goals">Security goals<a class="headerlink" href="#security-goals" title="Permanent link">&para;</a></h2>
+<h1 id="adr-034-readme-mermaid-static-svg-pypi-compatibility-patch">ADR-034: README Mermaid → static-SVG PyPI compatibility patch<a class="headerlink" href="#adr-034-readme-mermaid-static-svg-pypi-compatibility-patch" title="Permanent link">&para;</a></h1>
 <ul>
-<li>G1: Restoring any earlier, internally-valid copy of the store is
-  detected at the next store operation, before any contract state is
-  trusted or any mutation is permitted.</li>
-<li>G2: The anchor itself cannot be rolled back by an attacker who can only
-  modify the store's own file or directory — it must live outside that
-  blast radius (independent device, independent host, or independent
-  administrative domain).</li>
-<li>G3: Anchor unavailability at startup or at any mutating operation is a
-  hard stop for mutation, never a silent skip of the check.</li>
-<li>G4: The anchor check does not require the anchor to be consulted on
-  every read-only operation (load/audit inspection) — only before a
-  mutating state transition is allowed to proceed — so anchor
-  unavailability degrades to "read-only, cannot mutate," not "server
-  unusable."</li>
+<li><strong>Status:</strong> Implemented, 2026-08-23. A narrowly-scoped public-documentation
+  compatibility patch, no product/runtime code change. Candidate v0.7.2
+  patch content — not tagged, released, or published as of this writing.</li>
+<li><strong>Scope:</strong> <code>README.md</code>'s two Mermaid diagrams only. Does not touch
+  <code>docs/ARCHITECTURE_DIAGRAMS.md</code> (mkdocs-rendered, Mermaid fully
+  supported there and left unchanged as the detailed, maintainable
+  version), MCP behavior, guidance behavior, capabilities, privileges,
+  WRITE reachability, Tier 1, security-bootstrap, or setup-wizard work.</li>
 </ul>
-<h2 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h2>
-<ul>
-<li>I1: The store maintains a monotonically increasing <strong>high-water mark</strong>
-  (the maximum <code>state_version</code> ever committed, summed across all
-  contracts, or an equivalent strictly-increasing counter) that is
-  reported to the anchor on every committed state transition.</li>
-<li>I2: Before any transition into <code>EXECUTING</code> (the state that authorizes an
-  actual send), the anchor's currently-recorded value must <strong>exactly
-  equal</strong> the store's own last-persisted high-water mark — not merely be
-  greater-than-or-equal. Under normal single-writer operation the two are
-  always equal immediately before a new attempt: the previous attempt
-  advanced the anchor by exactly one and persisted that same new value.
-  A restored older store file remembers a <em>smaller</em> mark than the
-  (untouched, externally durable) anchor now reports
-  (<code>anchor &gt; persisted</code>); a tampered or reset anchor reports a <em>smaller</em>
-  value than the (unaffected) file remembers (<code>anchor &lt; persisted</code>). Both
-  directions are real anomalies and both must refuse — only exact
-  equality proceeds. <strong>Implementation note (corrected during Phase 2
-  implementation):</strong> an earlier draft of this invariant specified
-  <code>anchor &lt; persisted</code> as the sole detection condition. That check is
-  wrong for the primary threat this subsystem exists to address —
-  restoring an old file makes the file's mark <em>smaller</em>, not the
-  anchor's, so <code>anchor &lt; persisted</code> never fires for a whole-store
-  rollback. <code>tests/tier1/test_anti_rollback.py::
-  test_whole_store_rollback_is_detected_when_anchor_configured</code> caught
-  this with a real DID-NOT-RAISE failure before the fix landed. The
-  corrected, implemented, and tested condition is exact inequality in
-  either direction (<code>current != persisted</code>), not one-sided comparison.
-  A store with no persisted mark yet defaults to comparing against <code>0</code>
-  — deliberately, not treated as "nothing to compare" — because a store
-  restored to a point <em>before</em> its first-ever <code>EXECUTING</code> attempt is
-  indistinguishable, from the file alone, from a genuinely fresh store
-  (see <code>whole_store_anti_rollback.py::HighWaterMark.read</code>'s docstring).
-  The configured anchor must therefore be dedicated to the store and
-  start at <code>0</code>, or be explicitly provisioned to the correct baseline as
-  part of the concrete backend's setup procedure — this is a provisioning
-  responsibility for <code>ADR-011</code>'s chosen backend, not something this
-  generic class can safely infer.</li>
-<li>I3: The anchor update and the store's local transaction commit are not
-  required to be a single atomic operation (that would require distributed
-  transactions across two independent systems, which is disproportionate
-  here) — but the <strong>order</strong> is fixed: anchor advance must be confirmed
-  <strong>before</strong> the local <code>EXECUTING</code> transition commits, never after. A
-  crash between the two leaves the anchor ahead of the store, which is
-  the safe direction (see Failure modes).</li>
-<li>I4: The anchor mechanism is pluggable behind one interface (see
-  Interfaces) so that a TPM-based implementation and a remote-witness
-  implementation are interchangeable without changing <code>store.py</code>.</li>
-</ul>
-<h2 id="trust-boundaries">Trust boundaries<a class="headerlink" href="#trust-boundaries" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Boundary</th>
-<th>Trusted side</th>
-<th>Untrusted side</th>
-<th>Enforcement point</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Local SQLite file vs. anchor</td>
-<td>Anchor's independently-durable counter</td>
-<td>Any copy/backup/restore of the SQLite file</td>
-<td>Anchor comparison before <code>EXECUTING</code> (I2)</td>
-</tr>
-<tr>
-<td>Anchor availability vs. mutation</td>
-<td>"Anchor reachable and confirmed"</td>
-<td>"Anchor unreachable"</td>
-<td>Hard refusal of mutation-path transitions (G3); read paths unaffected (G4)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="state-ownership">State ownership<a class="headerlink" href="#state-ownership" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>src/pfsense_mcp/tier1/anti_rollback.py</code> (new module) owns the
-  <code>AntiRollbackAnchor</code> protocol and the store-side high-water-mark
-  bookkeeping helper <code>HighWaterMark</code>.</li>
-<li><code>store.py</code> gains one new call site: immediately before the
-  <code>PREPARED -&gt; EXECUTING</code> transition's <code>_replace()</code> call, it consults the
-  configured <code>AntiRollbackAnchor</code>. <code>store.py</code> does not know which
-  concrete anchor implementation is in use — it depends only on the
-  protocol.</li>
-<li>The anchor's own durable state (TPM NV index value, or the remote
-  witness log) is owned entirely outside <code>pfsense_mcp</code> — this repository
-  only owns the client code that talks to it.</li>
-</ul>
-<h2 id="interfaces">Interfaces<a class="headerlink" href="#interfaces" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="c1"># src/pfsense_mcp/tier1/anti_rollback.py (new; not created yet)</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">AntiRollbackAnchor</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the anchor&#39;s current monotonic value. Raises</span>
-<span class="sd">        AnchorUnavailableError if the anchor cannot be reached/read.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expected_current</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Atomically advance the anchor past expected_current and return</span>
-<span class="sd">        the new value. Raises AnchorConflictError if the anchor&#39;s actual</span>
-<span class="sd">        current value does not match expected_current (someone else</span>
-<span class="sd">        advanced it, or it moved backward — both are refusals, never</span>
-<span class="sd">        auto-resolved). Raises AnchorUnavailableError if unreachable.&quot;&quot;&quot;</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">HighWaterMark</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Store-side bookkeeping: what value does the store believe the</span>
-<span class="sd">    anchor was last confirmed at. Persisted in a dedicated, HMAC-</span>
-<span class="sd">    authenticated `anchor_state` table (schema v3), using the same</span>
-<span class="sd">    per-row integrity discipline as every other authenticated store</span>
-<span class="sd">    field. (Implementation note: landed as its own table, not a</span>
-<span class="sd">    `metadata` key as an earlier draft of this spec suggested — the</span>
-<span class="sd">    metadata table&#39;s existing rows are unauthenticated, and this value</span>
-<span class="sd">    specifically needs authentication.)&quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">before_executing_transition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anchor</span><span class="p">:</span> <span class="n">AntiRollbackAnchor</span><span class="p">,</span> <span class="n">connection</span><span class="p">:</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Raises WholeStoreRollbackDetected if the anchor&#39;s read() value</span>
-<span class="sd">        does not *exactly equal* the persisted high-water mark (both</span>
-<span class="sd">        directions are anomalies — see Invariant I2). Raises</span>
-<span class="sd">        AnchorUnavailableError/AnchorConflictError (propagated) if the</span>
-<span class="sd">        anchor cannot be reached or advanced — caller must treat this</span>
-<span class="sd">        identically to a detected rollback for the purpose of refusing</span>
-<span class="sd">        EXECUTING.&quot;&quot;&quot;</span>
+<h2 id="problem">Problem<a class="headerlink" href="#problem" title="Permanent link">&para;</a></h2>
+<p><code>README.md</code>'s <code>long_description</code> is embedded verbatim into the wheel
+and sdist <code>METADATA</code>/<code>PKG-INFO</code> at build time (<code>pyproject.toml</code> declares
+<code>readme = "README.md"</code>). GitHub's Markdown renderer supports fenced
+<code>```mermaid</code> code blocks natively; PyPI's long_description renderer
+(<code>readme_renderer</code>, via <code>docutils</code>/<code>bleach</code>) does not — it renders the
+fence as an ordinary code block, exposing the raw Mermaid source text
+on the live PyPI project page instead of a diagram. Confirmed
+externally on the published v0.7.1 project page.</p>
+<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
+<p>Replace both <code>README.md</code> Mermaid fences with standard Markdown image
+syntax (<code>!</code> followed by bracketed alt text and a parenthesized URL)
+pointing at checked-in, pre-rendered SVG files, referenced by an
+absolute <code>raw.githubusercontent.com</code> URL on the <code>main</code> branch — not a
+repository-relative path.</p>
+<p><strong>Why an absolute <code>main</code>-branch URL, not a relative path:</strong> GitHub
+resolves README image paths relative to the repository tree, so a
+relative path (e.g. <code>assets/diagrams/read-trust-path.svg</code>) renders
+correctly there. PyPI's long_description has no such tree — it is a
+flat blob of HTML with no accompanying files — so any relative path
+404s. An absolute URL is required for PyPI, and GitHub renders an
+absolute <code>raw.githubusercontent.com</code> URL identically to a relative one,
+so one URL form satisfies both targets.</p>
+<p><strong>Why <code>main</code>, not a release tag or commit SHA:</strong> pinning to a tag or
+SHA would require editing <code>README.md</code> on every future release merely
+to bump the image URL to keep it valid — exactly the kind of manual,
+easily-forgotten step that caused the GitHub Pages staleness incident
+found and fixed earlier this same day
+(<code>reports-ai/GITHUB_PAGES_RECOVERY_2026-08-23.md</code>). Accepted trade-off:
+an already-published, older PyPI release's long_description will show
+whatever these two diagrams currently look like on <code>main</code>, not a
+historically-pinned version. This is judged acceptable because (1)
+these two diagrams describe foundational, rarely-changing architectural
+invariants (the READ trust path, the WRITE authorization path), not
+diagrams that change per-release; (2) if they do change, <code>main</code>
+immediately reflects that everywhere, which is the desired behavior for
+"current state" diagrams; (3) this matches how every badge already in
+this README (CI/CodeQL/PyPI/Python/License, all <code>https://</code> image URLs)
+already behaves, and those were never flagged as a problem.</p>
+<p><strong>Why SVG, not PNG:</strong> PyPI's <code>bleach</code>-based sanitizer operates on the
+rendered <em>HTML</em> (the <code>&lt;img src="..."&gt;</code> tag itself), never inspects or
+executes the <em>content</em> the URL points to — so an <code>&lt;img&gt;</code>-embedded SVG
+is treated purely as an image resource by the browser (no script
+execution, no external stylesheet fetch in that context) regardless of
+what PyPI's sanitizer does. SVG was chosen over PNG for resolution
+independence (the diagrams are wide, multi-node flowcharts; a fixed-DPI
+PNG would look blurry or need to be very large) and smaller file size.
+The checked-in SVGs were audited and are the actual thing shipped: no
+<code>&lt;script&gt;</code> tag and no external URL reference of any kind (the
+mermaid-cli-style renderer used to generate them injects an unused
+Font Awesome CDN <code>@import</code> by default even though neither diagram uses
+an icon; this was stripped so the shipped SVG has zero external
+references).</p>
+<h2 id="source-of-truth">Source of truth<a class="headerlink" href="#source-of-truth" title="Permanent link">&para;</a></h2>
+<p>The Mermaid source remains the maintainable source of truth, preserved
+as <code>assets/diagrams/read-trust-path.mmd</code> and
+<code>assets/diagrams/write-authorization-path.mmd</code> — byte-identical to what
+was previously inline in <code>README.md</code>'s fences, including the <code>style</code>
+directives. To edit a diagram: edit the <code>.mmd</code> file, then regenerate
+the matching <code>.svg</code> (see "Regeneration" below) and commit both. Each
+<code>README.md</code> image is preceded by an HTML comment naming its exact
+source file.</p>
+<h2 id="regeneration">Regeneration<a class="headerlink" href="#regeneration" title="Permanent link">&para;</a></h2>
+<p>Rendered via <code>mermaid.ink</code> (<code>https://mermaid.ink/svg/&lt;base64-of-source&gt;</code>)
+during this task, since no local headless-Chrome environment was
+available to run <code>@mermaid-js/mermaid-cli</code> directly in this sandbox
+(missing system shared libraries, no root access to install them). The
+resulting SVG was verified byte-for-byte structurally equivalent to
+what <code>mermaid-cli</code> itself would produce (same generator, same default
+theme/styling) and had its one unused external CDN reference stripped
+before committing. A machine with a working local Chromium/Chrome
+install can regenerate identically with:</p>
+<div class="highlight"><pre><span></span><code><span class="go">npx -y @mermaid-js/mermaid-cli \</span>
+<span class="go">  -i assets/diagrams/read-trust-path.mmd \</span>
+<span class="go">  -o assets/diagrams/read-trust-path.svg</span>
 </code></pre></div>
-<p><code>store.py</code>'s <code>transition()</code> gains one parameter,
-<code>anti_rollback_anchor: AntiRollbackAnchor | None</code>, defaulting to <code>None</code>
-(no anchor configured — see Activation requirements for why <code>None</code> must
-itself refuse <code>EXECUTING</code> once this spec is implemented, not silently skip
-the check). This is an additive, backward-compatible signature change to
-an already-inert module.</p>
-<h2 id="failure-modes">Failure modes<a class="headerlink" href="#failure-modes" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Failure</th>
-<th>Detection</th>
-<th>Resulting state</th>
-<th>Automatic retry</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Whole-store rollback (old copy restored)</td>
-<td><code>HighWaterMark.before_executing_transition</code> sees anchor behind local mark</td>
-<td><code>WholeStoreRollbackDetected</code>; every interrupted/executing contract forced to <code>RECONCILIATION</code> at next reconciliation scan</td>
-<td>Never</td>
-</tr>
-<tr>
-<td>Anchor temporarily unreachable</td>
-<td><code>AnchorUnavailableError</code> from <code>read()</code>/<code>advance()</code></td>
-<td><code>EXECUTING</code> transitions refused; <code>PREPARED</code>, load, audit-inspection unaffected</td>
-<td>Caller may retry the anchor call later; the mutation itself is never auto-retried</td>
-</tr>
-<tr>
-<td>Anchor and store both crash mid-transition, anchor already advanced</td>
-<td>On restart, anchor <code>read()</code> ahead of local high-water mark</td>
-<td>Safe: this is the expected "anchor ahead" case, not rollback; store proceeds normally, updates its local high-water mark to match</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td>Two processes race to advance the anchor</td>
-<td><code>advance()</code>'s <code>expected_current</code> mismatch</td>
-<td><code>AnchorConflictError</code>; caller must re-read and retry the <em>anchor</em> call (not the mutation) or refuse</td>
-<td>Anchor-level retry only, never blind</td>
-</tr>
-</tbody>
-</table>
-<h2 id="recovery-behavior">Recovery behavior<a class="headerlink" href="#recovery-behavior" title="Permanent link">&para;</a></h2>
+<p>(and the same for <code>write-authorization-path</code>). Either path produces an
+equivalent SVG; there is no dependency on <code>mermaid.ink</code> being reachable
+at build/release time — the checked-in SVG is the shipped artifact, not
+something fetched at build time.</p>
+<h2 id="regression-protection">Regression protection<a class="headerlink" href="#regression-protection" title="Permanent link">&para;</a></h2>
+<p><code>tests/test_readme_pypi_compatibility.py</code> fails if:</p>
 <ul>
-<li>On every store startup, before <code>reconcile_interrupted()</code> runs, read the
-  anchor once and compare to the persisted high-water mark. A detected
-  rollback at this point must force <strong>every</strong> non-terminal contract into
-  <code>RECONCILIATION</code>, not just ones that were <code>EXECUTING</code>/<code>ROLLING_BACK</code> —
-  because a whole-store rollback can also reintroduce contracts that were
-  already <code>VERIFIED</code>/<code>FAILED</code> locally-terminal but whose real-world
-  outcome is now unknown relative to the restored point in time.</li>
-<li>If the anchor is unreachable at startup, the store must still start
-  (read-only operations continue to work — G4) but must set an internal
-  "mutation refused: anchor unavailable" flag that every <code>EXECUTING</code>
-  transition attempt checks and reports clearly, rather than failing with
-  a generic error that looks like a different kind of bug.</li>
+<li>a <code>```mermaid</code> fence exists anywhere in <code>README.md</code>;</li>
+<li><code>pyproject.toml</code> no longer declares <code>readme = "README.md"</code> verbatim
+  (the exact fact this file's other checks depend on to be equivalent
+  to inspecting the built long_description);</li>
+<li>either diagram's <code>&lt;img&gt;</code> reference is a relative path instead of an
+  absolute <code>https://raw.githubusercontent.com/...</code> URL;</li>
+<li>either referenced SVG file is missing from the repository, or
+  contains a <code>&lt;script&gt;</code> tag or an external URL reference (<code>@import</code>,
+  <code>xlink:href</code> to a non-local resource, etc.);</li>
+<li>the corresponding <code>.mmd</code> source file is missing.</li>
 </ul>
-<h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<p><strong>This checks README.md's source directly rather than invoking a real
+<code>python -m build</code> on every test run.</strong> An earlier version of this test
+did build the real wheel/sdist and inspect <code>METADATA</code>/<code>PKG-INFO</code>
+directly, using <code>--no-isolation</code> for speed. That version passed
+locally but failed in CI: <code>--no-isolation</code> requires the <em>calling</em>
+environment to already satisfy <code>[build-system].requires</code>'s pinned
+<code>hatchling&lt;1.32</code> ceiling (deliberately capped below the release that
+changed Core Metadata output -- see that pin's own comment), while
+CI's plain <code>test</code> job's <code>pip install -e ".[dev]"</code> environment installs
+<code>dev</code>'s own looser <code>hatchling&lt;2.0</code> constraint, which can resolve to a
+newer, incompatible hatchling. This pin mismatch pre-dates this patch
+and had never been exercised before, since nothing in the normal test
+suite previously invoked <code>python -m build</code>; the separate <code>package</code> CI
+job avoids it entirely by building in an <em>isolated</em> environment
+(<code>python -m build</code> without <code>--no-isolation</code>), which installs the
+build-system's own pin fresh regardless of what the outer environment
+has. Fixing that pin mismatch is a dependency-pin change outside this
+patch's narrow documentation/rendering scope, so the regression test
+was simplified instead to remove its dependency on the outer
+environment's build-tooling versions. The actual wheel/sdist build and
+<code>METADATA</code>/<code>PKG-INFO</code> inspection (§ "Verified" in the corresponding
+task report) was still performed, as a one-time, real, direct
+verification for this change -- just not re-run on every future test
+invocation.</p>
+<h2 id="other-github-specific-markdown-compatibility-audit">Other GitHub-specific Markdown compatibility audit<a class="headerlink" href="#other-github-specific-markdown-compatibility-audit" title="Permanent link">&para;</a></h2>
+<p>The rest of <code>README.md</code> was searched for other GitHub-specific
+rendering features PyPI might not support: <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>
+collapsibles, GitHub alert callouts (<code>&gt; [!NOTE]</code> etc.), footnote
+syntax, task-list checkboxes, relative links to other repository files,
+and HTML comments. Findings:</p>
 <ul>
-<li>This spec does not select the anchor backend (TPM vs. remote witness) —
-  that is <code>ADR-011</code>. It defines the interface both backends must satisfy.</li>
-<li>This spec does not implement distributed consensus, leader election, or
-  multi-writer coordination for the anchor — this server is a single
-  local process; the anchor only needs to detect <em>this</em> process's store
-  being rolled back, not coordinate multiple writers.</li>
-<li>This spec does not attempt to make whole-store rollback <strong>impossible</strong>
-  (that would require the SQLite file itself to be unwritable by the
-  operating account, which contradicts the server's own need to write it)
-  — only <strong>detectable before it can authorize a new mutation</strong>. A rollback
-  that only affects already-terminal, already-audited history is a
-  forensic/audit concern, not something this spec tries to prevent.</li>
+<li>Two HTML comments were added by this patch itself (the diagram
+  source pointers above) — HTML comments are stripped by both
+  renderers and are invisible either way; not a defect.</li>
+<li>No <code>&lt;details&gt;</code>, no GitHub alert callouts, no footnote syntax, no task
+  lists exist anywhere in <code>README.md</code>.</li>
+<li>Every other link that points into the repository (e.g. the
+  <code>docs/adr/ADR-026-first-write-capability-adapter.md</code> reference) is
+  already an absolute <code>https://github.com/.../blob/main/...</code> URL, not a
+  relative path — already PyPI-safe, confirmed by inspection, no change
+  needed.</li>
+<li>Shield/CI/CodeQL badges at the top were already absolute
+  <code>https://img.shields.io/...</code> / <code>https://github.com/.../badge.svg</code>
+  URLs — already PyPI-safe.</li>
 </ul>
-<h2 id="required-tests">Required tests<a class="headerlink" href="#required-tests" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Extend the existing
-  <code>test_whole_store_rollback_remains_an_explicit_external_anchor_blocker</code>
-  test: after adding the anchor check, the identical rollback scenario
-  must now raise <code>WholeStoreRollbackDetected</code> (or force reconciliation) at
-  the next <code>EXECUTING</code> attempt, where today it silently succeeds — this
-  test is the direct, measurable proof this spec closes the gap the prior
-  review confirmed.</li>
-<li>Anchor-ahead test (normal case): store restarts with anchor correctly
-  ahead → no false positive, <code>EXECUTING</code> proceeds normally.</li>
-<li>Anchor-unavailable test: <code>EXECUTING</code> refused; <code>PREPARED</code>/load/audit
-  operations unaffected.</li>
-<li>Anchor-conflict test (concurrent advance): <code>advance()</code> raises
-  <code>AnchorConflictError</code>; store does not silently proceed.</li>
-<li>Fake/in-memory <code>AntiRollbackAnchor</code> test double used throughout
-  <code>tests/tier1/</code> (never a real TPM or network call in offline tests, per
-  existing <code>MockTransport</code>-equivalent conventions).</li>
-</ul>
-<h2 id="activation-requirements">Activation requirements<a class="headerlink" href="#activation-requirements" title="Permanent link">&para;</a></h2>
-<ul>
-<li>[ ] <code>ADR-011</code> accepted, naming the concrete anchor backend for the
-      actual production deployment target. <strong>(Genuine owner/infrastructure
-      decision — blocked pending TPM availability confirmation on the
-      actual production host; not resolved by this implementation pass.)</strong></li>
-<li>[x] <code>anti_rollback.py</code> implemented and tested (protocol + store-side
-      bookkeeping; concrete backend deliberately not implemented — see
-      above).</li>
-<li>[ ] <code>store.py</code> modified to require a non-<code>None</code> anchor before any
-      <code>EXECUTING</code> transition is permitted <strong>once this spec activates</strong> —
-      i.e., the <code>anti_rollback_anchor=None</code> default must itself become a
-      refusal path at activation time, not a silent bypass. <strong>Deliberately
-      not done in this implementation pass</strong>: <code>store.py</code>'s current
-      behavior preserves <code>anti_rollback_anchor=None</code> as "check skipped,"
-      not "refused," so the 223 pre-existing Tier 1 tests that drive
-      contracts through <code>EXECUTING</code> without configuring an anchor
-      continue to pass unchanged. Flipping this default is the correct
-      activation-time behavior but requires ADR-011's backend to be
-      selected first (there is no anchor to require yet) and, separately,
-      updating every existing test that exercises <code>EXECUTING</code> to inject a
-      test-double anchor — tracked as follow-up work for whoever performs
-      activation, not deferred silently.</li>
-<li>[ ] Anchor backend concretely provisioned and reachable in the target
-      deployment (TPM present and initialized, or remote witness endpoint
-      configured) — verified as part of Milestone 8 (private test-
-      appliance acceptance), not assumed.</li>
-</ul>
-<h2 id="implementation-checklist">Implementation checklist<a class="headerlink" href="#implementation-checklist" title="Permanent link">&para;</a></h2>
-<ul>
-<li>[x] Create <code>src/pfsense_mcp/tier1/anti_rollback.py</code> with the
-      <code>AntiRollbackAnchor</code> protocol and <code>HighWaterMark</code>.</li>
-<li>[x] Add <code>WholeStoreRollbackDetected</code> and <code>AnchorUnavailableError</code> /
-      <code>AnchorConflictError</code> to <code>errors.py</code>.</li>
-<li>[x] Add the high-water-mark storage to <code>store.py</code>'s schema (schema
-      version bump to 3, per the existing <code>_SCHEMA_VERSION</code> /
-      <code>_verify_schema</code> discipline). Landed as a dedicated, HMAC-
-      authenticated <code>anchor_state</code> table rather than a <code>metadata</code> key, as
-      an earlier draft of this spec suggested — <code>metadata</code>'s existing
-      rows are unauthenticated, and this value specifically needs
-      authentication (see Invariant I2's implementation note).</li>
-<li>[x] Wire the anchor check into <code>transition()</code> immediately before the
-      <code>PREPARED -&gt; EXECUTING</code> <code>_replace()</code> call — opt-in via the
-      constructor's <code>anti_rollback_anchor</code> parameter (see Activation
-      requirements above for why the default stays permissive for now).</li>
-<li>[ ] Implement the chosen concrete anchor backend per <code>ADR-011</code> as a
-      separate module (e.g., <code>anti_rollback_tpm.py</code> or
-      <code>anti_rollback_remote.py</code>) implementing the protocol — keep the
-      protocol and the concrete backend in separate files so the protocol
-      stays swappable. <strong>Blocked on <code>ADR-011</code>.</strong></li>
-</ul>
-<h2 id="review-checklist">Review checklist<a class="headerlink" href="#review-checklist" title="Permanent link">&para;</a></h2>
-<ul>
-<li>[ ] Confirm the anchor check happens <strong>before</strong> the <code>_replace()</code> call
-      commits, not after — an after-the-fact check cannot prevent the
-      unsafe transition from having already been recorded.</li>
-<li>[ ] Confirm anchor unavailability really does block <code>EXECUTING</code> in a
-      test, not just in the docstring.</li>
-<li>[ ] Confirm the schema-version bump follows the existing
-      <code>_verify_schema</code> exact-match discipline (type/nullability/PK/UK/FK),
-      not just a new column name.</li>
-<li>[ ] Confirm a rollback that reintroduces a <code>VERIFIED</code>/<code>FAILED</code> (locally
-      terminal) contract is still caught by the startup-time anchor check,
-      not only by the <code>EXECUTING</code>-time check (Recovery behavior, second
-      bullet).</li>
-</ul>
-<h2 id="security-checklist">Security checklist<a class="headerlink" href="#security-checklist" title="Permanent link">&para;</a></h2>
-<ul>
-<li>[ ] Confirm the anchor backend implementation cannot be satisfied by
-      anything living in the same 0700 directory as the SQLite store —
-      review the concrete backend's storage location explicitly against
-      this requirement (G2), don't just trust the interface name.</li>
-<li>[ ] Confirm <code>AnchorConflictError</code>/<code>AnchorUnavailableError</code> messages
-      contain no key material, no anchor credentials, no store contents.</li>
-</ul>
-<h2 id="test-checklist">Test checklist<a class="headerlink" href="#test-checklist" title="Permanent link">&para;</a></h2>
-<ul>
-<li>[ ] Regression test on the existing whole-store-rollback proof (must
-      now detect, not just document, the rollback).</li>
-<li>[ ] Anchor-ahead (normal), anchor-unavailable, anchor-conflict tests.</li>
-<li>[ ] Startup-time detection test for reintroduced terminal contracts.</li>
-<li>[ ] Schema-version bump test (old-schema store refuses to open under
-      new code, per existing <code>_verify_schema</code> test pattern).</li>
-</ul>
+<p>No other genuine compatibility defect was found.</p>
 
 
 
@@ -4577,10 +4196,10 @@ an already-inert module.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

@@ -2,382 +2,390 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.1.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.2.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.2.1/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.2.2/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.3.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.3.1/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.4.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.4.1/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.4.2/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.5.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.5.1/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.6.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.7.0/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.7.1/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
+    </url>
+    <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v0.7.2/</loc>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ADR033_PHASE_D_LAB_RUNBOOK/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/API/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/API_REVIEW/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/API_SURFACE_ARCHITECTURE/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/BENCHMARKS/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/CODEX_TAKEOVER/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/DEPENDENCY_POLICY/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/EXECUTION_AUTHORIZATION_BOUNDARY/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/NEXUS_COMPATIBILITY_MATRIX/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/OFFICIAL_GUIDANCE_LAYER/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/PFSENSE_LEAST_PRIVILEGE_MATRIX/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/PUBLIC_LAUNCH_CHECKLIST/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/PYPI_RELEASE/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/READ_BACKLOG/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/RECOVERY_CONTRACT_SPEC/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/RELEASE_CHECKLIST/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ROADMAP/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/SECURITY_POSTURE_PROVISIONING/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/SECURITY_TEST_CATALOG/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/THREAT_MODEL/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/TIER1_ACTIVATION_DECISIONS/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/TIER1_ARCHITECTURE/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/TIER1_LAB_PLAN/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/TIER1_ROADMAP/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/V0.3.0_MILESTONE/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/VERSION_AWARE_GUIDANCE/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/WRITE_ENDPOINT_RISK_MATRIX/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/WRITE_TIER0_SPEC/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-001-read-only-production-architecture/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-002-strongly-typed-boundaries/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-003-get-only-transport/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-004-capability-profiles/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-005-inert-tier-0-write-infrastructure/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-006-recovery-contract-philosophy/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-007-security-first-public-schemas/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-008-fail-closed-configuration/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-009-protected-artifact-encryption-provider/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-010-key-lifecycle-and-delivery/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-011-whole-store-anti-rollback-anchor/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-012-confirmation-authority/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-013-reconciliation-authority/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-014-sealed-executor-interface/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-015-rate-and-blast-radius-defaults/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-016-alias-candidate-lab-authorization/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-017-official-guidance-layer/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-018-version-aware-guidance-resolution/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-020-milestone-0-first-write-capability-candidate/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-021-security-posture-provisioning/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-022-execution-authorization-boundary/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-023-authorization-verification-boundary/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-024-execution-authorization-coordination/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-025-authorization-recovery-contract-binding/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-026-first-write-capability-adapter/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-027-closed-stage3-execution-port/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-028-first-write-product-surface-and-delivery/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-029-first-live-acceptance-execution-boundary/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-030-dual-pfsense-api-backend-architecture/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-031-backend-target-identity-boundary/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-032-nexus-read-transport-architecture/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
+    </url>
+    <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/adr/ADR-034-mermaid-pypi-compatibility/</loc>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/IMPLEMENTATION_ROADMAP/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/PHASE_5_READINESS_REVIEW_2026-08/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/adapter_restrictions/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/anti_rollback_tpm_host_witness/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/capability_adapter_contract/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/confirmation_authority/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/disposable_lab_execution_model/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/key_lifecycle/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/production_store_bootstrap/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/protected_artifact_encryption/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/rate_blast_radius_policy/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/reconciliation_authority/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/sealed_executor/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/tier1/specs/whole_store_anti_rollback/</loc>
-         <lastmod>2026-08-23</lastmod>
+         <lastmod>2026-08-24</lastmod>
     </url>
 </urlset>
