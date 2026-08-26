@@ -28,14 +28,16 @@ CLI named in `ADR-021` (Accepted). This file implements:
     boundary enforced by a dedicated regression test asserting on the
     literal absence of their module names from this file's source text
     -- so this docstring intentionally does not name them either.
-    **This subcommand has been verified offline only**
-    (synthetic/fake HTTP fixtures) -- no live
-    pfSense appliance has been contacted by this development task, and
-    running it against a real target is a separate, future, explicitly
-    authorized action. `pfsense-mcp-security setup` (a user-facing,
-    non-mutating discovery/planning wizard; see below) never runs
-    `bootstrap` itself -- `bootstrap` remains the deterministic, non-interactive,
-    lower-level command underneath it.
+    **Verified offline (synthetic/fake HTTP fixtures) and, once, live**
+    against a disposable LAB appliance under an explicit,
+    ceremony-specific owner authorization (2026-08-26) -- that
+    authorization was scoped to that one ceremony only and does not
+    stand for any future run; every live invocation still requires its
+    own fresh, ceremony-specific authorization. `pfsense-mcp-security
+    setup` (a user-facing, non-mutating discovery/planning wizard; see
+    below) never runs `bootstrap` itself -- `bootstrap` remains the
+    deterministic, non-interactive, lower-level command underneath it
+    (composed by `setup apply --capability-posture write_protected`).
   - `recover`: ADR-033 recovery-execution orchestration -- inspects the
     existing bootstrap incident and, only with an explicit `--execute
     <ACTION>` plus the exact confirmation token a prior inspection just
@@ -44,9 +46,11 @@ CLI named in `ADR-021` (Accepted). This file implements:
     Standalone -- not folded into `bootstrap` or `setup`. Composes
     `security_recovery_orchestration.run_recovery_from_environment()`,
     the one function this file imports for it, exactly mirroring
-    `bootstrap`'s own isolation discipline. **Verified offline only**;
-    no live pfSense appliance has been contacted by the development task
-    that implemented it.
+    `bootstrap`'s own isolation discipline. **Verified offline, and its
+    read-only inspection path live** (a standalone `recover --json`
+    inspection against the 2026-08-26 LAB ceremony's own resulting
+    state returned `no_recovery_needed`) -- the mutating `--execute`
+    recovery actions themselves remain offline-verified only.
   - `setup` (`pfsense-mcp-security setup`): non-mutating,
     interactive-by-default discovery + plan-only wizard. Composes
     `discover`/`plan`'s own already-implemented machinery plus ADR-033
@@ -356,7 +360,8 @@ def _format_human(discovery: SecurityPostureDiscovery) -> str:
             "ADR-021 two-axis model -- not one of the three curated setup presets, but fully supported."
         )
     lines.append(
-        "This report is read-only discovery only (ADR-021 Phase B). No provisioning/setup subcommand exists yet."
+        "This report is read-only discovery only (ADR-021 Phase B). Provisioning happens only through "
+        "the separate `bootstrap`/`setup apply`/`recover` subcommands, never this one."
     )
     return "\n".join(lines)
 
@@ -520,9 +525,10 @@ def _bootstrap_result_to_dict(result: BootstrapOrchestrationResult) -> dict[str,
         "provisioning_outcome": result.provisioning_outcome.value if result.provisioning_outcome else None,
         "provisioning_detail": result.provisioning_detail,
         "notes": [
-            "This subcommand (along with `recover`) can mutate pfSense state. It is verified offline only "
-            "(synthetic/fake HTTP fixtures) -- no live pfSense appliance has been contacted by the "
-            "development task that implemented it.",
+            "This subcommand (along with `recover`) can mutate pfSense state. Verified offline "
+            "(synthetic/fake HTTP fixtures) and, once, live against a disposable LAB appliance under "
+            "an explicit, ceremony-specific owner authorization (2026-08-26) that does not stand for "
+            "any future run.",
             "Never prints or logs an API key, password, or any other secret value. A freshly generated "
             "service-account key is written only to the configured PFSENSE_SERVICE_API_KEY_FILE custody "
             "path (owner-only permissions), never to stdout/stderr/JSON output.",
@@ -549,9 +555,10 @@ def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
         lines.append(f"Engine detail:  {result.provisioning_detail}")
     lines.append("")
     lines.append(
-        "This subcommand (along with `recover`) can mutate pfSense state. It is verified offline only "
-        "(synthetic/fake HTTP fixtures) -- no live pfSense appliance has been contacted by the "
-        "development task that implemented it."
+        "This subcommand (along with `recover`) can mutate pfSense state. Verified offline "
+        "(synthetic/fake HTTP fixtures) and, once, live against a disposable LAB appliance under an "
+        "explicit, ceremony-specific owner authorization (2026-08-26) that does not stand for any "
+        "future run."
     )
     lines.append(
         "Never prints or logs an API key, password, or any other secret value. A freshly generated "
@@ -631,8 +638,8 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="pfsense-mcp-security",
         description=(
             "Guided security-posture discovery and diagnostics for pfsense-mcp-server (ADR-021, "
-            "Accepted). Read-only discovery/diagnostics only -- no provisioning/setup subcommand "
-            "exists yet."
+            "Accepted). `discover`/`plan`/`doctor` are read-only diagnostics; `bootstrap`/`setup "
+            "apply`/`recover` are the separate, explicitly-gated provisioning/recovery subcommands."
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -741,20 +748,25 @@ def _build_parser() -> argparse.ArgumentParser:
 
     bootstrap_parser = subparsers.add_parser(
         "bootstrap",
-        help=("ADR-033 least-privilege service-account bootstrap orchestration. Verified offline only."),
+        help=(
+            "ADR-033 least-privilege service-account bootstrap orchestration. Verified offline and, "
+            "once, live (LAB, 2026-08-26, ceremony-scoped)."
+        ),
         description=(
             "Journal-aware, locking, deterministic orchestration of the already-implemented ADR-033 "
             "security-bootstrap stack: creates or additively syncs the one fixed, least-privilege "
             "pfsense-mcp service account against the target configured entirely through environment "
             "variables (the same PFSENSE_*/PFSENSE_ADMIN_* variables build_admin_context() already "
             "validates -- no separate flags exist for target/credentials). May provision real security "
-            "prerequisites when later run against a real appliance -- THIS implemented slice has been "
-            "verified offline only (synthetic/fake HTTP fixtures); no live execution is authorized by "
-            "the development task that built it. `pfsense-mcp-security setup` (a future interactive "
-            "wizard) is a separate, not-yet-implemented command; `bootstrap` is the deterministic, "
-            "non-interactive command underneath it. Supply secrets (admin API key, admin password, "
-            "journal integrity key) through the configured file paths, never inline -- shell history "
-            "would otherwise capture them."
+            "prerequisites when run against a real appliance -- verified offline (synthetic/fake HTTP "
+            "fixtures) and, once, live against a disposable LAB appliance under an explicit, "
+            "ceremony-specific owner authorization (2026-08-26) that does not stand for any future "
+            "run; every live invocation still requires its own fresh authorization. "
+            "`pfsense-mcp-security setup` is the separate, already-implemented interactive wizard; "
+            "`bootstrap` is the deterministic, non-interactive command underneath it (composed by "
+            "`setup apply --capability-posture write_protected`). Supply secrets (admin API key, admin "
+            "password, journal integrity key) through the configured file paths, never inline -- shell "
+            "history would otherwise capture them."
         ),
         epilog=(
             "Exit codes: 0 success (provisioning completed or was already correctly satisfied, or a "
@@ -772,12 +784,14 @@ def _build_parser() -> argparse.ArgumentParser:
             "inconsistent. 6 the environment/configuration itself was rejected before any lock or "
             "journal was touched (missing/invalid variable, insecure file permissions, a schema that is "
             "not fully source-cross-checked, etc.).\n\n"
-            "This offline-only build never supplies a live server observation to restart "
-            "classification: any pre-existing journal for the same target/account/profile is always "
-            "conservatively treated as requiring recovery attention on a later run, even one that ended "
-            "as cleanly as possible -- a deliberate, fail-closed limitation of this slice, not a bug. "
-            "Only a future, separately-authorized live-verification slice can safely distinguish "
-            "'already done, all good' from 'needs review' without manual state inspection.\n\n"
+            "When a prior journal exists for the same target/account/profile, this command "
+            "automatically attempts one fresh, read-only live observation (GET-only; never a mutation) "
+            "of the account's actual current state before classifying the restart. Only an exact match "
+            "against every expected binding field resolves to a clean, already-complete restart; a "
+            "failed, inconclusive, or mismatched observation is still conservatively treated as "
+            "requiring recovery attention -- the journal alone is never sufficient evidence of "
+            "completion. See `security_bootstrap_orchestration.build_authoritative_restart_observation()` "
+            "for the exact fail-closed construction.\n\n"
             "Never prints, logs, or serializes an API key, password, or any other secret value. A "
             "freshly generated service-account key is written only to the owner-only "
             "PFSENSE_SERVICE_API_KEY_FILE custody path."
@@ -795,7 +809,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "ADR-033 recovery-execution orchestration: inspect, and only with an explicit --execute "
             "plus the exact confirmation token, execute one of the two closed recovery actions. "
-            "Standalone -- verified offline only."
+            "Standalone -- inspection path verified offline and live (LAB, 2026-08-26); --execute "
+            "verified offline only."
         ),
         description=(
             "Default (no flags): read-only inspection only. Classifies the existing bootstrap "

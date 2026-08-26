@@ -241,11 +241,11 @@ def test_help_documents_exit_codes_and_offline_only_and_standalone_boundary(caps
     assert "not folded into" in out
 
 
-def test_module_docstring_lists_recover_as_standalone_and_offline_verified():
+def test_module_docstring_lists_recover_as_standalone_and_its_verification_status():
     joined = " ".join(security_cli.__doc__.split())
     assert "`recover`:" in joined
     assert "Standalone -- not folded into `bootstrap` or `setup`." in joined
-    assert "Verified offline only" in joined
+    assert "Verified offline, and its read-only inspection path live" in joined
 
 
 # --- end-to-end: real main() -> real orchestration -> stubbed HTTP-level closures --

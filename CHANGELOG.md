@@ -7,6 +7,59 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+**CLI-only expansion of the `pfsense-mcp-security` operator tooling
+(ADR-021/ADR-033). No MCP capability change: the public MCP tool
+contract remains byte-identical to `v0.7.2` -- still 95 pfSense READ
+tools + 1 official-guidance tool, 0 default-reachable WRITE.** None of
+this release's new functionality is reachable from, or wired into,
+`pfsense_mcp.server`/the MCP tool registry/normal application startup;
+it is exclusively the separate `pfsense-mcp-security` CLI entry point.
+
+### Added
+
+- **`pfsense-mcp-security setup`** -- a guided, non-mutating
+  discovery + plan-only wizard (interactive by default, or
+  `--non-interactive` for deterministic automation), plus **`setup
+  apply`**, a wholly separate, explicit command that can apply a
+  generated plan: `read_only` performs one read-only connectivity
+  check; `write_protected` composes the existing `bootstrap`
+  orchestration to provision the one fixed ADR-033 service account.
+  Includes inline `RECOVERY_REQUIRED` delegation (a prior incomplete
+  bootstrap is surfaced with its exact recovery action and
+  confirmation token, never auto-resolved), `PFSENSE_SETUP_APPLY_CONFIRM_TOKEN`
+  for CI-friendly non-interactive confirmation, and **`setup
+  write-client-config`**, which writes (merge-only, never a whole-file
+  replacement) the MCP client configuration snippet `setup` already
+  prints to a real client config file, gated behind its own explicit
+  `--confirm` separate from any pfSense-side confirmation.
+- **`pfsense-mcp-security recover`** -- standalone ADR-033
+  recovery-execution orchestration. Default (no flags) is a read-only
+  inspection that classifies an existing bootstrap incident and, if
+  recovery is required, prints the exact action, affected object, and
+  an incident-bound confirmation token. Execution requires both
+  `--execute <ACTION>` and the exact token; a stale, wrong, or
+  cross-target/action/object/incident token is refused before any
+  mutating HTTP call.
+
+### Fixed
+
+- **`bootstrap` (and `setup apply --capability-posture
+  write_protected`) restart classification** -- previously, any prior
+  operation journal for the same target/account/profile was
+  unconditionally treated as requiring recovery attention on every
+  subsequent run, even one that had already completed cleanly and
+  correctly (a documented, deliberately conservative limitation, not a
+  bug). This command now automatically attempts one fresh, read-only,
+  GET-only live observation of the account's actual current state
+  before classifying a restart; only an exact match against every
+  expected binding field resolves to a clean, already-complete
+  restart -- any failed, inconclusive, or mismatched observation
+  remains conservatively treated as requiring recovery attention. The
+  journal alone is still never treated as sufficient evidence of
+  completion. A strictly fail-closed correctness improvement, not a
+  relaxation: no new mutating HTTP call, no new MCP tool, no change to
+  any documented exit code.
+
 ## [0.7.2] - 2026-08-23
 
 **Tier 1 correctness fix and validation-pipeline improvement. No MCP

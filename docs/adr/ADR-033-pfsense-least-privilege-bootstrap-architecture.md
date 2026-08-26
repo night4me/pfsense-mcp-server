@@ -14,14 +14,23 @@
   journal, fixed administrative composition, and journal-aware locking
   orchestration + the `pfsense-mcp-security bootstrap` subcommand) are
   **implemented, offline-verified only**, as of 2026-08-23 -- see "CLI/
-  runtime integration Slice 3" below. **No current phase authorizes a
-  live bootstrap run against any real pfSense appliance (LAB or
-  production), any `pfsense-mcp-security setup` subcommand (not yet
-  implemented), or wiring this engine into normal application
-  startup/MCP tool registration.** Owner-authorized 2026-08-17 (initial
-  research pass), 2026-08-17 (Phase B), 2026-08-17 (Phase C), and
-  2026-08-23 (CLI Integration Slice 3), each explicitly scoped, each
-  gating a later, separately-authorized implementation phase.
+  runtime integration Slice 3" below. Owner-authorized 2026-08-17
+  (initial research pass), 2026-08-17 (Phase B), 2026-08-17 (Phase C),
+  and 2026-08-23 (CLI Integration Slice 3), each explicitly scoped,
+  each gating a later, separately-authorized implementation phase.
+  **Update (2026-08-26):** `pfsense-mcp-security setup` (Slices 1-7)
+  is now fully implemented, including `setup apply` composing this
+  engine for `write_protected`. Under an explicit, ceremony-specific
+  owner authorization the owner, present as recovery operator,
+  executed a bounded live LAB ceremony -- `bootstrap` (and standalone
+  `recover`'s read-only inspection) were genuinely run against the
+  real disposable LAB appliance with zero unintended mutation; see
+  `reports-ai/LIVE_LAB_CEREMONY_2026-08-26.md`. That authorization was
+  scoped to that one ceremony and created no standing live authority --
+  every future live invocation still requires its own fresh,
+  ceremony-specific authorization, exactly as before. Wiring this
+  engine into normal application startup or MCP tool registration
+  remains unauthorized and unimplemented.
 - **Scope:** Establishes the exact current minimum privilege
   requirements (READ and existing WRITE), the authoritative derivation
   mechanism, and the proposed bootstrap security/rollback model. Does

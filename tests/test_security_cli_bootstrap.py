@@ -145,16 +145,17 @@ def test_bootstrap_never_prints_secret_looking_detail(capsys, monkeypatch):
     assert "PFSENSE_SERVICE_API_KEY_FILE" in out or "custody" in out  # points at the path, not a value
 
 
-def test_bootstrap_help_documents_exit_codes_and_offline_only_and_setup_boundary(capsys):
+def test_bootstrap_help_documents_exit_codes_and_verification_status_and_setup_boundary(capsys):
     with pytest.raises(SystemExit):
         main(["bootstrap", "--help"])
     out = capsys.readouterr().out
     assert "Exit codes:" in out
     for code_marker in ("0 success", "1 the engine ran", "2 the engine refused", "6 the environment"):
         assert code_marker in out
-    assert "verified offline only" in out
+    assert "verified offline" in out
+    assert "2026-08-26" in out
     assert "pfsense-mcp-security setup" in out
-    assert "future interactive" in out
+    assert "already-implemented interactive wizard" in out
 
 
 def test_bootstrap_module_docstring_lists_the_mutating_subcommands():
