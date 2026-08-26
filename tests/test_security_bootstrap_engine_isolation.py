@@ -96,6 +96,13 @@ _ENGINE_EXPECTED_PUBLIC_SURFACE = {
     "ProvisioningOutcome",
     "ProvisioningResult",
     "provision_service_account",
+    #: Read-only restart-verification primitive (bootstrap-restart
+    #: classification improvement) -- reuses the exact same privilege
+    #: derivation/drift comparison provision_service_account() itself
+    #: uses; never a mutation. See security_bootstrap_orchestration.py's
+    #: build_authoritative_restart_observation().
+    "AccountProvisioningObservation",
+    "observe_account_provisioning_state",
 }
 
 _RECOVERY_EXPECTED_PUBLIC_SURFACE = {
@@ -127,6 +134,13 @@ _ORCHESTRATION_EXPECTED_PUBLIC_SURFACE = {
     "BootstrapOrchestrationResult",
     "run_bootstrap",
     "run_bootstrap_from_environment",
+    #: Builds a fresh, live-evidence-only AuthoritativeRestartObservation
+    #: -- read-only, never a mutation. run_bootstrap_from_environment()
+    #: calls this itself when a local journal already exists and no
+    #: explicit `authoritative` override was supplied; exposed publicly
+    #: so tests (and any future caller needing the observation on its
+    #: own) never have to reach into a private helper.
+    "build_authoritative_restart_observation",
 }
 
 _CONFIRMATION_EXPECTED_PUBLIC_SURFACE = {

@@ -319,6 +319,71 @@ def provision_service_account(
     )
 
 
+@dataclass(frozen=True)
+class AccountProvisioningObservation:
+    """Pure read-only snapshot of the dedicated service account's
+    *current live* state -- never derived from a journal, never a
+    mutation. Every field is `None` when `exists` is `False` (nothing
+    else was observable). Restart-classification callers (see
+    `security_bootstrap_orchestration.py`) use this to decide whether
+    fresh evidence proves a genuinely completed prior operation, never
+    to decide anything about a *new* one."""
+
+    exists: bool
+    enabled: bool | None = None
+    matches_expected_description: bool | None = None
+    has_exact_expected_privileges: bool | None = None
+    has_temporary_bootstrap_privilege: bool | None = None
+
+
+def observe_account_provisioning_state(
+    *,
+    admin_transport: Transport,
+    api_version: ApiVersion,
+    username: str,
+    target_profile: TargetProfile,
+    schema: dict[str, Any] | None,
+    installed_package_version: tuple[int, int, int] | None = None,
+    user_descr: str = _DEFAULT_USER_DESCR,
+) -> AccountProvisioningObservation:
+    """Read-only counterpart to `provision_service_account()`'s own
+    existing-account check -- reuses the exact same privilege
+    derivation (`_derive_expected_privileges()`) and drift comparison
+    (`compute_account_drift()`) so "expected" can never silently drift
+    between the write path and this read-only restart-verification
+    path. Calls only `list_users()` (a GET); never a mutating HTTP
+    method.
+
+    Raises `BootstrapProvisioningError` if the account list cannot be
+    observed or the expected privilege set cannot be derived -- the
+    caller must treat that as "cannot verify," never as "verified
+    absent." Returns `AccountProvisioningObservation(exists=False)`,
+    not an error, when the account genuinely does not exist -- that is
+    itself a definitive, trustworthy observation."""
+
+    version_error = _check_package_version(installed_package_version)
+    if version_error is not None:
+        raise BootstrapProvisioningError(version_error)
+
+    expected, derivation_error = _derive_expected_privileges(schema, target_profile)
+    if expected is None:
+        raise BootstrapProvisioningError(derivation_error or "privilege derivation failed")
+
+    client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
+    existing = _find_user(client.list_users(), username)
+    if existing is None:
+        return AccountProvisioningObservation(exists=False)
+
+    drift = compute_account_drift(expected, existing.priv)
+    return AccountProvisioningObservation(
+        exists=True,
+        enabled=not existing.disabled,
+        matches_expected_description=existing.descr == user_descr,
+        has_exact_expected_privileges=drift.clean,
+        has_temporary_bootstrap_privilege=BOOTSTRAP_ONLY_PRIVILEGE in existing.priv,
+    )
+
+
 def _provision_against_existing_account(
     admin_client: BootstrapProvisioningClient,
     existing: ObservedUser,

@@ -117,6 +117,7 @@ from .security_operation_journal import (
     AdministrativeOperationType,
     AdministrativeTransactionState,
     AuthoritativeRestartObservation,
+    AuthoritativeServerState,
     DurableOperationState,
     OperationJournalError,
     OperationLockError,
@@ -128,6 +129,7 @@ __all__ = [
     "BootstrapOrchestrationError",
     "BootstrapOrchestrationOutcome",
     "BootstrapOrchestrationResult",
+    "build_authoritative_restart_observation",
     "run_bootstrap",
     "run_bootstrap_from_environment",
 ]
@@ -450,6 +452,68 @@ def _persist_service_api_key(context: AdministrativeContext, api_key: Provisione
         ) from exc
 
 
+def build_authoritative_restart_observation(context: AdministrativeContext) -> AuthoritativeRestartObservation | None:
+    """Read-only. Builds a *fresh* `AuthoritativeRestartObservation` from
+    live evidence only -- never from the journal, never a guess.
+
+    Every binding-identity field (`target_identity`/`target_origin`/
+    `account_identity`/`approved_profile`/`schema_version`/
+    `schema_evidence_digest`) is taken from `context.binding`, which
+    `build_admin_context()` itself freshly (re)computes from the
+    *current* configuration on every call -- not copied from any prior
+    journal record. `classify_restart()` performs the actual comparison
+    against the journal's own recorded binding; this function only ever
+    supplies "what is true of the current configuration and the current
+    live target right now."
+
+    `server_state` is the one field genuinely derived from a live read
+    (`context._mutation_components.observe_restart_state_call()`, a
+    GET-only call reusing `provision_service_account()`'s own privilege
+    derivation and drift comparison) -- `EXPECTED_COMPLETED` only when
+    the dedicated account exists, is enabled, carries the expected
+    description, holds *exactly* the expected steady-state privileges,
+    and does not hold the temporary bootstrap privilege; `UNKNOWN` for
+    every other observed shape, including the account not existing at
+    all. `UNKNOWN` is deliberately never treated as proof of anything by
+    `classify_restart()` -- only `EXPECTED_COMPLETED` combined with a
+    matching binding can ever produce `CLEAN_COMPLETED`.
+
+    Returns `None` on *any* error, transport failure, or ambiguity --
+    including a duplicate-named account, a schema that can no longer be
+    derived, or a network/TLS failure -- so the caller falls through to
+    the existing, conservative `RECOVERY_REQUIRED` default. Never
+    raises; a live read failing is exactly the case this function exists
+    to fail closed on, not to propagate."""
+
+    try:
+        account, auth_methods = context._mutation_components.observe_restart_state_call()
+    except Exception:  # deliberately broad: any escape from the live read is treated as "cannot verify"
+        return None
+
+    if (
+        account.exists
+        and account.enabled
+        and account.matches_expected_description
+        and account.has_exact_expected_privileges
+        and not account.has_temporary_bootstrap_privilege
+    ):
+        server_state = AuthoritativeServerState.EXPECTED_COMPLETED
+    else:
+        server_state = AuthoritativeServerState.UNKNOWN
+
+    return AuthoritativeRestartObservation(
+        target_identity=context.binding.target_identity,
+        target_origin=context.binding.target_origin,
+        account_identity=context.binding.account_identity,
+        approved_profile=context.binding.approved_profile,
+        schema_version=context.binding.schema_version,
+        schema_evidence_digest=context.binding.schema_evidence_digest,
+        auth_methods=tuple(sorted(auth_methods)),
+        server_state=server_state,
+        final_verification_complete=True,
+    )
+
+
 def run_bootstrap_from_environment(
     env: Mapping[str, str] | None = None,
     *,
@@ -471,6 +535,18 @@ def run_bootstrap_from_environment(
     `BLOCKED_CONFIGURATION_ERROR` rather than propagating -- no lock or
     journal is ever touched in that case, since construction itself
     already failed.
+
+    When `authoritative` is not explicitly supplied (the normal CLI
+    case) *and* a local journal already exists for this target/account/
+    profile (`context.journal_path.exists()`), a fresh live
+    `AuthoritativeRestartObservation` is built and used -- this is the
+    only way a genuinely completed prior operation can ever be
+    recognized as such after a process restart (see
+    `build_authoritative_restart_observation()`). A brand-new target
+    with no local journal at all never triggers this extra live read --
+    behavior for that case remains exactly what it always was, since
+    `classify_restart()` never even inspects `authoritative` when no
+    journal exists.
     """
 
     source = env if env is not None else os.environ
@@ -481,6 +557,8 @@ def run_bootstrap_from_environment(
             BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,
             str(exc),
         )
+    if authoritative is None and context.journal_path.exists():
+        authoritative = build_authoritative_restart_observation(context)
     return run_bootstrap(
         context,
         authoritative=authoritative,

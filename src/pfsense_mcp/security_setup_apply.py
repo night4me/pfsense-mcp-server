@@ -367,12 +367,18 @@ def _run_write_protected_apply(
     proceed unconditionally, mirroring read_only's own anchor-agnostic
     treatment.
 
-    `run_bootstrap_from_environment()` is called with its own default
-    `authoritative=None` -- the exact same offline default standalone
-    `bootstrap` itself uses -- so a prior incomplete/failed bootstrap
-    attempt against this target/account/profile is refused exactly as
-    conservatively as it already is for standalone `bootstrap`, never
-    more leniently."""
+    `run_bootstrap_from_environment()` is called with no explicit
+    `authoritative` override -- the exact same call standalone
+    `bootstrap` itself makes. As of the restart-classification
+    improvement, that function itself now builds a fresh, live
+    `AuthoritativeRestartObservation` automatically whenever a local
+    journal already exists for this target/account/profile, so a
+    genuinely completed prior operation can resolve to
+    `ALREADY_COMPLETE`; a prior incomplete/failed/ambiguous attempt, or
+    any live mismatch, is still refused exactly as conservatively as
+    it already was, never more leniently -- see
+    `build_authoritative_restart_observation()`'s own docstring for the
+    exact evidence this requires."""
 
     if anchor is AnchorAssurance.HARDWARE_WITNESS:
         doctor_result = run_doctor_checks(env)

@@ -27,10 +27,12 @@ from .config import PfSenseConfig, load_api_key, load_config
 from .errors import ConfigurationError
 from .secure_file import open_nofollow, validate_descriptor
 from .security_auth_transition import AuthMethodTransitionCoordinator, ReconnectPolicy
-from .security_bootstrap_client import ObservedApiKey, ObservedUser
+from .security_bootstrap_client import BootstrapProvisioningClient, ObservedApiKey, ObservedUser
 from .security_bootstrap_engine import (
+    AccountProvisioningObservation,
     ProvisioningResult,
     TargetProfile,
+    observe_account_provisioning_state,
     provision_service_account,
 )
 from .security_bootstrap_recovery import (
@@ -155,6 +157,14 @@ class _FixedMutationComponents:
     identify_orphan_key_candidate: Callable[[], ObservedApiKey] = field(repr=False)
     identify_dedicated_user_candidate: Callable[[], ObservedUser] = field(repr=False)
     auth_transition_factory: Callable[[], AuthMethodTransitionCoordinator] = field(repr=False)
+    #: Read-only, fresh-live-evidence restart-observation primitive.
+    #: Never a mutation -- calls only `list_users()` and the existing
+    #: auth-settings GET. Used exclusively to build an
+    #: `AuthoritativeRestartObservation` for `classify_restart()`;
+    #: never consulted when deciding whether to start a *new*
+    #: operation. See `security_bootstrap_orchestration.py`'s
+    #: `build_authoritative_restart_observation()`.
+    observe_restart_state_call: Callable[[], tuple[AccountProvisioningObservation, frozenset[str]]] = field(repr=False)
     #: The already-validated journal integrity key, exposed so a recovery
     #: orchestration layer can derive/verify a confirmation token bound to
     #: the same key that already authenticates every journal/lock record
@@ -621,6 +631,24 @@ def build_admin_context(
             reconnect_policy=ReconnectPolicy(),
         )
 
+    def observe_restart_state() -> tuple[AccountProvisioningObservation, frozenset[str]]:
+        transport = keyauth_factory()
+        try:
+            account = observe_account_provisioning_state(
+                admin_transport=transport,
+                api_version=ApiVersion.V2,
+                username=_ACCOUNT_NAME,
+                target_profile=TargetProfile.WRITE_PROTECTED,
+                schema=schema,
+                installed_package_version=config.restapi_package_version,
+                user_descr=RECOVERY_USER_DESCRIPTION,
+            )
+            client = BootstrapProvisioningClient(transport, api_version=ApiVersion.V2)
+            auth_settings = client._observe_auth_settings_for_transition()
+            return account, auth_settings.auth_methods
+        finally:
+            transport.close()
+
     mutation_components = _FixedMutationComponents(
         keyauth_transport_factory=keyauth_factory,
         basicauth_transport_factory=basicauth_factory,
@@ -630,6 +658,7 @@ def build_admin_context(
         identify_orphan_key_candidate=identify_orphan_key,
         identify_dedicated_user_candidate=identify_dedicated_user,
         auth_transition_factory=auth_transition_factory,
+        observe_restart_state_call=observe_restart_state,
         journal_integrity_key=integrity_key,
     )
     return AdministrativeContext(
