@@ -2,15 +2,27 @@
 host witness service (ADR-011's decided backend, see
 docs/tier1/specs/anti_rollback_tpm_host_witness.md).
 
-Not constructed by production. The Proxmox host's physical TPM NV
-counter has been provisioned (2026-08-10, Slice A) and is the real,
-authoritative anchor, but no witness daemon exists yet to serve the
-protocol this class calls, and this store has not been seeded with the
-provisioned counter's real baseline (Slice B provides the store-side
-primitives for that in `anti_rollback.py`; the actual seed call is a
-separate, later, not-yet-authorized administrative step). This class is
-therefore inert by construction, not merely by convention: nothing in
-`pfsense_mcp.application`/`factory`/`tools` imports or constructs it.
+Not constructed by the MCP runtime. The Proxmox host's physical TPM NV
+counter was provisioned on 2026-08-10 and is the real, authoritative
+anchor; the witness daemon (`witness_daemon/`) has been deployed as a
+persistent, hardware-verified `systemd` service since the same day
+(`docs/tier1/specs/anti_rollback_tpm_host_witness.md`'s own checklist);
+and the guest-side store was seeded with the provisioned counter's
+real baseline that same day (`HighWaterMark.seed()` in
+`anti_rollback.py`) -- reconfirmed by a live read as recently as
+2026-08-26 (`reports-ai/SLICE5_TPM_SEEDING_AND_RESTART_CLASSIFICATION_2026-08-26.md`).
+**This class is constructed and used today** by the CLI-side read-only
+discovery/doctor path (`security_discovery.py`'s
+`_build_read_only_witness_client()`, `tier1_anchor_check.py`) -- both
+call only `read()`, never `advance()`. What remains genuinely inert is
+narrower and still true: nothing in `pfsense_mcp.application`/
+`factory`/`tools` (the MCP runtime/tool-registry import graph)
+constructs it, and `tier1/production_runtime.py`'s own
+`build_production_runtime()` -- the only code path that could ever
+call `advance()` in anger -- is not called by `application.py`/
+`factory.py`/`server.py` and remains its own separately-gated Tier 1
+WRITE-activation decision, entirely independent of this class's own
+read-only CLI use.
 
 Wire protocol this class implements the guest side of (the daemon side
 does not exist yet -- whoever builds it, per the spec's "Host service
