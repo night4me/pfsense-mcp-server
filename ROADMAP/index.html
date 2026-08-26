@@ -4315,7 +4315,19 @@ structurally distinct official-documentation guidance tool (never a
 baseline (84 → 95 tools); <code>v0.5.0</code> was the major expansion before that
 (42 → 84 tools, exactly a 100% increase); <code>v0.5.1</code> was a documentation-
 accuracy and security-communication patch over <code>v0.5.0</code>. No WRITE
-capability changed across any of these releases. The <code>v0.2.x</code>/<code>v0.3.0</code>
+capability changed across any of these releases.</p>
+<p><strong>Update (2026-08-27): the current immutable published baseline is now
+<code>v0.7.2</code></strong> — <code>v0.7.1</code> (documentation/packaging correction) and <code>v0.7.2</code>
+(a <code>MutationExecutor</code> clock-injection fix, a validation-pipeline
+performance improvement, and the <code>pfsense-mcp-security bootstrap</code> CLI
+subcommand) shipped after the paragraph above was written; see
+<code>CHANGELOG.md</code>'s <code>[0.7.1]</code>/<code>[0.7.2]</code> entries. Neither changed the
+production MCP surface or any WRITE capability. <strong>A <code>v0.8.0</code> release
+candidate is additionally prepared on <code>main</code></strong> (the <code>recover</code> CLI
+subcommand, the full <code>setup</code> guided-provisioning wizard, and a
+restart-classification correctness fix) but is not yet tagged,
+released, or published — see <code>README.md</code>'s "Release status" section
+and <code>CHANGELOG.md</code>'s <code>[Unreleased]</code> entry. The <code>v0.2.x</code>/<code>v0.3.0</code>
 sections immediately below are kept exactly as originally written, as
 an accurate historical record of what shipped and when — not rewritten
 to look cleaner. Treat "v0.3.0" in their text as the baseline <em>at the

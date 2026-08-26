@@ -4636,14 +4636,23 @@
   journal, fixed administrative composition, and journal-aware locking
   orchestration + the <code>pfsense-mcp-security bootstrap</code> subcommand) are
   <strong>implemented, offline-verified only</strong>, as of 2026-08-23 -- see "CLI/
-  runtime integration Slice 3" below. <strong>No current phase authorizes a
-  live bootstrap run against any real pfSense appliance (LAB or
-  production), any <code>pfsense-mcp-security setup</code> subcommand (not yet
-  implemented), or wiring this engine into normal application
-  startup/MCP tool registration.</strong> Owner-authorized 2026-08-17 (initial
-  research pass), 2026-08-17 (Phase B), 2026-08-17 (Phase C), and
-  2026-08-23 (CLI Integration Slice 3), each explicitly scoped, each
-  gating a later, separately-authorized implementation phase.</li>
+  runtime integration Slice 3" below. Owner-authorized 2026-08-17
+  (initial research pass), 2026-08-17 (Phase B), 2026-08-17 (Phase C),
+  and 2026-08-23 (CLI Integration Slice 3), each explicitly scoped,
+  each gating a later, separately-authorized implementation phase.
+  <strong>Update (2026-08-26):</strong> <code>pfsense-mcp-security setup</code> (Slices 1-7)
+  is now fully implemented, including <code>setup apply</code> composing this
+  engine for <code>write_protected</code>. Under an explicit, ceremony-specific
+  owner authorization the owner, present as recovery operator,
+  executed a bounded live LAB ceremony -- <code>bootstrap</code> (and standalone
+  <code>recover</code>'s read-only inspection) were genuinely run against the
+  real disposable LAB appliance with zero unintended mutation; see
+  <code>reports-ai/LIVE_LAB_CEREMONY_2026-08-26.md</code>. That authorization was
+  scoped to that one ceremony and created no standing live authority --
+  every future live invocation still requires its own fresh,
+  ceremony-specific authorization, exactly as before. Wiring this
+  engine into normal application startup or MCP tool registration
+  remains unauthorized and unimplemented.</li>
 <li><strong>Scope:</strong> Establishes the exact current minimum privilege
   requirements (READ and existing WRITE), the authoritative derivation
   mechanism, and the proposed bootstrap security/rollback model. Does
