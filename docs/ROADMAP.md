@@ -16,7 +16,20 @@ structurally distinct official-documentation guidance tool (never a
 baseline (84 → 95 tools); `v0.5.0` was the major expansion before that
 (42 → 84 tools, exactly a 100% increase); `v0.5.1` was a documentation-
 accuracy and security-communication patch over `v0.5.0`. No WRITE
-capability changed across any of these releases. The `v0.2.x`/`v0.3.0`
+capability changed across any of these releases.
+
+**Update (2026-08-27): the current immutable published baseline is now
+`v0.7.2`** — `v0.7.1` (documentation/packaging correction) and `v0.7.2`
+(a `MutationExecutor` clock-injection fix, a validation-pipeline
+performance improvement, and the `pfsense-mcp-security bootstrap` CLI
+subcommand) shipped after the paragraph above was written; see
+`CHANGELOG.md`'s `[0.7.1]`/`[0.7.2]` entries. Neither changed the
+production MCP surface or any WRITE capability. **A `v0.8.0` release
+candidate is additionally prepared on `main`** (the `recover` CLI
+subcommand, the full `setup` guided-provisioning wizard, and a
+restart-classification correctness fix) but is not yet tagged,
+released, or published — see `README.md`'s "Release status" section
+and `CHANGELOG.md`'s `[Unreleased]` entry. The `v0.2.x`/`v0.3.0`
 sections immediately below are kept exactly as originally written, as
 an accurate historical record of what shipped and when — not rewritten
 to look cleaner. Treat "v0.3.0" in their text as the baseline *at the
