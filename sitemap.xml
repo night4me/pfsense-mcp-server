@@ -97,6 +97,10 @@
          <lastmod>2026-08-27</lastmod>
     </url>
     <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/COMPATIBILITY/</loc>
+         <lastmod>2026-08-27</lastmod>
+    </url>
+    <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/</loc>
          <lastmod>2026-08-27</lastmod>
     </url>
@@ -106,6 +110,14 @@
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/EXECUTION_AUTHORIZATION_BOUNDARY/</loc>
+         <lastmod>2026-08-27</lastmod>
+    </url>
+    <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/INSTALLATION/</loc>
+         <lastmod>2026-08-27</lastmod>
+    </url>
+    <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/MCP_CLIENT_CONFIGURATION/</loc>
          <lastmod>2026-08-27</lastmod>
     </url>
     <url>
@@ -153,6 +165,10 @@
          <lastmod>2026-08-27</lastmod>
     </url>
     <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/SECURITY_SETUP_WIZARD/</loc>
+         <lastmod>2026-08-27</lastmod>
+    </url>
+    <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/SECURITY_TEST_CATALOG/</loc>
          <lastmod>2026-08-27</lastmod>
     </url>
@@ -174,6 +190,10 @@
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/TIER1_ROADMAP/</loc>
+         <lastmod>2026-08-27</lastmod>
+    </url>
+    <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/TOOL_AND_GUIDANCE_REFERENCE/</loc>
          <lastmod>2026-08-27</lastmod>
     </url>
     <url>

@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/">
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../MCP_CLIENT_CONFIGURATION/">
       
       
-        <link rel="next" href="../SECURITY_MODEL/">
+        <link rel="next" href="../COMPATIBILITY/">
       
       
         
@@ -297,6 +297,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -344,14 +352,70 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+      <a href="../INSTALLATION/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Install & quick start (GitHub README)
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_SETUP_WIZARD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security setup wizard (pfsense-mcp-security)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect your MCP client
   
 
     
@@ -505,6 +569,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#the-mcp-client-shows-0-tools-or-fails-to-start-the-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The MCP client shows 0 tools, or fails to start the server
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-server-exits-with-a-configuration-error" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -527,10 +602,76 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#401-authentication-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        401 authentication failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#403-insufficient-privilege-failures-on-specific-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        403 insufficient-privilege failures on specific tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tls-verification-fails" class="md-nav__link">
     <span class="md-ellipsis">
       
         TLS verification fails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-specific-tool-always-returns-an-empty-or-package-absent-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A specific tool always returns an empty or package-absent result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api-unreachable-connection-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST API unreachable / connection refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#works-on-one-pfsense-version-not-another" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Works on one pfSense version, not another
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeouts-under-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeouts under load
       
     </span>
   </a>
@@ -591,6 +732,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../COMPATIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool & guidance reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
         
   
@@ -598,7 +795,7 @@
   <span class="md-ellipsis">
     
   
-    Client setup examples (GitHub)
+    Per-client config examples (GitHub)
   
 
     
@@ -4079,6 +4276,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#the-mcp-client-shows-0-tools-or-fails-to-start-the-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The MCP client shows 0 tools, or fails to start the server
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-server-exits-with-a-configuration-error" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4101,10 +4309,76 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#401-authentication-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        401 authentication failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#403-insufficient-privilege-failures-on-specific-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        403 insufficient-privilege failures on specific tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tls-verification-fails" class="md-nav__link">
     <span class="md-ellipsis">
       
         TLS verification fails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-specific-tool-always-returns-an-empty-or-package-absent-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A specific tool always returns an empty or package-absent result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api-unreachable-connection-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST API unreachable / connection refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#works-on-one-pfsense-version-not-another" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Works on one pfSense version, not another
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeouts-under-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeouts under load
       
     </span>
   </a>
@@ -4282,6 +4556,12 @@ configuration is valid.</p>
 <span class="go">pfsense-mcp-server</span>
 </code></pre></div>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="the-mcp-client-shows-0-tools-or-fails-to-start-the-server">The MCP client shows 0 tools, or fails to start the server<a class="headerlink" href="#the-mcp-client-shows-0-tools-or-fails-to-start-the-server" title="Permanent link">&para;</a></h3>
+<p>Usually a wrong command path, or the venv's <code>pfsense-mcp-server</code> entry
+point isn't executable from where the client launches it. Run the exact
+command from your client's own <code>env</code>/<code>command</code> configuration directly
+in a shell and read stderr verbatim — a client UI often swallows the
+real error.</p>
 <h3 id="the-server-exits-with-a-configuration-error">The server exits with a configuration error<a class="headerlink" href="#the-server-exits-with-a-configuration-error" title="Permanent link">&para;</a></h3>
 <p>Configuration fails closed. Confirm every required variable is present, the
 API URL is an HTTPS origin without a path, and the identity contains no
@@ -4291,11 +4571,43 @@ print the key value.</p>
 <p>The file must be a regular non-symlink file owned by the process user, with
 no group or other permission bits, and its first line must be non-empty and
 bounded. Parent directories should normally be mode <code>0700</code>.</p>
+<h3 id="401-authentication-failures"><code>401</code> authentication failures<a class="headerlink" href="#401-authentication-failures" title="Permanent link">&para;</a></h3>
+<p>Wrong API key, wrong <code>PFSENSE_IDENTITY</code>, or the key file has the wrong
+permissions/first-line format. Re-verify the key file's first line
+matches the key shown in pfSense's REST API user settings, and that
+<code>PFSENSE_IDENTITY</code> matches the pfSense user the key actually belongs
+to.</p>
+<h3 id="403-insufficient-privilege-failures-on-specific-tools"><code>403</code> insufficient-privilege failures on specific tools<a class="headerlink" href="#403-insufficient-privilege-failures-on-specific-tools" title="Permanent link">&para;</a></h3>
+<p>The pfSense identity lacks the narrow privilege that specific tool
+needs. Cross-check the required privilege in
+<a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/"><code>docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md</code></a>
+against the identity's assigned privileges in pfSense — or use
+<a href="../SECURITY_SETUP_WIZARD/">the setup wizard</a> to provision a fresh
+identity with exactly the right privilege set from the start.</p>
 <h3 id="tls-verification-fails">TLS verification fails<a class="headerlink" href="#tls-verification-fails" title="Permanent link">&para;</a></h3>
 <p>Prefer <code>strict</code> with the system trust store. For an internal CA, set
 <code>PFSENSE_TLS_MODE=auto</code> and point <code>PFSENSE_TLS_CA_FILE</code> to a readable CA
 bundle. <code>insecure</code> disables certificate verification and should be limited
 to short, explicitly accepted diagnostics.</p>
+<h3 id="a-specific-tool-always-returns-an-empty-or-package-absent-result">A specific tool always returns an empty or package-absent result<a class="headerlink" href="#a-specific-tool-always-returns-an-empty-or-package-absent-result" title="Permanent link">&para;</a></h3>
+<p>The underlying pfSense feature or package (e.g. WireGuard) likely isn't
+installed/configured on that appliance. Confirm via pfSense's own
+package manager or configuration UI — this is expected behavior, not a
+bug. See <a href="../COMPATIBILITY/">Compatibility</a> for exactly which tools are
+known to gate on a package this way.</p>
+<h3 id="rest-api-unreachable-connection-refused">REST API unreachable / connection refused<a class="headerlink" href="#rest-api-unreachable-connection-refused" title="Permanent link">&para;</a></h3>
+<p>The <code>pfrest</code>/<code>pfSense-pkg-RESTAPI</code> package is disabled or not installed
+on the appliance. Confirm the package is installed and enabled in
+pfSense's package manager, and confirm <code>PFSENSE_API_URL</code> and network
+reachability.</p>
+<h3 id="works-on-one-pfsense-version-not-another">Works on one pfSense version, not another<a class="headerlink" href="#works-on-one-pfsense-version-not-another" title="Permanent link">&para;</a></h3>
+<p>Check <a href="../COMPATIBILITY/">Compatibility</a> for your exact platform/version
+combination before filing an issue — this may be a genuine platform/
+schema incompatibility rather than a configuration problem.</p>
+<h3 id="timeouts-under-load">Timeouts under load<a class="headerlink" href="#timeouts-under-load" title="Permanent link">&para;</a></h3>
+<p>Confirm the appliance itself is responsive via its own web UI first —
+default HTTP timeouts assume a normally-loaded appliance; this project
+does not currently expose a configurable timeout.</p>
 <h3 id="no-tools-appear">No tools appear<a class="headerlink" href="#no-tools-appear" title="Permanent link">&para;</a></h3>
 <p>Use <code>PFSENSE_PROFILE=auditor</code>, the default accepted READ profile. The
 <code>engineer</code> placeholder intentionally grants no capabilities in this build.

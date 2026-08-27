@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/">
       
       
-        <link rel="prev" href="../CONFIGURATION/">
+        <link rel="prev" href="../TOOL_AND_GUIDANCE_REFERENCE/">
       
       
         <link rel="next" href="../THREAT_MODEL/">
@@ -295,6 +295,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -342,14 +350,70 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+      <a href="../INSTALLATION/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Install & quick start (GitHub README)
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_SETUP_WIZARD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security setup wizard (pfsense-mcp-security)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect your MCP client
   
 
     
@@ -398,6 +462,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../COMPATIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool & guidance reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
         
   
@@ -405,7 +525,7 @@
   <span class="md-ellipsis">
     
   
-    Client setup examples (GitHub)
+    Per-client config examples (GitHub)
   
 
     
@@ -556,6 +676,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-project-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why this project exists
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#trust-boundary" class="md-nav__link">
@@ -3978,6 +4109,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#why-this-project-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why this project exists
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#trust-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4119,6 +4261,64 @@
 
 
 <h1 id="security-model">Security model<a class="headerlink" href="#security-model" title="Permanent link">&para;</a></h1>
+<h2 id="why-this-project-exists">Why this project exists<a class="headerlink" href="#why-this-project-exists" title="Permanent link">&para;</a></h2>
+<p>This project was built because I wanted AI assistance for pfSense
+without giving an LLM the ability to accidentally disconnect my own
+network.</p>
+<p>A firewall is not just another application. It is the foundation
+everything else depends on. Any software capable of changing firewall
+rules, routing, interfaces, DNS, VPN configuration, or other
+network-critical settings also has the ability to make that network
+unreachable — and "the model probably won't make a bad change" is not a
+safety mechanism, it's a hope. Those operations deserve a higher safety
+standard than simply exposing WRITE tools to an AI model.</p>
+<p><strong>This project deliberately started, and remains, READ-only by
+default.</strong> Not because WRITE is impossible — a fully authorized,
+recoverable WRITE path exists and is described in
+<a href="#authorization">Authorization</a> below — but because WRITE should be
+earned through architecture rather than enabled by implementation.</p>
+<p><strong>What makes the engineering different, not just the policy:</strong></p>
+<ul>
+<li><strong>Explicit tool registration, never generic API dispatch.</strong> Every
+  tool is one statically checked, named function calling one client
+  method — there is no <code>call_endpoint(path, method)</code> escape hatch an AI
+  (or a bug) could use to reach an unregistered endpoint.</li>
+<li><strong>95 READ / 0 default-WRITE public contract</strong>, enforced by an
+  automated snapshot test — a change to the public surface that isn't
+  reflected in the approved contract fails CI.</li>
+<li><strong>Capability-based least privilege.</strong> Each tool is gated behind a
+  named <code>Capability</code>; profiles grant capability sets, not raw endpoint
+  access.</li>
+<li><strong>Deterministic public-contract validation</strong> — the registered tool
+  set, its privilege mapping, and its documentation are all re-derived
+  from source and checked for drift on every run, not maintained by
+  hand.</li>
+<li><strong>Secret-bearing fields omitted from models where confirmed present</strong>,
+  instead of trusting the upstream API's own redaction behavior.</li>
+<li><strong>Verification before promotion</strong> — every tool is exercised against a
+  real pfSense instance (LAB or production) and confirmed to return the
+  expected shape before it is ever added to the public registry.</li>
+<li><strong>Fail-closed handling</strong> of ambiguous or sensitive capabilities:
+  unclear schema behavior is treated as unsafe until proven otherwise,
+  not implemented optimistically.</li>
+<li><strong>CI, CodeQL, and a dedicated release-validation pipeline</strong> gate every
+  change — see the rest of this page for what's actually enforced, not
+  just designed.</li>
+</ul>
+<p><strong>The READ trust path, in one diagram:</strong></p>
+<!-- Rendered from assets/diagrams/read-trust-path.mmd -- see that file
+     to edit the diagram source, then regenerate this image. -->
+
+<p><img alt="READ trust path: AI/MCP client through stdio, an explicitly registered MCP tool, capability/profile gate, least-privilege mapping, one fixed typed client method, a GET-only pfREST call, the pfSense appliance, a typed model boundary excluding secret fields, to a safe MCP result" src="https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/read-trust-path.svg" /></p>
+<p>Every one of the 95 tools takes this same path — no exceptions, no
+alternate route. The yellow boxes are hard gates (fail closed, not
+merely checked); the green box is where confirmed secret-bearing fields
+are structurally excluded, not filtered. See
+<a href="../ARCHITECTURE_DIAGRAMS/">the full architecture diagrams page</a> for the
+detailed sequence diagram this summarizes.</p>
+<p>I don't mind if an AI answers a question incorrectly. I do mind if an AI
+accidentally disconnects my house from the Internet. That single design
+principle explains almost every architectural decision documented below.</p>
 <h2 id="trust-boundary">Trust boundary<a class="headerlink" href="#trust-boundary" title="Permanent link">&para;</a></h2>
 <p>This server is intended for local stdio MCP use. The process that launches
 and controls the MCP channel is the caller-authentication boundary. The

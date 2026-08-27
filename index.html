@@ -14,7 +14,7 @@
       
       
       
-        <link rel="next" href="CONFIGURATION/">
+        <link rel="next" href="INSTALLATION/">
       
       
         
@@ -373,6 +373,14 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -420,14 +428,70 @@
   
   
     <li class="md-nav__item">
-      <a href="https://github.com/night4me/pfsense-mcp-server#quick-start" class="md-nav__link">
+      <a href="INSTALLATION/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Install & quick start (GitHub README)
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="SECURITY_SETUP_WIZARD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security setup wizard (pfsense-mcp-security)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect your MCP client
   
 
     
@@ -476,6 +540,62 @@
   
   
     <li class="md-nav__item">
+      <a href="COMPATIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool & guidance reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
         
   
@@ -483,7 +603,7 @@
   <span class="md-ellipsis">
     
   
-    Client setup examples (GitHub)
+    Per-client config examples (GitHub)
   
 
     
@@ -3955,18 +4075,18 @@ exposing raw shell access or a way to mutate the appliance by accident.</p>
 <p><strong>Current production contract: 95 pfSense READ tools + 1 official-
 guidance tool. 0 WRITE tools.</strong> That split
 is deliberate: this project treats mutation as a safety-engineering
-problem, not a feature flag — the maintainer's own reasoning is in the
-README's
-<a href="https://github.com/night4me/pfsense-mcp-server#why-this-project-exists">"Why this project exists"</a>
-section. See <a href="TIER1_ARCHITECTURE/">the Tier 1 overview</a> below for the
+problem, not a feature flag — the maintainer's own reasoning is in
+<a href="SECURITY_MODEL/#why-this-project-exists">the security model's "Why this project exists"</a>.
+See <a href="TIER1_ARCHITECTURE/">the Tier 1 overview</a> below for the
 engineering detail behind it.</p>
 <p>This site is a browsable, organized view of the technical documentation
-under <code>docs/</code>. It does not repeat the project's practical
-getting-started material — that stays authoritative in the repository
-itself:</p>
+under <code>docs/</code>, including a complete getting-started path
+(<a href="INSTALLATION/">Installation</a> → <a href="SECURITY_SETUP_WIZARD/">Security setup wizard</a> →
+<a href="MCP_CLIENT_CONFIGURATION/">Connect your MCP client</a>). A few things
+stay authoritative in the repository itself instead:</p>
 <ul>
-<li><a href="https://github.com/night4me/pfsense-mcp-server#readme">README — install, quick start, example prompts</a></li>
-<li><a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md">Client setup examples</a></li>
+<li><a href="https://github.com/night4me/pfsense-mcp-server#readme">README — quick overview and copy/paste quick-start</a></li>
+<li><a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md">Per-client config examples</a></li>
 <li><a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md">CONTRIBUTING — development workflow</a></li>
 <li><a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md">SECURITY — how to report a vulnerability</a></li>
 </ul>
@@ -3981,15 +4101,23 @@ itself:</p>
 <tbody>
 <tr>
 <td>Install and run the server</td>
-<td><a href="CONFIGURATION/">Getting Started</a></td>
+<td><a href="INSTALLATION/">Installation</a></td>
+</tr>
+<tr>
+<td>Set up the operator CLI, or opt into protected WRITE</td>
+<td><a href="SECURITY_SETUP_WIZARD/">Security setup wizard</a></td>
+</tr>
+<tr>
+<td>Connect an MCP client</td>
+<td><a href="MCP_CLIENT_CONFIGURATION/">Connect your MCP client</a></td>
 </tr>
 <tr>
 <td>Know exactly what security properties are enforced (and which aren't)</td>
 <td><a href="SECURITY_MODEL/">Security</a></td>
 </tr>
 <tr>
-<td>See every MCP tool this server registers</td>
-<td><a href="API/">API reference</a></td>
+<td>See every MCP tool this server registers, and where guidance content comes from</td>
+<td><a href="API/">API reference</a> · <a href="TOOL_AND_GUIDANCE_REFERENCE/">Tool &amp; guidance reference</a></td>
 </tr>
 <tr>
 <td>Understand how the current READ path is built</td>
@@ -4007,9 +4135,9 @@ itself:</p>
 </table>
 <h2 id="what-is-on-this-site">What is on this site<a class="headerlink" href="#what-is-on-this-site" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Getting Started</strong> — the full configuration reference and
-  troubleshooting guide; installation itself lives in the README (linked
-  above), since that's what a new visitor sees first on GitHub or PyPI.</li>
+<li><strong>Getting Started</strong> — installation, the operator security CLI, MCP
+  client configuration, the full environment-variable/configuration
+  reference, and compatibility evidence.</li>
 <li><strong>Security</strong> — the threat model, security model, abuse-case catalog, and
   the risk study behind every writable pfSense endpoint class this project
   has inventoried and <em>not yet</em> authorized. Start here if you're deciding
@@ -4037,11 +4165,13 @@ itself:</p>
 </ul>
 <h2 id="project-status">Project status<a class="headerlink" href="#project-status" title="Permanent link">&para;</a></h2>
 <p>The production server is READ-only: 95 tools, zero WRITE tools, an empty
-WRITE endpoint allow-list. v0.5.0 is the current immutable, published
-release. It ships the Tier 1 safety framework — every new module remains
-structurally unreachable from production until an explicit, separately
-authorized activation decision is made. See the
-<a href="ROADMAP/">public roadmap</a> for what "done" looks like for this phase.</p>
+WRITE endpoint allow-list. <strong>v0.8.0 is the current immutable, published
+release</strong> — see the <a href="https://github.com/night4me/pfsense-mcp-server#release-status">README's Release status</a>
+section for the exact delta from each prior release. It ships the Tier 1
+safety framework — every new module remains structurally unreachable
+from production until an explicit, separately authorized activation
+decision is made. See the <a href="ROADMAP/">public roadmap</a> for what "done"
+looks like for this phase.</p>
 
 
 
