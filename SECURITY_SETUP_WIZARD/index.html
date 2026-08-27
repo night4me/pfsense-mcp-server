@@ -4359,13 +4359,18 @@ back via <code>--confirm &lt;TOKEN&gt;</code> actually acts:</p>
 changed since), apply refuses rather than silently re-planning — you
 run <code>setup</code> again to get a fresh, current plan and token.</p>
 <h3 id="mcp-client-config-generation">MCP client config generation<a class="headerlink" href="#mcp-client-config-generation" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config</span>
+<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config \</span>
+<span class="go">  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \</span>
+<span class="go">  --capability-posture read_only --anchor-assurance none</span>
 </code></pre></div>
-<p>Once you have a working configuration, this prints (and, with its own
-separate <code>--confirm</code>, can write/merge into a real client config file)
-the exact MCP client configuration block for the target you just set
-up — see <a href="../MCP_CLIENT_CONFIGURATION/">Connect your MCP client</a> for the
-full write/merge workflow and safety guarantees.</p>
+<p><code>--client</code>, <code>--capability-posture</code>, and <code>--anchor-assurance</code> are
+required (matching the values your <code>setup</code> run used). Once you have a
+working configuration, this prints (and, with its own separate
+<code>--confirm</code>, can write/merge into a real client config file, with an
+automatic <code>.bak</code> backup first) the exact MCP client configuration block
+for the target you just set up — see
+<a href="../MCP_CLIENT_CONFIGURATION/">Connect your MCP client</a> for the full
+write/merge workflow and safety guarantees.</p>
 <h3 id="doctor-is-this-host-ready-for-a-protected-write-ceremony"><code>doctor</code> — is this host ready for a protected-WRITE ceremony?<a class="headerlink" href="#doctor-is-this-host-ready-for-a-protected-write-ceremony" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security doctor</span>
 </code></pre></div>
@@ -4491,8 +4496,10 @@ mutates on its very first invocation.</p>
 <span class="go">  --capability-posture read_only --anchor-assurance none \</span>
 <span class="go">  --confirm &lt;TOKEN&gt;</span>
 
-<span class="gp"># </span><span class="m">4</span>.<span class="w"> </span>Generate<span class="w"> </span>your<span class="w"> </span>MCP<span class="w"> </span>client<span class="w"> </span>configuration.
-<span class="go">pfsense-mcp-security setup write-client-config</span>
+<span class="gp"># </span><span class="m">4</span>.<span class="w"> </span>Generate<span class="w"> </span>your<span class="w"> </span>MCP<span class="w"> </span>client<span class="w"> </span>configuration<span class="w"> </span><span class="o">(</span>inspects<span class="w"> </span>first,<span class="w"> </span>prints<span class="w"> </span>a<span class="w"> </span>token<span class="o">)</span>.
+<span class="go">pfsense-mcp-security setup write-client-config \</span>
+<span class="go">  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \</span>
+<span class="go">  --capability-posture read_only --anchor-assurance none</span>
 </code></pre></div>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>

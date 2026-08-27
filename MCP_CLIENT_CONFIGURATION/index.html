@@ -4137,39 +4137,61 @@ copy one of the static per-client examples and edit it by hand.</p>
 <p>Once your server configuration works (see <a href="../INSTALLATION/">Installation</a>
 and the <a href="../SECURITY_SETUP_WIZARD/">setup wizard</a>), generate the exact
 client configuration block for the target you configured:</p>
-<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config</span>
+<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config \</span>
+<span class="go">  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \</span>
+<span class="go">  --capability-posture read_only --anchor-assurance none</span>
 </code></pre></div>
-<p><strong>Print-only by default.</strong> With no <code>--confirm</code>, this only prints the
-configuration block to your terminal — it never touches any file on
-disk. Copy the printed block into your MCP client's own configuration
-by hand, or use the write/merge mode below.</p>
+<p><code>--client</code> (<code>claude-desktop</code> or <code>codex</code> — <code>codex</code> also covers the
+ChatGPT desktop app, which shares Codex CLI's own config file),
+<code>--capability-posture</code>, and <code>--anchor-assurance</code> are required and must
+match the values your <code>setup</code>/<code>setup apply</code> run used. <code>--config-path</code> is
+required for <code>claude-desktop</code> (no built-in default); optional for
+<code>codex</code> (defaults to <code>~/.codex/config.toml</code>).</p>
+<p><strong>Inspection-only by default.</strong> With no <code>--confirm</code>, this only prints
+the proposed diff and a confirmation token — it never touches any file
+on disk. Copy the printed block into your MCP client's own
+configuration by hand, or use the write/merge mode below.</p>
 <h3 id="writemerge-mode">Write/merge mode<a class="headerlink" href="#writemerge-mode" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config --confirm &lt;TOKEN&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config \</span>
+<span class="go">  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \</span>
+<span class="go">  --capability-posture read_only --anchor-assurance none \</span>
+<span class="go">  --confirm &lt;TOKEN-FROM-THE-INSPECTION-ABOVE&gt;</span>
 </code></pre></div>
 <p>Passing the exact confirmation token a prior inspection printed (this
 is a <em>separate</em> token from any pfSense-side setup/apply confirmation —
-never reused across the two) enables <strong>write/merge mode</strong>:</p>
+never reused across the two) enables <strong>write/merge mode</strong>. You can
+additionally pass <code>--plan-digest &lt;DIGEST-FROM-THE-INSPECTION-ABOVE&gt;</code> —
+optional, but recommended: if the underlying pfSense-side plan has
+changed since you inspected it, this makes the command refuse rather
+than proceed against stale state.</p>
 <ul>
 <li><strong>Merge-only, never a whole-file replacement.</strong> This project's own
   test suite proves this directly (not merely documents it): an
   existing client config file's other entries, and any unrelated JSON/
   TOML content in the same file, survive unchanged — only the
   <code>pfsense</code> MCP server entry itself is added or updated.</li>
-<li><strong>Destination</strong> is the real, client-specific config file location
-  (e.g. Claude Desktop's <code>claude_desktop_config.json</code>) — the command
-  tells you exactly which path it targets before writing.</li>
+<li><strong>An automatic backup is made first.</strong> If the destination file
+  already exists, it is copied to <code>&lt;path&gt;.bak</code> (exclusive create — the
+  command refuses if a <code>.bak</code> from a prior interrupted attempt is
+  already present, rather than overwriting it) before the real file is
+  written.</li>
+<li><strong>Atomic write with read-back verification.</strong> After writing, the
+  command reads the file back and confirms it matches exactly; if not,
+  the original is restored (or the new file removed, if none existed
+  before) — no lasting change is made on a verification mismatch.</li>
 <li><strong>Malformed existing config is refused, not repaired.</strong> If the
   destination file already exists but isn't valid JSON/TOML for that
-  client, or the object shape at the merge point isn't what's
-  expected, the command refuses and makes no change — it does not
-  attempt to guess or fix a broken file for you.</li>
+  client, or the target path is a symlink or not owned by the current
+  user, the command refuses and makes no change — it does not attempt
+  to guess or fix a broken or unsafe file for you.</li>
 <li><strong>Confirmation is required for every write</strong> — there is no <code>--force</code>
   or "always write" flag; every invocation that would touch a real file
   needs its own fresh token from a prior inspection, exactly like
-  <code>setup apply</code>'s own confirmation model.</li>
+  <code>setup apply</code>'s own confirmation model. The confirmation is also
+  bound to the exact client, config path, and current on-disk file
+  content at inspection time — a file that changed since inspection is
+  refused, even with a valid token.</li>
 </ul>
-<p><strong>No backup file is created automatically.</strong> If you want one, copy the
-destination file yourself before running write/merge mode.</p>
 <h2 id="manual-per-client-examples">Manual, per-client examples<a class="headerlink" href="#manual-per-client-examples" title="Permanent link">&para;</a></h2>
 <p>If you'd rather edit client configuration by hand, or your client isn't
 covered by the generator above, see
