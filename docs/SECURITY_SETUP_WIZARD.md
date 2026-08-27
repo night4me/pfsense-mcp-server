@@ -83,14 +83,19 @@ run `setup` again to get a fresh, current plan and token.
 ### MCP client config generation
 
 ```console
-pfsense-mcp-security setup write-client-config
+pfsense-mcp-security setup write-client-config \
+  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
+  --capability-posture read_only --anchor-assurance none
 ```
 
-Once you have a working configuration, this prints (and, with its own
-separate `--confirm`, can write/merge into a real client config file)
-the exact MCP client configuration block for the target you just set
-up — see [Connect your MCP client](MCP_CLIENT_CONFIGURATION.md) for the
-full write/merge workflow and safety guarantees.
+`--client`, `--capability-posture`, and `--anchor-assurance` are
+required (matching the values your `setup` run used). Once you have a
+working configuration, this prints (and, with its own separate
+`--confirm`, can write/merge into a real client config file, with an
+automatic `.bak` backup first) the exact MCP client configuration block
+for the target you just set up — see
+[Connect your MCP client](MCP_CLIENT_CONFIGURATION.md) for the full
+write/merge workflow and safety guarantees.
 
 ### `doctor` — is this host ready for a protected-WRITE ceremony?
 
@@ -203,8 +208,10 @@ pfsense-mcp-security setup apply \
   --capability-posture read_only --anchor-assurance none \
   --confirm <TOKEN>
 
-# 4. Generate your MCP client configuration.
-pfsense-mcp-security setup write-client-config
+# 4. Generate your MCP client configuration (inspects first, prints a token).
+pfsense-mcp-security setup write-client-config \
+  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
+  --capability-posture read_only --anchor-assurance none
 ```
 
 ## Related

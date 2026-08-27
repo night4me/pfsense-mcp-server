@@ -12,44 +12,66 @@ and the [setup wizard](SECURITY_SETUP_WIZARD.md)), generate the exact
 client configuration block for the target you configured:
 
 ```console
-pfsense-mcp-security setup write-client-config
+pfsense-mcp-security setup write-client-config \
+  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
+  --capability-posture read_only --anchor-assurance none
 ```
 
-**Print-only by default.** With no `--confirm`, this only prints the
-configuration block to your terminal — it never touches any file on
-disk. Copy the printed block into your MCP client's own configuration
-by hand, or use the write/merge mode below.
+`--client` (`claude-desktop` or `codex` — `codex` also covers the
+ChatGPT desktop app, which shares Codex CLI's own config file),
+`--capability-posture`, and `--anchor-assurance` are required and must
+match the values your `setup`/`setup apply` run used. `--config-path` is
+required for `claude-desktop` (no built-in default); optional for
+`codex` (defaults to `~/.codex/config.toml`).
+
+**Inspection-only by default.** With no `--confirm`, this only prints
+the proposed diff and a confirmation token — it never touches any file
+on disk. Copy the printed block into your MCP client's own
+configuration by hand, or use the write/merge mode below.
 
 ### Write/merge mode
 
 ```console
-pfsense-mcp-security setup write-client-config --confirm <TOKEN>
+pfsense-mcp-security setup write-client-config \
+  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
+  --capability-posture read_only --anchor-assurance none \
+  --confirm <TOKEN-FROM-THE-INSPECTION-ABOVE>
 ```
 
 Passing the exact confirmation token a prior inspection printed (this
 is a *separate* token from any pfSense-side setup/apply confirmation —
-never reused across the two) enables **write/merge mode**:
+never reused across the two) enables **write/merge mode**. You can
+additionally pass `--plan-digest <DIGEST-FROM-THE-INSPECTION-ABOVE>` —
+optional, but recommended: if the underlying pfSense-side plan has
+changed since you inspected it, this makes the command refuse rather
+than proceed against stale state.
 
 - **Merge-only, never a whole-file replacement.** This project's own
   test suite proves this directly (not merely documents it): an
   existing client config file's other entries, and any unrelated JSON/
   TOML content in the same file, survive unchanged — only the
   `pfsense` MCP server entry itself is added or updated.
-- **Destination** is the real, client-specific config file location
-  (e.g. Claude Desktop's `claude_desktop_config.json`) — the command
-  tells you exactly which path it targets before writing.
+- **An automatic backup is made first.** If the destination file
+  already exists, it is copied to `<path>.bak` (exclusive create — the
+  command refuses if a `.bak` from a prior interrupted attempt is
+  already present, rather than overwriting it) before the real file is
+  written.
+- **Atomic write with read-back verification.** After writing, the
+  command reads the file back and confirms it matches exactly; if not,
+  the original is restored (or the new file removed, if none existed
+  before) — no lasting change is made on a verification mismatch.
 - **Malformed existing config is refused, not repaired.** If the
   destination file already exists but isn't valid JSON/TOML for that
-  client, or the object shape at the merge point isn't what's
-  expected, the command refuses and makes no change — it does not
-  attempt to guess or fix a broken file for you.
+  client, or the target path is a symlink or not owned by the current
+  user, the command refuses and makes no change — it does not attempt
+  to guess or fix a broken or unsafe file for you.
 - **Confirmation is required for every write** — there is no `--force`
   or "always write" flag; every invocation that would touch a real file
   needs its own fresh token from a prior inspection, exactly like
-  `setup apply`'s own confirmation model.
-
-**No backup file is created automatically.** If you want one, copy the
-destination file yourself before running write/merge mode.
+  `setup apply`'s own confirmation model. The confirmation is also
+  bound to the exact client, config path, and current on-disk file
+  content at inspection time — a file that changed since inspection is
+  refused, even with a valid token.
 
 ## Manual, per-client examples
 

@@ -140,7 +140,9 @@ Once your server configuration works, generate the exact client config
 block automatically:
 
 ```console
-pfsense-mcp-security setup write-client-config
+pfsense-mcp-security setup write-client-config \
+  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
+  --capability-posture read_only --anchor-assurance none
 ```
 
 Or copy one of the ready-made per-client guides — Claude Desktop,
