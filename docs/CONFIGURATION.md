@@ -76,6 +76,14 @@ pfsense-mcp-server
 
 ## Troubleshooting
 
+### The MCP client shows 0 tools, or fails to start the server
+
+Usually a wrong command path, or the venv's `pfsense-mcp-server` entry
+point isn't executable from where the client launches it. Run the exact
+command from your client's own `env`/`command` configuration directly
+in a shell and read stderr verbatim — a client UI often swallows the
+real error.
+
 ### The server exits with a configuration error
 
 Configuration fails closed. Confirm every required variable is present, the
@@ -89,12 +97,56 @@ The file must be a regular non-symlink file owned by the process user, with
 no group or other permission bits, and its first line must be non-empty and
 bounded. Parent directories should normally be mode `0700`.
 
+### `401` authentication failures
+
+Wrong API key, wrong `PFSENSE_IDENTITY`, or the key file has the wrong
+permissions/first-line format. Re-verify the key file's first line
+matches the key shown in pfSense's REST API user settings, and that
+`PFSENSE_IDENTITY` matches the pfSense user the key actually belongs
+to.
+
+### `403` insufficient-privilege failures on specific tools
+
+The pfSense identity lacks the narrow privilege that specific tool
+needs. Cross-check the required privilege in
+[`docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`](PFSENSE_LEAST_PRIVILEGE_MATRIX.md)
+against the identity's assigned privileges in pfSense — or use
+[the setup wizard](SECURITY_SETUP_WIZARD.md) to provision a fresh
+identity with exactly the right privilege set from the start.
+
 ### TLS verification fails
 
 Prefer `strict` with the system trust store. For an internal CA, set
 `PFSENSE_TLS_MODE=auto` and point `PFSENSE_TLS_CA_FILE` to a readable CA
 bundle. `insecure` disables certificate verification and should be limited
 to short, explicitly accepted diagnostics.
+
+### A specific tool always returns an empty or package-absent result
+
+The underlying pfSense feature or package (e.g. WireGuard) likely isn't
+installed/configured on that appliance. Confirm via pfSense's own
+package manager or configuration UI — this is expected behavior, not a
+bug. See [Compatibility](COMPATIBILITY.md) for exactly which tools are
+known to gate on a package this way.
+
+### REST API unreachable / connection refused
+
+The `pfrest`/`pfSense-pkg-RESTAPI` package is disabled or not installed
+on the appliance. Confirm the package is installed and enabled in
+pfSense's package manager, and confirm `PFSENSE_API_URL` and network
+reachability.
+
+### Works on one pfSense version, not another
+
+Check [Compatibility](COMPATIBILITY.md) for your exact platform/version
+combination before filing an issue — this may be a genuine platform/
+schema incompatibility rather than a configuration problem.
+
+### Timeouts under load
+
+Confirm the appliance itself is responsive via its own web UI first —
+default HTTP timeouts assume a normally-loaded appliance; this project
+does not currently expose a configurable timeout.
 
 ### No tools appear
 

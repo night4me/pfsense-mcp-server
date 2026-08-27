@@ -76,9 +76,13 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started:
-      - Install & quick start (GitHub README): https://github.com/night4me/pfsense-mcp-server#quick-start
+      - Installation: INSTALLATION.md
+      - Security setup wizard (pfsense-mcp-security): SECURITY_SETUP_WIZARD.md
+      - Connect your MCP client: MCP_CLIENT_CONFIGURATION.md
       - Configuration reference: CONFIGURATION.md
-      - Client setup examples (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md
+      - Compatibility: COMPATIBILITY.md
+      - Tool & guidance reference: TOOL_AND_GUIDANCE_REFERENCE.md
+      - Per-client config examples (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md
   - Security:
       - Security model: SECURITY_MODEL.md
       - Threat model: THREAT_MODEL.md

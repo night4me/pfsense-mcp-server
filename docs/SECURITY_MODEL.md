@@ -1,5 +1,71 @@
 # Security model
 
+## Why this project exists
+
+This project was built because I wanted AI assistance for pfSense
+without giving an LLM the ability to accidentally disconnect my own
+network.
+
+A firewall is not just another application. It is the foundation
+everything else depends on. Any software capable of changing firewall
+rules, routing, interfaces, DNS, VPN configuration, or other
+network-critical settings also has the ability to make that network
+unreachable — and "the model probably won't make a bad change" is not a
+safety mechanism, it's a hope. Those operations deserve a higher safety
+standard than simply exposing WRITE tools to an AI model.
+
+**This project deliberately started, and remains, READ-only by
+default.** Not because WRITE is impossible — a fully authorized,
+recoverable WRITE path exists and is described in
+[Authorization](#authorization) below — but because WRITE should be
+earned through architecture rather than enabled by implementation.
+
+**What makes the engineering different, not just the policy:**
+
+- **Explicit tool registration, never generic API dispatch.** Every
+  tool is one statically checked, named function calling one client
+  method — there is no `call_endpoint(path, method)` escape hatch an AI
+  (or a bug) could use to reach an unregistered endpoint.
+- **95 READ / 0 default-WRITE public contract**, enforced by an
+  automated snapshot test — a change to the public surface that isn't
+  reflected in the approved contract fails CI.
+- **Capability-based least privilege.** Each tool is gated behind a
+  named `Capability`; profiles grant capability sets, not raw endpoint
+  access.
+- **Deterministic public-contract validation** — the registered tool
+  set, its privilege mapping, and its documentation are all re-derived
+  from source and checked for drift on every run, not maintained by
+  hand.
+- **Secret-bearing fields omitted from models where confirmed present**,
+  instead of trusting the upstream API's own redaction behavior.
+- **Verification before promotion** — every tool is exercised against a
+  real pfSense instance (LAB or production) and confirmed to return the
+  expected shape before it is ever added to the public registry.
+- **Fail-closed handling** of ambiguous or sensitive capabilities:
+  unclear schema behavior is treated as unsafe until proven otherwise,
+  not implemented optimistically.
+- **CI, CodeQL, and a dedicated release-validation pipeline** gate every
+  change — see the rest of this page for what's actually enforced, not
+  just designed.
+
+**The READ trust path, in one diagram:**
+
+<!-- Rendered from assets/diagrams/read-trust-path.mmd -- see that file
+     to edit the diagram source, then regenerate this image. -->
+
+![READ trust path: AI/MCP client through stdio, an explicitly registered MCP tool, capability/profile gate, least-privilege mapping, one fixed typed client method, a GET-only pfREST call, the pfSense appliance, a typed model boundary excluding secret fields, to a safe MCP result](https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/read-trust-path.svg)
+
+Every one of the 95 tools takes this same path — no exceptions, no
+alternate route. The yellow boxes are hard gates (fail closed, not
+merely checked); the green box is where confirmed secret-bearing fields
+are structurally excluded, not filtered. See
+[the full architecture diagrams page](ARCHITECTURE_DIAGRAMS.md) for the
+detailed sequence diagram this summarizes.
+
+I don't mind if an AI answers a question incorrectly. I do mind if an AI
+accidentally disconnects my house from the Internet. That single design
+principle explains almost every architectural decision documented below.
+
 ## Trust boundary
 
 This server is intended for local stdio MCP use. The process that launches

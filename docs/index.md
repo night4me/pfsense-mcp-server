@@ -7,19 +7,19 @@ exposing raw shell access or a way to mutate the appliance by accident.
 **Current production contract: 95 pfSense READ tools + 1 official-
 guidance tool. 0 WRITE tools.** That split
 is deliberate: this project treats mutation as a safety-engineering
-problem, not a feature flag — the maintainer's own reasoning is in the
-README's
-["Why this project exists"](https://github.com/night4me/pfsense-mcp-server#why-this-project-exists)
-section. See [the Tier 1 overview](TIER1_ARCHITECTURE.md) below for the
+problem, not a feature flag — the maintainer's own reasoning is in
+[the security model's "Why this project exists"](SECURITY_MODEL.md#why-this-project-exists).
+See [the Tier 1 overview](TIER1_ARCHITECTURE.md) below for the
 engineering detail behind it.
 
 This site is a browsable, organized view of the technical documentation
-under `docs/`. It does not repeat the project's practical
-getting-started material — that stays authoritative in the repository
-itself:
+under `docs/`, including a complete getting-started path
+([Installation](INSTALLATION.md) → [Security setup wizard](SECURITY_SETUP_WIZARD.md) →
+[Connect your MCP client](MCP_CLIENT_CONFIGURATION.md)). A few things
+stay authoritative in the repository itself instead:
 
-- [README — install, quick start, example prompts](https://github.com/night4me/pfsense-mcp-server#readme)
-- [Client setup examples](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md)
+- [README — quick overview and copy/paste quick-start](https://github.com/night4me/pfsense-mcp-server#readme)
+- [Per-client config examples](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md)
 - [CONTRIBUTING — development workflow](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md)
 - [SECURITY — how to report a vulnerability](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md)
 
@@ -27,18 +27,20 @@ itself:
 
 | If you want to... | Go to |
 |---|---|
-| Install and run the server | [Getting Started](CONFIGURATION.md) |
+| Install and run the server | [Installation](INSTALLATION.md) |
+| Set up the operator CLI, or opt into protected WRITE | [Security setup wizard](SECURITY_SETUP_WIZARD.md) |
+| Connect an MCP client | [Connect your MCP client](MCP_CLIENT_CONFIGURATION.md) |
 | Know exactly what security properties are enforced (and which aren't) | [Security](SECURITY_MODEL.md) |
-| See every MCP tool this server registers | [API reference](API.md) |
+| See every MCP tool this server registers, and where guidance content comes from | [API reference](API.md) · [Tool & guidance reference](TOOL_AND_GUIDANCE_REFERENCE.md) |
 | Understand how the current READ path is built | [Architecture](ARCHITECTURE_DIAGRAMS.md) |
 | Understand the future WRITE-safety framework — and why it isn't active yet | [Tier 1](TIER1_ARCHITECTURE.md) |
 | Build, review, or release a change | [Release and contributing](RELEASE_CHECKLIST.md) |
 
 ## What is on this site
 
-- **Getting Started** — the full configuration reference and
-  troubleshooting guide; installation itself lives in the README (linked
-  above), since that's what a new visitor sees first on GitHub or PyPI.
+- **Getting Started** — installation, the operator security CLI, MCP
+  client configuration, the full environment-variable/configuration
+  reference, and compatibility evidence.
 - **Security** — the threat model, security model, abuse-case catalog, and
   the risk study behind every writable pfSense endpoint class this project
   has inventoried and *not yet* authorized. Start here if you're deciding
@@ -67,8 +69,10 @@ itself:
 ## Project status
 
 The production server is READ-only: 95 tools, zero WRITE tools, an empty
-WRITE endpoint allow-list. v0.5.0 is the current immutable, published
-release. It ships the Tier 1 safety framework — every new module remains
-structurally unreachable from production until an explicit, separately
-authorized activation decision is made. See the
-[public roadmap](ROADMAP.md) for what "done" looks like for this phase.
+WRITE endpoint allow-list. **v0.8.0 is the current immutable, published
+release** — see the [README's Release status](https://github.com/night4me/pfsense-mcp-server#release-status)
+section for the exact delta from each prior release. It ships the Tier 1
+safety framework — every new module remains structurally unreachable
+from production until an explicit, separately authorized activation
+decision is made. See the [public roadmap](ROADMAP.md) for what "done"
+looks like for this phase.
