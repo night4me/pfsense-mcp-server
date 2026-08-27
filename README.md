@@ -459,17 +459,20 @@ A browsable version of the full documentation set below is published at
 
 ## Release status
 
-**A `v0.8.0` release candidate is prepared on `main` but not yet
-tagged, released, or published to PyPI.** It adds the
-`pfsense-mcp-security recover` CLI subcommand and the full guided
-`setup`/`setup apply`/`setup write-client-config` provisioning wizard
-(ADR-021/ADR-033), plus a restart-classification correctness fix for
-`bootstrap` — all operator-facing CLI additions, never MCP tools. **No
-MCP capability change: the public contract remains byte-identical to
-`v0.7.2`** (95 pfSense READ tools + 1 official-guidance tool, 0 WRITE
-tools). See `CHANGELOG.md`'s `[Unreleased]` entry for the complete
-delta. Until `v0.8.0` is actually tagged and released, `v0.7.2` below
-remains the current immutable, published production baseline.
+**v0.8.0 is the immutable production baseline, published on PyPI —
+95 pfSense READ tools + 1 official-guidance tool, 0 WRITE tools.** A
+CLI-only expansion of the `pfsense-mcp-security` operator tooling
+(ADR-021/ADR-033) over `v0.7.2` — no MCP capability change, public
+contract byte-identical to `v0.7.2`. Adds the `pfsense-mcp-security
+recover` CLI subcommand (standalone ADR-033 recovery-execution
+orchestration) and the full guided `setup`/`setup apply`/`setup
+write-client-config` provisioning wizard, plus a restart-classification
+correctness fix for `bootstrap` (a prior operation journal is no longer
+unconditionally treated as requiring recovery attention on every
+subsequent run — one fresh, read-only, GET-only live observation is
+attempted first). See `CHANGELOG.md`'s `[0.8.0]` entry and
+`docs/ACCEPTANCE_v0.8.0.md` for the complete, independently verified
+evidence.
 
 **v0.7.2 is the immutable production baseline, published on PyPI —
 95 pfSense READ tools + 1 official-guidance tool, 0 WRITE tools.** A

@@ -1,18 +1,32 @@
 # Acceptance — v0.8.0
 
-**Status: release-candidate, ready for the Owner Approval Gate. Not yet
-tagged, not yet released, not yet published to PyPI.** This document
-accepts the `v0.8.0` release-candidate state at its preparation commit,
-once that commit passes the required local and remote gates (CI,
-CodeQL, and the release-check constituent commands not tied to
-already-being-published — see "Full validation" below) — all confirmed
-there. Creating the `v0.8.0` tag, publishing the GitHub Release, and
-uploading to PyPI each remain a separate, explicit owner decision, taken
-only after this document and the exact commit SHA it corresponds to
-have been reviewed. `v0.7.2`'s own tag, GitHub Release, and PyPI
-artifact remain unmoved as an accurate historical record and, until
-`v0.8.0` is actually published, remain the current immutable production
-baseline (see `README.md`'s "Release status" section).
+**Status: published — the `v0.8.0` tag and PyPI release point at this
+commit.** The annotated git tag `v0.8.0` was created and pushed pointing
+at commit `90e6cb15079c0b6bf8a78221d6ac022d0127715a`; the GitHub Release
+was published from that tag
+(<https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.8.0>),
+which triggered the `publish.yml` OIDC trusted-publishing workflow (run
+`33027545829`, `build` and `publish` jobs both `success`, including
+Sigstore attestation generation for both artifacts). PyPI's JSON API
+confirms `0.8.0` is `info.version` and the latest entry in `releases`;
+neither artifact is yanked. PyPI's own provenance API
+(`/integrity/pfsense-mcp-server/0.8.0/.../provenance`) returns a valid
+attestation bundle whose certificate SAN references this exact
+workflow file and the `refs/tags/v0.8.0` ref. A clean installation of
+`pfsense-mcp-server==0.8.0` from the real PyPI index (not the local
+build) was independently verified in a fresh, isolated environment:
+reports version `0.8.0`, `import pfsense_mcp` resolves from
+`site-packages`, the `pfsense-mcp-server` CLI entry point fails closed
+with a clean "configuration error" message (no traceback) when required
+environment variables are absent, `pfsense-mcp-security
+{--help, setup --help, recover --help, bootstrap --help}` all succeed, a
+non-interactive `setup` plan-only smoke reaches
+`overall_status: already_satisfied`, and a fresh
+`public_contract.build_contract()` call against the installed package
+shows exactly 96 registered tools (95 READ + 1 guidance, 0 WRITE). This
+status line was only written after that independent post-publication
+verification succeeded. `v0.7.2`'s own tag, GitHub Release, and PyPI
+artifact remain unmoved as an accurate historical record.
 
 ## Release scope
 
@@ -123,6 +137,24 @@ verification commands, output, and hashes.
 
 ## Full validation (re-run at v0.8.0's release-candidate commit)
 
+**Update (2026-08-27, published):** `scripts/release_state_check.py`
+was made phase-aware (candidate vs. published) in a narrow follow-up
+commit before tagging — `determine_release_phase()` derives the phase
+from one objective, offline git fact (a `v{version}` tag reachable from
+`HEAD`) rather than any document's own status text, so a stale claim
+can never silently downgrade a real publication. At the actual tagged
+commit, `90e6cb15079c0b6bf8a78221d6ac022d0127715a`, every check below
+passed with **zero failures**: `make quick` and `make validate` both
+PASSED with `4653 passed, 0 failed, 42 skipped`; `make release-check`
+(the full monolithic chain) PASSED for the first time in this release
+cycle, including `release_state_check: OK (v0.8.0, phase=candidate,
+clean tree)` at that pre-tag commit. This is the commit the `v0.8.0`
+tag actually points at. The paragraph below is preserved as the
+historical record of validation performed *before* that gate fix
+landed, at an earlier, superseded candidate commit
+(`261c1a2399c293eaf6ce8c3b63f758f1ea3776e3`) — not rewritten, per this
+project's own "historical evidence stays as written" convention.
+
 - `pytest` (full suite, `pytest-xdist`, normal deps): 4636 passed, **1
   known/expected failure**, 42 skipped. The one failure
   (`tests/test_release_state_check.py::test_current_release_state_documentation_is_consistent`)
@@ -160,9 +192,12 @@ verification commands, output, and hashes.
 
 ## Acceptance boundary
 
-This document accepts the v0.8.0 **release-candidate** state at its
-preparation commit. It does **not** authorize a tag, push of a tag,
-GitHub Release, TestPyPI/PyPI upload, or any further action. Each of
-those remains a separate, explicit owner decision, taken only after
-this document and the exact commit SHA it corresponds to have been
-reviewed.
+**Update (2026-08-27): publication complete.** The owner explicitly
+authorized "Publish v0.8.0 from
+90e6cb15079c0b6bf8a78221d6ac022d0127715a." Tag `v0.8.0`, the GitHub
+Release, and the PyPI upload were each performed following exactly the
+sequence this document originally described as pending, and each was
+independently re-verified after the fact (see the "Status" paragraph
+above). No version other than `v0.8.0` was published; the public MCP
+contract was not altered; no pfSense LAB or production mutation was
+performed as part of release.

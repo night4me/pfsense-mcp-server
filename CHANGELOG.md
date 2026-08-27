@@ -7,6 +7,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-27
+
 **CLI-only expansion of the `pfsense-mcp-security` operator tooling
 (ADR-021/ADR-033). No MCP capability change: the public MCP tool
 contract remains byte-identical to `v0.7.2` -- still 95 pfSense READ
