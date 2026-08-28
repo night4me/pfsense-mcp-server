@@ -449,9 +449,7 @@ def _format_plan_human(plan: SecurityPosturePlan) -> str:
         for step in plan.steps:
             lines.append(f"  [{step.order}] ({step.axis}) {step.action}")
             lines.append(f"      id:                     {step.step_id}")
-            lines.append(
-                _wrap(step.description, indent=" " * 30, initial_indent="      description:            ")
-            )
+            lines.append(_wrap(step.description, indent=" " * 30, initial_indent="      description:            "))
             lines.append(f"      mutation_class:         {step.mutation_class.value}")
             lines.append(f"      authorization_required: {step.authorization_required.value}")
             lines.append(f"      implementation_available: {step.implementation_available}")
@@ -591,9 +589,7 @@ def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
             lines.append(f"Recovery action needed: {decision.recovery_action.value}")
     if result.provisioning_outcome is not None:
         lines.append(f"Engine outcome: {result.provisioning_outcome.value}")
-        lines.append(
-            _wrap(result.provisioning_detail or "", indent=" " * 16, initial_indent="Engine detail:  ")
-        )
+        lines.append(_wrap(result.provisioning_detail or "", indent=" " * 16, initial_indent="Engine detail:  "))
     lines.append("")
     lines.append(
         _wrap(
