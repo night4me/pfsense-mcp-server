@@ -148,7 +148,10 @@ def test_bootstrap_never_prints_secret_looking_detail(capsys, monkeypatch):
 def test_bootstrap_help_documents_exit_codes_and_verification_status_and_setup_boundary(capsys):
     with pytest.raises(SystemExit):
         main(["bootstrap", "--help"])
-    out = capsys.readouterr().out
+    # v1.0.0 Product/UX closure arc (C3): help text now wraps to the
+    # terminal width (see _ParagraphHelpFormatter); normalize whitespace
+    # before substring matching so this assertion is width-independent.
+    out = " ".join(capsys.readouterr().out.split())
     assert "Exit codes:" in out
     for code_marker in ("0 success", "1 the engine ran", "2 the engine refused", "6 the environment"):
         assert code_marker in out

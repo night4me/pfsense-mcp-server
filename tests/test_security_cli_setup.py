@@ -1048,7 +1048,10 @@ def test_setup_module_never_imports_mcp_application_or_tool_registry():
 def test_help_documents_no_setup_apply_and_no_mutation(capsys):
     with pytest.raises(SystemExit):
         main(["setup", "--help"])
-    out = capsys.readouterr().out
+    # v1.0.0 Product/UX closure arc (C3): help text now wraps to the
+    # terminal width (see _ParagraphHelpFormatter); normalize whitespace
+    # before substring matching so this assertion is width-independent.
+    out = " ".join(capsys.readouterr().out.split())
     assert "NEVER mutates" in out
     assert "no 'continue and apply' path from this command" in out
 

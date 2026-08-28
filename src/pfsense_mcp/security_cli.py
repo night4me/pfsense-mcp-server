@@ -118,7 +118,9 @@ import argparse
 import json
 import os
 import shlex
+import shutil
 import sys
+import textwrap
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -330,7 +332,7 @@ def _format_human(discovery: SecurityPostureDiscovery) -> str:
         f"  write capabilities active:  {cap.write_capabilities_active} of {cap.write_capabilities_total}",
         f"  allow-list entries:         {len(cap.allow_list_entries)}",
     ]
-    lines.extend(f"  - {line}" for line in cap.evidence)
+    lines.extend(_wrap(line, indent="    ", initial_indent="  - ") for line in cap.evidence)
     lines.extend(
         [
             "",
@@ -348,21 +350,27 @@ def _format_human(discovery: SecurityPostureDiscovery) -> str:
             f"  witness matches baseline:    {anchor.witness_matches_baseline}",
         ]
     )
-    lines.extend(f"  - {line}" for line in anchor.evidence)
+    lines.extend(_wrap(line, indent="    ", initial_indent="  - ") for line in anchor.evidence)
     lines.append("")
     if anchor.evidence_state is AnchorEvidenceState.PROVISIONED_MISMATCH:
         lines.append(
-            "WARNING: witness/store mismatch detected -- this is a security-relevant anomaly. "
-            "Reported only; no reconciliation was attempted."
+            _wrap(
+                "WARNING: witness/store mismatch detected -- this is a security-relevant anomaly. "
+                "Reported only; no reconciliation was attempted."
+            )
         )
     else:
         lines.append(
-            "Note: read_only + hardware_witness is a valid, representable combination in the accepted "
-            "ADR-021 two-axis model -- not one of the three curated setup presets, but fully supported."
+            _wrap(
+                "Note: read_only + hardware_witness is a valid, representable combination in the accepted "
+                "ADR-021 two-axis model -- not one of the three curated setup presets, but fully supported."
+            )
         )
     lines.append(
-        "This report is read-only discovery only (ADR-021 Phase B). Provisioning happens only through "
-        "the separate `bootstrap`/`setup apply`/`recover` subcommands, never this one."
+        _wrap(
+            "This report is read-only discovery only (ADR-021 Phase B). Provisioning happens only through "
+            "the separate `bootstrap`/`setup apply`/`recover` subcommands, never this one."
+        )
     )
     return "\n".join(lines)
 
@@ -432,16 +440,18 @@ def _format_plan_human(plan: SecurityPosturePlan) -> str:
         "",
     ]
     for line in plan.validity_evidence:
-        lines.append(f"  - {line}")
+        lines.append(_wrap(line, indent="    ", initial_indent="  - "))
     for line in plan.blocking_findings:
-        lines.append(f"BLOCKING: {line}")
+        lines.append(_wrap(line, indent="          ", initial_indent="BLOCKING: "))
     if plan.steps:
         lines.append("")
         lines.append("Steps (ordered; none executed):")
         for step in plan.steps:
             lines.append(f"  [{step.order}] ({step.axis}) {step.action}")
             lines.append(f"      id:                     {step.step_id}")
-            lines.append(f"      description:            {step.description}")
+            lines.append(
+                _wrap(step.description, indent=" " * 30, initial_indent="      description:            ")
+            )
             lines.append(f"      mutation_class:         {step.mutation_class.value}")
             lines.append(f"      authorization_required: {step.authorization_required.value}")
             lines.append(f"      implementation_available: {step.implementation_available}")
@@ -450,10 +460,12 @@ def _format_plan_human(plan: SecurityPosturePlan) -> str:
             lines.append(f"      prerequisite_satisfied: {step.prerequisite_satisfied}")
             lines.append(f"      blocked:                {step.blocked}")
             if step.blocked_reason:
-                lines.append(f"      blocked_reason:         {step.blocked_reason}")
+                lines.append(
+                    _wrap(step.blocked_reason, indent=" " * 30, initial_indent="      blocked_reason:         ")
+                )
     lines.append("")
     for line in plan.notes:
-        lines.append(line)
+        lines.append(_wrap(line))
     return "\n".join(lines)
 
 
@@ -506,21 +518,26 @@ def _format_doctor_human(result: DoctorResult, posture: CapabilityPostureDiscove
     # explanatory framing is new.
     if posture.value is CapabilityPosture.READ_ONLY:
         lines.append(
-            "You're using read-only access (the default, and what most users want). The "
-            "checks below are about a separate, optional capability -- protected changes -- "
-            "and do not affect your read-only access either way."
+            _wrap(
+                "You're using read-only access (the default, and what most users want). The "
+                "checks below are about a separate, optional capability -- protected changes -- "
+                "and do not affect your read-only access either way."
+            )
         )
         lines.append("")
     lines.append(f"Overall: {'READY' if result.ready else 'NOT READY'}")
     lines.append("")
     for check in result.checks:
-        lines.append(f"  [{_STATUS_SYMBOL[check.status]}] {check.description} ({check.check_id})")
-        lines.append(f"        {check.detail}")
+        marker = f"  [{_STATUS_SYMBOL[check.status]}] "
+        lines.append(_wrap(f"{check.description} ({check.check_id})", indent="      ", initial_indent=marker))
+        lines.append(_wrap(check.detail, indent="        ", initial_indent="        "))
     lines.append("")
     lines.append(
-        "Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state was "
-        "changed. Checks artifact-exchange path cleanliness and witness readiness only, not the full "
-        "build_production_runtime() prerequisite set."
+        _wrap(
+            "Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state was "
+            "changed. Checks artifact-exchange path cleanliness and witness readiness only, not the full "
+            "build_production_runtime() prerequisite set."
+        )
     )
     return "\n".join(lines)
 
@@ -563,7 +580,7 @@ def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
         "pfsense-mcp-security: ADR-033 least-privilege service-account bootstrap orchestration",
         "",
         f"Outcome: {result.outcome.value}",
-        f"Detail:  {result.detail}",
+        _wrap(result.detail, indent="         ", initial_indent="Detail:  "),
     ]
     if result.operation_id is not None:
         lines.append(f"Operation id: {result.operation_id}")
@@ -574,18 +591,24 @@ def _format_bootstrap_human(result: BootstrapOrchestrationResult) -> str:
             lines.append(f"Recovery action needed: {decision.recovery_action.value}")
     if result.provisioning_outcome is not None:
         lines.append(f"Engine outcome: {result.provisioning_outcome.value}")
-        lines.append(f"Engine detail:  {result.provisioning_detail}")
+        lines.append(
+            _wrap(result.provisioning_detail or "", indent=" " * 16, initial_indent="Engine detail:  ")
+        )
     lines.append("")
     lines.append(
-        "This subcommand (along with `recover`) can mutate pfSense state. Verified offline "
-        "(synthetic/fake HTTP fixtures) and, once, live against a disposable LAB appliance under an "
-        "explicit, ceremony-specific owner authorization (2026-08-26) that does not stand for any "
-        "future run."
+        _wrap(
+            "This subcommand (along with `recover`) can mutate pfSense state. Verified offline "
+            "(synthetic/fake HTTP fixtures) and, once, live against a disposable LAB appliance under an "
+            "explicit, ceremony-specific owner authorization (2026-08-26) that does not stand for any "
+            "future run."
+        )
     )
     lines.append(
-        "Never prints or logs an API key, password, or any other secret value. A freshly generated "
-        "service-account key is written only to the configured PFSENSE_SERVICE_API_KEY_FILE custody "
-        "path (owner-only permissions), never to stdout/stderr/JSON output."
+        _wrap(
+            "Never prints or logs an API key, password, or any other secret value. A freshly generated "
+            "service-account key is written only to the configured PFSENSE_SERVICE_API_KEY_FILE custody "
+            "path (owner-only permissions), never to stdout/stderr/JSON output."
+        )
     )
     return "\n".join(lines)
 
@@ -628,7 +651,7 @@ def _format_recover_human(result: RecoveryOrchestrationResult) -> str:
         "pfsense-mcp-security: ADR-033 recovery-execution orchestration",
         "",
         f"Outcome: {result.outcome.value}",
-        f"Detail:  {result.detail}",
+        _wrap(result.detail, indent="         ", initial_indent="Detail:  "),
     ]
     if result.operation_id is not None:
         lines.append(f"Operation id: {result.operation_id}")
@@ -647,12 +670,53 @@ def _format_recover_human(result: RecoveryOrchestrationResult) -> str:
     lines.append("")
     lines.append("Default (no --execute) is read-only inspection only -- makes no pfSense mutation.")
     lines.append(
-        "Execution requires both --execute <ACTION> and the exact confirmation token this inspection "
-        "just printed; a missing, wrong, stale, or cross-target/object/action/incident token is refused "
-        "before any mutating HTTP call."
+        _wrap(
+            "Execution requires both --execute <ACTION> and the exact confirmation token this inspection "
+            "just printed; a missing, wrong, stale, or cross-target/object/action/incident token is refused "
+            "before any mutating HTTP call."
+        )
     )
     lines.append("Never prints or logs an API key, password, or any other secret value.")
     return "\n".join(lines)
+
+
+def _wrap(text: str, *, indent: str = "", initial_indent: str | None = None) -> str:
+    """Wrap free-form prose in command *output* (not --help text, see
+    _ParagraphHelpFormatter) to the terminal width. Found via v1.0.0
+    Product/UX closure arc C3's narrow-terminal dogfood: discover/plan/
+    doctor's own explanatory prose (evidence bullets, notes, diagnostic
+    footers) was being emitted as single unwrapped lines up to 400+
+    characters at 60 columns. break_long_words/break_on_hyphens are off
+    -- a long unbreakable token (a plan digest, confirmation token, or
+    URL) must overflow its own line rather than be silently split across
+    two, which would corrupt it for copy/paste. `initial_indent`, if
+    given, prefixes only the first line (e.g. a "  - " bullet marker)
+    while `indent` aligns every continuation line beneath it."""
+    width = max(shutil.get_terminal_size(fallback=(80, 24)).columns, 20)
+    return textwrap.fill(
+        text,
+        width,
+        initial_indent=indent if initial_indent is None else initial_indent,
+        subsequent_indent=indent,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+
+
+class _ParagraphHelpFormatter(argparse.HelpFormatter):
+    """Wraps `description`/`epilog` text to the terminal width, like
+    argparse's own default formatter, but preserves blank-line paragraph
+    breaks -- unlike `RawDescriptionHelpFormatter` (never wraps, at any
+    width; found via v1.0.0 Product/UX closure arc C3's narrow-terminal
+    dogfood to produce a 449-character unwrapped line at 60 columns) or
+    the plain default formatter (collapses paragraph breaks, losing the
+    author's own exit-code/paragraph structure)."""
+
+    def _fill_text(self, text: str, width: int, indent: str) -> str:
+        paragraphs = text.split("\n\n")
+        return "\n\n".join(
+            textwrap.fill(paragraph, width, initial_indent=indent, subsequent_indent=indent) for paragraph in paragraphs
+        )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -676,7 +740,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "evidence state is provisioned_mismatch (the live witness value disagrees with the persisted "
             "high-water mark) -- a security-relevant anomaly, reported only, never auto-resolved."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     discover_parser.add_argument(
         "--json",
@@ -716,7 +780,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "secret, a bearer token, or proof of operator consent. No command in this build creates, "
             "accepts, or verifies an authorization artifact."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     plan_parser.add_argument(
         "--capability-posture",
@@ -760,7 +824,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "witness or store state -- it only reads filesystem metadata and delegates witness readiness "
             "to the same read-only discovery `discover` itself already uses."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     doctor_parser.add_argument(
         "--json",
@@ -818,7 +882,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "freshly generated service-account key is written only to the owner-only "
             "PFSENSE_SERVICE_API_KEY_FILE custody path."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     bootstrap_parser.add_argument(
         "--json",
@@ -867,7 +931,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "logs, or serializes an API key, password, or any other secret value -- the confirmation "
             "token is a derived confirmation artifact, not a credential."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     recover_parser.add_argument(
         "--execute",
@@ -930,7 +994,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "have failed and left RECOVERY_REQUIRED state, this command does not detect it -- run "
             "`pfsense-mcp-security recover` directly to inspect."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     setup_parser.add_argument(
         "--non-interactive",
@@ -1046,7 +1110,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "other secret value -- the confirmation token and the recovery confirmation token are both "
             "derived confirmation artifacts, not credentials."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     apply_parser.add_argument(
         "--capability-posture",
@@ -1131,7 +1195,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "credential, and the generated snippet itself never contains a live secret value, only a "
             "key-file *path* placeholder."
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_ParagraphHelpFormatter,
     )
     write_client_config_parser.add_argument(
         "--client",

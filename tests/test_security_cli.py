@@ -163,7 +163,10 @@ def test_plan_help_clarifies_safe_to_proceed_meaning(capsys):
     with pytest.raises(SystemExit) as excinfo:
         main(["plan", "--help"])
     assert excinfo.value.code == 0
-    out = capsys.readouterr().out
+    # v1.0.0 Product/UX closure arc (C3): help text now wraps to the
+    # terminal width (see _ParagraphHelpFormatter); normalize whitespace
+    # before substring matching so this assertion is width-independent.
+    out = " ".join(capsys.readouterr().out.split())
     assert "'Safe to proceed' means only" in out
     assert "never authorization, approval, execution-readiness" in out
 
@@ -210,7 +213,12 @@ def test_plan_help_documents_plan_digest_meaning(capsys):
     with pytest.raises(SystemExit) as excinfo:
         main(["plan", "--help"])
     assert excinfo.value.code == 0
-    out = capsys.readouterr().out
+    # v1.0.0 Product/UX closure arc (C3): help text now wraps to the
+    # terminal width (see _ParagraphHelpFormatter), so a phrase may be
+    # split across a line break at some widths -- normalize whitespace
+    # before substring matching since this test cares about content,
+    # not literal line breaks.
+    out = " ".join(capsys.readouterr().out.split())
     assert "'Plan digest' is a deterministic identity value" in out
     assert "never authorization, a" in out
 
@@ -260,7 +268,10 @@ def test_plan_help_documents_exit_codes_and_non_authorization(capsys):
     with pytest.raises(SystemExit) as excinfo:
         main(["plan", "--help"])
     assert excinfo.value.code == 0
-    out = capsys.readouterr().out
+    # v1.0.0 Product/UX closure arc (C3): help text now wraps to the
+    # terminal width (see _ParagraphHelpFormatter); normalize whitespace
+    # before substring matching so this assertion is width-independent.
+    out = " ".join(capsys.readouterr().out.split())
     assert "Exit codes" in out
     assert "not execution authorization" in out
     assert "no subsequent 'apply this plan' command exists" in out
