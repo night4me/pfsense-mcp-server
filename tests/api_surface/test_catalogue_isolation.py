@@ -190,9 +190,9 @@ def test_public_contract_remains_95_read_0_write_after_api_surface() -> None:
     read_tools = [t for t in tools if t.name in KNOWN_READ_TOOL_NAMES]
     guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 96
+    assert len(tools) == 97
     assert len(read_tools) == 95
-    assert len(guidance_tools) == 1
+    assert len(guidance_tools) == 2
     assert len(write_tools) == 0
 
 

@@ -237,18 +237,20 @@ def test_resolve_privilege_missing_endpoint_fails_closed_never_falls_back_to_sou
 
 def test_read_profile_requirements_has_95_entries_with_exactly_one_local_only():
     requirements = read_profile_requirements()
-    # 95 pfSense READ tools + 1 guidance tool (official_guidance, owner-
-    # authorized 2026-08-22) = 96 entries. official_guidance is local-only
-    # from this mechanical derivation's point of view for the same reason
-    # mcp_info is: it makes no *direct* client.<method>() call in its own
-    # source (it delegates identity resolution through
-    # resolve_appliance_identity(client) instead) -- so it correctly
-    # requires no pfSense privilege of its own, consistent with it not
-    # being gated by the Capability/privilege/profile system at all.
-    assert len(requirements) == 96
+    # 95 pfSense READ tools + 2 guidance tools (official_guidance, owner-
+    # authorized 2026-08-22; api_guidance, owner-authorized 2026-08-28) =
+    # 97 entries. Both guidance tools are local-only from this mechanical
+    # derivation's point of view for the same reason mcp_info is: neither
+    # makes a *direct* client.<method>() call in its own source (each
+    # delegates through an indirection -- resolve_appliance_identity(client)
+    # for official_guidance, ApplianceSchemaCache.lookup_*(client, ...) for
+    # api_guidance) -- so both correctly require no pfSense privilege of
+    # their own, consistent with neither being gated by the
+    # Capability/privilege/profile system at all.
+    assert len(requirements) == 97
     local_only = [r for r in requirements if r.url is None]
-    assert len(local_only) == 2
-    assert {r.tool_name for r in local_only} == {"mcp_info", "official_guidance"}
+    assert len(local_only) == 3
+    assert {r.tool_name for r in local_only} == {"mcp_info", "official_guidance", "api_guidance"}
 
 
 def test_official_guidance_identity_dependency_is_already_in_the_documented_read_privilege_set(live_schema):

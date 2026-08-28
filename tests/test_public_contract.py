@@ -11,11 +11,11 @@ def test_public_contract_is_complete_and_security_preserving():
     contract = build_contract()
     tools = contract["tools"]
 
-    # 95 pfSense READ tools + 1 guidance tool (pfsense_get_official_guidance,
+    # 95 pfSense READ tools + 2 guidance tools (pfsense_get_official_guidance,
     # owner-authorized 2026-08-22) -- accounted for separately below, never
     # blended into "96 READ tools" (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md).
-    assert len(tools) == 96
-    assert len({tool["name"] for tool in tools}) == 96
+    assert len(tools) == 97
+    assert len({tool["name"] for tool in tools}) == 97
 
     read_tools = [tool for tool in tools if tool["tool_class"] == "read"]
     assert len(read_tools) == 95
@@ -33,13 +33,13 @@ def test_public_contract_is_complete_and_security_preserving():
     assert local_only_tool["annotations"] == {"openWorldHint": False, "readOnlyHint": True}
 
     guidance_tools = [tool for tool in tools if tool["tool_class"] == "guidance"]
-    assert len(guidance_tools) == 1
-    guidance_tool = guidance_tools[0]
-    assert guidance_tool["name"] == "pfsense_get_official_guidance"
-    assert guidance_tool["capability"] is None
-    assert guidance_tool["client_method"] is None
-    assert guidance_tool["endpoint"] is None
-    assert guidance_tool["annotations"] == {"openWorldHint": True, "readOnlyHint": True, "destructiveHint": False}
+    assert len(guidance_tools) == 2
+    assert {tool["name"] for tool in guidance_tools} == {"pfsense_get_official_guidance", "pfsense_get_api_guidance"}
+    for guidance_tool in guidance_tools:
+        assert guidance_tool["capability"] is None
+        assert guidance_tool["client_method"] is None
+        assert guidance_tool["endpoint"] is None
+        assert guidance_tool["annotations"] == {"openWorldHint": True, "readOnlyHint": True, "destructiveHint": False}
 
     assert SNAPSHOT.is_file()
 

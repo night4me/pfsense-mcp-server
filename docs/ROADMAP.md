@@ -35,8 +35,8 @@ an accurate historical record of what shipped and when — not rewritten
 to look cleaner. Treat "v0.3.0" in their text as the baseline *at the
 time those sections were written*, not the current one.
 
-- Production MCP surface: **95 pfSense READ tools + 1 official-guidance
-  tool, 0 default-reachable WRITE tools** — the READ/WRITE split is
+- Production MCP surface: **95 pfSense READ tools + 2 documentation
+  guidance tools, 0 default-reachable WRITE tools** — the READ/WRITE split is
   enforced mechanically on every CI run
   (`scripts/write_capability_check.py`), not merely documented.
 - **One WRITE capability now exists and is `verified=True`**:

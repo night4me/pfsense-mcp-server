@@ -150,6 +150,7 @@ nav:
           - ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live): adr/ADR-032-nexus-read-transport-architecture.md
           - ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired): adr/ADR-033-pfsense-least-privilege-bootstrap-architecture.md
           - ADR-034 README Mermaid to static-SVG PyPI compatibility patch: adr/ADR-034-mermaid-pypi-compatibility.md
+          - ADR-035 pfREST live documentation guidance layer: adr/ADR-035-pfrest-live-guidance-layer.md
       - Subsystem specifications:
           - Protected artifact encryption: tier1/specs/protected_artifact_encryption.md
           - Key lifecycle: tier1/specs/key_lifecycle.md

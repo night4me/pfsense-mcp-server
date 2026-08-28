@@ -40,7 +40,7 @@ READ_TOOLS_DIR = ROOT / "src/pfsense_mcp/tools/read"
 #: call in its own body -- also zero *direct* calls, for a different,
 #: documented reason (see scripts/public_contract.py's GUIDANCE_TOOL_NAMES
 #: comment and official_guidance.py's own module docstring).
-EXPECTED_ZERO_CLIENT_CALL_TOOLS = {"mcp_info.py", "official_guidance.py"}
+EXPECTED_ZERO_CLIENT_CALL_TOOLS = {"mcp_info.py", "official_guidance.py", "api_guidance.py"}
 
 _DYNAMIC_ATTRIBUTE_BUILTINS = {"getattr", "setattr", "hasattr"}
 
@@ -95,7 +95,7 @@ def test_exactly_two_tool_files_have_zero_client_method_calls_and_they_are_the_e
 def test_fifty_nine_tool_files_exist_matching_the_public_contract() -> None:
     # 95 pfSense READ tool files + 1 guidance tool file (official_guidance.py,
     # owner-authorized 2026-08-22) -- all still live under tools/read/.
-    assert len(_tool_files()) == 96
+    assert len(_tool_files()) == 97
 
 
 def test_no_tool_file_uses_getattr_setattr_or_hasattr() -> None:

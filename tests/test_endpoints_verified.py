@@ -1202,3 +1202,22 @@ def test_vpn_wireguard_tunnel_addresses_path_suffix_has_no_api_prefix():
 
 def test_vpn_wireguard_tunnel_addresses_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.path_suffix == "/vpn/wireguard/tunnel/addresses"
+
+
+def test_system_schema_openapi_is_verified():
+    """pfREST_LIVE_GUIDANCE_ARC (2026-08-28): LAB-verified via an
+    authenticated GET against https://pfsense-test.lab.invalid -- 200,
+    raw unwrapped OpenAPI document (no pfSense {"data": ...} envelope,
+    unlike every other endpoint), openapi=3.0.0, 267 paths, 186 schemas.
+    Internal-only -- never a direct client.<method>() call inside any
+    tools/read/*.py file; consumed exclusively by
+    pfsense_mcp.pfrest_docs.appliance_schema."""
+    assert Endpoints.SYSTEM_SCHEMA_OPENAPI.verified is True
+
+
+def test_system_schema_openapi_path_suffix_has_no_api_prefix():
+    assert not Endpoints.SYSTEM_SCHEMA_OPENAPI.path_suffix.startswith("/api")
+
+
+def test_system_schema_openapi_path_suffix_is_correct():
+    assert Endpoints.SYSTEM_SCHEMA_OPENAPI.path_suffix == "/schema/openapi"

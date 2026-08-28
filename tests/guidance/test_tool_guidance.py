@@ -193,15 +193,24 @@ def test_tool_guidance_module_imports_no_safety_authority_module():
     assert offenders == set()
 
 
-def test_tool_guidance_is_not_yet_wired_into_any_production_module():
-    """Deliberate, this arc: no production module outside the guidance
-    package itself and this test file may import `tool_guidance` yet --
-    it is a tested foundation, not yet exposed via any MCP tool. This
-    guards against silent, unreviewed scope creep in either direction:
-    if a future slice wires it in, this test must be updated as part of
-    that same reviewed change, exactly mirroring
-    `test_isolation.py::test_guidance_package_is_imported_by_exactly_one_reviewed_production_module`'s
-    own pattern for `official_guidance.py`."""
+#: Updated 2026-08-28 (pfREST_LIVE_GUIDANCE_ARC): tool_guidance is now
+#: deliberately wired into exactly one reviewed production module,
+#: `pfsense_get_api_guidance` -- see that tool's own module docstring
+#: for why. A change to this constant is itself the kind of thing that
+#: must be a reviewed diff, not a silent expansion (same discipline as
+#: `test_isolation.py`'s `ALLOWED_GUIDANCE_IMPORTERS`).
+_ALLOWED_TOOL_GUIDANCE_CONSUMER = "src/pfsense_mcp/tools/read/api_guidance.py"
+
+
+def test_tool_guidance_is_wired_into_exactly_one_reviewed_production_module():
+    """Originally (this arc's predecessor): tool_guidance was a tested
+    foundation not yet exposed via any MCP tool. Revised 2026-08-28: it
+    is now wired into `pfsense_get_api_guidance`'s PROJECT_AUTHORED
+    evidence for query_mode="tool" -- deliberately, as part of this
+    arc's own Phase 9. This guards against silent, unreviewed scope
+    creep in either direction: an additional, undocumented consumer
+    fails this test just as loudly as the original "zero consumers"
+    version did."""
 
     production = ROOT / "src/pfsense_mcp"
     offenders = []
@@ -212,5 +221,15 @@ def test_tool_guidance_is_not_yet_wired_into_any_production_module():
             continue
         imported = _imported_modules(path)
         if any(m == "pfsense_mcp.guidance.tool_guidance" for m in imported):
-            offenders.append(path.relative_to(ROOT).as_posix())
+            relative = path.relative_to(ROOT).as_posix()
+            if relative != _ALLOWED_TOOL_GUIDANCE_CONSUMER:
+                offenders.append(relative)
     assert offenders == []
+
+
+def test_allowed_tool_guidance_consumer_actually_imports_tool_guidance():
+    """Flip side: confirm the allowed exception is not stale."""
+    path = ROOT / _ALLOWED_TOOL_GUIDANCE_CONSUMER
+    assert path.is_file(), f"{_ALLOWED_TOOL_GUIDANCE_CONSUMER} no longer exists -- remove the exception"
+    imported = _imported_modules(path)
+    assert any(m == "pfsense_mcp.guidance.tool_guidance" for m in imported)

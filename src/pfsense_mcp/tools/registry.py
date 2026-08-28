@@ -21,6 +21,7 @@ from ..write_endpoints import WriteEndpointInfo, WriteEndpoints
 from .audit import audit_logged
 from .read import (
     acme_settings,
+    api_guidance,
     arp_table,
     auth_keys,
     bind_settings,
@@ -249,15 +250,17 @@ WRITE_TOOL_ANNOTATION_POLICY = ToolAnnotations(
 KNOWN_WRITE_TOOL_NAMES: frozenset[str] = frozenset({"set_firewall_alias_description_v1"})
 
 #: pfsense_get_official_guidance (owner-authorized 2026-08-22, Candidate A
-#: from GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md). Deliberately
-#: its own set, disjoint from KNOWN_READ_TOOL_NAMES: a guidance tool is
-#: not a pfSense appliance READ capability -- it is not gated by, and
-#: does not consume, the Capability/privilege/profile system, and must
-#: never be counted as a 96th READ tool. See official_guidance.py's
-#: module docstring for the full rationale.
+#: from GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md) and
+#: pfsense_get_api_guidance (owner-authorized 2026-08-28,
+#: pfREST_LIVE_GUIDANCE_ARC). Deliberately their own set, disjoint from
+#: KNOWN_READ_TOOL_NAMES: a guidance tool is not a pfSense appliance READ
+#: capability -- it is not gated by, and does not consume, the
+#: Capability/privilege/profile system, and must never be counted as a
+#: 96th/97th READ tool. See official_guidance.py's and api_guidance.py's
+#: own module docstrings for the full rationale of each.
 GUIDANCE_TOOL_ANNOTATION_POLICY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
 
-KNOWN_GUIDANCE_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_get_official_guidance"})
+KNOWN_GUIDANCE_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_get_official_guidance", "pfsense_get_api_guidance"})
 
 
 class ToolRegistry:
@@ -480,6 +483,7 @@ class ToolRegistry:
         # filtering, same as every other tool (_register_guidance_tool()).
         if self._capabilities:
             self._register_official_guidance()
+            self._register_api_guidance()
 
         self.register_all_write()
 
@@ -779,6 +783,16 @@ class ToolRegistry:
         why this must never join `_registered_read_names`."""
         fn = official_guidance.build(self._client)
         wrapped = audit_logged("pfsense_get_official_guidance", self._identity)(fn)
+        self._register_guidance_tool(wrapped)
+
+    def _register_api_guidance(self) -> None:
+        """pfsense_get_api_guidance (owner-authorized 2026-08-28,
+        pfREST_LIVE_GUIDANCE_ARC). Same guidance-tool registration path
+        as _register_official_guidance() above -- see api_guidance.py's
+        own module docstring for why this is a separate tool rather than
+        an extension of pfsense_get_official_guidance."""
+        fn = api_guidance.build(self._client)
+        wrapped = audit_logged("pfsense_get_api_guidance", self._identity)(fn)
         self._register_guidance_tool(wrapped)
 
     def _register_interface_vlan_read(self) -> None:

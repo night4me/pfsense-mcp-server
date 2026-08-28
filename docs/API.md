@@ -1,11 +1,11 @@
 # MCP tool reference
 
-Version: 0.4.0 release state
+Version: 0.8.0 release state
 Profile: `auditor`  
-Registered tools: 95 READ, 1 guidance, 0 WRITE
+Registered tools: 95 READ, 2 guidance, 0 WRITE
 
 The normalized public contract is checked into
-`tests/contracts/mcp_public_contract_v0.4.0.json`. It records tool names,
+`tests/contracts/mcp_public_contract_v0.8.0.json`. It records tool names,
 descriptions, input/output schemas, annotations, capability ownership, client
 methods, and verified GET endpoint ownership. `make validate` fails on drift.
 After explicit approval of an intentional public API change, regenerate it with

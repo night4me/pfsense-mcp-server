@@ -827,6 +827,19 @@ class PfSenseClient:
         raw = self._rest.get(Endpoints.SYSTEM_RESTAPI_VERSION)
         return _parse_object_response(raw, "/system/restapi/version", SystemRestApiVersion.from_api)
 
+    def get_system_schema_openapi(self) -> dict[str, Any]:
+        """The appliance's own full OpenAPI document. Deliberately
+        returns the raw parsed dict, never a typed model -- this is not
+        a pfSense domain object, and no consumer needs more than a
+        handful of top-level keys (`paths`, `components.schemas`) from a
+        document that can be several megabytes. Internal-only: no public
+        MCP tool calls this method directly (see Endpoints.SYSTEM_SCHEMA_OPENAPI's
+        own comment) -- pfsense_mcp.pfrest_docs.appliance_schema is the
+        one caller, mirroring resolve_appliance_identity()'s reuse
+        pattern for pfsense_get_official_guidance.
+        """
+        return self._rest.get(Endpoints.SYSTEM_SCHEMA_OPENAPI)
+
     def get_firewall_virtual_ips(
         self, *, include_identifying_metadata: bool = False, limit: int = 100
     ) -> list[FirewallVirtualIp]:

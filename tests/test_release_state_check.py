@@ -280,9 +280,9 @@ def test_release_state_check_changes_do_not_touch_the_public_mcp_contract():
 
     contract = public_contract.build_contract()
     tools = contract["tools"]
-    assert len(tools) == 96
+    assert len(tools) == 97
     assert sum(1 for t in tools if t["tool_class"] == "read") == 95
-    assert sum(1 for t in tools if t["tool_class"] == "guidance") == 1
+    assert sum(1 for t in tools if t["tool_class"] == "guidance") == 2
     assert not any(t["tool_class"] == "write" for t in tools)
 
 

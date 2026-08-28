@@ -315,6 +315,26 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # pfREST_LIVE_GUIDANCE_ARC (2026-08-28): the appliance's own full
+    # OpenAPI schema document, confirmed by live upstream guide text
+    # (https://pfrest.org/SWAGGER_AND_OPENAPI/, fetched 2026-08-28:
+    # "The full OpenAPI schema is available at the /api/v2/schema/openapi
+    # endpoint"). Internal-only -- used exclusively by
+    # `pfsense_mcp.pfrest_docs.appliance_schema` as LIVE_APPLIANCE_SCHEMA
+    # evidence for the pfsense_get_api_guidance tool, never exposed as
+    # its own separate public MCP tool (mirrors
+    # resolve_appliance_identity()'s reuse of an existing client method
+    # rather than adding a new tool). verified=True (2026-08-28, LAB-only
+    # authenticated GET against https://pfsense-test.lab.invalid): HTTP
+    # 200, unwrapped raw OpenAPI document at the top level (no pfSense
+    # `{"data": ...}` envelope, unlike every other endpoint this project
+    # calls -- confirmed empirically, not assumed), openapi=3.0.0, 267
+    # paths, 186 schemas.
+    SYSTEM_SCHEMA_OPENAPI = EndpointInfo(
+        path_suffix="/schema/openapi",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     # verified=True (2026-08-20, READ Expansion phase Batch 3, LAB-only
     # verification against https://pfsense-test.lab.invalid): HTTP 200,
     # correct envelope, zero configured virtual IPs at verification time

@@ -196,13 +196,15 @@ def test_public_contract_remains_95_read_0_write() -> None:
     # 2026-08-22: pfsense_get_official_guidance (owner-authorized Candidate A)
     # is now registered unconditionally alongside the 95 pfSense READ tools --
     # accounted for SEPARATELY here, never blended into the READ count, per
-    # explicit owner instruction (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md).
+    # explicit owner instruction (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md). A second
+    # guidance tool, pfsense_get_api_guidance, was added 2026-08-28
+    # (pfREST_LIVE_GUIDANCE_ARC) under the same accounting discipline.
     from pfsense_mcp.tools.registry import KNOWN_GUIDANCE_TOOL_NAMES, KNOWN_READ_TOOL_NAMES
 
     read_tools = [t for t in tools if t.name in KNOWN_READ_TOOL_NAMES]
     guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 96
+    assert len(tools) == 97
     assert len(read_tools) == 95
-    assert len(guidance_tools) == 1
+    assert len(guidance_tools) == 2
     assert len(write_tools) == 0

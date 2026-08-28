@@ -64,18 +64,21 @@ def _client_with_version(body: dict[str, object] | None, *, status_code: int = 2
     return PfSenseClient(RestApiClient(transport, identity="test", api_version=ApiVersion.V2))
 
 
-# --- 1/2. Exact public registration; exactly one new guidance tool ---
+# --- 1/2. Exact public registration; exactly the expected guidance tools ---
 
 
-def test_exactly_one_guidance_tool_is_registered_and_it_is_the_expected_one():
-    assert frozenset({"pfsense_get_official_guidance"}) == KNOWN_GUIDANCE_TOOL_NAMES
+def test_exactly_the_expected_guidance_tools_are_registered():
+    """Updated 2026-08-28 (pfREST_LIVE_GUIDANCE_ARC): a second guidance
+    tool, pfsense_get_api_guidance, is now also registered -- see that
+    tool's own module docstring for why it is separate from this one."""
+    assert frozenset({"pfsense_get_official_guidance", "pfsense_get_api_guidance"}) == KNOWN_GUIDANCE_TOOL_NAMES
     mcp = FastMCP("registration-test")
     client = _client_with_version(_SYSTEM_VERSION_BODY_PLUS)
     ToolRegistry(mcp, client, "test", AuditorProfile.capabilities, profile_name="auditor").register_all()
     tools = asyncio.run(mcp.list_tools())
     guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
-    assert len(guidance_tools) == 1
-    assert guidance_tools[0].name == "pfsense_get_official_guidance"
+    assert len(guidance_tools) == 2
+    assert {t.name for t in guidance_tools} == {"pfsense_get_official_guidance", "pfsense_get_api_guidance"}
 
 
 def test_guidance_tool_names_disjoint_from_read_and_write_tool_names():
@@ -664,10 +667,11 @@ def test_public_contract_places_guidance_tool_in_its_own_class():
     contract = build_contract()
     tool_classes = {tool["name"]: tool["tool_class"] for tool in contract["tools"]}
     assert tool_classes["pfsense_get_official_guidance"] == "guidance"
+    assert tool_classes["pfsense_get_api_guidance"] == "guidance"
     read_count = sum(1 for cls in tool_classes.values() if cls == "read")
     guidance_count = sum(1 for cls in tool_classes.values() if cls == "guidance")
     assert read_count == 95
-    assert guidance_count == 1
+    assert guidance_count == 2
 
 
 # --- Release-readiness audit Section 7: real wire-level MCP call, not just the Python model ---

@@ -45,7 +45,13 @@ LOCAL_ONLY_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_mcp_info"})
 # dependency at all" (LOCAL_ONLY_TOOL_NAMES's actual meaning). It is also
 # not owned by any single Capability (see _capability_ownership()) and is
 # never counted toward the 95 pfSense READ tools (see build_contract()).
-GUIDANCE_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_get_official_guidance"})
+# pfsense_get_api_guidance (owner-authorized 2026-08-28,
+# pfREST_LIVE_GUIDANCE_ARC) is the same shape for the same reason: it
+# depends on PfSenseClient (LIVE_APPLIANCE_SCHEMA evidence, fetched
+# through pfsense_mcp.pfrest_docs.appliance_schema.ApplianceSchemaCache,
+# itself calling client.get_system_schema_openapi() indirectly) but has
+# zero *direct* client-attribute calls in its own source.
+GUIDANCE_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_get_official_guidance", "pfsense_get_api_guidance"})
 
 
 def _client() -> PfSenseClient:
