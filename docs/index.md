@@ -69,9 +69,9 @@ stay authoritative in the repository itself instead:
 ## Project status
 
 The production server is READ-only: 95 tools, zero WRITE tools, an empty
-WRITE endpoint allow-list. **v0.8.0 is the current immutable, published
-release** — see the [README's Release status](https://github.com/night4me/pfsense-mcp-server#release-status)
-section for the exact delta from each prior release. It ships the Tier 1
+WRITE endpoint allow-list. See the [README's Release status](https://github.com/night4me/pfsense-mcp-server#release-status)
+section for the current published release and the exact delta from each
+prior release. It ships the Tier 1
 safety framework — every new module remains structurally unreachable
 from production until an explicit, separately authorized activation
 decision is made. See the [public roadmap](ROADMAP.md) for what "done"

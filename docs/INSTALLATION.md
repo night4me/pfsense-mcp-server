@@ -27,10 +27,10 @@ section instead — this page explains the same steps in more depth.
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install pfsense-mcp-server==0.8.0
+.venv/bin/python -m pip install pfsense-mcp-server==0.9.0
 ```
 
-Pinning the exact version (`==0.8.0`) is recommended for anything other
+Pinning the exact version (`==0.9.0`) is recommended for anything other
 than a quick local trial — this project follows semantic versioning, so
 a pin protects you from an unreviewed minor/major upgrade landing in
 your MCP client's own environment. To always take the latest release
