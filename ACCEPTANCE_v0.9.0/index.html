@@ -4297,18 +4297,42 @@
 
 
 <h1 id="acceptance-v090">Acceptance — v0.9.0<a class="headerlink" href="#acceptance-v090" title="Permanent link">&para;</a></h1>
-<p><strong>Status: release-candidate, not yet tagged, not yet released, not yet
-published to PyPI.</strong> This document accepts the <code>v0.9.0</code> release-candidate
-state at its preparation commit, once that commit passes the required
-local and remote gates (CI, CodeQL, and the release-check constituent
-commands not tied to already-being-published — see "Full validation"
-below). Creating the <code>v0.9.0</code> tag, publishing the GitHub Release, and
-uploading to PyPI each remain a separate, explicit owner decision, taken
-only after this document and the exact commit SHA it corresponds to
-have been reviewed. <code>v0.8.0</code>'s own tag, GitHub Release, and PyPI
-artifact remain unmoved as an accurate historical record and, until
-<code>v0.9.0</code> is actually published, remain the current immutable production
-baseline (see <code>README.md</code>'s "Release status" section).</p>
+<p><strong>Status: published — the <code>v0.9.0</code> tag and PyPI release point at this
+commit.</strong> The annotated git tag <code>v0.9.0</code> was created and pushed pointing
+at commit <code>1a9378c8d961b8bcf5dc5b743da39b7451248947</code>; the GitHub Release
+was published from that tag
+(<a href="https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.9.0">https://github.com/night4me/pfsense-mcp-server/releases/tag/v0.9.0</a>),
+which triggered the <code>publish.yml</code> OIDC trusted-publishing workflow (run
+<code>33190942299</code>, <code>build</code> and <code>publish</code> jobs both <code>success</code>). PyPI's JSON
+API confirms <code>0.9.0</code> is <code>info.version</code> and the latest entry in
+<code>releases</code>; neither artifact is yanked. PyPI's own provenance API
+(<code>/integrity/pfsense-mcp-server/0.9.0/.../provenance</code>) returns a valid
+Sigstore attestation bundle for both the wheel and sdist whose
+certificate SAN references this exact workflow file
+(<code>.github/workflows/publish.yml</code>), the <code>refs/tags/v0.9.0</code> ref, this
+exact commit, and this exact GitHub Actions run. Both public artifacts
+were downloaded directly from <code>files.pythonhosted.org</code> and their
+member-by-member content (267 wheel files; 346 sdist files) confirmed
+byte-identical to the locally-built RC artifacts — the outer-archive
+SHA256 differs only because of non-reproducible container timestamps
+between separate build invocations, not any content difference. A
+clean installation of <code>pfsense-mcp-server==0.9.0</code> from the real PyPI
+index (not the local build) was independently verified in a fresh,
+isolated environment outside the repository: reports version <code>0.9.0</code>,
+<code>import pfsense_mcp</code> resolves from <code>site-packages</code>, the
+<code>pfsense-mcp-server</code> CLI entry point fails closed with a clean
+"configuration error" message (no traceback) when required environment
+variables are absent, <code>pfsense-mcp-security --help</code> succeeds, zero
+network attempted at import across every guidance-related module, and
+a fresh <code>public_contract.build_contract()</code> call against the installed
+package shows exactly 97 registered tools (95 READ + 2 guidance —
+<code>pfsense_get_official_guidance</code> and <code>pfsense_get_api_guidance</code> both
+present — 0 WRITE). This status line was only written after that
+independent post-publication verification succeeded. <code>v0.8.0</code>'s own
+tag, GitHub Release, and PyPI artifact remain unmoved as an accurate
+historical record. See
+<code>reports-ai/V0_9_0_PUBLICATION_2026-08-28.md</code> for the complete,
+itemized publication evidence.</p>
 <h2 id="release-scope">Release scope<a class="headerlink" href="#release-scope" title="Permanent link">&para;</a></h2>
 <p><code>v0.9.0</code> adds one new MCP tool and two offline maintainer scripts, all
 strictly READ-only / advisory. Public MCP contract: <strong>95 pfSense READ
@@ -4519,12 +4543,18 @@ was actually true at commit time.</li>
 <p>See <code>reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md</code> for the
 complete, itemized audit this document summarizes.</p>
 <h2 id="acceptance-boundary">Acceptance boundary<a class="headerlink" href="#acceptance-boundary" title="Permanent link">&para;</a></h2>
-<p>This document accepts the v0.9.0 <strong>release-candidate</strong> state at its
-preparation commit. It does <strong>not</strong> authorize a tag, push of a tag,
-GitHub Release, TestPyPI/PyPI upload, or any further action. Each of
-those remains a separate, explicit owner decision, taken only after
-this document and the exact commit SHA it corresponds to have been
-reviewed.</p>
+<p><strong>Update (2026-08-28): publication complete.</strong> The owner explicitly
+authorized "publication of pfsense-mcp-server v0.9.0" from RC SHA
+<code>1a9378c8d961b8bcf5dc5b743da39b7451248947</code>. Tag <code>v0.9.0</code>, the GitHub
+Release, and the PyPI upload were each performed following exactly the
+sequence this document originally described as pending, and each was
+independently re-verified after the fact (see the "Status" paragraph
+above and <code>reports-ai/V0_9_0_PUBLICATION_2026-08-28.md</code>). No version
+other than <code>v0.9.0</code> was published; the tag was never moved from the
+authorized RC commit; the public MCP contract published matches
+exactly what this document's "Full validation" section already
+verified; no pfSense LAB or production mutation was performed as part
+of release.</p>
 
 
 
