@@ -148,8 +148,9 @@ Full per-tool reference, parameters, and provenance:
 
 ## Connect your MCP client
 
-Once your server configuration works, generate the exact client config
-block automatically:
+For Claude Desktop and Codex CLI / ChatGPT desktop, once your server
+configuration works, generate the exact client config block
+automatically:
 
 ```console
 pfsense-mcp-security setup write-client-config \
@@ -159,9 +160,9 @@ pfsense-mcp-security setup write-client-config \
 
 This previews the change and asks for explicit confirmation before
 writing anything — it never silently overwrites an existing config.
-Supported clients: Claude Desktop, Claude Code, Codex CLI, ChatGPT
-desktop, and any other MCP-compatible client via the printed generic
-config block. Ready-made per-client guides —
+Every other supported client — Claude Code, Cursor, VS Code, Continue,
+and any other MCP-compatible client — has its own copy/paste-ready
+guide instead of a generator. Ready-made per-client guides —
 [`examples/README.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md).
 Full detail: [Connect your MCP client](https://night4me.github.io/pfsense-mcp-server/MCP_CLIENT_CONFIGURATION/).
 
