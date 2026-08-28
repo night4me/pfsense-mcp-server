@@ -7,7 +7,7 @@
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
         docs-build docs-serve docs-freshness-check sbom min-deps-check witness-daemon-check guidance-corpus-audit \
-        pfrest-privilege-crosscheck
+        pfrest-privilege-crosscheck pfrest-schema-diff
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -346,6 +346,24 @@ guidance-corpus-audit:
 # on a genuine cross-source DRIFT finding.
 pfrest-privilege-crosscheck:
 	@$(PYTHON) scripts/pfrest_privilege_crosscheck.py
+
+# Semantic, dimension-classified OpenAPI comparison (owner direction,
+# pfREST_LIVE_GUIDANCE_ARC continuation, 2026-08-28: "make OpenAPI first-
+# class" + real-world CE/pfREST-version comparison). Default compares
+# PFREST_UPSTREAM (live fetch) against LIVE_APPLIANCE_SCHEMA (live, via
+# the standard PFSENSE_* runtime environment variables) -- run
+# `PFSENSE_API_URL=... make pfrest-schema-diff` with an appliance
+# configured. `--a file --b file` also works directly via
+# `scripts/pfrest_schema_diff.py` for comparing two previously saved
+# snapshots (e.g. a future, separately authorized CE-vs-Plus
+# comparison). Requires network access; not part of validate/quick/
+# release-check for that reason (same rationale as
+# guidance-corpus-audit/pfrest-privilege-crosscheck above). Never
+# grants a privilege, authorizes an endpoint, or modifies any
+# configuration -- exits non-zero only if a source could not be
+# fetched/parsed, never merely because a difference was found.
+pfrest-schema-diff:
+	@$(PYTHON) scripts/pfrest_schema_diff.py
 
 # Software Bill of Materials (SBOM) generation. Deliberately outside
 # quick/validate/release-check -- an occasional, explicit, network-

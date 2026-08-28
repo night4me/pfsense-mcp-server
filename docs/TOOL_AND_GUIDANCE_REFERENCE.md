@@ -153,6 +153,28 @@ it into your own CI. Requires network access, so it is not part of
 pattern for every other live-network check
 (`make docs-freshness-check`, `make guidance-corpus-audit`).
 
+### Schema diff (maintainer/operator tool, not part of the MCP surface)
+
+`make pfrest-schema-diff` (`scripts/pfrest_schema_diff.py`) performs a
+semantic, dimension-classified comparison between two OpenAPI
+documents — by default, live PFREST_UPSTREAM vs. a configured
+appliance's live LIVE_APPLIANCE_SCHEMA. Twelve dimensions are compared
+(paths/methods, operationIds, parameters, schemas/models, fields,
+enums, field default values, required_packages, auth metadata,
+allowed_privileges, applies_immediately, `x-` extensions, top-level
+version metadata) and classified as added/removed/changed — never a
+raw JSON/byte diff, and never an attributed cause. `--a file`/`--b
+file` loads a previously saved snapshot from disk instead of making a
+live call, which is how a future, separately-authorized comparison
+between two different appliances (e.g. pfSense CE vs. Plus running the
+same pfREST version) can be performed offline. Strictly advisory and
+read-only; deliberately **not** part of `pfsense_get_api_guidance` or
+any other MCP tool, for the same reason as the privilege cross-check
+above. Requires network access, so it is not part of `make
+quick`/`make validate`. See
+[ADR-035](adr/ADR-035-pfrest-live-guidance-layer.md#schema-diff-semantic-dimension-classified-cause-agnostic)
+for the real LAB-vs-upstream findings from the arc that introduced it.
+
 ## Related
 
 - [MCP tool reference](API.md)

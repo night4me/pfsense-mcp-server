@@ -251,6 +251,103 @@ PFREST_UPSTREAM and LIVE_APPLIANCE_SCHEMA, 0 drift, 0 explained
 differences — independent confirmation that ADR-033's pinned-source
 algorithm and both live sources currently agree completely.
 
+### Schema diff: semantic, dimension-classified, cause-agnostic
+
+A second owner direction (2026-08-28, same day, "make OpenAPI/Swagger
+first-class") arrived alongside a real environment fact: LAB
+(pfSense CE 2.9.0) and production (pfSense Plus 26.07) now run the
+*same* pfREST package version, 2.10.2 — a controlled comparison
+opportunity. The immediate, currently-authorized task was narrower
+than a CE-vs-Plus comparison (production stays out of scope for
+exploratory work): compare LAB's `LIVE_APPLIANCE_SCHEMA` against
+current `PFREST_UPSTREAM`, and design — but do not execute — the
+general-purpose comparison a future, separately-authorized CE-vs-Plus
+run would need.
+
+`pfsense_mcp.pfrest_docs.schema_diff.diff_schemas()` performs a
+**semantic**, not byte-level, comparison across twelve dimensions:
+`paths_methods`, `operation_ids`, `parameters`, `schemas_models`,
+`fields`, `enums`, `default_values`, `required_packages`,
+`auth_metadata`, `allowed_privileges`, `applies_immediately`,
+`extensions`, `version_metadata`. A raw JSON/hash diff would flag
+harmless key-ordering noise and a single instance-specific default
+value the same way it would flag a missing endpoint — this module
+instead classifies each dimension's differences as ADDED_IN_B /
+REMOVED_IN_B / CHANGED, and states only **what** differs, never
+**why**: every report carries a fixed disclaimer that a found
+difference is not attributed to pfSense edition, release, installed
+packages, runtime environment, configuration, pfREST build, or
+schema-generation behavior.
+
+`default_values` is deliberately its own dimension, separate from
+`fields`' structural type/required/nullable shape — a default is
+frequently instance-specific runtime state (a per-install random
+secret, a runtime-computed capacity number, a next-available ID)
+rather than part of the request/response contract; bundling it into
+`fields` would make a harmless instance-specific value look, in shape,
+identical to a genuine contract break. This distinction was not
+theoretical: it is exactly what the real LAB-vs-upstream comparison
+below found.
+
+Endpoint-level structured facts (`required_packages`, `auth_metadata`,
+`allowed_privileges`, `applies_immediately`) are extracted by reusing
+`openapi_index.parse_openapi()`'s already-reviewed parser verbatim —
+same "reuse, don't reimplement" precedent as the privilege
+cross-check. Report output is capped at `MAX_ENTRIES_PER_DIMENSION`
+(25) per dimension for display, but the underlying comparison is
+always exhaustive — `dimension_totals` always reports the true count.
+Pure — no I/O, no network, no appliance/upstream knowledge; the caller
+supplies both already-fetched documents.
+
+**Designed for today's authorized comparison and tomorrow's, without
+executing tomorrow's.** `scripts/pfrest_schema_diff.py` selects each
+side independently (`--a`/`--b` ∈ `upstream` / `appliance` / `file`).
+`file` mode loads a previously saved OpenAPI JSON document from disk —
+this exists specifically so a future, separately-authorized
+comparison between two different appliances (does pfREST 2.10.2
+expose an identical contract on pfSense CE 2.9.0 vs. pfSense Plus
+26.07?) can be performed **offline**, from two independently captured
+snapshots, without this script ever configuring itself to talk to two
+appliances at once and without initiating a second live appliance
+connection on its own. This arc captures only LAB's snapshot;
+production was not contacted. Like the privilege cross-check,
+explicitly out of the public MCP tool surface — an offline script,
+`make pfrest-schema-diff`, not a new tool argument or query mode.
+
+**Live-verified 2026-08-28, LAB only:** independently re-confirmed via
+the existing safe READ-only identity path — `pfsense_get_system_version`
+returned pfSense CE `2.9.0-RELEASE`, `get_system_restapi_version`
+returned `current_version: v2.10.2`, matching the owner-supplied
+hypothesis exactly. (Production's reported `pfSense Plus 26.07` /
+`pfREST 2.10.2` was **not** independently verified this arc — production
+remained out of scope for any exploratory contact per explicit
+instruction, so that fact is recorded as owner-reported only.)
+
+A fresh live fetch of both documents found the two 4.2+ MiB documents
+were **not** byte-identical (different MD5), which `diff_schemas()`
+correctly explained: **every one of the twelve contract dimensions
+was fully identical** (all 267 paths/methods, all 186 schemas, every
+field, every enum, every operationId, every parameter, every
+`required_packages`/`auth_metadata`/`allowed_privileges`/
+`applies_immediately` value, every `x-` extension, and top-level
+version metadata) — the *only* differences were three `default_values`
+entries, each independently explainable as ordinary instance-specific
+runtime state, not a contract or edition difference:
+
+| Model.field | PFREST_UPSTREAM default | LIVE_APPLIANCE_SCHEMA (LAB) default | Likely nature |
+|---|---|---|---|
+| `OutboundNATMapping.source_hash_key` | `0xb94e8d112da08b7b700dc151ab2e245f` | `0x41ae11df6cee557c5594a088f23dc383` | per-install random secret |
+| `FirewallStatesSize.maximumstates` | `96000` | `198000` | runtime-computed capacity, dependent on the specific firewall's own sizing |
+| `User.uid` | `2000` | `2003` | next-available UID, dependent on how many users already exist on that installation |
+
+This is exactly the honest, unmanufactured result the owner's
+instructions required: no version gap existed between LAB's installed
+pfREST and the current public document (both 2.10.2), so there was no
+drift to demonstrate — and the schema-diff tooling's own dimension
+classification correctly distinguished "identical contract" from
+"three ordinary instance-specific values," which a byte-level diff
+alone would not have been able to explain.
+
 ## Consequences
 
 - Public contract: 95 READ + 2 guidance (was 1) + 0 WRITE = 97 total
@@ -260,7 +357,9 @@ algorithm and both live sources currently agree completely.
   require) — not a version bump, not a new release.
 - No pfSense mutation capability was added anywhere. Every new call this
   arc makes (`pfrest.org` fetches, the appliance schema fetch) is
-  GET-only.
+  GET-only. The schema-diff addition does not change the public
+  contract at all (offline script only, like the privilege
+  cross-check).
 - `docs.netgate.com` and `pfrest.org` remain permanently distinct
   provenance domains — nothing in this design lets one project's content
   be relabeled as the other's.
