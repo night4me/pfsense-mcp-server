@@ -7,6 +7,7 @@ These guides configure supported MCP clients to launch the local
 | Client | Local stdio support | Guide |
 |---|---:|---|
 | Claude Desktop | Yes | [Claude Desktop](claude-desktop.md) |
+| Claude Code | Yes | [Claude Code](claude-code.md) |
 | OpenAI Codex CLI | Yes | [Codex CLI](codex-cli.md) |
 | ChatGPT desktop app | Yes, through the Codex host | [ChatGPT](chatgpt.md) |
 | Cursor | Yes | [Cursor](cursor.md) |

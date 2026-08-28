@@ -28,6 +28,12 @@ one configuration scope:
 }
 ```
 
+This is the same `mcpServers` JSON shape Claude Desktop uses — if you've
+already run `pfsense-mcp-security setup write-client-config --client
+claude-desktop --config-path <path>` (see [Connect your MCP
+client](../docs/MCP_CLIENT_CONFIGURATION.md)) to preview or generate this
+block, the exact same content is valid here; only the file path differs.
+
 See Cursor's [MCP documentation][cursor-mcp] for current configuration scopes
 and controls.
 
