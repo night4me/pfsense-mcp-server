@@ -23,6 +23,32 @@ from .base import (
 
 _TIMEOUT = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=10.0)
 
+# v1.0.0 Product/UX arc (UX-D): httpx/httpcore collapse DNS failure,
+# "connection refused", and a TLS handshake/certificate-verification
+# failure into the exact same `httpx.ConnectError` -- confirmed live
+# against real hosts: httpcore never preserves the underlying
+# `ssl.SSLError` as a distinct type through its own wrapping (its
+# `__cause__` is `None`), only in the message text ("[SSL:
+# CERTIFICATE_VERIFY_FAILED] ..." vs "[Errno -2] Name or service not
+# known" vs "[Errno 111] Connection refused"). This message-only
+# classification exists purely to make the distinction mission text
+# asks for readable to a human; it changes no exception class, no
+# control flow, and no security-relevant behavior anywhere -- a
+# classification miss (an unrecognized message shape) silently falls
+# back to the prior generic wording rather than misclassifying.
+_TLS_FAILURE_MARKERS = ("ssl", "certificate", "cert_verify", "certificate_verify")
+
+
+def _classify_connect_failure(exc: BaseException) -> str:
+    text = f"{exc} {exc.__cause__}".lower()
+    if any(marker in text for marker in _TLS_FAILURE_MARKERS):
+        return "TLS certificate verification failed -- the server's certificate could not be verified"
+    if "name or service not known" in text or "nodename nor servname" in text or "getaddrinfo failed" in text:
+        return "the hostname could not be resolved (DNS lookup failed)"
+    if "connection refused" in text:
+        return "the host refused the connection (nothing is listening on that address/port)"
+    return "the host could not be reached"
+
 
 class HttpTransport:
     def __init__(self, base_url: str, api_key: str, verify: bool | str) -> None:
@@ -37,8 +63,9 @@ class HttpTransport:
         try:
             headers = {"Content-Type": "application/json"} if body is not None else None
             response = self._client.request(method, path, content=body, headers=headers)
-        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout):
-            raise TransportRequestNotSentError(f"Could not connect for {method} {path}") from None
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout) as exc:
+            detail = _classify_connect_failure(exc)
+            raise TransportRequestNotSentError(f"Could not connect for {method} {path}: {detail}") from None
         except httpx.TimeoutException:
             raise TransportTimeoutError(f"Request timed out for {method} {path}") from None
         except httpx.TransportError:

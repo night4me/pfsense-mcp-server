@@ -13,6 +13,17 @@ from pfsense_mcp.transport.base import (
 from pfsense_mcp.transport.http import BasicAuthHttpTransport, HttpTransport
 
 
+def _connect_error_with_cause(cause: BaseException) -> httpx.ConnectError:
+    """Build an httpx.ConnectError with a given __cause__, matching the
+    real shape httpcore produces (its own ConnectError message text is
+    what carries the DNS/refused/TLS distinction -- see
+    _classify_connect_failure's own docstring comment)."""
+
+    exc = httpx.ConnectError(str(cause))
+    exc.__cause__ = cause
+    return exc
+
+
 @respx.mock
 def test_request_sends_api_key_header_and_returns_response():
     route = respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(
@@ -75,6 +86,64 @@ def test_connect_error_raises_transport_connection_error():
             transport.request("GET", "/api/v2/status/system")
     finally:
         transport.close()
+
+
+@respx.mock
+def test_connect_error_message_classifies_a_tls_certificate_failure():
+    # v1.0.0 Product/UX arc (UX-D): httpx/httpcore collapse DNS
+    # failure, connection-refused, and a TLS certificate-verification
+    # failure into the same exception class -- this asserts the
+    # message text itself now distinguishes them, using the exact
+    # wording httpcore produces for a real cert-verify failure
+    # (confirmed live against self-signed.badssl.com during this
+    # arc's UX-D investigation).
+    cause = ConnectionError("[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate")
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=_connect_error_with_cause(cause))
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        with pytest.raises(TransportConnectionError) as excinfo:
+            transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+    assert "TLS certificate verification failed" in str(excinfo.value)
+
+
+@respx.mock
+def test_connect_error_message_classifies_dns_failure():
+    cause = ConnectionError("[Errno -2] Name or service not known")
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=_connect_error_with_cause(cause))
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        with pytest.raises(TransportConnectionError) as excinfo:
+            transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+    assert "hostname could not be resolved" in str(excinfo.value)
+
+
+@respx.mock
+def test_connect_error_message_classifies_connection_refused():
+    cause = ConnectionError("[Errno 111] Connection refused")
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=_connect_error_with_cause(cause))
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        with pytest.raises(TransportConnectionError) as excinfo:
+            transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+    assert "refused the connection" in str(excinfo.value)
+
+
+@respx.mock
+def test_connect_error_message_falls_back_to_generic_wording_for_unrecognized_cause():
+    respx.get("https://pfsense.example.invalid/api/v2/status/system").mock(side_effect=httpx.ConnectError("boom"))
+    transport = HttpTransport("https://pfsense.example.invalid", "fake-key", True)
+    try:
+        with pytest.raises(TransportConnectionError) as excinfo:
+            transport.request("GET", "/api/v2/status/system")
+    finally:
+        transport.close()
+    assert "could not be reached" in str(excinfo.value)
 
 
 @respx.mock
