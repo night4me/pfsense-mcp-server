@@ -211,7 +211,20 @@ quick:
 	@echo "QUICK: PASSED (11/11 stages)"
 
 coverage:
-	@$(PYTHON) -m pytest --cov=pfsense_mcp --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
+	# Plain serial `pytest --cov` over the full ~5k-test suite is what
+	# produced the Phase 1 90s-timeout observation (v1.0.0 Phase 2
+	# hardening, H3) -- coverage instrumentation on top of a fully serial
+	# run of a suite this size takes minutes, not seconds. pytest-xdist
+	# combines each worker's coverage data automatically within a single
+	# `--cov` invocation, so this mirrors `test`'s own xdist-parallel +
+	# small-serial-pass split (see XDIST_ARGS/XDIST_SERIAL_ONLY above):
+	# the first pass covers everything xdist-safe in parallel, and
+	# `--cov-append` merges in the two tests that must run serially,
+	# before the final combined report is written.
+	@rm -f .coverage coverage.xml
+	@$(PYTHON) -m pytest -q $(XDIST_ARGS) --cov=pfsense_mcp --cov-branch --cov-report=
+	@$(PYTHON) -m pytest -q $(XDIST_SERIAL_ONLY) --cov=pfsense_mcp --cov-branch --cov-append \
+		--cov-report=term-missing --cov-report=xml:coverage.xml
 
 security-static:
 	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts witness_daemon signing

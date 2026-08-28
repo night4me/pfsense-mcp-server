@@ -861,3 +861,155 @@ def test_evidence_fingerprint_participates_in_the_signing_payload():
     payload_a = _build_payload(plan=plan_a, step_ids=("s1",))
     payload_b = _build_payload(plan=plan_b, step_ids=("s1",))
     assert plan_authorization_signing_payload(payload_a) != plan_authorization_signing_payload(payload_b)
+
+
+# ---------------------------------------------------------------------------
+# 18. DeprovisionAuthorization malformed-input rejection (ADR-022's
+# destructive-operation artifact type -- structurally separate from
+# PlanAuthorization, so its own builder/dataclass guards need their own
+# adversarial coverage rather than inheriting PlanAuthorization's; found
+# uncovered during the v1.0.0 Phase 2 hardening audit, H3).
+# ---------------------------------------------------------------------------
+
+
+def _build_deprovision_payload(**overrides):
+    issued_at, expires_at = _times()
+    kwargs = {
+        "target_identity_digest": _HEX_64,
+        "authorization_id": "deprov-1",
+        "authority_id": "owner-key-1",
+        "issued_at": issued_at,
+        "expires_at": expires_at,
+    }
+    kwargs.update(overrides)
+    return build_deprovision_authorization_payload(**kwargs)
+
+
+def _signed_deprovision_authorization():
+    return sign_deprovision_authorization(_build_deprovision_payload(), _key())
+
+
+def test_deprovision_payload_rejects_a_malformed_target_identity_digest():
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(target_identity_digest="not-a-real-digest")
+
+
+def test_deprovision_payload_rejects_a_non_string_authorization_id():
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(authorization_id=12345)  # type: ignore[arg-type]
+
+
+def test_deprovision_payload_rejects_a_non_string_authority_id():
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(authority_id=12345)  # type: ignore[arg-type]
+
+
+def test_deprovision_payload_rejects_an_unsupported_algorithm():
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(algorithm="ED25519-V1")
+
+
+def test_deprovision_payload_rejects_a_naive_issued_at():
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(issued_at=datetime(2026, 8, 11, 12, 0, 0))
+
+
+def test_deprovision_payload_rejects_a_naive_expires_at():
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(expires_at=datetime(2026, 8, 11, 12, 5, 0))
+
+
+def test_deprovision_payload_rejects_expires_at_not_strictly_after_issued_at():
+    issued, _ = _times()
+    with pytest.raises(SecurityAuthorizationError):
+        _build_deprovision_payload(issued_at=issued, expires_at=issued)
+
+
+def test_deprovision_authorization_rejects_an_unsupported_schema_version():
+    authz = _signed_deprovision_authorization()
+    with pytest.raises(SecurityAuthorizationError):
+        DeprovisionAuthorization(
+            schema_version=DEPROVISION_AUTHORIZATION_SCHEMA_VERSION + 1,
+            authorization_id=authz.authorization_id,
+            target_identity_digest=authz.target_identity_digest,
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=authz.proof,
+            issued_at=authz.issued_at,
+            expires_at=authz.expires_at,
+        )
+
+
+def test_deprovision_authorization_rejects_a_schema_version_bool():
+    authz = _signed_deprovision_authorization()
+    with pytest.raises(SecurityAuthorizationError):
+        DeprovisionAuthorization(
+            schema_version=True,  # bool is a subclass of int -- must not silently pass as 1
+            authorization_id=authz.authorization_id,
+            target_identity_digest=authz.target_identity_digest,
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=authz.proof,
+            issued_at=authz.issued_at,
+            expires_at=authz.expires_at,
+        )
+
+
+def test_deprovision_authorization_rejects_a_malformed_target_identity_digest():
+    authz = _signed_deprovision_authorization()
+    with pytest.raises(SecurityAuthorizationError):
+        DeprovisionAuthorization(
+            schema_version=authz.schema_version,
+            authorization_id=authz.authorization_id,
+            target_identity_digest="not-a-real-digest",
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=authz.proof,
+            issued_at=authz.issued_at,
+            expires_at=authz.expires_at,
+        )
+
+
+def test_deprovision_authorization_rejects_a_truncated_proof():
+    authz = _signed_deprovision_authorization()
+    with pytest.raises(SecurityAuthorizationError):
+        DeprovisionAuthorization(
+            schema_version=authz.schema_version,
+            authorization_id=authz.authorization_id,
+            target_identity_digest=authz.target_identity_digest,
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=authz.proof[:-1],
+            issued_at=authz.issued_at,
+            expires_at=authz.expires_at,
+        )
+
+
+def test_deprovision_authorization_rejects_an_empty_proof():
+    authz = _signed_deprovision_authorization()
+    with pytest.raises(SecurityAuthorizationError):
+        DeprovisionAuthorization(
+            schema_version=authz.schema_version,
+            authorization_id=authz.authorization_id,
+            target_identity_digest=authz.target_identity_digest,
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=b"",
+            issued_at=authz.issued_at,
+            expires_at=authz.expires_at,
+        )
+
+
+def test_deprovision_authorization_rejects_expires_at_not_strictly_after_issued_at():
+    authz = _signed_deprovision_authorization()
+    with pytest.raises(SecurityAuthorizationError):
+        DeprovisionAuthorization(
+            schema_version=authz.schema_version,
+            authorization_id=authz.authorization_id,
+            target_identity_digest=authz.target_identity_digest,
+            authority_id=authz.authority_id,
+            algorithm=authz.algorithm,
+            proof=authz.proof,
+            issued_at=authz.issued_at,
+            expires_at=authz.issued_at,
+        )
