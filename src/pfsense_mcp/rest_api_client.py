@@ -51,10 +51,22 @@ class RestApiClient:
         start = time.monotonic()
         try:
             response = self._transport.request(method, path)
-        except TransportConnectionError:
+        except TransportConnectionError as exc:
             duration_ms = (time.monotonic() - start) * 1000
             logger.warning("connection_error identity=%s path=%s duration_ms=%.1f", self._identity, path, duration_ms)
-            raise PfSenseConnectionError(f"Could not connect to pfSense host for {path}") from None
+            # v1.0.0 Product/UX closure arc (C4): TransportRequestNotSentError's
+            # own message already distinguishes TLS-verification failure /
+            # DNS failure / connection-refused (see transport/http.py's
+            # _classify_connect_failure) and already names the method/path
+            # -- discarding it here and substituting a fresh generic
+            # message meant that classification never actually reached a
+            # real MCP tool caller, only ever proven at the transport
+            # layer's own unit tests. str(exc) is safe to surface as-is:
+            # it is built entirely from httpx/httpcore's own
+            # connection-failure text, generated before any request
+            # (including credentials) is ever sent -- never response
+            # content, never a header value.
+            raise PfSenseConnectionError(str(exc)) from None
         except TransportTimeoutError:
             duration_ms = (time.monotonic() - start) * 1000
             logger.warning("timeout identity=%s path=%s duration_ms=%.1f", self._identity, path, duration_ms)
