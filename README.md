@@ -1,10 +1,23 @@
 # pfsense-mcp-server
 
+<!-- Rendered from assets/brand/logo-lockup.svg -- see that file to edit
+     the brand asset source. An absolute raw.githubusercontent.com URL
+     is required, not a repository-relative path: this README's
+     long_description is also embedded verbatim into the published
+     PyPI package, which has no accompanying file tree to resolve a
+     relative path against -- see docs/adr/ADR-034-mermaid-pypi-compatibility.md,
+     which hit exactly this bug for the two diagram images below and
+     established this project's one safe pattern (plain Markdown image
+     syntax, absolute `main`-branch raw URL) that this hero image and
+     both diagrams now all follow identically. -->
+![pfsense-mcp-server: secure AI access for pfSense](https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/brand/logo-lockup.svg)
+
 [![CI](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/night4me/pfsense-mcp-server/actions/workflows/codeql.yml)
 [![PyPI](https://img.shields.io/pypi/v/pfsense-mcp-server.svg)](https://pypi.org/project/pfsense-mcp-server/)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/night4me/pfsense-mcp-server/blob/main/LICENSE)
+![Read-only by default](https://img.shields.io/badge/default-read--only-2563EB)
 
 **Safe, least-privilege pfSense access for AI assistants.** [MCP](https://modelcontextprotocol.io/)
 server that gives an AI assistant strongly typed, read-only visibility into
@@ -12,41 +25,79 @@ one pfSense appliance — system, network, firewall, DHCP, DNS, VPN,
 certificates, and diagnostics — without raw shell access, an unaudited
 scripting surface, or any way to change the appliance by accident.
 
-## What it does
-
-- **95 public READ tools + 1 documentation guidance tool.** Covers
-  roughly 90% of pfSense's useful REST API READ surface. Every tool is
-  strongly typed (Pydantic) — no untyped JSON passthrough.
-- **0 WRITE tools by default.** A fully built, twice live-verified
-  protected-WRITE path exists but requires an explicit operator opt-in
-  — see [Safety by default](#safety-by-default).
-- **Ask it things like**: *"List my VLANs and which interface each one
-  rides on,"* *"Is my WAN gateway up right now?"*, *"Which certificates
-  expire soon?"*, *"What DHCP leases are active on the LAN?"* — every
-  question maps to one typed, capability-gated tool.
-
-## Safety by default
-
-- **READ-oriented public MCP surface, 0 default-reachable WRITE.**
-  Enforced by an automated snapshot test, not just documented — a
-  change to the public tool contract that isn't reflected in the
-  approved snapshot fails CI.
-- **Explicit tool registration, never generic API dispatch.** There is
-  no `call_endpoint(path, method)` escape hatch an AI (or a bug) could
-  use to reach an unregistered endpoint.
-- **Capability-based least privilege**, with secret-bearing fields
-  excluded from the response model by construction wherever confirmed
-  present — never relying on the upstream API's own redaction alone.
-- **Guidance is data, never authority.** The one documentation-guidance
-  tool structurally cannot influence, select, or authorize any action —
-  see [Tool & guidance reference](https://night4me.github.io/pfsense-mcp-server/TOOL_AND_GUIDANCE_REFERENCE/).
-
 I built this because I wanted AI assistance for pfSense without giving
 an LLM the ability to accidentally disconnect my own network — a
 firewall deserves a higher safety standard than "the model probably
 won't make a bad change." See
 [Why this project exists](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/#why-this-project-exists)
 for the full reasoning.
+
+## What it does
+
+- **97 tools: 95 pfSense READ tools + 2 documentation guidance tools.**
+  Covers roughly 90% of pfSense's useful REST API READ surface. Every
+  tool is strongly typed (Pydantic) — no untyped JSON passthrough.
+- **0 WRITE tools by default.** A fully built, twice live-verified
+  protected-change path exists but requires an explicit opt-in — see
+  [Safety levels](#safety-levels) below.
+- **Ask it things like:** *"List my VLANs and which interface each one
+  rides on,"* *"Is my WAN gateway up right now?"*, *"Which certificates
+  expire soon?"*, *"What DHCP leases are active on the LAN?"* — every
+  question maps to one typed, capability-gated tool.
+
+## Quick start
+
+```console
+pip install pfsense-mcp-server
+pfsense-mcp-security setup
+```
+
+The setup wizard asks a few plain-language questions — your firewall's
+address, whether to allow read-only or protected changes, how to
+verify the connection — then prints the exact configuration to paste
+into your MCP client. Nothing needs to be typed or edited by hand.
+Prefer to configure manually, or want the full walkthrough step by
+step? See [Getting started](https://night4me.github.io/pfsense-mcp-server/GETTING_STARTED/).
+
+Once your client is connected and shows 97 tools available, try one of
+the questions from [What it does](#what-it-does) above.
+
+## Safety levels
+
+Choose the level that matches what you need — you can change this
+later by running `setup` again.
+
+| Level | What it means | Who it's for |
+|---|---|---|
+| **Read-only** *(default, recommended)* | The AI can inspect pfSense — status, configuration, diagnostics — but cannot change anything. | Almost everyone. This is the safest option and covers the large majority of useful AI-assisted pfSense work. |
+| **Protected changes** | Adds exactly one capability (editing a firewall alias's description) behind explicit, cryptographically signed authorization and a separate confirmation step. | Advanced users who have a specific, deliberate reason to let the AI make one narrow, auditable change. |
+| **Hardware-protected changes** | Everything in Protected changes, plus an external TPM-backed witness that must independently agree before a change is considered verified. | Security-conscious operators who want anti-rollback protection on top of the above. |
+
+No level silently escalates into another, and nothing above read-only
+is reachable unless you explicitly opt in during setup. Exact internal
+mechanics — plan digests, authorization tokens, the sealed mutation
+executor, witness state — are documented in full for advanced users
+and auditors in the [Security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/).
+
+## Architecture at a glance
+
+```
+AI client (Claude, Codex, ...)
+  │  MCP over stdio
+  ▼
+pfsense-mcp-server
+  │  one typed method call, GET-only
+  ▼
+pfSense's pfREST API
+  │
+  ▼
+pfSense appliance
+```
+
+Every one of the 95 READ tools takes this exact path, no exceptions —
+enforced mechanically at build time, not just by convention (a
+`make validate` check requires exactly one typed client call per READ
+tool, structurally preventing a tool/endpoint mismatch).
 
 <!-- Rendered from assets/diagrams/read-trust-path.mmd -- see that file to
      edit the diagram source, then regenerate this image. README.md
@@ -56,100 +107,25 @@ for the full reasoning.
 
 ![READ trust path: AI/MCP client through stdio, an explicitly registered MCP tool, capability/profile gate, least-privilege mapping, one fixed typed client method, a GET-only pfREST call, the pfSense appliance, a typed model boundary excluding secret fields, to a safe MCP result](https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/read-trust-path.svg)
 
-Every one of the 95 READ tools takes this same path — no exceptions.
+### The protected-change path (built, not default-reachable)
 
-### The protected-WRITE path (built, not default-reachable)
-
-A fully built, twice live-verified WRITE architecture exists for exactly
-one operation (a firewall alias's description field) but stays
-unreachable unless an operator explicitly opts in: `write_protected`
-must be selected, an off-host Ed25519 signature the running server never
-holds the key for must authorize it, and a separate confirmation
-authority must confirm it — see
+A fully built, twice live-verified path exists for exactly one
+protected-change operation (a firewall alias's description field) but
+stays unreachable unless you explicitly opt in during setup:
+`write_protected` must be selected, an off-host Ed25519 signature the
+running server never holds the key for must authorize it, and a
+separate confirmation authority must confirm it. See
 [the security setup wizard](https://night4me.github.io/pfsense-mcp-server/SECURITY_SETUP_WIZARD/)
 and [the security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/)
 for exactly what it requires and does not do by default.
 
 <!-- Rendered from assets/diagrams/write-authorization-path.mmd -- see
-     that file to edit the diagram source, then regenerate this image.
-     Same PyPI-compatibility reason as the READ-path diagram above. -->
+     that file to edit the diagram source, then regenerate this image. -->
 
 ![Authorization path: the default profile has 0 WRITE tools and is not reachable; an explicit operator opt-in provisions the write_protected profile plus full Tier 1 material; that requires off-host signed authorization and confirmation from separate identities, six fail-closed gates, a sealed MutationExecutor that is the only path that ever sends, and an authoritative read-back whose outcome is either VERIFIED or, if ambiguous, RECONCILIATION -- never a blind retry](https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/write-authorization-path.svg)
 
 See [the full architecture diagrams page](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/)
-for the gate-by-gate detail behind both diagrams above.
-
-## Requirements
-
-- **Python** 3.11, 3.12, or 3.13.
-- **pfSense** with the REST API package (`pfrest`/`pfSense-pkg-RESTAPI`,
-  API v2) installed and enabled.
-
-See [Compatibility](https://night4me.github.io/pfsense-mcp-server/COMPATIBILITY/)
-for exactly which pfSense editions/releases are directly verified vs.
-merely expected to work.
-
-## Quick start
-
-```console
-python -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install --upgrade pfsense-mcp-server
-install -m 600 /dev/null /absolute/private/path/pfsense-api.key
-# paste your pfSense API key as the file's first line, then:
-```
-
-```json
-{
-  "command": "/absolute/path/to/.venv/bin/pfsense-mcp-server",
-  "env": {
-    "PFSENSE_API_URL": "https://pfsense.example.invalid",
-    "PFSENSE_IDENTITY": "api-mcp-admin",
-    "PFSENSE_API_KEY_FILE": "/absolute/private/path/pfsense-api.key",
-    "PFSENSE_TLS_MODE": "strict"
-  }
-}
-```
-
-Point your MCP client at that command (see
-[Connect your MCP client](#connect-your-mcp-client) below), confirm it
-shows 97 tools (95 READ + 2 guidance, 0 WRITE), then try one of the
-prompts from [What it does](#what-it-does) above. Full walkthrough,
-credential handling, and verification steps:
-[Installation](https://night4me.github.io/pfsense-mcp-server/INSTALLATION/).
-
-## First setup
-
-Prefer a dedicated, least-privilege pfSense identity over reusing an
-existing credential? The bundled operator CLI can provision and verify
-one for you:
-
-```console
-pfsense-mcp-security setup
-```
-
-This is a guided, **non-mutating** wizard — it only plans; nothing is
-provisioned until a separate, explicit `setup apply` step with a
-confirmation token you've reviewed. Full walkthrough, including the
-optional protected-WRITE opt-in:
-[Security setup wizard](https://night4me.github.io/pfsense-mcp-server/SECURITY_SETUP_WIZARD/).
-
-## Connect your MCP client
-
-Once your server configuration works, generate the exact client config
-block automatically:
-
-```console
-pfsense-mcp-security setup write-client-config \
-  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
-  --capability-posture read_only --anchor-assurance none
-```
-
-Or copy one of the ready-made per-client guides — Claude Desktop,
-Claude Code, Codex CLI, ChatGPT desktop, Cursor, VS Code, Continue — from
-[`examples/README.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md).
-Full detail on both paths:
-[Connect your MCP client](https://night4me.github.io/pfsense-mcp-server/MCP_CLIENT_CONFIGURATION/).
+for the gate-by-gate detail behind both diagrams.
 
 ## What you get
 
@@ -170,41 +146,78 @@ Full per-tool reference, parameters, and provenance:
 [MCP tool reference](https://night4me.github.io/pfsense-mcp-server/API/) ·
 [Tool & guidance reference](https://night4me.github.io/pfsense-mcp-server/TOOL_AND_GUIDANCE_REFERENCE/).
 
+## Connect your MCP client
+
+Once your server configuration works, generate the exact client config
+block automatically:
+
+```console
+pfsense-mcp-security setup write-client-config \
+  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
+  --capability-posture read_only --anchor-assurance none
+```
+
+This previews the change and asks for explicit confirmation before
+writing anything — it never silently overwrites an existing config.
+Supported clients: Claude Desktop, Claude Code, Codex CLI, ChatGPT
+desktop, and any other MCP-compatible client via the printed generic
+config block. Ready-made per-client guides —
+[`examples/README.md`](https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md).
+Full detail: [Connect your MCP client](https://night4me.github.io/pfsense-mcp-server/MCP_CLIENT_CONFIGURATION/).
+
+## Requirements
+
+- **Python** 3.11, 3.12, or 3.13.
+- **pfSense** with the REST API package (`pfrest`/`pfSense-pkg-RESTAPI`,
+  API v2) installed and enabled.
+
+See [Compatibility](https://night4me.github.io/pfsense-mcp-server/COMPATIBILITY/)
+for exactly which pfSense editions/releases are directly verified vs.
+merely expected to work.
+
 ## Documentation
 
-- [Installation](https://night4me.github.io/pfsense-mcp-server/INSTALLATION/) ·
-  [Compatibility](https://night4me.github.io/pfsense-mcp-server/COMPATIBILITY/)
-- [Security setup wizard](https://night4me.github.io/pfsense-mcp-server/SECURITY_SETUP_WIZARD/) ·
-  [Connect your MCP client](https://night4me.github.io/pfsense-mcp-server/MCP_CLIENT_CONFIGURATION/)
-- [Configuration reference](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/) (env vars, troubleshooting)
-- [MCP tool reference](https://night4me.github.io/pfsense-mcp-server/API/) ·
-  [Tool & guidance reference](https://night4me.github.io/pfsense-mcp-server/TOOL_AND_GUIDANCE_REFERENCE/)
-- [Security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/) ·
-  [Threat model](https://night4me.github.io/pfsense-mcp-server/THREAT_MODEL/)
-- [Architecture diagrams](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/) ·
-  [Architecture decisions](https://night4me.github.io/pfsense-mcp-server/adr/)
-- [Tier 1 safety architecture](https://night4me.github.io/pfsense-mcp-server/TIER1_ARCHITECTURE/) ·
-  [Public roadmap](https://night4me.github.io/pfsense-mcp-server/ROADMAP/)
-- [Contributing](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md) ·
-  [Support](https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md) ·
-  [Security policy](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md)
+**Getting started**
+[Installation](https://night4me.github.io/pfsense-mcp-server/INSTALLATION/) ·
+[Security setup wizard](https://night4me.github.io/pfsense-mcp-server/SECURITY_SETUP_WIZARD/) ·
+[Connect your MCP client](https://night4me.github.io/pfsense-mcp-server/MCP_CLIENT_CONFIGURATION/)
+
+**Using the server**
+[MCP tool reference](https://night4me.github.io/pfsense-mcp-server/API/) ·
+[Tool & guidance reference](https://night4me.github.io/pfsense-mcp-server/TOOL_AND_GUIDANCE_REFERENCE/) ·
+[Configuration reference](https://night4me.github.io/pfsense-mcp-server/CONFIGURATION/)
+
+**Security**
+[Security model](https://night4me.github.io/pfsense-mcp-server/SECURITY_MODEL/) ·
+[Threat model](https://night4me.github.io/pfsense-mcp-server/THREAT_MODEL/) ·
+[Tier 1 safety architecture](https://night4me.github.io/pfsense-mcp-server/TIER1_ARCHITECTURE/)
+
+**Reference**
+[Compatibility](https://night4me.github.io/pfsense-mcp-server/COMPATIBILITY/) ·
+[Architecture diagrams](https://night4me.github.io/pfsense-mcp-server/ARCHITECTURE_DIAGRAMS/) ·
+[Public roadmap](https://night4me.github.io/pfsense-mcp-server/ROADMAP/)
+
+**Developer / contributor**
+[Architecture decisions](https://night4me.github.io/pfsense-mcp-server/adr/) ·
+[Contributing](https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md) ·
+[Support](https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md) ·
+[Security policy](https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md)
 
 ## Release status
 
 **v0.9.0 is the immutable production baseline, published on PyPI —
 95 pfSense READ tools + 2 documentation guidance tools, 0 WRITE
-tools.** Adds `pfsense_get_api_guidance`, a second, structurally
-distinct guidance tool covering the community-maintained pfREST
-package (`pfSense-pkg-RESTAPI`, documented at pfrest.org) — never
-blended with `pfsense_get_official_guidance` (Netgate product
-documentation). Evidence is explicitly labeled by provenance
-(`PROJECT_AUTHORED` / `PFREST_UPSTREAM` / `LIVE_APPLIANCE_SCHEMA` /
-`OFFICIAL_NETGATE`); documentation is data, never authority. See
-`CHANGELOG.md`'s `[0.9.0]` entry and `docs/ACCEPTANCE_v0.9.0.md` for
-the complete, independently verified evidence, and `CHANGELOG.md` in
-full for every prior release's own complete history — every past
-release's tag, GitHub Release, and PyPI artifact remains unmoved as an
-accurate historical record.
+tools.** `pfsense_get_api_guidance` covers the community-maintained
+pfREST package (`pfSense-pkg-RESTAPI`, documented at pfrest.org),
+kept structurally separate from `pfsense_get_official_guidance`
+(Netgate product documentation) — never blended. Evidence is
+explicitly labeled by provenance (`PROJECT_AUTHORED` /
+`PFREST_UPSTREAM` / `LIVE_APPLIANCE_SCHEMA` / `OFFICIAL_NETGATE`);
+documentation is data, never authority. See `CHANGELOG.md`'s
+`[0.9.0]` entry and `docs/ACCEPTANCE_v0.9.0.md` for the complete,
+independently verified evidence — every past release's tag, GitHub
+Release, and PyPI artifact remains unmoved as an accurate historical
+record.
 
 ## Contributing
 
@@ -214,3 +227,11 @@ boundaries. Read [CONTRIBUTING.md](https://github.com/night4me/pfsense-mcp-serve
 ## License
 
 Licensed under the [MIT License](https://github.com/night4me/pfsense-mcp-server/blob/main/LICENSE).
+
+---
+
+*pfSense® is a registered trademark of Electric Sheep Fencing, LLC,
+exclusively licensed to Rubicon Communications, LLC d/b/a Netgate.
+This project is an independent, community-built tool. It is not
+affiliated with, endorsed by, or sponsored by Electric Sheep Fencing,
+LLC or Netgate.*

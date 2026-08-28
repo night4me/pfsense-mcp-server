@@ -76,6 +76,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started:
+      - GETTING_STARTED.md
       - Installation: INSTALLATION.md
       - Security setup wizard (pfsense-mcp-security): SECURITY_SETUP_WIZARD.md
       - Connect your MCP client: MCP_CLIENT_CONFIGURATION.md

@@ -34,7 +34,7 @@ through `--env`; this server accepts only a key-file path.
 ## Expected behaviour
 
 Run `codex mcp list`, then use `/mcp` in the Codex TUI to inspect the server.
-With no tool restriction, it registers 95 READ tools, 1 guidance tool, and zero WRITE tools.
+With no tool restriction, it registers 95 READ tools, 2 guidance tools, and zero WRITE tools.
 
 ## Troubleshooting and limitations
 

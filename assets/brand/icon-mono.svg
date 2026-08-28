@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-labelledby="pfsenseMcpIconMonoTitle">
+  <title id="pfsenseMcpIconMonoTitle">pfsense-mcp-server "Network Shield" symbol, single-color</title>
+  <defs>
+    <clipPath id="shieldClipMono">
+      <path d="M100 10
+               C70 10, 40 22, 25 40
+               C25 95, 30 140, 50 162
+               C65 180, 82 190, 100 196
+               C118 190, 135 180, 150 162
+               C170 140, 175 95, 175 40
+               C160 22, 130 10, 100 10
+               Z" />
+    </clipPath>
+  </defs>
+
+  <path d="M100 10
+           C70 10, 40 22, 25 40
+           C25 95, 30 140, 50 162
+           C65 180, 82 190, 100 196
+           C118 190, 135 180, 150 162
+           C170 140, 175 95, 175 40
+           C160 22, 130 10, 100 10
+           Z"
+        fill="#0B1220" />
+
+  <g clip-path="url(#shieldClipMono)">
+    <g stroke="#F1F5F9" stroke-width="4" fill="none">
+      <line x1="100" y1="55" x2="80" y2="76" />
+      <line x1="100" y1="55" x2="120" y2="76" />
+      <line x1="100" y1="55" x2="100" y2="80" />
+    </g>
+    <g fill="#F1F5F9">
+      <circle cx="100" cy="55" r="8" />
+      <circle cx="80" cy="76" r="6.5" />
+      <circle cx="120" cy="76" r="6.5" />
+      <circle cx="100" cy="80" r="6.5" />
+    </g>
+    <g fill="#F1F5F9" opacity="0.9">
+      <rect x="35" y="120" width="26" height="13" rx="1.5" />
+      <rect x="65" y="120" width="26" height="13" rx="1.5" />
+      <rect x="95" y="120" width="26" height="13" rx="1.5" />
+      <rect x="125" y="120" width="26" height="13" rx="1.5" />
+
+      <rect x="20" y="137" width="26" height="13" rx="1.5" />
+      <rect x="50" y="137" width="26" height="13" rx="1.5" />
+      <rect x="80" y="137" width="26" height="13" rx="1.5" />
+      <rect x="110" y="137" width="26" height="13" rx="1.5" />
+      <rect x="140" y="137" width="26" height="13" rx="1.5" />
+
+      <rect x="35" y="154" width="26" height="13" rx="1.5" />
+      <rect x="65" y="154" width="26" height="13" rx="1.5" />
+      <rect x="95" y="154" width="26" height="13" rx="1.5" />
+      <rect x="125" y="154" width="26" height="13" rx="1.5" />
+    </g>
+  </g>
+</svg>

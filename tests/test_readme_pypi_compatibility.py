@@ -54,6 +54,14 @@ _EXPECTED_DIAGRAM_URLS = (
     "https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/read-trust-path.svg",
     "https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/diagrams/write-authorization-path.svg",
 )
+# v1.0.0 Product/UX arc: the hero brand image added under assets/brand/
+# is exactly the same PyPI-relative-path hazard class as the two
+# diagrams above -- covered by its own absolute-URL check below rather
+# than folded into _EXPECTED_DIAGRAM_URLS (which several other checks
+# in this file assume enumerates only the two original diagram SVGs).
+_EXPECTED_BRAND_IMAGE_URL = (
+    "https://raw.githubusercontent.com/night4me/pfsense-mcp-server/main/assets/brand/logo-lockup.svg"
+)
 
 
 def test_readme_source_has_no_mermaid_fence():
@@ -95,12 +103,36 @@ def test_readme_never_uses_a_relative_path_for_a_diagram_image():
     text = README.read_text(encoding="utf-8")
     for match in _IMAGE_LINE.finditer(text):
         url = match.group("url")
-        if "assets/diagrams" in url:
+        if "assets/diagrams" in url or "assets/brand" in url:
             assert url.startswith("https://raw.githubusercontent.com/"), (
-                f"README.md references a diagram image with a non-absolute URL ({url!r}) -- this "
+                f"README.md references an image with a non-absolute URL ({url!r}) -- this "
                 "would 404 on PyPI's long_description, which has no repository file tree to resolve "
                 "a relative path against."
             )
+
+
+def test_readme_references_the_brand_hero_image_by_absolute_url():
+    text = README.read_text(encoding="utf-8")
+    found = {match.group("url") for match in _IMAGE_LINE.finditer(text)}
+    assert _EXPECTED_BRAND_IMAGE_URL in found
+
+
+def test_readme_never_uses_raw_html_that_might_not_survive_pypi_sanitization():
+    """PyPI's long_description renderer (readme_renderer, nh3/bleach-
+    based) sanitizes raw HTML against an allowlist GitHub's own renderer
+    does not apply -- unlike GitHub, an unsupported tag can be silently
+    stripped or mangled rather than just failing to look as intended.
+    This project has exactly one already-verified-safe raw HTML
+    construct in README.md (the `<!-- -->` comments preceding each
+    image, confirmed inert), so anything else is presumed unverified and
+    kept out rather than tested for individually."""
+
+    text = README.read_text(encoding="utf-8")
+    # Strip HTML comments first so they don't trip the generic
+    # "looks like a tag" check below.
+    without_comments = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    tag_like = re.findall(r"</?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?>", without_comments)
+    assert not tag_like, f"README.md contains untested raw HTML tag(s): {tag_like}"
 
 
 @pytest.mark.parametrize(
@@ -117,6 +149,20 @@ def test_diagram_svg_is_self_contained_with_no_script_or_external_reference(name
         "renderers inject by default) -- strip it so the shipped SVG has zero external references"
     )
     assert "@import" not in content, f"{svg_path} contains an external stylesheet @import"
+
+
+def test_brand_hero_svg_is_self_contained_with_no_script_or_external_reference():
+    svg_path = Path(__file__).resolve().parents[1] / "assets" / "brand" / "logo-lockup.svg"
+    assert svg_path.is_file(), f"{svg_path} referenced by README.md but missing from the repository"
+    content = svg_path.read_text(encoding="utf-8")
+    assert "<script" not in content.lower(), f"{svg_path} contains a <script> tag -- must not, it is embedded via <img>"
+    assert "cdnjs.cloudflare.com" not in content
+    assert "@import" not in content
+    # The one legitimate "http://" in a hand-authored SVG is the fixed
+    # xmlns namespace URI, never fetched at render time -- anything else
+    # would be a real external reference.
+    external_refs = [line for line in content.splitlines() if "http://" in line and "xmlns" not in line]
+    assert not external_refs, f"{svg_path} contains unexpected external reference(s): {external_refs}"
 
 
 @pytest.mark.parametrize(

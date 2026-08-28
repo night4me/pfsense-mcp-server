@@ -114,10 +114,11 @@ The default `auditor` profile exposes the accepted READ capability set and
 grants zero WRITE capabilities. Under this default no WRITE tool is
 registered and the production bootstrap does not construct a write
 client — the public MCP contract remains exactly the accepted READ-only
-tool set (95 tools) plus the 1 documentation guidance tool
-(`pfsense_get_official_guidance`, not a pfSense READ capability, registered
-alongside the READ tools whenever the active profile grants any capability
-at all), with 0 WRITE tools, unless an operator explicitly opts in (see
+tool set (95 tools) plus the 2 documentation guidance tools
+(`pfsense_get_official_guidance` and `pfsense_get_api_guidance`, neither
+a pfSense READ capability, both registered alongside the READ tools
+whenever the active profile grants any capability at all), with 0 WRITE
+tools, unless an operator explicitly opts in (see
 below). The `engineer` profile has zero capabilities, so it registers zero
 tools of any kind — no READ tools, no guidance tool, no WRITE tools.
 

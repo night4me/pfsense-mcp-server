@@ -36,7 +36,7 @@ VS Code documents workspace and profile locations in its
 ## Expected behaviour
 
 Start the server from VS Code's MCP controls. The current auditor profile
-registers 95 READ tools, 1 guidance tool, and zero WRITE tools. VS Code may ask before a model can
+registers 95 READ tools, 2 guidance tools, and zero WRITE tools. VS Code may ask before a model can
 invoke a tool, depending on the selected approval settings.
 
 ## Troubleshooting

@@ -29,7 +29,7 @@ locations and standalone-block requirements.
 ## Expected behaviour
 
 In Agent mode, Continue loads the `pfSense` server and discovers 95 READ
-tools plus 1 guidance tool. No WRITE tool is available. Tool approval
+tools plus 2 guidance tools. No WRITE tool is available. Tool approval
 behaviour depends on the Continue version and local agent settings.
 
 ## Troubleshooting
