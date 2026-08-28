@@ -1911,6 +1911,8 @@
       
         
       
+        
+      
     
     
     
@@ -2899,6 +2901,34 @@
     
   
     ADR-034 README Mermaid to static-SVG PyPI compatibility patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-035 pfREST live documentation guidance layer
   
 
     
@@ -4535,8 +4565,8 @@ separate, explicitly authorized future phase (see
 <a href="../ROADMAP/">the public roadmap</a>), not a way to unlock anything today.</p>
 <p><code>PFSENSE_ALLOWED_TOOLS</code> is an optional restriction applied after the
 selected profile. If absent, the auditor profile keeps all 95 READ tools
-plus the 1 documentation guidance tool (<code>pfsense_get_official_guidance</code>,
-96 total). If present, only the comma-separated exact names in both the
+plus the 2 documentation guidance tools (<code>pfsense_get_official_guidance</code>,
+<code>pfsense_get_api_guidance</code>, 97 total). If present, only the comma-separated exact names in both the
 profile and the restriction register — this applies uniformly to READ and
 guidance tool names alike. Whitespace around names is ignored and duplicate
 names are normalized. An explicitly empty value registers zero tools.

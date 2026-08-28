@@ -1719,6 +1719,8 @@
       
         
       
+        
+      
     
     
     
@@ -2707,6 +2709,34 @@
     
   
     ADR-034 README Mermaid to static-SVG PyPI compatibility patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="adr/ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-035 pfREST live documentation guidance layer
   
 
     
@@ -4072,8 +4102,8 @@
 <p><strong>A security-first MCP server for pfSense.</strong> It gives an MCP client
 strongly typed, read-only visibility into one pfSense appliance — without
 exposing raw shell access or a way to mutate the appliance by accident.</p>
-<p><strong>Current production contract: 95 pfSense READ tools + 1 official-
-guidance tool. 0 WRITE tools.</strong> That split
+<p><strong>Current production contract: 95 pfSense READ tools + 2 documentation
+guidance tools. 0 WRITE tools.</strong> That split
 is deliberate: this project treats mutation as a safety-engineering
 problem, not a feature flag — the maintainer's own reasoning is in
 <a href="SECURITY_MODEL/#why-this-project-exists">the security model's "Why this project exists"</a>.
@@ -4143,8 +4173,8 @@ stay authoritative in the repository itself instead:</p>
   has inventoried and <em>not yet</em> authorized. Start here if you're deciding
   whether to trust this project with appliance credentials.</li>
 <li><strong>API reference</strong> — the full MCP tool catalog this server currently
-  registers (95 pfSense READ tools, 1 official-guidance tool, zero WRITE
-  tools).</li>
+  registers (95 pfSense READ tools, 2 documentation guidance tools, zero
+  WRITE tools).</li>
 <li><strong>Architecture (current production)</strong> — how the active READ path is
   built: transport, typed response mapping, capability gating, tool
   registration.</li>
