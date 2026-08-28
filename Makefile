@@ -6,7 +6,8 @@
         capture-fixture audit-fixture approve-fixture \
         scaffold-capability checkpoint \
         coverage security-static package-check reproducible-build artifact-manifest release-check \
-        docs-build docs-serve docs-freshness-check sbom min-deps-check witness-daemon-check guidance-corpus-audit
+        docs-build docs-serve docs-freshness-check sbom min-deps-check witness-daemon-check guidance-corpus-audit \
+        pfrest-privilege-crosscheck
 
 PYTHON := .venv/bin/python
 REPORT := .validate/report.xml
@@ -331,6 +332,20 @@ docs-freshness-check:
 # silent wrong guidance.
 guidance-corpus-audit:
 	@$(PYTHON) scripts/guidance_corpus_audit.py
+
+# Advisory READ-only cross-check (pfREST_LIVE_GUIDANCE_ARC, 2026-08-28):
+# does PFREST_UPSTREAM's declared "Allowed privileges" for each tool's
+# mapped endpoint agree with LIVE_APPLIANCE_SCHEMA's (if a real appliance
+# is configured via the standard PFSENSE_* runtime environment variables)
+# and with this project's own ADR-033 pinned-source algorithm? Requires
+# network access (a live fetch of the public pfREST OpenAPI document, and
+# optionally one authenticated GET against a configured appliance); not
+# part of validate/quick/release-check for that reason (same rationale as
+# guidance-corpus-audit above). Never grants a privilege, modifies a
+# service account, or changes ADR-033's own mapping -- exits non-zero only
+# on a genuine cross-source DRIFT finding.
+pfrest-privilege-crosscheck:
+	@$(PYTHON) scripts/pfrest_privilege_crosscheck.py
 
 # Software Bill of Materials (SBOM) generation. Deliberately outside
 # quick/validate/release-check -- an occasional, explicit, network-
