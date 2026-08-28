@@ -1,4 +1,4 @@
-flowchart LR
+flowchart TD
     A["AI / MCP client"] -->|"stdio (trust boundary)"| B["Explicit registered<br/>MCP tool<br/>(1 of 95, no dispatcher)"]
     B --> C["Capability / profile gate<br/>(auditor: READ only)"]
     C --> D["Least-privilege mapping<br/>(exact pfSense privilege)"]

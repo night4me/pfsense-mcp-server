@@ -1,4 +1,4 @@
-flowchart LR
+flowchart TD
     A["Default profile:<br/>0 WRITE tools<br/>(not reachable)"] -.->|"explicit operator<br/>opt-in required"| B["write_protected profile<br/>+ full Tier 1 material<br/>provisioned"]
     B --> C["Off-host signed<br/>authorization + confirmation<br/>(separate identities)"]
     C --> D["6 fail-closed gates<br/>(signature, expiry, digest,<br/>freshness, one-time use)"]
