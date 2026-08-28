@@ -66,25 +66,32 @@ def test_ci_permissions_are_read_only_and_no_release_steps_exist():
     assert "git push" not in text
 
 
-def test_codeql_has_only_required_read_permissions():
+def test_codeql_has_only_required_permissions():
     text = _workflow_text(CODEQL)
 
     assert _top_level_permissions(text) == {
         "actions": "read",
         "contents": "read",
         "packages": "read",
+        "security-events": "write",
     }
 
 
-def test_codeql_private_repository_mode_runs_analysis_without_sarif_upload():
+def test_codeql_public_repository_mode_uploads_sarif():
+    # This repository is public, so GitHub Code Scanning is free regardless
+    # of GitHub Advanced Security licensing (that licensing requirement
+    # only applies to private repositories) -- confirmed via `gh api` during
+    # the v1.0.0 Phase 2 hardening audit, H1. `upload: never` was based on a
+    # false "private repository" premise and silently discarded every
+    # finding; `upload: always` populates Security > Code Scanning with
+    # real, browsable findings.
     text = _workflow_text(CODEQL)
 
     assert "github/codeql-action/init@" in text
     assert "github/codeql-action/analyze@" in text
     assert "languages: python" in text
-    assert "upload: never" in text
-    assert "upload-sarif" not in text
-    assert "security-events:" not in text
+    assert "upload: always" in text
+    assert "security-events: write" in text
 
 
 def test_pypi_publish_workflow_is_oidc_only_and_disabled_by_default():
