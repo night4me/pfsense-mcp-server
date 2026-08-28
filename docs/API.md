@@ -1,8 +1,6 @@
 # MCP tool reference
 
-Version: 0.9.0 release-candidate state (not yet published — the
-currently published PyPI release is `v0.8.0`, 95 READ + 1 guidance, 96
-total; see `CHANGELOG.md`)
+Version: 0.9.0 release state
 Profile: `auditor`  
 Registered tools: 95 READ, 2 guidance, 0 WRITE
 

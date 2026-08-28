@@ -7,9 +7,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-**`v0.9.0` release candidate** (not yet tagged, released, or
-published — see `docs/ACCEPTANCE_v0.9.0.md` and
-`reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md`).
+## [0.9.0] - 2026-08-28
 
 **Public MCP tool contract changes: 95 pfSense READ tools + 2
 documentation guidance tools (was 1), 0 default-reachable WRITE = 97

@@ -120,11 +120,8 @@ Once a real MCP client (see
 [Connect your MCP client](MCP_CLIENT_CONFIGURATION.md)) is configured
 and connected, confirm it reports:
 
-- **96 total tools**: 95 pfSense READ tools + 1 documentation guidance
-  tool (`pfsense_get_official_guidance`). (A `v0.9.0` release candidate
-  adds a second guidance tool, `pfsense_get_api_guidance` — 97 total —
-  but is not yet published; see `CHANGELOG.md` for the current
-  published-vs-candidate state before assuming a count higher than 96.)
+- **97 total tools**: 95 pfSense READ tools + 2 documentation guidance
+  tools (`pfsense_get_official_guidance`, `pfsense_get_api_guidance`).
 - **0 WRITE tools** — this is the default (`auditor`) profile, and the
   one this project recommends for normal use.
 

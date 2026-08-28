@@ -113,7 +113,7 @@ install -m 600 /dev/null /absolute/private/path/pfsense-api.key
 
 Point your MCP client at that command (see
 [Connect your MCP client](#connect-your-mcp-client) below), confirm it
-shows 96 tools (95 READ + 1 guidance, 0 WRITE), then try one of the
+shows 97 tools (95 READ + 2 guidance, 0 WRITE), then try one of the
 prompts from [What it does](#what-it-does) above. Full walkthrough,
 credential handling, and verification steps:
 [Installation](https://night4me.github.io/pfsense-mcp-server/INSTALLATION/).
@@ -191,18 +191,20 @@ Full per-tool reference, parameters, and provenance:
 
 ## Release status
 
-**v0.8.0 is the immutable production baseline, published on PyPI —
-95 pfSense READ tools + 1 official-guidance tool, 0 WRITE tools.** A
-CLI-only expansion of the `pfsense-mcp-security` operator tooling
-(ADR-021/ADR-033) over `v0.7.2` — no MCP capability change, public
-contract byte-identical to `v0.7.2`. Adds the `pfsense-mcp-security
-recover` CLI subcommand and the full guided `setup`/`setup apply`/`setup
-write-client-config` provisioning wizard, plus a restart-classification
-correctness fix for `bootstrap`. See `CHANGELOG.md`'s `[0.8.0]` entry
-and `docs/ACCEPTANCE_v0.8.0.md` for the complete, independently verified
-evidence, and `CHANGELOG.md` in full for every prior release's own
-complete history — every past release's tag, GitHub Release, and PyPI
-artifact remains unmoved as an accurate historical record.
+**v0.9.0 is the immutable production baseline, published on PyPI —
+95 pfSense READ tools + 2 documentation guidance tools, 0 WRITE
+tools.** Adds `pfsense_get_api_guidance`, a second, structurally
+distinct guidance tool covering the community-maintained pfREST
+package (`pfSense-pkg-RESTAPI`, documented at pfrest.org) — never
+blended with `pfsense_get_official_guidance` (Netgate product
+documentation). Evidence is explicitly labeled by provenance
+(`PROJECT_AUTHORED` / `PFREST_UPSTREAM` / `LIVE_APPLIANCE_SCHEMA` /
+`OFFICIAL_NETGATE`); documentation is data, never authority. See
+`CHANGELOG.md`'s `[0.9.0]` entry and `docs/ACCEPTANCE_v0.9.0.md` for
+the complete, independently verified evidence, and `CHANGELOG.md` in
+full for every prior release's own complete history — every past
+release's tag, GitHub Release, and PyPI artifact remains unmoved as an
+accurate historical record.
 
 ## Contributing
 

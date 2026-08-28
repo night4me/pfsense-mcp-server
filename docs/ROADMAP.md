@@ -52,12 +52,18 @@ published — see `docs/ACCEPTANCE_v0.9.0.md` and
 below reflects this current, candidate `main` state (97 total MCP
 tools), not the published `v0.8.0` package (96 total).
 
-- Production MCP surface (candidate `main`, pending `v0.9.0`): **95
-  pfSense READ tools + 2 documentation guidance tools, 0
-  default-reachable WRITE tools** — the READ/WRITE split is enforced
-  mechanically on every CI run (`scripts/write_capability_check.py`),
-  not merely documented. The published `v0.8.0` package on PyPI still
-  has only 1 guidance tool (96 total) until `v0.9.0` is published.
+**Update (2026-08-28, published): the current immutable published
+baseline is now `v0.9.0`** (95 pfSense READ tools + 2 documentation
+guidance tools, 0 WRITE; see `CHANGELOG.md`'s `[0.9.0]` entry,
+`docs/ACCEPTANCE_v0.9.0.md`, and
+`reports-ai/V0_9_0_PUBLICATION_2026-08-28.md` for independent
+post-publication verification, including PyPI provenance/Sigstore
+attestation and a clean-room public install).
+
+- Production MCP surface: **95 pfSense READ tools + 2 documentation
+  guidance tools, 0 default-reachable WRITE tools** — the READ/WRITE
+  split is enforced mechanically on every CI run
+  (`scripts/write_capability_check.py`), not merely documented.
 - **One WRITE capability now exists and is `verified=True`**:
   `set_firewall_alias_description_v1`
   (`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION`). It is still
