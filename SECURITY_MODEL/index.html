@@ -303,6 +303,8 @@
       
         
       
+        
+      
     
     
     
@@ -342,6 +344,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GETTING_STARTED/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -4414,10 +4444,11 @@ the active READ capability profile.</p>
 grants zero WRITE capabilities. Under this default no WRITE tool is
 registered and the production bootstrap does not construct a write
 client — the public MCP contract remains exactly the accepted READ-only
-tool set (95 tools) plus the 1 documentation guidance tool
-(<code>pfsense_get_official_guidance</code>, not a pfSense READ capability, registered
-alongside the READ tools whenever the active profile grants any capability
-at all), with 0 WRITE tools, unless an operator explicitly opts in (see
+tool set (95 tools) plus the 2 documentation guidance tools
+(<code>pfsense_get_official_guidance</code> and <code>pfsense_get_api_guidance</code>, neither
+a pfSense READ capability, both registered alongside the READ tools
+whenever the active profile grants any capability at all), with 0 WRITE
+tools, unless an operator explicitly opts in (see
 below). The <code>engineer</code> profile has zero capabilities, so it registers zero
 tools of any kind — no READ tools, no guidance tool, no WRITE tools.</p>
 <p>As of 2026-08-16, one WRITE endpoint is allow-listed —

@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-006-recovery-contract-philosophy/">
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/GETTING_STARTED/">
       
       
-        <link rel="prev" href="../ADR-005-inert-tier-0-write-infrastructure/">
+        <link rel="prev" href="..">
       
       
-        <link rel="next" href="../ADR-007-security-first-public-schemas/">
+        <link rel="next" href="../INSTALLATION/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>ADR-006 Recovery Contract philosophy - pfsense-mcp-server</title>
+        <title>Getting started - pfsense-mcp-server</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#adr-006-recovery-contract-philosophy" class="md-skip">
+        <a href="#getting-started" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ADR-006 Recovery Contract philosophy
+              Getting started
             
           </span>
         </div>
@@ -230,7 +230,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -260,7 +260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -284,8 +284,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -309,11 +311,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -334,7 +336,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -349,10 +351,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../GETTING_STARTED/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -368,6 +397,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-run-the-guided-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Run the guided setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-connect-your-ai-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Connect your AI client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-first-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. First use
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#something-not-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Something not working?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -380,7 +484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../INSTALLATION/" class="md-nav__link">
+      <a href="../INSTALLATION/" class="md-nav__link">
         
   
   
@@ -408,7 +512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_SETUP_WIZARD/" class="md-nav__link">
+      <a href="../SECURITY_SETUP_WIZARD/" class="md-nav__link">
         
   
   
@@ -436,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+      <a href="../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
         
   
   
@@ -464,7 +568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CONFIGURATION/" class="md-nav__link">
+      <a href="../CONFIGURATION/" class="md-nav__link">
         
   
   
@@ -492,7 +596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../COMPATIBILITY/" class="md-nav__link">
+      <a href="../COMPATIBILITY/" class="md-nav__link">
         
   
   
@@ -520,7 +624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+      <a href="../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
         
   
   
@@ -646,7 +750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
         
   
   
@@ -674,7 +778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../THREAT_MODEL/" class="md-nav__link">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
         
   
   
@@ -702,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
         
   
   
@@ -730,7 +834,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
         
   
   
@@ -758,7 +862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+      <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
         
   
   
@@ -786,7 +890,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+      <a href="../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
         
   
   
@@ -902,7 +1006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/" class="md-nav__link">
+      <a href="../API/" class="md-nav__link">
         
   
   
@@ -930,7 +1034,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API_REVIEW/" class="md-nav__link">
+      <a href="../API_REVIEW/" class="md-nav__link">
         
   
   
@@ -1028,7 +1132,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
         
   
   
@@ -1056,7 +1160,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
         
   
   
@@ -1084,7 +1188,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
         
   
   
@@ -1112,7 +1216,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
         
   
   
@@ -1140,7 +1244,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1168,7 +1272,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+      <a href="../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
         
   
   
@@ -1196,7 +1300,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+      <a href="../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
         
   
   
@@ -1228,8 +1332,6 @@
       
   
   
-    
-  
   
   
     
@@ -1267,15 +1369,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../tier1/" class="md-nav__link ">
+            <a href="../tier1/" class="md-nav__link ">
               
   
   
@@ -1299,7 +1401,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1317,7 +1419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1345,7 +1447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
         
   
   
@@ -1373,7 +1475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ROADMAP/" class="md-nav__link">
+      <a href="../ROADMAP/" class="md-nav__link">
         
   
   
@@ -1401,7 +1503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+      <a href="../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
         
   
   
@@ -1429,7 +1531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
         
   
   
@@ -1457,7 +1559,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1485,7 +1587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1513,7 +1615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+      <a href="../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
         
   
   
@@ -1543,7 +1645,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
         
   
   
@@ -1571,7 +1673,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
         
   
   
@@ -1596,8 +1698,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1681,15 +1781,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../adr/" class="md-nav__link ">
               
   
   
@@ -1713,7 +1813,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1733,7 +1833,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
         
   
   
@@ -1761,7 +1861,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
         
   
   
@@ -1789,7 +1889,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
         
   
   
@@ -1817,7 +1917,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
         
   
   
@@ -1845,7 +1945,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
         
   
   
@@ -1870,37 +1970,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-006 Recovery Contract philosophy
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
         
   
   
@@ -1916,109 +1989,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Context
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decision" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Decision
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alternatives-considered" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alternatives considered
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2031,7 +2001,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
         
   
   
@@ -2059,7 +2029,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
         
   
   
@@ -2087,7 +2057,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
         
   
   
@@ -2115,7 +2085,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
         
   
   
@@ -2143,7 +2113,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
         
   
   
@@ -2171,7 +2141,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
         
   
   
@@ -2199,7 +2169,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
         
   
   
@@ -2227,7 +2197,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
         
   
   
@@ -2255,7 +2225,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
         
   
   
@@ -2283,7 +2253,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
         
   
   
@@ -2311,7 +2281,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
         
   
   
@@ -2339,7 +2309,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
         
   
   
@@ -2367,7 +2337,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
         
   
   
@@ -2395,7 +2365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+      <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
         
   
   
@@ -2423,7 +2393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-021-security-posture-provisioning/" class="md-nav__link">
+      <a href="../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
         
   
   
@@ -2451,7 +2421,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-022-execution-authorization-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
         
   
   
@@ -2479,7 +2449,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-023-authorization-verification-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
         
   
   
@@ -2507,7 +2477,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-024-execution-authorization-coordination/" class="md-nav__link">
+      <a href="../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
         
   
   
@@ -2535,7 +2505,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+      <a href="../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
         
   
   
@@ -2563,7 +2533,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-026-first-write-capability-adapter/" class="md-nav__link">
+      <a href="../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
         
   
   
@@ -2591,7 +2561,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+      <a href="../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
         
   
   
@@ -2619,7 +2589,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+      <a href="../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
         
   
   
@@ -2647,7 +2617,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
         
   
   
@@ -2675,7 +2645,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
         
   
   
@@ -2703,7 +2673,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
         
   
   
@@ -2731,7 +2701,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
         
   
   
@@ -2759,7 +2729,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
         
   
   
@@ -2787,7 +2757,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
+      <a href="../adr/ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
         
   
   
@@ -2815,7 +2785,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
+      <a href="../adr/ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
         
   
   
@@ -2924,7 +2894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
         
   
   
@@ -2952,7 +2922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
         
   
   
@@ -2980,7 +2950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
         
   
   
@@ -3008,7 +2978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+      <a href="../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
         
   
   
@@ -3036,7 +3006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+      <a href="../tier1/specs/production_store_bootstrap/" class="md-nav__link">
         
   
   
@@ -3064,7 +3034,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
         
   
   
@@ -3092,7 +3062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
         
   
   
@@ -3120,7 +3090,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
         
   
   
@@ -3148,7 +3118,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
         
   
   
@@ -3176,7 +3146,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
         
   
   
@@ -3204,7 +3174,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
         
   
   
@@ -3232,7 +3202,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
         
   
   
@@ -3340,7 +3310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -3368,7 +3338,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -3396,7 +3366,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
         
   
   
@@ -3424,7 +3394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
         
   
   
@@ -3452,7 +3422,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../BENCHMARKS/" class="md-nav__link">
+      <a href="../BENCHMARKS/" class="md-nav__link">
         
   
   
@@ -3536,7 +3506,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../READ_BACKLOG/" class="md-nav__link">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
         
   
   
@@ -3654,7 +3624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
         
   
   
@@ -3682,7 +3652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
         
   
   
@@ -3710,7 +3680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
         
   
   
@@ -3738,7 +3708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
         
   
   
@@ -3766,7 +3736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.3.0/" class="md-nav__link">
         
   
   
@@ -3794,7 +3764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.3.1/" class="md-nav__link">
         
   
   
@@ -3822,7 +3792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.4.0/" class="md-nav__link">
         
   
   
@@ -3850,7 +3820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.4.1/" class="md-nav__link">
         
   
   
@@ -3878,7 +3848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.4.2/" class="md-nav__link">
         
   
   
@@ -3906,7 +3876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.5.0/" class="md-nav__link">
         
   
   
@@ -3934,7 +3904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.5.1/" class="md-nav__link">
         
   
   
@@ -3962,7 +3932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.6.0/" class="md-nav__link">
         
   
   
@@ -3990,7 +3960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.7.0/" class="md-nav__link">
         
   
   
@@ -4018,7 +3988,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.7.1/" class="md-nav__link">
         
   
   
@@ -4046,7 +4016,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.7.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.7.2/" class="md-nav__link">
         
   
   
@@ -4074,7 +4044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.8.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.8.0/" class="md-nav__link">
         
   
   
@@ -4102,7 +4072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.9.0/" class="md-nav__link">
         
   
   
@@ -4157,10 +4127,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
+  <a href="#1-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Context
+        1. Install
       
     </span>
   </a>
@@ -4168,10 +4138,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#decision" class="md-nav__link">
+  <a href="#2-run-the-guided-setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Decision
+        2. Run the guided setup
       
     </span>
   </a>
@@ -4179,49 +4149,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
+  <a href="#3-connect-your-ai-client" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alternatives-considered" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alternatives considered
+        3. Connect your AI client
       
     </span>
   </a>
@@ -4229,10 +4160,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
+  <a href="#4-first-use" class="md-nav__link">
     <span class="md-ellipsis">
       
-        References
+        4. First use
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#something-not-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Something not working?
       
     </span>
   </a>
@@ -4256,7 +4198,7 @@
 
 
   
-    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-006-recovery-contract-philosophy.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/GETTING_STARTED.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -4264,63 +4206,66 @@
   
 
 
-<h1 id="adr-006-recovery-contract-philosophy">ADR-006: Recovery Contract philosophy<a class="headerlink" href="#adr-006-recovery-contract-philosophy" title="Permanent link">&para;</a></h1>
+<h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
+<p>Four steps, in order. Most users only need the first three.</p>
+<h2 id="1-install">1. Install<a class="headerlink" href="#1-install" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="go">pip install pfsense-mcp-server</span>
+</code></pre></div>
+<p>Requires Python 3.11, 3.12, or 3.13, and a pfSense appliance with the
+REST API package (<code>pfrest</code>/<code>pfSense-pkg-RESTAPI</code>, API v2) installed and
+enabled. See <a href="../COMPATIBILITY/">Compatibility</a> for exactly which
+pfSense editions/releases are directly verified.</p>
+<h2 id="2-run-the-guided-setup">2. Run the guided setup<a class="headerlink" href="#2-run-the-guided-setup" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup</span>
+</code></pre></div>
+<p>This is a short, interactive wizard: it asks for your firewall's
+address, which safety level you want (read-only is the default and
+recommended choice — see <a href="../SECURITY_MODEL/">Security model</a> for what
+each level means), and how to verify the connection. It never changes
+anything by itself — it only produces a plan for you to review. Full
+detail on every question it asks: <a href="../SECURITY_SETUP_WIZARD/">Security setup wizard</a>.</p>
+<h2 id="3-connect-your-ai-client">3. Connect your AI client<a class="headerlink" href="#3-connect-your-ai-client" title="Permanent link">&para;</a></h2>
+<p>The wizard's last step prints the exact configuration block for your
+MCP client. You can also generate it directly, with a preview and
+explicit confirmation before anything is written:</p>
+<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup write-client-config \</span>
+<span class="go">  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \</span>
+<span class="go">  --capability-posture read_only --anchor-assurance none</span>
+</code></pre></div>
+<p>Full detail, every supported client, and manual configuration if you'd
+rather not use the generator: <a href="../MCP_CLIENT_CONFIGURATION/">Connect your MCP client</a>.</p>
+<h2 id="4-first-use">4. First use<a class="headerlink" href="#4-first-use" title="Permanent link">&para;</a></h2>
+<p>Once your client shows the server connected (97 tools registered — 95
+READ + 2 guidance), ask it something concrete:</p>
 <ul>
-<li><strong>Status:</strong> Accepted; inert domain implementation, activation prerequisites incomplete</li>
-<li><strong>Date:</strong> 2026-08-06</li>
+<li><em>"What's my pfSense version and which packages are installed?"</em></li>
+<li><em>"List my VLANs and which interface each one rides on."</em></li>
+<li><em>"Is my WAN gateway up right now?"</em></li>
+<li><em>"Which certificates expire soon?"</em></li>
 </ul>
-<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
-<p>A successful mutating HTTP response is not sufficient evidence that an
-appliance can be recovered. Mutation can target the wrong object, race external
-changes, time out after applying, or crash between side effect and state
-persistence. Rollback must be designed before execution, not improvised after a
-failure.</p>
-<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
-<p>Every future mutation requires a short-lived Recovery Contract created from
-verified pre-state. The authoritative contract must be loaded by ID from a
-store and be immutably bound to capability, endpoint, method, canonical target,
-mutation intent, snapshot, rollback plan, and legal state transition.</p>
-<p>Execution and rollback use atomic transitions. HTTP outcome plus semantic
-read-back is required before commitment/restoration. Ambiguous outcomes enter an
-operator-reconciliation state and are never blindly replayed.</p>
-<p>No Tier 1 activation occurs until persistence and crash behavior are explicitly
-accepted.</p>
-<p>The v0.3.0 development framework implements the pure contract,
-canonicalization, closed transitions, authenticated atomic store, exact empty
-policy, fault classification, and value-free event model in an isolated
-package. This is an implementation of the safety philosophy, not activation:
-there is no executor, endpoint, capability, transport wiring, or MCP tool.
-Encryption/key management, whole-store anti-rollback, authenticated owner
-confirmation, and capability-specific outcome/rollback semantics remain
-explicit prerequisites.</p>
-<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
-<h3 id="positive">Positive<a class="headerlink" href="#positive" title="Permanent link">&para;</a></h3>
+<p>If nothing responds, or the connection fails, <code>pfsense-mcp-security
+doctor</code> diagnoses protected-change readiness (not applicable if you
+chose read-only); TLS/connectivity/authentication problems show up
+directly in your MCP client's own connection error, covered in the
+"Something not working?" section below.</p>
+<h2 id="something-not-working">Something not working?<a class="headerlink" href="#something-not-working" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Recovery becomes a precondition rather than a best-effort feature.</li>
-<li>Contract substitution/replay and wrong-target risks have explicit controls.</li>
-<li>Crash/timeout ambiguity is represented honestly.</li>
+<li><strong>Certificate/TLS errors</strong> — see <a href="../SECURITY_SETUP_WIZARD/">Security setup wizard</a>'s
+  TLS section. Never disable certificate verification as a shortcut;
+  the wizard's <code>auto</code>/CA-file path handles a self-signed appliance
+  certificate safely.</li>
+<li><strong>Authentication errors</strong> — confirm the API key file path in your
+  MCP client's configuration matches what <code>setup</code> printed, and that
+  the file's first line is the key with no extra whitespace.</li>
+<li><strong>Missing privileges</strong> — <code>pfsense-mcp-security discover</code> reports
+  exactly what the configured identity can and cannot do today.</li>
+<li><strong>MCP client doesn't see the server at all</strong> — re-run
+  <code>pfsense-mcp-security setup write-client-config</code> and compare its
+  output against what's actually in your client's config file; a stale
+  or hand-edited path is the most common cause.</li>
 </ul>
-<h3 id="negative">Negative<a class="headerlink" href="#negative" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Tier 1 requires durable state, canonicalization, concurrency, and operational
-  runbooks before one tool can ship.</li>
-<li>Snapshots create sensitive-data storage and lifecycle obligations.</li>
-<li>Some pfSense mutations may prove unsuitable as an initial capability.</li>
-</ul>
-<h2 id="alternatives-considered">Alternatives considered<a class="headerlink" href="#alternatives-considered" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Caller-supplied contract object:</strong> rejected because caller state is not
-  authoritative.</li>
-<li><strong>In-memory snapshot only:</strong> rejected for production crash recovery.</li>
-<li><strong>Rollback after any error without read-back:</strong> rejected because outcome may
-  already be unknown and replay may compound damage.</li>
-<li><strong>Confirmation boolean only:</strong> rejected because consent is not recovery.</li>
-</ul>
-<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../TIER1_ROADMAP/">Tier 1 roadmap</a></li>
-<li><a href="../../THREAT_MODEL/">Threat model</a></li>
-</ul>
+<p>Full configuration reference, every environment variable, and every
+error this server can produce: <a href="../CONFIGURATION/">Configuration reference</a>.</p>
 
 
 
@@ -4376,10 +4321,10 @@ explicit prerequisites.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
