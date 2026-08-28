@@ -628,7 +628,7 @@ finding out the hard way.
 
 ```
 $ pfsense-mcp-security doctor
-pfsense-mcp-security: Tier 1 ceremony readiness check (read-only, diagnostic only)
+pfsense-mcp-security doctor -- protected-change readiness check
 
 Overall: NOT READY
 
