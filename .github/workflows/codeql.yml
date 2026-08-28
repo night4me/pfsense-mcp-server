@@ -11,6 +11,7 @@ permissions:
   actions: read
   contents: read
   packages: read
+  security-events: write
 
 jobs:
   analyze:
@@ -24,6 +25,25 @@ jobs:
           languages: python
       - uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
         with:
-          # Private repositories without GitHub Code Security can run the full
-          # analysis but cannot upload SARIF to the Code Scanning backend.
-          upload: never
+          # This repository is PUBLIC, so GitHub Code Scanning is free
+          # regardless of GitHub Advanced Security licensing (that
+          # licensing requirement only applies to private repositories) --
+          # `upload: never` here was based on a false premise (found
+          # during the v1.0.0 Phase 2 hardening audit, H1). Uploading
+          # SARIF populates the repository's Security > Code Scanning
+          # tab with real, browsable findings and is a prerequisite for
+          # any future branch-protection "required status check" based
+          # on actual alert severity -- neither of which was possible
+          # with `upload: never`, since a real CodeQL finding never made
+          # this job itself fail (its own success/failure has always
+          # reflected only internal analysis-engine success, independent
+          # of how many or how severe the findings are -- confirmed via
+          # the codeql-action project's own documented `upload` semantics
+          # and the existence of separate third-party "fail workflow on
+          # alerts" actions built specifically to add that missing
+          # behavior). This change makes findings visible; it does NOT
+          # by itself make this job fail on a finding, and does NOT add
+          # branch-protection enforcement -- both remain a separate,
+          # explicit owner decision (repository administration, not a
+          # source/workflow change) if stronger gating is ever desired.
+          upload: always
