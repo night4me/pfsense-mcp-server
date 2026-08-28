@@ -158,6 +158,39 @@ jobs:
       - name: Verify minimum dependency versions
         run: python scripts/verify_min_dependencies.py
 
+  release-state:
+    # Three standalone, offline, stdlib-only scripts whose *internal
+    # logic* is already exercised by the full pytest suite (the `test`
+    # job's `make quick`, via their own dedicated unit tests), but whose
+    # *end-to-end invocation against this exact commit's real
+    # repository state* was never independently run in CI before this
+    # job (found during the v1.0.0 Phase 2 hardening audit, H2) -- a
+    # unit-tested checker whose own script never actually runs against
+    # real HEAD state can drift silently without anything noticing.
+    # `release_state_check.py` in particular is the exact category of
+    # check that would have caught the original v0.8.0 tag-visibility
+    # incident before it happened, had it existed then; `fetch-depth: 0`
+    # here is required for its own tag-reachability check, matching the
+    # same pattern already used by the `test`/`coverage`/`min-deps` jobs
+    # above. No dependency install is needed: all three scripts import
+    # only the standard library plus this repository's own `scripts/lib/`
+    # modules.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Release-state consistency
+        run: python scripts/release_state_check.py
+      - name: Documentation consistency
+        run: python scripts/validate_docs.py
+      - name: Fixture safety
+        run: python scripts/fixture_safety.py
+
   docs:
     # Builds the documentation site to prove it stays buildable --
     # never deploys anything. Enabling a public GitHub Pages deployment
@@ -183,9 +216,9 @@ jobs:
     # ref) -- fails the check if a newly introduced dependency has a
     # known vulnerability or a license outside the allowed set. Uses
     # this repository's default-enabled Dependency Graph; does not
-    # require GitHub Advanced Security / Code Scanning (unlike CodeQL's
-    # SARIF upload, which this private repository intentionally leaves
-    # disabled -- see codeql.yml).
+    # itself require SARIF/Code Scanning (unlike CodeQL -- see
+    # codeql.yml, which now uploads SARIF since this repository is
+    # public and that costs nothing).
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
