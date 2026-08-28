@@ -618,6 +618,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#schema-diff-maintaineroperator-tool-not-part-of-the-mcp-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema diff (maintainer/operator tool, not part of the MCP surface)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4161,6 +4172,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#schema-diff-maintaineroperator-tool-not-part-of-the-mcp-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema diff (maintainer/operator tool, not part of the MCP surface)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4380,6 +4402,26 @@ it into your own CI. Requires network access, so it is not part of
 <code>make quick</code>/<code>make validate</code>, matching this project's established
 pattern for every other live-network check
 (<code>make docs-freshness-check</code>, <code>make guidance-corpus-audit</code>).</p>
+<h3 id="schema-diff-maintaineroperator-tool-not-part-of-the-mcp-surface">Schema diff (maintainer/operator tool, not part of the MCP surface)<a class="headerlink" href="#schema-diff-maintaineroperator-tool-not-part-of-the-mcp-surface" title="Permanent link">&para;</a></h3>
+<p><code>make pfrest-schema-diff</code> (<code>scripts/pfrest_schema_diff.py</code>) performs a
+semantic, dimension-classified comparison between two OpenAPI
+documents — by default, live PFREST_UPSTREAM vs. a configured
+appliance's live LIVE_APPLIANCE_SCHEMA. Twelve dimensions are compared
+(paths/methods, operationIds, parameters, schemas/models, fields,
+enums, field default values, required_packages, auth metadata,
+allowed_privileges, applies_immediately, <code>x-</code> extensions, top-level
+version metadata) and classified as added/removed/changed — never a
+raw JSON/byte diff, and never an attributed cause. <code>--a file</code>/<code>--b
+file</code> loads a previously saved snapshot from disk instead of making a
+live call, which is how a future, separately-authorized comparison
+between two different appliances (e.g. pfSense CE vs. Plus running the
+same pfREST version) can be performed offline. Strictly advisory and
+read-only; deliberately <strong>not</strong> part of <code>pfsense_get_api_guidance</code> or
+any other MCP tool, for the same reason as the privilege cross-check
+above. Requires network access, so it is not part of <code>make
+quick</code>/<code>make validate</code>. See
+<a href="../adr/ADR-035-pfrest-live-guidance-layer/#schema-diff-semantic-dimension-classified-cause-agnostic">ADR-035</a>
+for the real LAB-vs-upstream findings from the arc that introduced it.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../API/">MCP tool reference</a></li>
