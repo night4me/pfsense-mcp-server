@@ -349,6 +349,43 @@ def test_doctor_default_environment_is_not_ready_human_output(capsys, monkeypatc
     assert "Diagnostic only" in out
 
 
+def test_doctor_read_only_output_explains_the_checks_do_not_apply_to_it(capsys, monkeypatch):
+    # v1.0 Product/UX arc: doctor's checks are entirely about the
+    # optional write_protected ceremony -- a read-only user (the
+    # default) should never read "NOT READY" as a problem with their
+    # own access.
+    _clear_relevant_env(monkeypatch)
+
+    exit_code = main(["doctor"])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "read-only access" in out
+    assert "do not affect your read-only access" in out
+    assert "Overall: NOT READY" in out  # underlying computation unchanged
+
+
+def test_doctor_write_protected_output_has_no_read_only_reassurance(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+    monkeypatch.setenv("PFSENSE_PROFILE", "write_protected")
+
+    exit_code = main(["doctor"])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "do not affect your read-only access" not in out
+
+
+def test_doctor_json_output_includes_capability_posture(capsys, monkeypatch):
+    _clear_relevant_env(monkeypatch)
+
+    main(["doctor", "--json"])
+    out = capsys.readouterr().out
+
+    payload = json.loads(out)
+    assert payload["capability_posture"] == "read_only"
+
+
 def test_doctor_json_output_is_valid_and_deterministic(capsys, monkeypatch):
     _clear_relevant_env(monkeypatch)
 

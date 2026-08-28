@@ -21,6 +21,17 @@ from .tools.registry import ToolRegistry
 from .transport.http import HttpTransport
 
 
+def _print_configuration_error(exc: ConfigurationError) -> None:
+    # This process (the MCP server itself) is not meant to be configured
+    # by hand -- any ConfigurationError here means the guided wizard
+    # either hasn't been run yet or an existing environment has drifted,
+    # and in both cases the same next step applies. stdout is left
+    # untouched (still just the "configuration error:" line an
+    # automated caller might parse); this is an additive second line.
+    print(f"pfsense-mcp-server: configuration error: {exc}", file=sys.stderr)
+    print("Run 'pfsense-mcp-security setup' for guided configuration.", file=sys.stderr)
+
+
 class Application:
     def __init__(self) -> None:
         self._mcp = FastMCP("pfsense-mcp-server")
@@ -37,7 +48,7 @@ class Application:
         try:
             log_max_bytes, log_backup_count = load_logging_config()
         except ConfigurationError as exc:
-            print(f"pfsense-mcp-server: configuration error: {exc}", file=sys.stderr)
+            _print_configuration_error(exc)
             raise SystemExit(1) from None
 
         redaction_filter = configure_logging(LOG_DIR, max_bytes=log_max_bytes, backup_count=log_backup_count)
@@ -70,7 +81,7 @@ class Application:
             registry.register_all()
         except ConfigurationError as exc:
             logger.error("startup_failed: %s", exc)
-            print(f"pfsense-mcp-server: configuration error: {exc}", file=sys.stderr)
+            _print_configuration_error(exc)
             raise SystemExit(1) from None
 
         report = build_diagnostics_report(config, type(self._transport).__name__)

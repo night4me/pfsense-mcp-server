@@ -138,6 +138,7 @@ from .security_discovery import (
     CapabilityPosture,
     CapabilityPostureDiscovery,
     SecurityPostureDiscovery,
+    discover_capability_posture,
     discover_security_posture,
 )
 from .security_doctor import CheckStatus, DoctorCheck, DoctorResult, run_doctor_checks
@@ -465,14 +466,23 @@ def _doctor_check_to_dict(check: DoctorCheck) -> dict[str, Any]:
     }
 
 
-def _doctor_result_to_dict(result: DoctorResult) -> dict[str, Any]:
+def _doctor_result_to_dict(result: DoctorResult, posture: CapabilityPostureDiscovery) -> dict[str, Any]:
     return {
         "ready": result.ready,
+        # v1.0 Product/UX arc: these checks are about the OPTIONAL
+        # protected-change capability, not about read-only access at
+        # all -- `capability_posture` lets a caller (human or script)
+        # tell whether `ready: false` actually matters for their own
+        # configured mode, rather than reading it as a general-purpose
+        # "is this installation broken" signal it was never meant to be.
+        "capability_posture": posture.value.value,
         "checks": [_doctor_check_to_dict(check) for check in result.checks],
         "notes": [
             "Diagnostic only -- no artifact was deleted, moved, or repaired, and no witness/store state "
             "was changed. Checks only artifact-exchange path cleanliness and witness readiness, not the "
             "full build_production_runtime() prerequisite set (store/authority-key configuration, etc.).",
+            "These checks are about the optional protected-change (write_protected) capability. "
+            "Read-only access does not require any of them to be ready.",
         ],
     }
 
@@ -484,13 +494,25 @@ _STATUS_SYMBOL = {
 }
 
 
-def _format_doctor_human(result: DoctorResult) -> str:
-    lines = [
-        "pfsense-mcp-security: Tier 1 ceremony readiness check (read-only, diagnostic only)",
-        "",
-        f"Overall: {'READY' if result.ready else 'NOT READY'}",
-        "",
-    ]
+def _format_doctor_human(result: DoctorResult, posture: CapabilityPostureDiscovery) -> str:
+    lines = ["pfsense-mcp-security doctor -- protected-change readiness check", ""]
+    # v1.0 Product/UX arc: this command's checks (artifact-exchange
+    # cleanliness, TPM witness) are entirely about the OPTIONAL
+    # protected-change ceremony -- irrelevant to the read-only access
+    # most users actually have. Framing "Overall: NOT READY" with no
+    # context made every read-only user's doctor run look alarming for
+    # something they never opted into. The underlying READY/NOT READY
+    # computation and per-check detail are unchanged; only this
+    # explanatory framing is new.
+    if posture.value is CapabilityPosture.READ_ONLY:
+        lines.append(
+            "You're using read-only access (the default, and what most users want). The "
+            "checks below are about a separate, optional capability -- protected changes -- "
+            "and do not affect your read-only access either way."
+        )
+        lines.append("")
+    lines.append(f"Overall: {'READY' if result.ready else 'NOT READY'}")
+    lines.append("")
     for check in result.checks:
         lines.append(f"  [{_STATUS_SYMBOL[check.status]}] {check.description} ({check.check_id})")
         lines.append(f"        {check.detail}")
@@ -1205,10 +1227,11 @@ def _run_plan(
 
 def _run_doctor(*, as_json: bool, env: dict[str, str] | None, out: TextIO) -> int:
     result = run_doctor_checks(env)
+    posture = discover_capability_posture(env)
     if as_json:
-        print(json.dumps(_doctor_result_to_dict(result), indent=2, sort_keys=True), file=out)
+        print(json.dumps(_doctor_result_to_dict(result, posture), indent=2, sort_keys=True), file=out)
     else:
-        print(_format_doctor_human(result), file=out)
+        print(_format_doctor_human(result, posture), file=out)
     return 0 if result.ready else _DOCTOR_NOT_READY_EXIT_CODE
 
 

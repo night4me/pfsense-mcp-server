@@ -17,6 +17,23 @@ def test_bootstrap_exits_when_required_env_vars_missing(monkeypatch, tmp_path):
     assert exc_info.value.code == 1
 
 
+def test_configuration_error_points_a_first_time_user_at_the_setup_wizard(monkeypatch, tmp_path, capsys):
+    # v1.0 Product/UX arc, front-door fix: a user with no configuration
+    # yet should not have to already know the guided wizard exists.
+    monkeypatch.delenv("PFSENSE_API_URL", raising=False)
+    monkeypatch.delenv("PFSENSE_IDENTITY", raising=False)
+    monkeypatch.delenv("PFSENSE_API_KEY_FILE", raising=False)
+    monkeypatch.setattr("pfsense_mcp.application.LOG_DIR", tmp_path / "state")
+
+    app = Application()
+    with pytest.raises(SystemExit):
+        app._bootstrap()
+
+    stderr = capsys.readouterr().err
+    assert "configuration error:" in stderr
+    assert "pfsense-mcp-security setup" in stderr
+
+
 def test_bootstrap_exits_when_key_file_missing(monkeypatch, tmp_path):
     monkeypatch.setenv("PFSENSE_API_URL", "https://pfsense.example.invalid")
     monkeypatch.setenv("PFSENSE_IDENTITY", "api-mcp-admin")
