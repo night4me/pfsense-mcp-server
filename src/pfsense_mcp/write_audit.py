@@ -12,6 +12,36 @@ Deliberately self-contained: configure_write_audit_logging() is not
 called anywhere in this build (Application._bootstrap() never imports
 this module — see Design Principle 1 in the Tier 0 spec), so this stays
 unreachable/unused unless a future tier explicitly wires it in.
+
+v1.0.0 Phase 2 hardening (H4) traced why this remains true even now that
+`set_firewall_alias_description_v1` is implemented and live-verified:
+
+1. The safety-critical property this module would provide -- one durable
+   record per mutation transition, impossible to lose independently of
+   the mutation's own outcome -- is already fully satisfied a different
+   way. `tier1/store.py`'s `_replace()` inserts into its own `audit_events`
+   table (contract_id, event_type, previous/current state, state_version,
+   a MAC) on the *same* SQLite connection/transaction as the state
+   change it records, for every transition (see ADR-026's live-LAB
+   verification, which reconstructs a mutation's full
+   `contract_created -> prepared -> contract_confirmed -> executing ->
+   verified` history straight from this table). This module and
+   `tier1/audit.py`'s `Tier1AuditEvent` would each add a second,
+   independent, non-transactional log line alongside that -- valuable
+   for operator visibility, but not for correctness.
+2. `set_firewall_alias_description_v1`'s MCP-visible return value is
+   deliberately minimal by ADR-028 design (`models/write_outcome.py`:
+   "no contract identifier, no digest, no internal RecoveryState") --
+   so `tools/registry.py`'s tool-call boundary, where the currently-wired
+   `tools/audit.py::audit_logged` already runs, has no contract_id or
+   digest to hand this module's richer event shape even if it were
+   wired in there.
+
+Net: `docs/TIER1_ROADMAP.md`'s "Policy and audit" row already lists
+"durable audit export ... decision" as outstanding activation work, and
+that remains accurate -- an operator-facing export/log of `audit_events`
+(a CLI subcommand, most likely) is real, undecided product scope, not a
+wiring oversight this hardening pass can safely close on its own.
 """
 
 from __future__ import annotations
