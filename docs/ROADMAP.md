@@ -35,10 +35,29 @@ an accurate historical record of what shipped and when — not rewritten
 to look cleaner. Treat "v0.3.0" in their text as the baseline *at the
 time those sections were written*, not the current one.
 
-- Production MCP surface: **95 pfSense READ tools + 2 documentation
-  guidance tools, 0 default-reachable WRITE tools** — the READ/WRITE split is
-  enforced mechanically on every CI run
-  (`scripts/write_capability_check.py`), not merely documented.
+**Update (2026-08-28): the current immutable published baseline is now
+`v0.8.0`** (95 pfSense READ tools + 1 official-guidance tool, 0 WRITE;
+see `CHANGELOG.md`'s `[0.8.0]` entry and `docs/ACCEPTANCE_v0.8.0.md`
+for independent post-publication verification). **A `v0.9.0` release
+candidate is additionally prepared on `main`**: the pfREST live
+documentation guidance layer (`pfsense_get_api_guidance`, a second,
+separate guidance tool covering the community `pfSense-pkg-RESTAPI`
+package itself — never Netgate product documentation, never blended
+with `pfsense_get_official_guidance`) plus an offline,
+maintainer-facing privilege drift check and semantic OpenAPI schema
+diff (`make pfrest-privilege-crosscheck`, `make pfrest-schema-diff`,
+neither part of the public MCP surface). Not yet tagged, released, or
+published — see `docs/ACCEPTANCE_v0.9.0.md` and
+`reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md`. The bullet list
+below reflects this current, candidate `main` state (97 total MCP
+tools), not the published `v0.8.0` package (96 total).
+
+- Production MCP surface (candidate `main`, pending `v0.9.0`): **95
+  pfSense READ tools + 2 documentation guidance tools, 0
+  default-reachable WRITE tools** — the READ/WRITE split is enforced
+  mechanically on every CI run (`scripts/write_capability_check.py`),
+  not merely documented. The published `v0.8.0` package on PyPI still
+  has only 1 guidance tool (96 total) until `v0.9.0` is published.
 - **One WRITE capability now exists and is `verified=True`**:
   `set_firewall_alias_description_v1`
   (`WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION`). It is still

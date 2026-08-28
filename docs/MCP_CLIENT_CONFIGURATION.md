@@ -93,10 +93,12 @@ and Continue.
   `auto`.
 - Anyone who can control your local MCP client can invoke every
   registered READ tool — see [the security model](SECURITY_MODEL.md).
-- The default profile registers 95 READ tools + 2 guidance tools, 0
-  WRITE tools. Selecting `write_protected` is a separate, deliberate
-  opt-in — see [the setup wizard](SECURITY_SETUP_WIZARD.md#advanced-and-recovery-paths)
-  and [the security model](SECURITY_MODEL.md) before choosing it.
+- The default profile registers 95 READ tools + 1 guidance tool (96
+  total; a `v0.9.0` candidate adds a second guidance tool but is not
+  yet published — see `CHANGELOG.md`), 0 WRITE tools. Selecting
+  `write_protected` is a separate, deliberate opt-in — see [the setup
+  wizard](SECURITY_SETUP_WIZARD.md#advanced-and-recovery-paths) and
+  [the security model](SECURITY_MODEL.md) before choosing it.
 
 ## Related
 

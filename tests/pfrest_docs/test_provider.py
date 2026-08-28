@@ -88,6 +88,45 @@ def test_lookup_guide_topic_fetches_and_extracts_excerpt():
 
 
 @respx.mock
+def test_lookup_guide_topic_serves_stale_on_refetch_failure(monkeypatch):
+    """v0.9.0 RC audit: coverage gap found -- lookup_guide_topic() has
+    its own inline stale-fallback block (distinct from _get_index()'s,
+    which test_stale_but_usable_served_when_refetch_fails below already
+    covers for lookup_endpoint/lookup_model) that was untested. Closes
+    it, plus the fully-unavailable-with-no-stale-entry branch."""
+
+    import time as time_module
+
+    url = "https://pfrest.org/AUTHENTICATION_AND_AUTHORIZATION/"
+    html = '<div role="main" class="document">Auth guide content here.</div><div class="rst-footer-buttons"></div>'
+    route = respx.get(url).mock(
+        return_value=httpx.Response(200, headers={"content-type": "text/html", "cache-control": "max-age=1"}, text=html)
+    )
+    provider = PfRestDocumentationProvider()
+    fake_now = [1000.0]
+    monkeypatch.setattr(time_module, "monotonic", lambda: fake_now[0])
+
+    first = provider.lookup_guide_topic(GuideTopic.AUTHENTICATION_AND_AUTHORIZATION)
+    assert first.freshness == FreshnessState.FRESH
+
+    fake_now[0] += 2.0  # past the 1s TTL
+    route.mock(return_value=httpx.Response(500))
+    second = provider.lookup_guide_topic(GuideTopic.AUTHENTICATION_AND_AUTHORIZATION)
+    assert second.value is not None
+    assert "Auth guide content here." in second.value
+    assert second.freshness == FreshnessState.STALE_BUT_USABLE
+
+
+@respx.mock
+def test_lookup_guide_topic_unavailable_with_no_prior_cache_entry():
+    respx.get("https://pfrest.org/AUTHENTICATION_AND_AUTHORIZATION/").mock(return_value=httpx.Response(500))
+    provider = PfRestDocumentationProvider()
+    result = provider.lookup_guide_topic(GuideTopic.AUTHENTICATION_AND_AUTHORIZATION)
+    assert result.value is None
+    assert result.freshness == FreshnessState.UPSTREAM_UNAVAILABLE
+
+
+@respx.mock
 def test_stale_but_usable_served_when_refetch_fails(monkeypatch):
     import time as time_module
 

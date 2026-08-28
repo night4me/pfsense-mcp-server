@@ -62,6 +62,19 @@ def test_appliance_unreachable_is_available_false_not_raise():
     assert result.error is not None
 
 
+def test_appliance_unreachable_is_available_false_for_lookup_model_too():
+    """v0.9.0 RC audit: coverage gap found -- lookup_model()'s own
+    unavailable-index branch (a structural mirror of lookup_endpoint()'s,
+    already covered above) was untested. Closes it."""
+
+    mock = MockTransport()
+    mock.register("GET", "/api/v2/schema/openapi", status_code=500, text="")
+    cache = ApplianceSchemaCache()
+    result = cache.lookup_model(_client(mock), "FirewallAlias")
+    assert result.available is False
+    assert result.error is not None
+
+
 def test_appliance_auth_failure_is_available_false_not_raise():
     mock = MockTransport()
     mock.register("GET", "/api/v2/schema/openapi", status_code=401, text="")

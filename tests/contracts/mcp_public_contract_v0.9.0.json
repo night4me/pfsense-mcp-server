@@ -44,6 +44,286 @@
     },
     {
       "annotations": {
+        "destructiveHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": null,
+      "client_method": null,
+      "description": "Get bounded, structured, provenance-labeled documentation\n        guidance about the pfSense REST API (pfREST) or this project's\n        own tools -- from up to three independently labeled sources:\n        PROJECT_AUTHORED (this project's own tool interpretation),\n        PFREST_UPSTREAM (the community-maintained pfREST package's live\n        published API reference at pfrest.org -- NOT official Netgate\n        documentation), and LIVE_APPLIANCE_SCHEMA (the connected\n        appliance's own OpenAPI schema). Read-only, documentation-only:\n        never returns raw appliance configuration and never authorizes\n        any action.\n\n        Exactly one of four bounded query modes:\n\n        - query_mode=\"tool\": requires tool_name (an exact pfsense-mcp-server\n          tool name, e.g. \"pfsense_get_firewall_aliases\"). Returns this\n          project's own PROJECT_AUTHORED interpretation of that tool,\n          plus (if the tool has a known corresponding pfREST endpoint)\n          PFREST_UPSTREAM and LIVE_APPLIANCE_SCHEMA evidence for it.\n        - query_mode=\"endpoint\": requires endpoint_path (e.g.\n          \"/api/v2/firewall/alias\") and endpoint_method (one of GET,\n          POST, PUT, PATCH, DELETE). Returns PFREST_UPSTREAM and\n          LIVE_APPLIANCE_SCHEMA evidence for that exact path/method.\n        - query_mode=\"model\": requires model_name (an exact pfREST\n          OpenAPI schema/model name, e.g. \"FirewallAlias\"). Returns\n          PFREST_UPSTREAM and LIVE_APPLIANCE_SCHEMA evidence for that\n          model's fields.\n        - query_mode=\"topic\": requires topic (one of\n          AUTHENTICATION_AND_AUTHORIZATION, WORKING_WITH_OBJECT_IDS,\n          QUERIES_FILTERS_AND_SORTING, COMMON_CONTROL_PARAMETERS,\n          WORKING_WITH_HATEOAS, SWAGGER_AND_OPENAPI). Returns a bounded\n          PFREST_UPSTREAM excerpt of that guide page.\n\n        Every input is used only as a lookup key into already-fetched,\n        already-cached documentation -- never as a URL, and never\n        forwarded to any network call this tool does not already make\n        internally to its own fixed, allowlisted sources.\n\n        This tool never covers official Netgate/pfSense product\n        documentation -- use pfsense_get_official_guidance for that.\n        ",
+      "endpoint": null,
+      "input_schema": {
+        "properties": {
+          "endpoint_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Endpoint Method"
+          },
+          "endpoint_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Endpoint Path"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Model Name"
+          },
+          "query_mode": {
+            "enum": [
+              "tool",
+              "endpoint",
+              "model",
+              "topic"
+            ],
+            "title": "Query Mode",
+            "type": "string"
+          },
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tool Name"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Topic"
+          }
+        },
+        "required": [
+          "query_mode"
+        ],
+        "title": "pfsense_get_api_guidanceArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_api_guidance",
+      "output_schema": {
+        "$defs": {
+          "CrossSourceGuidance": {
+            "additionalProperties": false,
+            "description": "The public composition result: one query, up to\n`MAX_EVIDENCE_ENTRIES` `GuidanceEvidence` entries (each independently\nprovenance-labeled), explicit conflicts, explicit applicability\nnotes. Never a flattened prose blob -- see `composition.py`.",
+            "properties": {
+              "applicability_notes": {
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 12,
+                "title": "Applicability Notes",
+                "type": "array"
+              },
+              "conflicts": {
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 12,
+                "title": "Conflicts",
+                "type": "array"
+              },
+              "evidence": {
+                "default": [],
+                "items": {
+                  "$ref": "#/$defs/GuidanceEvidence"
+                },
+                "maxItems": 8,
+                "title": "Evidence",
+                "type": "array"
+              },
+              "query": {
+                "maxLength": 200,
+                "title": "Query",
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "title": "CrossSourceGuidance",
+            "type": "object"
+          },
+          "FreshnessState": {
+            "description": "Cache/retrieval freshness for one `GuidanceEvidence` entry.\nOrthogonal to `Provenance` -- a `PROJECT_AUTHORED` or\n`OFFICIAL_NETGATE` entry is always `NOT_APPLICABLE` (neither is\never live-fetched by this package); only `PFREST_UPSTREAM` and\n`LIVE_APPLIANCE_SCHEMA` entries carry a real cache/network state.",
+            "enum": [
+              "fresh",
+              "stale_but_usable",
+              "miss",
+              "corrupt",
+              "upstream_unavailable",
+              "not_applicable"
+            ],
+            "title": "FreshnessState",
+            "type": "string"
+          },
+          "GuidanceEvidence": {
+            "additionalProperties": false,
+            "description": "One source's bounded, attributed contribution to a\n`CrossSourceGuidance` response. Never contains another source's\ntext -- `facts`/`caveats` here are only ever derived from\n`source`/`provenance`'s own material.",
+            "properties": {
+              "caveats": {
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 8,
+                "title": "Caveats",
+                "type": "array"
+              },
+              "content_hash": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "sha256 of the exact evidence content returned in THIS response -- a freshness/cache-key hash, never a claim that it equals whatever is live right now.",
+                "title": "Content Hash"
+              },
+              "facts": {
+                "default": [],
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 24,
+                "title": "Facts",
+                "type": "array"
+              },
+              "fetched_at": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "ISO 8601 UTC timestamp of retrieval. None for PROJECT_AUTHORED/OFFICIAL_NETGATE.",
+                "title": "Fetched At"
+              },
+              "freshness": {
+                "$ref": "#/$defs/FreshnessState"
+              },
+              "provenance": {
+                "$ref": "#/$defs/Provenance"
+              },
+              "source": {
+                "description": "Human-readable source identifier: a live URL for PFREST_UPSTREAM, a fixed literal describing the appliance call for LIVE_APPLIANCE_SCHEMA, the canonical Netgate URL for OFFICIAL_NETGATE (reused from GuidanceReference.canonical_url), or a fixed literal naming this project for PROJECT_AUTHORED.",
+                "maxLength": 300,
+                "title": "Source",
+                "type": "string"
+              },
+              "subject": {
+                "description": "What this evidence is about.",
+                "maxLength": 200,
+                "title": "Subject",
+                "type": "string"
+              },
+              "version": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Version/release evidence, where known. Never guessed.",
+                "title": "Version"
+              }
+            },
+            "required": [
+              "provenance",
+              "source",
+              "subject",
+              "freshness"
+            ],
+            "title": "GuidanceEvidence",
+            "type": "object"
+          },
+          "Provenance": {
+            "enum": [
+              "PROJECT_AUTHORED",
+              "PFREST_UPSTREAM",
+              "LIVE_APPLIANCE_SCHEMA",
+              "OFFICIAL_NETGATE"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "The only shape `pfsense_get_api_guidance` ever returns.\n\n`guidance` reuses `pfrest_docs.models.CrossSourceGuidance` --\nalready closed (`extra=\"forbid\"`), already bounded per-evidence-entry\nand per-response (`MAX_EVIDENCE_ENTRIES`), already independently\nprovenance-labeled.",
+        "properties": {
+          "disclaimer": {
+            "const": "This is documentation guidance from multiple independently labeled sources (PROJECT_AUTHORED / PFREST_UPSTREAM / LIVE_APPLIANCE_SCHEMA). It is NOT observed live appliance configuration state and does NOT authorize any action. PFREST_UPSTREAM is the community-maintained pfREST package's own documentation, not official Netgate guidance -- use pfsense_get_official_guidance for that. For current appliance configuration or status, use the relevant pfsense_get_* READ tool instead.",
+            "default": "This is documentation guidance from multiple independently labeled sources (PROJECT_AUTHORED / PFREST_UPSTREAM / LIVE_APPLIANCE_SCHEMA). It is NOT observed live appliance configuration state and does NOT authorize any action. PFREST_UPSTREAM is the community-maintained pfREST package's own documentation, not official Netgate guidance -- use pfsense_get_official_guidance for that. For current appliance configuration or status, use the relevant pfsense_get_* READ tool instead.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "guidance": {
+            "$ref": "#/$defs/CrossSourceGuidance"
+          },
+          "query_mode": {
+            "enum": [
+              "tool",
+              "endpoint",
+              "model",
+              "topic"
+            ],
+            "title": "Query Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query_mode",
+          "guidance"
+        ],
+        "title": "ApiGuidanceResult",
+        "type": "object"
+      },
+      "tool_class": "guidance"
+    },
+    {
+      "annotations": {
         "openWorldHint": true,
         "readOnlyHint": true
       },

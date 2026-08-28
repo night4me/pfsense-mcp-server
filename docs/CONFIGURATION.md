@@ -47,8 +47,11 @@ separate, explicitly authorized future phase (see
 
 `PFSENSE_ALLOWED_TOOLS` is an optional restriction applied after the
 selected profile. If absent, the auditor profile keeps all 95 READ tools
-plus the 2 documentation guidance tools (`pfsense_get_official_guidance`,
-`pfsense_get_api_guidance`, 97 total). If present, only the comma-separated exact names in both the
+plus every currently registered documentation guidance tool
+(`pfsense_get_official_guidance`, and — once the `v0.9.0` candidate
+described in `CHANGELOG.md` is published — `pfsense_get_api_guidance`
+too, 97 total; the currently published `v0.8.0` package has 96). If
+present, only the comma-separated exact names in both the
 profile and the restriction register — this applies uniformly to READ and
 guidance tool names alike. Whitespace around names is ignored and duplicate
 names are normalized. An explicitly empty value registers zero tools.

@@ -7,6 +7,61 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+**`v0.9.0` release candidate** (not yet tagged, released, or
+published — see `docs/ACCEPTANCE_v0.9.0.md` and
+`reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md`).
+
+**Public MCP tool contract changes: 95 pfSense READ tools + 2
+documentation guidance tools (was 1), 0 default-reachable WRITE = 97
+total (was 96).** The new tool is a second, structurally distinct
+guidance surface -- never blended with the existing
+`pfsense_get_official_guidance` (Netgate product documentation) --
+covering the community-maintained pfREST package (`pfSense-pkg-RESTAPI`)
+itself, documented at `pfrest.org`, not `docs.netgate.com`.
+
+### Added
+
+- **`pfsense_get_api_guidance`** -- a new guidance tool with four
+  bounded query modes (`tool`/`endpoint`/`model`/`topic`), returning
+  cross-source evidence explicitly labeled by provenance
+  (`PROJECT_AUTHORED` / `PFREST_UPSTREAM` / `LIVE_APPLIANCE_SCHEMA`),
+  never blended. `PFREST_UPSTREAM` evidence comes from a narrow,
+  allowlisted (exact host `pfrest.org` only), HTTPS-only, GET-only
+  fetcher with a hard response-size cap, single-redirect tolerance
+  restricted to the allowlisted host, and a bounded in-memory cache.
+  `LIVE_APPLIANCE_SCHEMA` evidence comes from the connected appliance's
+  own `/api/v2/schema/openapi`, fetched through the same authenticated
+  transport every READ tool already uses. See
+  [ADR-035](docs/adr/ADR-035-pfrest-live-guidance-layer.md).
+- Project-authored tool guidance (`pfsense_mcp.guidance.tool_guidance`,
+  Slice A) is now wired into `pfsense_get_api_guidance`'s `tool` query
+  mode.
+- `make pfrest-privilege-crosscheck` -- an offline, advisory,
+  maintainer-facing script comparing PFREST_UPSTREAM's and (if
+  configured) LIVE_APPLIANCE_SCHEMA's declared pfSense privilege for
+  every READ tool's mapped endpoint. Never part of the MCP surface;
+  never grants a privilege or modifies configuration.
+- `make pfrest-schema-diff` -- an offline, advisory, maintainer-facing
+  semantic (not byte-level) OpenAPI comparison across twelve
+  dimensions (paths/methods, operationIds, parameters, schemas/models,
+  fields, enums, default values, required packages, auth metadata,
+  allowed privileges, applies-immediately metadata, `x-` extensions,
+  version metadata), classifying differences without assuming a cause.
+  Supports comparing two saved snapshots offline, enabling a future,
+  separately-authorized comparison between different appliances (e.g.
+  pfSense CE vs. Plus running the same pfREST version). Never part of
+  the MCP surface.
+
+### Unchanged
+
+- No WRITE capability changed. `set_firewall_alias_description_v1`
+  remains the one WRITE-capable tool in this codebase, reachable only
+  under an explicit `write_protected` opt-in.
+- No pfSense credential can reach `pfrest.org`; no documentation
+  content from any source can influence authorization, endpoint
+  selection, or tool reachability -- documentation is data, never
+  authority.
+
 ## [0.8.0] - 2026-08-27
 
 **CLI-only expansion of the `pfsense-mcp-security` operator tooling

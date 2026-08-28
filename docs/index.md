@@ -4,10 +4,14 @@
 strongly typed, read-only visibility into one pfSense appliance — without
 exposing raw shell access or a way to mutate the appliance by accident.
 
-**Current production contract: 95 pfSense READ tools + 2 documentation
-guidance tools. 0 WRITE tools.** That split
-is deliberate: this project treats mutation as a safety-engineering
-problem, not a feature flag — the maintainer's own reasoning is in
+**Current `main`-branch contract: 95 pfSense READ tools + 2 documentation
+guidance tools. 0 WRITE tools.** (The currently published PyPI release,
+`v0.8.0`, has 1 guidance tool — 96 total — until the `v0.9.0` candidate
+described here is actually published; see `CHANGELOG.md` and
+`docs/ROADMAP.md`'s "Current baseline" section for the exact,
+up-to-date status.) That split is deliberate: this project treats
+mutation as a safety-engineering problem, not a feature flag — the
+maintainer's own reasoning is in
 [the security model's "Why this project exists"](SECURITY_MODEL.md#why-this-project-exists).
 See [the Tier 1 overview](TIER1_ARCHITECTURE.md) below for the
 engineering detail behind it.

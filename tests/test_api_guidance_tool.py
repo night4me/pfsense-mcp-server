@@ -238,6 +238,23 @@ def test_model_mode_missing_name_raises_value_error():
         fn(query_mode="model")
 
 
+@respx.mock
+def test_model_mode_appliance_unavailable_produces_applicability_note_not_conflict():
+    """v0.9.0 RC audit: coverage gap found -- endpoint mode's equivalent
+    unavailable-appliance case was tested but model mode's was not, even
+    though _appliance_model_evidence()'s unavailable branch is a
+    structural mirror of _appliance_endpoint_evidence()'s. Closes it."""
+
+    _mock_upstream()
+    mock = MockTransport()
+    mock.register("GET", "/api/v2/schema/openapi", status_code=500, text="")
+    client, _ = _client(mock)
+    fn = api_guidance.build(client)
+    result = fn(query_mode="model", model_name="FirewallAlias")
+    assert result.guidance.conflicts == ()
+    assert any("unavailable" in note for note in result.guidance.applicability_notes)
+
+
 # --- query_mode="topic" ---------------------------------------------------
 
 
