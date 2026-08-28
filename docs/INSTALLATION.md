@@ -24,34 +24,86 @@ section instead — this page explains the same steps in more depth.
 
 ## Install from PyPI
 
+Every method below installs `pfsense-mcp-server` into its own isolated
+environment rather than your system's shared Python packages — this
+matters concretely on modern Debian/Ubuntu (23.04+, including 24.04
+LTS): the system Python is "externally managed"
+([PEP 668](https://peps.python.org/pep-0668/)), so a plain `pip install
+pfsense-mcp-server` run against it is refused outright. Passing
+`--break-system-packages` to force it, or using `sudo pip install`, are
+both deliberately **not** recommended here — either risks conflicting
+with a package your OS itself depends on. Isolation also keeps this
+project's own dependency floors from interacting with anything else on
+your machine, regardless of platform.
+
+### Recommended: `pipx`
+
+[`pipx`](https://pipx.pypa.io/) is the standard, PyPA-recommended way to
+install a Python command-line application: it creates a dedicated
+environment for it automatically and puts its entry-point commands on
+your `PATH`.
+
 ```console
-python -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install pfsense-mcp-server==0.9.0
+sudo apt install pipx      # Debian/Ubuntu; see pipx's own docs for other platforms
+pipx ensurepath             # adds pipx's bin directory to PATH -- reopen your terminal after
+pipx install pfsense-mcp-server==0.9.0
 ```
 
 Pinning the exact version (`==0.9.0`) is recommended for anything other
 than a quick local trial — this project follows semantic versioning, so
 a pin protects you from an unreviewed minor/major upgrade landing in
 your MCP client's own environment. To always take the latest release
-instead, drop the pin:
+instead, drop the pin (`pipx install pfsense-mcp-server`).
+
+This installs the `pfsense-mcp-server` and `pfsense-mcp-security`
+commands to `~/.local/bin/` (pipx's default location) — use
+`~/.local/bin/pfsense-mcp-server` as the absolute command path in your
+MCP client's configuration (see
+[Connect your MCP client](MCP_CLIENT_CONFIGURATION.md)), or confirm the
+exact path yourself with `pipx list` or `which pfsense-mcp-server`.
+
+### Alternative: virtual environment + `pip`
+
+If you'd rather manage a project-local virtual environment directly —
+for example, to keep it alongside other tooling in a specific
+directory, or on a platform where `pipx` isn't packaged:
+
+```console
+python -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install pfsense-mcp-server==0.9.0
+```
+
+To always take the latest release instead of a pinned version:
 
 ```console
 .venv/bin/python -m pip install --upgrade pfsense-mcp-server
 ```
 
+This gives you one unambiguous path
+(`.venv/bin/pfsense-mcp-server`) to put in an MCP client's launch
+configuration — an absolute path to wherever you created `.venv`.
+
+### Alternative: `uv tool install`
+
+If you already use [`uv`](https://docs.astral.sh/uv/), it offers the
+same isolation as `pipx`, generally installing faster:
+
+```console
+uv tool install pfsense-mcp-server==0.9.0
+```
+
+`uv` installs to the same `~/.local/bin/` location `pipx` does by
+default.
+
+### Verifying what you installed
+
 `pfsense-mcp-server` is published with
 [PEP 740](https://peps.python.org/pep-0740/) digital attestations,
 verifiable back to this repository and the exact release commit that
 built them — there is no long-lived PyPI upload token involved in
-publishing it.
-
-A dedicated virtual environment (as shown above), rather than a
-system-wide or user-wide install, is recommended: it keeps this
-project's own dependency floors from interacting with anything else on
-your machine, and gives you one unambiguous path
-(`.venv/bin/pfsense-mcp-server`) to put in an MCP client's launch
-configuration.
+publishing it. This applies no matter which method above you used, since
+all three ultimately fetch the same signed artifact from PyPI.
 
 ## Obtain and configure a credential safely
 
@@ -104,8 +156,12 @@ PFSENSE_API_URL=https://pfsense.example.invalid \
 PFSENSE_IDENTITY=api-mcp-admin \
 PFSENSE_API_KEY_FILE=/absolute/private/path/pfsense-api.key \
 PFSENSE_TLS_MODE=strict \
-.venv/bin/pfsense-mcp-server
+pfsense-mcp-server
 ```
+
+(`pipx`/`uv tool install` put `pfsense-mcp-server` directly on your
+`PATH`; if you used the venv + `pip` alternative, run
+`.venv/bin/pfsense-mcp-server` instead.)
 
 A correctly configured server waits silently on stdin for MCP protocol
 messages — it does not print a banner. `Ctrl-C` to stop it. If
@@ -133,8 +189,12 @@ for more.
 ## Upgrading
 
 ```console
-.venv/bin/python -m pip install --upgrade pfsense-mcp-server
+pipx upgrade pfsense-mcp-server
 ```
+
+Used the venv + `pip` alternative instead?
+`.venv/bin/python -m pip install --upgrade pfsense-mcp-server`. Used
+`uv tool install`? `uv tool upgrade pfsense-mcp-server`.
 
 Check `CHANGELOG.md` for the exact delta between your installed
 version and the new one before upgrading anything you depend on —
@@ -145,13 +205,16 @@ directly) after upgrading for the new version to take effect.
 ## Uninstalling
 
 ```console
-.venv/bin/python -m pip uninstall pfsense-mcp-server
+pipx uninstall pfsense-mcp-server
 ```
 
-Then remove the virtual environment directory and the MCP client
-configuration entry that launched it. This project never writes
-outside its own virtual environment, your explicitly-configured
-credential file path, and (only if you explicitly use
+Used the venv + `pip` alternative instead? Remove the virtual
+environment directory (no separate uninstall command is needed). Used
+`uv tool install`? `uv tool uninstall pfsense-mcp-server`. In every
+case, also remove the MCP client configuration entry that launched it.
+This project never writes outside its own installed environment, your
+explicitly-configured credential file path, and (only if you explicitly
+use
 [`setup write-client-config`](SECURITY_SETUP_WIZARD.md#mcp-client-config-generation))
 the one MCP client configuration file you point it at — there is no
 other local state to clean up.

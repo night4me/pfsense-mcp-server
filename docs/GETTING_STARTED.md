@@ -5,8 +5,17 @@ Four steps, in order. Most users only need the first three.
 ## 1. Install
 
 ```console
-pip install pfsense-mcp-server
+pipx install pfsense-mcp-server
 ```
+
+`pipx` installs this project's command-line tools into their own
+isolated environment and puts them on your `PATH`, without touching
+your system's own Python packages. Don't have `pipx` yet? `sudo apt
+install pipx && pipx ensurepath` on Debian/Ubuntu (reopen your terminal
+afterward); see [Installation](INSTALLATION.md) for other platforms,
+the plain virtual-environment alternative, and why a bare `pip install`
+against your system Python is not recommended (it's refused outright on
+modern Debian/Ubuntu under PEP 668).
 
 Requires Python 3.11, 3.12, or 3.13, and a pfSense appliance with the
 REST API package (`pfrest`/`pfSense-pkg-RESTAPI`, API v2) installed and

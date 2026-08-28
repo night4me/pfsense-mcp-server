@@ -26,7 +26,13 @@ These guides configure supported MCP clients to launch the local
 - Expect 95 READ tools, 2 guidance tools, and no WRITE tools from the current production profile.
 
 The examples use `/absolute/path/to/...` placeholders. Replace every placeholder
-before starting the client. Client interfaces and configuration formats can
+before starting the client. The guides below show a project-local
+`.venv/bin/pfsense-mcp-server` path (the venv + `pip` install method) as
+their example — if you installed with the recommended `pipx` method (or
+`uv tool install`) instead, use `~/.local/bin/pfsense-mcp-server` (or
+run `which pfsense-mcp-server` to confirm) in its place. See
+[Installation](../docs/INSTALLATION.md) for every supported install
+method. Client interfaces and configuration formats can
 change; consult the linked vendor documentation when a guide differs from the
 installed client version.
 

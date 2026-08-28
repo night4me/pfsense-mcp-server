@@ -48,9 +48,17 @@ for the full reasoning.
 ## Quick start
 
 ```console
-pip install pfsense-mcp-server
+pipx install pfsense-mcp-server
 pfsense-mcp-security setup
 ```
+
+No `pipx` yet? `sudo apt install pipx && pipx ensurepath` on
+Debian/Ubuntu (reopen your terminal afterward) — see
+[Installation](https://night4me.github.io/pfsense-mcp-server/INSTALLATION/)
+for other platforms and a plain virtual-environment alternative. A
+system-wide `pip install` is deliberately not the recommended path: on
+modern Debian/Ubuntu it's refused outright (PEP 668), and even where
+it isn't, it risks touching packages your OS itself depends on.
 
 The setup wizard asks a few plain-language questions — your firewall's
 address, whether to allow read-only or protected changes, how to
