@@ -3711,6 +3711,8 @@
       
         
       
+        
+      
     
     
     
@@ -4199,6 +4201,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.9.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4565,8 +4595,11 @@ separate, explicitly authorized future phase (see
 <a href="../ROADMAP/">the public roadmap</a>), not a way to unlock anything today.</p>
 <p><code>PFSENSE_ALLOWED_TOOLS</code> is an optional restriction applied after the
 selected profile. If absent, the auditor profile keeps all 95 READ tools
-plus the 2 documentation guidance tools (<code>pfsense_get_official_guidance</code>,
-<code>pfsense_get_api_guidance</code>, 97 total). If present, only the comma-separated exact names in both the
+plus every currently registered documentation guidance tool
+(<code>pfsense_get_official_guidance</code>, and — once the <code>v0.9.0</code> candidate
+described in <code>CHANGELOG.md</code> is published — <code>pfsense_get_api_guidance</code>
+too, 97 total; the currently published <code>v0.8.0</code> package has 96). If
+present, only the comma-separated exact names in both the
 profile and the restriction register — this applies uniformly to READ and
 guidance tool names alike. Whitespace around names is ignored and duplicate
 names are normalized. An explicitly empty value registers zero tools.

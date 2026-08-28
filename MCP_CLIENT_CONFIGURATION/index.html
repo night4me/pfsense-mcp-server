@@ -3551,6 +3551,8 @@
       
         
       
+        
+      
     
     
     
@@ -4039,6 +4041,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.9.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4240,10 +4270,12 @@ and Continue.</p>
   <code>auto</code>.</li>
 <li>Anyone who can control your local MCP client can invoke every
   registered READ tool — see <a href="../SECURITY_MODEL/">the security model</a>.</li>
-<li>The default profile registers 95 READ tools + 2 guidance tools, 0
-  WRITE tools. Selecting <code>write_protected</code> is a separate, deliberate
-  opt-in — see <a href="../SECURITY_SETUP_WIZARD/#advanced-and-recovery-paths">the setup wizard</a>
-  and <a href="../SECURITY_MODEL/">the security model</a> before choosing it.</li>
+<li>The default profile registers 95 READ tools + 1 guidance tool (96
+  total; a <code>v0.9.0</code> candidate adds a second guidance tool but is not
+  yet published — see <code>CHANGELOG.md</code>), 0 WRITE tools. Selecting
+  <code>write_protected</code> is a separate, deliberate opt-in — see <a href="../SECURITY_SETUP_WIZARD/#advanced-and-recovery-paths">the setup
+  wizard</a> and
+  <a href="../SECURITY_MODEL/">the security model</a> before choosing it.</li>
 </ul>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>

@@ -3519,6 +3519,8 @@
       
         
       
+        
+      
     
     
     
@@ -4007,6 +4009,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ACCEPTANCE_v0.9.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.9.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4102,10 +4132,14 @@
 <p><strong>A security-first MCP server for pfSense.</strong> It gives an MCP client
 strongly typed, read-only visibility into one pfSense appliance — without
 exposing raw shell access or a way to mutate the appliance by accident.</p>
-<p><strong>Current production contract: 95 pfSense READ tools + 2 documentation
-guidance tools. 0 WRITE tools.</strong> That split
-is deliberate: this project treats mutation as a safety-engineering
-problem, not a feature flag — the maintainer's own reasoning is in
+<p><strong>Current <code>main</code>-branch contract: 95 pfSense READ tools + 2 documentation
+guidance tools. 0 WRITE tools.</strong> (The currently published PyPI release,
+<code>v0.8.0</code>, has 1 guidance tool — 96 total — until the <code>v0.9.0</code> candidate
+described here is actually published; see <code>CHANGELOG.md</code> and
+<code>docs/ROADMAP.md</code>'s "Current baseline" section for the exact,
+up-to-date status.) That split is deliberate: this project treats
+mutation as a safety-engineering problem, not a feature flag — the
+maintainer's own reasoning is in
 <a href="SECURITY_MODEL/#why-this-project-exists">the security model's "Why this project exists"</a>.
 See <a href="TIER1_ARCHITECTURE/">the Tier 1 overview</a> below for the
 engineering detail behind it.</p>

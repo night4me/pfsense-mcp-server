@@ -3712,6 +3712,8 @@
       
         
       
+        
+      
     
     
     
@@ -4200,6 +4202,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.9.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4512,11 +4542,29 @@ sections immediately below are kept exactly as originally written, as
 an accurate historical record of what shipped and when — not rewritten
 to look cleaner. Treat "v0.3.0" in their text as the baseline <em>at the
 time those sections were written</em>, not the current one.</p>
+<p><strong>Update (2026-08-28): the current immutable published baseline is now
+<code>v0.8.0</code></strong> (95 pfSense READ tools + 1 official-guidance tool, 0 WRITE;
+see <code>CHANGELOG.md</code>'s <code>[0.8.0]</code> entry and <code>docs/ACCEPTANCE_v0.8.0.md</code>
+for independent post-publication verification). <strong>A <code>v0.9.0</code> release
+candidate is additionally prepared on <code>main</code></strong>: the pfREST live
+documentation guidance layer (<code>pfsense_get_api_guidance</code>, a second,
+separate guidance tool covering the community <code>pfSense-pkg-RESTAPI</code>
+package itself — never Netgate product documentation, never blended
+with <code>pfsense_get_official_guidance</code>) plus an offline,
+maintainer-facing privilege drift check and semantic OpenAPI schema
+diff (<code>make pfrest-privilege-crosscheck</code>, <code>make pfrest-schema-diff</code>,
+neither part of the public MCP surface). Not yet tagged, released, or
+published — see <code>docs/ACCEPTANCE_v0.9.0.md</code> and
+<code>reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md</code>. The bullet list
+below reflects this current, candidate <code>main</code> state (97 total MCP
+tools), not the published <code>v0.8.0</code> package (96 total).</p>
 <ul>
-<li>Production MCP surface: <strong>95 pfSense READ tools + 2 documentation
-  guidance tools, 0 default-reachable WRITE tools</strong> — the READ/WRITE split is
-  enforced mechanically on every CI run
-  (<code>scripts/write_capability_check.py</code>), not merely documented.</li>
+<li>Production MCP surface (candidate <code>main</code>, pending <code>v0.9.0</code>): <strong>95
+  pfSense READ tools + 2 documentation guidance tools, 0
+  default-reachable WRITE tools</strong> — the READ/WRITE split is enforced
+  mechanically on every CI run (<code>scripts/write_capability_check.py</code>),
+  not merely documented. The published <code>v0.8.0</code> package on PyPI still
+  has only 1 guidance tool (96 total) until <code>v0.9.0</code> is published.</li>
 <li><strong>One WRITE capability now exists and is <code>verified=True</code></strong>:
   <code>set_firewall_alias_description_v1</code>
   (<code>WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION</code>). It is still
