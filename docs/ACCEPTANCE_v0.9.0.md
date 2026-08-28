@@ -174,13 +174,66 @@ consistent with every earlier check this arc — no drift found.
 
 ## Full validation (re-run at v0.9.0's release-candidate commit)
 
-*(Filled in after the complete gate stack — pytest, min-deps, ruff,
-mypy, bandit, `make quick`, `make validate`, `make release-check`,
-`mkdocs --strict`, fresh wheel/sdist build and install — was actually
-run at this document's own commit; see
-`reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md` for the complete,
-itemized results and this document is only finalized once that report
-is.)*
+Every check below was run fresh at commit `b850548aa308471d5c6b2a2600169395cac39ea1`
+(the exact RC preparation commit), not read from any prior report:
+
+- `pytest` (full suite, `pytest-xdist`, normal deps): **4936 passed, 42
+  skipped, 0 failed**.
+- `pytest` at verified minimum dependency versions
+  (`mcp==1.21.1`/`httpx==0.27.1`/`pydantic==2.11.0`/`cryptography==43.0.0`,
+  Python 3.11.15): **4936 passed, 42 skipped, 0 failed** — an initial
+  run at min-deps versions failed on one test (`test_artifact_manifest.py`
+  hardcoded a stale version literal, described above); fixed, then
+  re-verified clean.
+- `ruff format --check` / `ruff check`: clean (777 files).
+- `mypy` (`src/pfsense_mcp scripts lab witness_daemon signing`): `Success:
+  no issues found in 403 source files`.
+- `bandit -c pyproject.toml -r src/pfsense_mcp scripts witness_daemon
+  signing`: no issues identified (0 High/Medium/Low).
+- `mkdocs build --strict`: clean (only the same four pre-existing,
+  unrelated relative-link notices present since before this arc).
+- `public_contract.py`: OK (95 pfSense READ tools, 2 guidance tools, 97
+  total) against the new `mcp_public_contract_v0.9.0.json` snapshot.
+- `make quick`: **PASSED (11/11 stages)**.
+- `make validate`: **PASSED (20/20 stages)**.
+- `make release-check` (the full monolithic chain — `release_state_check`
+  + `validate` + `package-check` + `twine check --strict` +
+  `reproducible-build` + `min-deps-check` + `artifact-manifest`):
+  **PASSED**, offline, no tag/upload/credentials/network-appliance
+  access.
+- `make reproducible-build`: OK, byte-identical artifacts across two
+  independent same-epoch builds.
+- Built-artifact proof: wheel (`pfsense_mcp_server-0.9.0-py3-none-any.whl`,
+  595,189 bytes,
+  `sha256:9948101123b95cf6940c5c60c35fd4fac513c890d596e10ce023c6fd2091c266`)
+  and sdist (`pfsense_mcp_server-0.9.0.tar.gz`, 526,471 bytes,
+  `sha256:1875cb97c1ee6be60438983f1d20ab42b9d84715410c0e35a43cb748ffbacc47`)
+  built and inspected directly: member lists grepped for secrets/LAB
+  files (none found beyond a benign false-positive on filenames
+  containing "available"), METADATA/entry_points.txt/WHEEL confirmed
+  correct package name, version `0.9.0`, both console-script entry
+  points, `Requires-Python: >=3.11`, and MIT license metadata. Both
+  artifacts installed into a fresh, isolated environment (via `uv venv`,
+  since the system Python's `ensurepip` is unavailable in this
+  environment) and exercised from outside the repository working
+  directory: import resolves from `site-packages`,
+  `importlib.metadata.version("pfsense-mcp-server") == "0.9.0"`, the
+  `pfsense-mcp-server` entry point fails closed with a clean
+  "configuration error" message (no traceback) with no environment
+  configured, `pfsense-mcp-security --help` succeeds, and a fresh
+  `public_contract.build_contract()` call against the *installed*
+  package independently confirmed 97 registered tools (95 READ + 2
+  guidance, both guidance tool names present, zero WRITE-shaped tool
+  names) — matching the source-tree result exactly.
+**Update, after push:** GitHub Pages redeployed from this exact commit
+(`mkdocs gh-deploy --strict`); `Docs Pages freshness` (re-triggered via
+`workflow_dispatch`), `CI`, and `CodeQL` GitHub Actions results are
+recorded in `reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md` —
+not restated here to avoid this document claiming a fact before it
+was actually true at commit time.
+
+See `reports-ai/V0_9_0_RELEASE_READINESS_2026-08-28.md` for the
+complete, itemized audit this document summarizes.
 
 ## Acceptance boundary
 
