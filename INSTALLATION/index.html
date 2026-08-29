@@ -4244,7 +4244,7 @@
   <span class="md-ellipsis">
     
   
-    v1.0.0 (release-candidate)
+    v1.0.0
   
 
     
@@ -4517,9 +4517,9 @@ environment for it automatically and puts its entry-point commands on
 your <code>PATH</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="go">sudo apt install pipx      # Debian/Ubuntu; see pipx&#39;s own docs for other platforms</span>
 <span class="go">pipx ensurepath             # adds pipx&#39;s bin directory to PATH -- reopen your terminal after</span>
-<span class="go">pipx install pfsense-mcp-server==0.9.0</span>
+<span class="go">pipx install pfsense-mcp-server==1.0.0</span>
 </code></pre></div>
-<p>Pinning the exact version (<code>==0.9.0</code>) is recommended for anything other
+<p>Pinning the exact version (<code>==1.0.0</code>) is recommended for anything other
 than a quick local trial — this project follows semantic versioning, so
 a pin protects you from an unreviewed minor/major upgrade landing in
 your MCP client's own environment. To always take the latest release
@@ -4536,7 +4536,7 @@ for example, to keep it alongside other tooling in a specific
 directory, or on a platform where <code>pipx</code> isn't packaged:</p>
 <div class="highlight"><pre><span></span><code><span class="go">python -m venv .venv</span>
 <span class="go">.venv/bin/python -m pip install --upgrade pip</span>
-<span class="go">.venv/bin/python -m pip install pfsense-mcp-server==0.9.0</span>
+<span class="go">.venv/bin/python -m pip install pfsense-mcp-server==1.0.0</span>
 </code></pre></div>
 <p>To always take the latest release instead of a pinned version:</p>
 <div class="highlight"><pre><span></span><code><span class="go">.venv/bin/python -m pip install --upgrade pfsense-mcp-server</span>
@@ -4547,7 +4547,7 @@ configuration — an absolute path to wherever you created <code>.venv</code>.</
 <h3 id="alternative-uv-tool-install">Alternative: <code>uv tool install</code><a class="headerlink" href="#alternative-uv-tool-install" title="Permanent link">&para;</a></h3>
 <p>If you already use <a href="https://docs.astral.sh/uv/"><code>uv</code></a>, it offers the
 same isolation as <code>pipx</code>, generally installing faster:</p>
-<div class="highlight"><pre><span></span><code><span class="go">uv tool install pfsense-mcp-server==0.9.0</span>
+<div class="highlight"><pre><span></span><code><span class="go">uv tool install pfsense-mcp-server==1.0.0</span>
 </code></pre></div>
 <p><code>uv</code> installs to the same <code>~/.local/bin/</code> location <code>pipx</code> does by
 default.</p>
