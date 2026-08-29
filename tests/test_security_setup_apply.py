@@ -78,6 +78,7 @@ def _current_token(
     *,
     target_capability_posture: str,
     target_anchor_assurance: str,
+    read_only_account_mode: str = "byo",
     target_origin: str | None = None,
     target_identity: str | None = None,
 ) -> tuple[str, str]:
@@ -92,6 +93,7 @@ def _current_token(
         target_anchor_assurance=anchor,
         target_origin=target_origin,
         target_identity=target_identity,
+        read_only_account_mode=read_only_account_mode,
         env=env,
     )
     digest = compute_setup_plan_digest(plan)
@@ -101,6 +103,7 @@ def _current_token(
         target_identity=target_identity,
         capability_posture=posture.value,
         anchor_assurance=anchor.value,
+        read_only_account_mode=(read_only_account_mode if posture is CapabilityPosture.READ_ONLY else None),
     )
     key_path = Path(env["PFSENSE_SETUP_CONFIRM_KEY_FILE"])
     token = derive_confirmation_token(binding, integrity_key=key_path.read_bytes().strip())

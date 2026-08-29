@@ -109,13 +109,17 @@ all three ultimately fetch the same signed artifact from PyPI.
 
 1. In pfSense, under the REST API package's own user/key management,
    generate an API key for the identity you intend to use. If you plan
-   to run `write_protected`, prefer
-   [the setup wizard](SECURITY_SETUP_WIZARD.md)'s `bootstrap` step,
-   which provisions a fresh, dedicated, least-privilege identity
-   instead of reusing an existing one. **For `read_only`, the wizard
-   does not provision or verify any identity** — it uses whatever key
-   you configure here exactly as-is, so for the strongest security
-   boundary, scope that key's own pfSense privileges to the READ set
+   to run `write_protected`, or `read_only` with the **recommended**
+   managed account option, prefer
+   [the setup wizard](SECURITY_SETUP_WIZARD.md)'s Account step (or its
+   `bootstrap --target-profile <profile>` step underneath), which
+   provisions a fresh, dedicated, least-privilege identity instead of
+   reusing an existing one. **If you instead choose `read_only`'s
+   "bring your own key" option (the wizard's Advanced choice, and the
+   default for scripted use), the wizard does not provision or verify
+   any identity** — it uses whatever key you configure here exactly
+   as-is, so for the strongest security boundary, scope that key's own
+   pfSense privileges to the READ set
    [the least-privilege matrix](PFSENSE_LEAST_PRIVILEGE_MATRIX.md)
    documents rather than reusing an administrator account.
 2. Save **only the key itself** to a file *outside* this project's

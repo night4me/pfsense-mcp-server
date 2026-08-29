@@ -135,4 +135,4 @@ def test_verify_setup_plan_digest_never_raises_on_malformed_expected_digest():
 
 
 def test_schema_version_participates_in_the_digest():
-    assert SETUP_PLAN_DIGEST_SCHEMA_VERSION == 1
+    assert SETUP_PLAN_DIGEST_SCHEMA_VERSION == 2

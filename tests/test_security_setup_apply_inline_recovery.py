@@ -148,7 +148,7 @@ def test_inline_recovery_fires_exactly_for_blocked_prior_operation(tmp_path, mon
     calls: list[str] = []
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.run_recovery_from_environment",
-        lambda env: (
+        lambda env, **kwargs: (
             calls.append("called")
             or RecoveryOrchestrationResult(RecoveryOrchestrationOutcome.NO_RECOVERY_NEEDED, "nothing to do")
         ),
@@ -182,7 +182,10 @@ def test_inline_recovery_is_called_with_only_env_never_execute_action_or_confirm
     env = _base_env(tmp_path)
     _run(tmp_path, env)
     assert captured["env"] is env
-    assert captured["kwargs"] == {}
+    # target_profile is always supplied (added for the POST-v1.0 MANAGED READ-ONLY WIZARD
+    # INTEGRATION mission, 2026-08-29, so inline recovery inspects the correct account's own
+    # journal) -- but never execute_action/confirm_token, the actual invariant this test proves.
+    assert captured["kwargs"] == {"target_profile": "write_protected"}
 
 
 # --- faithful surfacing across every inspect-only RecoveryOrchestrationOutcome --
@@ -203,7 +206,7 @@ def test_inline_recovery_is_called_with_only_env_never_execute_action_or_confirm
 def test_every_inspect_only_recovery_outcome_is_surfaced_verbatim(tmp_path, monkeypatch, recovery_outcome):
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.run_recovery_from_environment",
-        lambda env: RecoveryOrchestrationResult(recovery_outcome, "canned recovery detail"),
+        lambda env, **kwargs: RecoveryOrchestrationResult(recovery_outcome, "canned recovery detail"),
     )
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.run_bootstrap_from_environment",
@@ -221,7 +224,7 @@ def test_recovery_action_and_token_present_only_when_recovery_needed(tmp_path, m
 
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.run_recovery_from_environment",
-        lambda env: RecoveryOrchestrationResult(
+        lambda env, **kwargs: RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.RECOVERY_NEEDED,
             "revoke needed",
             recovery_action=RecoveryAction.REVOKE_ORPHAN_KEY,
@@ -242,7 +245,7 @@ def test_recovery_action_and_token_present_only_when_recovery_needed(tmp_path, m
 def test_recovery_action_and_token_absent_when_candidate_not_identifiable(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.run_recovery_from_environment",
-        lambda env: RecoveryOrchestrationResult(
+        lambda env, **kwargs: RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.BLOCKED_CANDIDATE_NOT_IDENTIFIABLE, "zero candidates found"
         ),
     )
@@ -268,7 +271,7 @@ def test_no_secret_material_leaks_into_the_inline_recovery_result(tmp_path, monk
 
     monkeypatch.setattr(
         "pfsense_mcp.security_setup_apply.run_recovery_from_environment",
-        lambda env: RecoveryOrchestrationResult(
+        lambda env, **kwargs: RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.RECOVERY_NEEDED,
             "sanitized detail only",
             recovery_action=RecoveryAction.REVOKE_ORPHAN_KEY,

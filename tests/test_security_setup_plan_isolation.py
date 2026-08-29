@@ -70,6 +70,8 @@ _FORBIDDEN_MUTATING_CALLS = {
 _EXPECTED_PUBLIC_SURFACE = {
     "SETUP_PLAN_SCHEMA_VERSION",
     "INTENDED_SERVICE_ACCOUNT_IDENTITY",
+    "INTENDED_READONLY_SERVICE_ACCOUNT_IDENTITY",
+    "ReadOnlyAccountMode",
     "TargetDescriptor",
     "PrivilegePlan",
     "VersionEvidence",

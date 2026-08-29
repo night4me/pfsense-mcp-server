@@ -47,7 +47,12 @@ from .tier1.canonical import CanonicalValue, DigestPurpose, digest_value
 #: `PLAN_DIGEST_SCHEMA_VERSION` docstring for the identical reasoning
 #: (the version itself is hashed as part of the payload, so a version
 #: change alone already changes every future digest).
-SETUP_PLAN_DIGEST_SCHEMA_VERSION = 1
+#:
+#: Bumped to 2 for the managed-read-only wizard integration slice
+#: (2026-08-29): `read_only_account_mode` now participates -- see
+#: `_setup_plan_payload()`'s own comment on that field for why it must
+#: be digest-bound, not merely presentational.
+SETUP_PLAN_DIGEST_SCHEMA_VERSION = 2
 
 
 def _setup_plan_payload(plan: SetupPlan) -> dict[str, CanonicalValue]:
@@ -80,6 +85,12 @@ def _setup_plan_payload(plan: SetupPlan) -> dict[str, CanonicalValue]:
         "posture_plan_digest": compute_plan_digest(plan.posture_plan),
         "intended_capability_posture": privilege.intended_capability_posture.value,
         "intended_account_identity": privilege.intended_account_identity,
+        # POST-v1.0 MANAGED READ-ONLY WIZARD INTEGRATION mission (2026-08-29): the managed-vs-BYOK
+        # choice must be security-bound into the plan's own identity, not merely presentational --
+        # otherwise a reviewed BYOK plan's confirmation token could be reused (or a reviewed managed
+        # plan's token misapplied) against the other mode for the identical target/posture. `None` for
+        # write_protected (not applicable); "byo" or "managed" for read_only.
+        "read_only_account_mode": privilege.account_mode,
         "dedicated_account_provisioning_implemented": privilege.dedicated_account_provisioning_implemented,
         "privilege_schema_provided": privilege.schema_provided,
         "required_privileges": (

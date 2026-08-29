@@ -737,15 +737,24 @@ in depth. BYOK remains available and unchanged as the advanced path;
 its documented caveat (the product cannot verify an operator-supplied
 key's own privilege scope) is unaffected by this addition.
 
-**Not yet wired into the interactive `setup` wizard** as of this
-writing -- `bootstrap --target-profile read_only` is a standalone,
-already-tested command today, mirroring exactly how `write_protected`'s
-own `bootstrap` subcommand existed and was live-verified before
-`setup apply --capability-posture write_protected` was later extended
-to compose it in a separate, dedicated slice. The equivalent
-`setup apply` integration for `read_only` (an explicit "managed vs.
-BYOK" choice, confirmation-gated, never mutating during bare `setup`)
-remains a deliberately separate, not-yet-authorized follow-up.
+**Wired into the interactive `setup` wizard** (POST-v1.0 MANAGED
+READ-ONLY WIZARD INTEGRATION mission, 2026-08-29) -- mirroring exactly
+how `write_protected`'s own `bootstrap` subcommand existed and was
+live-verified before `setup apply --capability-posture write_protected`
+was later extended to compose it. `setup`'s own Account step now
+offers "Create a dedicated read-only account [Recommended]" (managed)
+alongside "Use an existing API key [Advanced]" (BYOK) for `read_only`,
+and `setup apply --read-only-account-mode managed` composes the same
+`run_readonly_bootstrap_from_environment()` standalone `bootstrap
+--target-profile read_only` already used -- never a second,
+independent provisioning engine, and never mutating during bare
+`setup`, in either mode, always. The managed-vs-BYOK choice is
+security-bound into the plan digest and confirmation token, not merely
+presentational -- a plan/token reviewed for one mode cannot authorize
+an apply in the other. Existing BYOK installations are unaffected:
+`read_only_account_mode` defaults to `byo`, so every pre-existing
+scripted invocation that omits the new flag behaves exactly as it
+always has.
 
 ## Combined minimum set, READ + existing WRITE
 

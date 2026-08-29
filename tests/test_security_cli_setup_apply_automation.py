@@ -45,6 +45,7 @@ def _canned(monkeypatch, result: ApplyResult) -> list[dict[str, object]]:
         *,
         target_capability_posture,
         target_anchor_assurance,
+        read_only_account_mode="byo",
         target_origin=None,
         target_identity=None,
         tls_mode=None,
@@ -55,6 +56,7 @@ def _canned(monkeypatch, result: ApplyResult) -> list[dict[str, object]]:
             {
                 "target_capability_posture": target_capability_posture,
                 "target_anchor_assurance": target_anchor_assurance,
+                "read_only_account_mode": read_only_account_mode,
                 "target_origin": target_origin,
                 "target_identity": target_identity,
                 "tls_mode": tls_mode,

@@ -41,7 +41,8 @@ def _write_secure(path: Path, value: bytes, mode: int = 0o600) -> None:
 def _canned(monkeypatch, result: RecoveryOrchestrationResult) -> dict[str, object]:
     captured: dict[str, object] = {}
 
-    def fake(env, *, execute_action=None, confirm_token=None):
+    def fake(env, *, target_profile="write_protected", execute_action=None, confirm_token=None):
+        captured["target_profile"] = target_profile
         captured["execute_action"] = execute_action
         captured["confirm_token"] = confirm_token
         return result
@@ -59,6 +60,22 @@ def test_no_recovery_needed_human_output_exit_zero(capsys, monkeypatch):
     out = capsys.readouterr().out
     assert "Outcome: no_recovery_needed" in out
     assert "read-only inspection only" in out
+
+
+def test_target_profile_defaults_to_write_protected(capsys, monkeypatch):
+    captured = _canned(monkeypatch, RecoveryOrchestrationResult(RecoveryOrchestrationOutcome.NO_RECOVERY_NEEDED, "x"))
+
+    main(["recover"])
+
+    assert captured["target_profile"] == "write_protected"
+
+
+def test_target_profile_read_only_forwarded(capsys, monkeypatch):
+    captured = _canned(monkeypatch, RecoveryOrchestrationResult(RecoveryOrchestrationOutcome.NO_RECOVERY_NEEDED, "x"))
+
+    main(["recover", "--target-profile", "read_only"])
+
+    assert captured["target_profile"] == "read_only"
 
 
 def test_recovery_needed_prints_token_and_execute_command(capsys, monkeypatch):

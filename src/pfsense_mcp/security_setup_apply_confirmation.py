@@ -19,7 +19,7 @@ incident/plan-bound HMAC-style confirmation approach" this run's own
 owner decisions name explicitly, reused for a plan instead of a
 recovery incident. Does not wire ADR-022/023 signing into setup.
 
-The payload binds five independent facts, so a token is refused if
+The payload binds six independent facts, so a token is refused if
 *any* of them differs from what is true right now:
 
   - the plan's own deterministic identity (`plan_digest`, from
@@ -27,6 +27,10 @@ The payload binds five independent facts, so a token is refused if
   - the target appliance (origin + identity)
   - the exact capability posture and anchor assurance the plan was
     generated for
+  - for `read_only`, the exact `read_only_account_mode` (`byo` or
+    `managed`) the plan was generated for -- `None` for
+    `write_protected` (POST-v1.0 MANAGED READ-ONLY WIZARD INTEGRATION
+    mission, 2026-08-29)
 
 A plan digest alone already changes if any of these differ (they are
 themselves part of what the digest is computed over) -- binding them
@@ -35,7 +39,11 @@ again explicitly here is defense in depth, not redundancy: it means
 supplied a digest that was actually computed the way this module
 expects, since the binding is reconstructed from the same values the
 caller already independently re-validated (see
-`security_setup_apply.py`).
+`security_setup_apply.py`). `read_only_account_mode` in particular
+means a token derived for a reviewed BYOK plan can never be replayed
+to authorize a managed-provisioning apply for the identical target/
+posture, or vice versa -- the token itself, not only the recomputed
+plan digest it already depends on, refuses to match.
 
 Nothing here makes a network call, reads a file, or knows about
 `Transport`/HTTP at all -- pure, deterministic, easily unit-tested.
@@ -64,6 +72,12 @@ class ApplyConfirmationBinding:
     target_identity: str | None
     capability_posture: str
     anchor_assurance: str
+    #: `None` for `write_protected`; `"byo"` or `"managed"` for
+    #: `read_only`. Defaults to `None` so every existing keyword-argument
+    #: construction of this dataclass (including every pre-existing test)
+    #: remains valid unchanged -- see this module's own docstring for why
+    #: this field must be bound here, not only inside `plan_digest`.
+    read_only_account_mode: str | None = None
 
 
 def _canonical_payload(binding: ApplyConfirmationBinding) -> bytes:
@@ -73,6 +87,7 @@ def _canonical_payload(binding: ApplyConfirmationBinding) -> bytes:
         "target_identity": binding.target_identity,
         "capability_posture": binding.capability_posture,
         "anchor_assurance": binding.anchor_assurance,
+        "read_only_account_mode": binding.read_only_account_mode,
     }
     return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
 

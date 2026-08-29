@@ -80,6 +80,7 @@ from .security_operation_journal import (
     RecoveryAction,
     RestartClassification,
 )
+from .security_readonly_admin_composition import build_readonly_admin_context
 from .security_recovery_confirmation import (
     RecoveryIncidentBinding,
     confirmation_token_matches,
@@ -183,6 +184,7 @@ def _default_operation_id() -> str:
 def run_recovery_from_environment(
     env: Mapping[str, str] | None = None,
     *,
+    target_profile: str = "write_protected",
     execute_action: RecoveryAction | None = None,
     confirm_token: str | None = None,
     now: Callable[[], str] = _default_now,
@@ -190,6 +192,24 @@ def run_recovery_from_environment(
 ) -> RecoveryOrchestrationResult:
     """The one function a CLI needs. `env` defaults to `os.environ`,
     matching `run_bootstrap_from_environment()`'s own convention.
+
+    `target_profile` (`"write_protected"` or `"read_only"`, mirroring
+    `pfsense-mcp-security bootstrap --target-profile`) selects which of
+    the two, entirely separate, namespaced administrative contexts
+    (`build_admin_context()` for the ADR-033 `pfsense-mcp` account,
+    `build_readonly_admin_context()` for `pfsense-mcp-readonly`) this
+    call inspects/recovers -- both builders return the same
+    `AdministrativeContext` shape, so every line below this point is
+    unchanged regardless of which was built (`security_readonly_admin_
+    composition.py`'s own docstring on why the two accounts'
+    journals/locks/custody artifacts are structurally incapable of
+    colliding). Added for the POST-v1.0 MANAGED READ-ONLY WIZARD
+    INTEGRATION mission (2026-08-29): before this, a managed read_only
+    `setup apply` hitting `BLOCKED_PRIOR_OPERATION` had no correct way
+    to inline-inspect its own account's incident -- calling this
+    function unparameterized would have silently inspected the
+    unrelated `pfsense-mcp` (write_protected) journal instead, which
+    would have been actively misleading.
 
     `execute_action=None` (the default) is inspection-only: no lock is
     acquired, no journal is written, no mutating call is ever made.
@@ -199,8 +219,9 @@ def run_recovery_from_environment(
     """
 
     source = env if env is not None else os.environ
+    build_context = build_readonly_admin_context if target_profile == "read_only" else build_admin_context
     try:
-        bootstrap_context = build_admin_context(source)
+        bootstrap_context = build_context(source)
     except AdminCompositionError as exc:
         return RecoveryOrchestrationResult(RecoveryOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR, str(exc))
 
@@ -243,7 +264,7 @@ def run_recovery_from_environment(
 
     operation_type = _ACTION_TO_OPERATION_TYPE[recovery_action]
     try:
-        recovery_context = build_admin_context(source, operation_type=operation_type)
+        recovery_context = build_context(source, operation_type=operation_type)
     except AdminCompositionError as exc:
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,

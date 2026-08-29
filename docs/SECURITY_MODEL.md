@@ -196,14 +196,29 @@ dedicated pfSense identity -- `pfsense-mcp-readonly`, distinct from
 94 READ privileges the least-privilege matrix documents and nothing
 else (never `page-all`, never the WRITE-exclusive privilege). The two
 ceremonies use separate journals, locks, and custody files by
-construction, so provisioning one can never disturb the other. This is
-reachable today as a standalone command (mirroring how `write_protected`'s
-own `bootstrap` predated its later `setup apply` integration); the
-interactive `setup` wizard does not yet offer this choice, so an
-operator who only runs bare `setup`/`setup apply` still gets the BYOK
-path described above by default. See
+construction, so provisioning one can never disturb the other.
+
+**POST-v1.0 MANAGED READ-ONLY WIZARD INTEGRATION mission (2026-08-29)**
+made this the *recommended* path for new setups: the interactive
+`setup` wizard's own Account step now offers "Create a dedicated
+read-only account [Recommended]" (managed) alongside "Use an existing
+API key [Advanced]" (BYOK) for `read_only`, and `setup apply
+--read-only-account-mode managed` composes the same standalone
+`bootstrap --target-profile read_only` machinery -- never a second,
+independent provisioning engine. This choice is security-bound into
+the plan's own digest and confirmation token (not merely
+presentational): a plan/token reviewed for one mode can never silently
+authorize an apply in the other mode for the same target/posture. Bare
+`setup` still never provisions anything, in either mode, always; only
+the explicit, confirmation-gated `setup apply` (or standalone
+`bootstrap`) ever provisions the managed account. Existing BYOK
+installations are unaffected -- `read_only_account_mode` defaults to
+`byo`, so every pre-existing scripted `setup`/`setup apply` invocation
+that does not pass the new flag behaves byte-for-byte as it always
+has; managed is only ever chosen by an explicit flag, or an operator's
+own explicit interactive choice. See
 [the least-privilege matrix](PFSENSE_LEAST_PRIVILEGE_MATRIX.md#managed-read-only-service-account-pfsense-mcp-readonly)
-for the full detail. Whether provisioned or BYOK, operators can
+for the full privilege detail. Whether managed or BYOK, operators can
 alternatively provision (or ask a pfSense administrator to provision)
 an API identity scoped to exactly the READ privilege set themselves
 and use that identity's key for `read_only`.

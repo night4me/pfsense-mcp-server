@@ -54,9 +54,35 @@ def test_read_only_posture_reports_dedicated_account_provisioning_as_not_impleme
     plan = generate_setup_plan(
         target_capability_posture=CapabilityPosture.READ_ONLY, target_anchor_assurance=AnchorAssurance.NONE
     )
+    assert plan.privilege_plan.account_mode == "byo"
     assert plan.privilege_plan.dedicated_account_provisioning_implemented is False
-    assert "no implemented provisioning path" in plan.privilege_plan.provisioning_note
+    assert "Bring-your-own-key" in plan.privilege_plan.provisioning_note
     assert any("READ-only account provisioning" in step for step in plan.unsupported_steps)
+
+
+def test_read_only_managed_mode_reports_dedicated_account_provisioning_as_implemented(monkeypatch):
+    _clear_relevant_env(monkeypatch)
+    plan = generate_setup_plan(
+        target_capability_posture=CapabilityPosture.READ_ONLY,
+        target_anchor_assurance=AnchorAssurance.NONE,
+        read_only_account_mode="managed",
+    )
+    assert plan.privilege_plan.account_mode == "managed"
+    assert plan.privilege_plan.dedicated_account_provisioning_implemented is True
+    assert "pfsense-mcp-readonly" in plan.privilege_plan.provisioning_note
+    assert plan.privilege_plan.intended_account_identity == "pfsense-mcp-readonly"
+    assert any("pfsense-mcp-readonly" in action for action in plan.planned_pfsense_actions)
+    assert not any("READ-only account provisioning" in step for step in plan.unsupported_steps)
+
+
+def test_read_only_account_mode_rejected_for_write_protected(monkeypatch):
+    _clear_relevant_env(monkeypatch)
+    with pytest.raises(ValueError, match="read_only_account_mode"):
+        generate_setup_plan(
+            target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
+            target_anchor_assurance=AnchorAssurance.NONE,
+            read_only_account_mode="managed",
+        )
 
 
 def test_write_protected_posture_reports_dedicated_account_provisioning_as_implemented(monkeypatch):

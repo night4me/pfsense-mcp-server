@@ -166,8 +166,10 @@ from .security_setup_confirm_key import (
     create_confirm_key,
 )
 from .security_setup_plan import (
+    INTENDED_READONLY_SERVICE_ACCOUNT_IDENTITY,
     INTENDED_SERVICE_ACCOUNT_IDENTITY,
     PrivilegePlan,
+    ReadOnlyAccountMode,
     SetupPlan,
     TargetDescriptor,
     VersionEvidence,
@@ -964,6 +966,19 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=_ParagraphHelpFormatter,
     )
     recover_parser.add_argument(
+        "--target-profile",
+        choices=["write_protected", "read_only"],
+        default="write_protected",
+        help=(
+            "Which fixed service account's own incident to inspect/recover: 'write_protected' "
+            "(default, the 'pfsense-mcp' account) or 'read_only' (POST-v1.0 addition, the dedicated "
+            "'pfsense-mcp-readonly' account). Must match the --target-profile the original `bootstrap` "
+            "(or `setup apply --read-only-account-mode managed`) attempt used -- each profile has its "
+            "own entirely separate incident journal; this only ever inspects/recovers the one selected "
+            "here."
+        ),
+    )
+    recover_parser.add_argument(
         "--execute",
         choices=[action.value for action in RecoveryAction],
         default=None,
@@ -1042,6 +1057,18 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=_ANCHOR_ASSURANCE_CHOICES,
         default=None,
         help="Target anchor-assurance axis value. Prompted for if omitted and interactive.",
+    )
+    setup_parser.add_argument(
+        "--read-only-account-mode",
+        choices=["byo", "managed"],
+        default=None,
+        help=(
+            "Only applies to --capability-posture read_only. 'managed' (recommended for new setups) "
+            "plans for the dedicated least-privilege pfsense-mcp-readonly service account "
+            "(POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission); 'byo' (default) plans for your "
+            "own existing API key, exactly as every prior release. Prompted for if omitted and "
+            "interactive and --capability-posture read_only was selected; ignored for write_protected."
+        ),
     )
     setup_parser.add_argument(
         "--target-origin",
@@ -1161,49 +1188,57 @@ def _build_parser() -> argparse.ArgumentParser:
         description=(
             "Recomputes the plan fresh from current state, refuses if it does not match --plan-digest "
             "(the state you reviewed has changed), refuses if --confirm does not match the exact "
-            "plan/target/posture, and only then acts. For read_only: one read-only connectivity check "
-            "against the pfSense target configured via the normal runtime PFSENSE_API_URL/"
-            "PFSENSE_IDENTITY/PFSENSE_API_KEY_FILE/PFSENSE_TLS_* environment variables -- the exact "
-            "same configuration the MCP server itself would use to start. For write_protected: composes "
-            "`pfsense-mcp-security bootstrap`'s own orchestration to provision (or verify/repair) the "
-            "dedicated least-privilege service account, using the same ADR-033 administrative "
-            "environment variables standalone `bootstrap` already requires; for anchor_assurance="
-            "hardware_witness, `doctor` must report ready before this call is ever made. A prior "
-            "incomplete/failed bootstrap for this target/account/profile is refused (exit 9) and points "
-            "at `pfsense-mcp-security recover` -- never bypassed, retried, or resolved automatically. "
-            "Omitting --confirm (or --plan-digest) performs inspection only: it shows the current plan "
-            "and the exact token a real apply would need, without touching pfSense at all."
+            "plan/target/posture/read_only_account_mode, and only then acts. For read_only+byo "
+            "(default): one read-only connectivity check against the pfSense target configured via the "
+            "normal runtime PFSENSE_API_URL/PFSENSE_IDENTITY/PFSENSE_API_KEY_FILE/PFSENSE_TLS_* "
+            "environment variables -- the exact same configuration the MCP server itself would use to "
+            "start. For write_protected and read_only+managed (POST-v1.0 MANAGED READ-ONLY WIZARD "
+            "INTEGRATION mission, 2026-08-29): composes `pfsense-mcp-security bootstrap`'s own "
+            "orchestration to provision (or verify/repair) the relevant dedicated least-privilege "
+            "service account (`pfsense-mcp` or `pfsense-mcp-readonly` respectively -- entirely separate "
+            "accounts/journals), using the same ADR-033 administrative environment variables standalone "
+            "`bootstrap` already requires; for anchor_assurance=hardware_witness, `doctor` must report "
+            "ready before this call is ever made. A prior incomplete/failed bootstrap for this "
+            "target/account/profile is refused (exit 9) and points at `pfsense-mcp-security recover "
+            "--target-profile <profile>` -- never bypassed, retried, or resolved automatically. Omitting "
+            "--confirm (or --plan-digest) performs inspection only: it shows the current plan and the "
+            "exact token a real apply would need, without touching pfSense at all."
         ),
         epilog=(
-            "Exit codes: 0 apply completed (read_only: connectivity verified, nothing changed; "
-            "write_protected: the ADR-033 service account is now provisioned or was already so). "
+            "Exit codes: 0 apply completed (read_only+byo: connectivity verified, nothing changed; "
+            "write_protected and read_only+managed: the relevant dedicated service account is now "
+            "provisioned or was already so). "
             "1 inspection only -- the plan is current and a confirmation token was shown, but --confirm "
             "was not supplied, so nothing was applied. 2 the recomputed plan digest does not match "
-            "--plan-digest -- current state has changed since the plan was reviewed; refused before the "
-            "confirmation token is even considered. 3 --confirm does not match this exact "
-            "plan/target/posture -- refused before any pfSense contact. 5 the environment/configuration "
-            "itself was rejected before any pfSense contact (missing/invalid PFSENSE_* variable, "
-            "missing/invalid PFSENSE_SETUP_CONFIRM_KEY_FILE, insecure file permissions). 6 the one "
-            "read-only connectivity check failed (read_only only). 7 `doctor` reports the requested "
-            "hardware-witness anchor is not ready -- checked after connectivity for read_only, checked "
-            "before any bootstrap call for write_protected. 8 another process holds the local ADR-033 "
-            "operation lock (write_protected only). 9 a prior bootstrap attempt for this target/account/"
-            "profile requires recovery before a new one may start (write_protected only) -- "
-            "RECOVERY_REQUIRED, surfaced faithfully, never bypassed: a read-only recovery inspection "
-            "(the exact same one bare `pfsense-mcp-security recover` performs) is run inline and its "
+            "--plan-digest -- current state (including read_only_account_mode) has changed since the "
+            "plan was reviewed; refused before the confirmation token is even considered. 3 --confirm "
+            "does not match this exact plan/target/posture/read_only_account_mode -- refused before any "
+            "pfSense contact. 5 the environment/configuration itself was rejected before any pfSense "
+            "contact (missing/invalid PFSENSE_* variable, missing/invalid "
+            "PFSENSE_SETUP_CONFIRM_KEY_FILE, insecure file permissions). 6 the one read-only "
+            "connectivity check failed (read_only+byo only). 7 `doctor` reports the requested "
+            "hardware-witness anchor is not ready -- checked after connectivity for read_only+byo, "
+            "checked before any bootstrap call for write_protected/read_only+managed. 8 another process "
+            "holds the local ADR-033 operation lock (write_protected/read_only+managed only). 9 a prior "
+            "bootstrap attempt for this target/account/profile requires recovery before a new one may "
+            "start (write_protected/read_only+managed only) -- RECOVERY_REQUIRED, surfaced faithfully, "
+            "never bypassed: a read-only recovery inspection (the exact same one bare "
+            "`pfsense-mcp-security recover --target-profile <profile>` performs) is run inline and its "
             "own recovery_action/confirmation_token are shown, but only the operator's own separate "
-            "`pfsense-mcp-security recover --execute <ACTION> --confirm <TOKEN>` invocation can ever "
-            "resolve it -- this command never supplies that token itself. 10 local ADR-033 journal/"
-            "lock/custody state is corrupt or untrusted (write_protected only). 11 the engine refused "
-            "before any HTTP call -- unsupported package version, or privilege derivation not fully "
-            "source-cross-checked (write_protected only; proven zero network activity, but still "
-            "requires human review before retrying). 12 the engine ran and did not reach a verified "
-            "successful state (write_protected only); local state is held for human review.\n\n"
-            "Never introduces a second mutating primitive: the only pfSense contact for read_only is "
-            "one read-only GET; the only things write_protected ever composes are the exact same "
-            "`run_bootstrap_from_environment()` standalone `bootstrap` already calls and (inspection "
-            "only, exit 9) the exact same `run_recovery_from_environment()` standalone `recover` "
-            "already calls, made only after the confirmation token has already been verified.\n\n"
+            "`pfsense-mcp-security recover --target-profile <profile> --execute <ACTION> --confirm "
+            "<TOKEN>` invocation can ever resolve it -- this command never supplies that token itself. "
+            "10 local ADR-033 journal/lock/custody state is corrupt or untrusted (write_protected/"
+            "read_only+managed only). 11 the engine refused before any HTTP call -- unsupported package "
+            "version, or privilege derivation not fully source-cross-checked (write_protected/"
+            "read_only+managed only; proven zero network activity, but still requires human review "
+            "before retrying). 12 the engine ran and did not reach a verified successful state "
+            "(write_protected/read_only+managed only); local state is held for human review.\n\n"
+            "Never introduces a second mutating primitive: the only pfSense contact for read_only+byo "
+            "is one read-only GET; the only things write_protected/read_only+managed ever compose are "
+            "the exact same `run_bootstrap_from_environment()`/`run_readonly_bootstrap_from_"
+            "environment()` standalone `bootstrap` already calls and (inspection only, exit 9) the "
+            "exact same `run_recovery_from_environment()` standalone `recover` already calls, made only "
+            "after the confirmation token has already been verified.\n\n"
             "Never prints, logs, or serializes an API key, password, journal-integrity key, or any "
             "other secret value -- the confirmation token and the recovery confirmation token are both "
             "derived confirmation artifacts, not credentials."
@@ -1221,6 +1256,20 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=_ANCHOR_ASSURANCE_CHOICES,
         required=True,
         help="The exact target anchor-assurance axis value the plan being applied was generated for.",
+    )
+    apply_parser.add_argument(
+        "--read-only-account-mode",
+        choices=["byo", "managed"],
+        default="byo",
+        help=(
+            "The exact read_only_account_mode value the plan being applied was generated for -- only "
+            "applies together with --capability-posture read_only. 'byo' (default, unchanged from "
+            "every prior release) verifies connectivity using your own existing key. 'managed' composes "
+            "the same `bootstrap --target-profile read_only` machinery to provision the dedicated "
+            "pfsense-mcp-readonly account. Participates in the plan digest and confirmation token -- a "
+            "mismatch against the plan actually reviewed is refused as a stale plan, before any "
+            "pfSense contact."
+        ),
     )
     apply_parser.add_argument("--target-origin", default=None, help="Must match the value `setup` recorded.")
     apply_parser.add_argument("--target-identity", default=None, help="Must match the value `setup` recorded.")
@@ -1325,6 +1374,16 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=_ANCHOR_ASSURANCE_CHOICES,
         required=True,
         help="The exact target anchor-assurance axis value the plan being applied was generated for.",
+    )
+    write_client_config_parser.add_argument(
+        "--read-only-account-mode",
+        choices=["byo", "managed"],
+        default="byo",
+        help=(
+            "The exact read_only_account_mode value the plan being applied was generated for -- see "
+            "`setup apply --help`. Must match what was actually applied, so the generated config "
+            "references the credential that ceremony actually produced."
+        ),
     )
     write_client_config_parser.add_argument(
         "--target-origin", default=None, help="Must match the value `setup` recorded."
@@ -1459,6 +1518,7 @@ def _run_recover(
     env: dict[str, str] | None,
     out: TextIO,
     in_: TextIO,
+    target_profile: str = "write_protected",
 ) -> int:
     execute_action = RecoveryAction(execute) if execute is not None else None
     # '-' reads the token from stdin rather than the command line/process
@@ -1467,7 +1527,9 @@ def _run_recover(
     # controlled-automation use consistent with how this codebase already
     # prefers file/stdin-sourced input over inline secrets elsewhere.
     confirm_token = in_.readline().rstrip("\n") if confirm == "-" else confirm
-    result = run_recovery_from_environment(env, execute_action=execute_action, confirm_token=confirm_token)
+    result = run_recovery_from_environment(
+        env, target_profile=target_profile, execute_action=execute_action, confirm_token=confirm_token
+    )
     if as_json:
         print(json.dumps(_recover_result_to_dict(result), indent=2, sort_keys=True), file=out)
     else:
@@ -1488,6 +1550,7 @@ def _privilege_plan_to_dict(privilege_plan: PrivilegePlan) -> dict[str, Any]:
     return {
         "intended_capability_posture": privilege_plan.intended_capability_posture.value,
         "intended_account_identity": privilege_plan.intended_account_identity,
+        "read_only_account_mode": privilege_plan.account_mode,
         "dedicated_account_provisioning_implemented": privilege_plan.dedicated_account_provisioning_implemented,
         "provisioning_note": privilege_plan.provisioning_note,
         "schema_provided": privilege_plan.schema_provided,
@@ -1609,16 +1672,21 @@ def _mcp_client_env_vars(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CL
     the correct least-privilege identity for the MCP server's own
     runtime credential; suggesting the *administrator* identity used to
     provision it would be exactly the privilege-escalation mistake
-    ADR-033 exists to prevent. For `read_only` (bring-your-own-key),
-    the operator's own entered identity is used instead, since no
-    dedicated account is ever provisioned for that posture."""
+    ADR-033 exists to prevent. For `read_only`+`managed` (POST-v1.0
+    MANAGED READ-ONLY WIZARD INTEGRATION mission, 2026-08-29), the
+    identity is likewise the fixed dedicated account
+    (`INTENDED_READONLY_SERVICE_ACCOUNT_IDENTITY`), for the identical
+    reason. For `read_only`+`byo`, the operator's own entered identity
+    is used instead, since no dedicated account is ever provisioned for
+    that mode."""
 
     posture = plan.privilege_plan.intended_capability_posture
-    identity = (
-        INTENDED_SERVICE_ACCOUNT_IDENTITY
-        if posture is CapabilityPosture.WRITE_PROTECTED
-        else (plan.target.identity or _MCP_CLIENT_IDENTITY_PLACEHOLDER)
-    )
+    if posture is CapabilityPosture.WRITE_PROTECTED:
+        identity = INTENDED_SERVICE_ACCOUNT_IDENTITY
+    elif plan.privilege_plan.account_mode == ReadOnlyAccountMode.MANAGED.value:
+        identity = INTENDED_READONLY_SERVICE_ACCOUNT_IDENTITY
+    else:
+        identity = plan.target.identity or _MCP_CLIENT_IDENTITY_PLACEHOLDER
     env: dict[str, str] = {
         "PFSENSE_API_URL": plan.target.origin or _MCP_CLIENT_ORIGIN_PLACEHOLDER,
         "PFSENSE_IDENTITY": identity,
@@ -1755,7 +1823,9 @@ def _human_status_word(plan: SetupPlan) -> str:
 
 def _human_mode_label(plan: SetupPlan) -> str:
     if plan.privilege_plan.intended_capability_posture is CapabilityPosture.READ_ONLY:
-        return "Read-only"
+        if plan.privilege_plan.account_mode == ReadOnlyAccountMode.MANAGED.value:
+            return "Read-only (managed account)"
+        return "Read-only (your own key)"
     return "Protected write"
 
 
@@ -1911,14 +1981,19 @@ def _confirm_key_guidance_lines() -> tuple[str, ...]:
 def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> tuple[str, ...]:
     """The "Next step" guidance for the human-mode completion screen.
     `setup apply` now exists for both postures (Slice 2 read_only,
-    Slice 3 write_protected) -- shows the exact command, built from
-    this plan's own recorded values, an operator can copy verbatim to
-    inspect (and then apply) it. Wording differs only in what the
-    command actually *does*: read_only verifies connectivity;
-    write_protected provisions the ADR-033 service account via the
-    existing `bootstrap` machinery."""
+    Slice 3 write_protected) and, within read_only, both account modes
+    (POST-v1.0 MANAGED READ-ONLY WIZARD INTEGRATION mission, 2026-08-29)
+    -- shows the exact command, built from this plan's own recorded
+    values, an operator can copy verbatim to inspect (and then apply)
+    it. Wording differs only in what the command actually *does*:
+    read_only+byo verifies connectivity; read_only+managed and
+    write_protected both provision a dedicated ADR-033 service account
+    via the existing `bootstrap` machinery (different accounts, same
+    machinery)."""
 
     posture = plan.privilege_plan.intended_capability_posture
+    account_mode = plan.privilege_plan.account_mode
+    managed_read_only = posture is CapabilityPosture.READ_ONLY and account_mode == ReadOnlyAccountMode.MANAGED.value
     command_tokens = ["--capability-posture", posture.value]
     command_tokens += ["--anchor-assurance", plan.posture_plan.target_anchor_assurance.value]
     if plan.target.origin:
@@ -1927,6 +2002,12 @@ def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT
         command_tokens += ["--target-identity", plan.target.identity]
     if plan.target.tls_mode:
         command_tokens += ["--tls-mode", plan.target.tls_mode]
+    if posture is CapabilityPosture.READ_ONLY:
+        # Always printed explicitly (never relying on the default) -- `read_only_account_mode`
+        # participates in the plan digest, so the printed --plan-digest below is only valid for
+        # exactly this mode; omitting the flag here would let a copy-pasted command silently use
+        # whatever the default happens to be instead of what was actually reviewed.
+        command_tokens += ["--read-only-account-mode", account_mode or ReadOnlyAccountMode.BRING_YOUR_OWN.value]
     command_tokens += ["--plan-digest", compute_setup_plan_digest(plan)]
 
     command_lines = ["  pfsense-mcp-security setup apply \\"]
@@ -1939,7 +2020,22 @@ def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT
     action_lines: tuple[str, ...]
     confirm_lines: tuple[str, ...]
     env_lines: tuple[str, ...] = ()
-    if posture is CapabilityPosture.READ_ONLY:
+    if managed_read_only:
+        env_lines = ("", *_confirm_key_guidance_lines(), "")
+        action_lines = (
+            _wrap(
+                "To provision the dedicated least-privilege READ-only pfSense service account "
+                "(`pfsense-mcp-readonly`; requires the same PFSENSE_ADMIN_* environment "
+                "`pfsense-mcp-security bootstrap` already needs), run:"
+            ),
+        )
+        confirm_lines = (
+            _wrap(
+                "That command alone only inspects and prints a confirmation token; add --confirm "
+                "<TOKEN> to it to actually provision."
+            ),
+        )
+    elif posture is CapabilityPosture.READ_ONLY:
         env_vars = _mcp_client_env_vars(plan, hints)
         env_export_lines = tuple(f'  export {key}="{value}"' for key, value in env_vars.items())
         env_lines = (
@@ -2126,6 +2222,7 @@ class _WizardState:
 
     mode: str | None = None  # "read_only" | "write_protected"
     protection: str | None = None  # "hardware_witness" | "software" | None
+    account_mode: str | None = None  # "managed" | "byo" -- read_only only, see _step_account()
     address: str | None = None
     name: str | None = None
     tls_choice: str | None = None  # "verify" | "verify_private_ca" | "insecure"
@@ -2144,6 +2241,7 @@ class _WizardPrefill:
 
     capability_posture: str | None
     anchor_assurance: str | None
+    read_only_account_mode: str | None
     target_origin: str | None
     target_identity: str | None
     tls_mode: str | None
@@ -2156,6 +2254,7 @@ class _WizardPrefill:
 class _WizardResult:
     capability_posture: str
     anchor_assurance: str
+    read_only_account_mode: str
     target_origin: str | None
     target_identity: str | None
     tls_mode: str | None
@@ -2166,6 +2265,7 @@ class _WizardResult:
 
 _STEP_USAGE = "usage"
 _STEP_PROTECTION = "protection"
+_STEP_ACCOUNT = "account"
 _STEP_FIREWALL = "firewall"
 _STEP_CONNECTION = "connection"
 _STEP_REVIEW = "review"
@@ -2173,6 +2273,7 @@ _STEP_REVIEW = "review"
 _STEP_LABELS = {
     _STEP_USAGE: "Usage",
     _STEP_PROTECTION: "Protection",
+    _STEP_ACCOUNT: "Account",
     _STEP_FIREWALL: "Firewall",
     _STEP_CONNECTION: "Connection",
     _STEP_REVIEW: "Review",
@@ -2181,16 +2282,18 @@ _STEP_LABELS = {
 
 def _step_sequence(mode: str | None) -> tuple[str, ...]:
     """The numbered core wizard steps for the given mode -- `Protection`
-    only appears for `write_protected` (progressive disclosure: a
-    read-only operator is never shown it, and it never counts toward
-    "of N" for that path). Advanced discovery-input configuration is
-    deliberately never part of this sequence: it is not a mandatory
-    normal-flow step, only an explicit, optional action offered from
-    the Review step (see `_step_review()`)."""
+    only appears for `write_protected`, `Account` only for `read_only`
+    (POST-v1.0 MANAGED READ-ONLY WIZARD INTEGRATION mission, 2026-08-29;
+    progressive disclosure: each mode is shown only the one axis of
+    choice relevant to it, and neither ever counts toward "of N" for the
+    other path). Advanced discovery-input configuration is deliberately
+    never part of this sequence: it is not a mandatory normal-flow step,
+    only an explicit, optional action offered from the Review step (see
+    `_step_review()`)."""
 
     if mode == "write_protected":
         return (_STEP_USAGE, _STEP_PROTECTION, _STEP_FIREWALL, _STEP_CONNECTION, _STEP_REVIEW)
-    return (_STEP_USAGE, _STEP_FIREWALL, _STEP_CONNECTION, _STEP_REVIEW)
+    return (_STEP_USAGE, _STEP_ACCOUNT, _STEP_FIREWALL, _STEP_CONNECTION, _STEP_REVIEW)
 
 
 def _print_step_heading(out: TextIO, state: _WizardState, step: str) -> None:
@@ -2435,6 +2538,53 @@ def _step_protection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSi
     return _WizardSignal.NEXT
 
 
+def _step_account(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
+    """Read-only's own counterpart to `_step_protection()` -- shown only
+    for `mode == "read_only"` (POST-v1.0 MANAGED READ-ONLY WIZARD
+    INTEGRATION mission, 2026-08-29). Deliberately avoids internal
+    terminology (ADR-033, `pfsense-mcp-readonly`, transaction/journal
+    states) in this primary choice text -- those remain available via
+    `--json`/`setup apply --help` for an operator who wants them, never
+    required to make this choice."""
+
+    _print_step_heading(out, state, _STEP_ACCOUNT)
+    choice = _prompt_menu(
+        out,
+        in_,
+        "",
+        "How should this tool access pfSense?",
+        [
+            _MenuOption(
+                "Create a dedicated read-only account",
+                description=(
+                    "We provision a separate pfSense account that can only",
+                    "read. Even a request that bypasses this tool entirely",
+                    "cannot use that account to change pfSense -- pfSense",
+                    "itself refuses the change, not just this tool.",
+                ),
+                tag="Recommended",
+            ),
+            _MenuOption(
+                "Use an existing API key",
+                description=(
+                    "Bring your own pfSense API key. This tool still never",
+                    "exposes a way to change pfSense through it, but pfSense",
+                    "itself does not limit what that key could otherwise do",
+                    "-- scoping it is up to you.",
+                ),
+                tag="Advanced",
+            ),
+        ],
+        default=1,
+    )
+    if choice is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    if choice is _WizardSignal.BACK:
+        return _WizardSignal.BACK
+    state.account_mode = ReadOnlyAccountMode.MANAGED.value if choice == 1 else ReadOnlyAccountMode.BRING_YOUR_OWN.value
+    return _WizardSignal.NEXT
+
+
 def _step_firewall(out: TextIO, in_: TextIO, state: _WizardState, prefill: _WizardPrefill) -> _WizardSignal:
     _print_step_heading(out, state, _STEP_FIREWALL)
 
@@ -2614,6 +2764,10 @@ def _effective_anchor_assurance(state: _WizardState, prefill: _WizardPrefill) ->
     return prefill.anchor_assurance or _derive_anchor_assurance(state)
 
 
+def _effective_read_only_account_mode(state: _WizardState, prefill: _WizardPrefill) -> str:
+    return prefill.read_only_account_mode or state.account_mode or ReadOnlyAccountMode.BRING_YOUR_OWN.value
+
+
 def _print_review(out: TextIO, state: _WizardState, prefill: _WizardPrefill) -> None:
     print(file=out)
     print("Review setup plan", file=out)
@@ -2622,6 +2776,17 @@ def _print_review(out: TextIO, state: _WizardState, prefill: _WizardPrefill) -> 
     if state.mode == "read_only":
         print("  Read-only", file=out)
         print("  AI can inspect pfSense but cannot change it.", file=out)
+        print(file=out)
+        print("Account", file=out)
+        if _effective_read_only_account_mode(state, prefill) == ReadOnlyAccountMode.MANAGED.value:
+            print("  Dedicated read-only account (recommended)", file=out)
+            print("  This tool blocks changes, AND the pfSense account it uses", file=out)
+            print("  cannot make changes either -- even a request that bypasses", file=out)
+            print("  this tool entirely is refused by pfSense itself.", file=out)
+        else:
+            print("  Your own existing API key", file=out)
+            print("  This tool blocks changes, but pfSense does not limit what", file=out)
+            print("  your key could otherwise do -- scoping it is up to you.", file=out)
     else:
         print("  Protected write", file=out)
         anchor = _effective_anchor_assurance(state, prefill)
@@ -2701,8 +2866,12 @@ def _step_review(out: TextIO, in_: TextIO, state: _WizardState, prefill: _Wizard
 
 def _next_step(current: str, state: _WizardState) -> str:
     if current == _STEP_USAGE:
-        return _STEP_PROTECTION if state.mode == "write_protected" else _STEP_FIREWALL
+        if state.mode == "write_protected":
+            return _STEP_PROTECTION
+        return _STEP_ACCOUNT
     if current == _STEP_PROTECTION:
+        return _STEP_FIREWALL
+    if current == _STEP_ACCOUNT:
         return _STEP_FIREWALL
     if current == _STEP_FIREWALL:
         return _STEP_CONNECTION
@@ -2735,6 +2904,10 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
         if current == _STEP_PROTECTION and prefill.anchor_assurance is not None:
             current = _next_step(current, state)
             continue
+        if current == _STEP_ACCOUNT and prefill.read_only_account_mode is not None:
+            state.account_mode = prefill.read_only_account_mode
+            current = _next_step(current, state)
+            continue
         if current == _STEP_CONNECTION and prefill.tls_mode is not None:
             state.tls_choice = prefill.tls_mode
             state.ca_file_hint = prefill.tls_ca_file
@@ -2745,6 +2918,8 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
             signal = _step_usage(out, in_, state)
         elif current == _STEP_PROTECTION:
             signal = _step_protection(out, in_, state)
+        elif current == _STEP_ACCOUNT:
+            signal = _step_account(out, in_, state)
         elif current == _STEP_FIREWALL:
             signal = _step_firewall(out, in_, state, prefill)
         elif current == _STEP_CONNECTION:
@@ -2768,9 +2943,21 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
         current = _next_step(current, state)
 
     advanced_locked = prefill.schema_file is not None or prefill.declared_package_version is not None
+    resolved_posture = prefill.capability_posture or state.mode or CapabilityPosture.READ_ONLY.value
+    # `read_only_account_mode` only ever applies to read_only (see `generate_setup_plan()`'s own
+    # validation) -- clamped to "byo" here for write_protected regardless of any (contradictory)
+    # `--read-only-account-mode` prefill, mirroring how `state.protection` is already forced to
+    # `None` for read_only above: the resolved posture, not a stray unrelated flag, decides what
+    # applies.
+    resolved_account_mode = (
+        _effective_read_only_account_mode(state, prefill)
+        if resolved_posture == CapabilityPosture.READ_ONLY.value
+        else ReadOnlyAccountMode.BRING_YOUR_OWN.value
+    )
     return _WizardResult(
-        capability_posture=prefill.capability_posture or state.mode or CapabilityPosture.READ_ONLY.value,
+        capability_posture=resolved_posture,
         anchor_assurance=_effective_anchor_assurance(state, prefill),
+        read_only_account_mode=resolved_account_mode,
         target_origin=state.address if prefill.target_origin is None else prefill.target_origin,
         target_identity=state.name if prefill.target_identity is None else prefill.target_identity,
         tls_mode=prefill.tls_mode or state.tls_choice,
@@ -2787,6 +2974,7 @@ def _run_setup(
     non_interactive: bool,
     capability_posture: str | None,
     anchor_assurance: str | None,
+    read_only_account_mode: str | None = None,
     target_origin: str | None,
     target_identity: str | None,
     tls_mode: str | None,
@@ -2824,6 +3012,7 @@ def _run_setup(
         prefill = _WizardPrefill(
             capability_posture=capability_posture,
             anchor_assurance=anchor_assurance,
+            read_only_account_mode=read_only_account_mode,
             target_origin=target_origin,
             target_identity=target_identity,
             tls_mode=tls_mode,
@@ -2842,6 +3031,7 @@ def _run_setup(
             return _SETUP_ABORTED_EXIT_CODE
         capability_posture = wizard_result.capability_posture
         anchor_assurance = wizard_result.anchor_assurance
+        read_only_account_mode = wizard_result.read_only_account_mode
         target_origin = wizard_result.target_origin
         target_identity = wizard_result.target_identity
         tls_mode = wizard_result.tls_mode
@@ -2859,16 +3049,21 @@ def _run_setup(
 
     schema = _load_local_schema_file(schema_file, out=out) if schema_file else None
 
-    plan = generate_setup_plan(
-        target_capability_posture=CapabilityPosture(capability_posture),
-        target_anchor_assurance=AnchorAssurance(anchor_assurance),
-        target_origin=target_origin,
-        target_identity=target_identity,
-        tls_mode=tls_mode,
-        schema=schema,
-        declared_package_version=declared_package_version,
-        env=env,
-    )
+    try:
+        plan = generate_setup_plan(
+            target_capability_posture=CapabilityPosture(capability_posture),
+            target_anchor_assurance=AnchorAssurance(anchor_assurance),
+            target_origin=target_origin,
+            target_identity=target_identity,
+            tls_mode=tls_mode,
+            schema=schema,
+            declared_package_version=declared_package_version,
+            read_only_account_mode=read_only_account_mode or ReadOnlyAccountMode.BRING_YOUR_OWN.value,
+            env=env,
+        )
+    except ValueError as exc:
+        print(f"setup: no plan generated -- {exc}", file=out)
+        return _SETUP_ABORTED_EXIT_CODE
     hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command, api_key_file=api_key_file)
     if as_json:
         print(json.dumps(_setup_plan_to_dict(plan, hints), indent=2, sort_keys=True), file=out)
@@ -2988,6 +3183,7 @@ def _run_setup_apply(
     *,
     capability_posture: str,
     anchor_assurance: str,
+    read_only_account_mode: str = "byo",
     target_origin: str | None,
     target_identity: str | None,
     tls_mode: str | None,
@@ -3003,6 +3199,7 @@ def _run_setup_apply(
         env,
         target_capability_posture=capability_posture,
         target_anchor_assurance=anchor_assurance,
+        read_only_account_mode=read_only_account_mode,
         target_origin=target_origin,
         target_identity=target_identity,
         tls_mode=tls_mode,
@@ -3075,6 +3272,7 @@ def _run_setup_write_client_config(
     config_path: str | None,
     capability_posture: str,
     anchor_assurance: str,
+    read_only_account_mode: str = "byo",
     target_origin: str | None,
     target_identity: str | None,
     tls_mode: str | None,
@@ -3100,19 +3298,26 @@ def _run_setup_write_client_config(
     try:
         posture = CapabilityPosture(capability_posture)
         anchor = AnchorAssurance(anchor_assurance)
+        account_mode = ReadOnlyAccountMode(read_only_account_mode)
     except ValueError as exc:
         result = WriteResult(WriteOutcome.BLOCKED_CONFIGURATION_ERROR, str(exc))
         _print_write_result(result, as_json=as_json, out=out)
         return _CLIENT_CONFIG_WRITE_EXIT_CODES[result.outcome]
 
-    plan = generate_setup_plan(
-        target_capability_posture=posture,
-        target_anchor_assurance=anchor,
-        target_origin=target_origin,
-        target_identity=target_identity,
-        tls_mode=tls_mode,
-        env=env,
-    )
+    try:
+        plan = generate_setup_plan(
+            target_capability_posture=posture,
+            target_anchor_assurance=anchor,
+            target_origin=target_origin,
+            target_identity=target_identity,
+            tls_mode=tls_mode,
+            read_only_account_mode=account_mode.value,
+            env=env,
+        )
+    except ValueError as exc:
+        result = WriteResult(WriteOutcome.BLOCKED_CONFIGURATION_ERROR, str(exc))
+        _print_write_result(result, as_json=as_json, out=out)
+        return _CLIENT_CONFIG_WRITE_EXIT_CODES[result.outcome]
     fresh_digest = compute_setup_plan_digest(plan)
 
     if plan_digest is not None and fresh_digest != plan_digest:
@@ -3163,7 +3368,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.confirm is not None and args.execute is None:
             parser.error("--confirm requires --execute")
         return _run_recover(
-            execute=args.execute, confirm=args.confirm, as_json=args.json, env=None, out=sys.stdout, in_=sys.stdin
+            execute=args.execute,
+            confirm=args.confirm,
+            as_json=args.json,
+            env=None,
+            out=sys.stdout,
+            in_=sys.stdin,
+            target_profile=args.target_profile,
         )
     if args.command == "setup":
         if getattr(args, "setup_action", None) == "init-confirm-key":
@@ -3172,6 +3383,7 @@ def main(argv: list[str] | None = None) -> int:
             return _run_setup_apply(
                 capability_posture=args.capability_posture,
                 anchor_assurance=args.anchor_assurance,
+                read_only_account_mode=args.read_only_account_mode,
                 target_origin=args.target_origin,
                 target_identity=args.target_identity,
                 tls_mode=args.tls_mode,
@@ -3188,6 +3400,7 @@ def main(argv: list[str] | None = None) -> int:
                 config_path=args.config_path,
                 capability_posture=args.capability_posture,
                 anchor_assurance=args.anchor_assurance,
+                read_only_account_mode=args.read_only_account_mode,
                 target_origin=args.target_origin,
                 target_identity=args.target_identity,
                 tls_mode=args.tls_mode,
@@ -3207,6 +3420,7 @@ def main(argv: list[str] | None = None) -> int:
             non_interactive=args.non_interactive,
             capability_posture=args.capability_posture,
             anchor_assurance=args.anchor_assurance,
+            read_only_account_mode=args.read_only_account_mode,
             target_origin=args.target_origin,
             target_identity=args.target_identity,
             tls_mode=args.tls_mode,

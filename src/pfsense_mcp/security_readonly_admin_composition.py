@@ -91,7 +91,12 @@ from .security_bootstrap_engine import (
     observe_account_provisioning_state,
     provision_service_account,
 )
-from .security_operation_journal import ExclusiveOperationLock, LockState, OperationJournal
+from .security_operation_journal import (
+    AdministrativeOperationType,
+    ExclusiveOperationLock,
+    LockState,
+    OperationJournal,
+)
 from .security_privileges import (
     EvidenceClass,
     distinct_ok_privileges,
@@ -196,18 +201,33 @@ def load_readonly_admin_composition_config(source: Mapping[str, str]) -> AdminCo
     return config
 
 
-def _namespace(config: AdminCompositionConfig) -> str:
+def _namespace(
+    config: AdminCompositionConfig,
+    *,
+    operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+) -> str:
     payload: dict[str, str] = {
         "target_origin": config.target.base_url,
         "target_identity": config.target.identity,
         "account_identity": _ACCOUNT_NAME,
         "approved_profile": _PROFILE,
     }
+    # Mirrors security_admin_composition.py::_namespace() exactly (added for the POST-v1.0 MANAGED
+    # READ-ONLY WIZARD INTEGRATION mission, 2026-08-29, to let a managed read_only apply's inline
+    # RECOVERY_REQUIRED delegation use its own fresh recovery-typed journal, distinct from bootstrap's):
+    # `operation_type` is deliberately omitted from the payload for the BOOTSTRAP default, so every
+    # existing bootstrap namespace/journal/lock path for this account is byte-for-byte unchanged.
+    if operation_type is not AdministrativeOperationType.BOOTSTRAP:
+        payload["operation_type"] = operation_type.value
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(b"pfsense-mcp-adr033-admin-namespace-v1\x00" + canonical).hexdigest()
 
 
-def build_readonly_admin_context(source: Mapping[str, str]) -> AdministrativeContext:
+def build_readonly_admin_context(
+    source: Mapping[str, str],
+    *,
+    operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+) -> AdministrativeContext:
     """Construct one target-bound admin stack for the dedicated
     `read_only` managed service account, without network or mutation.
     Structurally identical to `build_admin_context()` except: the
@@ -216,7 +236,13 @@ def build_readonly_admin_context(source: Mapping[str, str]) -> AdministrativeCon
     fixed account is `pfsense-mcp-readonly`, and every mutation closure
     calls `TargetProfile.READ_ONLY`/`security_readonly_bootstrap_
     recovery.py`'s functions instead of the write_protected
-    equivalents."""
+    equivalents.
+
+    `operation_type` mirrors `build_admin_context()`'s own parameter of
+    the same name -- added so `security_recovery_orchestration.py` can
+    build this account's own recovery-typed context (a fresh journal
+    distinct from its bootstrap journal) instead of only ever being able
+    to build the bootstrap one."""
 
     config = load_readonly_admin_composition_config(source)
     schema, schema_digest = _load_schema(config.schema_file)
@@ -235,7 +261,7 @@ def build_readonly_admin_context(source: Mapping[str, str]) -> AdministrativeCon
     _load_admin_api_key(config.target)
     _read_secret_text(config.administrator_password_file, label="Administrator password file")
 
-    namespace = _namespace(config)
+    namespace = _namespace(config, operation_type=operation_type)
     binding = AdminTargetBinding(
         target_origin=config.target.base_url,
         target_identity=config.target.identity,

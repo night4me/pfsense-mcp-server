@@ -81,7 +81,7 @@ later by running `setup` again.
 
 | Level | What it means | Who it's for |
 |---|---|---|
-| **Read-only** *(default, recommended)* | The AI can inspect pfSense — status, configuration, diagnostics — but cannot change anything. | Almost everyone. This is the safest option and covers the large majority of useful AI-assisted pfSense work. |
+| **Read-only** *(default, recommended)* | The AI can inspect pfSense — status, configuration, diagnostics — but cannot change anything. Setup offers to create a dedicated read-only pfSense account for you *(recommended)*, so even a request that bypasses this tool entirely is refused by pfSense itself — or you can bring your own existing API key instead. | Almost everyone. This is the safest option and covers the large majority of useful AI-assisted pfSense work. |
 | **Protected changes** | Adds exactly one capability (editing a firewall alias's description) behind explicit, cryptographically signed authorization and a separate confirmation step. | Advanced users who have a specific, deliberate reason to let the AI make one narrow, auditable change. |
 | **Hardware-protected changes** | Everything in Protected changes, plus an external TPM-backed witness that must independently agree before a change is considered verified. | Security-conscious operators who want anti-rollback protection on top of the above. |
 

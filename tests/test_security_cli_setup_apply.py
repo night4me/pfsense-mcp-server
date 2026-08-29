@@ -33,6 +33,7 @@ def _canned(monkeypatch, result: ApplyResult) -> dict[str, object]:
         *,
         target_capability_posture,
         target_anchor_assurance,
+        read_only_account_mode="byo",
         target_origin=None,
         target_identity=None,
         tls_mode=None,
@@ -41,6 +42,7 @@ def _canned(monkeypatch, result: ApplyResult) -> dict[str, object]:
     ):
         captured["target_capability_posture"] = target_capability_posture
         captured["target_anchor_assurance"] = target_anchor_assurance
+        captured["read_only_account_mode"] = read_only_account_mode
         captured["target_origin"] = target_origin
         captured["target_identity"] = target_identity
         captured["tls_mode"] = tls_mode
@@ -116,11 +118,31 @@ def test_forwards_all_flags_to_orchestration(monkeypatch):
 
     assert captured["target_capability_posture"] == "read_only"
     assert captured["target_anchor_assurance"] == "hardware_witness"
+    assert captured["read_only_account_mode"] == "byo"
     assert captured["target_origin"] == "https://pfsense.example"
     assert captured["target_identity"] == "admin"
     assert captured["tls_mode"] == "verify"
     assert captured["plan_digest"] == "a" * 64
     assert captured["confirm_token"] == "some-token"
+
+
+def test_forwards_managed_read_only_account_mode_flag(monkeypatch):
+    captured = _canned(monkeypatch, ApplyResult(ApplyOutcome.INSPECT_PLAN_CURRENT, "detail"))
+
+    main(
+        [
+            "setup",
+            "apply",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--read-only-account-mode",
+            "managed",
+        ]
+    )
+
+    assert captured["read_only_account_mode"] == "managed"
 
 
 def test_confirm_dash_reads_token_from_stdin(monkeypatch):
