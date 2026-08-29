@@ -51,6 +51,18 @@ plan is (the binding no longer matches, so the token no longer
 matches -- no separate "stale" outcome needed, mirroring
 `setup apply`'s own established precedent).
 
+**Missing parent directory is created automatically, safely.** A
+first-time machine with no `~/.codex` (or any missing component of an
+explicit `--config-path`) is not an error: `_ensure_parent_directory()`
+creates it (and any missing ancestors) with owner-only (0700)
+permissions, only once the operator has already reviewed and confirmed
+the exact target path during inspection. Never follows a symlink at
+any component, existing or newly created; an existing parent that is
+itself unsafe (a symlink, not a directory, or owned by someone else)
+is left untouched and reported as a fail-closed `BLOCKED_PATH_UNSAFE`
+error -- exactly the same discipline `_read_existing()` already
+applies to the target file itself, never "repaired" automatically.
+
 **Backup, atomic write, and validated rollback.** An existing target
 file is first copied to `<path>.bak` via exclusive creation (refuses
 if a backup already exists -- never silently overwrites a leftover
@@ -381,6 +393,108 @@ def _load_confirm_key(env: dict[str, str] | None) -> bytes:
     return value.strip()
 
 
+_PATH_SAFETY_MESSAGE_MARKERS = ("symbolic link", "regular file", "owned by", "is not a directory", "unsafe artifact")
+
+
+def _classify_path_safety_error(message: str) -> WriteOutcome:
+    """Shared classification for `_read_existing()`'s and
+    `_ensure_parent_directory()`'s own `ClientConfigWriteError`
+    messages. Deliberately narrow: only a genuine safety violation
+    (symlink, wrong owner, wrong file/directory type, or a
+    post-creation race producing an unsafe artifact) is reported as
+    `BLOCKED_PATH_UNSAFE` -- a plain OS-level failure while creating or
+    opening a directory (permission denied, disk full, unsupported
+    platform, ...) is a real but ordinary configuration problem, not a
+    path-safety one, and stays `BLOCKED_CONFIGURATION_ERROR`."""
+
+    return (
+        WriteOutcome.BLOCKED_PATH_UNSAFE
+        if any(marker in message for marker in _PATH_SAFETY_MESSAGE_MARKERS)
+        else WriteOutcome.BLOCKED_CONFIGURATION_ERROR
+    )
+
+
+def _ensure_parent_directory(parent: Path) -> None:
+    """v1.0.0 clean-room finding (2026-08-29): a real Codex client-config
+    write against a genuinely clean `$HOME` (no pre-existing `~/.codex`)
+    failed with an opaque "Could not create temporary file" error --
+    nothing in this module ever created the missing parent directory.
+    This is the fix: create `parent` (and any missing ancestors) with
+    owner-only (0700) permissions if absent, so the documented default
+    Codex path (and any `--config-path` override, which the operator
+    already explicitly reviewed and confirmed during inspection) works
+    on a first-time machine without a manual `mkdir` -- "no `mkdir`
+    required in the happy path".
+
+    Never follows a symlink at any path component, either an already-
+    existing `parent` itself or an intermediate ancestor discovered
+    while creating missing components: each newly created directory is
+    reopened with `O_NOFOLLOW` and re-validated (regular directory,
+    owned by the current user) before being trusted as the anchor for
+    the next component, defending against a substitution race between
+    `mkdir` and the following `open`. An existing `parent` that is
+    itself unsafe (a symlink, not a directory, or owned by someone
+    else) is left completely untouched and reported as a fail-closed
+    error -- this function never "repairs" or replaces an unsafe
+    existing path, matching `_read_existing()`'s own established
+    discipline for the target file itself."""
+
+    if parent.is_symlink():
+        raise ClientConfigWriteError(f"Config directory must not be a symbolic link: {parent}")
+    if parent.exists():
+        if not parent.is_dir():
+            raise ClientConfigWriteError(f"Config directory path exists but is not a directory: {parent}")
+        try:
+            metadata = parent.stat()
+        except OSError as exc:
+            raise ClientConfigWriteError(f"Could not inspect config directory: {parent}") from exc
+        if metadata.st_uid != os.geteuid():
+            raise ClientConfigWriteError(f"Config directory must be owned by the current user: {parent}")
+        return
+
+    # Walk upward to the nearest already-existing ancestor, collecting
+    # the missing path components along the way (deepest first).
+    missing: list[str] = []
+    cursor = parent
+    while not cursor.exists():
+        if not cursor.name or cursor.parent == cursor:
+            raise ClientConfigWriteError(f"Could not resolve an existing ancestor directory for: {parent}")
+        missing.append(cursor.name)
+        cursor = cursor.parent
+    if cursor.is_symlink():
+        raise ClientConfigWriteError(f"Config directory ancestor must not be a symbolic link: {cursor}")
+    if not cursor.is_dir():
+        raise ClientConfigWriteError(f"Config directory ancestor is not a directory: {cursor}")
+
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        raise ClientConfigWriteError("Secure directory creation is unsupported on this platform")
+    directory_flags = os.O_RDONLY | nofollow | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_CLOEXEC", 0)
+
+    try:
+        anchor_descriptor = os.open(cursor, directory_flags)
+    except OSError as exc:
+        raise ClientConfigWriteError(f"Could not open existing config directory: {cursor}") from exc
+    try:
+        for name in reversed(missing):
+            try:
+                os.mkdir(name, 0o700, dir_fd=anchor_descriptor)
+            except OSError as exc:
+                raise ClientConfigWriteError(f"Could not create config directory: {name}") from exc
+            try:
+                next_descriptor = os.open(name, directory_flags, dir_fd=anchor_descriptor)
+            except OSError as exc:
+                raise ClientConfigWriteError(f"Could not open newly created config directory: {name}") from exc
+            os.close(anchor_descriptor)
+            anchor_descriptor = next_descriptor
+            metadata = os.fstat(anchor_descriptor)
+            if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != os.geteuid():
+                raise ClientConfigWriteError(f"Config directory creation produced an unsafe artifact: {name}")
+            os.fchmod(anchor_descriptor, 0o700)
+    finally:
+        os.close(anchor_descriptor)
+
+
 def _write_atomic_with_backup(path: Path, content: bytes) -> str | None:
     """Backs up an existing file (exclusive create of `<path>.bak`,
     refusing if one already exists) then writes `content` to a
@@ -467,12 +581,9 @@ def run_client_config_write_from_environment(
     try:
         existing = _read_existing(path)
     except ClientConfigWriteError as exc:
-        outcome = (
-            WriteOutcome.BLOCKED_PATH_UNSAFE
-            if "symbolic link" in str(exc) or "regular file" in str(exc) or "owned by" in str(exc)
-            else WriteOutcome.BLOCKED_CONFIGURATION_ERROR
+        return WriteResult(
+            _classify_path_safety_error(str(exc)), str(exc), client_type=client_type.value, config_path=str(path)
         )
-        return WriteResult(outcome, str(exc), client_type=client_type.value, config_path=str(path))
 
     try:
         proposed = _compute_proposed_content(client_type, existing, command=command, env_vars=env_vars)
@@ -526,6 +637,13 @@ def run_client_config_write_from_environment(
             "Refused before any file was touched. If the file changed since inspection, re-inspect first.",
             client_type=client_type.value,
             config_path=str(path),
+        )
+
+    try:
+        _ensure_parent_directory(path.parent)
+    except ClientConfigWriteError as exc:
+        return WriteResult(
+            _classify_path_safety_error(str(exc)), str(exc), client_type=client_type.value, config_path=str(path)
         )
 
     try:

@@ -311,6 +311,206 @@ def test_not_owned_by_current_user_is_refused(tmp_path):
         ccw.os.fstat = original
 
 
+# --- missing parent directory (v1.0.0 clean-room finding, 2026-08-29) -----
+#
+# Real human clean-room acceptance testing found `setup write-client-config`
+# fails with an opaque "Could not create temporary file for atomic write"
+# error on a genuinely clean $HOME with no pre-existing `~/.codex` -- the
+# exact first-time-machine scenario the documented Codex default path
+# exists to serve. `_ensure_parent_directory()` fixes this; these tests
+# prove the fix and that it introduces no new unsafe behavior.
+
+
+def test_clean_home_missing_codex_parent_directory_inspect_and_write_succeed(tmp_path):
+    """The exact reported scenario: a clean $HOME with no `.codex`
+    directory at all. Inspection must succeed (it never touches the
+    filesystem for writing), and the confirmed write must create both
+    the directory and the file without any manual `mkdir` step."""
+
+    env = _confirm_key(tmp_path)
+    home = tmp_path / "clean-home"
+    home.mkdir()
+    config_path = home / ".codex" / "config.toml"
+    assert not (home / ".codex").exists()
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    assert inspected.outcome is WriteOutcome.INSPECT_CURRENT
+    assert not (home / ".codex").exists()  # inspection alone must not create it
+
+    written = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert written.outcome is WriteOutcome.WRITE_COMPLETED
+    assert config_path.is_file()
+    assert "[mcp_servers.pfsense]" in config_path.read_text()
+
+
+def test_created_parent_directory_has_owner_only_permissions(tmp_path):
+    env = _confirm_key(tmp_path)
+    config_path = tmp_path / "nohome" / ".codex" / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    written = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert written.outcome is WriteOutcome.WRITE_COMPLETED
+
+    mode = os.stat(config_path.parent).st_mode & 0o777
+    assert mode == 0o700
+    # The intermediate ancestor created along the way must be owner-only too.
+    mode_ancestor = os.stat(config_path.parent.parent).st_mode & 0o777
+    assert mode_ancestor == 0o700
+
+
+def test_nested_missing_ancestors_are_all_created_safely(tmp_path):
+    env = _confirm_key(tmp_path)
+    config_path = tmp_path / "a" / "b" / "c" / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    written = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert written.outcome is WriteOutcome.WRITE_COMPLETED
+    assert config_path.is_file()
+
+
+def test_parent_directory_symlink_is_refused_fail_closed(tmp_path):
+    """A pre-existing symlink standing in for `.codex` must never be
+    followed or written through -- refused before any file is touched,
+    and the symlink's real target must remain completely unmodified."""
+
+    env = _confirm_key(tmp_path)
+    real_target = tmp_path / "attacker-controlled"
+    real_target.mkdir()
+    link_parent = tmp_path / ".codex"
+    link_parent.symlink_to(real_target)
+    config_path = link_parent / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    assert inspected.outcome is WriteOutcome.INSPECT_CURRENT  # inspection alone never touches disk
+
+    result = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert result.outcome is WriteOutcome.BLOCKED_PATH_UNSAFE
+    assert list(real_target.iterdir()) == []
+
+
+def test_dangling_parent_symlink_is_also_refused(tmp_path):
+    env = _confirm_key(tmp_path)
+    link_parent = tmp_path / ".codex"
+    link_parent.symlink_to(tmp_path / "does-not-exist-target")
+    config_path = link_parent / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    result = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert result.outcome is WriteOutcome.BLOCKED_PATH_UNSAFE
+
+
+def test_parent_exists_as_a_regular_file_not_a_directory_is_refused(tmp_path):
+    env = _confirm_key(tmp_path)
+    not_a_dir = tmp_path / ".codex"
+    not_a_dir.write_text("i am a file, not a directory")
+    config_path = not_a_dir / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    result = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert result.outcome is WriteOutcome.BLOCKED_PATH_UNSAFE
+    assert not_a_dir.read_text() == "i am a file, not a directory"
+
+
+def test_parent_directory_wrong_owner_is_refused(tmp_path, monkeypatch):
+    """Structural proof only (cannot actually chown to another uid in a
+    sandboxed test run): an already-existing parent directory whose
+    owning uid does not match the current process is refused, mirroring
+    `_read_existing()`'s own uid check for the target file."""
+
+    import pfsense_mcp.security_client_config_write as ccw
+
+    existing_parent = tmp_path / ".codex"
+    existing_parent.mkdir()
+    config_path = existing_parent / "config.toml"
+    env = _confirm_key(tmp_path)
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+
+    real_geteuid = ccw.os.geteuid
+    monkeypatch.setattr(ccw.os, "geteuid", lambda: real_geteuid() + 1)
+    result = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert result.outcome is WriteOutcome.BLOCKED_PATH_UNSAFE
+    assert "owned by the current user" in result.detail
+
+
+def test_wrong_confirm_token_never_creates_the_missing_parent(tmp_path):
+    """A wrong/stale token must be refused before `_ensure_parent_directory()`
+    is ever reached -- the missing directory must not appear as a side
+    effect of a rejected confirmation attempt."""
+
+    env = _confirm_key(tmp_path)
+    config_path = tmp_path / ".codex" / "config.toml"
+    assert not (tmp_path / ".codex").exists()
+
+    result = _confirm(tmp_path, env, "totally-wrong-token", config_path=str(config_path))
+    assert result.outcome is WriteOutcome.CONFIRM_TOKEN_INVALID
+    assert not (tmp_path / ".codex").exists()
+
+
+def test_plan_digest_mismatch_never_creates_the_missing_parent(tmp_path):
+    env = _confirm_key(tmp_path)
+    config_path = tmp_path / ".codex" / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path), plan_digest=_PLAN_DIGEST)
+    result = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path), plan_digest="b" * 64)
+    assert result.outcome is WriteOutcome.CONFIRM_TOKEN_INVALID
+    assert not (tmp_path / ".codex").exists()
+
+
+def test_no_api_key_or_secret_value_appears_when_creating_missing_parent(tmp_path):
+    api_key_marker = "SECRET-API-KEY-VALUE-SHOULD-NEVER-APPEAR"
+    env = _confirm_key(tmp_path)
+    config_path = tmp_path / ".codex" / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    written = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+
+    for result in (inspected, written):
+        for field in (result.detail, result.confirmation_token, result.diff, result.backup_path, result.config_path):
+            if field is not None:
+                assert api_key_marker not in field
+    assert api_key_marker not in config_path.read_text()
+
+
+def test_failure_after_parent_creation_leaves_no_partial_config_or_temp_artifact(tmp_path, monkeypatch):
+    """If the atomic write itself fails after the (now-safely-created)
+    parent directory exists, no partial config file and no leftover
+    `.tmp-*` artifact may remain."""
+
+    import pfsense_mcp.security_client_config_write as ccw
+
+    env = _confirm_key(tmp_path)
+    config_path = tmp_path / ".codex" / "config.toml"
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+
+    def _boom(path, content):
+        raise ccw.ClientConfigWriteError("simulated atomic-write failure")
+
+    monkeypatch.setattr(ccw, "_write_atomic_with_backup", _boom)
+    result = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert result.outcome is WriteOutcome.BLOCKED_CONFIGURATION_ERROR
+    assert not config_path.exists()
+    leftovers = [p for p in (tmp_path / ".codex").iterdir() if p.name != "config.toml"]
+    assert leftovers == []
+
+
+def test_existing_safe_parent_directory_is_left_completely_untouched(tmp_path):
+    """A parent directory that already exists, is a real directory, and
+    is owned by the current user must be used as-is -- never chmod'd,
+    recreated, or otherwise modified, regardless of its existing mode."""
+
+    env = _confirm_key(tmp_path)
+    existing_parent = tmp_path / ".codex"
+    existing_parent.mkdir(mode=0o755)
+    os.chmod(existing_parent, 0o755)  # mkdir's mode is subject to umask; force it explicitly
+    config_path = existing_parent / "config.toml"
+
+    inspected = _inspect(tmp_path, env, config_path=str(config_path))
+    written = _confirm(tmp_path, env, inspected.confirmation_token, config_path=str(config_path))
+    assert written.outcome is WriteOutcome.WRITE_COMPLETED
+    assert os.stat(existing_parent).st_mode & 0o777 == 0o755
+
+
 # --- backup creation + rollback -------------------------------------------
 
 
