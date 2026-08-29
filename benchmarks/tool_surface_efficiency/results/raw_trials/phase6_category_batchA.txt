@@ -1,0 +1,15 @@
+t01: system | A quick health check maps to appliance status/diagnostics under system.
+t03: system | Hostname is core appliance identity information.
+t05: system | HA sync state between firewall pairs is explicitly part of the system category.
+t07: networking | Available/unassigned physical NICs fall under interface inventory in networking.
+t09: networking | Whether interface config has been applied is an interface apply-status concern in networking.
+t11: networking | Bridges are an interface composition type listed under networking.
+t13: networking | Gateway up/down/flapping status is a networking gateway concern.
+t15: networking | Static routes are explicitly listed under networking.
+t17: system, dns_dhcp | The firewall's own configured DNS servers is a system-level general setting, but could plausibly be filed under DNS.
+t19: dns_dhcp | Whether the DNS resolver (unbound) config is applied/needs restart is a resolver apply-status question.
+t21: dns_dhcp | DHCP leases are explicitly part of the dns_dhcp category.
+t23: dns_dhcp | DHCP static reservations are a DHCP server configuration detail.
+t25: firewall | Firewall rules on an interface are core to the firewall category.
+t27: firewall | Firewall aliases are explicitly listed under the firewall category.
+t29: firewall | Whether the alias table reload has taken effect is a firewall apply-status concern.

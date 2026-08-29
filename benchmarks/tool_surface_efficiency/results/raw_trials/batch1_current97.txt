@@ -1,0 +1,15 @@
+t01: mcp__pfsense__pfsense_get_system_status | Returns overall system health/status metrics to confirm the firewall is up and running.
+t02: mcp__pfsense__pfsense_get_system_version | Directly reports the installed pfSense version.
+t03: mcp__pfsense__pfsense_get_system_hostname | Directly reports the configured hostname.
+t04: mcp__pfsense__pfsense_get_system_timezone | Directly reports the configured timezone.
+t05: mcp__pfsense__pfsense_get_system_hasync, mcp__pfsense__pfsense_get_carp_status | hasync shows what's configured to sync between HA nodes and carp_status shows live CARP/sync state to confirm it's actually happening.
+t06: mcp__pfsense__pfsense_get_interfaces | Returns the list of configured network interfaces.
+t07: mcp__pfsense__pfsense_get_interface_available_interfaces | Lists physical NICs available on the system, including ones not yet assigned.
+t08: mcp__pfsense__pfsense_get_interface_laggs | Directly lists configured LAGG (link aggregation) interfaces.
+t09: mcp__pfsense__pfsense_get_interface_apply_status | Reports whether pending interface changes have been applied to the running config.
+t10: mcp__pfsense__pfsense_get_interface_vlans | Directly lists configured VLAN interfaces.
+t11: mcp__pfsense__pfsense_get_interface_bridges | Directly lists configured bridge interfaces and their members.
+t12: mcp__pfsense__pfsense_get_gateways | Returns the configured gateways known to the firewall.
+t13: mcp__pfsense__pfsense_get_gateway_status | Returns live up/down/latency status for gateways, including WAN.
+t14: mcp__pfsense__pfsense_get_routing_gateway_default | Directly reports the currently active default gateway for outbound traffic.
+t15: mcp__pfsense__pfsense_get_routing_static_routes | Directly lists configured static routes.

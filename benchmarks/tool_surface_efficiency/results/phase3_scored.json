@@ -1,0 +1,1574 @@
+{
+  "failures_or_notable": [
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_service_status",
+        "pfsense_get_dns_resolver_apply_status"
+      ],
+      "calls_in_answer": 2,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dns_resolver_apply_status"
+      ],
+      "first_choice_correct": false,
+      "id": "t19",
+      "multi_tool": false,
+      "reason": "Service status shows whether unbound is running, and apply status shows if there are unapplied config changes pending a restart.",
+      "topic": "dns",
+      "types": [
+        "C",
+        "G"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_service_status"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_states",
+        "pfsense_get_interfaces",
+        "pfsense_get_routing_static_routes"
+      ],
+      "answer": [
+        "pfsense_get_interfaces",
+        "pfsense_get_interface_vlans",
+        "pfsense_get_firewall_rules",
+        "pfsense_get_gateway_status",
+        "pfsense_get_firewall_nat_outbound_mappings"
+      ],
+      "calls_in_answer": 5,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_rules",
+        "pfsense_get_gateway_status",
+        "pfsense_get_interface_vlans"
+      ],
+      "first_choice_correct": null,
+      "id": "t53",
+      "multi_tool": true,
+      "reason": "Diagnosing a VLAN internet-reachability issue requires checking interface/VLAN status, the rules governing that interface, upstream gateway health, and outbound NAT coverage.",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D",
+        "G"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_firewall_nat_outbound_mappings"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_ipsec_child_sas",
+        "pfsense_get_vpn_openvpn_servers",
+        "pfsense_get_status_openvpn_servers",
+        "pfsense_get_status_openvpn_server_connections",
+        "pfsense_get_status_openvpn_clients",
+        "pfsense_get_status_wireguard_tunnels",
+        "pfsense_get_status_wireguard_peers"
+      ],
+      "calls_in_answer": 8,
+      "eventually_correct": false,
+      "expected_tools": [
+        "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_openvpn_server_connections",
+        "pfsense_get_status_wireguard_peers",
+        "pfsense_get_status_wireguard_tunnels",
+        "pfsense_get_vpn_ipsec_phase2s",
+        "pfsense_get_vpn_openvpn_servers"
+      ],
+      "first_choice_correct": null,
+      "id": "t54",
+      "multi_tool": true,
+      "reason": "A full VPN posture requires config+live status across all three VPN technologies (IPsec SAs, OpenVPN servers/clients/connections, WireGuard tunnels/peers).",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_status_ipsec_child_sas",
+        "pfsense_get_status_openvpn_clients",
+        "pfsense_get_status_openvpn_servers"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_diagnostics_config_history_revisions"
+      ],
+      "answer": [
+        "pfsense_get_system_status",
+        "pfsense_get_system_hasync",
+        "pfsense_get_carp_status",
+        "pfsense_get_firewall_apply_status"
+      ],
+      "calls_in_answer": 4,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_apply_status",
+        "pfsense_get_system_hasync",
+        "pfsense_get_system_status"
+      ],
+      "first_choice_correct": null,
+      "id": "t55",
+      "multi_tool": true,
+      "reason": "Pre-flight needs overall system health, HA sync configuration, CARP status, and whether pending firewall config changes have applied.",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D",
+        "G"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_carp_status"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    }
+  ],
+  "methodology": "Phase 3 scoring: current 97-tool surface baseline trial results vs. corpus.\n\nReads the 4 raw trial batches under results/raw_trials/ (each line:\n\"<task_id>: <tool_name>[, <tool_name>, ...] | <reason>\"), plus corpus.json,\nand produces a scored per-task + aggregate report.\n\nScoring methodology (documented here because two tasks -- t39, t44 -- and\nthe four Batch-4 multi-tool diagnostic tasks (t53-t56) received reasonable\nmulti-tool answers against a corpus that records a single primary\n`expected_tools` entry plus an `acceptable_tools` list; this must be an\nexplicit, honest judgment call, not glossed over):\n\n  - `answer_set`  = the set of tool names the agent returned for a task.\n  - `expected`    = set(task['expected_tools'])\n  - `acceptable`  = set(task['acceptable_tools'])\n  - `allowed`     = expected | acceptable  (anything not in `allowed` and\n                     not \"NONE\" is an unnecessary/wrong call)\n\n  first_choice_correct: for single-expected-tool tasks, True iff the FIRST\n    tool named in the answer is in `expected` (or the answer is exactly\n    \"NONE -- unsupported\" and the task is itself unsupported). For\n    multi_tool tasks (corpus marks `multi_tool: true`), first_choice_correct\n    is not a meaningful single-token concept -- scored as eventual only.\n\n  eventually_correct: True iff `expected <= answer_set` (every expected\n    tool was named somewhere in the answer) OR the entire answer_set is\n    contained in `allowed` (expected | acceptable) -- i.e. an answer built\n    entirely from the task's own defensible-alternative pool also counts\n    as correct, not just an exact `expected` hit. OR (for unsupported\n    tasks) the answer is \"NONE\" with unsupported reasoning.\n\n  unnecessary_tools: answer_set - allowed. `allowed` is `expected |\n    acceptable` for every task -- multi_tool tasks populate\n    acceptable_tools too (e.g. t53/t55/t56), so it is never dropped based\n    on the multi_tool flag.\n\n  wrong_tool_task: eventually_correct is False and answer_set is non-empty\n    and doesn't overlap `expected` at all.\n\nThis module has no import path from src/pfsense_mcp; it is benchmark-only.\n",
+  "per_task": [
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t01",
+      "multi_tool": false,
+      "reason": "Returns overall system health/status metrics to confirm the firewall is up and running.",
+      "topic": "system_status",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_version"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_version"
+      ],
+      "first_choice_correct": true,
+      "id": "t02",
+      "multi_tool": false,
+      "reason": "Directly reports the installed pfSense version.",
+      "topic": "system_status",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_system_status"
+      ],
+      "answer": [
+        "pfsense_get_system_hostname"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_hostname"
+      ],
+      "first_choice_correct": true,
+      "id": "t03",
+      "multi_tool": false,
+      "reason": "Directly reports the configured hostname.",
+      "topic": "system_status",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_timezone"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_timezone"
+      ],
+      "first_choice_correct": true,
+      "id": "t04",
+      "multi_tool": false,
+      "reason": "Directly reports the configured timezone.",
+      "topic": "system_status",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_carp_status"
+      ],
+      "answer": [
+        "pfsense_get_system_hasync",
+        "pfsense_get_carp_status"
+      ],
+      "calls_in_answer": 2,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_hasync"
+      ],
+      "first_choice_correct": true,
+      "id": "t05",
+      "multi_tool": false,
+      "reason": "hasync shows what's configured to sync between HA nodes and carp_status shows live CARP/sync state to confirm it's actually happening.",
+      "topic": "system_status",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_interfaces"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_interfaces"
+      ],
+      "first_choice_correct": true,
+      "id": "t06",
+      "multi_tool": false,
+      "reason": "Returns the list of configured network interfaces.",
+      "topic": "interfaces",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_interfaces"
+      ],
+      "answer": [
+        "pfsense_get_interface_available_interfaces"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_interface_available_interfaces"
+      ],
+      "first_choice_correct": true,
+      "id": "t07",
+      "multi_tool": false,
+      "reason": "Lists physical NICs available on the system, including ones not yet assigned.",
+      "topic": "interfaces",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_interfaces"
+      ],
+      "answer": [
+        "pfsense_get_interface_laggs"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_interface_laggs"
+      ],
+      "first_choice_correct": true,
+      "id": "t08",
+      "multi_tool": false,
+      "reason": "Directly lists configured LAGG (link aggregation) interfaces.",
+      "topic": "interfaces",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_interfaces"
+      ],
+      "answer": [
+        "pfsense_get_interface_apply_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_interface_apply_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t09",
+      "multi_tool": false,
+      "reason": "Reports whether pending interface changes have been applied to the running config.",
+      "topic": "interfaces",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_interface_vlans"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_interface_vlans"
+      ],
+      "first_choice_correct": true,
+      "id": "t10",
+      "multi_tool": false,
+      "reason": "Directly lists configured VLAN interfaces.",
+      "topic": "vlans",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_interface_groups"
+      ],
+      "answer": [
+        "pfsense_get_interface_bridges"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_interface_bridges"
+      ],
+      "first_choice_correct": true,
+      "id": "t11",
+      "multi_tool": false,
+      "reason": "Directly lists configured bridge interfaces and their members.",
+      "topic": "vlans",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_gateways"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_gateways"
+      ],
+      "first_choice_correct": true,
+      "id": "t12",
+      "multi_tool": false,
+      "reason": "Returns the configured gateways known to the firewall.",
+      "topic": "gateways",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_gateway_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_gateway_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t13",
+      "multi_tool": false,
+      "reason": "Returns live up/down/latency status for gateways, including WAN.",
+      "topic": "gateways",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_gateways"
+      ],
+      "answer": [
+        "pfsense_get_routing_gateway_default"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_routing_gateway_default"
+      ],
+      "first_choice_correct": true,
+      "id": "t14",
+      "multi_tool": false,
+      "reason": "Directly reports the currently active default gateway for outbound traffic.",
+      "topic": "gateways",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_routing_static_routes"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_routing_static_routes"
+      ],
+      "first_choice_correct": true,
+      "id": "t15",
+      "multi_tool": false,
+      "reason": "Directly lists configured static routes.",
+      "topic": "routes",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_routing_gateway_groups"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_routing_gateway_groups"
+      ],
+      "first_choice_correct": true,
+      "id": "t16",
+      "multi_tool": false,
+      "reason": "Gateway groups for failover routing are retrieved directly by this tool.",
+      "topic": "routes",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_dns"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_dns"
+      ],
+      "first_choice_correct": true,
+      "id": "t17",
+      "multi_tool": false,
+      "reason": "This returns the DNS servers configured for the firewall's own system resolver.",
+      "topic": "dns",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_dns_forwarder_host_overrides"
+      ],
+      "answer": [
+        "pfsense_get_dns_resolver_host_overrides",
+        "pfsense_get_dns_forwarder_host_overrides"
+      ],
+      "calls_in_answer": 2,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dns_resolver_host_overrides"
+      ],
+      "first_choice_correct": true,
+      "id": "t18",
+      "multi_tool": false,
+      "reason": "Host overrides could live under either the DNS resolver (unbound) or DNS forwarder (dnsmasq) depending on which service is active, so both are checked.",
+      "topic": "dns",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_service_status",
+        "pfsense_get_dns_resolver_apply_status"
+      ],
+      "calls_in_answer": 2,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dns_resolver_apply_status"
+      ],
+      "first_choice_correct": false,
+      "id": "t19",
+      "multi_tool": false,
+      "reason": "Service status shows whether unbound is running, and apply status shows if there are unapplied config changes pending a restart.",
+      "topic": "dns",
+      "types": [
+        "C",
+        "G"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_service_status"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_dns_resolver_domain_overrides"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dns_resolver_domain_overrides"
+      ],
+      "first_choice_correct": true,
+      "id": "t20",
+      "multi_tool": false,
+      "reason": "Domain overrides define which domains get forwarded to a different DNS server instead of being resolved locally.",
+      "topic": "dns",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_dhcp_leases"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dhcp_leases"
+      ],
+      "first_choice_correct": true,
+      "id": "t21",
+      "multi_tool": false,
+      "reason": "This directly lists current active DHCP leases and the devices holding them.",
+      "topic": "dhcp",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_dhcp_servers"
+      ],
+      "answer": [
+        "pfsense_get_dhcp_server_address_pools"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dhcp_server_address_pools"
+      ],
+      "first_choice_correct": true,
+      "id": "t22",
+      "multi_tool": false,
+      "reason": "This returns the configured DHCP address pool range per interface, including LAN.",
+      "topic": "dhcp",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_dhcp_leases"
+      ],
+      "answer": [
+        "pfsense_get_dhcp_static_mappings"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dhcp_static_mappings"
+      ],
+      "first_choice_correct": true,
+      "id": "t23",
+      "multi_tool": false,
+      "reason": "Static mappings (reservations) list is the source of truth for whether a specific IP/host has a fixed DHCP reservation.",
+      "topic": "dhcp",
+      "types": [
+        "B",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_dhcp_relay"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dhcp_relay"
+      ],
+      "first_choice_correct": true,
+      "id": "t24",
+      "multi_tool": false,
+      "reason": "This tool directly reports DHCP relay configuration status.",
+      "topic": "dhcp",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_rules"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_rules"
+      ],
+      "first_choice_correct": true,
+      "id": "t25",
+      "multi_tool": false,
+      "reason": "This retrieves firewall rules, which can be filtered/scoped to the WAN interface.",
+      "topic": "firewall_rules",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_states"
+      ],
+      "answer": [
+        "pfsense_get_firewall_rules"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_rules"
+      ],
+      "first_choice_correct": true,
+      "id": "t26",
+      "multi_tool": false,
+      "reason": "Reviewing the guest interface's rule set (and rule order) is the way to identify a rule blocking or failing to permit internet-bound traffic.",
+      "topic": "firewall_rules",
+      "types": [
+        "B",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_aliases"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_aliases"
+      ],
+      "first_choice_correct": true,
+      "id": "t27",
+      "multi_tool": false,
+      "reason": "This lists all configured firewall aliases, including IP-list aliases like trusted admin IPs.",
+      "topic": "aliases",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_aliases"
+      ],
+      "answer": [],
+      "calls_in_answer": 0,
+      "eventually_correct": true,
+      "expected_tools": [],
+      "first_choice_correct": true,
+      "id": "t28",
+      "multi_tool": false,
+      "reason": "Only read-only \"get\" tools exist for aliases; there is no create/update/rename tool available to modify or rename an alias.",
+      "topic": "aliases",
+      "types": [
+        "E",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": true,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_apply_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_apply_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t29",
+      "multi_tool": false,
+      "reason": "This reports whether pending firewall/alias configuration changes have been applied (reloaded) to the live system.",
+      "topic": "aliases",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_nat_port_forwards"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_nat_port_forwards"
+      ],
+      "first_choice_correct": true,
+      "id": "t30",
+      "multi_tool": false,
+      "reason": "This directly lists configured NAT port forward rules.",
+      "topic": "nat",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_nat_outbound_mappings"
+      ],
+      "answer": [
+        "pfsense_get_firewall_nat_outbound_mode"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_nat_outbound_mode"
+      ],
+      "first_choice_correct": true,
+      "id": "t31",
+      "multi_tool": false,
+      "reason": "This tool directly reports whether outbound NAT mode is automatic, hybrid, or manual.",
+      "topic": "nat",
+      "types": [
+        "B",
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_nat_one_to_one_mappings"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_nat_one_to_one_mappings"
+      ],
+      "first_choice_correct": true,
+      "id": "t32",
+      "multi_tool": false,
+      "reason": "Retrieves the configured 1:1 NAT mappings, which can be checked for the mail server's public IP.",
+      "topic": "nat",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_virtual_ips"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_virtual_ips"
+      ],
+      "first_choice_correct": true,
+      "id": "t33",
+      "multi_tool": false,
+      "reason": "Lists all virtual IPs configured on the firewall.",
+      "topic": "virtual_ips",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_virtual_ip_apply_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_virtual_ip_apply_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t34",
+      "multi_tool": false,
+      "reason": "Reports whether pending virtual IP config changes have been applied to the running system.",
+      "topic": "virtual_ips",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_certificates"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_certificates"
+      ],
+      "first_choice_correct": true,
+      "id": "t35",
+      "multi_tool": false,
+      "reason": "Lists all SSL certificates installed on the firewall.",
+      "topic": "certificates",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_certificate_authorities"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_certificate_authorities"
+      ],
+      "first_choice_correct": true,
+      "id": "t36",
+      "multi_tool": false,
+      "reason": "Lists the certificate authorities configured/trusted on the firewall.",
+      "topic": "certificates",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_system_certificates"
+      ],
+      "answer": [
+        "pfsense_get_system_crls"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_crls"
+      ],
+      "first_choice_correct": true,
+      "id": "t37",
+      "multi_tool": false,
+      "reason": "Certificate Revocation Lists show which certificates have been revoked.",
+      "topic": "certificates",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_users"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_users"
+      ],
+      "first_choice_correct": true,
+      "id": "t38",
+      "multi_tool": false,
+      "reason": "Lists local user accounts configured on the firewall.",
+      "topic": "users",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_users"
+      ],
+      "answer": [
+        "pfsense_get_users",
+        "pfsense_get_user_groups"
+      ],
+      "calls_in_answer": 2,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_user_groups"
+      ],
+      "first_choice_correct": false,
+      "id": "t39",
+      "multi_tool": false,
+      "reason": "Need the user's group memberships from get_users cross-referenced with group definitions/privileges from get_user_groups to identify the admin group.",
+      "topic": "users",
+      "types": [
+        "B",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_users"
+      ],
+      "answer": [],
+      "calls_in_answer": 0,
+      "eventually_correct": true,
+      "expected_tools": [],
+      "first_choice_correct": true,
+      "id": "t40",
+      "multi_tool": false,
+      "reason": "Only read (\"get\") user tools exist (get_users, get_user_groups); no create/add user tool is available.",
+      "topic": "users",
+      "types": [
+        "E",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": true,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_firewall_schedules"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_schedules"
+      ],
+      "first_choice_correct": true,
+      "id": "t41",
+      "multi_tool": false,
+      "reason": "Lists configured firewall rule time schedules, e.g. business-hours schedules.",
+      "topic": "schedules",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_service_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_service_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t42",
+      "multi_tool": false,
+      "reason": "Reports the live running/stopped status of system services including OpenVPN.",
+      "topic": "services",
+      "types": [
+        "A",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_system_packages"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_packages"
+      ],
+      "first_choice_correct": true,
+      "id": "t43",
+      "multi_tool": false,
+      "reason": "Lists packages currently installed on the firewall.",
+      "topic": "packages",
+      "types": [
+        "B"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_system_packages"
+      ],
+      "answer": [
+        "pfsense_get_system_packages",
+        "pfsense_get_system_package_available"
+      ],
+      "calls_in_answer": 2,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_package_available"
+      ],
+      "first_choice_correct": false,
+      "id": "t44",
+      "multi_tool": false,
+      "reason": "Compare the installed WireGuard version (get_system_packages) against the version available for update (get_system_package_available).",
+      "topic": "packages",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_vpn_openvpn_servers"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_vpn_openvpn_servers"
+      ],
+      "first_choice_correct": true,
+      "id": "t45",
+      "multi_tool": false,
+      "reason": "Lists the configured OpenVPN server instances.",
+      "topic": "openvpn",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_status_openvpn_clients"
+      ],
+      "answer": [
+        "pfsense_get_status_openvpn_server_connections"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_status_openvpn_server_connections"
+      ],
+      "first_choice_correct": true,
+      "id": "t46",
+      "multi_tool": false,
+      "reason": "Shows who is currently connected to the OpenVPN server.",
+      "topic": "openvpn",
+      "types": [
+        "B",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_status_openvpn_server_routes"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_status_openvpn_server_routes"
+      ],
+      "first_choice_correct": true,
+      "id": "t47",
+      "multi_tool": false,
+      "reason": "Shows the routes pushed to OpenVPN clients.",
+      "topic": "openvpn",
+      "types": [
+        "C"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_vpn_wireguard_tunnel_addresses"
+      ],
+      "answer": [
+        "pfsense_get_status_wireguard_tunnels"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_status_wireguard_tunnels"
+      ],
+      "first_choice_correct": true,
+      "id": "t48",
+      "multi_tool": false,
+      "reason": "Lists configured WireGuard tunnels and their status.",
+      "topic": "wireguard",
+      "types": [
+        "A"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_status_wireguard_peers"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_status_wireguard_peers"
+      ],
+      "first_choice_correct": true,
+      "id": "t49",
+      "multi_tool": false,
+      "reason": "Shows per-peer handshake/last-seen data to distinguish active vs. dead peers.",
+      "topic": "wireguard",
+      "types": [
+        "B",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_official_guidance"
+      ],
+      "answer": [
+        "pfsense_get_official_guidance"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_api_guidance"
+      ],
+      "first_choice_correct": false,
+      "id": "t50",
+      "multi_tool": false,
+      "reason": "Documentation/guidance tool is the closest fit for describing REST API endpoint behavior rather than live firewall state.",
+      "topic": "guidance",
+      "types": [
+        "F"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_official_guidance"
+      ],
+      "answer": [
+        "pfsense_mcp_info"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_mcp_info"
+      ],
+      "first_choice_correct": true,
+      "id": "t51",
+      "multi_tool": false,
+      "reason": "This tool exists specifically to describe the MCP server's own capabilities.",
+      "topic": "guidance",
+      "types": [
+        "F",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_api_guidance"
+      ],
+      "answer": [
+        "pfsense_get_official_guidance"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_official_guidance"
+      ],
+      "first_choice_correct": true,
+      "id": "t52",
+      "multi_tool": false,
+      "reason": "Directly designed to surface official pfSense documentation/guidance on a feature's intended behavior.",
+      "topic": "guidance",
+      "types": [
+        "F"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_states",
+        "pfsense_get_interfaces",
+        "pfsense_get_routing_static_routes"
+      ],
+      "answer": [
+        "pfsense_get_interfaces",
+        "pfsense_get_interface_vlans",
+        "pfsense_get_firewall_rules",
+        "pfsense_get_gateway_status",
+        "pfsense_get_firewall_nat_outbound_mappings"
+      ],
+      "calls_in_answer": 5,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_rules",
+        "pfsense_get_gateway_status",
+        "pfsense_get_interface_vlans"
+      ],
+      "first_choice_correct": null,
+      "id": "t53",
+      "multi_tool": true,
+      "reason": "Diagnosing a VLAN internet-reachability issue requires checking interface/VLAN status, the rules governing that interface, upstream gateway health, and outbound NAT coverage.",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D",
+        "G"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_firewall_nat_outbound_mappings"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [],
+      "answer": [
+        "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_ipsec_child_sas",
+        "pfsense_get_vpn_openvpn_servers",
+        "pfsense_get_status_openvpn_servers",
+        "pfsense_get_status_openvpn_server_connections",
+        "pfsense_get_status_openvpn_clients",
+        "pfsense_get_status_wireguard_tunnels",
+        "pfsense_get_status_wireguard_peers"
+      ],
+      "calls_in_answer": 8,
+      "eventually_correct": false,
+      "expected_tools": [
+        "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_openvpn_server_connections",
+        "pfsense_get_status_wireguard_peers",
+        "pfsense_get_status_wireguard_tunnels",
+        "pfsense_get_vpn_ipsec_phase2s",
+        "pfsense_get_vpn_openvpn_servers"
+      ],
+      "first_choice_correct": null,
+      "id": "t54",
+      "multi_tool": true,
+      "reason": "A full VPN posture requires config+live status across all three VPN technologies (IPsec SAs, OpenVPN servers/clients/connections, WireGuard tunnels/peers).",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_status_ipsec_child_sas",
+        "pfsense_get_status_openvpn_clients",
+        "pfsense_get_status_openvpn_servers"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_diagnostics_config_history_revisions"
+      ],
+      "answer": [
+        "pfsense_get_system_status",
+        "pfsense_get_system_hasync",
+        "pfsense_get_carp_status",
+        "pfsense_get_firewall_apply_status"
+      ],
+      "calls_in_answer": 4,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_firewall_apply_status",
+        "pfsense_get_system_hasync",
+        "pfsense_get_system_status"
+      ],
+      "first_choice_correct": null,
+      "id": "t55",
+      "multi_tool": true,
+      "reason": "Pre-flight needs overall system health, HA sync configuration, CARP status, and whether pending firewall config changes have applied.",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D",
+        "G"
+      ],
+      "unnecessary_tools": [
+        "pfsense_get_carp_status"
+      ],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_system_dns"
+      ],
+      "answer": [
+        "pfsense_get_dhcp_servers",
+        "pfsense_get_system_dns",
+        "pfsense_get_dns_resolver_settings"
+      ],
+      "calls_in_answer": 3,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_dhcp_servers",
+        "pfsense_get_dns_resolver_settings"
+      ],
+      "first_choice_correct": null,
+      "id": "t56",
+      "multi_tool": true,
+      "reason": "Comparing DHCP-handed-out DNS servers against the resolver's actual settings requires the DHCP server config plus system DNS and resolver configuration.",
+      "topic": "multi_tool_diagnostics",
+      "types": [
+        "D"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_rules"
+      ],
+      "answer": [],
+      "calls_in_answer": 0,
+      "eventually_correct": true,
+      "expected_tools": [],
+      "first_choice_correct": true,
+      "id": "t57",
+      "multi_tool": false,
+      "reason": "This server only exposes read/get tools; no mutation tool exists to block traffic.",
+      "topic": "firewall_rules",
+      "types": [
+        "E",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": true,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_firewall_nat_port_forwards"
+      ],
+      "answer": [],
+      "calls_in_answer": 0,
+      "eventually_correct": true,
+      "expected_tools": [],
+      "first_choice_correct": true,
+      "id": "t58",
+      "multi_tool": false,
+      "reason": "No create/mutation tool exists for NAT port forwards; only get_firewall_nat_port_forwards (read-only) is available.",
+      "topic": "nat",
+      "types": [
+        "E"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": true,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_interfaces"
+      ],
+      "answer": [],
+      "calls_in_answer": 0,
+      "eventually_correct": true,
+      "expected_tools": [],
+      "first_choice_correct": true,
+      "id": "t59",
+      "multi_tool": false,
+      "reason": "No tool exists to disable/modify an interface; only read-only interface status/config getters are available.",
+      "topic": "interfaces",
+      "types": [
+        "E",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": true,
+      "wrong_tool_task": false
+    },
+    {
+      "acceptable_tools": [
+        "pfsense_get_service_status",
+        "pfsense_mcp_info"
+      ],
+      "answer": [
+        "pfsense_get_system_status"
+      ],
+      "calls_in_answer": 1,
+      "eventually_correct": true,
+      "expected_tools": [
+        "pfsense_get_system_status"
+      ],
+      "first_choice_correct": true,
+      "id": "t60",
+      "multi_tool": false,
+      "reason": "Directly reports overall system health/status.",
+      "topic": "system_status",
+      "types": [
+        "C",
+        "G"
+      ],
+      "unnecessary_tools": [],
+      "unsupported": false,
+      "wrong_tool_task": false
+    }
+  ],
+  "summary": {
+    "eventual_accuracy_pct": 98.3,
+    "first_choice_accuracy_pct": 92.9,
+    "mean_calls_per_task": 1.27,
+    "median_calls_per_task": 1,
+    "multi_tool_task_count": 4,
+    "single_primary_tool_task_count": 56,
+    "task_count": 60,
+    "tasks_with_unnecessary_calls_pct": 6.7,
+    "wrong_tool_task_pct": 0.0
+  }
+}

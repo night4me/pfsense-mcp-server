@@ -1,0 +1,15 @@
+t31: mcp__pfsense__pfsense_get_firewall_nat_outbound_mode | This tool directly reports whether outbound NAT mode is automatic, hybrid, or manual.
+t32: mcp__pfsense__pfsense_get_firewall_nat_one_to_one_mappings | Retrieves the configured 1:1 NAT mappings, which can be checked for the mail server's public IP.
+t33: mcp__pfsense__pfsense_get_firewall_virtual_ips | Lists all virtual IPs configured on the firewall.
+t34: mcp__pfsense__pfsense_get_firewall_virtual_ip_apply_status | Reports whether pending virtual IP config changes have been applied to the running system.
+t35: mcp__pfsense__pfsense_get_system_certificates | Lists all SSL certificates installed on the firewall.
+t36: mcp__pfsense__pfsense_get_system_certificate_authorities | Lists the certificate authorities configured/trusted on the firewall.
+t37: mcp__pfsense__pfsense_get_system_crls | Certificate Revocation Lists show which certificates have been revoked.
+t38: mcp__pfsense__pfsense_get_users | Lists local user accounts configured on the firewall.
+t39: mcp__pfsense__pfsense_get_users, mcp__pfsense__pfsense_get_user_groups | Need the user's group memberships from get_users cross-referenced with group definitions/privileges from get_user_groups to identify the admin group.
+t40: NONE -- unsupported | Only read ("get") user tools exist (get_users, get_user_groups); no create/add user tool is available.
+t41: mcp__pfsense__pfsense_get_firewall_schedules | Lists configured firewall rule time schedules, e.g. business-hours schedules.
+t42: mcp__pfsense__pfsense_get_service_status | Reports the live running/stopped status of system services including OpenVPN.
+t43: mcp__pfsense__pfsense_get_system_packages | Lists packages currently installed on the firewall.
+t44: mcp__pfsense__pfsense_get_system_packages, mcp__pfsense__pfsense_get_system_package_available | Compare the installed WireGuard version (get_system_packages) against the version available for update (get_system_package_available).
+t45: mcp__pfsense__pfsense_get_vpn_openvpn_servers | Lists the configured OpenVPN server instances.

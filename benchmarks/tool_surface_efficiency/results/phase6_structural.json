@@ -1,0 +1,854 @@
+{
+  "methodology": "Phase 6 (part 1): structural single-category-coverage check.\n\nFor every corpus task, determine which categories (from prototypes/categories.py's\nstatic TOOL_CATEGORY map) its expected_tools + acceptable_tools fall into. If a task's\nfull allowed-tool set spans more than one category, a category-first funnel (static\ngrouping A, or progressive discovery B -- both rely on picking a category before\nseeing tool names) cannot resolve it in a single category selection; the agent would\nneed to either guess right on the first try, browse multiple categories, or the corpus\ntask itself would need re-scoping under that architecture.\n\nThis is a deterministic, zero-cost, fully reproducible check -- no model calls\ninvolved -- since discover_tools(category) is a fixed lookup, not a search.\n",
+  "multi_category_tasks": [
+    {
+      "allowed_tools": [
+        "pfsense_get_carp_status",
+        "pfsense_get_system_hasync"
+      ],
+      "categories_spanned": [
+        "networking",
+        "system"
+      ],
+      "id": "t05",
+      "multi_tool": false,
+      "spans_multiple_categories": true,
+      "topic": "system_status",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_states",
+        "pfsense_get_gateway_status",
+        "pfsense_get_interface_vlans",
+        "pfsense_get_interfaces",
+        "pfsense_get_routing_static_routes"
+      ],
+      "categories_spanned": [
+        "firewall",
+        "networking"
+      ],
+      "id": "t53",
+      "multi_tool": true,
+      "spans_multiple_categories": true,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_diagnostics_config_history_revisions",
+        "pfsense_get_firewall_apply_status",
+        "pfsense_get_system_hasync",
+        "pfsense_get_system_status"
+      ],
+      "categories_spanned": [
+        "firewall",
+        "system"
+      ],
+      "id": "t55",
+      "multi_tool": true,
+      "spans_multiple_categories": true,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dhcp_servers",
+        "pfsense_get_dns_resolver_settings",
+        "pfsense_get_system_dns"
+      ],
+      "categories_spanned": [
+        "dns_dhcp",
+        "system"
+      ],
+      "id": "t56",
+      "multi_tool": true,
+      "spans_multiple_categories": true,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_service_status",
+        "pfsense_get_system_status",
+        "pfsense_mcp_info"
+      ],
+      "categories_spanned": [
+        "guidance",
+        "system"
+      ],
+      "id": "t60",
+      "multi_tool": false,
+      "spans_multiple_categories": true,
+      "topic": "system_status",
+      "unmapped_tools": []
+    }
+  ],
+  "per_task": [
+    {
+      "allowed_tools": [
+        "pfsense_get_system_status"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t01",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "system_status",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_version"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t02",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "system_status",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_hostname",
+        "pfsense_get_system_status"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t03",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "system_status",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_timezone"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t04",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "system_status",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_carp_status",
+        "pfsense_get_system_hasync"
+      ],
+      "categories_spanned": [
+        "networking",
+        "system"
+      ],
+      "id": "t05",
+      "multi_tool": false,
+      "spans_multiple_categories": true,
+      "topic": "system_status",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_interfaces"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t06",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "interfaces",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_interface_available_interfaces",
+        "pfsense_get_interfaces"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t07",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "interfaces",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_interface_laggs",
+        "pfsense_get_interfaces"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t08",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "interfaces",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_interface_apply_status",
+        "pfsense_get_interfaces"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t09",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "interfaces",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_interface_vlans"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t10",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "vlans",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_interface_bridges",
+        "pfsense_get_interface_groups"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t11",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "vlans",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_gateways"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t12",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "gateways",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_gateway_status"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t13",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "gateways",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_gateways",
+        "pfsense_get_routing_gateway_default"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t14",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "gateways",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_routing_static_routes"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t15",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "routes",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_routing_gateway_groups"
+      ],
+      "categories_spanned": [
+        "networking"
+      ],
+      "id": "t16",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "routes",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_dns"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t17",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dns",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dns_forwarder_host_overrides",
+        "pfsense_get_dns_resolver_host_overrides"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t18",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dns",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dns_resolver_apply_status"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t19",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dns",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dns_resolver_domain_overrides"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t20",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dns",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dhcp_leases"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t21",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dhcp",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dhcp_server_address_pools",
+        "pfsense_get_dhcp_servers"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t22",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dhcp",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dhcp_leases",
+        "pfsense_get_dhcp_static_mappings"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t23",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dhcp",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dhcp_relay"
+      ],
+      "categories_spanned": [
+        "dns_dhcp"
+      ],
+      "id": "t24",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "dhcp",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_rules"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t25",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "firewall_rules",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_states"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t26",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "firewall_rules",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_aliases"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t27",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "aliases",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_apply_status"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t29",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "aliases",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_nat_port_forwards"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t30",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "nat",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_nat_outbound_mappings",
+        "pfsense_get_firewall_nat_outbound_mode"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t31",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "nat",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_nat_one_to_one_mappings"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t32",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "nat",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_virtual_ips"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t33",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "virtual_ips",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_virtual_ip_apply_status"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t34",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "virtual_ips",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_certificates"
+      ],
+      "categories_spanned": [
+        "identity_certificates"
+      ],
+      "id": "t35",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "certificates",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_certificate_authorities"
+      ],
+      "categories_spanned": [
+        "identity_certificates"
+      ],
+      "id": "t36",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "certificates",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_certificates",
+        "pfsense_get_system_crls"
+      ],
+      "categories_spanned": [
+        "identity_certificates"
+      ],
+      "id": "t37",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "certificates",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_users"
+      ],
+      "categories_spanned": [
+        "identity_certificates"
+      ],
+      "id": "t38",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "users",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_user_groups",
+        "pfsense_get_users"
+      ],
+      "categories_spanned": [
+        "identity_certificates"
+      ],
+      "id": "t39",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "users",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_schedules"
+      ],
+      "categories_spanned": [
+        "firewall"
+      ],
+      "id": "t41",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "schedules",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_service_status"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t42",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "services",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_packages"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t43",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "packages",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_system_package_available",
+        "pfsense_get_system_packages"
+      ],
+      "categories_spanned": [
+        "system"
+      ],
+      "id": "t44",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "packages",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_vpn_openvpn_servers"
+      ],
+      "categories_spanned": [
+        "vpn"
+      ],
+      "id": "t45",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "openvpn",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_status_openvpn_clients",
+        "pfsense_get_status_openvpn_server_connections"
+      ],
+      "categories_spanned": [
+        "vpn"
+      ],
+      "id": "t46",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "openvpn",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_status_openvpn_server_routes"
+      ],
+      "categories_spanned": [
+        "vpn"
+      ],
+      "id": "t47",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "openvpn",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_status_wireguard_tunnels",
+        "pfsense_get_vpn_wireguard_tunnel_addresses"
+      ],
+      "categories_spanned": [
+        "vpn"
+      ],
+      "id": "t48",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "wireguard",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_status_wireguard_peers"
+      ],
+      "categories_spanned": [
+        "vpn"
+      ],
+      "id": "t49",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "wireguard",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_api_guidance",
+        "pfsense_get_official_guidance"
+      ],
+      "categories_spanned": [
+        "guidance"
+      ],
+      "id": "t50",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "guidance",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_official_guidance",
+        "pfsense_mcp_info"
+      ],
+      "categories_spanned": [
+        "guidance"
+      ],
+      "id": "t51",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "guidance",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_api_guidance",
+        "pfsense_get_official_guidance"
+      ],
+      "categories_spanned": [
+        "guidance"
+      ],
+      "id": "t52",
+      "multi_tool": false,
+      "spans_multiple_categories": false,
+      "topic": "guidance",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_firewall_rules",
+        "pfsense_get_firewall_states",
+        "pfsense_get_gateway_status",
+        "pfsense_get_interface_vlans",
+        "pfsense_get_interfaces",
+        "pfsense_get_routing_static_routes"
+      ],
+      "categories_spanned": [
+        "firewall",
+        "networking"
+      ],
+      "id": "t53",
+      "multi_tool": true,
+      "spans_multiple_categories": true,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_status_ipsec_sas",
+        "pfsense_get_status_openvpn_server_connections",
+        "pfsense_get_status_wireguard_peers",
+        "pfsense_get_status_wireguard_tunnels",
+        "pfsense_get_vpn_ipsec_phase2s",
+        "pfsense_get_vpn_openvpn_servers"
+      ],
+      "categories_spanned": [
+        "vpn"
+      ],
+      "id": "t54",
+      "multi_tool": true,
+      "spans_multiple_categories": false,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_diagnostics_config_history_revisions",
+        "pfsense_get_firewall_apply_status",
+        "pfsense_get_system_hasync",
+        "pfsense_get_system_status"
+      ],
+      "categories_spanned": [
+        "firewall",
+        "system"
+      ],
+      "id": "t55",
+      "multi_tool": true,
+      "spans_multiple_categories": true,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_dhcp_servers",
+        "pfsense_get_dns_resolver_settings",
+        "pfsense_get_system_dns"
+      ],
+      "categories_spanned": [
+        "dns_dhcp",
+        "system"
+      ],
+      "id": "t56",
+      "multi_tool": true,
+      "spans_multiple_categories": true,
+      "topic": "multi_tool_diagnostics",
+      "unmapped_tools": []
+    },
+    {
+      "allowed_tools": [
+        "pfsense_get_service_status",
+        "pfsense_get_system_status",
+        "pfsense_mcp_info"
+      ],
+      "categories_spanned": [
+        "guidance",
+        "system"
+      ],
+      "id": "t60",
+      "multi_tool": false,
+      "spans_multiple_categories": true,
+      "topic": "system_status",
+      "unmapped_tools": []
+    }
+  ],
+  "summary": {
+    "multi_category_task_count": 5,
+    "single_category_pct": 90.9,
+    "single_category_task_count": 50,
+    "supported_task_count": 55,
+    "unsupported_task_count": 5
+  }
+}

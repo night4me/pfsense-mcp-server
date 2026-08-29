@@ -1,0 +1,15 @@
+t46: mcp__pfsense__pfsense_get_status_openvpn_server_connections | Shows who is currently connected to the OpenVPN server.
+t47: mcp__pfsense__pfsense_get_status_openvpn_server_routes | Shows the routes pushed to OpenVPN clients.
+t48: mcp__pfsense__pfsense_get_status_wireguard_tunnels | Lists configured WireGuard tunnels and their status.
+t49: mcp__pfsense__pfsense_get_status_wireguard_peers | Shows per-peer handshake/last-seen data to distinguish active vs. dead peers.
+t50: mcp__pfsense__pfsense_get_official_guidance | Documentation/guidance tool is the closest fit for describing REST API endpoint behavior rather than live firewall state.
+t51: mcp__pfsense__pfsense_mcp_info | This tool exists specifically to describe the MCP server's own capabilities.
+t52: mcp__pfsense__pfsense_get_official_guidance | Directly designed to surface official pfSense documentation/guidance on a feature's intended behavior.
+t53: mcp__pfsense__pfsense_get_interfaces, mcp__pfsense__pfsense_get_interface_vlans, mcp__pfsense__pfsense_get_firewall_rules, mcp__pfsense__pfsense_get_gateway_status, mcp__pfsense__pfsense_get_firewall_nat_outbound_mappings | Diagnosing a VLAN internet-reachability issue requires checking interface/VLAN status, the rules governing that interface, upstream gateway health, and outbound NAT coverage.
+t54: mcp__pfsense__pfsense_get_status_ipsec_sas, mcp__pfsense__pfsense_get_status_ipsec_child_sas, mcp__pfsense__pfsense_get_vpn_openvpn_servers, mcp__pfsense__pfsense_get_status_openvpn_servers, mcp__pfsense__pfsense_get_status_openvpn_server_connections, mcp__pfsense__pfsense_get_status_openvpn_clients, mcp__pfsense__pfsense_get_status_wireguard_tunnels, mcp__pfsense__pfsense_get_status_wireguard_peers | A full VPN posture requires config+live status across all three VPN technologies (IPsec SAs, OpenVPN servers/clients/connections, WireGuard tunnels/peers).
+t55: mcp__pfsense__pfsense_get_system_status, mcp__pfsense__pfsense_get_system_hasync, mcp__pfsense__pfsense_get_carp_status, mcp__pfsense__pfsense_get_firewall_apply_status | Pre-flight needs overall system health, HA sync configuration, CARP status, and whether pending firewall config changes have applied.
+t56: mcp__pfsense__pfsense_get_dhcp_servers, mcp__pfsense__pfsense_get_system_dns, mcp__pfsense__pfsense_get_dns_resolver_settings | Comparing DHCP-handed-out DNS servers against the resolver's actual settings requires the DHCP server config plus system DNS and resolver configuration.
+t57: NONE -- unsupported | This server only exposes read/get tools; no mutation tool exists to block traffic.
+t58: NONE -- unsupported | No create/mutation tool exists for NAT port forwards; only get_firewall_nat_port_forwards (read-only) is available.
+t59: NONE -- unsupported | No tool exists to disable/modify an interface; only read-only interface status/config getters are available.
+t60: mcp__pfsense__pfsense_get_system_status | Directly reports overall system health/status.

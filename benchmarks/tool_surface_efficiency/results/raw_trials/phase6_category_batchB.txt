@@ -1,0 +1,15 @@
+t31: firewall | Outbound NAT mode/customization is part of firewall NAT configuration.
+t33: firewall | Virtual IPs are listed under the firewall category.
+t35: identity_certificates | Installed SSL certificates fall under the PKI/certificate inventory.
+t37: identity_certificates | Certificate revocation status lives in the CRL/CA inventory.
+t39: identity_certificates | User-to-group membership is part of local users and groups management.
+t41: firewall | Rule schedules (e.g., business-hours rules) are part of firewall configuration.
+t43: system | Installed packages are appliance platform configuration.
+t45: vpn | OpenVPN server instances are VPN configuration.
+t47: vpn | Routes pushed to OpenVPN clients is live OpenVPN status/config.
+t49: vpn | WireGuard peer check-in/status is live VPN status.
+t51: guidance | This asks about the server's own capabilities, a meta-tool question.
+t53: networking, firewall | Guest VLAN connectivity issues could stem from interface/VLAN config or firewall rules blocking traffic.
+t55: system, firewall | Box health and HA sync are system diagnostics, while confirming the last change applied may require checking firewall apply status too.
+t57: firewall | Blocking traffic by source subnet is a firewall rule action.
+t59: networking | Disabling an interface is an interface configuration action.

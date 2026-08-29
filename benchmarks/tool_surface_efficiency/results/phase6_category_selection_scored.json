@@ -1,0 +1,372 @@
+{
+  "methodology": "Phase 6 (part 2): score the category-selection agent trial against ground truth.\n\nGround truth per task = the set of categories its allowed_tools (expected |\nacceptable) actually span, computed deterministically by\nscore_phase6_structural.py from the static TOOL_CATEGORY map (never guessed).\n\nA category-selection answer is scored correct if it names at least one\ncategory that intersects the task's ground-truth category set. For\nunsupported tasks (no tool exists), there is no ground-truth category --\nthe agent's answer is recorded but not scored right/wrong, since \"closest\nplausible category\" is inherently subjective for a request with no\nmatching tool.\n",
+  "per_task": [
+    {
+      "answer_categories": [
+        "system"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "system"
+      ],
+      "id": "t01",
+      "reason": "A quick health check maps to appliance status/diagnostics under system.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "system"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "system"
+      ],
+      "id": "t03",
+      "reason": "Hostname is core appliance identity information.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "system"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "networking",
+        "system"
+      ],
+      "id": "t05",
+      "reason": "HA sync state between firewall pairs is explicitly part of the system category.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "networking"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "networking"
+      ],
+      "id": "t07",
+      "reason": "Available/unassigned physical NICs fall under interface inventory in networking.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "networking"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "networking"
+      ],
+      "id": "t09",
+      "reason": "Whether interface config has been applied is an interface apply-status concern in networking.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "networking"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "networking"
+      ],
+      "id": "t11",
+      "reason": "Bridges are an interface composition type listed under networking.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "networking"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "networking"
+      ],
+      "id": "t13",
+      "reason": "Gateway up/down/flapping status is a networking gateway concern.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "networking"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "networking"
+      ],
+      "id": "t15",
+      "reason": "Static routes are explicitly listed under networking.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "system",
+        "dns_dhcp"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "system"
+      ],
+      "id": "t17",
+      "reason": "The firewall's own configured DNS servers is a system-level general setting, but could plausibly be filed under DNS.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "dns_dhcp"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "dns_dhcp"
+      ],
+      "id": "t19",
+      "reason": "Whether the DNS resolver (unbound) config is applied/needs restart is a resolver apply-status question.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "dns_dhcp"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "dns_dhcp"
+      ],
+      "id": "t21",
+      "reason": "DHCP leases are explicitly part of the dns_dhcp category.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "dns_dhcp"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "dns_dhcp"
+      ],
+      "id": "t23",
+      "reason": "DHCP static reservations are a DHCP server configuration detail.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall"
+      ],
+      "id": "t25",
+      "reason": "Firewall rules on an interface are core to the firewall category.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall"
+      ],
+      "id": "t27",
+      "reason": "Firewall aliases are explicitly listed under the firewall category.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall"
+      ],
+      "id": "t29",
+      "reason": "Whether the alias table reload has taken effect is a firewall apply-status concern.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall"
+      ],
+      "id": "t31",
+      "reason": "Outbound NAT mode/customization is part of firewall NAT configuration.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall"
+      ],
+      "id": "t33",
+      "reason": "Virtual IPs are listed under the firewall category.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "identity_certificates"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "identity_certificates"
+      ],
+      "id": "t35",
+      "reason": "Installed SSL certificates fall under the PKI/certificate inventory.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "identity_certificates"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "identity_certificates"
+      ],
+      "id": "t37",
+      "reason": "Certificate revocation status lives in the CRL/CA inventory.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "identity_certificates"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "identity_certificates"
+      ],
+      "id": "t39",
+      "reason": "User-to-group membership is part of local users and groups management.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall"
+      ],
+      "id": "t41",
+      "reason": "Rule schedules (e.g., business-hours rules) are part of firewall configuration.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "system"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "system"
+      ],
+      "id": "t43",
+      "reason": "Installed packages are appliance platform configuration.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "vpn"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "vpn"
+      ],
+      "id": "t45",
+      "reason": "OpenVPN server instances are VPN configuration.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "vpn"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "vpn"
+      ],
+      "id": "t47",
+      "reason": "Routes pushed to OpenVPN clients is live OpenVPN status/config.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "vpn"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "vpn"
+      ],
+      "id": "t49",
+      "reason": "WireGuard peer check-in/status is live VPN status.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "guidance"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "guidance"
+      ],
+      "id": "t51",
+      "reason": "This asks about the server's own capabilities, a meta-tool question.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "networking",
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall",
+        "networking"
+      ],
+      "id": "t53",
+      "reason": "Guest VLAN connectivity issues could stem from interface/VLAN config or firewall rules blocking traffic.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "system",
+        "firewall"
+      ],
+      "correct": true,
+      "ground_truth_categories": [
+        "firewall",
+        "system"
+      ],
+      "id": "t55",
+      "reason": "Box health and HA sync are system diagnostics, while confirming the last change applied may require checking firewall apply status too.",
+      "unsupported": false
+    },
+    {
+      "answer_categories": [
+        "firewall"
+      ],
+      "correct": null,
+      "ground_truth_categories": [],
+      "id": "t57",
+      "reason": "Blocking traffic by source subnet is a firewall rule action.",
+      "unsupported": true
+    },
+    {
+      "answer_categories": [
+        "networking"
+      ],
+      "correct": null,
+      "ground_truth_categories": [],
+      "id": "t59",
+      "reason": "Disabling an interface is an interface configuration action.",
+      "unsupported": true
+    }
+  ],
+  "summary": {
+    "accuracy_pct": 100.0,
+    "correct_count": 28,
+    "scored_task_count": 28
+  }
+}
