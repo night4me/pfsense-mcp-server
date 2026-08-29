@@ -9,6 +9,7 @@ owned by their callers.
 
 from __future__ import annotations
 
+import ssl
 from urllib.parse import unquote, urlsplit
 
 import httpx
@@ -38,8 +39,94 @@ _TIMEOUT = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=10.0)
 # back to the prior generic wording rather than misclassifying.
 _TLS_FAILURE_MARKERS = ("ssl", "certificate", "cert_verify", "certificate_verify")
 
+# v1.0.0 clean-room finding (2026-08-29): a real LAB target with a
+# valid, correctly-trusted private-CA certificate produced only "TLS
+# certificate verification failed -- the server's certificate could
+# not be verified" when connected to by IP address instead of its
+# certificate's own DNS name -- concealing the actually useful
+# distinction (independently confirmed via `openssl s_client
+# -verify_return_error`: trust chain verified fine, "IP address
+# mismatch" specifically). `exc.__cause__` (what httpcore/httpx
+# themselves expose) never carries this detail -- confirmed above --
+# but `exc.__context__` still does: Python's interpreter sets
+# `__context__` to whatever exception was active whenever a new one is
+# raised inside an `except` block, and this happens unconditionally,
+# regardless of an explicit `raise ... from None` (that only clears
+# `__cause__` and suppresses *traceback display* of the context, never
+# the `__context__` attribute itself -- PEP 3134). Verified directly:
+# a real `ssl.SSLCertVerificationError` (with real, populated
+# `.verify_code`/`.verify_message`) is reachable a few `__context__`
+# hops down from httpx's own `ConnectError`, through httpcore's own
+# `ConnectError` wrapping, in the exact live scenario above. `verify_code`
+# is a standard, stable OpenSSL `X509_V_ERR_*` numeric constant (not
+# httpx/httpcore's own API, and not parsed from English prose) --
+# empirically confirmed for the hostname-mismatch (62), IP-mismatch
+# (64), and untrusted-CA (20, "unable to get local issuer certificate")
+# cases against this exact codebase's own transport; the
+# expired/not-yet-valid codes (10/9) are long-standing, unchanged
+# OpenSSL constants documented since early `openssl/x509_vfy.h` and are
+# included on that same structural basis, not re-derived from a live
+# expired-certificate probe this session.
+#
+# This is a diagnostic-message improvement only: it never changes
+# whether a connection is accepted, never weakens verification, and
+# never falls back to guessing -- `_classify_ssl_verification_error()`
+# returns `None` (not a wrong classification) for any `verify_code` it
+# does not specifically recognize, or if no `ssl.SSLCertVerificationError`
+# is found in the (bounded) `__context__` walk at all -- e.g. a future
+# httpx/httpcore release that stops setting `__context__` this way, or
+# a non-CPython `ssl` implementation without `.verify_code`. Either way
+# `_classify_connect_failure()` below falls back to the pre-existing,
+# already-tested marker-based classification, exactly as it always did.
+_TLS_HOSTNAME_IDENTITY_MISMATCH_CODES = frozenset({62, 64})  # HOSTNAME_MISMATCH, IP_ADDRESS_MISMATCH
+# self-signed / unable-to-get-issuer / untrusted-chain family
+_TLS_UNTRUSTED_CA_CODES = frozenset({18, 19, 20, 21, 24, 27, 33})
+_TLS_CERT_NOT_YET_VALID_CODE = 9
+_TLS_CERT_EXPIRED_CODE = 10
+_MAX_EXCEPTION_CONTEXT_WALK_DEPTH = 8
+
+
+def _classify_ssl_verification_error(exc: BaseException) -> str | None:
+    """Walks `exc.__context__` (bounded depth) for the real
+    `ssl.SSLCertVerificationError` Python's own TLS stack raised, and
+    turns its structured `.verify_code`/`.verify_message` into a
+    specific, actionable distinction. Returns `None` -- never a guess
+    -- if no such exception is found, or its `verify_code` is not one
+    of the specific families recognized above; see this module's own
+    top-level comment for what was actually verified and how."""
+
+    current: BaseException | None = exc
+    for _ in range(_MAX_EXCEPTION_CONTEXT_WALK_DEPTH):
+        if current is None:
+            return None
+        if isinstance(current, ssl.SSLCertVerificationError):
+            code = current.verify_code
+            detail = (current.verify_message or "").strip()
+            if code in _TLS_HOSTNAME_IDENTITY_MISMATCH_CODES:
+                return (
+                    "the certificate authority is trusted, but the certificate is not valid for the "
+                    f"address you connected to ({detail or 'hostname/IP mismatch'}) -- connect using "
+                    "the exact hostname the certificate was issued for instead"
+                )
+            if code in _TLS_UNTRUSTED_CA_CODES:
+                return (
+                    "the certificate authority that signed the server's certificate is not trusted "
+                    f"({detail or 'unable to verify the certificate chain'}) -- for a private/internal "
+                    "CA, verify PFSENSE_TLS_CA_FILE points at its own public certificate"
+                )
+            if code == _TLS_CERT_EXPIRED_CODE:
+                return f"the server's certificate has expired ({detail or 'certificate has expired'})"
+            if code == _TLS_CERT_NOT_YET_VALID_CODE:
+                return f"the server's certificate is not yet valid ({detail or 'certificate is not yet valid'})"
+            return None
+        current = current.__context__
+    return None
+
 
 def _classify_connect_failure(exc: BaseException) -> str:
+    structured = _classify_ssl_verification_error(exc)
+    if structured is not None:
+        return structured
     text = f"{exc} {exc.__cause__}".lower()
     if any(marker in text for marker in _TLS_FAILURE_MARKERS):
         return "TLS certificate verification failed -- the server's certificate could not be verified"
