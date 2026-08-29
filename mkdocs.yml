@@ -82,6 +82,7 @@ nav:
       - Connect your MCP client: MCP_CLIENT_CONFIGURATION.md
       - Configuration reference: CONFIGURATION.md
       - Compatibility: COMPATIBILITY.md
+      - Stability & compatibility contract (v1.0.0): STABILITY.md
       - Tool & guidance reference: TOOL_AND_GUIDANCE_REFERENCE.md
       - Per-client config examples (GitHub): https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md
   - Security:
