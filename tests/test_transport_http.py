@@ -216,7 +216,7 @@ def test_ip_address_mismatch_is_distinguished_from_generic_tls_failure():
     arc's own investigation."""
     from pfsense_mcp.transport.http import _classify_connect_failure
 
-    exc = _exception_with_ssl_context_chain(64, "IP address mismatch, certificate is not valid for '192.168.250.1'.")
+    exc = _exception_with_ssl_context_chain(64, "IP address mismatch, certificate is not valid for '203.0.113.1'.")
     message = _classify_connect_failure(exc)
     assert "certificate authority is trusted" in message
     assert "connect using the exact hostname" in message
