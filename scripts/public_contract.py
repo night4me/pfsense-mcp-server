@@ -23,7 +23,7 @@ from pfsense_mcp.tools.registry import ToolRegistry
 from pfsense_mcp.transport.mock import MockTransport
 
 ROOT = Path(__file__).resolve().parents[1]
-SNAPSHOT = ROOT / "tests" / "contracts" / "mcp_public_contract_v0.9.0.json"
+SNAPSHOT = ROOT / "tests" / "contracts" / "mcp_public_contract_v1.0.0.json"
 READ_TOOLS = ROOT / "src" / "pfsense_mcp" / "tools" / "read"
 CLIENT_SOURCE = ROOT / "src" / "pfsense_mcp" / "pfsense_client.py"
 
