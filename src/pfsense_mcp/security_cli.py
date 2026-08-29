@@ -1021,9 +1021,30 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     setup_parser.add_argument(
         "--tls-mode",
-        choices=["verify", "insecure"],
+        choices=["verify", "verify_private_ca", "insecure"],
         default=None,
         help="Declared TLS intent, recorded exactly as entered -- never verified by this slice.",
+    )
+    setup_parser.add_argument(
+        "--tls-ca-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional, purely-informational path to your private CA's certificate -- only used to "
+            "personalize the generated MCP client configuration preview when --tls-mode is "
+            "verify_private_ca; never read, validated, or sent anywhere by this slice."
+        ),
+    )
+    setup_parser.add_argument(
+        "--command",
+        dest="command_override",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Override the auto-detected pfsense-mcp-server executable path shown in the generated "
+            "MCP client configuration -- only needed if you are generating this configuration for a "
+            "different machine than the one running this command."
+        ),
     )
     setup_parser.add_argument(
         "--schema-file",
@@ -1123,7 +1144,10 @@ def _build_parser() -> argparse.ArgumentParser:
     apply_parser.add_argument("--target-origin", default=None, help="Must match the value `setup` recorded.")
     apply_parser.add_argument("--target-identity", default=None, help="Must match the value `setup` recorded.")
     apply_parser.add_argument(
-        "--tls-mode", choices=["verify", "insecure"], default=None, help="Must match the value `setup` recorded."
+        "--tls-mode",
+        choices=["verify", "verify_private_ca", "insecure"],
+        default=None,
+        help="Must match the value `setup` recorded.",
     )
     apply_parser.add_argument(
         "--plan-digest",
@@ -1226,7 +1250,31 @@ def _build_parser() -> argparse.ArgumentParser:
         "--target-identity", default=None, help="Must match the value `setup` recorded."
     )
     write_client_config_parser.add_argument(
-        "--tls-mode", choices=["verify", "insecure"], default=None, help="Must match the value `setup` recorded."
+        "--tls-mode",
+        choices=["verify", "verify_private_ca", "insecure"],
+        default=None,
+        help="Must match the value `setup` recorded.",
+    )
+    write_client_config_parser.add_argument(
+        "--tls-ca-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Path to your private CA's certificate, written verbatim into the generated "
+            "PFSENSE_TLS_CA_FILE value when --tls-mode is verify_private_ca. Never read or validated "
+            "by this command -- only the path string is used."
+        ),
+    )
+    write_client_config_parser.add_argument(
+        "--command",
+        dest="command_override",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Override the auto-detected pfsense-mcp-server executable path written into the client "
+            "config file -- only needed if this file is being generated for a different machine than "
+            "the one running this command."
+        ),
     )
     write_client_config_parser.add_argument(
         "--plan-digest",
@@ -1361,36 +1409,91 @@ def _version_evidence_to_dict(version_evidence: VersionEvidence) -> dict[str, An
 
 
 #: Slice 6 (`reports-ai/SETUP_WIZARD_DESIGN_2026-08-23.md` §14):
-#: print-only MCP client configuration generation. Every placeholder
-#: below is copied verbatim from `examples/claude-desktop.md`'s own
-#: already-reviewed snippet -- never reinvented. `setup` has no way to
-#: discover the actual install path or the actual API-key custody path
-#: (no earlier slice collects either), so both remain the exact same
-#: illustrative placeholder text the example docs already use;
-#: detecting them would be new environment-introspection scope this
-#: slice does not need.
+#: print-only MCP client configuration generation.
+#:
+#: v1.0.0 clean-room finding (2026-08-28): a real pipx install/setup
+#: journey found that a hardcoded `.venv/bin/...` command placeholder
+#: is actively wrong once pipx (this project's own recommended install
+#: method) is used -- pipx installs into a per-package venv whose path
+#: has nothing to do with any project checkout. `_resolve_mcp_client_command()`
+#: below now resolves the real, currently-installed sibling executable
+#: at generation time instead of assuming a fixed illustrative path;
+#: this placeholder remains only as the last-resort fallback when that
+#: resolution genuinely cannot find one (e.g. running from an unpacked
+#: source checkout that was never actually installed).
 _MCP_CLIENT_COMMAND_PLACEHOLDER = "/absolute/path/to/pfsense-mcp-server/.venv/bin/pfsense-mcp-server"
 _MCP_CLIENT_ORIGIN_PLACEHOLDER = "https://pfsense.example.invalid"
 _MCP_CLIENT_IDENTITY_PLACEHOLDER = "api-mcp-admin"
 _MCP_CLIENT_KEY_FILE_PLACEHOLDER = "/absolute/private/path/pfsense-api.key"
+_MCP_CLIENT_CA_FILE_PLACEHOLDER = "/absolute/path/to/your-private-ca.crt"
+
+
+@dataclass(frozen=True)
+class _MCPClientHints:
+    """Operator-declared, purely-informational values used only to
+    personalize the generated MCP client configuration preview/write.
+    Never validated (no file is ever opened by this dataclass or its
+    callers), never part of `SetupPlan` or its digest -- the same
+    "declared intent, never verified" discipline `generate_setup_plan()`
+    already applies to `target.origin`/`target.identity`. `ca_file` is
+    only ever rendered when the plan's own `tls_mode` is
+    `verify_private_ca`; `command_override` always wins over
+    auto-detection when given (see `_resolve_mcp_client_command()`)."""
+
+    ca_file: str | None = None
+    command_override: str | None = None
+
+
+_EMPTY_MCP_CLIENT_HINTS = _MCPClientHints()
+
+
+def _resolve_mcp_client_command(override: str | None = None) -> tuple[str, bool]:
+    """Returns `(command_path, is_a_real_usable_path)`. An explicit
+    `override` (from `--command`) always wins and is always trusted --
+    it is never re-detected or second-guessed.
+
+    Otherwise, resolves the real, currently-installed `pfsense-mcp-server`
+    executable colocated with the currently-running `pfsense-mcp-security`
+    -- both are declared as `[project.scripts]` in the same package, so
+    they are always installed into the very same environment's `bin/`
+    directory together, regardless of install method (`pipx`, a plain
+    `venv` + `pip`, or `uv tool install`): this is a structural packaging
+    guarantee, not a runtime coincidence, and it is exactly the directory
+    `sys.executable` (the interpreter running *this* process) lives in.
+    Falls back to `shutil.which()` for the unusual case of a
+    non-colocated PATH-based install, and only falls back to the
+    illustrative placeholder if neither resolves to a real file -- e.g.
+    running directly from an unpacked source checkout that was never
+    actually installed."""
+
+    if override:
+        return override, True
+    candidate = Path(sys.executable).with_name("pfsense-mcp-server")
+    if candidate.is_file():
+        return str(candidate), True
+    found = shutil.which("pfsense-mcp-server")
+    if found:
+        return found, True
+    return _MCP_CLIENT_COMMAND_PLACEHOLDER, False
 
 
 def _mcp_client_tls_mode(plan: SetupPlan) -> str:
     """Translates `setup`'s own wizard-facing `--tls-mode` vocabulary
-    (`verify`/`insecure`) into the real runtime `PfSenseConfig`/`TLSMode`
-    vocabulary (`strict`/`auto`/`insecure`) the generated snippet must
-    actually be valid for -- these are deliberately different
-    vocabularies (`setup`'s own `--tls-mode` choices are `verify`/
-    `insecure` only; `TLSMode` also has `auto`), so this is a real
-    translation, not a pass-through."""
+    (`verify`/`verify_private_ca`/`insecure`) into the real runtime
+    `PfSenseConfig`/`TLSMode` vocabulary (`strict`/`auto`/`insecure`)
+    the generated snippet must actually be valid for -- these are
+    deliberately different vocabularies, so this is a real translation,
+    not a pass-through."""
 
     if plan.target.tls_mode == "insecure":
         return "insecure"
+    if plan.target.tls_mode == "verify_private_ca":
+        return "auto"
     return "strict"
 
 
-def _mcp_client_env_vars(plan: SetupPlan) -> dict[str, str]:
-    """The four `PFSENSE_*` values shared verbatim by every documented
+def _mcp_client_env_vars(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> dict[str, str]:
+    """The `PFSENSE_*` values shared verbatim by every documented
     client format (`examples/claude-desktop.md`'s JSON, and
     `examples/codex-cli.md`/`examples/chatgpt.md`'s shared TOML) --
     computed once so the JSON and TOML snippet builders never drift
@@ -1410,24 +1513,34 @@ def _mcp_client_env_vars(plan: SetupPlan) -> dict[str, str]:
         if posture is CapabilityPosture.WRITE_PROTECTED
         else (plan.target.identity or _MCP_CLIENT_IDENTITY_PLACEHOLDER)
     )
-    return {
+    env: dict[str, str] = {
         "PFSENSE_API_URL": plan.target.origin or _MCP_CLIENT_ORIGIN_PLACEHOLDER,
         "PFSENSE_IDENTITY": identity,
         "PFSENSE_API_KEY_FILE": _MCP_CLIENT_KEY_FILE_PLACEHOLDER,
         "PFSENSE_TLS_MODE": _mcp_client_tls_mode(plan),
     }
+    # v1.0.0 clean-room finding (2026-08-28): a real private-CA pfSense
+    # LAB target found this env var was never generated at all --
+    # `setup`'s own TLS choice had no way to express "verify against a
+    # private CA" in the first place. Only ever added when that's the
+    # declared intent; `hints.ca_file`, if given, is purely
+    # operator-declared and never read/validated by this function.
+    if plan.target.tls_mode == "verify_private_ca":
+        env["PFSENSE_TLS_CA_FILE"] = hints.ca_file or _MCP_CLIENT_CA_FILE_PLACEHOLDER
+    return env
 
 
-def _mcp_client_config_snippet(plan: SetupPlan) -> dict[str, Any]:
+def _mcp_client_config_snippet(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> dict[str, Any]:
     """The exact `mcpServers` block `examples/claude-desktop.md`
     already documents. Print-only, forever the default (owner decision
     8) -- `setup` never writes this to any file."""
 
+    command, _ = _resolve_mcp_client_command(hints.command_override)
     return {
         "mcpServers": {
             "pfsense": {
-                "command": _MCP_CLIENT_COMMAND_PLACEHOLDER,
-                "env": _mcp_client_env_vars(plan),
+                "command": command,
+                "env": _mcp_client_env_vars(plan, hints),
             }
         }
     }
@@ -1452,7 +1565,7 @@ def _toml_escape_string(value: str) -> str:
     return "".join(result)
 
 
-def _mcp_client_config_toml(plan: SetupPlan) -> str:
+def _mcp_client_config_toml(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> str:
     """The exact `[mcp_servers.pfsense]` TOML table
     `examples/codex-cli.md` already documents, shared verbatim by the
     ChatGPT desktop app per `examples/chatgpt.md` ("the desktop app,
@@ -1465,10 +1578,11 @@ def _mcp_client_config_toml(plan: SetupPlan) -> str:
     `_mcp_client_env_vars()`. Print-only, forever the default (owner
     decision 8) -- `setup` never writes this to any file."""
 
-    env_vars = _mcp_client_env_vars(plan)
+    command, _ = _resolve_mcp_client_command(hints.command_override)
+    env_vars = _mcp_client_env_vars(plan, hints)
     lines = [
         "[mcp_servers.pfsense]",
-        f'command = "{_toml_escape_string(_MCP_CLIENT_COMMAND_PLACEHOLDER)}"',
+        f'command = "{_toml_escape_string(command)}"',
         "required = true",
         "",
         "[mcp_servers.pfsense.env]",
@@ -1477,7 +1591,8 @@ def _mcp_client_config_toml(plan: SetupPlan) -> str:
     return "\n".join(lines)
 
 
-def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
+def _setup_plan_to_dict(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> dict[str, Any]:
+    _, command_resolved = _resolve_mcp_client_command(hints.command_override)
     return {
         "schema_version": plan.schema_version,
         "target": _target_to_dict(plan.target),
@@ -1501,8 +1616,14 @@ def _setup_plan_to_dict(plan: SetupPlan) -> dict[str, Any]:
         # desktop, a genuinely different config format, not a
         # reformatting of the JSON one) is a plain string since JSON
         # cannot represent TOML syntax natively.
-        "mcp_client_config": _mcp_client_config_snippet(plan),
-        "mcp_client_config_toml": _mcp_client_config_toml(plan),
+        "mcp_client_config": _mcp_client_config_snippet(plan, hints),
+        "mcp_client_config_toml": _mcp_client_config_toml(plan, hints),
+        # v1.0.0 clean-room finding: whether "command" above was
+        # actually auto-detected/explicitly overridden (True) or is the
+        # illustrative placeholder because neither resolved to a real
+        # file (False) -- lets an automation consumer of --json decide
+        # whether to trust it verbatim.
+        "mcp_client_command_resolved": command_resolved,
     }
 
 
@@ -1537,6 +1658,8 @@ def _human_connection_label(plan: SetupPlan) -> str:
         return "Skip TLS verification (not recommended)"
     if plan.target.tls_mode == "verify":
         return "Verify TLS certificate"
+    if plan.target.tls_mode == "verify_private_ca":
+        return "Verify TLS certificate (private/internal certificate authority)"
     return "Not specified"
 
 
@@ -1551,7 +1674,57 @@ def _human_connection_label(plan: SetupPlan) -> str:
 _HUMAN_PLAN_ID_LENGTH = 12
 
 
-def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
+#: v1.0.0 clean-room finding (2026-08-28): a real read-only pfSense LAB
+#: journey found that nothing in this command's own output ever
+#: explained that `setup apply`'s one connectivity check reads its
+#: pfSense connection details from the operator's real shell
+#: environment -- the *exact same* `PFSENSE_*` variables the MCP server
+#: itself reads at startup -- not from anything `setup` collected
+#: interactively. An operator who only ever answered the wizard's
+#: questions had no way to know they still needed to `export` these
+#: themselves before the printed `setup apply` command could succeed.
+def _credential_guidance_lines() -> tuple[str, ...]:
+    """How to obtain and safely store the pfSense API key
+    `PFSENSE_API_KEY_FILE` must point at. Mirrors
+    docs/INSTALLATION.md's own "Obtain and configure a credential
+    safely" section verbatim in substance (same recipe, same
+    permissions requirement) so this project never gives two different
+    answers to the same question. Never prints, requests, or implies
+    typing the key value itself anywhere -- only the file *path* is
+    ever part of this guidance."""
+
+    return (
+        "Need an API key? In pfSense, under the REST API package's own",
+        "user/key management, generate one for the identity above (or",
+        "reuse an existing key for that identity if you already have",
+        "one). Save ONLY the key itself to a private file, e.g.:",
+        "",
+        "  install -m 600 /dev/null /absolute/private/path/pfsense-api.key",
+        "  # paste the key as the file's first (and only) line",
+        "",
+        "The file must be owned by you with no group/other permissions",
+        "(600 above already sets that) -- the server refuses to start",
+        "otherwise. Never paste the key value itself anywhere else.",
+    )
+
+
+def _private_ca_guidance_lines() -> tuple[str, ...]:
+    """What "verify against a private/internal certificate authority"
+    means and how to obtain the one file it requires. Only ever shown
+    when `plan.target.tls_mode == "verify_private_ca"`."""
+
+    return (
+        "Your pfSense target uses a certificate signed by a private or",
+        "internal certificate authority (common for a self-hosted or",
+        "LAB pfSense) rather than a publicly trusted one -- this needs",
+        "one file: that CA's own public certificate (never a private",
+        "key). Export it from pfSense's own Certificate Manager, or ask",
+        "whoever manages this pfSense's certificates for it, then point",
+        "PFSENSE_TLS_CA_FILE at wherever you saved it.",
+    )
+
+
+def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> tuple[str, ...]:
     """The "Next step" guidance for the human-mode completion screen.
     `setup apply` now exists for both postures (Slice 2 read_only,
     Slice 3 write_protected) -- shows the exact command, built from
@@ -1581,7 +1754,23 @@ def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
 
     action_lines: tuple[str, ...]
     confirm_lines: tuple[str, ...]
+    env_lines: tuple[str, ...] = ()
     if posture is CapabilityPosture.READ_ONLY:
+        env_vars = _mcp_client_env_vars(plan, hints)
+        env_export_lines = tuple(f'  export {key}="{value}"' for key, value in env_vars.items())
+        env_lines = (
+            "Before running the command below, set these in your shell",
+            "-- `setup apply` reads them fresh from your real environment,",
+            "the exact same way the MCP server itself does at startup;",
+            "`setup` never reads or writes them itself:",
+            "",
+            *env_export_lines,
+            "",
+            *_credential_guidance_lines(),
+        )
+        if plan.target.tls_mode == "verify_private_ca":
+            env_lines += ("", *_private_ca_guidance_lines())
+        env_lines += ("",)
         action_lines = (
             "To verify live connectivity (no pfSense changes are made),",
             "run:",
@@ -1604,6 +1793,7 @@ def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
     return (
         "This setup has only been planned. Nothing has been changed yet.",
         "",
+        *env_lines,
         *action_lines,
         "",
         *command_lines,
@@ -1612,7 +1802,7 @@ def _next_step_lines(plan: SetupPlan) -> tuple[str, ...]:
     )
 
 
-def _format_setup_human(plan: SetupPlan) -> str:
+def _format_setup_human(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> str:
     """The default human-readable rendering for every human-mode setup
     output -- both the interactive wizard's completion screen and
     `--non-interactive` without `--json`. Deliberately does not surface
@@ -1639,7 +1829,7 @@ def _format_setup_human(plan: SetupPlan) -> str:
     lines.append("No changes were made to pfSense.")
     lines.append("")
     lines.append("Next step")
-    lines.extend(_next_step_lines(plan))
+    lines.extend(_next_step_lines(plan, hints))
     if not plan.posture_plan.safe_to_proceed:
         if plan.posture_plan.blocking_findings:
             reason = plan.posture_plan.blocking_findings[0]
@@ -1650,15 +1840,41 @@ def _format_setup_human(plan: SetupPlan) -> str:
         lines.append("")
         lines.append(f"! This selection cannot be completed yet: {reason}")
     if plan.posture_plan.safe_to_proceed:
+        command, command_resolved = _resolve_mcp_client_command(hints.command_override)
         lines.append("")
         lines.append("MCP client configuration (print-only -- copy into your client's config,")
         lines.append("nothing is written to any file by this command):")
         lines.append("")
+        if command_resolved:
+            lines.append(_wrap(f"Detected your installed pfsense-mcp-server executable: {command}"))
+        else:
+            lines.append(
+                _wrap(
+                    "Could not automatically detect your installed pfsense-mcp-server executable -- "
+                    "replace the illustrative 'command' value below with the output of "
+                    "`which pfsense-mcp-server`."
+                )
+            )
+        lines.append("")
         lines.append("Claude Desktop (JSON):")
-        lines.append(json.dumps(_mcp_client_config_snippet(plan), indent=2, sort_keys=True))
+        lines.append(json.dumps(_mcp_client_config_snippet(plan, hints), indent=2, sort_keys=True))
         lines.append("")
         lines.append("Codex CLI / ChatGPT desktop (shared TOML config):")
-        lines.append(_mcp_client_config_toml(plan))
+        lines.append(_mcp_client_config_toml(plan, hints))
+        lines.append("")
+        lines.append(
+            _wrap(
+                "Replace PFSENSE_API_KEY_FILE above with wherever you saved your key (see the "
+                "credential guidance under Next step)."
+            )
+        )
+        if plan.target.tls_mode == "verify_private_ca":
+            lines.append(
+                _wrap(
+                    "Replace PFSENSE_TLS_CA_FILE above with wherever you saved your CA certificate "
+                    "(see the private-CA guidance under Next step)."
+                )
+            )
     lines.append("")
     short_plan_id = compute_setup_plan_digest(plan)[:_HUMAN_PLAN_ID_LENGTH]
     lines.append(f"Plan ID: {short_plan_id}  (full plan digest and technical detail available via --json)")
@@ -1724,7 +1940,8 @@ class _WizardState:
     protection: str | None = None  # "hardware_witness" | "software" | None
     address: str | None = None
     name: str | None = None
-    tls_choice: str | None = None  # "verify" | "insecure"
+    tls_choice: str | None = None  # "verify" | "verify_private_ca" | "insecure"
+    ca_file_hint: str | None = None
     declared_package_version: str | None = None
     schema_file: str | None = None
 
@@ -1742,6 +1959,7 @@ class _WizardPrefill:
     target_origin: str | None
     target_identity: str | None
     tls_mode: str | None
+    tls_ca_file: str | None
     schema_file: str | None
     declared_package_version: str | None
 
@@ -1753,6 +1971,7 @@ class _WizardResult:
     target_origin: str | None
     target_identity: str | None
     tls_mode: str | None
+    tls_ca_file: str | None
     schema_file: str | None
     declared_package_version: str | None
 
@@ -2067,57 +2286,75 @@ def _step_firewall(out: TextIO, in_: TextIO, state: _WizardState, prefill: _Wiza
 
 
 def _step_connection(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
+    """v1.0.0 clean-room finding (2026-08-28): a real private-CA pfSense
+    LAB target found this step previously had no way to express "verify
+    against a private/internal CA" at all -- only "verify against the
+    system trust store" or "skip verification entirely". A private CA
+    is common for a self-hosted/LAB pfSense, so it is now a first-class,
+    directly-chosen option here (not buried in an "Advanced" submenu),
+    distinguished in plain language from both the publicly-trusted-
+    certificate case (still the overall recommended default) and the
+    discouraged skip-verification case."""
+
     _print_step_heading(out, state, _STEP_CONNECTION)
-    while True:
-        choice = _prompt_menu(
-            out,
-            in_,
-            "",
-            "Connection security",
-            [
-                _MenuOption(
-                    "Verify TLS certificate",
-                    description=("Verifies the identity of the pfSense server.",),
-                    tag="Recommended",
+    choice = _prompt_menu(
+        out,
+        in_,
+        "",
+        "Connection security",
+        [
+            _MenuOption(
+                "Verify TLS certificate",
+                description=("For pfSense with a certificate from a public,", "trusted certificate authority."),
+                tag="Recommended",
+            ),
+            _MenuOption(
+                "Verify against a private/internal certificate authority",
+                description=(
+                    "For self-hosted or LAB pfSense using its own or your",
+                    "organization's internal CA.",
                 ),
-                _MenuOption(
-                    "Advanced connection settings",
-                    description=("Configure non-standard connection behavior.",),
+            ),
+            _MenuOption(
+                "Skip TLS verification",
+                description=(
+                    "Skips verifying the pfSense server's identity. Only",
+                    "use this for trusted local/lab networks.",
                 ),
-            ],
-            default=1,
-        )
-        if choice is _WizardSignal.QUIT:
-            return _WizardSignal.QUIT
-        if choice is _WizardSignal.BACK:
-            return _WizardSignal.BACK
-        if choice == 1:
-            state.tls_choice = "verify"
-            return _WizardSignal.NEXT
-        sub_choice = _prompt_menu(
-            out,
-            in_,
-            "",
-            "Advanced connection settings",
-            [
-                _MenuOption("Verify TLS certificate", tag="Recommended"),
-                _MenuOption(
-                    "Skip TLS verification",
-                    description=(
-                        "Skips verifying the pfSense server's identity. Only",
-                        "use this for trusted local/lab networks.",
-                    ),
-                    tag="Advanced · Not recommended",
-                ),
-            ],
-            default=1,
-        )
-        if sub_choice is _WizardSignal.QUIT:
-            return _WizardSignal.QUIT
-        if sub_choice is _WizardSignal.BACK:
-            continue
-        state.tls_choice = "verify" if sub_choice == 1 else "insecure"
+                tag="Advanced · Not recommended",
+            ),
+        ],
+        default=1,
+    )
+    if choice is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    if choice is _WizardSignal.BACK:
+        return _WizardSignal.BACK
+    if choice == 1:
+        state.tls_choice = "verify"
         return _WizardSignal.NEXT
+    if choice == 3:
+        state.tls_choice = "insecure"
+        return _WizardSignal.NEXT
+
+    state.tls_choice = "verify_private_ca"
+    ca_result = _prompt_text(
+        out,
+        in_,
+        "Path to your private CA certificate file",
+        (
+            "Only the CA's own public certificate -- never a private key.",
+            "Optional here -- leave blank if you don't have the file yet;",
+            "you'll be reminded how to get it before applying this plan.",
+        ),
+        example="/path/to/lab-ca.crt",
+        required=False,
+        allow_back=False,
+    )
+    if ca_result is _WizardSignal.QUIT:
+        return _WizardSignal.QUIT
+    state.ca_file_hint = ca_result or None
+    return _WizardSignal.NEXT
 
 
 def _step_advanced(out: TextIO, in_: TextIO, state: _WizardState) -> _WizardSignal:
@@ -2312,6 +2549,7 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
             continue
         if current == _STEP_CONNECTION and prefill.tls_mode is not None:
             state.tls_choice = prefill.tls_mode
+            state.ca_file_hint = prefill.tls_ca_file
             current = _next_step(current, state)
             continue
 
@@ -2348,6 +2586,7 @@ def _run_wizard(out: TextIO, in_: TextIO, prefill: _WizardPrefill) -> _WizardRes
         target_origin=state.address if prefill.target_origin is None else prefill.target_origin,
         target_identity=state.name if prefill.target_identity is None else prefill.target_identity,
         tls_mode=prefill.tls_mode or state.tls_choice,
+        tls_ca_file=prefill.tls_ca_file if prefill.tls_mode is not None else state.ca_file_hint,
         schema_file=prefill.schema_file if advanced_locked else state.schema_file,
         declared_package_version=(
             prefill.declared_package_version if advanced_locked else state.declared_package_version
@@ -2363,6 +2602,8 @@ def _run_setup(
     target_origin: str | None,
     target_identity: str | None,
     tls_mode: str | None,
+    tls_ca_file: str | None = None,
+    command: str | None = None,
     schema_file: str | None,
     declared_package_version: str | None,
     as_json: bool,
@@ -2380,7 +2621,15 @@ def _run_setup(
     separate "automation" code path that could silently behave
     differently. A real terminal SIGINT (Ctrl+C) during interactive
     prompting raises `KeyboardInterrupt`, caught here and treated
-    identically to an explicit Quit -- no traceback, no partial plan."""
+    identically to an explicit Quit -- no traceback, no partial plan.
+
+    `tls_ca_file`/`command` are purely-informational rendering hints
+    (see `_MCPClientHints`) -- never part of `SetupPlan`, never
+    validated, never sent anywhere. `tls_ca_file` also prefills the
+    interactive wizard's own private-CA prompt when `tls_mode` is
+    prefilled (matching every other `--target-*`/`--tls-mode` prefill's
+    existing "an explicit flag always wins, the step is never shown"
+    behavior)."""
 
     if not non_interactive:
         prefill = _WizardPrefill(
@@ -2389,6 +2638,7 @@ def _run_setup(
             target_origin=target_origin,
             target_identity=target_identity,
             tls_mode=tls_mode,
+            tls_ca_file=tls_ca_file,
             schema_file=schema_file,
             declared_package_version=declared_package_version,
         )
@@ -2406,6 +2656,7 @@ def _run_setup(
         target_origin = wizard_result.target_origin
         target_identity = wizard_result.target_identity
         tls_mode = wizard_result.tls_mode
+        tls_ca_file = wizard_result.tls_ca_file
         schema_file = wizard_result.schema_file
         declared_package_version = wizard_result.declared_package_version
 
@@ -2429,10 +2680,11 @@ def _run_setup(
         declared_package_version=declared_package_version,
         env=env,
     )
+    hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command)
     if as_json:
-        print(json.dumps(_setup_plan_to_dict(plan), indent=2, sort_keys=True), file=out)
+        print(json.dumps(_setup_plan_to_dict(plan, hints), indent=2, sort_keys=True), file=out)
     else:
-        print(_format_setup_human(plan), file=out)
+        print(_format_setup_human(plan, hints), file=out)
     if plan.posture_plan.overall_status in (
         PlanOverallStatus.BLOCKED_INVALID_TARGET,
         PlanOverallStatus.BLOCKED_ANOMALY_DETECTED,
@@ -2606,6 +2858,8 @@ def _run_setup_write_client_config(
     target_origin: str | None,
     target_identity: str | None,
     tls_mode: str | None,
+    tls_ca_file: str | None = None,
+    command: str | None = None,
     plan_digest: str | None,
     confirm: str | None,
     as_json: bool,
@@ -2613,6 +2867,15 @@ def _run_setup_write_client_config(
     out: TextIO,
     in_: TextIO,
 ) -> int:
+    """`tls_ca_file`/`command` are the same purely-informational
+    rendering hints `_run_setup()` accepts (see `_MCPClientHints`) --
+    here they personalize the file actually being written, not just a
+    preview, so getting them right matters even more: an un-overridden
+    `command` still auto-resolves to the real, currently-installed
+    `pfsense-mcp-server` executable (see `_resolve_mcp_client_command()`)
+    rather than writing a placeholder that was never right for a
+    pipx/uv-tool-installed operator to begin with."""
+
     try:
         posture = CapabilityPosture(capability_posture)
         anchor = AnchorAssurance(anchor_assurance)
@@ -2641,13 +2904,15 @@ def _run_setup_write_client_config(
         _print_write_result(result, as_json=as_json, out=out)
         return _CLIENT_CONFIG_WRITE_PLAN_STALE_EXIT_CODE
 
+    hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command)
+    resolved_command, _ = _resolve_mcp_client_command(hints.command_override)
     confirm_token = _resolve_client_config_confirm(confirm, in_=in_)
     result = run_client_config_write_from_environment(
         env,
         client=client,
         config_path_override=config_path,
-        command=_MCP_CLIENT_COMMAND_PLACEHOLDER,
-        env_vars=_mcp_client_env_vars(plan),
+        command=resolved_command,
+        env_vars=_mcp_client_env_vars(plan, hints),
         plan_digest=fresh_digest,
         confirm_token=confirm_token,
     )
@@ -2703,6 +2968,8 @@ def main(argv: list[str] | None = None) -> int:
                 target_origin=args.target_origin,
                 target_identity=args.target_identity,
                 tls_mode=args.tls_mode,
+                tls_ca_file=args.tls_ca_file,
+                command=args.command_override,
                 plan_digest=args.plan_digest,
                 confirm=args.confirm,
                 as_json=args.json,
@@ -2719,6 +2986,8 @@ def main(argv: list[str] | None = None) -> int:
             target_origin=args.target_origin,
             target_identity=args.target_identity,
             tls_mode=args.tls_mode,
+            tls_ca_file=args.tls_ca_file,
+            command=args.command_override,
             schema_file=args.schema_file,
             declared_package_version=args.declared_package_version,
             as_json=args.json,

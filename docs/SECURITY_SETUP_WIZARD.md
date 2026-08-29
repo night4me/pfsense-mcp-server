@@ -49,6 +49,41 @@ pfsense-mcp-security setup --non-interactive \
 Add `--json` to any `setup`/`setup apply` invocation for machine-
 readable output.
 
+### Connection security (TLS) and credentials
+
+The interactive wizard's connection-security question offers three
+choices — `--tls-mode` takes the same three values non-interactively:
+
+- **Verify TLS certificate** (`verify`, the default and recommended
+  choice) — validates the appliance's certificate against your
+  system's normal trust store, exactly like a browser would. Use this
+  if pfSense's certificate was issued by a publicly trusted CA (or one
+  your OS already trusts); nothing extra is needed.
+- **Verify against a private/internal certificate authority**
+  (`verify_private_ca`) — for a self-hosted or LAB pfSense using its
+  own or your organization's internal CA. The wizard asks for the path
+  to that CA's **public certificate only** (never a private key) —
+  export it from pfSense's own Certificate Manager, or ask whoever
+  manages this pfSense's certificates for it. This maps to
+  `PFSENSE_TLS_MODE=auto` plus `PFSENSE_TLS_CA_FILE` pointing at that
+  file.
+- **Skip TLS verification** (`insecure`, advanced, not recommended) —
+  disables certificate verification entirely. Treat it as a short-lived
+  diagnostic step only, never a standing configuration.
+
+Whichever you choose, `setup`'s plan-only output reminds you to
+**export the matching real environment variables in your shell**
+(`PFSENSE_API_URL`, `PFSENSE_IDENTITY`, `PFSENSE_API_KEY_FILE`,
+`PFSENSE_TLS_MODE`, and `PFSENSE_TLS_CA_FILE` if applicable) before
+running `setup apply` — `setup apply` reads your real shell
+environment fresh, the same way the MCP server itself does at startup;
+`setup` itself never reads or writes them. For the credential file
+(`PFSENSE_API_KEY_FILE`): generate an API key in pfSense under the
+REST API package's own user/key management, then save **only the key
+itself** to a private, owner-only file —
+[Installation](INSTALLATION.md#obtain-and-configure-a-credential-safely)
+has the exact `install -m 600` recipe.
+
 ### `setup apply` — actually doing what the plan describes
 
 `setup` only plans; **`setup apply` is the separate, explicit command

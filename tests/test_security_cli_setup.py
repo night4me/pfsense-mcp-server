@@ -21,10 +21,17 @@ from __future__ import annotations
 import io
 import json
 import os
+import sys
+from pathlib import Path
 
 import pytest
 
-from pfsense_mcp.security_cli import main
+from pfsense_mcp.security_cli import (
+    _MCP_CLIENT_CA_FILE_PLACEHOLDER,
+    _MCP_CLIENT_COMMAND_PLACEHOLDER,
+    _resolve_mcp_client_command,
+    main,
+)
 
 
 def _clear_relevant_env(monkeypatch):
@@ -388,8 +395,7 @@ def test_review_back_then_modify_then_regenerate(monkeypatch):
         "Home pfSense",
         "1",  # connection: verify TLS
         "2",  # review: go back -> lands directly on Connection
-        "2",  # connection: advanced connection settings
-        "2",  # skip TLS verification
+        "3",  # connection: skip TLS verification
         "1",  # review: generate plan
     )
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
@@ -456,18 +462,41 @@ def test_declining_https_confirmation_reprompts_for_address(monkeypatch):
 
 
 def test_tls_advanced_path_allows_insecure_and_marks_it_not_recommended(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "2", "1")
+    """The "Skip TLS verification" option is now a direct top-level
+    choice (3), not nested inside a separate "Advanced connection
+    settings" submenu -- redesigned to make the private-CA option a
+    first-class, directly-chosen alternative alongside it (v1.0.0
+    clean-room finding, 2026-08-28)."""
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "3", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "Advanced · Not recommended" in out
     assert "Connection:  Skip TLS verification (not recommended)" in out
 
 
-def test_tls_advanced_path_can_still_choose_verify(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "1", "1")
+def test_connection_menu_offers_a_private_ca_option_directly(monkeypatch):
+    """v1.0.0 clean-room finding (2026-08-28): a real private-CA pfSense
+    LAB target found the wizard had no way to express this at all.
+    Choice 2 selects it directly (not buried in "Advanced"); the
+    CA-file-path sub-prompt is optional (blank = skip)."""
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "/path/to/lab-ca.crt", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
-    assert "Connection:  Verify TLS certificate" in out
+    assert "Connection:  Verify TLS certificate (private/internal certificate authority)" in out
+    assert "PFSENSE_TLS_CA_FILE" in out
+    assert "/path/to/lab-ca.crt" in out
+    assert 'PFSENSE_TLS_MODE="auto"' in out or '"PFSENSE_TLS_MODE": "auto"' in out
+
+
+def test_private_ca_option_ca_file_path_is_optional(monkeypatch):
+    """Leaving the CA-file-path prompt blank is a valid, explicitly
+    supported skip -- the plan is still generated, with a placeholder
+    and guidance shown instead of a personalized path."""
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "", "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
+    assert exit_code == 0
+    assert "Connection:  Verify TLS certificate (private/internal certificate authority)" in out
+    assert _MCP_CLIENT_CA_FILE_PLACEHOLDER in out
 
 
 def test_operator_never_types_verify_or_insecure_literal(monkeypatch):
@@ -487,7 +516,7 @@ def test_review_wording_for_verify_choice_names_a_future_connection(monkeypatch)
 
 
 def test_review_wording_for_insecure_choice_never_claims_verification_is_required(monkeypatch):
-    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "2", "1")
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "3", "1")
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
     assert exit_code == 0
     assert "TLS verification will be skipped when setup connects to pfSense." in out
@@ -612,9 +641,24 @@ def test_review_menu_offers_generate_back_advanced_and_exit_in_order(monkeypatch
 
 
 def test_no_wizard_line_is_unreasonably_wide(monkeypatch):
+    # The Claude Desktop (JSON) / Codex CLI (TOML) config snippets are
+    # exempt: they are meant to be copy-pasted verbatim into a client
+    # config file, so they are never word-wrapped, and they legitimately
+    # embed a real, resolved absolute filesystem path (e.g. the detected
+    # pfsense-mcp-server executable) whose length depends on the host's
+    # own install location -- not something this codebase can bound.
     exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
     assert exit_code == 0
-    for raw_line in out.splitlines():
+    lines = out.splitlines()
+    in_config_snippet = False
+    for raw_line in lines:
+        if raw_line in ("Claude Desktop (JSON):", "Codex CLI / ChatGPT desktop (shared TOML config):"):
+            in_config_snippet = True
+            continue
+        if in_config_snippet:
+            if raw_line == "":
+                in_config_snippet = False
+            continue
         assert len(raw_line) <= 90, f"line too wide for a narrow terminal: {raw_line!r}"
 
 
@@ -1023,6 +1067,24 @@ def test_no_secret_shaped_env_value_ever_appears_in_interactive_wizard_output(mo
     assert "totally-secret-value-should-never-appear" not in out
 
 
+def test_no_secret_shaped_env_value_leaks_through_the_new_private_ca_and_credential_guidance_text(monkeypatch):
+    """The v1.0.0 clean-room finding added static credential-file and
+    private-CA guidance prose to the wizard's completion screen (see
+    _credential_guidance_lines()/_private_ca_guidance_lines()) -- this
+    proves that new prose block, specifically, still never echoes an
+    unrelated secret-shaped environment value."""
+
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "/path/to/lab-ca.crt", "1")
+    _exit_code, out = _run(
+        monkeypatch,
+        ["setup"],
+        stdin_text=answers,
+        env={"PFSENSE_ADMIN_API_KEY": "totally-secret-value-should-never-appear"},
+    )
+    assert "totally-secret-value-should-never-appear" not in out
+    assert "Your pfSense target uses a certificate signed by a private" in out
+
+
 # ===========================================================================
 # Isolation: setup never imports the runtime/MCP application
 # ===========================================================================
@@ -1076,7 +1138,15 @@ def test_mcp_client_config_present_in_json_for_a_safe_to_proceed_read_only_plan(
     payload = json.loads(out)
     snippet = payload["mcp_client_config"]
     assert snippet["mcpServers"]["pfsense"]["env"]["PFSENSE_TLS_MODE"] == "strict"
-    assert snippet["mcpServers"]["pfsense"]["command"].startswith("/absolute/path/to/pfsense-mcp-server")
+    # v1.0.0 clean-room finding (2026-08-28): the command is now resolved
+    # at generation time to the real, currently-installed
+    # pfsense-mcp-server executable (see _resolve_mcp_client_command())
+    # rather than always being the illustrative placeholder -- in this
+    # test's own venv, that means an absolute path ending in the real
+    # entry-point name, not the old hardcoded ".venv/bin/..." literal.
+    assert snippet["mcpServers"]["pfsense"]["command"].endswith("pfsense-mcp-server")
+    assert Path(snippet["mcpServers"]["pfsense"]["command"]).is_absolute()
+    assert payload["mcp_client_command_resolved"] is True
 
 
 def test_mcp_client_config_json_stays_present_but_human_output_omits_it_when_not_safe_to_proceed(monkeypatch):
@@ -1406,3 +1476,68 @@ def test_no_secret_shaped_env_value_ever_appears_in_the_mcp_client_config_toml(m
         env={"PFSENSE_ADMIN_API_KEY": "totally-secret-value-should-never-appear"},
     )
     assert "totally-secret-value-should-never-appear" not in out
+
+
+# ===========================================================================
+# _resolve_mcp_client_command() -- isolated (v1.0.0 clean-room finding:
+# pipx/executable-path coherence)
+# ===========================================================================
+
+
+def test_resolve_command_explicit_override_always_wins(monkeypatch, tmp_path):
+    # Even when a colocated executable genuinely exists, an explicit
+    # --command override must never be second-guessed or re-detected.
+    fake_python = tmp_path / "bin" / "python3"
+    fake_python.parent.mkdir(parents=True)
+    fake_python.touch()
+    (tmp_path / "bin" / "pfsense-mcp-server").touch()
+    monkeypatch.setattr(sys, "executable", str(fake_python))
+    command, resolved = _resolve_mcp_client_command("/opt/custom/pfsense-mcp-server")
+    assert command == "/opt/custom/pfsense-mcp-server"
+    assert resolved is True
+
+
+def test_resolve_command_finds_executable_colocated_with_sys_executable(monkeypatch, tmp_path):
+    fake_python = tmp_path / "bin" / "python3"
+    fake_python.parent.mkdir(parents=True)
+    fake_python.touch()
+    sibling = tmp_path / "bin" / "pfsense-mcp-server"
+    sibling.touch()
+    monkeypatch.setattr(sys, "executable", str(fake_python))
+    command, resolved = _resolve_mcp_client_command(None)
+    assert command == str(sibling)
+    assert resolved is True
+
+
+def test_resolve_command_falls_back_to_which_when_not_colocated(monkeypatch, tmp_path):
+    fake_python = tmp_path / "bin" / "python3"
+    fake_python.parent.mkdir(parents=True)
+    fake_python.touch()
+    monkeypatch.setattr(sys, "executable", str(fake_python))
+    monkeypatch.setattr("pfsense_mcp.security_cli.shutil.which", lambda name: "/usr/local/bin/pfsense-mcp-server")
+    command, resolved = _resolve_mcp_client_command(None)
+    assert command == "/usr/local/bin/pfsense-mcp-server"
+    assert resolved is True
+
+
+def test_resolve_command_falls_back_to_placeholder_when_nothing_found(monkeypatch, tmp_path):
+    fake_python = tmp_path / "bin" / "python3"
+    fake_python.parent.mkdir(parents=True)
+    fake_python.touch()
+    monkeypatch.setattr(sys, "executable", str(fake_python))
+    monkeypatch.setattr("pfsense_mcp.security_cli.shutil.which", lambda name: None)
+    command, resolved = _resolve_mcp_client_command(None)
+    assert command == _MCP_CLIENT_COMMAND_PLACEHOLDER
+    assert resolved is False
+
+
+# ===========================================================================
+# Public-CA (verify) path never emits PFSENSE_TLS_CA_FILE
+# ===========================================================================
+
+
+def test_public_ca_verify_path_never_emits_a_ca_file_env_var(monkeypatch):
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    assert "PFSENSE_TLS_CA_FILE" not in out
+    assert '"PFSENSE_TLS_MODE": "strict"' in out or 'PFSENSE_TLS_MODE="strict"' in out

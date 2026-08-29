@@ -124,6 +124,44 @@ def test_forwards_client_and_config_path_to_orchestration(monkeypatch):
     assert captured["config_path_override"] == "/tmp/does-not-matter.toml"
 
 
+def test_command_override_flag_is_used_verbatim_as_the_written_command(monkeypatch):
+    """--command is a v1.0.0 clean-room-finding addition: it lets an
+    operator supply the exact executable path to write into the client
+    config, bypassing auto-detection (e.g. sys.executable colocation /
+    `which pfsense-mcp-server`) entirely."""
+
+    captured = _canned(monkeypatch, WriteResult(WriteOutcome.INSPECT_CURRENT, "detail"))
+    main([*_BASE_ARGS, "--command", "/opt/custom/bin/pfsense-mcp-server"])
+    assert captured["command"] == "/opt/custom/bin/pfsense-mcp-server"
+
+
+def test_tls_ca_file_flag_is_threaded_into_written_env_vars(monkeypatch):
+    """--tls-ca-file only takes effect when the plan's own --tls-mode is
+    verify_private_ca -- it is purely a presentation hint, never part of
+    SetupPlan/its digest, so passing it alongside verify/insecure must
+    have no effect on the written env vars."""
+
+    captured = _canned(monkeypatch, WriteResult(WriteOutcome.INSPECT_CURRENT, "detail"))
+    main(
+        [
+            *_BASE_ARGS,
+            "--tls-mode",
+            "verify_private_ca",
+            "--tls-ca-file",
+            "/etc/pfsense-mcp/lab-ca.crt",
+        ]
+    )
+    assert captured["env_vars"]["PFSENSE_TLS_CA_FILE"] == "/etc/pfsense-mcp/lab-ca.crt"
+    assert captured["env_vars"]["PFSENSE_TLS_MODE"] == "auto"
+
+
+def test_tls_ca_file_flag_has_no_effect_without_verify_private_ca(monkeypatch):
+    captured = _canned(monkeypatch, WriteResult(WriteOutcome.INSPECT_CURRENT, "detail"))
+    main([*_BASE_ARGS, "--tls-mode", "verify", "--tls-ca-file", "/etc/pfsense-mcp/lab-ca.crt"])
+    assert "PFSENSE_TLS_CA_FILE" not in captured["env_vars"]
+    assert captured["env_vars"]["PFSENSE_TLS_MODE"] == "strict"
+
+
 def test_confirm_dash_reads_token_from_stdin(monkeypatch):
     captured = _canned(monkeypatch, WriteResult(WriteOutcome.WRITE_COMPLETED, "done"))
     monkeypatch.setattr("sys.stdin", io.StringIO("token-from-stdin\n"))
