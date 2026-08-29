@@ -250,8 +250,16 @@ def run_setup_apply_from_environment(
     does posture decide which already-reviewed primitive is composed --
     `read_only` loads pfSense config/credentials before its one live
     GET, with `doctor` checked after (connectivity is the more
-    fundamental fact for a harmless read); `write_protected` checks
-    `doctor` *before* composing `run_bootstrap_from_environment()` for
+    fundamental fact for a harmless read) and, like `write_protected`,
+    only for `anchor=hardware_witness` -- `doctor`'s own checks are
+    exclusively about that optional hardware-witness ceremony, so for
+    `none`/`software` anchors it is never run and `doctor_ready` stays
+    `None` (v1.0.0 clean-room finding, 2026-08-29: a plain read_only
+    apply against `none`/`software` used to run and report `doctor`
+    unconditionally, ending a successful read-only onboarding with an
+    unexplained `Doctor ready: False` that had nothing to do with the
+    posture actually selected); `write_protected` checks `doctor`
+    *before* composing `run_bootstrap_from_environment()` for
     `anchor=hardware_witness` (a missing prerequisite must fail closed
     before a lock/journal-touching call, not after). No step after a
     failure is ever reached."""
@@ -331,22 +339,25 @@ def run_setup_apply_from_environment(
     finally:
         transport.close()
 
-    doctor_result = run_doctor_checks(env)
-    if anchor is AnchorAssurance.HARDWARE_WITNESS and not doctor_result.ready:
-        return ApplyResult(
-            ApplyOutcome.DOCTOR_NOT_READY,
-            "Connectivity verified, but the hardware witness anchor is not ready per `doctor`. Run "
-            "`pfsense-mcp-security doctor` for detail.",
-            plan_digest=fresh_digest,
-            doctor_ready=False,
-        )
+    doctor_ready: bool | None = None
+    if anchor is AnchorAssurance.HARDWARE_WITNESS:
+        doctor_result = run_doctor_checks(env)
+        if not doctor_result.ready:
+            return ApplyResult(
+                ApplyOutcome.DOCTOR_NOT_READY,
+                "Connectivity verified, but the hardware witness anchor is not ready per `doctor`. Run "
+                "`pfsense-mcp-security doctor` for detail.",
+                plan_digest=fresh_digest,
+                doctor_ready=False,
+            )
+        doctor_ready = doctor_result.ready
 
     return ApplyResult(
         ApplyOutcome.APPLY_COMPLETED,
         "Connectivity verified against the configured pfSense target. No pfSense state was changed "
         "(read_only posture performs no provisioning).",
         plan_digest=fresh_digest,
-        doctor_ready=doctor_result.ready,
+        doctor_ready=doctor_ready,
     )
 
 

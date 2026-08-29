@@ -388,9 +388,13 @@ def test_read_only_hardware_witness_valid_token_doctor_not_ready(tmp_path, monke
     assert fake_transport.closed
 
 
-def test_read_only_anchor_none_ignores_doctor_not_ready(tmp_path, monkeypatch):
-    """`anchor=none` never needs witness readiness -- doctor is
-    informational only for that anchor, never blocking."""
+def test_read_only_anchor_none_never_runs_doctor(tmp_path, monkeypatch):
+    """v1.0.0 clean-room finding (2026-08-29): `doctor`'s checks are
+    exclusively about the optional hardware-witness ceremony, so a
+    plain `anchor=none` apply must not run them at all -- `doctor_ready`
+    stays `None` (never printed) rather than reporting an irrelevant
+    `False` that looks like a failure after a successful read-only
+    apply."""
 
     fake_transport = _FakeTransport()
     fake_client = _FakeClient()
@@ -399,10 +403,10 @@ def test_read_only_anchor_none_ignores_doctor_not_ready(tmp_path, monkeypatch):
         lambda config, api_key: (fake_transport, fake_client),
     )
 
-    class _NotReady:
-        ready = False
+    def _fail_if_called(env):
+        raise AssertionError("run_doctor_checks must not be called for anchor=none")
 
-    monkeypatch.setattr("pfsense_mcp.security_setup_apply.run_doctor_checks", lambda env: _NotReady())
+    monkeypatch.setattr("pfsense_mcp.security_setup_apply.run_doctor_checks", _fail_if_called)
 
     env = _base_env(tmp_path, with_pfsense_config=True)
     digest, token = _current_token(tmp_path, env, target_capability_posture="read_only", target_anchor_assurance="none")
@@ -414,7 +418,70 @@ def test_read_only_anchor_none_ignores_doctor_not_ready(tmp_path, monkeypatch):
         confirm_token=token,
     )
     assert result.outcome is ApplyOutcome.APPLY_COMPLETED
-    assert result.doctor_ready is False
+    assert result.doctor_ready is None
+
+
+def test_read_only_anchor_software_never_runs_doctor(tmp_path, monkeypatch):
+    """Same posture-aware behavior for `anchor=software` -- doctor is
+    exclusively about `hardware_witness` readiness."""
+
+    fake_transport = _FakeTransport()
+    fake_client = _FakeClient()
+    monkeypatch.setattr(
+        "pfsense_mcp.security_setup_apply.build_pfsense_client",
+        lambda config, api_key: (fake_transport, fake_client),
+    )
+
+    def _fail_if_called(env):
+        raise AssertionError("run_doctor_checks must not be called for anchor=software")
+
+    monkeypatch.setattr("pfsense_mcp.security_setup_apply.run_doctor_checks", _fail_if_called)
+
+    env = _base_env(tmp_path, with_pfsense_config=True)
+    digest, token = _current_token(
+        tmp_path, env, target_capability_posture="read_only", target_anchor_assurance="software"
+    )
+    result = run_setup_apply_from_environment(
+        env,
+        target_capability_posture="read_only",
+        target_anchor_assurance="software",
+        plan_digest=digest,
+        confirm_token=token,
+    )
+    assert result.outcome is ApplyOutcome.APPLY_COMPLETED
+    assert result.doctor_ready is None
+
+
+def test_read_only_hardware_witness_ready_reports_doctor_ready_true(tmp_path, monkeypatch):
+    """The one case where `doctor_ready` should still be a concrete
+    `True` on a successful read_only apply: `anchor=hardware_witness`
+    with doctor genuinely passing."""
+
+    fake_transport = _FakeTransport()
+    fake_client = _FakeClient()
+    monkeypatch.setattr(
+        "pfsense_mcp.security_setup_apply.build_pfsense_client",
+        lambda config, api_key: (fake_transport, fake_client),
+    )
+
+    class _Ready:
+        ready = True
+
+    monkeypatch.setattr("pfsense_mcp.security_setup_apply.run_doctor_checks", lambda env: _Ready())
+
+    env = _base_env(tmp_path, with_pfsense_config=True)
+    digest, token = _current_token(
+        tmp_path, env, target_capability_posture="read_only", target_anchor_assurance="hardware_witness"
+    )
+    result = run_setup_apply_from_environment(
+        env,
+        target_capability_posture="read_only",
+        target_anchor_assurance="hardware_witness",
+        plan_digest=digest,
+        confirm_token=token,
+    )
+    assert result.outcome is ApplyOutcome.APPLY_COMPLETED
+    assert result.doctor_ready is True
 
 
 # --- happy path --------------------------------------------------------------
