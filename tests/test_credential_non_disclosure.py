@@ -67,10 +67,11 @@ def test_all_read_tools_have_exact_annotations_without_schema_side_effects():
     ToolRegistry(mcp, client, "upstream", AuditorProfile.capabilities).register_all()
     all_tools = asyncio.run(mcp.list_tools())
 
-    # 96 total = 95 pfSense READ tools + 1 guidance tool (pfsense_get_official_guidance,
-    # owner-authorized 2026-08-22) -- this test is specifically about the 95
-    # READ tools' annotation shape; the guidance tool's own annotation shape
-    # is asserted separately in tests/test_official_guidance_tool.py.
+    # 97 total = 95 pfSense READ tools + 2 guidance tools (pfsense_get_official_guidance,
+    # owner-authorized 2026-08-22, and pfsense_get_api_guidance, added
+    # 2026-08-28) -- this test is specifically about the 95 READ tools'
+    # annotation shape; each guidance tool's own annotation shape is
+    # asserted separately in its own test module.
     assert len(all_tools) == 97
     tools = [tool for tool in all_tools if tool.name in KNOWN_READ_TOOL_NAMES]
     assert len(tools) == 95
