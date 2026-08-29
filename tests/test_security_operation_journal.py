@@ -426,3 +426,30 @@ def test_binding_scope_is_closed(secure_dir: Path, changed: dict[str, object]):
     values = {**binding().__dict__, **changed}
     with pytest.raises(OperationJournalError):
         OperationJournal(secure_dir / "journal", KEY).create(OperationBinding(**values), timestamp=T0)
+
+
+def test_binding_scope_accepts_the_readonly_pair_together(secure_dir: Path):
+    """POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29):
+    the closed set this module enforces (`_VALID_ACCOUNT_PROFILE_
+    PAIRS`) now has two members -- confirms the *new* pair, changed
+    together (never account_identity alone, as the parametrized
+    rejection test above already proves for a mismatched half-pair),
+    is accepted. The original write_protected pair's own acceptance
+    behavior is unchanged, covered by every other test in this file
+    that calls `binding()` unmodified."""
+
+    values = {**binding().__dict__, "account_identity": "pfsense-mcp-readonly", "approved_profile": "read_only"}
+    snapshot = OperationJournal(secure_dir / "journal", KEY).create(OperationBinding(**values), timestamp=T0)
+    assert snapshot.latest.binding.account_identity == "pfsense-mcp-readonly"
+    assert snapshot.latest.binding.approved_profile == "read_only"
+
+
+def test_binding_scope_rejects_the_readonly_account_with_the_wrong_profile(secure_dir: Path):
+    """The mirror image of the parametrized `approved_profile="read_only"`
+    case above: pairing the *new* account identity with the wrong
+    profile must still be rejected -- the set is closed over exact
+    pairs, never either field independently."""
+
+    values = {**binding().__dict__, "account_identity": "pfsense-mcp-readonly"}
+    with pytest.raises(OperationJournalError):
+        OperationJournal(secure_dir / "journal", KEY).create(OperationBinding(**values), timestamp=T0)

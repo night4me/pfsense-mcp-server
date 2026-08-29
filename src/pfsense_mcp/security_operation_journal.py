@@ -29,6 +29,20 @@ _MAX_JOURNAL_BYTES = 4 * 1024 * 1024
 _MAX_METADATA_BYTES = 64 * 1024
 _ZERO_MAC = "0" * 64
 
+#: The closed set of (account_identity, approved_profile) pairs this
+#: journal will ever create a record for -- a hardcoded allowlist, not
+#: caller-configurable, exactly like the single-pair check it replaces.
+#: POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29)
+#: added the second pair; the original write_protected pair's own
+#: behavior is unchanged -- it still must match both fields together,
+#: exactly as before.
+_VALID_ACCOUNT_PROFILE_PAIRS = frozenset(
+    {
+        ("pfsense-mcp", "write_protected"),
+        ("pfsense-mcp-readonly", "read_only"),
+    }
+)
+
 
 class OperationJournalError(Exception):
     """Local operation state is unsafe, malformed, or unauthenticated."""
@@ -337,7 +351,7 @@ class OperationJournal:
         _validate_parent(self._path)
         if not all((binding.operation_id, binding.target_identity, binding.target_origin, binding.account_identity)):
             raise OperationJournalError("Operation binding contains an empty identity field")
-        if binding.account_identity != "pfsense-mcp" or binding.approved_profile != "write_protected":
+        if (binding.account_identity, binding.approved_profile) not in _VALID_ACCOUNT_PROFILE_PAIRS:
             raise OperationJournalError("Operation binding is outside the fixed ADR-033 account/profile scope")
         if binding.starting_auth_methods != ("KeyAuth",):
             raise OperationJournalError("Operation binding must start from exact KeyAuth-only state")
