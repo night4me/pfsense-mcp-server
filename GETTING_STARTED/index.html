@@ -4209,8 +4209,16 @@
 <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
 <p>Four steps, in order. Most users only need the first three.</p>
 <h2 id="1-install">1. Install<a class="headerlink" href="#1-install" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="go">pip install pfsense-mcp-server</span>
+<div class="highlight"><pre><span></span><code><span class="go">pipx install pfsense-mcp-server</span>
 </code></pre></div>
+<p><code>pipx</code> installs this project's command-line tools into their own
+isolated environment and puts them on your <code>PATH</code>, without touching
+your system's own Python packages. Don't have <code>pipx</code> yet? <code>sudo apt
+install pipx &amp;&amp; pipx ensurepath</code> on Debian/Ubuntu (reopen your terminal
+afterward); see <a href="../INSTALLATION/">Installation</a> for other platforms,
+the plain virtual-environment alternative, and why a bare <code>pip install</code>
+against your system Python is not recommended (it's refused outright on
+modern Debian/Ubuntu under PEP 668).</p>
 <p>Requires Python 3.11, 3.12, or 3.13, and a pfSense appliance with the
 REST API package (<code>pfrest</code>/<code>pfSense-pkg-RESTAPI</code>, API v2) installed and
 enabled. See <a href="../COMPATIBILITY/">Compatibility</a> for exactly which

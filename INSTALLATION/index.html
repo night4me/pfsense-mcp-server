@@ -461,6 +461,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install from PyPI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recommended-pipx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended: pipx
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-virtual-environment-pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: virtual environment + pip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-uv-tool-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: uv tool install
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifying-what-you-installed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying what you installed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4201,6 +4251,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install from PyPI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recommended-pipx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended: pipx
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-virtual-environment-pip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: virtual environment + pip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-uv-tool-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: uv tool install
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verifying-what-you-installed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying what you installed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4339,28 +4439,65 @@ section instead — this page explains the same steps in more depth.</p>
   automates exactly that.</li>
 </ul>
 <h2 id="install-from-pypi">Install from PyPI<a class="headerlink" href="#install-from-pypi" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="go">python -m venv .venv</span>
-<span class="go">.venv/bin/python -m pip install --upgrade pip</span>
-<span class="go">.venv/bin/python -m pip install pfsense-mcp-server==0.9.0</span>
+<p>Every method below installs <code>pfsense-mcp-server</code> into its own isolated
+environment rather than your system's shared Python packages — this
+matters concretely on modern Debian/Ubuntu (23.04+, including 24.04
+LTS): the system Python is "externally managed"
+(<a href="https://peps.python.org/pep-0668/">PEP 668</a>), so a plain <code>pip install
+pfsense-mcp-server</code> run against it is refused outright. Passing
+<code>--break-system-packages</code> to force it, or using <code>sudo pip install</code>, are
+both deliberately <strong>not</strong> recommended here — either risks conflicting
+with a package your OS itself depends on. Isolation also keeps this
+project's own dependency floors from interacting with anything else on
+your machine, regardless of platform.</p>
+<h3 id="recommended-pipx">Recommended: <code>pipx</code><a class="headerlink" href="#recommended-pipx" title="Permanent link">&para;</a></h3>
+<p><a href="https://pipx.pypa.io/"><code>pipx</code></a> is the standard, PyPA-recommended way to
+install a Python command-line application: it creates a dedicated
+environment for it automatically and puts its entry-point commands on
+your <code>PATH</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="go">sudo apt install pipx      # Debian/Ubuntu; see pipx&#39;s own docs for other platforms</span>
+<span class="go">pipx ensurepath             # adds pipx&#39;s bin directory to PATH -- reopen your terminal after</span>
+<span class="go">pipx install pfsense-mcp-server==0.9.0</span>
 </code></pre></div>
 <p>Pinning the exact version (<code>==0.9.0</code>) is recommended for anything other
 than a quick local trial — this project follows semantic versioning, so
 a pin protects you from an unreviewed minor/major upgrade landing in
 your MCP client's own environment. To always take the latest release
-instead, drop the pin:</p>
+instead, drop the pin (<code>pipx install pfsense-mcp-server</code>).</p>
+<p>This installs the <code>pfsense-mcp-server</code> and <code>pfsense-mcp-security</code>
+commands to <code>~/.local/bin/</code> (pipx's default location) — use
+<code>~/.local/bin/pfsense-mcp-server</code> as the absolute command path in your
+MCP client's configuration (see
+<a href="../MCP_CLIENT_CONFIGURATION/">Connect your MCP client</a>), or confirm the
+exact path yourself with <code>pipx list</code> or <code>which pfsense-mcp-server</code>.</p>
+<h3 id="alternative-virtual-environment-pip">Alternative: virtual environment + <code>pip</code><a class="headerlink" href="#alternative-virtual-environment-pip" title="Permanent link">&para;</a></h3>
+<p>If you'd rather manage a project-local virtual environment directly —
+for example, to keep it alongside other tooling in a specific
+directory, or on a platform where <code>pipx</code> isn't packaged:</p>
+<div class="highlight"><pre><span></span><code><span class="go">python -m venv .venv</span>
+<span class="go">.venv/bin/python -m pip install --upgrade pip</span>
+<span class="go">.venv/bin/python -m pip install pfsense-mcp-server==0.9.0</span>
+</code></pre></div>
+<p>To always take the latest release instead of a pinned version:</p>
 <div class="highlight"><pre><span></span><code><span class="go">.venv/bin/python -m pip install --upgrade pfsense-mcp-server</span>
 </code></pre></div>
+<p>This gives you one unambiguous path
+(<code>.venv/bin/pfsense-mcp-server</code>) to put in an MCP client's launch
+configuration — an absolute path to wherever you created <code>.venv</code>.</p>
+<h3 id="alternative-uv-tool-install">Alternative: <code>uv tool install</code><a class="headerlink" href="#alternative-uv-tool-install" title="Permanent link">&para;</a></h3>
+<p>If you already use <a href="https://docs.astral.sh/uv/"><code>uv</code></a>, it offers the
+same isolation as <code>pipx</code>, generally installing faster:</p>
+<div class="highlight"><pre><span></span><code><span class="go">uv tool install pfsense-mcp-server==0.9.0</span>
+</code></pre></div>
+<p><code>uv</code> installs to the same <code>~/.local/bin/</code> location <code>pipx</code> does by
+default.</p>
+<h3 id="verifying-what-you-installed">Verifying what you installed<a class="headerlink" href="#verifying-what-you-installed" title="Permanent link">&para;</a></h3>
 <p><code>pfsense-mcp-server</code> is published with
 <a href="https://peps.python.org/pep-0740/">PEP 740</a> digital attestations,
 verifiable back to this repository and the exact release commit that
 built them — there is no long-lived PyPI upload token involved in
-publishing it.</p>
-<p>A dedicated virtual environment (as shown above), rather than a
-system-wide or user-wide install, is recommended: it keeps this
-project's own dependency floors from interacting with anything else on
-your machine, and gives you one unambiguous path
-(<code>.venv/bin/pfsense-mcp-server</code>) to put in an MCP client's launch
-configuration.</p>
+publishing it. This applies no matter which method above you used, since
+all three ultimately fetch the same signed artifact from PyPI.</p>
 <h2 id="obtain-and-configure-a-credential-safely">Obtain and configure a credential safely<a class="headerlink" href="#obtain-and-configure-a-credential-safely" title="Permanent link">&para;</a></h2>
 <ol>
 <li>In pfSense, under the REST API package's own user/key management,
@@ -4405,8 +4542,11 @@ MCP client at it:</p>
 <span class="go">PFSENSE_IDENTITY=api-mcp-admin \</span>
 <span class="go">PFSENSE_API_KEY_FILE=/absolute/private/path/pfsense-api.key \</span>
 <span class="go">PFSENSE_TLS_MODE=strict \</span>
-<span class="go">.venv/bin/pfsense-mcp-server</span>
+<span class="go">pfsense-mcp-server</span>
 </code></pre></div>
+<p>(<code>pipx</code>/<code>uv tool install</code> put <code>pfsense-mcp-server</code> directly on your
+<code>PATH</code>; if you used the venv + <code>pip</code> alternative, run
+<code>.venv/bin/pfsense-mcp-server</code> instead.)</p>
 <p>A correctly configured server waits silently on stdin for MCP protocol
 messages — it does not print a banner. <code>Ctrl-C</code> to stop it. If
 configuration is invalid, it prints a <code>configuration error</code> naming the
@@ -4428,20 +4568,26 @@ version is this appliance running?"</em> — see the
 <a href="https://github.com/night4me/pfsense-mcp-server#what-it-does">README's example prompts</a>
 for more.</p>
 <h2 id="upgrading">Upgrading<a class="headerlink" href="#upgrading" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="go">.venv/bin/python -m pip install --upgrade pfsense-mcp-server</span>
+<div class="highlight"><pre><span></span><code><span class="go">pipx upgrade pfsense-mcp-server</span>
 </code></pre></div>
+<p>Used the venv + <code>pip</code> alternative instead?
+<code>.venv/bin/python -m pip install --upgrade pfsense-mcp-server</code>. Used
+<code>uv tool install</code>? <code>uv tool upgrade pfsense-mcp-server</code>.</p>
 <p>Check <code>CHANGELOG.md</code> for the exact delta between your installed
 version and the new one before upgrading anything you depend on —
 every release states plainly whether the public MCP tool contract
 changed. Restart your MCP client (or the server process, if launched
 directly) after upgrading for the new version to take effect.</p>
 <h2 id="uninstalling">Uninstalling<a class="headerlink" href="#uninstalling" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="go">.venv/bin/python -m pip uninstall pfsense-mcp-server</span>
+<div class="highlight"><pre><span></span><code><span class="go">pipx uninstall pfsense-mcp-server</span>
 </code></pre></div>
-<p>Then remove the virtual environment directory and the MCP client
-configuration entry that launched it. This project never writes
-outside its own virtual environment, your explicitly-configured
-credential file path, and (only if you explicitly use
+<p>Used the venv + <code>pip</code> alternative instead? Remove the virtual
+environment directory (no separate uninstall command is needed). Used
+<code>uv tool install</code>? <code>uv tool uninstall pfsense-mcp-server</code>. In every
+case, also remove the MCP client configuration entry that launched it.
+This project never writes outside its own installed environment, your
+explicitly-configured credential file path, and (only if you explicitly
+use
 <a href="../SECURITY_SETUP_WIZARD/#mcp-client-config-generation"><code>setup write-client-config</code></a>)
 the one MCP client configuration file you point it at — there is no
 other local state to clean up.</p>
