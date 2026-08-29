@@ -504,6 +504,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#one-time-local-confirmation-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One-time local confirmation key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#setup-apply-actually-doing-what-the-plan-describes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4261,6 +4272,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#one-time-local-confirmation-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One-time local confirmation key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#setup-apply-actually-doing-what-the-plan-describes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4479,6 +4501,25 @@ REST API package's own user/key management, then save <strong>only the key
 itself</strong> to a private, owner-only file —
 <a href="../INSTALLATION/#obtain-and-configure-a-credential-safely">Installation</a>
 has the exact <code>install -m 600</code> recipe.</p>
+<h3 id="one-time-local-confirmation-key">One-time local confirmation key<a class="headerlink" href="#one-time-local-confirmation-key" title="Permanent link">&para;</a></h3>
+<p><code>setup apply</code> and <code>setup write-client-config</code> also both require
+<code>PFSENSE_SETUP_CONFIRM_KEY_FILE</code> — a <strong>purely local</strong> secret, unrelated
+to pfSense: it is never sent to pfSense, is not a pfSense credential,
+and never appears in any generated MCP client configuration. It exists
+only so this tool can tell a plan you actually reviewed apart from a
+stale, copy-pasted, or cross-target/cross-posture command — a
+lightweight anti-footgun check, not an authentication mechanism.</p>
+<p>If you don't already have one, create it once:</p>
+<div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup init-confirm-key</span>
+</code></pre></div>
+<p>This writes a fresh, cryptographically random key to a safe default
+path under <code>~/.local/state/pfsense-mcp-server/</code> (owner-only
+permissions, refuses to follow a symlink or overwrite an existing key)
+and prints the exact <code>export PFSENSE_SETUP_CONFIRM_KEY_FILE=...</code> line
+to use. Running it again later is safe — an existing key is always
+left untouched, never rotated: rotating it would invalidate any
+<code>--confirm</code> token you haven't redeemed yet. Pass <code>--path</code> to use a
+different location instead of the default.</p>
 <h3 id="setup-apply-actually-doing-what-the-plan-describes"><code>setup apply</code> — actually doing what the plan describes<a class="headerlink" href="#setup-apply-actually-doing-what-the-plan-describes" title="Permanent link">&para;</a></h3>
 <p><code>setup</code> only plans; <strong><code>setup apply</code> is the separate, explicit command
 that acts on a plan you've already reviewed</strong>:</p>
@@ -4591,6 +4632,10 @@ against; see
 <td>Never — plan-only.</td>
 </tr>
 <tr>
+<td><code>setup init-confirm-key</code></td>
+<td>Never touches pfSense; may create one local key file (never overwrites an existing one).</td>
+</tr>
+<tr>
 <td><code>setup apply</code> (no <code>--confirm</code>, or stale plan)</td>
 <td>Never — inspection only.</td>
 </tr>
@@ -4632,16 +4677,21 @@ mutates on its very first invocation.</p>
 <span class="go">pfsense-mcp-security setup --non-interactive \</span>
 <span class="go">  --capability-posture read_only --anchor-assurance none --json</span>
 
-<span class="gp"># </span><span class="m">2</span>.<span class="w"> </span>Apply<span class="w"> </span>it<span class="w"> </span><span class="o">(</span>first<span class="w"> </span>call<span class="w"> </span>inspects,<span class="w"> </span>prints<span class="w"> </span>a<span class="w"> </span>confirmation<span class="w"> </span>token<span class="o">)</span>.
+<span class="gp"># </span><span class="m">2</span>.<span class="w"> </span>One-time<span class="w"> </span>only:<span class="w"> </span>provision<span class="w"> </span>the<span class="w"> </span><span class="nb">local</span><span class="w"> </span>confirmation<span class="w"> </span>key<span class="w"> </span>setup<span class="w"> </span>apply
+<span class="gp">#    </span>and<span class="w"> </span>setup<span class="w"> </span>write-client-config<span class="w"> </span>both<span class="w"> </span>need<span class="w"> </span><span class="o">(</span>see<span class="w"> </span>the<span class="w"> </span><span class="s2">&quot;One-time local</span>
+<span class="gp">#    </span><span class="s2">confirmation key&quot;</span><span class="w"> </span>section<span class="w"> </span>above<span class="o">)</span>.<span class="w"> </span>Skip<span class="w"> </span><span class="k">if</span><span class="w"> </span>you<span class="w"> </span>already<span class="w"> </span>have<span class="w"> </span>one.
+<span class="go">pfsense-mcp-security setup init-confirm-key</span>
+
+<span class="gp"># </span><span class="m">3</span>.<span class="w"> </span>Apply<span class="w"> </span>it<span class="w"> </span><span class="o">(</span>first<span class="w"> </span>call<span class="w"> </span>inspects,<span class="w"> </span>prints<span class="w"> </span>a<span class="w"> </span>confirmation<span class="w"> </span>token<span class="o">)</span>.
 <span class="go">pfsense-mcp-security setup apply \</span>
 <span class="go">  --capability-posture read_only --anchor-assurance none</span>
 
-<span class="gp"># </span><span class="m">3</span>.<span class="w"> </span>Re-run<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>printed<span class="w"> </span>token<span class="w"> </span>to<span class="w"> </span>actually<span class="w"> </span>verify<span class="w"> </span>connectivity.
+<span class="gp"># </span><span class="m">4</span>.<span class="w"> </span>Re-run<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>printed<span class="w"> </span>token<span class="w"> </span>to<span class="w"> </span>actually<span class="w"> </span>verify<span class="w"> </span>connectivity.
 <span class="go">pfsense-mcp-security setup apply \</span>
 <span class="go">  --capability-posture read_only --anchor-assurance none \</span>
 <span class="go">  --confirm &lt;TOKEN&gt;</span>
 
-<span class="gp"># </span><span class="m">4</span>.<span class="w"> </span>Generate<span class="w"> </span>your<span class="w"> </span>MCP<span class="w"> </span>client<span class="w"> </span>configuration<span class="w"> </span><span class="o">(</span>inspects<span class="w"> </span>first,<span class="w"> </span>prints<span class="w"> </span>a<span class="w"> </span>token<span class="o">)</span>.
+<span class="gp"># </span><span class="m">5</span>.<span class="w"> </span>Generate<span class="w"> </span>your<span class="w"> </span>MCP<span class="w"> </span>client<span class="w"> </span>configuration<span class="w"> </span><span class="o">(</span>inspects<span class="w"> </span>first,<span class="w"> </span>prints<span class="w"> </span>a<span class="w"> </span>token<span class="o">)</span>.
 <span class="go">pfsense-mcp-security setup write-client-config \</span>
 <span class="go">  --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \</span>
 <span class="go">  --capability-posture read_only --anchor-assurance none</span>
