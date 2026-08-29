@@ -131,6 +131,7 @@ from .security_bootstrap_orchestration import (
     BootstrapOrchestrationOutcome,
     BootstrapOrchestrationResult,
     run_bootstrap_from_environment,
+    run_readonly_bootstrap_from_environment,
 )
 from .security_client_config_write import WriteOutcome, WriteResult, run_client_config_write_from_environment
 from .security_discovery import (
@@ -855,8 +856,9 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
         description=(
             "Journal-aware, locking, deterministic orchestration of the already-implemented ADR-033 "
-            "security-bootstrap stack: creates or additively syncs the one fixed, least-privilege "
-            "pfsense-mcp service account against the target configured entirely through environment "
+            "security-bootstrap stack: creates or additively syncs one fixed, least-privilege service "
+            "account -- 'pfsense-mcp' (write_protected, default) or 'pfsense-mcp-readonly' (read_only, "
+            "via --target-profile) -- against the target configured entirely through environment "
             "variables (the same PFSENSE_*/PFSENSE_ADMIN_* variables build_admin_context() already "
             "validates -- no separate flags exist for target/credentials). May provision real security "
             "prerequisites when run against a real appliance -- verified offline (synthetic/fake HTTP "
@@ -903,6 +905,19 @@ def _build_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+    bootstrap_parser.add_argument(
+        "--target-profile",
+        choices=["write_protected", "read_only"],
+        default="write_protected",
+        help=(
+            "Which fixed, least-privilege service account to provision/verify: 'write_protected' (default, "
+            "the 'pfsense-mcp' account) or 'read_only' (POST-v1.0 addition, the dedicated 'pfsense-mcp-readonly' "
+            "account holding only the 94 READ privileges -- never the WRITE-exclusive one). Each profile has "
+            "its own entirely separate journal/lock/custody state; running one never touches the other's. "
+            "'read_only' writes its newly-provisioned key to PFSENSE_READONLY_SERVICE_API_KEY_FILE, never "
+            "PFSENSE_SERVICE_API_KEY_FILE."
+        ),
     )
 
     recover_parser = subparsers.add_parser(
@@ -1421,8 +1436,14 @@ def _run_doctor(*, as_json: bool, env: dict[str, str] | None, out: TextIO) -> in
     return 0 if result.ready else _DOCTOR_NOT_READY_EXIT_CODE
 
 
-def _run_bootstrap(*, as_json: bool, env: dict[str, str] | None, out: TextIO) -> int:
-    result = run_bootstrap_from_environment(env)
+def _run_bootstrap(
+    *, as_json: bool, env: dict[str, str] | None, out: TextIO, target_profile: str = "write_protected"
+) -> int:
+    result = (
+        run_readonly_bootstrap_from_environment(env)
+        if target_profile == "read_only"
+        else run_bootstrap_from_environment(env)
+    )
     if as_json:
         print(json.dumps(_bootstrap_result_to_dict(result), indent=2, sort_keys=True), file=out)
     else:
@@ -1828,6 +1849,13 @@ def _credential_guidance_lines() -> tuple[str, ...]:
             "even though no WRITE tool is registered here. For the strongest boundary, scope this "
             "key to the READ privilege set docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md documents rather "
             "than reusing an administrator account."
+        ),
+        "",
+        _wrap(
+            "Prefer not to scope a key yourself? `pfsense-mcp-security bootstrap --target-profile "
+            "read_only` provisions a dedicated, least-privilege pfSense identity for you -- entirely "
+            "separate from write_protected's own account -- and reports the exact READ-only key file "
+            "to point PFSENSE_API_KEY_FILE at above."
         ),
     )
 
@@ -3130,7 +3158,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "doctor":
         return _run_doctor(as_json=args.json, env=None, out=sys.stdout)
     if args.command == "bootstrap":
-        return _run_bootstrap(as_json=args.json, env=None, out=sys.stdout)
+        return _run_bootstrap(as_json=args.json, env=None, out=sys.stdout, target_profile=args.target_profile)
     if args.command == "recover":
         if args.confirm is not None and args.execute is None:
             parser.error("--confirm requires --execute")

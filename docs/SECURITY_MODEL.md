@@ -177,21 +177,36 @@ derives from source (currently 94 READ privileges, one per READ tool,
 plus the one WRITE-exclusive privilege `set_firewall_alias_description_v1`
 needs -- 95 combined; see
 [the least-privilege matrix](PFSENSE_LEAST_PRIVILEGE_MATRIX.md)).
-For the default `read_only`/`auditor` posture, **no dedicated identity
-is ever provisioned**: `setup apply` performs one harmless `GET`
-against whatever bring-your-own-key credential the operator already
-configured, and never inspects that credential's own pfSense privilege
-scope beyond confirming it can authenticate. If that key happens to
-hold pfSense administrator or WRITE privileges, a request that bypasses
-this MCP server entirely -- a leaked key used directly against
-`pfREST`, or a misrouted call -- can still mutate pfSense state;
-nothing in the `read_only` posture prevents that at the pfSense
-authorization layer. Operators who want the stronger, credential-layer
-guarantee should provision (or ask a pfSense administrator to
-provision) an API identity scoped to exactly the READ privilege set the
-least-privilege matrix documents, and use that identity's key for
-`read_only` -- this project does not currently do this for the operator
-automatically.
+By default, `setup apply` for `read_only` performs one harmless `GET`
+against whatever bring-your-own-key (BYOK) credential the operator
+already configured, and never inspects that credential's own pfSense
+privilege scope beyond confirming it can authenticate. If that key
+happens to hold pfSense administrator or WRITE privileges, a request
+that bypasses this MCP server entirely -- a leaked key used directly
+against `pfREST`, or a misrouted call -- can still mutate pfSense
+state; nothing in the `read_only` posture's BYOK path prevents that at
+the pfSense authorization layer.
+
+**POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29)**
+closed this gap for operators who want the stronger, credential-layer
+guarantee: `pfsense-mcp-security bootstrap --target-profile read_only`
+provisions (or verifies/repairs) a **second, entirely separate**
+dedicated pfSense identity -- `pfsense-mcp-readonly`, distinct from
+`write_protected`'s own `pfsense-mcp` account -- holding exactly the
+94 READ privileges the least-privilege matrix documents and nothing
+else (never `page-all`, never the WRITE-exclusive privilege). The two
+ceremonies use separate journals, locks, and custody files by
+construction, so provisioning one can never disturb the other. This is
+reachable today as a standalone command (mirroring how `write_protected`'s
+own `bootstrap` predated its later `setup apply` integration); the
+interactive `setup` wizard does not yet offer this choice, so an
+operator who only runs bare `setup`/`setup apply` still gets the BYOK
+path described above by default. See
+[the least-privilege matrix](PFSENSE_LEAST_PRIVILEGE_MATRIX.md#managed-read-only-service-account-pfsense-mcp-readonly)
+for the full detail. Whether provisioned or BYOK, operators can
+alternatively provision (or ask a pfSense administrator to provision)
+an API identity scoped to exactly the READ privilege set themselves
+and use that identity's key for `read_only`.
 
 HTTP redirects are not followed and every non-2xx status is rejected. Timeout,
 connection, TLS, protocol, and other HTTP transport failures are normalized to

@@ -49,8 +49,14 @@ ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_bootstrap_orchestra
 CONFIRMATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_recovery_confirmation.py"
 RECOVERY_ORCHESTRATION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_recovery_orchestration.py"
 SETUP_APPLY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_setup_apply.py"
+#: POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29):
+#: the read_only-profile counterparts of COMPOSITION_MODULE_PATH/
+#: RECOVERY_MODULE_PATH, subject to the identical isolation discipline
+#: -- only ORCHESTRATION_MODULE_PATH may import from them.
+READONLY_COMPOSITION_MODULE_PATH = ROOT / "src/pfsense_mcp/security_readonly_admin_composition.py"
+READONLY_RECOVERY_MODULE_PATH = ROOT / "src/pfsense_mcp/security_readonly_bootstrap_recovery.py"
 
-# The five lower-level module names security_cli.py (and every other
+# The seven lower-level module names security_cli.py (and every other
 # runtime entry point / tool) must never reference directly -- only
 # ORCHESTRATION_MODULE_PATH itself may import from them.
 _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES = (
@@ -60,6 +66,8 @@ _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES = (
     "security_auth_transition",
     "security_admin_composition",
     "security_recovery_confirmation",
+    "security_readonly_admin_composition",
+    "security_readonly_bootstrap_recovery",
 )
 
 _RUNTIME_ENTRY_POINTS = (
@@ -128,12 +136,29 @@ _TRANSITION_EXPECTED_PUBLIC_SURFACE = {
     "AuthMethodTransitionCoordinator",
 }
 
+_READONLY_COMPOSITION_EXPECTED_PUBLIC_SURFACE = {
+    "build_readonly_admin_context",
+    "load_readonly_admin_composition_config",
+}
+
+_READONLY_RECOVERY_EXPECTED_PUBLIC_SURFACE = {
+    "READONLY_RECOVERY_USERNAME",
+    "READONLY_RECOVERY_USER_DESCRIPTION",
+    "READONLY_RECOVERY_KEY_DESCRIPTION",
+    "ReadonlyRecoveryDeletionEvidence",
+    "revoke_failed_readonly_bootstrap_api_key",
+    "delete_dedicated_readonly_recovery_user",
+    "identify_orphan_readonly_api_key_candidate",
+    "identify_dedicated_readonly_recovery_user_candidate",
+}
+
 _ORCHESTRATION_EXPECTED_PUBLIC_SURFACE = {
     "BootstrapOrchestrationError",
     "BootstrapOrchestrationOutcome",
     "BootstrapOrchestrationResult",
     "run_bootstrap",
     "run_bootstrap_from_environment",
+    "run_readonly_bootstrap_from_environment",
     #: Builds a fresh, live-evidence-only AuthoritativeRestartObservation
     #: -- read-only, never a mutation. run_bootstrap_from_environment()
     #: calls this itself when a local journal already exists and no
@@ -193,6 +218,59 @@ def test_both_modules_exist():
     assert COMPOSITION_MODULE_PATH.is_file()
     assert CONFIRMATION_MODULE_PATH.is_file()
     assert RECOVERY_ORCHESTRATION_MODULE_PATH.is_file()
+    assert READONLY_COMPOSITION_MODULE_PATH.is_file()
+    assert READONLY_RECOVERY_MODULE_PATH.is_file()
+
+
+# --- POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH: the read_only-profile
+# counterparts of the composition/recovery isolation tests above ---------
+
+
+def test_readonly_composition_public_surface_is_exactly_the_reviewed_api():
+    assert _public_surface(READONLY_COMPOSITION_MODULE_PATH) == _READONLY_COMPOSITION_EXPECTED_PUBLIC_SURFACE
+
+
+def test_readonly_recovery_public_surface_is_exactly_the_reviewed_api():
+    assert _public_surface(READONLY_RECOVERY_MODULE_PATH) == _READONLY_RECOVERY_EXPECTED_PUBLIC_SURFACE
+
+
+def test_readonly_composition_does_not_register_commands_or_call_transport_directly():
+    source = READONLY_COMPOSITION_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+    assert "@app.command" not in source
+    assert "add_parser(" not in source
+    assert "mcp.tool" not in source
+    assert "FastMCP" not in source
+
+
+def test_readonly_recovery_never_calls_transport_request_or_bootstrap_engine():
+    source = READONLY_RECOVERY_MODULE_PATH.read_text(encoding="utf-8")
+    assert ".request(" not in source
+    assert "security_bootstrap_engine" not in source
+    assert "provision_service_account" not in source
+
+
+def test_neither_readonly_module_is_in_the_tier1_isolation_exemption_list():
+    isolation_test_path = ROOT / "tests/tier1/test_isolation.py"
+    source = isolation_test_path.read_text(encoding="utf-8")
+    assert "security_readonly_admin_composition.py" not in source
+    assert "security_readonly_bootstrap_recovery.py" not in source
+
+
+def test_readonly_recovery_uses_a_distinct_fixed_username_from_write_protected():
+    """The single most important property of the "duplicate rather than
+    parametrize" design decision (see security_readonly_admin_
+    composition.py's own module docstring): the two ceremonies' fixed
+    account identities must never collide, or a bug could let one
+    ceremony's orphan-detection/deletion logic match the other's
+    account."""
+
+    from pfsense_mcp.security_bootstrap_recovery import RECOVERY_USERNAME
+    from pfsense_mcp.security_readonly_bootstrap_recovery import READONLY_RECOVERY_USERNAME
+
+    assert RECOVERY_USERNAME != READONLY_RECOVERY_USERNAME
+    assert RECOVERY_USERNAME == "pfsense-mcp"
+    assert READONLY_RECOVERY_USERNAME == "pfsense-mcp-readonly"
 
 
 def test_neither_module_imports_pfsense_mcp_tier1_or_a_raw_http_library():
@@ -212,36 +290,32 @@ def test_no_shipped_runtime_entry_point_references_the_bootstrap_engine_or_clien
     no tool-registry reference. This is the mechanical proof that the
     only way to reach `provision_service_account()` in this build is a
     direct Python import (a test, or a future, separately-authorized
-    phase)."""
+    phase). Iterates `_FORBIDDEN_LOWER_LEVEL_MODULE_NAMES` (rather than
+    a hand-repeated list of asserts) so the two read_only-profile
+    modules added by the POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH
+    mission are covered automatically, with no separate assertion to
+    remember to add."""
 
     for entry_point in _RUNTIME_ENTRY_POINTS:
         source = entry_point.read_text(encoding="utf-8")
-        assert "security_bootstrap_engine" not in source, f"{entry_point.name} references security_bootstrap_engine"
-        assert "security_bootstrap_client" not in source, f"{entry_point.name} references security_bootstrap_client"
-        assert "security_bootstrap_recovery" not in source, f"{entry_point.name} references security_bootstrap_recovery"
-        assert "security_auth_transition" not in source, f"{entry_point.name} references security_auth_transition"
-        assert "security_recovery_confirmation" not in source, (
-            f"{entry_point.name} references security_recovery_confirmation"
-        )
-        assert "security_admin_composition" not in source, f"{entry_point.name} references security_admin_composition"
+        for name in _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES:
+            assert name not in source, f"{entry_point.name} references {name}"
 
 
 def test_no_tool_under_tools_read_references_the_bootstrap_engine_or_client():
     tools_dir = ROOT / "src/pfsense_mcp/tools"
     for path in sorted(tools_dir.rglob("*.py")):
         source = path.read_text(encoding="utf-8")
-        assert "security_bootstrap_engine" not in source, f"{path} references security_bootstrap_engine"
-        assert "security_bootstrap_client" not in source, f"{path} references security_bootstrap_client"
-        assert "security_bootstrap_recovery" not in source, f"{path} references security_bootstrap_recovery"
-        assert "security_auth_transition" not in source, f"{path} references security_auth_transition"
-        assert "security_admin_composition" not in source, f"{path} references security_admin_composition"
-        assert "security_recovery_confirmation" not in source, f"{path} references security_recovery_confirmation"
+        for name in _FORBIDDEN_LOWER_LEVEL_MODULE_NAMES:
+            assert name not in source, f"{path} references {name}"
 
 
 def test_composition_is_absent_from_all_runtime_cli_doctor_and_tool_imports():
     searched = [*_RUNTIME_ENTRY_POINTS, *sorted((ROOT / "src/pfsense_mcp/tools").rglob("*.py"))]
     for path in searched:
-        assert "security_admin_composition" not in path.read_text(encoding="utf-8"), path
+        source = path.read_text(encoding="utf-8")
+        assert "security_admin_composition" not in source, path
+        assert "security_readonly_admin_composition" not in source, path
 
 
 def test_composition_does_not_register_commands_or_call_transport_directly():
@@ -416,6 +490,7 @@ def test_orchestration_module_itself_reaches_the_lower_level_stack():
     assert "security_admin_composition" in imported
     assert "security_bootstrap_engine" in imported
     assert "security_operation_journal" in imported
+    assert "security_readonly_admin_composition" in imported
 
 
 def test_basic_auth_transport_remains_unwired_from_orchestration_module():

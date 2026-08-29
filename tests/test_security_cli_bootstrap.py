@@ -40,6 +40,56 @@ def _canned(monkeypatch, result: BootstrapOrchestrationResult) -> None:
     monkeypatch.setattr(security_cli, "run_bootstrap_from_environment", lambda env: result)
 
 
+def test_default_target_profile_calls_write_protected_orchestration_only(capsys, monkeypatch):
+    """POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29):
+    omitting --target-profile must reach exactly the same function this
+    file's other, pre-existing tests already exercise -- proving the
+    new flag's default preserves 100% of existing behavior."""
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        security_cli,
+        "run_bootstrap_from_environment",
+        lambda env: (
+            calls.append("write_protected")
+            or BootstrapOrchestrationResult(BootstrapOrchestrationOutcome.COMPLETED, "synced", operation_id="op-1")
+        ),
+    )
+    monkeypatch.setattr(
+        security_cli,
+        "run_readonly_bootstrap_from_environment",
+        lambda env: (_ for _ in ()).throw(AssertionError("must not be called for the default target-profile")),
+    )
+    exit_code = main(["bootstrap"])
+    assert exit_code == 0
+    assert calls == ["write_protected"]
+
+
+def test_target_profile_read_only_calls_readonly_orchestration_only(capsys, monkeypatch):
+    calls: list[str] = []
+    monkeypatch.setattr(
+        security_cli,
+        "run_bootstrap_from_environment",
+        lambda env: (_ for _ in ()).throw(AssertionError("must not be called for --target-profile read_only")),
+    )
+    monkeypatch.setattr(
+        security_cli,
+        "run_readonly_bootstrap_from_environment",
+        lambda env: (
+            calls.append("read_only")
+            or BootstrapOrchestrationResult(BootstrapOrchestrationOutcome.COMPLETED, "synced", operation_id="op-1")
+        ),
+    )
+    exit_code = main(["bootstrap", "--target-profile", "read_only"])
+    assert exit_code == 0
+    assert calls == ["read_only"]
+
+
+def test_target_profile_rejects_unknown_value():
+    with pytest.raises(SystemExit):
+        main(["bootstrap", "--target-profile", "admin"])
+
+
 def test_bootstrap_success_human_output_exit_zero(capsys, monkeypatch):
     _canned(
         monkeypatch,

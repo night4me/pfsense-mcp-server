@@ -124,6 +124,7 @@ from .security_operation_journal import (
     RestartClassification,
     RestartDecision,
 )
+from .security_readonly_admin_composition import build_readonly_admin_context
 
 __all__ = [
     "BootstrapOrchestrationError",
@@ -132,6 +133,7 @@ __all__ = [
     "build_authoritative_restart_observation",
     "run_bootstrap",
     "run_bootstrap_from_environment",
+    "run_readonly_bootstrap_from_environment",
 ]
 
 
@@ -552,6 +554,52 @@ def run_bootstrap_from_environment(
     source = env if env is not None else os.environ
     try:
         context = build_admin_context(source)
+    except AdminCompositionError as exc:
+        return BootstrapOrchestrationResult(
+            BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,
+            str(exc),
+        )
+    if authoritative is None and context.journal_path.exists():
+        authoritative = build_authoritative_restart_observation(context)
+    return run_bootstrap(
+        context,
+        authoritative=authoritative,
+        now=now,
+        operation_id_factory=operation_id_factory,
+    )
+
+
+def run_readonly_bootstrap_from_environment(
+    env: Mapping[str, str] | None = None,
+    *,
+    authoritative: AuthoritativeRestartObservation | None = None,
+    now: Callable[[], str] = _default_now,
+    operation_id_factory: Callable[[], str] = _default_operation_id,
+) -> BootstrapOrchestrationResult:
+    """The `read_only`-profile counterpart of `run_bootstrap_from_
+    environment()` -- provisions/verifies the dedicated `pfsense-mcp-
+    readonly` service account instead of the `write_protected`
+    `pfsense-mcp` one (POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH
+    mission, 2026-08-29).
+
+    Deliberately as small a diff against the existing function as
+    possible: `run_bootstrap()` itself is already fully generic over
+    `AdministrativeContext` (it operates only on `context.binding`/
+    `context._mutation_components`, never on any write_protected-
+    specific assumption), so this function differs from `run_bootstrap_
+    from_environment()` in exactly one line -- which context builder it
+    calls. Every journal/lock/restart-classification/failure-handling
+    property `run_bootstrap_from_environment()`'s own docstring
+    documents applies here identically, against the read_only account's
+    own, entirely separate namespace/journal/lock (see
+    `security_readonly_admin_composition.py`'s own docstring for why a
+    separate, fixed `_ACCOUNT_NAME` makes the two ceremonies'
+    journals/locks/custody artifacts structurally incapable of
+    colliding)."""
+
+    source = env if env is not None else os.environ
+    try:
+        context = build_readonly_admin_context(source)
     except AdminCompositionError as exc:
         return BootstrapOrchestrationResult(
             BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,

@@ -697,6 +697,56 @@ transcript), are the complete set this project has ever needed to
 provision for WRITE, live-tested twice against the disposable LAB
 appliance.
 
+## Managed READ-only service account (`pfsense-mcp-readonly`)
+
+**POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29)**:
+the same ADR-033 bootstrap engine that provisions `write_protected`'s
+`pfsense-mcp` account (`TargetProfile.WRITE_PROTECTED`) already
+supported `TargetProfile.READ_ONLY` from its original implementation
+-- `provision_service_account()`'s own test suite defaults to it. What
+was missing was the composition/orchestration/CLI layer above the
+engine; that gap is now closed by
+`security_readonly_admin_composition.py`/`security_readonly_bootstrap_
+recovery.py`/`security_bootstrap_orchestration.run_readonly_bootstrap_
+from_environment()`, reachable via
+`pfsense-mcp-security bootstrap --target-profile read_only`.
+
+The provisioned account is granted **exactly the 94 READ privileges**
+this document's own READ privilege matrix (above) already lists --
+never `page-all`, never the WRITE-exclusive
+`api-v2-firewall-alias-patch`, never the temporary bootstrap-only
+`api-v2-auth-key-post` (revoked before the transaction completes,
+identically to `write_protected`'s own ceremony). It is a **separate,
+fixed, dedicated account** (`pfsense-mcp-readonly`, distinct from
+`write_protected`'s `pfsense-mcp`) with its own journal/lock/custody
+namespace, its own recovery module
+(`security_readonly_bootstrap_recovery.py`), and its own custody env
+var (`PFSENSE_READONLY_SERVICE_API_KEY_FILE`) -- the two ceremonies can
+never collide, be confused for each other, or share state, by
+construction (proven in
+`tests/test_security_readonly_admin_composition.py::test_namespace_never_collides_with_write_protected_for_the_identical_target`
+and the orchestration/journal-level equivalents).
+
+**This closes the credential-layer gap the prior
+`reports-ai/POST_V1_0_SECURITY_BOUNDARY_AUDIT_2026-08-29.md` audit
+found**: an operator who chooses managed provisioning (rather than
+bring-your-own-key) for `read_only` now gets a pfSense credential that
+is *itself* incapable of any WRITE operation, on top of the pre-existing
+MCP-layer guarantee (0 default-reachable WRITE tools) -- true defense
+in depth. BYOK remains available and unchanged as the advanced path;
+its documented caveat (the product cannot verify an operator-supplied
+key's own privilege scope) is unaffected by this addition.
+
+**Not yet wired into the interactive `setup` wizard** as of this
+writing -- `bootstrap --target-profile read_only` is a standalone,
+already-tested command today, mirroring exactly how `write_protected`'s
+own `bootstrap` subcommand existed and was live-verified before
+`setup apply --capability-posture write_protected` was later extended
+to compose it in a separate, dedicated slice. The equivalent
+`setup apply` integration for `read_only` (an explicit "managed vs.
+BYOK" choice, confirmation-gated, never mutating during bare `setup`)
+remains a deliberately separate, not-yet-authorized follow-up.
+
 ## Combined minimum set, READ + existing WRITE
 
 The 4 WRITE privileges are a strict subset of the 94 READ privileges
