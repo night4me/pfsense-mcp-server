@@ -894,6 +894,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#managed-read-only-service-account-pfsense-mcp-readonly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managed READ-only service account (pfsense-mcp-readonly)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#combined-minimum-set-read-existing-write" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4231,6 +4242,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#managed-read-only-service-account-pfsense-mcp-readonly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managed READ-only service account (pfsense-mcp-readonly)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#combined-minimum-set-read-existing-write" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5536,6 +5558,60 @@ security model" and the historical
 transcript), are the complete set this project has ever needed to
 provision for WRITE, live-tested twice against the disposable LAB
 appliance.</p>
+<h2 id="managed-read-only-service-account-pfsense-mcp-readonly">Managed READ-only service account (<code>pfsense-mcp-readonly</code>)<a class="headerlink" href="#managed-read-only-service-account-pfsense-mcp-readonly" title="Permanent link">&para;</a></h2>
+<p><strong>POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29)</strong>:
+the same ADR-033 bootstrap engine that provisions <code>write_protected</code>'s
+<code>pfsense-mcp</code> account (<code>TargetProfile.WRITE_PROTECTED</code>) already
+supported <code>TargetProfile.READ_ONLY</code> from its original implementation
+-- <code>provision_service_account()</code>'s own test suite defaults to it. What
+was missing was the composition/orchestration/CLI layer above the
+engine; that gap is now closed by
+<code>security_readonly_admin_composition.py</code>/<code>security_readonly_bootstrap_
+recovery.py</code>/<code>security_bootstrap_orchestration.run_readonly_bootstrap_
+from_environment()</code>, reachable via
+<code>pfsense-mcp-security bootstrap --target-profile read_only</code>.</p>
+<p>The provisioned account is granted <strong>exactly the 94 READ privileges</strong>
+this document's own READ privilege matrix (above) already lists --
+never <code>page-all</code>, never the WRITE-exclusive
+<code>api-v2-firewall-alias-patch</code>, never the temporary bootstrap-only
+<code>api-v2-auth-key-post</code> (revoked before the transaction completes,
+identically to <code>write_protected</code>'s own ceremony). It is a <strong>separate,
+fixed, dedicated account</strong> (<code>pfsense-mcp-readonly</code>, distinct from
+<code>write_protected</code>'s <code>pfsense-mcp</code>) with its own journal/lock/custody
+namespace, its own recovery module
+(<code>security_readonly_bootstrap_recovery.py</code>), and its own custody env
+var (<code>PFSENSE_READONLY_SERVICE_API_KEY_FILE</code>) -- the two ceremonies can
+never collide, be confused for each other, or share state, by
+construction (proven in
+<code>tests/test_security_readonly_admin_composition.py::test_namespace_never_collides_with_write_protected_for_the_identical_target</code>
+and the orchestration/journal-level equivalents).</p>
+<p><strong>This closes the credential-layer gap the prior
+<code>reports-ai/POST_V1_0_SECURITY_BOUNDARY_AUDIT_2026-08-29.md</code> audit
+found</strong>: an operator who chooses managed provisioning (rather than
+bring-your-own-key) for <code>read_only</code> now gets a pfSense credential that
+is <em>itself</em> incapable of any WRITE operation, on top of the pre-existing
+MCP-layer guarantee (0 default-reachable WRITE tools) -- true defense
+in depth. BYOK remains available and unchanged as the advanced path;
+its documented caveat (the product cannot verify an operator-supplied
+key's own privilege scope) is unaffected by this addition.</p>
+<p><strong>Wired into the interactive <code>setup</code> wizard</strong> (POST-v1.0 MANAGED
+READ-ONLY WIZARD INTEGRATION mission, 2026-08-29) -- mirroring exactly
+how <code>write_protected</code>'s own <code>bootstrap</code> subcommand existed and was
+live-verified before <code>setup apply --capability-posture write_protected</code>
+was later extended to compose it. <code>setup</code>'s own Account step now
+offers "Create a dedicated read-only account [Recommended]" (managed)
+alongside "Use an existing API key [Advanced]" (BYOK) for <code>read_only</code>,
+and <code>setup apply --read-only-account-mode managed</code> composes the same
+<code>run_readonly_bootstrap_from_environment()</code> standalone <code>bootstrap
+--target-profile read_only</code> already used -- never a second,
+independent provisioning engine, and never mutating during bare
+<code>setup</code>, in either mode, always. The managed-vs-BYOK choice is
+security-bound into the plan digest and confirmation token, not merely
+presentational -- a plan/token reviewed for one mode cannot authorize
+an apply in the other. Existing BYOK installations are unaffected:
+<code>read_only_account_mode</code> defaults to <code>byo</code>, so every pre-existing
+scripted invocation that omits the new flag behaves exactly as it
+always has.</p>
 <h2 id="combined-minimum-set-read-existing-write">Combined minimum set, READ + existing WRITE<a class="headerlink" href="#combined-minimum-set-read-existing-write" title="Permanent link">&para;</a></h2>
 <p>The 4 WRITE privileges are a strict subset of the 94 READ privileges
 except for <code>api-v2-firewall-alias-patch</code> (the mutation itself, obviously

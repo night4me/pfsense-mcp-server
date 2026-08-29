@@ -4545,6 +4545,65 @@ audit logging, and independent WRITE-inactivity checks remain authoritative.</p>
 the <code>X-API-Key</code> header. HTTPS is mandatory. Strict system trust is the
 default; an explicit CA file can be used for an internal CA. TLS
 verification can be disabled only by explicit startup configuration.</p>
+<p><strong>What this credential is authorized to do on pfSense's own side is a
+deployment-time choice, not something this project verifies or
+restricts for <code>read_only</code>.</strong> These are two separate properties and this
+project does not conflate them: (1) "no WRITE tool is registered" is an
+MCP/application-layer guarantee about this server's own code -- proven
+above, enforced structurally, and independently tested; (2) "the
+configured pfSense credential cannot itself perform a WRITE operation"
+is a pfSense-side privilege guarantee that depends entirely on which
+key the operator supplies. For <code>write_protected</code>,
+<code>pfsense-mcp-security bootstrap</code>/<code>setup apply</code> provision a dedicated
+pfSense identity holding exactly the least-privilege set
+<a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/">ADR-033</a>
+derives from source (currently 94 READ privileges, one per READ tool,
+plus the one WRITE-exclusive privilege <code>set_firewall_alias_description_v1</code>
+needs -- 95 combined; see
+<a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/">the least-privilege matrix</a>).
+By default, <code>setup apply</code> for <code>read_only</code> performs one harmless <code>GET</code>
+against whatever bring-your-own-key (BYOK) credential the operator
+already configured, and never inspects that credential's own pfSense
+privilege scope beyond confirming it can authenticate. If that key
+happens to hold pfSense administrator or WRITE privileges, a request
+that bypasses this MCP server entirely -- a leaked key used directly
+against <code>pfREST</code>, or a misrouted call -- can still mutate pfSense
+state; nothing in the <code>read_only</code> posture's BYOK path prevents that at
+the pfSense authorization layer.</p>
+<p><strong>POST-v1.0 MANAGED READ-ONLY DEFENSE IN DEPTH mission (2026-08-29)</strong>
+closed this gap for operators who want the stronger, credential-layer
+guarantee: <code>pfsense-mcp-security bootstrap --target-profile read_only</code>
+provisions (or verifies/repairs) a <strong>second, entirely separate</strong>
+dedicated pfSense identity -- <code>pfsense-mcp-readonly</code>, distinct from
+<code>write_protected</code>'s own <code>pfsense-mcp</code> account -- holding exactly the
+94 READ privileges the least-privilege matrix documents and nothing
+else (never <code>page-all</code>, never the WRITE-exclusive privilege). The two
+ceremonies use separate journals, locks, and custody files by
+construction, so provisioning one can never disturb the other.</p>
+<p><strong>POST-v1.0 MANAGED READ-ONLY WIZARD INTEGRATION mission (2026-08-29)</strong>
+made this the <em>recommended</em> path for new setups: the interactive
+<code>setup</code> wizard's own Account step now offers "Create a dedicated
+read-only account [Recommended]" (managed) alongside "Use an existing
+API key [Advanced]" (BYOK) for <code>read_only</code>, and <code>setup apply
+--read-only-account-mode managed</code> composes the same standalone
+<code>bootstrap --target-profile read_only</code> machinery -- never a second,
+independent provisioning engine. This choice is security-bound into
+the plan's own digest and confirmation token (not merely
+presentational): a plan/token reviewed for one mode can never silently
+authorize an apply in the other mode for the same target/posture. Bare
+<code>setup</code> still never provisions anything, in either mode, always; only
+the explicit, confirmation-gated <code>setup apply</code> (or standalone
+<code>bootstrap</code>) ever provisions the managed account. Existing BYOK
+installations are unaffected -- <code>read_only_account_mode</code> defaults to
+<code>byo</code>, so every pre-existing scripted <code>setup</code>/<code>setup apply</code> invocation
+that does not pass the new flag behaves byte-for-byte as it always
+has; managed is only ever chosen by an explicit flag, or an operator's
+own explicit interactive choice. See
+<a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/#managed-read-only-service-account-pfsense-mcp-readonly">the least-privilege matrix</a>
+for the full privilege detail. Whether managed or BYOK, operators can
+alternatively provision (or ask a pfSense administrator to provision)
+an API identity scoped to exactly the READ privilege set themselves
+and use that identity's key for <code>read_only</code>.</p>
 <p>HTTP redirects are not followed and every non-2xx status is rejected. Timeout,
 connection, TLS, protocol, and other HTTP transport failures are normalized to
 sanitized project exceptions without propagating upstream exception messages

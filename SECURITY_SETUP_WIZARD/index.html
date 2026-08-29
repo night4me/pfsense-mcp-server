@@ -495,6 +495,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#read-only-account-managed-vs-bring-your-own-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only account: managed vs. bring-your-own-key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#connection-security-tls-and-credentials" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4321,6 +4332,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#read-only-account-managed-vs-bring-your-own-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only account: managed vs. bring-your-own-key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#connection-security-tls-and-credentials" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4498,10 +4520,14 @@ the server uses. This page documents its current, real behavior,
 derived directly from source and from <code>--help</code> output — not historical
 plans.</p>
 <p><strong>If you only want the default, read-only server</strong>, you do not need
-most of this page: any existing pfSense API key works (see
-<a href="../INSTALLATION/">Installation</a>). Use <code>pfsense-mcp-security setup</code> if
-you'd rather have a dedicated, least-privilege identity generated and
-verified for you instead of reusing one.</p>
+most of this page: <code>pfsense-mcp-security setup</code> walks you through it,
+and its recommended default (POST-v1.0 MANAGED READ-ONLY WIZARD
+INTEGRATION mission, 2026-08-29) creates a dedicated, least-privilege
+<code>pfsense-mcp-readonly</code> pfSense account for you — the pfSense credential
+itself is then incapable of a WRITE operation, not only this tool's own
+MCP surface. Prefer to reuse an existing pfSense API key instead? The
+wizard's Account step also offers that as an explicit, equally
+supported "Advanced" choice — see <a href="../INSTALLATION/">Installation</a>.</p>
 <h2 id="normal-user-path">Normal user path<a class="headerlink" href="#normal-user-path" title="Permanent link">&para;</a></h2>
 <h3 id="setup-guided-discovery-and-planning"><code>setup</code> — guided discovery and planning<a class="headerlink" href="#setup-guided-discovery-and-planning" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security setup</span>
@@ -4528,6 +4554,39 @@ flags:</p>
 </ul>
 <p>Add <code>--json</code> to any <code>setup</code>/<code>setup apply</code> invocation for machine-
 readable output.</p>
+<h3 id="read-only-account-managed-vs-bring-your-own-key">Read-only account: managed vs. bring-your-own-key<a class="headerlink" href="#read-only-account-managed-vs-bring-your-own-key" title="Permanent link">&para;</a></h3>
+<p>Only meaningful for <code>--capability-posture read_only</code>. The interactive
+wizard's Account step (shown right after Usage) offers two choices;
+<code>--read-only-account-mode</code> takes the same two values non-interactively:</p>
+<ul>
+<li><strong>Managed</strong> (<code>managed</code>, the default in the interactive wizard,
+  <strong>recommended</strong>) — <code>setup apply --read-only-account-mode managed</code>
+  provisions the dedicated, least-privilege <code>pfsense-mcp-readonly</code>
+  pfSense service account (composing the same engine standalone
+  <code>pfsense-mcp-security bootstrap --target-profile read_only</code> uses —
+  never a second, independent provisioning path). This account holds
+  exactly the 94 READ privileges this project documents and nothing
+  else; even a request that bypasses this MCP server entirely and goes
+  straight to pfSense's own REST API is refused, because the
+  <em>credential itself</em> cannot write, not only this tool's application
+  layer. See <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/#managed-read-only-service-account-pfsense-mcp-readonly">the least-privilege matrix</a>.</li>
+<li><strong>Bring your own key</strong> (<code>byo</code>, the default for every non-interactive/
+  scripted invocation that omits the flag, matching every release
+  before this one byte-for-byte) — reuses whatever pfSense API key
+  you've already configured via <code>PFSENSE_API_KEY_FILE</code>. This project
+  confirms that key can authenticate; it never inspects or verifies
+  what pfSense privileges the key itself holds. If that key happens to
+  hold WRITE or administrator privileges, a request that bypasses this
+  MCP server can still mutate pfSense — nothing about this posture's
+  BYOK path prevents that at the pfSense authorization layer.</li>
+</ul>
+<p>This choice is bound into the plan's own digest and confirmation
+token, not merely a presentation detail — a plan/token you reviewed
+for one mode can never be reused to silently authorize an apply in the
+other mode for the same target. Existing installations are never
+affected by this addition: a <code>setup</code>/<code>setup apply</code> invocation that
+does not pass <code>--read-only-account-mode</code> behaves exactly as it always
+has (<code>byo</code>).</p>
 <h3 id="connection-security-tls-and-credentials">Connection security (TLS) and credentials<a class="headerlink" href="#connection-security-tls-and-credentials" title="Permanent link">&para;</a></h3>
 <p>The interactive wizard's connection-security question offers three
 choices — <code>--tls-mode</code> takes the same three values non-interactively:</p>
@@ -4595,11 +4654,14 @@ back via <code>--confirm &lt;TOKEN&gt;</code> actually acts:</p>
 <span class="go">  --confirm &lt;TOKEN-FROM-THE-INSPECTION-ABOVE&gt;</span>
 </code></pre></div>
 <ul>
-<li>For <code>read_only</code>, apply performs exactly <strong>one</strong> read-only connectivity
-  check against your configured pfSense target — never a mutation.</li>
-<li>For <code>write_protected</code>, apply provisions (or verifies) the one fixed,
-  dedicated, least-privilege service account this project ever creates
-  — see <a href="#advanced-and-recovery-paths">Advanced paths</a>.</li>
+<li>For <code>read_only</code>+<code>byo</code> (the default), apply performs exactly <strong>one</strong>
+  read-only connectivity check against your configured pfSense target
+  — never a mutation.</li>
+<li>For <code>read_only</code>+<code>managed</code> (<code>--read-only-account-mode managed</code>) and
+  for <code>write_protected</code>, apply provisions (or verifies) the relevant
+  fixed, dedicated, least-privilege service account — <code>pfsense-mcp-readonly</code>
+  or <code>pfsense-mcp</code> respectively, entirely separate accounts/journals —
+  see <a href="#advanced-and-recovery-paths">Advanced paths</a>.</li>
 </ul>
 <p>If the plan you reviewed is now stale (something about the target
 changed since), apply refuses rather than silently re-planning — you
@@ -4625,18 +4687,27 @@ write/merge workflow and safety guarantees.</p>
 <code>READY</code>/<code>NOT READY</code> for the local artifact-exchange paths and witness
 connectivity. Never repairs or mutates anything itself.</p>
 <h2 id="advanced-and-recovery-paths">Advanced and recovery paths<a class="headerlink" href="#advanced-and-recovery-paths" title="Permanent link">&para;</a></h2>
-<p>The rest of this page covers <code>write_protected</code> — an explicit, optional
-opt-in that most installations do not need. If you don't plan to let
-this server change a firewall alias's description field (currently the
-<em>only</em> mutation this project supports, ever), you can stop reading
-here.</p>
+<p>The rest of this page mostly covers <code>write_protected</code> — an explicit,
+optional opt-in that most installations do not need. If you don't plan
+to let this server change a firewall alias's description field
+(currently the <em>only</em> mutation <code>write_protected</code> adds, ever) and
+you're not using the <strong>managed</strong> read-only account mode above, you can
+stop reading here. If you <em>are</em> using managed read-only, <code>bootstrap</code>
+and <code>recover</code> below both take <code>--target-profile read_only</code> to operate
+on the <code>pfsense-mcp-readonly</code> account specifically — its own,
+independent journal/lock/recovery state.</p>
 <h3 id="bootstrap-the-deterministic-provisioning-engine-underneath-setup-apply"><code>bootstrap</code> — the deterministic provisioning engine underneath <code>setup apply</code><a class="headerlink" href="#bootstrap-the-deterministic-provisioning-engine-underneath-setup-apply" title="Permanent link">&para;</a></h3>
-<p><code>setup apply --capability-posture write_protected</code> composes <code>bootstrap</code>
-internally; you do not normally invoke it directly. <code>bootstrap</code> is the
-non-interactive, journal-aware, locking engine that creates (or
-verifies) the one fixed, least-privilege <code>pfsense-mcp</code> service account
-on your target appliance. Every action it takes is configured entirely
-through environment variables — see
+<p><code>setup apply --capability-posture write_protected</code> (and, for read-only,
+<code>setup apply --capability-posture read_only --read-only-account-mode
+managed</code>) compose <code>bootstrap</code> internally; you do not normally invoke it
+directly. <code>bootstrap</code> is the non-interactive, journal-aware, locking
+engine that creates (or verifies) the one fixed, least-privilege
+service account on your target appliance — <code>pfsense-mcp</code>
+(<code>--target-profile write_protected</code>, the default) or
+<code>pfsense-mcp-readonly</code> (<code>--target-profile read_only</code>), entirely
+separate accounts with entirely separate journal/lock/custody state.
+Every action it takes is configured entirely through environment
+variables — see
 <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/">ADR-033</a>
 for the full design if you want the underlying architecture.</p>
 <p><strong>Restart safety</strong>: if a prior <code>bootstrap</code>/<code>setup apply
@@ -4651,10 +4722,14 @@ fine.</p>
 <div class="highlight"><pre><span></span><code><span class="go">pfsense-mcp-security recover</span>
 </code></pre></div>
 <p>Run with no flags, this is <strong>read-only inspection</strong>: it classifies the
-existing incident (if any) and, if recovery is genuinely required,
-prints the exact action needed, the affected object, and a
-confirmation token bound to this exact target/action/object/incident.
-It makes no pfSense mutation on its own.</p>
+existing incident (if any) for the <code>write_protected</code> (<code>pfsense-mcp</code>)
+account by default, and prints the exact action needed, the affected
+object, and a confirmation token bound to this exact
+target/action/object/incident. Pass <code>--target-profile read_only</code> to
+inspect/recover the <code>pfsense-mcp-readonly</code> account's own incident
+instead — its journal/lock state is entirely separate, so the two
+profiles' incidents (if either exists at all) are never conflated. It
+makes no pfSense mutation on its own.</p>
 <p>Resolving the incident requires <strong>both</strong> flags together — a token from
 a different target, action, object, or incident is refused before any
 mutating call is made:</p>
@@ -4700,12 +4775,16 @@ against; see
 <td>Never — inspection only.</td>
 </tr>
 <tr>
-<td><code>setup apply --confirm &lt;token&gt;</code>, posture <code>read_only</code></td>
+<td><code>setup apply --confirm &lt;token&gt;</code>, posture <code>read_only</code>, mode <code>byo</code> (default)</td>
 <td>Never — one read-only connectivity check.</td>
 </tr>
 <tr>
+<td><code>setup apply --confirm &lt;token&gt;</code>, posture <code>read_only</code>, mode <code>managed</code></td>
+<td>Yes — provisions/verifies the dedicated <code>pfsense-mcp-readonly</code> service account.</td>
+</tr>
+<tr>
 <td><code>setup apply --confirm &lt;token&gt;</code>, posture <code>write_protected</code></td>
-<td>Yes — provisions/verifies the one fixed service account.</td>
+<td>Yes — provisions/verifies the dedicated <code>pfsense-mcp</code> service account.</td>
 </tr>
 <tr>
 <td><code>setup write-client-config</code> (no <code>--confirm</code>)</td>
@@ -4733,6 +4812,14 @@ against; see
 printed by a prior, separate inspection step — there is no command that
 mutates on its very first invocation.</p>
 <h2 id="common-first-run-flow">Common first-run flow<a class="headerlink" href="#common-first-run-flow" title="Permanent link">&para;</a></h2>
+<p>This flow shows the <code>byo</code> (bring-your-own-key) path explicitly for
+clarity — it is also what every command below does if you omit
+<code>--read-only-account-mode</code> entirely. Prefer the <strong>recommended</strong>
+managed account instead? Add <code>--read-only-account-mode managed</code> to
+steps 1, 3, 4, and 5 below (step 3's apply then provisions
+<code>pfsense-mcp-readonly</code> instead of only checking connectivity; the same
+<code>PFSENSE_ADMIN_*</code> environment standalone <code>bootstrap</code> needs is required
+for that step).</p>
 <div class="highlight"><pre><span></span><code><span class="gp"># </span><span class="m">1</span>.<span class="w"> </span>See<span class="w"> </span>what<span class="w"> </span>a<span class="w"> </span>read-only<span class="w"> </span>setup<span class="w"> </span>would<span class="w"> </span>look<span class="w"> </span>like<span class="w"> </span><span class="o">(</span>no<span class="w"> </span>changes<span class="w"> </span>made<span class="w"> </span>yet<span class="o">)</span>.
 <span class="go">pfsense-mcp-security setup --non-interactive \</span>
 <span class="go">  --capability-posture read_only --anchor-assurance none --json</span>

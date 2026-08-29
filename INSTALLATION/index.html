@@ -4561,10 +4561,20 @@ all three ultimately fetch the same signed artifact from PyPI.</p>
 <h2 id="obtain-and-configure-a-credential-safely">Obtain and configure a credential safely<a class="headerlink" href="#obtain-and-configure-a-credential-safely" title="Permanent link">&para;</a></h2>
 <ol>
 <li>In pfSense, under the REST API package's own user/key management,
-   generate an API key for the identity you intend to use (or use
-   <a href="../SECURITY_SETUP_WIZARD/">the setup wizard</a> to provision a fresh,
-   dedicated, least-privilege identity instead of reusing an existing
-   one).</li>
+   generate an API key for the identity you intend to use. If you plan
+   to run <code>write_protected</code>, or <code>read_only</code> with the <strong>recommended</strong>
+   managed account option, prefer
+   <a href="../SECURITY_SETUP_WIZARD/">the setup wizard</a>'s Account step (or its
+   <code>bootstrap --target-profile &lt;profile&gt;</code> step underneath), which
+   provisions a fresh, dedicated, least-privilege identity instead of
+   reusing an existing one. <strong>If you instead choose <code>read_only</code>'s
+   "bring your own key" option (the wizard's Advanced choice, and the
+   default for scripted use), the wizard does not provision or verify
+   any identity</strong> — it uses whatever key you configure here exactly
+   as-is, so for the strongest security boundary, scope that key's own
+   pfSense privileges to the READ set
+   <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/">the least-privilege matrix</a>
+   documents rather than reusing an administrator account.</li>
 <li>Save <strong>only the key itself</strong> to a file <em>outside</em> this project's
    directory, with owner-only permissions:</li>
 </ol>
@@ -4576,8 +4586,11 @@ all three ultimately fetch the same signed artifact from PyPI.</p>
    anything logged. The file must be a regular file (not a symlink)
    owned by the user running the server, with no group/other
    permission bits, or the server refuses to start. See
-   <a href="../SECURITY_MODEL/">the security model</a> for the full credential-
-   handling design.</p>
+   <a href="../SECURITY_MODEL/#credentials-and-transport">the security model</a>
+   for the full credential-handling design, including why "0
+   default-reachable WRITE tools" is an application-layer guarantee,
+   not a statement about what this key itself is authorized to do on
+   pfSense.</p>
 <h2 id="tls-verification">TLS verification<a class="headerlink" href="#tls-verification" title="Permanent link">&para;</a></h2>
 <p>Leave <code>PFSENSE_TLS_MODE</code> at its default, <code>strict</code> — this validates the
 appliance's certificate against your system's normal trust store,
