@@ -395,12 +395,12 @@ def test_drift_never_mutates_inputs():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("version", [(2, 7, 7), (2, 8, 0), (2, 9, 0), (2, 10, 0)])
+@pytest.mark.parametrize("version", [(2, 7, 7), (2, 8, 0), (2, 9, 0), (2, 10, 0), (2, 10, 1), (2, 10, 2)])
 def test_supported_package_versions_produce_no_finding(version):
     assert check_package_version_support(version) is None
 
 
-@pytest.mark.parametrize("version", [(2, 7, 6), (2, 11, 0), (3, 0, 0)])
+@pytest.mark.parametrize("version", [(2, 7, 6), (2, 10, 3), (2, 11, 0), (3, 0, 0)])
 def test_unsupported_package_versions_produce_a_finding(version):
     finding = check_package_version_support(version)
     assert finding is not None

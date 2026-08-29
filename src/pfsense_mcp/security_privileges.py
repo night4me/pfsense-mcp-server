@@ -64,11 +64,23 @@ _PAGE_ALL_PRIVILEGE = "page-all"
 
 #: Confirmed range: `Core/Endpoint.inc::get_method_priv_name()` is
 #: byte-identical across every `pfrest/pfSense-pkg-RESTAPI` tag from
-#: `v2.7.7` through `v2.10.0` (the latest tag as of this research,
-#: 2026-08-17) -- `ADR-033` §2. A version outside this range is not
-#: known-bad, only unverified; see `check_package_version_support()`.
+#: `v2.7.7` through `v2.10.0` (2026-08-17 research) -- `ADR-033` §2. A
+#: version outside this range is not known-bad, only unverified; see
+#: `check_package_version_support()`.
+#:
+#: Extended to `v2.10.2` (2026-08-29, POST-v1.0 MANAGED READ-ONLY
+#: DEFENSE IN DEPTH live-LAB ceremony): the LAB's installed package had
+#: been upgraded to v2.10.2 since the prior research pass. Re-verified
+#: directly against pinned source at both `v2.10.1` and `v2.10.2`
+#: before extending -- `Core/Endpoint.inc::get_method_priv_name()`'s
+#: slug-generation logic is byte-identical to the v2.10.0 text already
+#: cited above, and `Core/Auth.inc`'s `authorize()` still uses the same
+#: unconditional `array_intersect($this->required_privileges,
+#: $this->client_privileges)` ANY-match with no `page-all` special-case
+#: bypass in the authorization check itself. This is evidence for these
+#: two specific tags, not a guarantee for any future one.
 VERIFIED_PACKAGE_VERSION_MIN = (2, 7, 7)
-VERIFIED_PACKAGE_VERSION_MAX = (2, 10, 0)
+VERIFIED_PACKAGE_VERSION_MAX = (2, 10, 2)
 
 
 class EvidenceClass(str, Enum):
