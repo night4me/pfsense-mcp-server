@@ -158,6 +158,12 @@ from .security_recovery_orchestration import (
     run_recovery_from_environment,
 )
 from .security_setup_apply import ApplyOutcome, ApplyResult, run_setup_apply_from_environment
+from .security_setup_confirm_key import (
+    DEFAULT_CONFIRM_KEY_FILE,
+    InitConfirmKeyOutcome,
+    InitConfirmKeyResult,
+    create_confirm_key,
+)
 from .security_setup_plan import (
     INTENDED_SERVICE_ACCOUNT_IDENTITY,
     PrivilegePlan,
@@ -258,6 +264,19 @@ _CLIENT_CONFIG_WRITE_EXIT_CODES: dict[WriteOutcome, int] = {
     WriteOutcome.WRITE_VALIDATION_FAILED_ROLLED_BACK: 7,
 }
 _CLIENT_CONFIG_WRITE_PLAN_STALE_EXIT_CODE = 2
+
+# `setup init-confirm-key`'s own exit-code model. CREATED and
+# ALREADY_EXISTS both exit 0 -- idempotent by design (see
+# `security_setup_confirm_key.create_confirm_key()`'s own docstring):
+# an operator re-running this command after already having a key is
+# not an error, it is the safe, expected no-op that still reports the
+# path to export.
+_INIT_CONFIRM_KEY_EXIT_CODES: dict[InitConfirmKeyOutcome, int] = {
+    InitConfirmKeyOutcome.CREATED: 0,
+    InitConfirmKeyOutcome.ALREADY_EXISTS: 0,
+    InitConfirmKeyOutcome.BLOCKED_UNSAFE_PATH: 1,
+    InitConfirmKeyOutcome.FAILED: 2,
+}
 
 # `setup`'s own exit-code model, independently numbered under its own
 # epilog like every other subcommand here. 3 is deliberately distinct
@@ -1069,6 +1088,43 @@ def _build_parser() -> argparse.ArgumentParser:
 
     setup_subparsers = setup_parser.add_subparsers(dest="setup_action")
 
+    init_confirm_key_parser = setup_subparsers.add_parser(
+        "init-confirm-key",
+        help=(
+            "Guided, one-time local provisioning of PFSENSE_SETUP_CONFIRM_KEY_FILE -- the local "
+            "secret both `setup apply` and `setup write-client-config` require. Never touches pfSense."
+        ),
+        description=(
+            "Generates a fresh, cryptographically random local key and writes it to a safe default "
+            "path (override with --path), owner-only permissions, refusing to follow a symlink or "
+            "overwrite an existing key. This key is never sent to pfSense and is not a pfSense "
+            "credential -- it is used only to bind a `setup apply`/`setup write-client-config` "
+            "confirmation token to the exact plan/target/posture you were shown, so a stale or "
+            "copy-pasted command cannot reach a live pfSense call or local file write by accident. "
+            "Safe to run again later: an existing key is always left untouched, never rotated or "
+            "overwritten -- doing so would invalidate any --confirm token you have not yet redeemed."
+        ),
+        epilog=(
+            "Exit codes: 0 a key now exists at the printed path (freshly created, or one already "
+            "there from a prior run -- both are the safe, expected outcome). 1 the target path is a "
+            "symbolic link -- refused before touching it. 2 the key could not be created safely (e.g. "
+            "the parent directory could not be created, or this platform lacks O_NOFOLLOW support).\n\n"
+            "Never prints, logs, or serializes the key's own value -- only its file path."
+        ),
+        formatter_class=_ParagraphHelpFormatter,
+    )
+    init_confirm_key_parser.add_argument(
+        "--path",
+        default=None,
+        metavar="PATH",
+        help=f"Override the default key path ({DEFAULT_CONFIRM_KEY_FILE}).",
+    )
+    init_confirm_key_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit deterministic machine-readable JSON instead of human-readable text.",
+    )
+
     apply_parser = setup_subparsers.add_parser(
         "apply",
         help=(
@@ -1724,6 +1780,32 @@ def _private_ca_guidance_lines() -> tuple[str, ...]:
     )
 
 
+def _confirm_key_guidance_lines() -> tuple[str, ...]:
+    """`setup apply` (both postures) and `setup write-client-config`
+    both also require PFSENSE_SETUP_CONFIRM_KEY_FILE -- a purely local
+    secret, never sent to pfSense and not a pfSense credential, used
+    only to bind a confirmation token to the exact plan you were shown
+    (see `security_setup_confirm_key.py`'s own module docstring for the
+    full rationale). v1.0.0 clean-room finding (2026-08-29): this was
+    previously never mentioned here at all, so `setup apply` failed
+    with an unexplained `blocked_configuration_error` for an operator
+    who had done everything else this screen told them to."""
+
+    return (
+        "Also required, the first time only (persists across future",
+        "setup apply / write-client-config runs): PFSENSE_SETUP_CONFIRM_KEY_FILE",
+        "-- a local secret this tool uses only to confirm you've",
+        "reviewed a plan before applying it (never sent to pfSense,",
+        "never a pfSense credential). Don't have one yet? Create it:",
+        "",
+        "  pfsense-mcp-security setup init-confirm-key",
+        "",
+        "It prints the exact 'export PFSENSE_SETUP_CONFIRM_KEY_FILE=...'",
+        "line to use below. Already have one from a prior run? Export",
+        "that same path instead.",
+    )
+
+
 def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT_HINTS) -> tuple[str, ...]:
     """The "Next step" guidance for the human-mode completion screen.
     `setup apply` now exists for both postures (Slice 2 read_only,
@@ -1770,7 +1852,7 @@ def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT
         )
         if plan.target.tls_mode == "verify_private_ca":
             env_lines += ("", *_private_ca_guidance_lines())
-        env_lines += ("",)
+        env_lines += ("", *_confirm_key_guidance_lines(), "")
         action_lines = (
             "To verify live connectivity (no pfSense changes are made),",
             "run:",
@@ -1780,6 +1862,7 @@ def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT
             "token; add --confirm <TOKEN> to it to actually verify.",
         )
     else:
+        env_lines = ("", *_confirm_key_guidance_lines(), "")
         action_lines = (
             "To provision the dedicated least-privilege ADR-033 service",
             "account (requires the same PFSENSE_ADMIN_* environment",
@@ -2764,6 +2847,37 @@ def _resolve_setup_apply_confirm(confirm: str | None, *, env: dict[str, str] | N
     return None
 
 
+def _init_confirm_key_result_to_dict(result: InitConfirmKeyResult) -> dict[str, Any]:
+    return {"outcome": result.outcome.value, "path": str(result.path), "detail": result.detail}
+
+
+def _format_init_confirm_key_human(result: InitConfirmKeyResult) -> str:
+    lines = [f"pfsense-mcp-security setup init-confirm-key: {result.outcome.value}", "", result.detail]
+    if result.outcome in (InitConfirmKeyOutcome.CREATED, InitConfirmKeyOutcome.ALREADY_EXISTS):
+        lines.append("")
+        lines.append("Before running `setup apply` or `setup write-client-config`, export:")
+        lines.append("")
+        lines.append(f'  export PFSENSE_SETUP_CONFIRM_KEY_FILE="{result.path}"')
+        lines.append("")
+        lines.append(_wrap("This key never leaves this machine, is never sent to pfSense, and is not a"))
+        lines.append(
+            _wrap(
+                "pfSense credential -- it only lets this tool tell a fresh, reviewed plan apart from a "
+                "stale or copy-pasted one."
+            )
+        )
+    return "\n".join(lines)
+
+
+def _run_setup_init_confirm_key(*, path: str | None, as_json: bool, out: TextIO) -> int:
+    result = create_confirm_key(Path(path).expanduser() if path else None)
+    if as_json:
+        print(json.dumps(_init_confirm_key_result_to_dict(result), indent=2, sort_keys=True), file=out)
+    else:
+        print(_format_init_confirm_key_human(result), file=out)
+    return _INIT_CONFIRM_KEY_EXIT_CODES[result.outcome]
+
+
 def _run_setup_apply(
     *,
     capability_posture: str,
@@ -2945,6 +3059,8 @@ def main(argv: list[str] | None = None) -> int:
             execute=args.execute, confirm=args.confirm, as_json=args.json, env=None, out=sys.stdout, in_=sys.stdin
         )
     if args.command == "setup":
+        if getattr(args, "setup_action", None) == "init-confirm-key":
+            return _run_setup_init_confirm_key(path=args.path, as_json=args.json, out=sys.stdout)
         if getattr(args, "setup_action", None) == "apply":
             return _run_setup_apply(
                 capability_posture=args.capability_posture,

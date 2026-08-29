@@ -488,6 +488,106 @@ def test_end_to_end_inspect_then_apply_against_a_real_environment(tmp_path, monk
     assert apply_payload["outcome"] == "apply_completed"
 
 
+def test_end_to_end_guided_init_confirm_key_then_apply_reaches_inspect_then_completes(tmp_path, monkeypatch, capsys):
+    """The exact corrected v1.0.0 clean-room journey: `setup
+    init-confirm-key` (not a hand-written key file) provisions the
+    local secret, then a fresh `setup apply` (no --confirm) reaches
+    INSPECT_PLAN_CURRENT -- the exact point the original clean-room run
+    failed at with an unexplained blocked_configuration_error -- and a
+    second call with the printed token completes."""
+
+    confirm_key_path = tmp_path / "confirm.key"
+    init_exit = main(["setup", "init-confirm-key", "--path", str(confirm_key_path), "--json"])
+    init_payload = json.loads(capsys.readouterr().out)
+    assert init_exit == 0
+    assert init_payload["outcome"] == "created"
+    monkeypatch.setenv("PFSENSE_SETUP_CONFIRM_KEY_FILE", init_payload["path"])
+
+    api_key = tmp_path / "api.key"
+    _write_secure(api_key, b"real-api-key-material")
+    monkeypatch.setenv("PFSENSE_API_URL", "https://pfsense.example")
+    monkeypatch.setenv("PFSENSE_IDENTITY", "admin")
+    monkeypatch.setenv("PFSENSE_API_KEY_FILE", str(api_key))
+
+    class _FakeTransport:
+        def close(self):
+            pass
+
+    class _FakeClient:
+        def get_system_status(self, *, include_identifying_metadata=False):
+            return object()
+
+    monkeypatch.setattr(
+        "pfsense_mcp.security_setup_apply.build_pfsense_client",
+        lambda config, api_key: (_FakeTransport(), _FakeClient()),
+    )
+
+    inspect_exit = main(["setup", "apply", "--capability-posture", "read_only", "--anchor-assurance", "none", "--json"])
+    inspect_payload = json.loads(capsys.readouterr().out)
+    assert inspect_exit == 1
+    assert inspect_payload["outcome"] == "inspect_plan_current"
+    digest = inspect_payload["plan_digest"]
+    token = inspect_payload["confirmation_token"]
+    assert digest and token
+
+    apply_exit = main(
+        [
+            "setup",
+            "apply",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--plan-digest",
+            digest,
+            "--confirm",
+            token,
+            "--json",
+        ]
+    )
+    apply_payload = json.loads(capsys.readouterr().out)
+    assert apply_exit == 0
+    assert apply_payload["outcome"] == "apply_completed"
+
+
+def test_end_to_end_stale_plan_digest_still_fails_closed_with_guided_confirm_key(tmp_path, monkeypatch, capsys):
+    """A stale/mismatched --plan-digest must still be refused before
+    the confirmation token is even considered, regardless of whether
+    the confirm-key was hand-provisioned or created via the new guided
+    `setup init-confirm-key` path -- the new provisioning path changes
+    nothing about this existing fail-closed ordering."""
+
+    confirm_key_path = tmp_path / "confirm.key"
+    main(["setup", "init-confirm-key", "--path", str(confirm_key_path)])
+    capsys.readouterr()
+    monkeypatch.setenv("PFSENSE_SETUP_CONFIRM_KEY_FILE", str(confirm_key_path))
+
+    api_key = tmp_path / "api.key"
+    _write_secure(api_key, b"real-api-key-material")
+    monkeypatch.setenv("PFSENSE_API_URL", "https://pfsense.example")
+    monkeypatch.setenv("PFSENSE_IDENTITY", "admin")
+    monkeypatch.setenv("PFSENSE_API_KEY_FILE", str(api_key))
+
+    exit_code = main(
+        [
+            "setup",
+            "apply",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--plan-digest",
+            "0" * 65,
+            "--confirm",
+            "irrelevant-because-digest-is-checked-first",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 2
+    assert payload["outcome"] == "plan_stale"
+
+
 def test_end_to_end_next_step_output_prints_the_exact_usable_apply_command(monkeypatch, capsys):
     """The `setup` (non-apply) happy path's own "Next step" output must
     name the real `setup apply` command, not vague future wording --

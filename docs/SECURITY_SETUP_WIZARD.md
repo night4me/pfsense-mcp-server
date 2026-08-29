@@ -84,6 +84,31 @@ itself** to a private, owner-only file —
 [Installation](INSTALLATION.md#obtain-and-configure-a-credential-safely)
 has the exact `install -m 600` recipe.
 
+### One-time local confirmation key
+
+`setup apply` and `setup write-client-config` also both require
+`PFSENSE_SETUP_CONFIRM_KEY_FILE` — a **purely local** secret, unrelated
+to pfSense: it is never sent to pfSense, is not a pfSense credential,
+and never appears in any generated MCP client configuration. It exists
+only so this tool can tell a plan you actually reviewed apart from a
+stale, copy-pasted, or cross-target/cross-posture command — a
+lightweight anti-footgun check, not an authentication mechanism.
+
+If you don't already have one, create it once:
+
+```console
+pfsense-mcp-security setup init-confirm-key
+```
+
+This writes a fresh, cryptographically random key to a safe default
+path under `~/.local/state/pfsense-mcp-server/` (owner-only
+permissions, refuses to follow a symlink or overwrite an existing key)
+and prints the exact `export PFSENSE_SETUP_CONFIRM_KEY_FILE=...` line
+to use. Running it again later is safe — an existing key is always
+left untouched, never rotated: rotating it would invalidate any
+`--confirm` token you haven't redeemed yet. Pass `--path` to use a
+different location instead of the default.
+
 ### `setup apply` — actually doing what the plan describes
 
 `setup` only plans; **`setup apply` is the separate, explicit command
@@ -214,6 +239,7 @@ against; see
 |---|---|
 | `discover`, `plan`, `doctor` | Never. |
 | `setup` (bare) | Never — plan-only. |
+| `setup init-confirm-key` | Never touches pfSense; may create one local key file (never overwrites an existing one). |
 | `setup apply` (no `--confirm`, or stale plan) | Never — inspection only. |
 | `setup apply --confirm <token>`, posture `read_only` | Never — one read-only connectivity check. |
 | `setup apply --confirm <token>`, posture `write_protected` | Yes — provisions/verifies the one fixed service account. |
@@ -234,16 +260,21 @@ mutates on its very first invocation.
 pfsense-mcp-security setup --non-interactive \
   --capability-posture read_only --anchor-assurance none --json
 
-# 2. Apply it (first call inspects, prints a confirmation token).
+# 2. One-time only: provision the local confirmation key setup apply
+#    and setup write-client-config both need (see the "One-time local
+#    confirmation key" section above). Skip if you already have one.
+pfsense-mcp-security setup init-confirm-key
+
+# 3. Apply it (first call inspects, prints a confirmation token).
 pfsense-mcp-security setup apply \
   --capability-posture read_only --anchor-assurance none
 
-# 3. Re-run with the printed token to actually verify connectivity.
+# 4. Re-run with the printed token to actually verify connectivity.
 pfsense-mcp-security setup apply \
   --capability-posture read_only --anchor-assurance none \
   --confirm <TOKEN>
 
-# 4. Generate your MCP client configuration (inspects first, prints a token).
+# 5. Generate your MCP client configuration (inspects first, prints a token).
 pfsense-mcp-security setup write-client-config \
   --client claude-desktop --config-path /absolute/path/to/claude_desktop_config.json \
   --capability-posture read_only --anchor-assurance none
