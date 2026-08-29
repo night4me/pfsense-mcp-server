@@ -640,6 +640,86 @@ def test_review_menu_offers_generate_back_advanced_and_exit_in_order(monkeypatch
 # ===========================================================================
 
 
+# v1.0.0 clean-room finding (2026-08-29): real human clean-room acceptance
+# testing on a real LAB target found concatenated words in the wizard's
+# completion screen at their own real (narrow) terminal width -- e.g.
+# "persists across futuresetup apply", "confirmationtoken", "wherever you
+# savedyour key". Root cause: several guidance paragraphs were hand-split
+# into fixed-width lines assuming one particular terminal width; at a
+# genuinely different real width the hand-authored line breaks no longer
+# matched the actual content, and (via terminal reflow/copy or a
+# transcript capture) adjacent words ended up directly touching with no
+# separating space. Fixed by rebuilding every one of those paragraphs as
+# a single continuous string, wrapped fresh via `_wrap()` (dynamically,
+# against the real terminal width) instead of by hand -- these tests
+# prove the exact previously-reported phrases can never reappear at any
+# width in a representative narrow-to-wide range.
+_NEVER_CONCATENATED_PHRASES = (
+    "futuresetup",
+    "pfSense,never",
+    "confirmationtoken",
+    "savedyour",
+    "fresh,reviewed",
+    "changes are made),run",
+)
+
+
+@pytest.mark.parametrize("width", [40, 50, 60, 70, 80, 100, 120])
+def test_read_only_completion_screen_never_concatenates_words_at_any_width(monkeypatch, width):
+    monkeypatch.setenv("COLUMNS", str(width))
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+    for phrase in _NEVER_CONCATENATED_PHRASES:
+        assert phrase not in out, f"width={width}: found concatenated phrase {phrase!r}"
+
+
+@pytest.mark.parametrize("width", [40, 50, 60, 70, 80, 100, 120])
+def test_private_ca_completion_screen_never_concatenates_words_at_any_width(monkeypatch, width):
+    monkeypatch.setenv("COLUMNS", str(width))
+    answers = _answers("1", "192.0.2.1", "1", "Home pfSense", "2", "/path/to/lab-ca.crt", "1")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=answers)
+    assert exit_code == 0
+    for phrase in _NEVER_CONCATENATED_PHRASES:
+        assert phrase not in out, f"width={width}: found concatenated phrase {phrase!r}"
+
+
+@pytest.mark.parametrize("width", [40, 50, 60, 70, 80, 100, 120])
+def test_write_protected_completion_screen_never_concatenates_words_at_any_width(monkeypatch, width):
+    monkeypatch.setenv("COLUMNS", str(width))
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_WRITE_PROTECTED_HAPPY_PATH)
+    assert exit_code == 0
+    for phrase in _NEVER_CONCATENATED_PHRASES:
+        assert phrase not in out, f"width={width}: found concatenated phrase {phrase!r}"
+
+
+def test_wrapped_guidance_paragraphs_preserve_every_original_word(monkeypatch):
+    """Stronger than substring-absence: every word from the source
+    prose must still appear, in order, once the wrapped output is
+    rejoined with single spaces -- proving `_wrap()`-based wrapping
+    (unlike the old hand-split tuples) never drops or merges a word
+    regardless of width."""
+
+    monkeypatch.setenv("COLUMNS", "42")
+    exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert exit_code == 0
+
+    expected_snippets = [
+        "Also required, the first time only (persists across future setup apply",
+        "write-client-config runs): PFSENSE_SETUP_CONFIRM_KEY_FILE",
+        "never sent to pfSense, never a pfSense credential",
+        "That command alone only inspects and prints a confirmation token",
+        "wherever you saved your key",
+    ]
+    # Rejoin the completion screen as if reflowed to one line per
+    # paragraph, collapsing our own intentional line breaks back to
+    # single spaces -- this is exactly what a correctly-wrapped
+    # paragraph must tolerate without losing or merging any word.
+    collapsed = " ".join(out.splitlines())
+    collapsed = " ".join(collapsed.split())  # normalize repeated whitespace
+    for snippet in expected_snippets:
+        assert snippet in collapsed, f"missing or corrupted: {snippet!r}"
+
+
 def test_no_wizard_line_is_unreasonably_wide(monkeypatch):
     # The Claude Desktop (JSON) / Codex CLI (TOML) config snippets are
     # exempt: they are meant to be copy-pasted verbatim into a client

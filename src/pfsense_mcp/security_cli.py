@@ -1776,36 +1776,54 @@ def _credential_guidance_lines() -> tuple[str, ...]:
     permissions requirement) so this project never gives two different
     answers to the same question. Never prints, requests, or implies
     typing the key value itself anywhere -- only the file *path* is
-    ever part of this guidance."""
+    ever part of this guidance.
+
+    v1.0.0 clean-room finding (2026-08-29): this prose used to be
+    hand-split into fixed-width lines assuming one particular terminal
+    width. At a real, different width the fixed line breaks no longer
+    matched the actual wrap points, and (whether reflowed by a terminal
+    multiplexer, a copy/paste, or a transcript tool) the words at each
+    hand-authored line boundary could end up directly adjacent with no
+    separating space (e.g. "wherever you savedyour key"). Each
+    paragraph below is now one continuous string, wrapped once via
+    `_wrap()` to the real terminal width at render time -- the fix is
+    generic (every consumer of `_wrap()` gets it), not a per-string
+    patch. Copy/paste tokens (the `install` command) remain untouched,
+    separate list entries -- never wrapped."""
 
     return (
-        "Need an API key? In pfSense, under the REST API package's own",
-        "user/key management, generate one for the identity above (or",
-        "reuse an existing key for that identity if you already have",
-        "one). Save ONLY the key itself to a private file, e.g.:",
+        _wrap(
+            "Need an API key? In pfSense, under the REST API package's own user/key management, "
+            "generate one for the identity above (or reuse an existing key for that identity if you "
+            "already have one). Save ONLY the key itself to a private file, e.g.:"
+        ),
         "",
         "  install -m 600 /dev/null /absolute/private/path/pfsense-api.key",
         "  # paste the key as the file's first (and only) line",
         "",
-        "The file must be owned by you with no group/other permissions",
-        "(600 above already sets that) -- the server refuses to start",
-        "otherwise. Never paste the key value itself anywhere else.",
+        _wrap(
+            "The file must be owned by you with no group/other permissions (600 above already sets "
+            "that) -- the server refuses to start otherwise. Never paste the key value itself anywhere "
+            "else."
+        ),
     )
 
 
 def _private_ca_guidance_lines() -> tuple[str, ...]:
     """What "verify against a private/internal certificate authority"
     means and how to obtain the one file it requires. Only ever shown
-    when `plan.target.tls_mode == "verify_private_ca"`."""
+    when `plan.target.tls_mode == "verify_private_ca"`. See
+    `_credential_guidance_lines()`'s own docstring for why this is one
+    wrapped paragraph rather than hand-split fixed-width lines."""
 
     return (
-        "Your pfSense target uses a certificate signed by a private or",
-        "internal certificate authority (common for a self-hosted or",
-        "LAB pfSense) rather than a publicly trusted one -- this needs",
-        "one file: that CA's own public certificate (never a private",
-        "key). Export it from pfSense's own Certificate Manager, or ask",
-        "whoever manages this pfSense's certificates for it, then point",
-        "PFSENSE_TLS_CA_FILE at wherever you saved it.",
+        _wrap(
+            "Your pfSense target uses a certificate signed by a private or internal certificate "
+            "authority (common for a self-hosted or LAB pfSense) rather than a publicly trusted one -- "
+            "this needs one file: that CA's own public certificate (never a private key). Export it "
+            "from pfSense's own Certificate Manager, or ask whoever manages this pfSense's certificates "
+            "for it, then point PFSENSE_TLS_CA_FILE at wherever you saved it."
+        ),
     )
 
 
@@ -1818,20 +1836,24 @@ def _confirm_key_guidance_lines() -> tuple[str, ...]:
     full rationale). v1.0.0 clean-room finding (2026-08-29): this was
     previously never mentioned here at all, so `setup apply` failed
     with an unexplained `blocked_configuration_error` for an operator
-    who had done everything else this screen told them to."""
+    who had done everything else this screen told them to. See
+    `_credential_guidance_lines()`'s own docstring for why this is
+    wrapped paragraphs rather than hand-split fixed-width lines."""
 
     return (
-        "Also required, the first time only (persists across future",
-        "setup apply / write-client-config runs): PFSENSE_SETUP_CONFIRM_KEY_FILE",
-        "-- a local secret this tool uses only to confirm you've",
-        "reviewed a plan before applying it (never sent to pfSense,",
-        "never a pfSense credential). Don't have one yet? Create it:",
+        _wrap(
+            "Also required, the first time only (persists across future setup apply / "
+            "write-client-config runs): PFSENSE_SETUP_CONFIRM_KEY_FILE -- a local secret this tool uses "
+            "only to confirm you've reviewed a plan before applying it (never sent to pfSense, never a "
+            "pfSense credential). Don't have one yet? Create it:"
+        ),
         "",
         "  pfsense-mcp-security setup init-confirm-key",
         "",
-        "It prints the exact 'export PFSENSE_SETUP_CONFIRM_KEY_FILE=...'",
-        "line to use below. Already have one from a prior run? Export",
-        "that same path instead.",
+        _wrap(
+            "It prints the exact 'export PFSENSE_SETUP_CONFIRM_KEY_FILE=...' line to use below. "
+            "Already have one from a prior run? Export that same path instead."
+        ),
     )
 
 
@@ -1870,10 +1892,11 @@ def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT
         env_vars = _mcp_client_env_vars(plan, hints)
         env_export_lines = tuple(f'  export {key}="{value}"' for key, value in env_vars.items())
         env_lines = (
-            "Before running the command below, set these in your shell",
-            "-- `setup apply` reads them fresh from your real environment,",
-            "the exact same way the MCP server itself does at startup;",
-            "`setup` never reads or writes them itself:",
+            _wrap(
+                "Before running the command below, set these in your shell -- `setup apply` reads them "
+                "fresh from your real environment, the exact same way the MCP server itself does at "
+                "startup; `setup` never reads or writes them itself:"
+            ),
             "",
             *env_export_lines,
             "",
@@ -1882,24 +1905,26 @@ def _next_step_lines(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CLIENT
         if plan.target.tls_mode == "verify_private_ca":
             env_lines += ("", *_private_ca_guidance_lines())
         env_lines += ("", *_confirm_key_guidance_lines(), "")
-        action_lines = (
-            "To verify live connectivity (no pfSense changes are made),",
-            "run:",
-        )
+        action_lines = (_wrap("To verify live connectivity (no pfSense changes are made), run:"),)
         confirm_lines = (
-            "That command alone only inspects and prints a confirmation",
-            "token; add --confirm <TOKEN> to it to actually verify.",
+            _wrap(
+                "That command alone only inspects and prints a confirmation token; add --confirm "
+                "<TOKEN> to it to actually verify."
+            ),
         )
     else:
         env_lines = ("", *_confirm_key_guidance_lines(), "")
         action_lines = (
-            "To provision the dedicated least-privilege ADR-033 service",
-            "account (requires the same PFSENSE_ADMIN_* environment",
-            "`pfsense-mcp-security bootstrap` already needs), run:",
+            _wrap(
+                "To provision the dedicated least-privilege ADR-033 service account (requires the same "
+                "PFSENSE_ADMIN_* environment `pfsense-mcp-security bootstrap` already needs), run:"
+            ),
         )
         confirm_lines = (
-            "That command alone only inspects and prints a confirmation",
-            "token; add --confirm <TOKEN> to it to actually provision.",
+            _wrap(
+                "That command alone only inspects and prints a confirmation token; add --confirm "
+                "<TOKEN> to it to actually provision."
+            ),
         )
 
     return (
