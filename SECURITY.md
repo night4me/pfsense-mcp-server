@@ -2,15 +2,13 @@
 
 ## Supported versions
 
-Security fixes are provided for the current `0.2.x` release line.
-Versions `0.1.x` and older are unsupported. Version `0.2.0` is
-superseded by the credential-disclosure hardening in `0.2.1`.
-
-v0.3.0 is under active development and adds no reachable capability beyond
-what `0.2.x` already exposes — its entire Tier 1 WRITE-safety framework
-remains structurally unreachable from production (see "Non-goals" below).
-It is not a supported release until published; report issues against it
-the same way as `0.2.x`, noting the commit SHA you tested.
+Security fixes are provided for the latest published release only —
+this project does not yet maintain parallel fix branches for older
+minor versions. Report against whatever version you have installed; if
+it's not the latest, upgrading is the first recommended step, but the
+report itself is still welcome and will be triaged. Report issues found
+against an unpublished commit the same way, noting the exact commit SHA
+you tested.
 
 ## Reporting a vulnerability
 
