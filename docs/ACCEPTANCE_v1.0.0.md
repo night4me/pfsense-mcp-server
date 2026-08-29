@@ -1,11 +1,11 @@
 # Acceptance — v1.0.0
 
 **Status: release-candidate — not yet tagged, released, or published.**
-This commit (`15146ff3cb3b2cdecbc8d4010d929f6387378cec`) is the prepared
-`1.0.0` candidate on `main`. Tagging, the GitHub Release, and PyPI
-publication remain a separate, explicitly owner-authorized step this
-document does not perform. See `reports-ai/V1_0_FINAL_AUDIT_2026-08-29.md`
-for the complete, itemized audit evidence this summarizes.
+The current `main` HEAD is the prepared `1.0.0` candidate. Tagging, the
+GitHub Release, and PyPI publication remain a separate, explicitly
+owner-authorized step this document does not perform. See
+`reports-ai/V1_0_FINAL_AUDIT_2026-08-29.md` for the exact final commit
+SHA and the complete, itemized audit evidence this summarizes.
 
 ## Release scope
 
