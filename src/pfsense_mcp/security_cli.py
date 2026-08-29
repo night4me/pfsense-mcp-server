@@ -1055,6 +1055,16 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     setup_parser.add_argument(
+        "--api-key-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional, purely-informational path to your pfSense API key file -- only used to "
+            "personalize the generated MCP client configuration preview instead of showing an "
+            "illustrative placeholder; never read, validated, or sent anywhere by this slice."
+        ),
+    )
+    setup_parser.add_argument(
         "--command",
         dest="command_override",
         default=None,
@@ -1322,6 +1332,16 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     write_client_config_parser.add_argument(
+        "--api-key-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Path to your pfSense API key file, written verbatim into the generated "
+            "PFSENSE_API_KEY_FILE value instead of an illustrative placeholder. Never read or "
+            "validated by this command -- only the path string is used."
+        ),
+    )
+    write_client_config_parser.add_argument(
         "--command",
         dest="command_override",
         default=None,
@@ -1494,10 +1514,17 @@ class _MCPClientHints:
     already applies to `target.origin`/`target.identity`. `ca_file` is
     only ever rendered when the plan's own `tls_mode` is
     `verify_private_ca`; `command_override` always wins over
-    auto-detection when given (see `_resolve_mcp_client_command()`)."""
+    auto-detection when given (see `_resolve_mcp_client_command()`).
+    `api_key_file`: v1.0.0 clean-room finding (2026-08-29) -- a real
+    `setup apply` -> `setup write-client-config` walkthrough found the
+    generated config always wrote the illustrative placeholder path
+    even when the operator's own already-working `PFSENSE_API_KEY_FILE`
+    was sitting right there in their environment; mirrors `ca_file`'s
+    own flag-only, never-validated personalization exactly."""
 
     ca_file: str | None = None
     command_override: str | None = None
+    api_key_file: str | None = None
 
 
 _EMPTY_MCP_CLIENT_HINTS = _MCPClientHints()
@@ -1572,7 +1599,7 @@ def _mcp_client_env_vars(plan: SetupPlan, hints: _MCPClientHints = _EMPTY_MCP_CL
     env: dict[str, str] = {
         "PFSENSE_API_URL": plan.target.origin or _MCP_CLIENT_ORIGIN_PLACEHOLDER,
         "PFSENSE_IDENTITY": identity,
-        "PFSENSE_API_KEY_FILE": _MCP_CLIENT_KEY_FILE_PLACEHOLDER,
+        "PFSENSE_API_KEY_FILE": hints.api_key_file or _MCP_CLIENT_KEY_FILE_PLACEHOLDER,
         "PFSENSE_TLS_MODE": _mcp_client_tls_mode(plan),
     }
     # v1.0.0 clean-room finding (2026-08-28): a real private-CA pfSense
@@ -2687,6 +2714,7 @@ def _run_setup(
     tls_mode: str | None,
     tls_ca_file: str | None = None,
     command: str | None = None,
+    api_key_file: str | None = None,
     schema_file: str | None,
     declared_package_version: str | None,
     as_json: bool,
@@ -2763,7 +2791,7 @@ def _run_setup(
         declared_package_version=declared_package_version,
         env=env,
     )
-    hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command)
+    hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command, api_key_file=api_key_file)
     if as_json:
         print(json.dumps(_setup_plan_to_dict(plan, hints), indent=2, sort_keys=True), file=out)
     else:
@@ -2974,6 +3002,7 @@ def _run_setup_write_client_config(
     tls_mode: str | None,
     tls_ca_file: str | None = None,
     command: str | None = None,
+    api_key_file: str | None = None,
     plan_digest: str | None,
     confirm: str | None,
     as_json: bool,
@@ -2981,7 +3010,7 @@ def _run_setup_write_client_config(
     out: TextIO,
     in_: TextIO,
 ) -> int:
-    """`tls_ca_file`/`command` are the same purely-informational
+    """`tls_ca_file`/`command`/`api_key_file` are the same purely-informational
     rendering hints `_run_setup()` accepts (see `_MCPClientHints`) --
     here they personalize the file actually being written, not just a
     preview, so getting them right matters even more: an un-overridden
@@ -3018,7 +3047,7 @@ def _run_setup_write_client_config(
         _print_write_result(result, as_json=as_json, out=out)
         return _CLIENT_CONFIG_WRITE_PLAN_STALE_EXIT_CODE
 
-    hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command)
+    hints = _MCPClientHints(ca_file=tls_ca_file, command_override=command, api_key_file=api_key_file)
     resolved_command, _ = _resolve_mcp_client_command(hints.command_override)
     confirm_token = _resolve_client_config_confirm(confirm, in_=in_)
     result = run_client_config_write_from_environment(
@@ -3086,6 +3115,7 @@ def main(argv: list[str] | None = None) -> int:
                 tls_mode=args.tls_mode,
                 tls_ca_file=args.tls_ca_file,
                 command=args.command_override,
+                api_key_file=args.api_key_file,
                 plan_digest=args.plan_digest,
                 confirm=args.confirm,
                 as_json=args.json,
@@ -3104,6 +3134,7 @@ def main(argv: list[str] | None = None) -> int:
             tls_mode=args.tls_mode,
             tls_ca_file=args.tls_ca_file,
             command=args.command_override,
+            api_key_file=args.api_key_file,
             schema_file=args.schema_file,
             declared_package_version=args.declared_package_version,
             as_json=args.json,

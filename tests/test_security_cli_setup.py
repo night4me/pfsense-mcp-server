@@ -1149,6 +1149,31 @@ def test_mcp_client_config_present_in_json_for_a_safe_to_proceed_read_only_plan(
     assert payload["mcp_client_command_resolved"] is True
 
 
+def test_api_key_file_flag_personalizes_bare_setups_own_preview(monkeypatch):
+    """v1.0.0 clean-room finding (2026-08-29): --api-key-file mirrors
+    --tls-ca-file's own flag-only rendering-hint pattern -- personalizes
+    the generated PFSENSE_API_KEY_FILE value instead of the illustrative
+    placeholder, never validated, never part of SetupPlan/its digest."""
+
+    _exit_code, out = _run(
+        monkeypatch,
+        [
+            "setup",
+            "--non-interactive",
+            "--capability-posture",
+            "read_only",
+            "--anchor-assurance",
+            "none",
+            "--api-key-file",
+            "/home/operator/pfsense-api.key",
+            "--json",
+        ],
+    )
+    payload = json.loads(out)
+    snippet = payload["mcp_client_config"]
+    assert snippet["mcpServers"]["pfsense"]["env"]["PFSENSE_API_KEY_FILE"] == "/home/operator/pfsense-api.key"
+
+
 def test_mcp_client_config_json_stays_present_but_human_output_omits_it_when_not_safe_to_proceed(monkeypatch):
     """write_protected + none is never a valid ADR-021 target (mutation
     must stay blocked without a witness). `--json` output stays fully

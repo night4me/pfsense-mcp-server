@@ -159,6 +159,25 @@ def test_tls_ca_file_flag_has_no_effect_without_verify_private_ca(monkeypatch):
     captured = _canned(monkeypatch, WriteResult(WriteOutcome.INSPECT_CURRENT, "detail"))
     main([*_BASE_ARGS, "--tls-mode", "verify", "--tls-ca-file", "/etc/pfsense-mcp/lab-ca.crt"])
     assert "PFSENSE_TLS_CA_FILE" not in captured["env_vars"]
+
+
+def test_api_key_file_flag_is_threaded_into_written_env_vars(monkeypatch):
+    """v1.0.0 clean-room finding (2026-08-29): a real setup apply ->
+    write-client-config walkthrough found the generated config always
+    wrote the illustrative placeholder API-key-file path even though
+    the operator's own already-working PFSENSE_API_KEY_FILE was right
+    there in their environment -- --api-key-file closes that gap,
+    mirroring --tls-ca-file's own flag-only personalization exactly."""
+
+    captured = _canned(monkeypatch, WriteResult(WriteOutcome.INSPECT_CURRENT, "detail"))
+    main([*_BASE_ARGS, "--api-key-file", "/home/operator/pfsense-api.key"])
+    assert captured["env_vars"]["PFSENSE_API_KEY_FILE"] == "/home/operator/pfsense-api.key"
+
+
+def test_api_key_file_flag_omitted_still_uses_the_illustrative_placeholder(monkeypatch):
+    captured = _canned(monkeypatch, WriteResult(WriteOutcome.INSPECT_CURRENT, "detail"))
+    main(_BASE_ARGS)
+    assert captured["env_vars"]["PFSENSE_API_KEY_FILE"] == "/absolute/private/path/pfsense-api.key"
     assert captured["env_vars"]["PFSENSE_TLS_MODE"] == "strict"
 
 
