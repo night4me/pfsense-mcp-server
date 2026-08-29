@@ -7,6 +7,7 @@ import argparse
 import ast
 import asyncio
 import json
+import re
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -214,6 +215,67 @@ def _changed_tools(expected: dict[str, Any], actual: dict[str, Any]) -> list[str
     )
 
 
+def readme_tool_count_mismatches(readme_text: str, *, read_count: int, guidance_count: int) -> list[str]:
+    """Cross-checks README.md's own tool-count prose against the
+    authoritative contract computed by `build_contract()`, so a stale
+    number (e.g. left over from a prior release) can never silently
+    drift away from reality -- this is what let v0.9.0's already-published
+    PyPI long_description carry a wrong "96 (95 READ + 1 guidance)" count
+    after a second guidance tool was added; this check exists so that
+    can never happen again for whatever README ships in the *next*
+    release. Deliberately number-focused (regex over exact prose) so
+    ordinary copy edits elsewhere in the README don't make this brittle
+    -- only a genuinely wrong count fails it.
+    """
+    total = read_count + guidance_count
+    normalized = re.sub(r"\s+", " ", readme_text)
+    failures: list[str] = []
+
+    headline = re.search(r"(\d+) tools: (\d+) pfSense READ tools \+ (\d+) documentation guidance tools", normalized)
+    if headline is None:
+        failures.append(
+            "README.md is missing the 'N tools: N pfSense READ tools + N documentation guidance tools' headline"
+        )
+    elif tuple(int(g) for g in headline.groups()) != (total, read_count, guidance_count):
+        failures.append(
+            f"README.md headline says {headline.group(0)!r}, but the authoritative contract is "
+            f"{total} tools: {read_count} pfSense READ tools + {guidance_count} documentation guidance tools"
+        )
+
+    release_status = re.search(
+        r"(\d+) pfSense READ tools \+ (\d+) documentation guidance tools, 0 WRITE tools", normalized
+    )
+    if release_status is None:
+        failures.append(
+            "README.md's Release status section is missing the "
+            "'N pfSense READ tools + N documentation guidance tools, 0 WRITE tools' claim"
+        )
+    elif tuple(int(g) for g in release_status.groups()) != (read_count, guidance_count):
+        failures.append(
+            f"README.md Release status says {release_status.group(0)!r}, but the authoritative contract is "
+            f"{read_count} pfSense READ tools + {guidance_count} documentation guidance tools"
+        )
+
+    shows_available = re.search(r"shows (\d+) tools available", normalized)
+    if shows_available is None:
+        failures.append("README.md is missing the 'shows N tools available' Quick start closing line")
+    elif int(shows_available.group(1)) != total:
+        failures.append(f"README.md says 'shows {shows_available.group(1)} tools available', but the total is {total}")
+
+    table_match = re.search(r"\| Category \| Tools \| Examples \|.*?(?=\n##|\Z)", readme_text, re.DOTALL)
+    if table_match is None:
+        failures.append("README.md is missing the 'What you get' per-category tool-count table")
+    else:
+        table_total = sum(int(row) for row in re.findall(r"\|\s*(\d+)\s*\|", table_match.group(0)))
+        if table_total != read_count:
+            failures.append(
+                f"README.md's per-category tool-count table sums to {table_total}, "
+                f"but there are {read_count} READ tools"
+            )
+
+    return failures
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update", action="store_true", help="write the current contract after explicit API approval")
@@ -235,6 +297,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     read_count = sum(1 for tool in actual["tools"] if tool["tool_class"] == "read")
     guidance_count = sum(1 for tool in actual["tools"] if tool["tool_class"] == "guidance")
+    readme_path = ROOT / "README.md"
+    readme_failures = readme_tool_count_mismatches(
+        readme_path.read_text(encoding="utf-8"), read_count=read_count, guidance_count=guidance_count
+    )
+    if readme_failures:
+        print("public_contract: README.md tool-count claims disagree with the authoritative contract:")
+        for failure in readme_failures:
+            print(f"  - {failure}")
+        return 1
     print(
         f"public_contract: OK ({read_count} pfSense READ tools, {guidance_count} guidance tool(s), "
         f"{len(actual['tools'])} total)"

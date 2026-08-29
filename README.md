@@ -52,6 +52,10 @@ pipx install pfsense-mcp-server
 pfsense-mcp-security setup
 ```
 
+(If you arrived here from PyPI's own generic "pip install" box above —
+that's PyPI's fixed page header, not this project's recommendation.
+Use the `pipx` command shown here instead.)
+
 No `pipx` yet? `sudo apt install pipx && pipx ensurepath` on
 Debian/Ubuntu (reopen your terminal afterward) — see
 [Installation](https://night4me.github.io/pfsense-mcp-server/INSTALLATION/)
