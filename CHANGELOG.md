@@ -7,9 +7,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-First stable release (`1.0.0`, kept `[Unreleased]` rather than
-dated/renamed until actual publication — this is the record of the
-not-yet-tagged candidate state). The public MCP tool contract is unchanged from
+## [1.0.0] - 2026-08-29
+
+First stable release. The public MCP tool contract is unchanged from
 `0.9.0` (95 pfSense READ tools + 2 documentation guidance tools, 0
 default-reachable WRITE = 97 total) — this release is a product-maturity
 and correctness pass, not a capability expansion. See

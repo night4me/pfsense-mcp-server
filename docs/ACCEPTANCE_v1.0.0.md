@@ -1,11 +1,49 @@
 # Acceptance — v1.0.0
 
-**Status: release-candidate — not yet tagged, released, or published.**
-The current `main` HEAD is the prepared `1.0.0` candidate. Tagging, the
-GitHub Release, and PyPI publication remain a separate, explicitly
-owner-authorized step this document does not perform. See
-`reports-ai/V1_0_FINAL_AUDIT_2026-08-29.md` for the exact final commit
-SHA and the complete, itemized audit evidence this summarizes.
+**Status: published — the `v1.0.0` tag, GitHub Release, and PyPI release
+all point at this commit.** The annotated git tag `v1.0.0` was created
+and pushed pointing at commit
+`b1a5d0782157ed7f5fe8c680894f0b9e0407fdd1`; GitHub confirms the tag
+object resolves to exactly that commit
+(`GET /repos/.../git/refs/tags/v1.0.0` → tag object →
+`object.sha == b1a5d078...`). The GitHub Release was published from
+that tag (<https://github.com/night4me/pfsense-mcp-server/releases/tag/v1.0.0>,
+not a draft, not a prerelease), which triggered the `publish.yml` OIDC
+trusted-publishing workflow (run `33252394957`, `build` and `publish`
+jobs both `success`). PyPI's JSON API confirms `1.0.0` is `info.version`
+and the latest entry in `releases`; neither artifact is yanked. Both
+public artifacts were downloaded directly from `files.pythonhosted.org`
+and their member-by-member content confirmed byte-identical to the
+locally-built, already-audited RC artifacts (323/323 wheel files,
+348/348 sdist files) — the outer-archive SHA256 differs only because of
+non-reproducible container build timestamps between separate build
+invocations, not any content difference (the same class of difference
+`v0.9.0`'s own publication found and explained). PyPI's own provenance
+API returned a valid Sigstore attestation bundle for both the wheel and
+sdist; the certificate's Subject Alternative Name and Fulcio OIDC
+extensions were independently decoded and confirmed to reference this
+exact workflow file (`.github/workflows/publish.yml`), the
+`refs/tags/v1.0.0` ref, this exact commit
+(`b1a5d0782157ed7f5fe8c680894f0b9e0407fdd1`), this exact GitHub Actions
+run (`33252394957`), the `release` trigger event, and the `pypi`
+deployment environment. A clean installation of
+`pfsense-mcp-server==1.0.0` from the real PyPI index (not the local
+build) was independently verified in a fresh, isolated environment
+outside the repository: reports version `1.0.0` via both `pipx`'s own
+output and `pfsense-mcp-server --version`, a real MCP client session
+against the freshly installed server reports `serverInfo.version=1.0.0`
+and exactly 97 registered tools (95 READ + 2 guidance — both
+`pfsense_get_official_guidance` and `pfsense_get_api_guidance` present
+— 0 WRITE), and one real READ tool call against a local mock target
+succeeded. This status line was only written after that independent
+post-publication verification succeeded. `v0.9.0`'s own tag, GitHub
+Release, and PyPI artifact remain unmoved as an accurate historical
+record. GitHub Pages was redeployed from this exact commit before
+tagging; `docs_pages_freshness_check.py` confirms `gh-pages` is current
+as of `b1a5d0782157ed7f5fe8c680894f0b9e0407fdd1`. See
+`reports-ai/V1_0_FINAL_AUDIT_2026-08-29.md` and
+`reports-ai/V1_0_0_PUBLICATION_2026-08-29.md` for the complete,
+itemized audit and publication evidence.
 
 ## Release scope
 
