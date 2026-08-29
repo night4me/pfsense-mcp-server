@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-010-key-lifecycle-and-delivery/">
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/STABILITY/">
       
       
-        <link rel="prev" href="../ADR-009-protected-artifact-encryption-provider/">
+        <link rel="prev" href="../COMPATIBILITY/">
       
       
-        <link rel="next" href="../ADR-011-whole-store-anti-rollback-anchor/">
+        <link rel="next" href="../TOOL_AND_GUIDANCE_REFERENCE/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>ADR-010 Key lifecycle and delivery - pfsense-mcp-server</title>
+        <title>Stability & compatibility contract (v1.0.0) - pfsense-mcp-server</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#adr-010-key-lifecycle-and-delivery" class="md-skip">
+        <a href="#stability-compatibility-contract-v100" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href=".." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ADR-010 Key lifecycle and delivery
+              Stability & compatibility contract (v1.0.0)
             
           </span>
         </div>
@@ -230,7 +230,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+    <a href=".." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -260,7 +260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -284,8 +284,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -311,11 +313,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -336,7 +338,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -354,7 +356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../GETTING_STARTED/" class="md-nav__link">
+      <a href="../GETTING_STARTED/" class="md-nav__link">
         
   
   
@@ -382,7 +384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../INSTALLATION/" class="md-nav__link">
+      <a href="../INSTALLATION/" class="md-nav__link">
         
   
   
@@ -410,7 +412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_SETUP_WIZARD/" class="md-nav__link">
+      <a href="../SECURITY_SETUP_WIZARD/" class="md-nav__link">
         
   
   
@@ -438,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+      <a href="../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
         
   
   
@@ -466,7 +468,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CONFIGURATION/" class="md-nav__link">
+      <a href="../CONFIGURATION/" class="md-nav__link">
         
   
   
@@ -494,7 +496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../COMPATIBILITY/" class="md-nav__link">
+      <a href="../COMPATIBILITY/" class="md-nav__link">
         
   
   
@@ -519,10 +521,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../STABILITY/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability & compatibility contract (v1.0.0)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -538,6 +567,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persisted-state-what-a-09x-users-on-disk-state-means-for-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persisted state (what a 0.9.x user's on-disk state means for 1.0)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explicitly-internal-no-stability-promise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicitly internal (no stability promise)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -550,7 +665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+      <a href="../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
         
   
   
@@ -676,7 +791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+      <a href="../SECURITY_MODEL/" class="md-nav__link">
         
   
   
@@ -704,7 +819,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../THREAT_MODEL/" class="md-nav__link">
+      <a href="../THREAT_MODEL/" class="md-nav__link">
         
   
   
@@ -732,7 +847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+      <a href="../SECURITY_TEST_CATALOG/" class="md-nav__link">
         
   
   
@@ -760,7 +875,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+      <a href="../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
         
   
   
@@ -788,7 +903,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+      <a href="../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
         
   
   
@@ -816,7 +931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+      <a href="../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
         
   
   
@@ -932,7 +1047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/" class="md-nav__link">
+      <a href="../API/" class="md-nav__link">
         
   
   
@@ -960,7 +1075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API_REVIEW/" class="md-nav__link">
+      <a href="../API_REVIEW/" class="md-nav__link">
         
   
   
@@ -1058,7 +1173,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+      <a href="../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
         
   
   
@@ -1086,7 +1201,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+      <a href="../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
         
   
   
@@ -1114,7 +1229,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+      <a href="../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
         
   
   
@@ -1142,7 +1257,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+      <a href="../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
         
   
   
@@ -1170,7 +1285,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+      <a href="../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1198,7 +1313,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+      <a href="../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
         
   
   
@@ -1226,7 +1341,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+      <a href="../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
         
   
   
@@ -1258,8 +1373,6 @@
       
   
   
-    
-  
   
   
     
@@ -1297,15 +1410,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../tier1/" class="md-nav__link ">
+            <a href="../tier1/" class="md-nav__link ">
               
   
   
@@ -1329,7 +1442,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1347,7 +1460,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+      <a href="../TIER1_ARCHITECTURE/" class="md-nav__link">
         
   
   
@@ -1375,7 +1488,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+      <a href="../WRITE_TIER0_SPEC/" class="md-nav__link">
         
   
   
@@ -1403,7 +1516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ROADMAP/" class="md-nav__link">
+      <a href="../ROADMAP/" class="md-nav__link">
         
   
   
@@ -1431,7 +1544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+      <a href="../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
         
   
   
@@ -1459,7 +1572,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+      <a href="../V0.3.0_MILESTONE/" class="md-nav__link">
         
   
   
@@ -1487,7 +1600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+      <a href="../TIER1_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1515,7 +1628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+      <a href="../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
         
   
   
@@ -1543,7 +1656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+      <a href="../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
         
   
   
@@ -1573,7 +1686,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+      <a href="../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
         
   
   
@@ -1601,7 +1714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+      <a href="../TIER1_LAB_PLAN/" class="md-nav__link">
         
   
   
@@ -1626,8 +1739,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1711,15 +1822,15 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../adr/" class="md-nav__link ">
               
   
   
@@ -1743,7 +1854,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1763,7 +1874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
         
   
   
@@ -1791,7 +1902,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+      <a href="../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
         
   
   
@@ -1819,7 +1930,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+      <a href="../adr/ADR-003-get-only-transport/" class="md-nav__link">
         
   
   
@@ -1847,7 +1958,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+      <a href="../adr/ADR-004-capability-profiles/" class="md-nav__link">
         
   
   
@@ -1875,7 +1986,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+      <a href="../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
         
   
   
@@ -1903,7 +2014,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+      <a href="../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
         
   
   
@@ -1931,7 +2042,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+      <a href="../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
         
   
   
@@ -1959,7 +2070,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+      <a href="../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
         
   
   
@@ -1987,7 +2098,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+      <a href="../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
         
   
   
@@ -2012,37 +2123,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADR-010 Key lifecycle and delivery
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
         
   
   
@@ -2058,137 +2142,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Context
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#options-considered" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Options considered
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recommendation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recommendation
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Recommendation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#self-challenge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Self-challenge
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#future-migration-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Future migration path
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2201,7 +2154,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+      <a href="../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
         
   
   
@@ -2229,7 +2182,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+      <a href="../adr/ADR-012-confirmation-authority/" class="md-nav__link">
         
   
   
@@ -2257,7 +2210,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+      <a href="../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
         
   
   
@@ -2285,7 +2238,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+      <a href="../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
         
   
   
@@ -2313,7 +2266,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+      <a href="../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
         
   
   
@@ -2341,7 +2294,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+      <a href="../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
         
   
   
@@ -2369,7 +2322,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+      <a href="../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
         
   
   
@@ -2397,7 +2350,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+      <a href="../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
         
   
   
@@ -2425,7 +2378,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
         
   
   
@@ -2453,7 +2406,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+      <a href="../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
         
   
   
@@ -2481,7 +2434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-021-security-posture-provisioning/" class="md-nav__link">
+      <a href="../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
         
   
   
@@ -2509,7 +2462,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-022-execution-authorization-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
         
   
   
@@ -2537,7 +2490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-023-authorization-verification-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
         
   
   
@@ -2565,7 +2518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-024-execution-authorization-coordination/" class="md-nav__link">
+      <a href="../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
         
   
   
@@ -2593,7 +2546,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+      <a href="../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
         
   
   
@@ -2621,7 +2574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-026-first-write-capability-adapter/" class="md-nav__link">
+      <a href="../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
         
   
   
@@ -2649,7 +2602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+      <a href="../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
         
   
   
@@ -2677,7 +2630,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+      <a href="../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
         
   
   
@@ -2705,7 +2658,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
         
   
   
@@ -2733,7 +2686,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
         
   
   
@@ -2761,7 +2714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+      <a href="../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
         
   
   
@@ -2789,7 +2742,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
         
   
   
@@ -2817,7 +2770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+      <a href="../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
         
   
   
@@ -2845,7 +2798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
+      <a href="../adr/ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
         
   
   
@@ -2873,7 +2826,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
+      <a href="../adr/ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
         
   
   
@@ -2982,7 +2935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+      <a href="../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
         
   
   
@@ -3010,7 +2963,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+      <a href="../tier1/specs/key_lifecycle/" class="md-nav__link">
         
   
   
@@ -3038,7 +2991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+      <a href="../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
         
   
   
@@ -3066,7 +3019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+      <a href="../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
         
   
   
@@ -3094,7 +3047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+      <a href="../tier1/specs/production_store_bootstrap/" class="md-nav__link">
         
   
   
@@ -3122,7 +3075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+      <a href="../tier1/specs/confirmation_authority/" class="md-nav__link">
         
   
   
@@ -3150,7 +3103,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+      <a href="../tier1/specs/reconciliation_authority/" class="md-nav__link">
         
   
   
@@ -3178,7 +3131,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+      <a href="../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
         
   
   
@@ -3206,7 +3159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+      <a href="../tier1/specs/sealed_executor/" class="md-nav__link">
         
   
   
@@ -3234,7 +3187,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+      <a href="../tier1/specs/capability_adapter_contract/" class="md-nav__link">
         
   
   
@@ -3262,7 +3215,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+      <a href="../tier1/specs/adapter_restrictions/" class="md-nav__link">
         
   
   
@@ -3290,7 +3243,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+      <a href="../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
         
   
   
@@ -3398,7 +3351,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+      <a href="../RELEASE_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -3426,7 +3379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+      <a href="../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
         
   
   
@@ -3454,7 +3407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+      <a href="../PYPI_RELEASE/" class="md-nav__link">
         
   
   
@@ -3482,7 +3435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+      <a href="../DEPENDENCY_POLICY/" class="md-nav__link">
         
   
   
@@ -3510,7 +3463,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../BENCHMARKS/" class="md-nav__link">
+      <a href="../BENCHMARKS/" class="md-nav__link">
         
   
   
@@ -3594,7 +3547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../READ_BACKLOG/" class="md-nav__link">
+      <a href="../READ_BACKLOG/" class="md-nav__link">
         
   
   
@@ -3714,7 +3667,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.1.0/" class="md-nav__link">
         
   
   
@@ -3742,7 +3695,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.0/" class="md-nav__link">
         
   
   
@@ -3770,7 +3723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.1/" class="md-nav__link">
         
   
   
@@ -3798,7 +3751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.2.2/" class="md-nav__link">
         
   
   
@@ -3826,7 +3779,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.3.0/" class="md-nav__link">
         
   
   
@@ -3854,7 +3807,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.3.1/" class="md-nav__link">
         
   
   
@@ -3882,7 +3835,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.4.0/" class="md-nav__link">
         
   
   
@@ -3910,7 +3863,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.4.1/" class="md-nav__link">
         
   
   
@@ -3938,7 +3891,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.4.2/" class="md-nav__link">
         
   
   
@@ -3966,7 +3919,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.5.0/" class="md-nav__link">
         
   
   
@@ -3994,7 +3947,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.5.1/" class="md-nav__link">
         
   
   
@@ -4022,7 +3975,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.6.0/" class="md-nav__link">
         
   
   
@@ -4050,7 +4003,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.7.0/" class="md-nav__link">
         
   
   
@@ -4078,7 +4031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.7.1/" class="md-nav__link">
         
   
   
@@ -4106,7 +4059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.7.2/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.7.2/" class="md-nav__link">
         
   
   
@@ -4134,7 +4087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.8.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.8.0/" class="md-nav__link">
         
   
   
@@ -4162,7 +4115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v0.9.0/" class="md-nav__link">
         
   
   
@@ -4190,7 +4143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ACCEPTANCE_v1.0.0/" class="md-nav__link">
+      <a href="../ACCEPTANCE_v1.0.0/" class="md-nav__link">
         
   
   
@@ -4245,10 +4198,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#context" class="md-nav__link">
+  <a href="#mcp-surface" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Context
+        MCP surface
       
     </span>
   </a>
@@ -4256,10 +4209,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#options-considered" class="md-nav__link">
+  <a href="#cli-surface" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Options considered
+        CLI surface
       
     </span>
   </a>
@@ -4267,77 +4220,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommendation" class="md-nav__link">
+  <a href="#configuration-surface" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommendation
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Recommendation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#self-challenge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Self-challenge
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#consequences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Consequences
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Consequences">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#positive" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Positive
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#negative" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Negative
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#future-migration-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Future migration path
+        Configuration surface
       
     </span>
   </a>
@@ -4345,10 +4231,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
+  <a href="#persisted-state-what-a-09x-users-on-disk-state-means-for-10" class="md-nav__link">
     <span class="md-ellipsis">
       
-        References
+        Persisted state (what a 0.9.x user's on-disk state means for 1.0)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explicitly-internal-no-stability-promise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicitly internal (no stability promise)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
       
     </span>
   </a>
@@ -4372,7 +4280,7 @@
 
 
   
-    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-010-key-lifecycle-and-delivery.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/STABILITY.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -4380,116 +4288,202 @@
   
 
 
-<h1 id="adr-010-key-lifecycle-and-delivery">ADR-010: Key lifecycle and delivery<a class="headerlink" href="#adr-010-key-lifecycle-and-delivery" title="Permanent link">&para;</a></h1>
-<ul>
-<li><strong>Status:</strong> Accepted</li>
-<li><strong>Date:</strong> 2026-08-08</li>
-<li><strong>Accepted:</strong> 2026-08-08 — implemented as <code>key_lifecycle.py</code>/
-  <code>secure_file.py</code> (Phase 2); status field corrected to match
-  already-merged implementation. Whether a systemd-managed deployment
-  model changes the key-delivery recommendation remains open if the
-  actual production deployment differs from what this session observed
-  — an operational confirmation, not a reopening of this decision.</li>
-</ul>
-<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
-<p><code>ADR-009</code> selects a codec but not how its key (and the pre-existing HMAC
-integrity key <code>SqliteRecoveryContractStore</code> already requires) is
-generated, rotated, and destroyed. Today, <code>SqliteRecoveryContractStore.
-__init__</code> accepts <code>integrity_key: bytes</code> as a caller-supplied parameter
-with no defined production sourcing — this ADR closes that gap for both
-keys.</p>
-<h2 id="options-considered">Options considered<a class="headerlink" href="#options-considered" title="Permanent link">&para;</a></h2>
+<h1 id="stability-compatibility-contract-v100">Stability &amp; compatibility contract (v1.0.0)<a class="headerlink" href="#stability-compatibility-contract-v100" title="Permanent link">&para;</a></h1>
+<p><code>v1.0.0</code> is this project's first release to treat its public interfaces as a
+stable contract rather than an evolving prototype. This page states,
+source-derived, exactly what "stable" covers and what it deliberately does
+not — so a 0.9.x user upgrading, or anyone scripting/automating against this
+project, knows what they can rely on.</p>
+<p>Semantic versioning applies to everything listed as <strong>Stable</strong> below: a
+breaking change to any of it is a major-version bump, never a patch or minor
+release. Everything listed as <strong>Internal</strong> may change in any release,
+including a patch release, without notice.</p>
+<h2 id="mcp-surface">MCP surface<a class="headerlink" href="#mcp-surface" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Option</th>
-<th>Strengths</th>
-<th>Costs / failure modes</th>
+<th>Surface</th>
+<th>Status</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Single shared key for encryption + HMAC</td>
-<td>Simplest to provision</td>
-<td>Violates key separation (compromise of one purpose compromises both); rejected outright, not a serious option</td>
+<td>Public tool names (<code>KNOWN_READ_TOOL_NAMES</code>, <code>KNOWN_GUIDANCE_TOOL_NAMES</code>)</td>
+<td><strong>Stable</strong></td>
+<td>95 READ + 2 guidance tools, <a href="../API/">API.md</a>. A tool is never silently renamed; renames are additive (new name registered, old name deprecated first).</td>
 </tr>
 <tr>
-<td>Manual, ad hoc rotation (no tooling)</td>
-<td>Zero implementation cost</td>
-<td>Exactly how key-custody mistakes happen under incident pressure; rejected</td>
+<td>Tool input schemas</td>
+<td><strong>Stable</strong></td>
+<td>New optional fields may be added; existing fields are never removed or repurposed within a major version.</td>
 </tr>
 <tr>
-<td><strong>Two independent <code>KeyRecord</code>s, local-file delivery, counter-based nonce, resumable per-record rotation (recommended)</strong></td>
-<td>Reuses <code>config.py</code>'s proven loading pattern; rotation is safe to interrupt; nonce reuse is structurally prevented</td>
-<td>Requires implementing <code>NonceCounter</code> durability correctly — the one genuinely new piece of engineering here</td>
+<td>Tool output/result shapes</td>
+<td><strong>Stable</strong></td>
+<td>Pydantic response models are additive-only across <code>1.x</code>.</td>
 </tr>
 <tr>
-<td>Automatic time-based rotation (e.g., rotate every 30 days unconditionally)</td>
-<td>Removes a manual step</td>
-<td>Silent rotation without an operator confirming the old key's artifacts have all migrated risks the old key being destroyed prematurely; rejected in favor of explicit operator-confirmed destruction</td>
+<td><code>pfsense_mcp_info</code>'s own fields (<code>server_version</code>, <code>registered_tool_count</code>, etc.)</td>
+<td><strong>Stable</strong></td>
+<td>The one tool whose entire purpose is exposing this contract to a client at runtime.</td>
+</tr>
+<tr>
+<td>Server name (<code>serverInfo.name</code>)</td>
+<td><strong>Stable</strong></td>
+<td>Always <code>pfsense-mcp-server</code>.</td>
+</tr>
+<tr>
+<td>Server version (<code>serverInfo.version</code>)</td>
+<td><strong>Stable meaning, not a stable value</strong></td>
+<td>Always the installed <code>pfsense-mcp-server</code> package version (<code>importlib.metadata</code>) as of <code>v1.0.0</code> — never the <code>mcp</code> SDK's own version. See the serverInfo.version fix in this same audit for why this needed stating explicitly.</td>
+</tr>
+<tr>
+<td>MCP protocol behavior (stdio transport, initialize/list_tools/call_tool semantics)</td>
+<td><strong>Stable, but owned upstream</strong></td>
+<td>Governed by the <code>mcp</code> Python SDK (<code>mcp&gt;=1.21.1,&lt;2.0.0</code>), not this project.</td>
+</tr>
+<tr>
+<td>Default-reachable WRITE tool count</td>
+<td><strong>Stable at zero</strong></td>
+<td>0 by design for <code>v1.x</code>; any future default-reachable WRITE tool is itself a major-version, security-reviewed decision, never a minor/patch addition.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="recommendation">Recommendation<a class="headerlink" href="#recommendation" title="Permanent link">&para;</a></h2>
-<p>Two independently generated 256-bit keys (encryption, HMAC), each a
-<code>KeyRecord</code>, loaded via a shared <code>O_NOFOLLOW</code>/<code>fstat()</code> helper factored
-out of <code>config.py</code>'s existing key-loading code. Nonce uniqueness for the
-encryption key is enforced by a durable, fsync-before-return
-<code>NonceCounter</code>, not <code>os.urandom()</code> alone. Rotation is per-contract,
-resumable, and never destroys the old key automatically — destruction is
-a separate, explicit operator action after a zero-count verification.
-Full specification: <a href="../../tier1/specs/key_lifecycle/">key_lifecycle.md</a>.</p>
-<h3 id="self-challenge">Self-challenge<a class="headerlink" href="#self-challenge" title="Permanent link">&para;</a></h3>
-<p><em>"Isn't a counter-based nonce over-engineering compared to just using
-<code>os.urandom(12)</code> per encryption, which is what most AEAD examples show?"</em>
-— For AES-GCM specifically, a 96-bit random nonce has a meaningful
-collision probability once billions of encryptions have occurred under
-one key (birthday bound); for a long-lived server key that could
-plausibly encrypt many records over months, a random nonce is the wrong
-choice for the number of encryptions this system may eventually perform,
-even if any single day's volume looks negligible. A monotonic counter
-makes reuse structurally impossible up to 2^64 encryptions per key epoch,
-which is the correct engineering choice given AES-GCM's well-documented
-nonce-reuse catastrophic failure mode. This is not caution for its own
-sake — nonce reuse under GCM leaks the authentication key.</p>
-<p><em>"Why not let <code>rotate_key()</code> run as one big transaction so it's atomic
-instead of resumable-but-interruptible?"</em> — Because the store's own design
-principle (see <code>store.py</code>'s per-record <code>BEGIN IMMEDIATE</code> transactions,
-never a whole-database lock) is to keep any single transaction narrow —
-a store with potentially many contracts held under one giant rotation
-transaction would block all other store operations for the duration and
-would make a mid-rotation crash's blast radius the entire store instead of
-one record. Resumable-per-record is the design already used everywhere
-else in this store; rotation should not be the one place that breaks that
-pattern.</p>
-<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
-<h3 id="positive">Positive<a class="headerlink" href="#positive" title="Permanent link">&para;</a></h3>
+<h2 id="cli-surface">CLI surface<a class="headerlink" href="#cli-surface" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pfsense-mcp-server</code> (<code>--help</code>, <code>--version</code>)</td>
+<td><strong>Stable</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>pfsense-mcp-security discover</code>/<code>plan</code>/<code>doctor</code></td>
+<td><strong>Stable</strong></td>
+<td>Read-only diagnostics; flags are additive.</td>
+</tr>
+<tr>
+<td><code>pfsense-mcp-security setup</code> (bare, <code>--non-interactive</code>)</td>
+<td><strong>Stable</strong></td>
+<td>Plan-only; never provisions.</td>
+</tr>
+<tr>
+<td><code>pfsense-mcp-security setup apply</code></td>
+<td><strong>Stable</strong></td>
+<td>Confirmation-gated; <code>--plan-digest</code>/<code>--confirm</code> contract unchanged.</td>
+</tr>
+<tr>
+<td><code>pfsense-mcp-security setup init-confirm-key</code></td>
+<td><strong>Stable</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>pfsense-mcp-security setup write-client-config</code></td>
+<td><strong>Stable</strong></td>
+<td><code>--client {claude-desktop,codex}</code> values are stable; new client types are additive.</td>
+</tr>
+<tr>
+<td><code>pfsense-mcp-security bootstrap</code>/<code>recover</code></td>
+<td><strong>Stable</strong></td>
+<td>ADR-033/recovery-contract commands.</td>
+</tr>
+<tr>
+<td>Exit codes</td>
+<td><strong>Stable per subcommand</strong></td>
+<td>Documented in each subcommand's own <code>--help</code> epilog; a given outcome keeps its exit code across <code>1.x</code>.</td>
+</tr>
+<tr>
+<td><code>--json</code> output shapes</td>
+<td><strong>Stable</strong></td>
+<td>Field names are additive-only.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="configuration-surface">Configuration surface<a class="headerlink" href="#configuration-surface" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PFSENSE_API_URL</code>, <code>PFSENSE_IDENTITY</code>, <code>PFSENSE_API_KEY_FILE</code>, <code>PFSENSE_TLS_MODE</code>, <code>PFSENSE_TLS_CA_FILE</code></td>
+<td><strong>Stable</strong></td>
+<td><a href="../CONFIGURATION/">CONFIGURATION.md</a>.</td>
+</tr>
+<tr>
+<td><code>PFSENSE_SETUP_CONFIRM_KEY_FILE</code></td>
+<td><strong>Stable</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>Credential-file semantics (owner-only permissions, path-only in client config, value never serialized)</td>
+<td><strong>Stable</strong></td>
+<td>A security invariant, not just a convention — see <code>SECURITY_MODEL.md</code>.</td>
+</tr>
+<tr>
+<td>Generated Claude Desktop JSON / Codex TOML shapes</td>
+<td><strong>Stable</strong></td>
+<td><a href="../MCP_CLIENT_CONFIGURATION/">MCP_CLIENT_CONFIGURATION.md</a>; merge-only, never a whole-file replacement.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="persisted-state-what-a-09x-users-on-disk-state-means-for-10">Persisted state (what a 0.9.x user's on-disk state means for 1.0)<a class="headerlink" href="#persisted-state-what-a-09x-users-on-disk-state-means-for-10" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PFSENSE_SETUP_CONFIRM_KEY_FILE</code> contents</td>
+<td><strong>Compatible</strong></td>
+<td>Opaque local secret; a 0.9.x-created key continues to work unchanged.</td>
+</tr>
+<tr>
+<td>Generated <code>~/.codex/config.toml</code> / Claude Desktop config</td>
+<td><strong>Compatible</strong></td>
+<td>Existing entries are preserved (merge-only) by every <code>write-client-config</code> run, past or future.</td>
+</tr>
+<tr>
+<td>Tier 1 store / bootstrap journal / witness baseline</td>
+<td><strong>Internal</strong></td>
+<td>Tier 1 is inert (no default-reachable WRITE capability ships in <code>v1.0.0</code>); its on-disk formats are pre-release, unversioned, and may change without notice until a Tier 1 capability is actually shipped and its own stability is declared separately.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="explicitly-internal-no-stability-promise">Explicitly internal (no stability promise)<a class="headerlink" href="#explicitly-internal-no-stability-promise" title="Permanent link">&para;</a></h2>
 <ul>
-<li>No new credential-loading pattern beyond what <code>config.py</code> already
-  proves works.</li>
-<li>Rotation is safe under crash/interruption without operator guesswork.</li>
-<li>Nonce reuse is structurally, not just statistically, prevented.</li>
+<li>Every <code>pfsense_mcp.*</code> Python module, class, and function not reached
+  through the MCP tool surface or the two CLI entry points above. This
+  project does not support being imported as a Python library — only as an
+  MCP server (<code>pfsense-mcp-server</code>) and a CLI (<code>pfsense-mcp-security</code>).</li>
+<li>Log file formats/locations, internal audit-event schemas, and CI/release
+  tooling under <code>scripts/</code>.</li>
+<li><code>docs/adr/*</code> design-only ADRs describing not-yet-implemented capabilities
+  (Nexus, Tier 1 WRITE execution, hardware witness backends) — these are
+  research/design artifacts, not a compatibility promise for anything they
+  describe.</li>
 </ul>
-<h3 id="negative">Negative<a class="headerlink" href="#negative" title="Permanent link">&para;</a></h3>
+<h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Requires factoring existing production code (<code>config.py</code>'s key-loading
-  helpers) into a shared location — a refactor of already-tested code,
-  which must preserve exact existing behavior (explicit review
-  requirement in <code>key_lifecycle.md</code>'s review checklist).</li>
-<li>Two key files to manage operationally instead of one.</li>
-</ul>
-<h2 id="future-migration-path">Future migration path<a class="headerlink" href="#future-migration-path" title="Permanent link">&para;</a></h2>
-<p>If a hardware-backed key provider (TPM-sealed key, HSM) is adopted later,
-only <code>load_key_material()</code>'s implementation changes — <code>KeyRecord</code>'s shape
-and every downstream consumer (<code>crypto.py</code>, <code>store.py</code>) are unaffected.
-Revisit the "manual rotation only" decision if operational experience
-shows rotation is needed frequently enough that manual per-rotation
-review becomes a bottleneck rather than a safety feature.</p>
-<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../tier1/specs/key_lifecycle/">key_lifecycle.md</a></li>
-<li><a href="../ADR-009-protected-artifact-encryption-provider/">ADR-009</a></li>
-<li><code>src/pfsense_mcp/config.py</code> (existing key-loading pattern)</li>
+<li><a href="../COMPATIBILITY/">Compatibility</a> — pfSense-appliance-side edition/version/schema compatibility (a different concern from this page).</li>
+<li><a href="../SECURITY_MODEL/">Security model</a></li>
+<li><a href="../API/">MCP tool reference</a></li>
 </ul>
 
 
@@ -4546,10 +4540,10 @@ review becomes a bottleneck rather than a safety feature.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

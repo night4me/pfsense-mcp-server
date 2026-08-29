@@ -73,6 +73,10 @@
          <lastmod>2026-08-29</lastmod>
     </url>
     <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/ACCEPTANCE_v1.0.0/</loc>
+         <lastmod>2026-08-29</lastmod>
+    </url>
+    <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/ADR033_PHASE_D_LAB_RUNBOOK/</loc>
          <lastmod>2026-08-29</lastmod>
     </url>
@@ -178,6 +182,10 @@
     </url>
     <url>
          <loc>https://night4me.github.io/pfsense-mcp-server/SECURITY_TEST_CATALOG/</loc>
+         <lastmod>2026-08-29</lastmod>
+    </url>
+    <url>
+         <loc>https://night4me.github.io/pfsense-mcp-server/STABILITY/</loc>
          <lastmod>2026-08-29</lastmod>
     </url>
     <url>
