@@ -3,8 +3,8 @@
 Claude Code supports local stdio MCP servers via the `claude mcp add` CLI
 command (Anthropic's own documented, recommended way to register a server —
 see [Claude Code's MCP documentation][claude-code-mcp]), or by editing
-`.mcp.json` (project scope, shared via version control) or `~/.claude.json`
-(personal/user scope) directly.
+`.mcp.json` (`project` scope, shared via version control) or `~/.claude.json`
+(`local`/`user` scope) directly.
 
 ## Installation
 
@@ -27,8 +27,10 @@ claude mcp add --scope project --transport stdio pfsense \
 
 Use `--scope project` for a team-shared `.mcp.json` you commit to version
 control (never commit the actual key file, only its path), or `--scope user`
-(the default if `--scope` is omitted) to make the server available across all
-your projects.
+to make the server available across all your projects. If `--scope` is
+omitted, it defaults to `local` — stored in `~/.claude.json` under an
+entry for the current project only, not shared and not available in your
+other projects.
 
 If you prefer to edit the file directly, the same server entry looks like
 this in either `.mcp.json` or `~/.claude.json`'s `mcpServers` object:

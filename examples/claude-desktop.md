@@ -52,4 +52,4 @@ query the configured appliance but cannot mutate it.
 - Review Claude Desktop's MCP logs, but never paste logs containing appliance
   details into a public issue.
 
-[claude-local]: https://support.anthropic.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop
+[claude-local]: https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop

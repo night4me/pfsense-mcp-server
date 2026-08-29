@@ -51,4 +51,4 @@ appliance. No WRITE tool is registered.
   sanitized startup errors; do not print the key or request headers.
 - Keep machine-specific configuration out of version control.
 
-[cursor-mcp]: https://docs.cursor.com/context/model-context-protocol
+[cursor-mcp]: https://cursor.com/docs/mcp
