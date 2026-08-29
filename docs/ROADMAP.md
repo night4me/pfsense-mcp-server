@@ -60,6 +60,19 @@ guidance tools, 0 WRITE; see `CHANGELOG.md`'s `[0.9.0]` entry,
 post-publication verification, including PyPI provenance/Sigstore
 attestation and a clean-room public install).
 
+**Update (2026-08-29, published): the current immutable published
+baseline is now `v1.0.0`, this project's first stable release** (95
+pfSense READ tools + 2 documentation guidance tools, 0 WRITE — the
+public MCP contract is unchanged from `v0.9.0`; this release is a
+product-maturity and correctness pass, not a capability expansion; see
+`docs/STABILITY.md` for the version-independent stability promise now
+made across the MCP/CLI/config/persisted-state surfaces). See
+`CHANGELOG.md`'s `[1.0.0]` entry, `docs/ACCEPTANCE_v1.0.0.md`, and
+`reports-ai/V1_0_0_PUBLICATION_2026-08-29.md` for independent
+post-publication verification, including PyPI provenance/Sigstore
+attestation, member-by-member wheel/sdist content parity, and a
+clean-room public install.
+
 - Production MCP surface: **95 pfSense READ tools + 2 documentation
   guidance tools, 0 default-reachable WRITE tools** — the READ/WRITE
   split is enforced mechanically on every CI run
