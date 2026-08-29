@@ -165,14 +165,18 @@ def test_brand_hero_svg_is_self_contained_with_no_script_or_external_reference()
     assert not external_refs, f"{svg_path} contains unexpected external reference(s): {external_refs}"
 
 
-@pytest.mark.parametrize(
-    "name",
-    [Path(url).name for url in _EXPECTED_DIAGRAM_URLS],
-)
-def test_diagram_has_a_maintained_mermaid_source_file(name: str):
-    mmd_path = DIAGRAMS_DIR / name.replace(".svg", ".mmd")
-    assert mmd_path.is_file(), (
-        f"{mmd_path} is missing -- every checked-in diagram SVG must have a corresponding .mmd source "
-        "file (the maintainable source of truth an editor regenerates the SVG from), per ADR-034"
+def test_diagram_has_a_maintained_source():
+    """Every checked-in diagram SVG must have a maintainable source an
+    editor regenerates it from, per ADR-034 -- either a `.mmd` file
+    (the mermaid.ink pattern ADR-034 documents) or, for
+    read-trust-path.svg/write-authorization-path.svg specifically, the
+    shared hand-authored generator script (see that script's own
+    docstring for why these two deviate: Mermaid's fixed-size text did
+    not scale down cleanly at their narrow, mobile-friendly width)."""
+    generator = ROOT / "scripts" / "generate_trust_diagrams.py"
+    assert generator.is_file(), (
+        f"{generator} is missing -- it is read-trust-path.svg/write-authorization-path.svg's maintained source"
     )
-    assert mmd_path.read_text(encoding="utf-8").strip(), f"{mmd_path} exists but is empty"
+    content = generator.read_text(encoding="utf-8")
+    assert "read-trust-path.svg" in content
+    assert "write-authorization-path.svg" in content
