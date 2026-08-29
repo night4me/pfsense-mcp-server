@@ -493,6 +493,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#connection-security-tls-and-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection security (TLS) and credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#setup-apply-actually-doing-what-the-plan-describes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4239,6 +4250,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#connection-security-tls-and-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection security (TLS) and credentials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#setup-apply-actually-doing-what-the-plan-describes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4424,6 +4446,39 @@ flags:</p>
 </ul>
 <p>Add <code>--json</code> to any <code>setup</code>/<code>setup apply</code> invocation for machine-
 readable output.</p>
+<h3 id="connection-security-tls-and-credentials">Connection security (TLS) and credentials<a class="headerlink" href="#connection-security-tls-and-credentials" title="Permanent link">&para;</a></h3>
+<p>The interactive wizard's connection-security question offers three
+choices — <code>--tls-mode</code> takes the same three values non-interactively:</p>
+<ul>
+<li><strong>Verify TLS certificate</strong> (<code>verify</code>, the default and recommended
+  choice) — validates the appliance's certificate against your
+  system's normal trust store, exactly like a browser would. Use this
+  if pfSense's certificate was issued by a publicly trusted CA (or one
+  your OS already trusts); nothing extra is needed.</li>
+<li><strong>Verify against a private/internal certificate authority</strong>
+  (<code>verify_private_ca</code>) — for a self-hosted or LAB pfSense using its
+  own or your organization's internal CA. The wizard asks for the path
+  to that CA's <strong>public certificate only</strong> (never a private key) —
+  export it from pfSense's own Certificate Manager, or ask whoever
+  manages this pfSense's certificates for it. This maps to
+  <code>PFSENSE_TLS_MODE=auto</code> plus <code>PFSENSE_TLS_CA_FILE</code> pointing at that
+  file.</li>
+<li><strong>Skip TLS verification</strong> (<code>insecure</code>, advanced, not recommended) —
+  disables certificate verification entirely. Treat it as a short-lived
+  diagnostic step only, never a standing configuration.</li>
+</ul>
+<p>Whichever you choose, <code>setup</code>'s plan-only output reminds you to
+<strong>export the matching real environment variables in your shell</strong>
+(<code>PFSENSE_API_URL</code>, <code>PFSENSE_IDENTITY</code>, <code>PFSENSE_API_KEY_FILE</code>,
+<code>PFSENSE_TLS_MODE</code>, and <code>PFSENSE_TLS_CA_FILE</code> if applicable) before
+running <code>setup apply</code> — <code>setup apply</code> reads your real shell
+environment fresh, the same way the MCP server itself does at startup;
+<code>setup</code> itself never reads or writes them. For the credential file
+(<code>PFSENSE_API_KEY_FILE</code>): generate an API key in pfSense under the
+REST API package's own user/key management, then save <strong>only the key
+itself</strong> to a private, owner-only file —
+<a href="../INSTALLATION/#obtain-and-configure-a-credential-safely">Installation</a>
+has the exact <code>install -m 600</code> recipe.</p>
 <h3 id="setup-apply-actually-doing-what-the-plan-describes"><code>setup apply</code> — actually doing what the plan describes<a class="headerlink" href="#setup-apply-actually-doing-what-the-plan-describes" title="Permanent link">&para;</a></h3>
 <p><code>setup</code> only plans; <strong><code>setup apply</code> is the separate, explicit command
 that acts on a plan you've already reviewed</strong>:</p>
