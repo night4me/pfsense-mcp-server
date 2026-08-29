@@ -1789,7 +1789,21 @@ def _credential_guidance_lines() -> tuple[str, ...]:
     `_wrap()` to the real terminal width at render time -- the fix is
     generic (every consumer of `_wrap()` gets it), not a per-string
     patch. Copy/paste tokens (the `install` command) remain untouched,
-    separate list entries -- never wrapped."""
+    separate list entries -- never wrapped.
+
+    Post-v1.0 security boundary audit finding (2026-08-29): this
+    guidance is shown only for `read_only` (`_next_step_lines()`'s own
+    branch), and `read_only` never provisions or scopes a pfSense
+    identity -- `setup apply` performs exactly one harmless `GET`
+    against whatever key is configured here (see
+    `security_setup_apply.py`'s own module docstring, "Zero pfSense
+    mutation for `read_only`"). This project verifies that key can
+    authenticate; it never verifies, and cannot verify, what pfSense
+    privileges that key itself holds. The final paragraph below now
+    says so explicitly, so an operator reusing an administrator-level
+    key does not mistake the MCP server's own "0 default-reachable
+    WRITE tools" property (real, but application-layer only) for a
+    pfSense-side guarantee that this key cannot write."""
 
     return (
         _wrap(
@@ -1805,6 +1819,15 @@ def _credential_guidance_lines() -> tuple[str, ...]:
             "The file must be owned by you with no group/other permissions (600 above already sets "
             "that) -- the server refuses to start otherwise. Never paste the key value itself anywhere "
             "else."
+        ),
+        "",
+        _wrap(
+            "This project does not provision or verify this key's own pfSense privileges for "
+            "read_only -- it only confirms the key can authenticate. If this key holds pfSense "
+            "WRITE privileges, a request that bypasses this MCP server can still mutate pfSense "
+            "even though no WRITE tool is registered here. For the strongest boundary, scope this "
+            "key to the READ privilege set docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md documents rather "
+            "than reusing an administrator account."
         ),
     )
 

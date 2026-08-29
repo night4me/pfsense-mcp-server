@@ -108,10 +108,16 @@ all three ultimately fetch the same signed artifact from PyPI.
 ## Obtain and configure a credential safely
 
 1. In pfSense, under the REST API package's own user/key management,
-   generate an API key for the identity you intend to use (or use
-   [the setup wizard](SECURITY_SETUP_WIZARD.md) to provision a fresh,
-   dedicated, least-privilege identity instead of reusing an existing
-   one).
+   generate an API key for the identity you intend to use. If you plan
+   to run `write_protected`, prefer
+   [the setup wizard](SECURITY_SETUP_WIZARD.md)'s `bootstrap` step,
+   which provisions a fresh, dedicated, least-privilege identity
+   instead of reusing an existing one. **For `read_only`, the wizard
+   does not provision or verify any identity** — it uses whatever key
+   you configure here exactly as-is, so for the strongest security
+   boundary, scope that key's own pfSense privileges to the READ set
+   [the least-privilege matrix](PFSENSE_LEAST_PRIVILEGE_MATRIX.md)
+   documents rather than reusing an administrator account.
 2. Save **only the key itself** to a file *outside* this project's
    directory, with owner-only permissions:
 
@@ -125,8 +131,11 @@ all three ultimately fetch the same signed artifact from PyPI.
    anything logged. The file must be a regular file (not a symlink)
    owned by the user running the server, with no group/other
    permission bits, or the server refuses to start. See
-   [the security model](SECURITY_MODEL.md) for the full credential-
-   handling design.
+   [the security model](SECURITY_MODEL.md#credentials-and-transport)
+   for the full credential-handling design, including why "0
+   default-reachable WRITE tools" is an application-layer guarantee,
+   not a statement about what this key itself is authorized to do on
+   pfSense.
 
 ## TLS verification
 

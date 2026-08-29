@@ -301,6 +301,44 @@ def test_write_protected_never_touches_the_read_only_pfsense_client(tmp_path, mo
     assert calls == []
 
 
+def test_read_only_never_composes_bootstrap_provisioning(tmp_path, monkeypatch):
+    """Post-v1.0 security boundary audit (2026-08-29): the symmetric
+    counterpart to test_write_protected_never_touches_the_read_only_
+    pfsense_client above. `read_only` must never call
+    run_bootstrap_from_environment() -- it has no dedicated pfSense
+    identity to provision or verify; it only ever performs the one
+    harmless GET against the operator's bring-your-own-key credential.
+    This pins the exact property this audit found undocumented in
+    tests: that `read_only` never gains a code path into ADR-033's
+    provisioning engine, however future slices evolve."""
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        "pfsense_mcp.security_setup_apply.run_bootstrap_from_environment",
+        lambda *args, **kwargs: (
+            calls.append("called")
+            or (_ for _ in ()).throw(
+                AssertionError("run_bootstrap_from_environment must never be called for read_only")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "pfsense_mcp.security_setup_apply.build_pfsense_client",
+        lambda config, api_key: (_FakeTransport(), _FakeClient()),
+    )
+    env = _base_env(tmp_path, with_pfsense_config=True)
+    digest, token = _current_token(tmp_path, env, target_capability_posture="read_only", target_anchor_assurance="none")
+    result = run_setup_apply_from_environment(
+        env,
+        target_capability_posture="read_only",
+        target_anchor_assurance="none",
+        plan_digest=digest,
+        confirm_token=token,
+    )
+    assert result.outcome is ApplyOutcome.APPLY_COMPLETED
+    assert calls == []
+
+
 # --- pfSense configuration/credential errors --------------------------------
 
 

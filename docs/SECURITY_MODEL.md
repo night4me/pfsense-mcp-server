@@ -161,6 +161,38 @@ the `X-API-Key` header. HTTPS is mandatory. Strict system trust is the
 default; an explicit CA file can be used for an internal CA. TLS
 verification can be disabled only by explicit startup configuration.
 
+**What this credential is authorized to do on pfSense's own side is a
+deployment-time choice, not something this project verifies or
+restricts for `read_only`.** These are two separate properties and this
+project does not conflate them: (1) "no WRITE tool is registered" is an
+MCP/application-layer guarantee about this server's own code -- proven
+above, enforced structurally, and independently tested; (2) "the
+configured pfSense credential cannot itself perform a WRITE operation"
+is a pfSense-side privilege guarantee that depends entirely on which
+key the operator supplies. For `write_protected`,
+`pfsense-mcp-security bootstrap`/`setup apply` provision a dedicated
+pfSense identity holding exactly the least-privilege set
+[ADR-033](adr/ADR-033-pfsense-least-privilege-bootstrap-architecture.md)
+derives from source (currently 94 READ privileges, one per READ tool,
+plus the one WRITE-exclusive privilege `set_firewall_alias_description_v1`
+needs -- 95 combined; see
+[the least-privilege matrix](PFSENSE_LEAST_PRIVILEGE_MATRIX.md)).
+For the default `read_only`/`auditor` posture, **no dedicated identity
+is ever provisioned**: `setup apply` performs one harmless `GET`
+against whatever bring-your-own-key credential the operator already
+configured, and never inspects that credential's own pfSense privilege
+scope beyond confirming it can authenticate. If that key happens to
+hold pfSense administrator or WRITE privileges, a request that bypasses
+this MCP server entirely -- a leaked key used directly against
+`pfREST`, or a misrouted call -- can still mutate pfSense state;
+nothing in the `read_only` posture prevents that at the pfSense
+authorization layer. Operators who want the stronger, credential-layer
+guarantee should provision (or ask a pfSense administrator to
+provision) an API identity scoped to exactly the READ privilege set the
+least-privilege matrix documents, and use that identity's key for
+`read_only` -- this project does not currently do this for the operator
+automatically.
+
 HTTP redirects are not followed and every non-2xx status is rejected. Timeout,
 connection, TLS, protocol, and other HTTP transport failures are normalized to
 sanitized project exceptions without propagating upstream exception messages

@@ -92,7 +92,12 @@ the complete, current list:
 - **GET-only production transport.** The production request path cannot
   issue a mutating (non-GET) HTTP request. This is enforced structurally
   (a static check over the source, not just a runtime flag) and verified
-  on every CI run.
+  on every CI run. This is a guarantee about this project's own code,
+  not about the configured pfSense credential's own privileges — see
+  [the security model](docs/SECURITY_MODEL.md#credentials-and-transport)
+  for why those are two separate properties, and what `read_only`
+  currently does and does not verify about a bring-your-own-key
+  credential.
 - **Explicit capability gating.** An MCP tool is reachable only if its
   capability is present in the selected profile's accepted set; there is
   no reflection-based or implicit tool registration.

@@ -1147,6 +1147,21 @@ def test_no_secret_shaped_env_value_ever_appears_in_interactive_wizard_output(mo
     assert "totally-secret-value-should-never-appear" not in out
 
 
+def test_read_only_wizard_output_states_the_credential_privilege_scoping_caveat(monkeypatch):
+    """Post-v1.0 security boundary audit (2026-08-29): `read_only` never
+    provisions or verifies the pfSense-side privilege scope of the
+    operator's bring-your-own-key credential -- `_credential_guidance_
+    lines()` now says so explicitly so an operator does not mistake
+    "0 default-reachable WRITE tools" (application-layer only) for a
+    pfSense-side guarantee about their own key. This pins that the
+    caveat is actually reachable in real wizard output, not merely
+    present in source."""
+
+    _exit_code, out = _run(monkeypatch, ["setup"], stdin_text=_READ_ONLY_HAPPY_PATH)
+    assert "does not provision or verify this key's own pfSense privileges" in out
+    assert "PFSENSE_LEAST_PRIVILEGE_MATRIX.md" in out
+
+
 def test_no_secret_shaped_env_value_leaks_through_the_new_private_ca_and_credential_guidance_text(monkeypatch):
     """The v1.0.0 clean-room finding added static credential-file and
     private-CA guidance prose to the wizard's completion screen (see
