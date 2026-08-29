@@ -46,10 +46,10 @@ your `PATH`.
 ```console
 sudo apt install pipx      # Debian/Ubuntu; see pipx's own docs for other platforms
 pipx ensurepath             # adds pipx's bin directory to PATH -- reopen your terminal after
-pipx install pfsense-mcp-server==0.9.0
+pipx install pfsense-mcp-server==1.0.0
 ```
 
-Pinning the exact version (`==0.9.0`) is recommended for anything other
+Pinning the exact version (`==1.0.0`) is recommended for anything other
 than a quick local trial — this project follows semantic versioning, so
 a pin protects you from an unreviewed minor/major upgrade landing in
 your MCP client's own environment. To always take the latest release
@@ -71,7 +71,7 @@ directory, or on a platform where `pipx` isn't packaged:
 ```console
 python -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install pfsense-mcp-server==0.9.0
+.venv/bin/python -m pip install pfsense-mcp-server==1.0.0
 ```
 
 To always take the latest release instead of a pinned version:
@@ -90,7 +90,7 @@ If you already use [`uv`](https://docs.astral.sh/uv/), it offers the
 same isolation as `pipx`, generally installing faster:
 
 ```console
-uv tool install pfsense-mcp-server==0.9.0
+uv tool install pfsense-mcp-server==1.0.0
 ```
 
 `uv` installs to the same `~/.local/bin/` location `pipx` does by

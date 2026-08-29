@@ -1,5 +1,6 @@
 """Regression protection for the public install commands shown in
-README.md's Quick start and docs/GETTING_STARTED.md's Step 1.
+README.md's Quick start, docs/GETTING_STARTED.md's Step 1, and
+docs/INSTALLATION.md's "Install from PyPI" section.
 
 Found 2026-08-22: the Quick start section pinned an exact release
 version (``pfsense-mcp-server==0.5.1``) that was never updated across
@@ -29,6 +30,15 @@ stale command (backtick-quoted, describing what was wrong) as part of
 explaining the fix -- a legitimate historical reference, not a live
 install instruction, and exactly the false-positive class this test
 must not reject.
+
+Found 2026-08-29 during a post-v1.0.0 documentation staleness sweep:
+docs/INSTALLATION.md's three `pipx install`/`.venv pip install`/`uv
+tool install` examples each independently pin an exact version and had
+drifted to a stale ``==0.9.0`` after the v1.0.0 release, uncaught by
+the two checks above since neither scans that document. Scoped to the
+"## Install from PyPI" section only (up to the next `## ` heading), the
+same targeted-region discipline as the checks above, for the same
+false-positive-avoidance reason.
 """
 
 from __future__ import annotations
@@ -40,18 +50,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 GETTING_STARTED = ROOT / "docs" / "GETTING_STARTED.md"
+INSTALLATION = ROOT / "docs" / "INSTALLATION.md"
 PACKAGE_NAME = "pfsense-mcp-server"
 
 QUICK_START_FENCE = re.compile(r"^## Quick start\s*\n+```(?:\w+)?\s*\n(?P<body>.*?)```", re.DOTALL | re.MULTILINE)
 GETTING_STARTED_INSTALL_FENCE = re.compile(
     r"^## 1\. Install\s*\n+```(?:\w+)?\s*\n(?P<body>.*?)```", re.DOTALL | re.MULTILINE
 )
+INSTALLATION_PYPI_SECTION = re.compile(r"^## Install from PyPI\s*\n(?P<body>.*?)(?=^## )", re.DOTALL | re.MULTILINE)
 
 # Matches a `pipx install` line naming this package, optionally pinned to
 # an exact version, e.g.:
 #   pipx install pfsense-mcp-server
 #   pipx install pfsense-mcp-server==0.9.0
 INSTALL_LINE = re.compile(r"pipx install\s+'?" + re.escape(PACKAGE_NAME) + r"(?:==(?P<version>[\d.]+))?'?")
+
+# Matches any of docs/INSTALLATION.md's three install-command forms that
+# name and optionally pin this package -- `pipx install`, the venv
+# `.venv/bin/python -m pip install` form, and `uv tool install`.
+INSTALLATION_INSTALL_LINE = re.compile(
+    r"(?:pipx install|python -m pip install|uv tool install)\s+'?"
+    + re.escape(PACKAGE_NAME)
+    + r"(?:==(?P<version>[\d.]+))?'?"
+)
 
 # A bare `pip install <package>` (optionally `--upgrade`/pinned, but NOT
 # preceded by `-m ` -- i.e. not `python -m pip install` /
@@ -78,6 +99,13 @@ def _getting_started_install_code_block() -> str:
     text = GETTING_STARTED.read_text(encoding="utf-8")
     match = GETTING_STARTED_INSTALL_FENCE.search(text)
     assert match, "docs/GETTING_STARTED.md has no fenced code block directly under '## 1. Install'"
+    return match.group("body")
+
+
+def _installation_pypi_section() -> str:
+    text = INSTALLATION.read_text(encoding="utf-8")
+    match = INSTALLATION_PYPI_SECTION.search(text)
+    assert match, "docs/INSTALLATION.md has no '## Install from PyPI' section"
     return match.group("body")
 
 
@@ -144,3 +172,29 @@ def test_getting_started_install_never_regresses_to_bare_pip_install():
         "test_readme_quick_start_never_regresses_to_bare_pip_install's "
         "reasoning; the same regression must not land here either."
     )
+
+
+def test_installation_has_an_install_command_for_this_package():
+    body = _installation_pypi_section()
+    matches = INSTALLATION_INSTALL_LINE.findall(body)
+    assert matches, (
+        f"docs/INSTALLATION.md's 'Install from PyPI' section has no install command naming {PACKAGE_NAME} to validate"
+    )
+
+
+def test_installation_install_commands_never_pin_a_stale_version():
+    body = _installation_pypi_section()
+    current = _current_version()
+    matches = list(INSTALLATION_INSTALL_LINE.finditer(body))
+    assert matches, (
+        f"docs/INSTALLATION.md's 'Install from PyPI' section has no install command naming {PACKAGE_NAME} to validate"
+    )
+    for match in matches:
+        pinned = match.group("version")
+        if pinned is not None:
+            assert pinned == current, (
+                f"docs/INSTALLATION.md pins pfsense-mcp-server=={pinned}, "
+                f"but pyproject.toml's current version is {current}. Update "
+                "every pinned example in the 'Install from PyPI' section "
+                "before this is published."
+            )
