@@ -4375,12 +4375,50 @@
 
 
 <h1 id="acceptance-v100">Acceptance — v1.0.0<a class="headerlink" href="#acceptance-v100" title="Permanent link">&para;</a></h1>
-<p><strong>Status: release-candidate — not yet tagged, released, or published.</strong>
-The current <code>main</code> HEAD is the prepared <code>1.0.0</code> candidate. Tagging, the
-GitHub Release, and PyPI publication remain a separate, explicitly
-owner-authorized step this document does not perform. See
-<code>reports-ai/V1_0_FINAL_AUDIT_2026-08-29.md</code> for the exact final commit
-SHA and the complete, itemized audit evidence this summarizes.</p>
+<p><strong>Status: published — the <code>v1.0.0</code> tag, GitHub Release, and PyPI release
+all point at this commit.</strong> The annotated git tag <code>v1.0.0</code> was created
+and pushed pointing at commit
+<code>b1a5d0782157ed7f5fe8c680894f0b9e0407fdd1</code>; GitHub confirms the tag
+object resolves to exactly that commit
+(<code>GET /repos/.../git/refs/tags/v1.0.0</code> → tag object →
+<code>object.sha == b1a5d078...</code>). The GitHub Release was published from
+that tag (<a href="https://github.com/night4me/pfsense-mcp-server/releases/tag/v1.0.0">https://github.com/night4me/pfsense-mcp-server/releases/tag/v1.0.0</a>,
+not a draft, not a prerelease), which triggered the <code>publish.yml</code> OIDC
+trusted-publishing workflow (run <code>33252394957</code>, <code>build</code> and <code>publish</code>
+jobs both <code>success</code>). PyPI's JSON API confirms <code>1.0.0</code> is <code>info.version</code>
+and the latest entry in <code>releases</code>; neither artifact is yanked. Both
+public artifacts were downloaded directly from <code>files.pythonhosted.org</code>
+and their member-by-member content confirmed byte-identical to the
+locally-built, already-audited RC artifacts (323/323 wheel files,
+348/348 sdist files) — the outer-archive SHA256 differs only because of
+non-reproducible container build timestamps between separate build
+invocations, not any content difference (the same class of difference
+<code>v0.9.0</code>'s own publication found and explained). PyPI's own provenance
+API returned a valid Sigstore attestation bundle for both the wheel and
+sdist; the certificate's Subject Alternative Name and Fulcio OIDC
+extensions were independently decoded and confirmed to reference this
+exact workflow file (<code>.github/workflows/publish.yml</code>), the
+<code>refs/tags/v1.0.0</code> ref, this exact commit
+(<code>b1a5d0782157ed7f5fe8c680894f0b9e0407fdd1</code>), this exact GitHub Actions
+run (<code>33252394957</code>), the <code>release</code> trigger event, and the <code>pypi</code>
+deployment environment. A clean installation of
+<code>pfsense-mcp-server==1.0.0</code> from the real PyPI index (not the local
+build) was independently verified in a fresh, isolated environment
+outside the repository: reports version <code>1.0.0</code> via both <code>pipx</code>'s own
+output and <code>pfsense-mcp-server --version</code>, a real MCP client session
+against the freshly installed server reports <code>serverInfo.version=1.0.0</code>
+and exactly 97 registered tools (95 READ + 2 guidance — both
+<code>pfsense_get_official_guidance</code> and <code>pfsense_get_api_guidance</code> present
+— 0 WRITE), and one real READ tool call against a local mock target
+succeeded. This status line was only written after that independent
+post-publication verification succeeded. <code>v0.9.0</code>'s own tag, GitHub
+Release, and PyPI artifact remain unmoved as an accurate historical
+record. GitHub Pages was redeployed from this exact commit before
+tagging; <code>docs_pages_freshness_check.py</code> confirms <code>gh-pages</code> is current
+as of <code>b1a5d0782157ed7f5fe8c680894f0b9e0407fdd1</code>. See
+<code>reports-ai/V1_0_FINAL_AUDIT_2026-08-29.md</code> and
+<code>reports-ai/V1_0_0_PUBLICATION_2026-08-29.md</code> for the complete,
+itemized audit and publication evidence.</p>
 <h2 id="release-scope">Release scope<a class="headerlink" href="#release-scope" title="Permanent link">&para;</a></h2>
 <p><code>v1.0.0</code> is a product-maturity and correctness release, not a capability
 expansion. <strong>Public MCP contract is unchanged from <code>v0.9.0</code>: 95 pfSense
