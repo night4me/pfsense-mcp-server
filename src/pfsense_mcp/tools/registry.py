@@ -3,7 +3,6 @@ is gated by which capabilities are active for this server instance."""
 
 from __future__ import annotations
 
-import importlib.metadata
 import importlib.util
 import sys
 from dataclasses import dataclass
@@ -13,6 +12,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from .. import tier1_write_bridge
+from .._version import resolve_package_version
 from ..capabilities import Capability
 from ..errors import ConfigurationError
 from ..models.server_introspection import ServerIntrospection
@@ -1059,7 +1059,7 @@ class ToolRegistry:
             sorted(capability.name for capability in self._capabilities if capability.name.endswith("_WRITE"))
         )
         return ServerIntrospection(
-            server_version=importlib.metadata.version("pfsense-mcp-server"),
+            server_version=resolve_package_version(),
             active_profile=self._profile_name,
             registered_tool_count=len(self._registered_read_names)
             + len(self._registered_write_names)

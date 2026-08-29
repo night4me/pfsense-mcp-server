@@ -37,13 +37,9 @@ Documentation: https://night4me.github.io/pfsense-mcp-server/
 
 
 def _print_version() -> None:
-    import importlib.metadata
+    from ._version import resolve_package_version
 
-    try:
-        version = importlib.metadata.version("pfsense-mcp-server")
-    except importlib.metadata.PackageNotFoundError:
-        version = "unknown (not installed as a package)"
-    print(f"pfsense-mcp-server {version}")
+    print(f"pfsense-mcp-server {resolve_package_version()}")
 
 
 def main() -> None:

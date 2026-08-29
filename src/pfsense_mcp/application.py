@@ -5,11 +5,13 @@ server.py's only responsibility is to construct and run this class.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 
 from mcp.server.fastmcp import FastMCP
 
+from ._version import resolve_package_version
 from .config import load_api_key, load_config, load_logging_config
 from .diagnostics import build_diagnostics_report
 from .errors import ConfigurationError
@@ -35,6 +37,23 @@ def _print_configuration_error(exc: ConfigurationError) -> None:
 class Application:
     def __init__(self) -> None:
         self._mcp = FastMCP("pfsense-mcp-server")
+        # FastMCP's own constructor never accepts or forwards a
+        # `version=` to the low-level `mcp.server.lowlevel.Server` it
+        # builds internally -- left unset, that Server falls back to
+        # reporting the installed `mcp` SDK package's own version as
+        # `serverInfo.version` in every MCP `initialize` response (a
+        # v1.0.0 human clean-room finding: a client showed
+        # "server=pfsense-mcp-server version=1.29.1" while the
+        # installed product itself was 0.9.0 -- confusingly
+        # implying a mismatch that never existed). `.version` is a
+        # plain public attribute on the low-level Server (just not
+        # exposed as a FastMCP constructor argument in this SDK
+        # version range), so it is set directly here. Never fatal if
+        # a future/older `mcp` release restructures this private
+        # `_mcp_server` attribute -- worst case is falling back to the
+        # SDK's own prior behavior, not a broken server.
+        with contextlib.suppress(AttributeError):
+            self._mcp._mcp_server.version = resolve_package_version()
         self._transport: HttpTransport | None = None
 
     def run(self) -> None:
