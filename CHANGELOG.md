@@ -7,6 +7,73 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-29
+
+First stable release. The public MCP tool contract is unchanged from
+`0.9.0` (95 pfSense READ tools + 2 documentation guidance tools, 0
+default-reachable WRITE = 97 total) — this release is a product-maturity
+and correctness pass, not a capability expansion. See
+`docs/STABILITY.md` for what is now a version-independent stability
+promise across the MCP/CLI/config/persisted-state surfaces.
+
+### Fixed
+
+- **`serverInfo.version` reported the installed `mcp` SDK's own version
+  instead of this package's version** in every MCP `initialize`
+  response (e.g. `1.29.1` instead of the actual installed
+  `pfsense-mcp-server` version) — `FastMCP` never forwards a `version=`
+  to the low-level `mcp.server.lowlevel.Server` it constructs
+  internally, so an unset `.version` fell back to the `mcp` package's
+  own `importlib.metadata` version. `Application` now sets it
+  explicitly from one shared `resolve_package_version()` helper, also
+  consolidating a second, independent `pfsense_mcp_info` call site onto
+  the same resolver. Verified live via a real MCP client session
+  against a fresh `pipx` install, and independently corroborated by a
+  human clean-room acceptance run using the real Codex CLI.
+- **`setup write-client-config` failed on a genuinely clean `$HOME`**
+  with no pre-existing `~/.codex` directory (`blocked_configuration_error:
+  Could not create temporary file for atomic write`), despite a valid
+  confirmation token — a missing parent directory for the target config
+  path is now created automatically, safely (symlink-safe,
+  ownership-checked, owner-only permissions), with the existing
+  target-file validation/confirmation binding/atomic-write/rollback
+  semantics unchanged.
+- **Setup wizard guidance text lost whitespace at wrap boundaries** on
+  narrow terminals (e.g. "persists across futuresetup apply",
+  "pfSense,never a pfSense credential") — several guidance paragraphs
+  were built as hand-pre-split, fixed-width line tuples assuming one
+  terminal width; rebuilt as continuous strings wrapped fresh at render
+  time.
+- **TLS certificate verification failures were reported with one
+  generic message**, concealing whether the failure was an untrusted
+  certificate authority or a certificate valid for a different
+  hostname/IP than the one connected to (a real clean-room case: a
+  trusted private CA, but connecting by IP instead of the certificate's
+  DNS name). Now distinguishes CA-trust failure, hostname/IP identity
+  mismatch, and expired/not-yet-valid certificates using structured
+  `ssl.SSLCertVerificationError.verify_code` evidence, never
+  string-guessing, and never suggesting an insecure/bypass workaround.
+- **A successful `read_only` `setup apply` ended with an unexplained
+  `Doctor ready: False`** even though nothing about that posture was
+  actually unready — `doctor`'s checks are exclusively about the
+  optional hardware-witness ceremony readiness, but were run and
+  reported unconditionally regardless of the selected anchor. Now
+  posture-aware: only run, and only reported, when
+  `anchor_assurance=hardware_witness`, mirroring `write_protected`'s
+  already-correct pattern.
+
+### Changed
+
+- `SECURITY.md`'s "Supported versions" section, frozen at the
+  `v0.2.x`/`v0.3.0` era, replaced with a version-independent policy
+  (latest published release only) so it can't go stale again silently.
+- Corrected two client-integration-guide claims found stale by live
+  verification against current vendor documentation: Claude Code's
+  `claude mcp add` default scope (was documented as `user`; is actually
+  `local`), and a dead `docs.cursor.com` link (now `cursor.com/docs/mcp`).
+- `Development Status` classifier updated from `4 - Beta` to
+  `5 - Production/Stable`.
+
 ## [0.9.0] - 2026-08-28
 
 **Public MCP tool contract changes: 95 pfSense READ tools + 2
