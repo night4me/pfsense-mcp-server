@@ -3365,10 +3365,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#terminology-precise-not-interchangeable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terminology (precise, not interchangeable)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#clean-build" class="md-nav__link">
     <span class="md-ellipsis">
       
         Clean build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#release-build-rehearsal-verify-against-the-real-build-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release build rehearsal (verify against the real build environment)
       
     </span>
   </a>
@@ -4272,10 +4294,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#terminology-precise-not-interchangeable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terminology (precise, not interchangeable)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#clean-build" class="md-nav__link">
     <span class="md-ellipsis">
       
         Clean build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#release-build-rehearsal-verify-against-the-real-build-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release build rehearsal (verify against the real build environment)
       
     </span>
   </a>
@@ -4402,20 +4446,90 @@ requires explicit owner approval.</p>
   95 as of this candidate), zero WRITE tools, an empty WRITE allow-list,
   and no capability or endpoint expansion unless separately approved.</li>
 </ul>
+<h2 id="terminology-precise-not-interchangeable">Terminology (precise, not interchangeable)<a class="headerlink" href="#terminology-precise-not-interchangeable" title="Permanent link">&para;</a></h2>
+<p>Adopted 2026-08-30 after the v1.1.0 publication ceremony found this
+project's own claims had been imprecise about what its checks actually
+proved:</p>
+<ul>
+<li><strong>Deterministic build</strong>: the same source, built the same way, always
+  produces the same output <em>within a single fixed environment</em>. Does not
+  by itself say anything about a different environment.</li>
+<li><strong>Same-environment reproducible build</strong>: two builds run back-to-back in
+  the same environment (same machine, same already-installed tool
+  versions) produce byte-identical artifacts. This is what <code>make
+  reproducible-build</code> alone proves.</li>
+<li><strong>Cross-environment reproducible build</strong>: a build in one environment
+  (e.g. a local machine) produces byte-identical artifacts to a build of
+  the same source in a <em>different</em> environment (e.g. the GitHub Actions
+  runner). This project achieves this by pinning <code>SOURCE_DATE_EPOCH</code> to
+  the exact commit timestamp and hatchling's build-dependency closure to
+  exact versions (<code>scripts/build-constraints.txt</code>), verified end to end by
+  the release build rehearsal workflow.</li>
+<li><strong>Source provenance</strong>: cryptographic proof (Sigstore, via PyPI's Trusted
+  Publishing attestations) that a published artifact was built by a
+  specific, named CI workflow from a specific, named commit. Says nothing
+  about whether that artifact's <em>bytes</em> match anything built anywhere
+  else -- only that its origin is what it claims to be.</li>
+<li><strong>Artifact provenance</strong>: the specific published file's own recorded
+  digest, attested alongside source provenance. Ties a hash to an origin,
+  not to any other build.</li>
+<li><strong>Content equivalence</strong>: two archives (e.g. a local build and a
+  published one) contain byte-identical <em>extracted</em> files, even if the
+  outer archive container bytes (and therefore the outer SHA-256) differ.
+  Established by extracting both and diffing recursively -- not by
+  comparing archive hashes.</li>
+<li><strong>Exact byte identity</strong>: two archives are identical at the SHA-256
+  level, including the outer container. The strongest, most specific
+  claim; everything above it is necessary but not sufficient to establish
+  it on its own.</li>
+</ul>
+<p>The v1.1.0 published artifacts had content equivalence and valid source
+provenance, but not exact byte identity with the RC hashes an earlier local
+build had produced -- because that local build skipped the cross-
+environment reproducibility steps documented below. The hardening in this
+document exists to make exact byte identity the normal, verified outcome
+for every release from v1.1.0 onward, not merely an occasional coincidence.</p>
 <h2 id="clean-build">Clean build<a class="headerlink" href="#clean-build" title="Permanent link">&para;</a></h2>
-<p>Start from the repository root with an isolated release environment. The
-commands deliberately stop if <code>dist/</code> already exists so stale artifacts cannot
-be uploaded accidentally.</p>
+<p>Start from the repository root with an isolated release environment.
+<code>scripts/build_release_artifact.py</code> is the <strong>one canonical build path</strong> --
+used identically here, by <code>make package-check</code>, by <code>make
+reproducible-build</code>, by the safe <code>release-rehearsal.yml</code> dry-run workflow,
+and by the real <code>.github/workflows/publish.yml</code>. Never invoke <code>python -m
+build</code> directly for a release artifact; every direct invocation is a
+distinct, unverified build path that can silently diverge from what the
+other three actually produce (this is exactly what happened during the
+v1.1.0 publication ceremony, 2026-08-30 -- see
+<code>reports-ai/POST_V1_1_RELEASE_REPRODUCIBILITY_HARDENING.md</code>).</p>
 <div class="highlight"><pre><span></span><code><span class="go">git status --short</span>
-<span class="go">test ! -e dist</span>
 <span class="go">python -m venv .release-venv</span>
 <span class="go">.release-venv/bin/python -m pip install --upgrade pip</span>
 <span class="go">.release-venv/bin/python -m pip install &#39;build&gt;=1.2,&lt;2.0&#39; &#39;twine&gt;=5.0,&lt;7.0&#39;</span>
-<span class="go">SOURCE_DATE_EPOCH=&quot;$(git show -s --format=%ct HEAD)&quot; \</span>
-<span class="go">  .release-venv/bin/python -m build --sdist --wheel</span>
+<span class="go">.release-venv/bin/python scripts/build_release_artifact.py --outdir dist</span>
 </code></pre></div>
-<p>The Git status output must be empty. <code>.release-venv/</code> and <code>dist/</code> are local,
+<p>The Git status output must be empty. The script itself refuses to build if
+<code>dist/</code> already exists, derives <code>SOURCE_DATE_EPOCH</code> from the exact commit
+checked out at <code>HEAD</code> (never from wall-clock "now"), and pins <code>hatchling</code>'s
+own build-dependency closure to exact versions via
+<code>scripts/build-constraints.txt</code> -- removing both sources of nondeterminism
+found during the v1.1.0 incident. <code>.release-venv/</code> and <code>dist/</code> are local,
 ignored build state and must never be committed.</p>
+<h2 id="release-build-rehearsal-verify-against-the-real-build-environment">Release build rehearsal (verify against the real build environment)<a class="headerlink" href="#release-build-rehearsal-verify-against-the-real-build-environment" title="Permanent link">&para;</a></h2>
+<p>Before asking for owner approval, trigger a real GitHub Actions build of
+the exact reviewed commit -- not merely a local approximation of one --
+using the safe, non-publishing <code>release-rehearsal.yml</code> workflow:</p>
+<div class="highlight"><pre><span></span><code><span class="go">gh workflow run release-rehearsal.yml --ref main -f ref=&lt;exact RC SHA or tag&gt;</span>
+</code></pre></div>
+<p>It checks out that exact ref, builds via the identical
+<code>scripts/build_release_artifact.py</code> path, and prints the resulting
+wheel/sdist SHA-256 hashes to the run's job summary -- the <em>actual</em> bytes a
+real <code>publish.yml</code> run from the same ref would produce, since both use the
+same canonical build path, the same pinned build-dependency closure, and
+the same <code>SOURCE_DATE_EPOCH</code> derivation. This workflow carries no
+publication capability whatsoever (no <code>id-token: write</code>, no <code>pypi</code>
+environment, no publish step) -- it cannot upload anything under any input.
+Compare its reported hashes against the locally-built ones from the
+previous section; they must match exactly. Report <em>these</em> hashes -- not
+merely a local build's -- in the owner approval request below.</p>
 <h2 id="artifact-inspection">Artifact inspection<a class="headerlink" href="#artifact-inspection" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="go">.release-venv/bin/python scripts/verify_distribution.py dist</span>
 <span class="go">.release-venv/bin/python -m twine check --strict dist/*</span>
@@ -4425,9 +4539,14 @@ ignored build state and must never be committed.</p>
 byte-identical:</p>
 <div class="highlight"><pre><span></span><code><span class="go">make reproducible-build</span>
 </code></pre></div>
-<p>This target derives <code>SOURCE_DATE_EPOCH</code> from <code>HEAD</code>, builds twice in temporary
-directories, compares artifact names and SHA-256 values, and removes its
-temporary files. It never uploads an artifact.</p>
+<p>This target uses the same canonical <code>scripts/build_release_artifact.py</code>
+path, builds twice in temporary directories, compares artifact names and
+SHA-256 values, and removes its temporary files. It never uploads an
+artifact. A passing result proves this build path is internally
+deterministic in the current environment -- it is not, by itself, proof
+that a <em>different</em> environment (the actual GitHub Actions runner) will
+produce the same bytes; that is what the release build rehearsal above is
+for.</p>
 <p><code>make artifact-manifest</code> emits the version, source commit, source-date epoch,
 Python requirement, filenames, sizes, and SHA-256 values for the local wheel
 and sdist. Save that output in the external release record after final approval;
@@ -4438,7 +4557,7 @@ exclude reports, <code>.env</code> files, key/private-key files, caches, fixture
 configuration, and temporary state. Install the wheel in a second clean virtual
 environment, import <code>pfsense_mcp.server</code>, and verify the console entry point
 fails closed without configuration; <code>make package-check</code> automates these
-checks.</p>
+checks (via the same canonical build path).</p>
 <h2 id="trusted-publishing">Trusted publishing<a class="headerlink" href="#trusted-publishing" title="Permanent link">&para;</a></h2>
 <p><code>.github/workflows/publish.yml</code> uses GitHub Actions OIDC trusted publishing;
 there is no PyPI API token or repository secret. A build job checks out the
@@ -4473,9 +4592,10 @@ and the enabling repository variable remain explicit owner-controlled settings.<
 <p>The permanent human release gate is immediately before creation of the
 immutable version tag. Before reaching it, complete the full preflight and
 report the exact commit SHA, exact-SHA CI and CodeQL status, release-check,
-artifact verification and hashes, Trusted Publisher identity, <code>pypi</code>
-environment, exact enable-variable value, final MCP tool counts, and WRITE
-inactivity.</p>
+artifact verification and hashes -- <strong>from the release build rehearsal
+workflow run against that exact commit, not only from a local build</strong> (see
+above) -- Trusted Publisher identity, <code>pypi</code> environment, exact
+enable-variable value, final MCP tool counts, and WRITE inactivity.</p>
 <p>Ask exactly: "Approve creation of immutable tag vX.Y.Z and production
 release?" Do not create or move the tag, push it, create the GitHub Release, or
 permit the publish workflow to execute without that explicit approval. The
