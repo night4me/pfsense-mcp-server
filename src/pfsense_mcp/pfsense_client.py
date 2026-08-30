@@ -15,7 +15,12 @@ from .models.arp_table_entry import ArpTableEntry
 from .models.auth_key import AuthKey
 from .models.available_interface import AvailableInterface
 from .models.available_package import AvailablePackage
+from .models.bind_access_list import BindAccessList
 from .models.bind_settings import BindSettings
+from .models.bind_sync_settings import BindSyncSettings
+from .models.bind_view import BindView
+from .models.bind_zone import BindZone
+from .models.bind_zone_record import BindZoneRecord
 from .models.carp_status import CarpStatus
 from .models.certificate_revocation_list import CertificateRevocationList
 from .models.config_history_revision import ConfigHistoryRevision
@@ -156,6 +161,18 @@ DHCP_LEASES_MAX_LIMIT = 100
 
 DHCP_STATIC_MAPPINGS_MIN_LIMIT = 1
 DHCP_STATIC_MAPPINGS_MAX_LIMIT = 100
+
+
+BIND_ACCESS_LISTS_MIN_LIMIT = 1
+BIND_ACCESS_LISTS_MAX_LIMIT = 100
+
+
+BIND_VIEWS_MIN_LIMIT = 1
+BIND_VIEWS_MAX_LIMIT = 100
+
+
+BIND_ZONES_MIN_LIMIT = 1
+BIND_ZONES_MAX_LIMIT = 100
 
 
 DHCP_SERVERS_MIN_LIMIT = 1
@@ -726,6 +743,41 @@ class PfSenseClient:
     def get_bind_settings(self) -> BindSettings:
         raw = self._rest.get(Endpoints.BIND_SETTINGS)
         return _parse_object_response(raw, "/services/bind/settings", BindSettings.from_api)
+
+    def get_bind_access_lists(self, *, limit: int = 100) -> list[BindAccessList]:
+        if not (BIND_ACCESS_LISTS_MIN_LIMIT <= limit <= BIND_ACCESS_LISTS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {BIND_ACCESS_LISTS_MIN_LIMIT} and {BIND_ACCESS_LISTS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.BIND_ACCESS_LISTS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/bind/access_lists", BindAccessList.from_api)
+
+    def get_bind_sync_settings(self) -> BindSyncSettings:
+        raw = self._rest.get(Endpoints.BIND_SYNC_SETTINGS)
+        return _parse_object_response(raw, "/services/bind/sync/settings", BindSyncSettings.from_api)
+
+    def get_bind_views(self, *, limit: int = 100) -> list[BindView]:
+        if not (BIND_VIEWS_MIN_LIMIT <= limit <= BIND_VIEWS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {BIND_VIEWS_MIN_LIMIT} and {BIND_VIEWS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.BIND_VIEWS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/bind/views", BindView.from_api)
+
+    def get_bind_zones(self, *, limit: int = 100) -> list[BindZone]:
+        if not (BIND_ZONES_MIN_LIMIT <= limit <= BIND_ZONES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {BIND_ZONES_MIN_LIMIT} and {BIND_ZONES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.BIND_ZONES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/bind/zones", BindZone.from_api)
+
+    def get_bind_zone_record(self, *, parent_id: int, id: int) -> BindZoneRecord:
+        raw = self._rest.get(Endpoints.BIND_ZONE_RECORD, params={"parent_id": parent_id, "id": id})
+        return _parse_object_response(raw, "/services/bind/zone/record", BindZoneRecord.from_api)
 
     def get_ntp_settings(self) -> NtpSettings:
         raw = self._rest.get(Endpoints.NTP_SETTINGS)

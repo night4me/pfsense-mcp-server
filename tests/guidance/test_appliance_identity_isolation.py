@@ -5,7 +5,7 @@ adding appliance_identity.py to the guidance package changed nothing
 about the invariants that predate it: guidance's own registry/models
 machinery is not imported or activated by it, Tier 1 remains
 unreachable, WRITE state is unchanged, pfsense_mcp_info remains
-zero-pfSense-call, and the public MCP contract remains exactly 96 READ
+zero-pfSense-call, and the public MCP contract remains exactly 101 READ
 tools / 0 WRITE tools.
 """
 
@@ -194,7 +194,7 @@ def test_public_contract_remains_95_read_0_write() -> None:
     tools = asyncio.run(mcp.list_tools())
 
     # 2026-08-22: pfsense_get_official_guidance (owner-authorized Candidate A)
-    # is now registered unconditionally alongside the 96 pfSense READ tools --
+    # is now registered unconditionally alongside the 101 pfSense READ tools --
     # accounted for SEPARATELY here, never blended into the READ count, per
     # explicit owner instruction (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md). A second
     # guidance tool, pfsense_get_api_guidance, was added 2026-08-28
@@ -204,7 +204,7 @@ def test_public_contract_remains_95_read_0_write() -> None:
     read_tools = [t for t in tools if t.name in KNOWN_READ_TOOL_NAMES]
     guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 98
-    assert len(read_tools) == 96
+    assert len(tools) == 103
+    assert len(read_tools) == 101
     assert len(guidance_tools) == 2
     assert len(write_tools) == 0

@@ -41,7 +41,7 @@ def test_every_read_tool_is_classified():
 
 
 def test_known_tool_names_matches_public_contract_count():
-    assert len(known_tool_names()) == 96
+    assert len(known_tool_names()) == 101
 
 
 @pytest.mark.parametrize("tool_name", sorted(_real_read_tool_names()))

@@ -405,7 +405,7 @@ def test_fresh_account_completes_full_sequence_write_protected_profile():
 
     assert result.outcome is ProvisioningOutcome.COMPLETED
     assert result.transaction is not None
-    assert len(result.transaction.privileges) == 96
+    assert len(result.transaction.privileges) == 101
     assert "api-v2-firewall-alias-patch" in result.transaction.privileges
 
 

@@ -62,8 +62,8 @@ invocation -- "the exact same way they would outside the wizard."
   admin credentials (`PFSENSE_ADMIN_*`/`PFSENSE_SERVICE_API_KEY_FILE`/
   etc. -- the exact same env vars standalone `bootstrap` already
   requires). This composition does **not** by itself make any new WRITE
-  tool reachable through the MCP server -- the public MCP contract (95
-  READ + 1 guidance + 0 default-reachable WRITE) is unaffected by
+  tool reachable through the MCP server -- the public MCP contract (100
+  READ + 2 guidance + 0 default-reachable WRITE) is unaffected by
   provisioning this account; Tier 1's own store/witness provisioning
   remains a separate, still-manual prerequisite for the resulting
   account's privileges to ever become operationally exercised writes

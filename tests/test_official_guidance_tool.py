@@ -675,7 +675,7 @@ def test_public_contract_places_guidance_tool_in_its_own_class():
     assert tool_classes["pfsense_get_api_guidance"] == "guidance"
     read_count = sum(1 for cls in tool_classes.values() if cls == "read")
     guidance_count = sum(1 for cls in tool_classes.values() if cls == "guidance")
-    assert read_count == 96
+    assert read_count == 101
     assert guidance_count == 2
 
 

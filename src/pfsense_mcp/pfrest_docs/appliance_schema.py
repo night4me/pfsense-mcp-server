@@ -3,7 +3,7 @@ Phase 7).
 
 Fetches the connected appliance's own `/api/v2/schema/openapi` through
 the existing, already-authenticated `PfSenseClient` -- the exact same
-trust boundary every one of the 95 READ tools already uses. This is
+trust boundary every one of the 100 READ tools already uses. This is
 NOT a call to the public internet and does NOT go through
 `fetch.py`/`cache.py` (those exist solely for the untrusted
 `PFREST_UPSTREAM` domain) -- reusing `PfSenseClient` here is the

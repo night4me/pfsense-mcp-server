@@ -216,6 +216,45 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # POST_V1_1_BIND_READ_QUALIFICATION.md (source qualification) + its
+    # 2026-08-30 live-ceremony addendum (temporary, fully-reversed
+    # managed-privilege grant, LAB): all 5 live-verified HTTP 200 with
+    # BIND still absent from LAB, same graceful-degradation behavior as
+    # BIND_SETTINGS above. No secrets, no privilege aliasing with any
+    # BIND mutating operation (13 GET vs 29 mutating privileges,
+    # resolve_privilege()-verified, zero overlap).
+    BIND_ACCESS_LISTS = EndpointInfo(
+        path_suffix="/services/bind/access_lists",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    BIND_SYNC_SETTINGS = EndpointInfo(
+        path_suffix="/services/bind/sync/settings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    BIND_VIEWS = EndpointInfo(
+        path_suffix="/services/bind/views",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    BIND_ZONES = EndpointInfo(
+        path_suffix="/services/bind/zones",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # Live-ceremony evidence differs from the other 4: with no zone
+    # configured (BIND absent), this returned a well-formed HTTP 404
+    # (MODEL_PARENT_OBJECT_NOT_FOUND) rather than 200 -- a correct,
+    # fail-closed business-logic response proving the endpoint itself
+    # is reachable and sane, not an unhandled crash. verified=True on
+    # that basis (reachability + correct-shape error), not on having
+    # observed a populated record.
+    BIND_ZONE_RECORD = EndpointInfo(
+        path_suffix="/services/bind/zone/record",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     NTP_SETTINGS = EndpointInfo(
         path_suffix="/services/ntp/settings",
         verified=True,

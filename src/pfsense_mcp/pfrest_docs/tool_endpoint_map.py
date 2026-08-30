@@ -10,7 +10,7 @@ exact match against this dict. The production runtime path is a plain
 dict lookup, never AST parsing -- this file exists so that lookup never
 has to read/parse this project's own source tree at MCP call time.
 
-95 of the 96 public READ tools appear here; the missing one is
+100 of the 101 public READ tools appear here; the missing one is
 `pfsense_mcp_info` (`LOCAL_ONLY_TOOL_NAMES` in `scripts/public_contract.py`),
 which has no pfSense API call at all and therefore no endpoint to map.
 
@@ -31,7 +31,12 @@ TOOL_ENDPOINT_PATHS: dict[str, tuple[str, str]] = {
     "pfsense_get_acme_settings": ("/services/acme/settings", "GET"),
     "pfsense_get_arp_table": ("/diagnostics/arp_table", "GET"),
     "pfsense_get_auth_keys": ("/auth/keys", "GET"),
+    "pfsense_get_bind_access_lists": ("/services/bind/access_lists", "GET"),
     "pfsense_get_bind_settings": ("/services/bind/settings", "GET"),
+    "pfsense_get_bind_sync_settings": ("/services/bind/sync/settings", "GET"),
+    "pfsense_get_bind_views": ("/services/bind/views", "GET"),
+    "pfsense_get_bind_zone_record": ("/services/bind/zone/record", "GET"),
+    "pfsense_get_bind_zones": ("/services/bind/zones", "GET"),
     "pfsense_get_carp_status": ("/status/carp", "GET"),
     "pfsense_get_cron_jobs": ("/services/cron/jobs", "GET"),
     "pfsense_get_dhcp_leases": ("/status/dhcp_server/leases", "GET"),

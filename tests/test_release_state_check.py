@@ -274,14 +274,14 @@ def test_release_state_check_changes_do_not_touch_the_public_mcp_contract():
     """This task's scope is `scripts/release_state_check.py` and this
     test file only -- guard that against drift by re-deriving the public
     contract fresh and confirming it is exactly what every prior session
-    already established: 96 READ + 2 guidance + 0 WRITE."""
+    already established: 101 READ + 2 guidance + 0 WRITE."""
 
     import public_contract
 
     contract = public_contract.build_contract()
     tools = contract["tools"]
-    assert len(tools) == 98
-    assert sum(1 for t in tools if t["tool_class"] == "read") == 96
+    assert len(tools) == 103
+    assert sum(1 for t in tools if t["tool_class"] == "read") == 101
     assert sum(1 for t in tools if t["tool_class"] == "guidance") == 2
     assert not any(t["tool_class"] == "write" for t in tools)
 

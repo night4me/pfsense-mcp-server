@@ -9,6 +9,30 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Five BIND (DNS server package) READ tools: `pfsense_get_bind_access_lists`,
+  `pfsense_get_bind_sync_settings`, `pfsense_get_bind_views`,
+  `pfsense_get_bind_zones`, and `pfsense_get_bind_zone_record`. Result of
+  `POST_V1_1_BIND_READ_QUALIFICATION.md`'s source-first review of BIND's
+  full 13 GET-capable pfREST paths (not 9, correcting a prior miscount) —
+  12 candidates beyond the already-shipped `pfsense_get_bind_settings`
+  were classified, of which these 5 qualified `SAFE_READ`/
+  `SAFE_READ_WITH_BOUNDS` (the rest deferred as low-value or rejected as
+  secret-bearing). A temporary, fully-reversed 5-privilege managed-account
+  grant live-verified all 5 against the LAB (BIND package absent): 4
+  returned HTTP 200, and `zone_record` returned a correctly-shaped HTTP
+  404 (`MODEL_PARENT_OBJECT_NOT_FOUND`) rather than crashing or leaking —
+  proving the existing uniform `PfSenseAPIError` handling already fails
+  closed for this endpoint with no special-casing needed. `BindZone` and
+  `BindZoneRecord` model 19 and 1 schema-conditional fields respectively
+  as `Optional`, matching this project's established conditional-field
+  handling; `BindZone.custom`/`.customzonerecords`/`.records` and
+  `BindView.bind_custom_options` are deliberately excluded entirely
+  (raw-config-injection-risk / unbounded-response fields). Public READ
+  tool count moves from 96 to 101 (103 total incl. 2 guidance tools); the
+  managed `pfsense-mcp-readonly` READ-only privilege set moves from 95 to
+  100. Not yet published to PyPI — README.md's tool-count claims continue
+  to describe the last published baseline (v1.1.0: 95 READ) until the
+  next release's doc sync updates them together.
 - `pfsense_get_vpn_wireguard_settings` READ tool: global WireGuard service
   settings (enabled state, config-retention-on-uninstall, endpoint
   hostname re-resolution interval, interface-group membership mode).

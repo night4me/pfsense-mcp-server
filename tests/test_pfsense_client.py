@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from pfsense_mcp.api_version import ApiVersion
-from pfsense_mcp.errors import PfSenseRequestValidationError, PfSenseResponseShapeError
+from pfsense_mcp.errors import PfSenseAPIError, PfSenseRequestValidationError, PfSenseResponseShapeError
 from pfsense_mcp.models.system import SystemStatus
 from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.rest_api_client import RestApiClient
@@ -3808,6 +3808,419 @@ def test_get_bind_settings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_bind_settings()
     assert sentinel not in str(excinfo.value)
+
+
+BIND_ACCESS_LISTS_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_access_lists_response.json"
+
+
+def _bind_access_lists_body() -> dict:
+    return json.loads(BIND_ACCESS_LISTS_FIXTURE.read_text())
+
+
+def _bind_access_lists_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _bind_access_lists_body()
+    transport.register("GET", "/api/v2/services/bind/access_lists?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_bind_access_lists_maps_fields():
+    client, _ = _bind_access_lists_client()
+    raw = _bind_access_lists_body()["data"]
+    access_lists = client.get_bind_access_lists()
+    assert len(access_lists) == 1
+    assert access_lists[0].id == raw[0]["id"]
+    assert access_lists[0].name == raw[0]["name"]
+    assert access_lists[0].description == raw[0]["description"]
+    assert access_lists[0].entries == raw[0]["entries"]
+
+
+def test_get_bind_access_lists_only_calls_endpoint_with_default_limit():
+    client, transport = _bind_access_lists_client()
+    client.get_bind_access_lists()
+    assert transport.calls == [("GET", "/api/v2/services/bind/access_lists?limit=100")]
+
+
+def test_get_bind_access_lists_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _bind_access_lists_body()
+    transport.register("GET", "/api/v2/services/bind/access_lists?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_bind_access_lists(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/bind/access_lists?limit=2")]
+
+
+def test_get_bind_access_lists_rejects_zero_limit():
+    client, _ = _bind_access_lists_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_bind_access_lists(limit=0)
+
+
+def test_get_bind_access_lists_rejects_limit_above_max():
+    client, _ = _bind_access_lists_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_bind_access_lists(limit=101)
+
+
+def test_get_bind_access_lists_missing_data_key_raises_shape_error():
+    body = _bind_access_lists_body()
+    del body["data"]
+    client, _ = _bind_access_lists_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_access_lists()
+
+
+def test_get_bind_access_lists_data_wrong_type_raises_shape_error():
+    body = _bind_access_lists_body()
+    body["data"] = "not-a-list"
+    client, _ = _bind_access_lists_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_access_lists()
+
+
+BIND_SYNC_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_sync_settings_response.json"
+
+
+def _bind_sync_settings_body() -> dict:
+    return json.loads(BIND_SYNC_SETTINGS_FIXTURE.read_text())
+
+
+def _bind_sync_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _bind_sync_settings_body()
+    transport.register("GET", "/api/v2/services/bind/sync/settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_bind_sync_settings_maps_fields():
+    client, _ = _bind_sync_settings_client()
+    settings = client.get_bind_sync_settings()
+    assert settings.synctimeout == 30
+
+
+def test_get_bind_sync_settings_parses_null_synconchanges_and_masterip():
+    """Live LAB ceremony evidence (2026-08-30): both fields returned
+    `null` despite the schema declaring `nullable: false` -- live
+    behavior trusted over the stale schema claim."""
+    client, _ = _bind_sync_settings_client()
+    settings = client.get_bind_sync_settings()
+    assert settings.synconchanges is None
+    assert settings.masterip is None
+
+
+def test_get_bind_sync_settings_parses_populated_synconchanges_and_masterip():
+    body = _bind_sync_settings_body()
+    body["data"]["synconchanges"] = "auto"
+    body["data"]["masterip"] = "198.51.100.5"
+    client, _ = _bind_sync_settings_client(body)
+    settings = client.get_bind_sync_settings()
+    assert settings.synconchanges == "auto"
+    assert settings.masterip == "198.51.100.5"
+
+
+def test_get_bind_sync_settings_only_calls_settings_endpoint():
+    client, transport = _bind_sync_settings_client()
+    client.get_bind_sync_settings()
+    assert transport.calls == [("GET", "/api/v2/services/bind/sync/settings")]
+
+
+def test_get_bind_sync_settings_missing_data_key_raises_shape_error():
+    body = _bind_sync_settings_body()
+    del body["data"]
+    client, _ = _bind_sync_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_sync_settings()
+
+
+def test_get_bind_sync_settings_data_wrong_type_raises_shape_error():
+    body = _bind_sync_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _bind_sync_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_sync_settings()
+
+
+BIND_VIEWS_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_views_response.json"
+
+
+def _bind_views_body() -> dict:
+    return json.loads(BIND_VIEWS_FIXTURE.read_text())
+
+
+def _bind_views_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _bind_views_body()
+    transport.register("GET", "/api/v2/services/bind/views?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_bind_views_maps_fields():
+    client, _ = _bind_views_client()
+    raw = _bind_views_body()["data"]
+    views = client.get_bind_views()
+    assert len(views) == 1
+    assert views[0].id == raw[0]["id"]
+    assert views[0].name == raw[0]["name"]
+    assert views[0].descr == raw[0]["descr"]
+    assert views[0].recursion == raw[0]["recursion"]
+    assert views[0].match_clients == raw[0]["match_clients"]
+    assert views[0].allow_recursion == raw[0]["allow_recursion"]
+
+
+def test_get_bind_views_only_calls_endpoint_with_default_limit():
+    client, transport = _bind_views_client()
+    client.get_bind_views()
+    assert transport.calls == [("GET", "/api/v2/services/bind/views?limit=100")]
+
+
+def test_get_bind_views_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _bind_views_body()
+    transport.register("GET", "/api/v2/services/bind/views?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_bind_views(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/bind/views?limit=2")]
+
+
+def test_get_bind_views_rejects_zero_limit():
+    client, _ = _bind_views_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_bind_views(limit=0)
+
+
+def test_get_bind_views_rejects_limit_above_max():
+    client, _ = _bind_views_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_bind_views(limit=101)
+
+
+def test_get_bind_views_missing_data_key_raises_shape_error():
+    body = _bind_views_body()
+    del body["data"]
+    client, _ = _bind_views_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_views()
+
+
+def test_get_bind_views_never_exposes_bind_custom_options_even_if_present_in_raw_response():
+    """Adversarial: BindView deliberately excludes `bind_custom_options`
+    (raw-config-injection-risk field, see bind_view.py). Even if a
+    malformed/adversarial raw response includes it, from_api() must
+    never read or leak it -- it only reads the six modeled fields."""
+    body = _bind_views_body()
+    sentinel = "SENTINEL-CUSTOM-OPTIONS"
+    body["data"][0]["bind_custom_options"] = sentinel
+    client, _ = _bind_views_client(body)
+    views = client.get_bind_views()
+    assert sentinel not in views[0].model_dump_json()
+
+
+BIND_ZONES_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_zones_response.json"
+
+
+def _bind_zones_body() -> dict:
+    return json.loads(BIND_ZONES_FIXTURE.read_text())
+
+
+def _bind_zones_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _bind_zones_body()
+    transport.register("GET", "/api/v2/services/bind/zones?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_bind_zones_maps_fields():
+    client, _ = _bind_zones_client()
+    raw = _bind_zones_body()["data"]
+    zones = client.get_bind_zones()
+    assert len(zones) == 1
+    assert zones[0].id == raw[0]["id"]
+    assert zones[0].name == raw[0]["name"]
+    assert zones[0].type == raw[0]["type"]
+    assert zones[0].nameserver == raw[0]["nameserver"]
+    assert zones[0].serial == raw[0]["serial"]
+
+
+def test_get_bind_zones_only_calls_endpoint_with_default_limit():
+    client, transport = _bind_zones_client()
+    client.get_bind_zones()
+    assert transport.calls == [("GET", "/api/v2/services/bind/zones?limit=100")]
+
+
+def test_get_bind_zones_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _bind_zones_body()
+    transport.register("GET", "/api/v2/services/bind/zones?limit=2", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_bind_zones(limit=2)
+    assert transport.calls == [("GET", "/api/v2/services/bind/zones?limit=2")]
+
+
+def test_get_bind_zones_rejects_zero_limit():
+    client, _ = _bind_zones_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_bind_zones(limit=0)
+
+
+def test_get_bind_zones_rejects_limit_above_max():
+    client, _ = _bind_zones_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_bind_zones(limit=101)
+
+
+def test_get_bind_zones_missing_data_key_raises_shape_error():
+    body = _bind_zones_body()
+    del body["data"]
+    client, _ = _bind_zones_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_zones()
+
+
+def test_get_bind_zones_tolerates_absent_conditional_fields():
+    """A zone whose `type` doesn't populate every conditional field
+    (e.g. a `slave` zone lacking master-only fields like `nameserver`,
+    `serial`, `updatepolicy`) must still parse -- these 19 fields are
+    schema-documented conditional, not always-present."""
+    body = _bind_zones_body()
+    zone = body["data"][0]
+    zone["type"] = "slave"
+    zone["slaveip"] = "198.51.100.5"
+    for field in (
+        "reversev4",
+        "reversev6",
+        "rpz",
+        "dnssec",
+        "backupkeys",
+        "forwarders",
+        "ttl",
+        "baseip",
+        "enable_updatepolicy",
+        "allowtransfer",
+        "nameserver",
+        "mail",
+        "serial",
+        "refresh",
+        "retry",
+        "expire",
+        "minimum",
+        "updatepolicy",
+        "allowupdate",
+    ):
+        del zone[field]
+    client, _ = _bind_zones_client(body)
+    zones = client.get_bind_zones()
+    assert zones[0].type == "slave"
+    assert zones[0].slaveip == "198.51.100.5"
+    assert zones[0].nameserver is None
+    assert zones[0].serial is None
+
+
+def test_get_bind_zones_never_exposes_excluded_raw_config_fields_even_if_present_in_raw_response():
+    """Adversarial: BindZone deliberately excludes `custom`,
+    `customzonerecords`, and `records` (raw-config-injection-risk /
+    unbounded-response fields, see bind_zone.py). Even if a malformed/
+    adversarial raw response includes them, from_api() must never read
+    or leak them."""
+    body = _bind_zones_body()
+    sentinels = {
+        "custom": "SENTINEL-CUSTOM",
+        "customzonerecords": "SENTINEL-CUSTOM-RECORDS",
+        "records": ["SENTINEL-RECORDS"],
+    }
+    body["data"][0].update(sentinels)
+    client, _ = _bind_zones_client(body)
+    zones = client.get_bind_zones()
+    dumped = zones[0].model_dump_json()
+    for sentinel in ("SENTINEL-CUSTOM", "SENTINEL-CUSTOM-RECORDS", "SENTINEL-RECORDS"):
+        assert sentinel not in dumped
+
+
+BIND_ZONE_RECORD_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_zone_record_response.json"
+
+
+def _bind_zone_record_body() -> dict:
+    return json.loads(BIND_ZONE_RECORD_FIXTURE.read_text())
+
+
+def _bind_zone_record_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _bind_zone_record_body()
+    transport.register(
+        "GET", "/api/v2/services/bind/zone/record?parent_id=0&id=0", status_code=200, text=json.dumps(payload)
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_bind_zone_record_maps_fields():
+    client, _ = _bind_zone_record_client()
+    raw = _bind_zone_record_body()["data"]
+    record = client.get_bind_zone_record(parent_id=0, id=0)
+    assert record.id == raw["id"]
+    assert record.parent_id == raw["parent_id"]
+    assert record.name == raw["name"]
+    assert record.type == raw["type"]
+    assert record.rdata == raw["rdata"]
+    assert record.priority == raw["priority"]
+
+
+def test_get_bind_zone_record_parses_populated_priority_for_mx_record():
+    body = _bind_zone_record_body()
+    body["data"]["type"] = "MX"
+    body["data"]["priority"] = 10
+    client, _ = _bind_zone_record_client(body)
+    record = client.get_bind_zone_record(parent_id=0, id=0)
+    assert record.priority == 10
+
+
+def test_get_bind_zone_record_calls_endpoint_with_parent_id_and_id_query_params():
+    client, transport = _bind_zone_record_client()
+    client.get_bind_zone_record(parent_id=0, id=0)
+    assert transport.calls == [("GET", "/api/v2/services/bind/zone/record?parent_id=0&id=0")]
+
+
+def test_get_bind_zone_record_missing_data_key_raises_shape_error():
+    body = _bind_zone_record_body()
+    del body["data"]
+    client, _ = _bind_zone_record_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_bind_zone_record(parent_id=0, id=0)
+
+
+def test_get_bind_zone_record_not_found_raises_api_error_not_a_crash_or_false_success():
+    """Live LAB ceremony evidence (2026-08-30): with no zone configured
+    (BIND absent), this endpoint returned a well-formed HTTP 404
+    (MODEL_PARENT_OBJECT_NOT_FOUND). RestApiClient._request() already
+    raises PfSenseAPIError uniformly for any non-2xx status -- this
+    regression-proves that existing fail-closed behavior holds for this
+    endpoint specifically, never a crash, schema failure, or misleading
+    success."""
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        "/api/v2/services/bind/zone/record?parent_id=0&id=0",
+        status_code=404,
+        text=json.dumps(
+            {
+                "code": 404,
+                "data": [],
+                "message": "Model object not found.",
+                "response_id": "MODEL_PARENT_OBJECT_NOT_FOUND",
+                "status": "error",
+            }
+        ),
+    )
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    with pytest.raises(PfSenseAPIError):
+        client.get_bind_zone_record(parent_id=0, id=0)
 
 
 NTP_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "services_ntp_settings_response.json"

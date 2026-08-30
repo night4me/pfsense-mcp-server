@@ -1490,6 +1490,31 @@
       "get": {
         "description": "<h3>Description:</h3>Reads current WireGuard Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: WireGuardSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-settings-get ]<br>**Required packages**: [ pfSense-pkg-WireGuard ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
+    },
+    "/api/v2/services/bind/access_lists": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing BIND Access Lists.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: BINDAccessList<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-bind-access-lists-get ]<br>**Required packages**: [ pfSense-pkg-bind ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/bind/sync/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current BIND Sync Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: BINDSyncSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-bind-sync-settings-get ]<br>**Required packages**: [ pfSense-pkg-bind ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/bind/views": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing BIND Views.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: BINDView<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-bind-views-get ]<br>**Required packages**: [ pfSense-pkg-bind ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/bind/zones": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing BIND Zones.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: BINDZone<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-bind-zones-get ]<br>**Required packages**: [ pfSense-pkg-bind ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/bind/zone/record": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing BIND Zone Record.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: BINDZoneRecord<br>**Parent model**: BINDZone<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-bind-zone-record-get ]<br>**Required packages**: [ pfSense-pkg-bind ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      }
     }
   }
 }

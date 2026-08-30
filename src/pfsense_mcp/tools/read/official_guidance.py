@@ -11,9 +11,9 @@ production MCP tool surface and the previously fully-isolated
 This is a GUIDANCE tool, not a pfSense appliance READ capability: it is
 not gated by, and does not consume, the `Capability`/privilege/profile
 system that governs appliance access (no new `Capability` member was
-added for it). It is accounted for separately from the 95 pfSense READ
+added for it). It is accounted for separately from the 100 pfSense READ
 tools in the public contract (`KNOWN_GUIDANCE_TOOL_NAMES`, distinct from
-`KNOWN_READ_TOOL_NAMES`) — never blended into a "96 READ tools" claim.
+`KNOWN_READ_TOOL_NAMES`) — never blended into a "101 READ tools" claim.
 
 **Identity resolution is tool-resolved, never model-supplied** (explicit
 owner decision, 2026-08-22): this tool uses the *same*, already-
@@ -48,7 +48,7 @@ top level (to register every tool during server startup), a module-level
 import here would put the guidance registry's integrity check on the
 *server startup* path for every profile with any capability granted —
 meaning a corrupted guidance registry entry could crash the entire MCP
-server, taking all 95 pfSense READ tools down with it. Deferring the
+server, taking all 100 pfSense READ tools down with it. Deferring the
 import to call time means a corrupted registry can only ever fail this
 one tool's own calls, never server startup or any other tool -- verified
 directly in `tests/test_official_guidance_tool.py` (failure-independence

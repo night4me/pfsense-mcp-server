@@ -1,0 +1,20 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 0,
+      "name": "default",
+      "descr": "REDACTED-descr",
+      "recursion": true,
+      "match_clients": [
+        "trusted-networks"
+      ],
+      "allow_recursion": [
+        "trusted-networks"
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

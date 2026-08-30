@@ -571,6 +571,82 @@
         "readOnlyHint": true
       },
       "capability": "SERVICES_BIND_READ",
+      "client_method": "get_bind_access_lists",
+      "description": "List pfSense BIND (DNS server) access lists: name,\n        description, and network entries. Requires pfSense-pkg-bind.\n        Read-only.\n\n        limit: maximum number of access lists to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/bind/access_lists",
+        "symbol": "BIND_ACCESS_LISTS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_bind_access_listsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_bind_access_lists",
+      "output_schema": {
+        "$defs": {
+          "BindAccessList": {
+            "properties": {
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "entries": {
+                "items": {},
+                "title": "Entries",
+                "type": "array"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "description",
+              "entries"
+            ],
+            "title": "BindAccessList",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/BindAccessList"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_bind_access_listsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_BIND_READ",
       "client_method": "get_bind_settings",
       "description": "Get pfSense BIND DNS server settings: enabled state, listen address/port, logging, and rate limiting.",
       "endpoint": {
@@ -731,6 +807,588 @@
           "rate_limit"
         ],
         "title": "BindSettings",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_BIND_READ",
+      "client_method": "get_bind_sync_settings",
+      "description": "Get pfSense BIND (DNS server) HA sync settings: sync mode,\n        timeout, and master server IP. Requires pfSense-pkg-bind.\n        Read-only. Does not include the separate sync remote-host\n        credentials.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/bind/sync/settings",
+        "symbol": "BIND_SYNC_SETTINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_bind_sync_settingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_bind_sync_settings",
+      "output_schema": {
+        "properties": {
+          "masterip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masterip"
+          },
+          "synconchanges": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synconchanges"
+          },
+          "synctimeout": {
+            "title": "Synctimeout",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "synconchanges",
+          "synctimeout",
+          "masterip"
+        ],
+        "title": "BindSyncSettings",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_BIND_READ",
+      "client_method": "get_bind_views",
+      "description": "List pfSense BIND (DNS server) views: name, description,\n        recursion setting, and matched/allowed access lists. Requires\n        pfSense-pkg-bind. Read-only. Custom BIND config-file options\n        for each view are not included.\n\n        limit: maximum number of views to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/bind/views",
+        "symbol": "BIND_VIEWS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_bind_viewsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_bind_views",
+      "output_schema": {
+        "$defs": {
+          "BindView": {
+            "properties": {
+              "allow_recursion": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Allow Recursion",
+                "type": "array"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "match_clients": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Match Clients",
+                "type": "array"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "recursion": {
+                "title": "Recursion",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "descr",
+              "recursion",
+              "match_clients",
+              "allow_recursion"
+            ],
+            "title": "BindView",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/BindView"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_bind_viewsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_BIND_READ",
+      "client_method": "get_bind_zone_record",
+      "description": "Get a single pfSense BIND (DNS server) zone record: name,\n        type, data, and (for MX/SRV records) priority. Requires\n        pfSense-pkg-bind. Read-only.\n\n        parent_id: the id of the BIND zone this record belongs to\n        (from pfsense_get_bind_zones).\n        id: the id of the record within that zone.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/bind/zone/record",
+        "symbol": "BIND_ZONE_RECORD",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "parent_id": {
+            "title": "Parent Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "parent_id",
+          "id"
+        ],
+        "title": "pfsense_get_bind_zone_recordArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_bind_zone_record",
+      "output_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "title": "Parent Id",
+            "type": "integer"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "rdata": {
+            "title": "Rdata",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "parent_id",
+          "name",
+          "type",
+          "rdata",
+          "priority"
+        ],
+        "title": "BindZoneRecord",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_BIND_READ",
+      "client_method": "get_bind_zones",
+      "description": "List pfSense BIND (DNS server) zones: name, type, SOA\n        settings, and access-list associations. Requires\n        pfSense-pkg-bind. Read-only. Does not include each zone's own\n        DNS records (use pfsense_get_bind_zone_record for individual\n        records) or its custom BIND config-file/zone-file text\n        fragments.\n\n        limit: maximum number of zones to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/bind/zones",
+        "symbol": "BIND_ZONES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_bind_zonesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_bind_zones",
+      "output_schema": {
+        "$defs": {
+          "BindZone": {
+            "properties": {
+              "allowquery": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Allowquery",
+                "type": "array"
+              },
+              "allowtransfer": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Allowtransfer"
+              },
+              "allowupdate": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Allowupdate"
+              },
+              "backupkeys": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Backupkeys"
+              },
+              "baseip": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Baseip"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "disabled": {
+                "title": "Disabled",
+                "type": "boolean"
+              },
+              "dnssec": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dnssec"
+              },
+              "enable_updatepolicy": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Enable Updatepolicy"
+              },
+              "expire": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Expire"
+              },
+              "forwarders": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Forwarders"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "mail": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mail"
+              },
+              "minimum": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Minimum"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "nameserver": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Nameserver"
+              },
+              "refresh": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Refresh"
+              },
+              "regdhcpstatic": {
+                "title": "Regdhcpstatic",
+                "type": "boolean"
+              },
+              "retry": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Retry"
+              },
+              "reversev4": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Reversev4"
+              },
+              "reversev6": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Reversev6"
+              },
+              "rpz": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Rpz"
+              },
+              "serial": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Serial"
+              },
+              "slaveip": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Slaveip"
+              },
+              "ttl": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ttl"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              },
+              "updatepolicy": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Updatepolicy"
+              },
+              "view": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "View",
+                "type": "array"
+              }
+            },
+            "required": [
+              "id",
+              "disabled",
+              "name",
+              "description",
+              "type",
+              "view",
+              "allowquery",
+              "regdhcpstatic",
+              "reversev4",
+              "reversev6",
+              "rpz",
+              "dnssec",
+              "backupkeys",
+              "slaveip",
+              "forwarders",
+              "ttl",
+              "baseip",
+              "enable_updatepolicy",
+              "allowtransfer",
+              "nameserver",
+              "mail",
+              "serial",
+              "refresh",
+              "retry",
+              "expire",
+              "minimum",
+              "updatepolicy",
+              "allowupdate"
+            ],
+            "title": "BindZone",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/BindZone"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_bind_zonesOutput",
         "type": "object"
       },
       "tool_class": "read"

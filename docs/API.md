@@ -2,7 +2,7 @@
 
 Version: 1.0.0 release state
 Profile: `auditor`  
-Registered tools: 96 READ, 2 guidance, 0 WRITE
+Registered tools: 101 READ, 2 guidance, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v1.0.0.json`. It records tool names,
@@ -885,6 +885,60 @@ Common parameters:
 - **Security:** Listen addresses and service posture are sensitive network
   metadata; no zone-transfer credential is returned.
 - **Example:** `{"name":"pfsense_get_bind_settings","arguments":{}}`
+
+### `pfsense_get_bind_access_lists`
+
+- **Purpose:** List pfSense BIND access lists: name, description, and
+  network entries. Requires pfSense-pkg-bind.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[BindAccessList]`.
+- **Security:** No secrets; network entries are configuration metadata.
+- **Example:** `{"name":"pfsense_get_bind_access_lists","arguments":{}}`
+
+### `pfsense_get_bind_sync_settings`
+
+- **Purpose:** Get pfSense BIND HA sync settings: sync mode, timeout, and
+  master server IP. Requires pfSense-pkg-bind. Does not include the
+  separate sync remote-host credentials.
+- **Parameters:** None.
+- **Returns:** `BindSyncSettings`.
+- **Security:** No secrets; remote-host credentials live on a separate,
+  rejected resource never exposed by this tool.
+- **Example:** `{"name":"pfsense_get_bind_sync_settings","arguments":{}}`
+
+### `pfsense_get_bind_views`
+
+- **Purpose:** List pfSense BIND views: name, description, recursion
+  setting, and matched/allowed access lists. Requires pfSense-pkg-bind.
+  Custom BIND config-file options for each view are not included.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[BindView]`.
+- **Security:** `bind_custom_options` is deliberately excluded (raw
+  config-injection-risk free text).
+- **Example:** `{"name":"pfsense_get_bind_views","arguments":{}}`
+
+### `pfsense_get_bind_zones`
+
+- **Purpose:** List pfSense BIND zones: name, type, SOA settings, and
+  access-list associations. Requires pfSense-pkg-bind. Does not include
+  each zone's own DNS records (use `pfsense_get_bind_zone_record` for
+  individual records) or its custom BIND config-file/zone-file text
+  fragments.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[BindZone]`.
+- **Security:** `custom`, `customzonerecords`, and `records` are
+  deliberately excluded (raw config-injection-risk / unbounded response).
+- **Example:** `{"name":"pfsense_get_bind_zones","arguments":{}}`
+
+### `pfsense_get_bind_zone_record`
+
+- **Purpose:** Get a single pfSense BIND zone record: name, type, data,
+  and (for MX/SRV records) priority. Requires pfSense-pkg-bind.
+- **Parameters:** `parent_id: integer` (the zone's id), `id: integer`
+  (the record's id within that zone).
+- **Returns:** `BindZoneRecord`.
+- **Security:** No secrets.
+- **Example:** `{"name":"pfsense_get_bind_zone_record","arguments":{"parent_id":0,"id":0}}`
 
 ### `pfsense_get_dhcp_server_apply_status`
 

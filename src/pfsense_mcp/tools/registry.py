@@ -24,7 +24,12 @@ from .read import (
     api_guidance,
     arp_table,
     auth_keys,
+    bind_access_lists,
     bind_settings,
+    bind_sync_settings,
+    bind_views,
+    bind_zone_record,
+    bind_zones,
     carp_status,
     cron_jobs,
     dhcp_leases,
@@ -142,7 +147,12 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_acme_settings",
         "pfsense_get_arp_table",
         "pfsense_get_auth_keys",
+        "pfsense_get_bind_access_lists",
         "pfsense_get_bind_settings",
+        "pfsense_get_bind_sync_settings",
+        "pfsense_get_bind_views",
+        "pfsense_get_bind_zone_record",
+        "pfsense_get_bind_zones",
         "pfsense_get_carp_status",
         "pfsense_get_cron_jobs",
         "pfsense_get_dhcp_leases",
@@ -735,6 +745,26 @@ class ToolRegistry:
         fn = bind_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_bind_settings", self._identity)(fn)
         self._register_read_tool(wrapped)
+
+        access_lists_fn = bind_access_lists.build(self._client)
+        access_lists_wrapped = audit_logged("pfsense_get_bind_access_lists", self._identity)(access_lists_fn)
+        self._register_read_tool(access_lists_wrapped)
+
+        sync_settings_fn = bind_sync_settings.build(self._client)
+        sync_settings_wrapped = audit_logged("pfsense_get_bind_sync_settings", self._identity)(sync_settings_fn)
+        self._register_read_tool(sync_settings_wrapped)
+
+        views_fn = bind_views.build(self._client)
+        views_wrapped = audit_logged("pfsense_get_bind_views", self._identity)(views_fn)
+        self._register_read_tool(views_wrapped)
+
+        zones_fn = bind_zones.build(self._client)
+        zones_wrapped = audit_logged("pfsense_get_bind_zones", self._identity)(zones_fn)
+        self._register_read_tool(zones_wrapped)
+
+        zone_record_fn = bind_zone_record.build(self._client)
+        zone_record_wrapped = audit_logged("pfsense_get_bind_zone_record", self._identity)(zone_record_fn)
+        self._register_read_tool(zone_record_wrapped)
 
     def _register_services_ntp_read(self) -> None:
         fn = ntp_settings.build(self._client)

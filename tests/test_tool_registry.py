@@ -629,6 +629,18 @@ _BIND_SETTINGS_BODY = {
 }
 
 
+_BIND_ACCESS_LISTS_BODY = {
+    "data": [
+        {
+            "id": 0,
+            "name": "trusted-networks",
+            "description": "test",
+            "entries": ["198.51.100.0/24"],
+        }
+    ]
+}
+
+
 _NTP_SETTINGS_BODY = {
     "data": {
         "clockstats": False,
@@ -842,6 +854,7 @@ def _client(
     with_system_tunables: bool = False,
     with_email_notification_settings: bool = False,
     with_bind_settings: bool = False,
+    with_bind_access_lists: bool = False,
     with_ntp_settings: bool = False,
     with_ntp_time_servers: bool = False,
     with_ssh_settings: bool = False,
@@ -995,6 +1008,13 @@ def _client(
     if with_bind_settings:
         transport.register(
             "GET", "/api/v2/services/bind/settings", status_code=200, text=json.dumps(_BIND_SETTINGS_BODY)
+        )
+    if with_bind_access_lists:
+        transport.register(
+            "GET",
+            "/api/v2/services/bind/access_lists?limit=100",
+            status_code=200,
+            text=json.dumps(_BIND_ACCESS_LISTS_BODY),
         )
     if with_ntp_settings:
         transport.register("GET", "/api/v2/services/ntp/settings", status_code=200, text=json.dumps(_NTP_SETTINGS_BODY))
@@ -2118,23 +2138,35 @@ def test_registered_email_notification_settings_tool_reveals_identifying_metadat
     assert settings.fromaddress == "test-from@example.invalid"
 
 
-def test_registry_registers_bind_settings_tool_when_capability_present():
+def test_registry_registers_all_six_bind_tools_when_capability_present():
     mcp = FakeMCP()
     client = _client(with_bind_settings=True)
     registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_BIND_READ}))
     registry.register_all()
-    assert len(mcp.registered) == 3
-    assert mcp.registered[0].__name__ == "pfsense_get_bind_settings"
-    assert mcp.registered[1].__name__ == "pfsense_get_official_guidance"
-    assert mcp.registered[2].__name__ == "pfsense_get_api_guidance"
+    assert len(mcp.registered) == 8
+    assert [fn.__name__ for fn in mcp.registered] == [
+        "pfsense_get_bind_settings",
+        "pfsense_get_bind_access_lists",
+        "pfsense_get_bind_sync_settings",
+        "pfsense_get_bind_views",
+        "pfsense_get_bind_zones",
+        "pfsense_get_bind_zone_record",
+        "pfsense_get_official_guidance",
+        "pfsense_get_api_guidance",
+    ]
 
 
-def test_registry_does_not_register_bind_settings_tool_without_capability():
+def test_registry_does_not_register_bind_tools_without_capability():
     mcp = FakeMCP()
     registry = ToolRegistry(mcp, _client(), "api-mcp-admin", frozenset({Capability.SYSTEM_READ}))
     registry.register_all()
     names = [fn.__name__ for fn in mcp.registered]
     assert "pfsense_get_bind_settings" not in names
+    assert "pfsense_get_bind_access_lists" not in names
+    assert "pfsense_get_bind_sync_settings" not in names
+    assert "pfsense_get_bind_views" not in names
+    assert "pfsense_get_bind_zones" not in names
+    assert "pfsense_get_bind_zone_record" not in names
 
 
 def test_registered_bind_settings_tool_invokes_client():
@@ -2146,6 +2178,18 @@ def test_registered_bind_settings_tool_invokes_client():
     settings = fn()
     assert settings.enable_bind is False
     assert settings.listenport == "53"
+
+
+def test_registered_bind_access_lists_tool_invokes_client():
+    mcp = FakeMCP()
+    client = _client(with_bind_access_lists=True)
+    registry = ToolRegistry(mcp, client, "api-mcp-admin", frozenset({Capability.SERVICES_BIND_READ}))
+    registry.register_all()
+    fn = next(fn for fn in mcp.registered if fn.__name__ == "pfsense_get_bind_access_lists")
+    access_lists = fn()
+    assert len(access_lists) == 1
+    assert access_lists[0].name == "trusted-networks"
+    assert access_lists[0].entries == ["198.51.100.0/24"]
 
 
 def test_registry_registers_ntp_settings_tool_when_capability_present():

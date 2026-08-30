@@ -1,0 +1,42 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 0,
+      "disabled": false,
+      "name": "example.invalid",
+      "description": "REDACTED-description",
+      "type": "master",
+      "view": [
+        "default"
+      ],
+      "allowquery": [
+        "trusted-networks"
+      ],
+      "regdhcpstatic": false,
+      "reversev4": false,
+      "reversev6": false,
+      "rpz": false,
+      "dnssec": false,
+      "backupkeys": null,
+      "slaveip": null,
+      "forwarders": null,
+      "ttl": 86400,
+      "baseip": null,
+      "enable_updatepolicy": false,
+      "allowtransfer": [],
+      "nameserver": "ns1.example.invalid",
+      "mail": "hostmaster.example.invalid",
+      "serial": 1,
+      "refresh": "6h",
+      "retry": "1h",
+      "expire": "1w",
+      "minimum": "1d",
+      "updatepolicy": null,
+      "allowupdate": null
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

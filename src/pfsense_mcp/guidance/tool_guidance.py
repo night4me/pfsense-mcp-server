@@ -161,11 +161,11 @@ class ToolGuidance:
     provenance: Literal["PROJECT_AUTHORED"] = PROVENANCE
 
 
-#: Tool name -> ResultKind, covering every one of the 95 read tools plus
+#: Tool name -> ResultKind, covering every one of the 100 read tools plus
 #: `pfsense_mcp_info` (re-derived and cross-checked against
 #: `scripts/public_contract.py`'s own live output by
 #: `tests/guidance/test_tool_guidance.py::test_every_read_tool_is_classified`
-#: -- this dict is never allowed to silently drift from the real 95-tool
+#: -- this dict is never allowed to silently drift from the real 100-tool
 #: contract). A tool's presence here is a classification of what KIND of
 #: evidence its result is, authored from reading this project's own
 #: model/tool source, never a claim about pfREST/Netgate content.
@@ -212,7 +212,12 @@ _TOOL_RESULT_KIND: dict[str, ResultKind] = {
     # --- configuration (everything else) ---
     "pfsense_get_acme_settings": ResultKind.CONFIGURATION,
     "pfsense_get_auth_keys": ResultKind.CONFIGURATION,
+    "pfsense_get_bind_access_lists": ResultKind.CONFIGURATION,
     "pfsense_get_bind_settings": ResultKind.CONFIGURATION,
+    "pfsense_get_bind_sync_settings": ResultKind.CONFIGURATION,
+    "pfsense_get_bind_views": ResultKind.CONFIGURATION,
+    "pfsense_get_bind_zone_record": ResultKind.CONFIGURATION,
+    "pfsense_get_bind_zones": ResultKind.CONFIGURATION,
     "pfsense_get_cron_jobs": ResultKind.CONFIGURATION,
     "pfsense_get_dhcp_relay": ResultKind.CONFIGURATION,
     "pfsense_get_dhcp_server_address_pools": ResultKind.CONFIGURATION,

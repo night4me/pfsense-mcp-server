@@ -1,0 +1,16 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 0,
+      "name": "trusted-networks",
+      "description": "REDACTED-description",
+      "entries": [
+        "198.51.100.0/24"
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

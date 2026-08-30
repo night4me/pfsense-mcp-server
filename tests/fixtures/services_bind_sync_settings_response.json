@@ -1,0 +1,11 @@
+{
+  "code": 200,
+  "data": {
+    "synconchanges": null,
+    "synctimeout": 30,
+    "masterip": null
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

@@ -96,7 +96,7 @@ same `run_bootstrap_from_environment()` standalone `bootstrap` already
 calls, and its `read_only` branch's one live call is a harmless GET.
 Provisioning this account through `setup apply` does not, by itself,
 make any new WRITE tool reachable through the MCP server -- the public
-MCP contract (95 READ + 1 guidance + 0 default-reachable WRITE) is
+MCP contract (100 READ + 2 guidance + 0 default-reachable WRITE) is
 unaffected; see `security_setup_apply.py`'s own module docstring for
 why.
 
@@ -915,7 +915,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Which fixed, least-privilege service account to provision/verify: 'write_protected' (default, "
             "the 'pfsense-mcp' account) or 'read_only' (POST-v1.0 addition, the dedicated 'pfsense-mcp-readonly' "
-            "account holding only the 95 READ privileges -- never the WRITE-exclusive one). Each profile has "
+            "account holding only the 100 READ privileges -- never the WRITE-exclusive one). Each profile has "
             "its own entirely separate journal/lock/custody state; running one never touches the other's. "
             "'read_only' writes its newly-provisioned key to PFSENSE_READONLY_SERVICE_API_KEY_FILE, never "
             "PFSENSE_SERVICE_API_KEY_FILE."

@@ -1,0 +1,14 @@
+{
+  "code": 200,
+  "data": {
+    "id": 0,
+    "parent_id": 0,
+    "name": "www",
+    "type": "A",
+    "rdata": "198.51.100.20",
+    "priority": null
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

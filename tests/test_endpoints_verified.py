@@ -418,6 +418,70 @@ def test_bind_settings_path_suffix_is_correct():
     assert Endpoints.BIND_SETTINGS.path_suffix == "/services/bind/settings"
 
 
+def test_bind_access_lists_is_declared_verified():
+    assert Endpoints.BIND_ACCESS_LISTS.verified is True
+
+
+def test_bind_access_lists_path_suffix_has_no_api_prefix():
+    assert not Endpoints.BIND_ACCESS_LISTS.path_suffix.startswith("/api")
+
+
+def test_bind_access_lists_path_suffix_is_correct():
+    assert Endpoints.BIND_ACCESS_LISTS.path_suffix == "/services/bind/access_lists"
+
+
+def test_bind_sync_settings_is_declared_verified():
+    assert Endpoints.BIND_SYNC_SETTINGS.verified is True
+
+
+def test_bind_sync_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.BIND_SYNC_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_bind_sync_settings_path_suffix_is_correct():
+    assert Endpoints.BIND_SYNC_SETTINGS.path_suffix == "/services/bind/sync/settings"
+
+
+def test_bind_views_is_declared_verified():
+    assert Endpoints.BIND_VIEWS.verified is True
+
+
+def test_bind_views_path_suffix_has_no_api_prefix():
+    assert not Endpoints.BIND_VIEWS.path_suffix.startswith("/api")
+
+
+def test_bind_views_path_suffix_is_correct():
+    assert Endpoints.BIND_VIEWS.path_suffix == "/services/bind/views"
+
+
+def test_bind_zones_is_declared_verified():
+    assert Endpoints.BIND_ZONES.verified is True
+
+
+def test_bind_zones_path_suffix_has_no_api_prefix():
+    assert not Endpoints.BIND_ZONES.path_suffix.startswith("/api")
+
+
+def test_bind_zones_path_suffix_is_correct():
+    assert Endpoints.BIND_ZONES.path_suffix == "/services/bind/zones"
+
+
+def test_bind_zone_record_is_declared_verified():
+    """Live-ceremony evidence differs from the other 4 BIND endpoints:
+    with no zone configured (BIND absent), this returned a well-formed
+    HTTP 404 rather than 200 -- verified on reachability + correct-shape
+    error, not on having observed a populated record."""
+    assert Endpoints.BIND_ZONE_RECORD.verified is True
+
+
+def test_bind_zone_record_path_suffix_has_no_api_prefix():
+    assert not Endpoints.BIND_ZONE_RECORD.path_suffix.startswith("/api")
+
+
+def test_bind_zone_record_path_suffix_is_correct():
+    assert Endpoints.BIND_ZONE_RECORD.path_suffix == "/services/bind/zone/record"
+
+
 def test_ntp_settings_is_declared_verified():
     assert Endpoints.NTP_SETTINGS.verified is True
 

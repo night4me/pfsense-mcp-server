@@ -29,7 +29,7 @@ unchanged.
 This is a GUIDANCE tool, not a pfSense appliance READ capability --
 same accounting as `pfsense_get_official_guidance`: not gated by, and
 does not consume, the `Capability`/privilege/profile system, counted
-separately from the 95 pfSense READ tools in the public contract.
+separately from the 100 pfSense READ tools in the public contract.
 
 **Bounded query modes, never arbitrary fetch** (Phase 3/10 threat-model
 requirement): every input here is used exclusively as a *lookup key*
