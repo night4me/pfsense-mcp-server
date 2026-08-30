@@ -7,9 +7,17 @@ to make the qualification's own evidence -- the complete BIND operation
 matrix and its privilege-alias-freedom proof -- durable, executable, and
 regression-checked against `tests/fixtures/bind_openapi_subset.json` (a
 pinned, self-contained subset of the live pfrest.org OpenAPI document
-fetched 2026-08-30, scoped to the 13 `/services/bind/*` paths and their
-21 referenced schemas). They do not touch, import, or assert anything about
-production `src/pfsense_mcp` runtime code -- there is none to test yet.
+fetched 2026-08-30, scoped to the 13 `/services/bind/*` paths and 20 of
+their 21 referenced schemas). They do not touch, import, or assert anything
+about production `src/pfsense_mcp` runtime code -- there is none to test yet.
+
+`BINDSyncRemoteHost` is deliberately excluded from the pinned fixture's
+`components.schemas` (this project's own `scripts/fixture_safety.py`
+correctly rejects any checked-in fixture containing a `password`-named
+field, even as a schema type descriptor rather than a real credential
+value) -- its REJECT_SECRET classification is documented in
+`POST_V1_1_BIND_READ_QUALIFICATION.md` Item 9 from the live fetch instead
+of as an executable regression here.
 
 If a future mission installs BIND on LAB and implements production tools,
 this file's fixture should be refreshed from a live fetch and these tests
@@ -101,14 +109,6 @@ def test_no_bind_get_privilege_is_aliased_with_any_mutating_bind_privilege():
     assert len(get_privileges) == 13
     assert len(mutating_privileges) == 29
     assert get_privileges.isdisjoint(mutating_privileges)
-
-
-def test_bind_sync_remote_host_schemas_carry_a_plaintext_password_field():
-    """Regression coverage for the REJECT_SECRET classification: proves
-    the finding was schema-derived, not assumed from the resource name."""
-    doc = _load_fixture()
-    schema = doc["components"]["schemas"]["BINDSyncRemoteHost"]
-    assert "password" in schema["properties"]
 
 
 def test_bind_zone_schema_has_no_tsig_or_dnssec_private_key_field():

@@ -331,65 +331,6 @@
     },
     "type": "object"
    },
-   "BINDSyncRemoteHost": {
-    "properties": {
-     "ipaddress": {
-      "description": "The IP address/hostname of the remote host.<br>",
-      "maxLength": 1024,
-      "minLength": 0,
-      "nullable": false,
-      "readOnly": false,
-      "type": "string",
-      "writeOnly": false
-     },
-     "password": {
-      "description": "The password to use to authenticate when syncing.<br>",
-      "maxLength": 1024,
-      "minLength": 0,
-      "nullable": false,
-      "readOnly": false,
-      "type": "string",
-      "writeOnly": false
-     },
-     "syncdestinenable": {
-      "description": "Enable this remote host for syncing.<br>",
-      "nullable": false,
-      "readOnly": false,
-      "type": "boolean",
-      "writeOnly": false
-     },
-     "syncport": {
-      "description": "The remote host port to use for syncing. Valid options are: a TCP/UDP port number<br>",
-      "nullable": false,
-      "readOnly": false,
-      "type": "string",
-      "writeOnly": false
-     },
-     "syncprotocol": {
-      "description": "The protocol to use for syncing.<br>",
-      "enum": [
-       "http",
-       "https"
-      ],
-      "maxLength": 1024,
-      "minLength": 0,
-      "nullable": false,
-      "readOnly": false,
-      "type": "string",
-      "writeOnly": false
-     },
-     "username": {
-      "description": "The username to use to authenticate when syncing.<br>",
-      "maxLength": 1024,
-      "minLength": 0,
-      "nullable": false,
-      "readOnly": false,
-      "type": "string",
-      "writeOnly": false
-     }
-    },
-    "type": "object"
-   },
    "BINDSyncSettings": {
     "properties": {
      "masterip": {
