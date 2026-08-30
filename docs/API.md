@@ -883,7 +883,10 @@ Common parameters:
 - **Parameters:** None.
 - **Returns:** `BindSettings`.
 - **Security:** Listen addresses and service posture are sensitive network
-  metadata; no zone-transfer credential is returned.
+  metadata; no zone-transfer credential is returned. `bind_custom_options`
+  and `bind_global_settings` are deliberately excluded (unbounded, operator-
+  supplied text spliced verbatim into the generated BIND configuration —
+  a potential exfiltration channel for pasted secrets).
 - **Example:** `{"name":"pfsense_get_bind_settings","arguments":{}}`
 
 ### `pfsense_get_bind_access_lists`

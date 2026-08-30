@@ -48,6 +48,28 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   continue to describe the last published baseline (v1.1.0: 95 READ)
   until the next release's doc sync updates them together.
 
+### Security
+
+- `pfsense_get_bind_settings`'s response model no longer includes
+  `bind_custom_options` or `bind_global_settings`. Both were `Base64Field`-
+  typed, unvalidated, unbounded free text in the actual pfSense-pkg-RESTAPI
+  `BINDSettings.inc` model, spliced verbatim into the generated `named.conf`
+  ("[c]ustom BIND options to include in the configuration file" / "[g]lobal
+  BIND settings to include in the configuration file" per the model's own
+  help text) — a potential exfiltration channel for anything an operator
+  may have pasted there, including secrets, despite not being formally
+  typed as a credential field. This tool has been part of the public MCP
+  contract (and the published v1.0.0/v1.1.0 PyPI releases) since commit
+  `ff2231c` (2026-08-06); removing these two fields is a compatibility-
+  breaking response-shape change for that already-published tool, made
+  deliberately because the security benefit of closing a raw-config
+  exfiltration channel outweighs preserving an unsafe field. The GET
+  endpoint, capability, and privilege (`api-v2-services-bind-settings-get`)
+  are unchanged; the remaining 17 fields are unaffected. Public tool/READ/
+  guidance/WRITE counts and the managed privilege count are unchanged
+  (response-shape change only, not a new tool). See
+  `POST_V1_1_BIND_SETTINGS_READ_HARDENING.md`.
+
 ## [1.1.0] - 2026-08-30
 
 **Defense-in-depth and onboarding release.** Public MCP tool contract is

@@ -5,6 +5,7 @@ import pytest
 
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.errors import PfSenseAPIError, PfSenseRequestValidationError, PfSenseResponseShapeError
+from pfsense_mcp.models.bind_settings import BindSettings
 from pfsense_mcp.models.system import SystemStatus
 from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.rest_api_client import RestApiClient
@@ -3808,6 +3809,116 @@ def test_get_bind_settings_shape_error_does_not_leak_raw_field_values():
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_bind_settings()
     assert sentinel not in str(excinfo.value)
+
+
+def test_get_bind_settings_never_exposes_bind_custom_options():
+    """Adversarial: BindSettings deliberately excludes `bind_custom_options`
+    (POST_V1_1_BIND_SETTINGS_READ_HARDENING.md -- unbounded, unvalidated
+    `Base64Field` free text that pfSense-pkg-RESTAPI's BINDSettings.inc
+    splices verbatim into the generated named.conf). Even when the raw
+    response contains a value that looks like a real secret, from_api()
+    must never read it and it must never reach the serialized model."""
+    body = _bind_settings_body()
+    sentinel = 'SENTINEL-CUSTOM-OPTIONS-tsig-key my-key { secret "base64secretmaterial=="; };'
+    body["data"]["bind_custom_options"] = sentinel
+    client, _ = _bind_settings_client(body)
+    settings = client.get_bind_settings()
+    assert not hasattr(settings, "bind_custom_options")
+    assert sentinel not in settings.model_dump_json()
+
+
+def test_get_bind_settings_never_exposes_bind_global_settings():
+    """Adversarial: same exclusion, `bind_global_settings` field."""
+    body = _bind_settings_body()
+    sentinel = 'SENTINEL-GLOBAL-SETTINGS-include "/etc/secret-tsig-keys.conf";'
+    body["data"]["bind_global_settings"] = sentinel
+    client, _ = _bind_settings_client(body)
+    settings = client.get_bind_settings()
+    assert not hasattr(settings, "bind_global_settings")
+    assert sentinel not in settings.model_dump_json()
+
+
+def test_get_bind_settings_excludes_both_raw_config_fields_with_multiline_hostile_content():
+    """Adversarial: multiline `named.conf`-shaped content (recognizable
+    secret-like text, an `include` directive, and a misleading nested
+    field name embedded inside the raw string) in both excluded fields
+    simultaneously must not reach the model or its serialization."""
+    body = _bind_settings_body()
+    hostile_custom_options = (
+        'allow-transfer { key "internal-tsig"; };\n'
+        'include "/usr/local/etc/named/rndc.key";\n'
+        "// password=hunter2-do-not-share\n"
+        '"bind_dnssec_validation": "auto", "enable_bind": true\n'
+    )
+    hostile_global_settings = (
+        'options {\n  listen-on { any; };\n  session-keyfile "/var/run/named/session.key";\n};\n' + ("A" * 20000)
+    )
+    body["data"]["bind_custom_options"] = hostile_custom_options
+    body["data"]["bind_global_settings"] = hostile_global_settings
+    client, _ = _bind_settings_client(body)
+    settings = client.get_bind_settings()
+    dumped = settings.model_dump_json()
+    assert "bind_custom_options" not in dumped
+    assert "bind_global_settings" not in dumped
+    assert "internal-tsig" not in dumped
+    assert "hunter2" not in dumped
+    assert "session-keyfile" not in dumped
+    assert "rndc.key" not in dumped
+    assert "A" * 100 not in dumped
+
+
+def test_get_bind_settings_excluded_fields_absent_do_not_break_parsing():
+    """A raw response entirely lacking the two excluded keys (e.g. a
+    future pfREST version that stops returning them) must still parse
+    cleanly -- from_api() never requires them."""
+    body = _bind_settings_body()
+    del body["data"]["bind_custom_options"]
+    del body["data"]["bind_global_settings"]
+    client, _ = _bind_settings_client(body)
+    settings = client.get_bind_settings()
+    assert settings.enable_bind is False
+
+
+def test_get_bind_settings_model_has_no_extra_fields_config():
+    """Structural guarantee (not a runtime check on one response):
+    BindSettings uses Pydantic's default `extra='ignore'` behavior (no
+    `model_config` override), so even a malformed/adversarial raw
+    response with unexpected extra keys can never populate attributes
+    beyond the explicitly declared safe field set."""
+    assert BindSettings.model_config.get("extra") in (None, "ignore")
+
+
+def test_bind_settings_model_fields_exclude_the_two_raw_config_keys():
+    """Regression: fails immediately if a future edit reintroduces
+    `bind_custom_options`/`bind_global_settings` as declared model
+    fields, without needing to construct a response at all."""
+    field_names = set(BindSettings.model_fields.keys())
+    assert "bind_custom_options" not in field_names
+    assert "bind_global_settings" not in field_names
+
+
+def test_get_bind_settings_retains_all_seventeen_safe_fields():
+    client, _ = _bind_settings_client()
+    raw = _bind_settings_body()["data"]
+    settings = client.get_bind_settings()
+    assert settings.bind_dnssec_validation == raw["bind_dnssec_validation"]
+    assert settings.bind_forwarder == raw["bind_forwarder"]
+    assert settings.bind_forwarder_ips == raw["bind_forwarder_ips"]
+    assert settings.bind_hide_version == raw["bind_hide_version"]
+    assert settings.bind_ip_version == raw["bind_ip_version"]
+    assert settings.bind_logging == raw["bind_logging"]
+    assert settings.bind_notify == raw["bind_notify"]
+    assert settings.bind_ram_limit == raw["bind_ram_limit"]
+    assert settings.controlport == raw["controlport"]
+    assert settings.enable_bind == raw["enable_bind"]
+    assert settings.listenon == raw["listenon"]
+    assert settings.listenport == raw["listenport"]
+    assert settings.log_only == raw["log_only"]
+    assert settings.log_options == raw["log_options"]
+    assert settings.log_severity == raw["log_severity"]
+    assert settings.rate_enabled == raw["rate_enabled"]
+    assert settings.rate_limit == raw["rate_limit"]
+    assert len(BindSettings.model_fields) == 17
 
 
 BIND_ACCESS_LISTS_FIXTURE = Path(__file__).parent / "fixtures" / "services_bind_access_lists_response.json"

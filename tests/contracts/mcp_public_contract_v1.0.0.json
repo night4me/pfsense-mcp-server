@@ -648,7 +648,7 @@
       },
       "capability": "SERVICES_BIND_READ",
       "client_method": "get_bind_settings",
-      "description": "Get pfSense BIND DNS server settings: enabled state, listen address/port, logging, and rate limiting.",
+      "description": "Get pfSense BIND DNS server settings: enabled state, listen\n        address/port, logging, and rate limiting. `bind_custom_options`\n        and `bind_global_settings` are deliberately excluded (raw\n        BIND-config-injection-risk free text).",
       "endpoint": {
         "method": "GET",
         "minimum_api_version": "v2",
@@ -664,17 +664,6 @@
       "name": "pfsense_get_bind_settings",
       "output_schema": {
         "properties": {
-          "bind_custom_options": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bind Custom Options"
-          },
           "bind_dnssec_validation": {
             "title": "Bind Dnssec Validation",
             "type": "string"
@@ -696,17 +685,6 @@
               }
             ],
             "title": "Bind Forwarder Ips"
-          },
-          "bind_global_settings": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bind Global Settings"
           },
           "bind_hide_version": {
             "title": "Bind Hide Version",
@@ -786,11 +764,9 @@
           }
         },
         "required": [
-          "bind_custom_options",
           "bind_dnssec_validation",
           "bind_forwarder",
           "bind_forwarder_ips",
-          "bind_global_settings",
           "bind_hide_version",
           "bind_ip_version",
           "bind_logging",
