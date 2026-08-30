@@ -4405,10 +4405,28 @@
 
 
 <h1 id="acceptance-v110">Acceptance — v1.1.0<a class="headerlink" href="#acceptance-v110" title="Permanent link">&para;</a></h1>
-<p><strong>Status: release-candidate, not yet tagged, not yet released, not yet
-published to PyPI.</strong> This document records the release-readiness audit
-for the <code>v1.1.0</code> candidate. Owner publication authorization is a
-separate, explicit step not covered by this document.</p>
+<p><strong>Status: published — the <code>v1.1.0</code> tag, GitHub Release, and PyPI
+release all point at this commit.</strong> The annotated git tag <code>v1.1.0</code> was
+created and pushed pointing at commit
+<code>c731430887d09403e956dcb1c6bf35a99190fa5a</code>; the tag's dereferenced
+commit (<code>refs/tags/v1.1.0^{}</code>) resolves to exactly that SHA. The
+GitHub Release was published from that tag
+(<a href="https://github.com/night4me/pfsense-mcp-server/releases/tag/v1.1.0">https://github.com/night4me/pfsense-mcp-server/releases/tag/v1.1.0</a>),
+which triggered the established trusted-publishing workflow
+(<code>.github/workflows/publish.yml</code>) to PyPI. The published wheel and
+sdist were independently downloaded and their extracted contents
+diffed byte-for-byte against a local build from this same commit —
+zero differences across all files (326 wheel entries, 350 sdist
+entries) — and a Sigstore attestation (verified via PyPI's Integrity
+API) cryptographically binds the published wheel to this exact commit,
+<code>refs/tags/v1.1.0</code>, and the <code>publish.yml</code> workflow. (The outer archive
+container bytes of the published artifacts differ from the ones built
+locally during RC preparation — a build-environment nondeterminism
+between this project's dev machine and the GitHub Actions runner, not
+a content or source difference; see
+<code>reports-ai/V1_1_0_PUBLICATION_2026-08-30.md</code> for the full forensic
+detail.) See that same report for the complete publication-ceremony
+evidence.</p>
 <h2 id="release-scope">Release scope<a class="headerlink" href="#release-scope" title="Permanent link">&para;</a></h2>
 <p><code>v1.1.0</code> is a <strong>defense-in-depth and onboarding release</strong>, not a
 capability expansion. <strong>Public MCP contract is unchanged from <code>v1.0.0</code>:
