@@ -1782,6 +1782,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_wireguard_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_wireguard_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6170,6 +6181,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pfsense_get_vpn_wireguard_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pfsense_get_vpn_wireguard_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6629,7 +6651,7 @@
 <h1 id="mcp-tool-reference">MCP tool reference<a class="headerlink" href="#mcp-tool-reference" title="Permanent link">&para;</a></h1>
 <p>Version: 1.0.0 release state
 Profile: <code>auditor</code><br />
-Registered tools: 95 READ, 2 guidance, 0 WRITE</p>
+Registered tools: 96 READ, 2 guidance, 0 WRITE</p>
 <p>The normalized public contract is checked into
 <code>tests/contracts/mcp_public_contract_v1.0.0.json</code>. It records tool names,
 descriptions, input/output schemas, annotations, capability ownership, client
@@ -7335,6 +7357,18 @@ security behavior.</p>
 <li><strong>Returns:</strong> <code>list[WireGuardTunnelAddress]</code>.</li>
 <li><strong>Security:</strong> Literal address/mask are omitted by default.</li>
 <li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_wireguard_tunnel_addresses","arguments":{}}</code></li>
+</ul>
+<h3 id="pfsense_get_vpn_wireguard_settings"><code>pfsense_get_vpn_wireguard_settings</code><a class="headerlink" href="#pfsense_get_vpn_wireguard_settings" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Purpose:</strong> Get global pfSense WireGuard service settings: enabled
+  state, config-retention-on-uninstall, endpoint hostname
+  re-resolution interval, and interface-group membership mode.
+  Requires pfSense-pkg-WireGuard.</li>
+<li><strong>Parameters:</strong> None.</li>
+<li><strong>Returns:</strong> <code>WireGuardSettings</code>.</li>
+<li><strong>Security:</strong> No identifying metadata. No tunnel/peer configuration
+  or key material.</li>
+<li><strong>Example:</strong> <code>{"name":"pfsense_get_vpn_wireguard_settings","arguments":{}}</code></li>
 </ul>
 <h2 id="users-and-api-identities">Users and API identities<a class="headerlink" href="#users-and-api-identities" title="Permanent link">&para;</a></h2>
 <h3 id="pfsense_get_users"><code>pfsense_get_users</code><a class="headerlink" href="#pfsense_get_users" title="Permanent link">&para;</a></h3>
