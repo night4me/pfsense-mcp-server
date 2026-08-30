@@ -3620,6 +3620,8 @@
       
         
       
+        
+      
     
     
     
@@ -4151,6 +4153,34 @@
     
   
     v1.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACCEPTANCE_v1.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v1.1.0
   
 
     
@@ -4713,9 +4743,19 @@ API package's own <code>Core/Endpoint.inc::get_method_priv_name()</code>:</p>
 <span class="x">}</span>
 </code></pre></div>
 <p>(<code>pfrest/pfSense-pkg-RESTAPI</code>, <code>Core/Endpoint.inc</code>, confirmed <strong>byte-identical</strong>
-across every tag from <code>v2.7.7</code> through <code>v2.10.0</code> — the current latest
-tag as of this research pass, 2026-08-17. The algorithm has not changed
-across this project's entire lifetime.)</p>
+across every tag from <code>v2.7.7</code> through <code>v2.10.0</code> as of this research pass,
+2026-08-17. The algorithm has not changed across this project's entire
+lifetime.</p>
+<p><strong>Extended to <code>v2.10.2</code></strong> (2026-08-29, POST-v1.0 MANAGED READ-ONLY DEFENSE
+IN DEPTH mission): re-verified directly against pinned source at both
+<code>v2.10.1</code> and <code>v2.10.2</code> before extending — the slug-generation logic above
+is byte-identical to the <code>v2.10.0</code> text already cited, and <code>Core/Auth.inc</code>'s
+<code>authorize()</code> still uses the same unconditional
+<code>array_intersect($this-&gt;required_privileges, $this-&gt;client_privileges)</code>
+ANY-match with no <code>page-all</code> special-case bypass in the authorization check
+itself. This is evidence for these two specific tags, not a guarantee for
+any future one — see <code>security_privileges.VERIFIED_PACKAGE_VERSION_MAX</code>,
+the single source of truth this document mirrors.)</p>
 <p>Concretely: take the endpoint's URL (e.g. <code>/api/v2/status/system</code>),
 replace every <code>/</code> and <code>_</code> with <code>-</code>, strip the resulting leading <code>-</code>,
 append the lowercase HTTP method. <code>/api/v2/status/dhcp_server/leases</code>
