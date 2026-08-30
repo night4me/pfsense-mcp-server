@@ -125,8 +125,18 @@ def test_pypi_publish_workflow_builds_verified_tagged_artifacts_before_publish()
 
     assert 'if [ "$RELEASE_TAG" != "v$package_version" ]' in text
     assert "Release tag does not match the package version" in text
-    assert "Refusing to build with a pre-existing dist directory" in text
-    assert "python -m build --sdist --wheel" in text
+    # Builds via the canonical scripts/build_release_artifact.py (also used
+    # by `make package-check`, `make reproducible-build`, and the safe
+    # release-rehearsal workflow) rather than a separate raw `python -m
+    # build` invocation -- that script itself enforces the refuse-if-a-
+    # pre-existing-dist-directory-exists safety property (see
+    # test_build_release_artifact.py::test_main_refuses_to_build_into_a_pre_existing_directory)
+    # and derives SOURCE_DATE_EPOCH from the exact commit being built,
+    # instead of this workflow computing it inline and risking divergence
+    # from every other build site (see
+    # reports-ai/POST_V1_1_RELEASE_REPRODUCIBILITY_HARDENING.md).
+    assert "build_release_artifact.py --outdir dist" in text
+    assert "SOURCE_DATE_EPOCH=" not in text
     assert "verify_distribution.py dist" in text
     assert "twine check --strict dist/*" in text
     assert "needs: build" in text

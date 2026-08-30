@@ -47,13 +47,17 @@ jobs:
           fi
       - name: Build and verify distributions
         run: |
-          if [ -e dist ]; then
-            echo "::error::Refusing to build with a pre-existing dist directory."
-            exit 1
-          fi
           python -m pip install --upgrade pip
           python -m pip install 'build>=1.2,<2.0' 'twine>=5.0,<7.0'
-          SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)" python -m build --sdist --wheel
+          # scripts/build_release_artifact.py is the one canonical build path
+          # shared with `make package-check`, `make reproducible-build`, and
+          # the safe non-publishing release-rehearsal workflow -- refuses to
+          # build into a pre-existing dist/, derives SOURCE_DATE_EPOCH from
+          # this exact checked-out commit, and pins hatchling's own build-
+          # dependency closure via scripts/build-constraints.txt so this job
+          # resolves the identical build toolchain regardless of when it
+          # runs. See reports-ai/POST_V1_1_RELEASE_REPRODUCIBILITY_HARDENING.md.
+          python scripts/build_release_artifact.py --outdir dist
           python scripts/verify_distribution.py dist
           python -m twine check --strict dist/*
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

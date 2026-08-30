@@ -230,7 +230,8 @@ security-static:
 	@$(PYTHON) -m bandit -c pyproject.toml -r src/pfsense_mcp scripts witness_daemon signing
 
 package-check:
-	@$(PYTHON) -m build --no-isolation --sdist --wheel
+	@rm -rf dist
+	@$(PYTHON) scripts/build_release_artifact.py --outdir dist
 	@$(PYTHON) scripts/verify_distribution.py dist
 	@tmp_dir=$$(mktemp -d); \
 	  trap 'rm -rf "$$tmp_dir"' EXIT; \

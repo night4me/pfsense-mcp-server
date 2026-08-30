@@ -1,0 +1,64 @@
+name: Release Build Rehearsal
+
+# Safe, non-publishing dry run of exactly what .github/workflows/publish.yml
+# will build from a given ref -- built via scripts/build_release_artifact.py,
+# the same canonical, SOURCE_DATE_EPOCH-and-build-dependency-pinned build
+# path publish.yml itself now uses.
+#
+# Exists to close a real gap found during the v1.1.0 publication ceremony
+# (2026-08-30): a local release-readiness audit's own build of a release
+# candidate had no way to prove it would match what the trusted GitHub
+# Actions release environment would actually produce, short of already
+# having published the release. This workflow lets a future release-
+# readiness audit trigger a real GitHub Actions build of the exact RC ref
+# *before* a tag/release/PyPI publication exists, and read back the exact
+# wheel/sdist SHA-256 hashes that a real publish run from that same ref
+# would produce -- evidence an owner can bind a publication GO to, not an
+# approximation. See reports-ai/POST_V1_1_RELEASE_REPRODUCIBILITY_HARDENING.md.
+#
+# Deliberately carries none of publish.yml's publication capability: no
+# `id-token: write`, no `pypi` environment, no PyPI-publish step. It cannot
+# publish anything under any input.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref (tag, branch, or SHA) to build from
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rehearse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Build and verify distributions (no publish)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'build>=1.2,<2.0' 'twine>=5.0,<7.0'
+          python scripts/build_release_artifact.py --outdir dist
+          python scripts/verify_distribution.py dist
+          python -m twine check --strict dist/*
+      - name: Report artifact hashes
+        run: |
+          echo "## Release build rehearsal: ${{ inputs.ref }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          sha256sum dist/* | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-rehearsal-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

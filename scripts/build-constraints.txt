@@ -1,0 +1,18 @@
+# Exact pins for hatchling's own PEP 517 build-dependency closure, applied
+# via PIP_CONSTRAINT during every official build of this project's release
+# artifacts (see scripts/build_release_artifact.py). pyproject.toml's own
+# [build-system] `requires = ["hatchling>=1.25,<1.32"]` intentionally states
+# a compatible range, not an exact pin -- this file is the separate
+# enforcement mechanism that makes an *official* build resolve identically
+# regardless of when or where it runs, closing the class of bug found during
+# the v1.1.0 publication ceremony (2026-08-30): a local RC-audit build and
+# the GitHub Actions publish build, both satisfying the same declared range,
+# resolved hatchling's own transitive dependencies independently at
+# different times and could in principle diverge even with SOURCE_DATE_EPOCH
+# held fixed. Bump deliberately, as its own reviewed change, when adopting a
+# new hatchling release -- never let it float.
+hatchling==1.31.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.6.0
+trove-classifiers==2026.6.1.19

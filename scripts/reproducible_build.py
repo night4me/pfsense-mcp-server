@@ -1,18 +1,37 @@
 #!/usr/bin/env python3
-"""Build twice from HEAD and require byte-identical Python distributions."""
+"""Build twice from HEAD via `scripts/build_release_artifact.py` -- the same
+canonical, full-isolation, SOURCE_DATE_EPOCH-and-constraint-pinned build
+path `make package-check`, the safe release-rehearsal workflow, and the
+real `.github/workflows/publish.yml` all use -- and require the two builds
+to be byte-identical.
+
+Previously used a separate, ad hoc `--no-isolation` build here that never
+shared a code path with any of the other three build sites; that let this
+check pass (proving only that *this script's own pair* of builds, using
+whatever build tooling happened to already be installed in the invoking
+environment, was internally consistent) while the actual artifact `make
+package-check` built -- and that `make artifact-manifest`/`make
+release-check` hashed and reported to the owner -- was built a third,
+different way and could diverge from what the real publish workflow later
+produced. See `reports-ai/POST_V1_1_RELEASE_REPRODUCIBILITY_HARDENING.md`
+for the concrete v1.1.0 incident this closes.
+
+A passing result here means: this project's one canonical build path is
+internally deterministic (same source, same declared build-dependency
+pins, byte-identical output) -- not a substitute for the safe release-
+rehearsal workflow's evidence that a real GitHub Actions run of the exact
+same path produces the same bytes too.
+"""
 
 from __future__ import annotations
 
 import hashlib
-import os
-
-# Fixed local git/build commands; no shell or caller-controlled argv.
-import subprocess  # nosec B404
 import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build_release_artifact import build, source_date_epoch
 
 
 def _sha256(path: Path) -> str:
@@ -23,36 +42,16 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _source_date_epoch() -> str:
-    # Fixed read-only git argv.
-    return subprocess.check_output(  # nosec B603 B607
-        ["git", "show", "-s", "--format=%ct", "HEAD"], cwd=ROOT, text=True
-    ).strip()
-
-
-def _build(output: Path, epoch: str) -> None:
-    environment = dict(os.environ)
-    environment["SOURCE_DATE_EPOCH"] = epoch
-    # Fixed interpreter/build argv.
-    subprocess.run(  # nosec B603
-        [sys.executable, "-m", "build", "--no-isolation", "--sdist", "--wheel", "--outdir", str(output)],
-        cwd=ROOT,
-        env=environment,
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
-
-
 def main() -> int:
-    epoch = _source_date_epoch()
+    epoch = source_date_epoch("HEAD")
     with (
         tempfile.TemporaryDirectory(prefix="pfsense-build-a-") as first_dir,
         tempfile.TemporaryDirectory(prefix="pfsense-build-b-") as second_dir,
     ):
         first = Path(first_dir)
         second = Path(second_dir)
-        _build(first, epoch)
-        _build(second, epoch)
+        build(first, "HEAD")
+        build(second, "HEAD")
         first_names = {path.name for path in first.iterdir()}
         second_names = {path.name for path in second.iterdir()}
         if first_names != second_names:

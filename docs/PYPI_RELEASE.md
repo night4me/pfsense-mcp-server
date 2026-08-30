@@ -18,24 +18,101 @@ requires explicit owner approval.
   95 as of this candidate), zero WRITE tools, an empty WRITE allow-list,
   and no capability or endpoint expansion unless separately approved.
 
+## Terminology (precise, not interchangeable)
+
+Adopted 2026-08-30 after the v1.1.0 publication ceremony found this
+project's own claims had been imprecise about what its checks actually
+proved:
+
+- **Deterministic build**: the same source, built the same way, always
+  produces the same output *within a single fixed environment*. Does not
+  by itself say anything about a different environment.
+- **Same-environment reproducible build**: two builds run back-to-back in
+  the same environment (same machine, same already-installed tool
+  versions) produce byte-identical artifacts. This is what `make
+  reproducible-build` alone proves.
+- **Cross-environment reproducible build**: a build in one environment
+  (e.g. a local machine) produces byte-identical artifacts to a build of
+  the same source in a *different* environment (e.g. the GitHub Actions
+  runner). This project achieves this by pinning `SOURCE_DATE_EPOCH` to
+  the exact commit timestamp and hatchling's build-dependency closure to
+  exact versions (`scripts/build-constraints.txt`), verified end to end by
+  the release build rehearsal workflow.
+- **Source provenance**: cryptographic proof (Sigstore, via PyPI's Trusted
+  Publishing attestations) that a published artifact was built by a
+  specific, named CI workflow from a specific, named commit. Says nothing
+  about whether that artifact's *bytes* match anything built anywhere
+  else -- only that its origin is what it claims to be.
+- **Artifact provenance**: the specific published file's own recorded
+  digest, attested alongside source provenance. Ties a hash to an origin,
+  not to any other build.
+- **Content equivalence**: two archives (e.g. a local build and a
+  published one) contain byte-identical *extracted* files, even if the
+  outer archive container bytes (and therefore the outer SHA-256) differ.
+  Established by extracting both and diffing recursively -- not by
+  comparing archive hashes.
+- **Exact byte identity**: two archives are identical at the SHA-256
+  level, including the outer container. The strongest, most specific
+  claim; everything above it is necessary but not sufficient to establish
+  it on its own.
+
+The v1.1.0 published artifacts had content equivalence and valid source
+provenance, but not exact byte identity with the RC hashes an earlier local
+build had produced -- because that local build skipped the cross-
+environment reproducibility steps documented below. The hardening in this
+document exists to make exact byte identity the normal, verified outcome
+for every release from v1.1.0 onward, not merely an occasional coincidence.
+
 ## Clean build
 
-Start from the repository root with an isolated release environment. The
-commands deliberately stop if `dist/` already exists so stale artifacts cannot
-be uploaded accidentally.
+Start from the repository root with an isolated release environment.
+`scripts/build_release_artifact.py` is the **one canonical build path** --
+used identically here, by `make package-check`, by `make
+reproducible-build`, by the safe `release-rehearsal.yml` dry-run workflow,
+and by the real `.github/workflows/publish.yml`. Never invoke `python -m
+build` directly for a release artifact; every direct invocation is a
+distinct, unverified build path that can silently diverge from what the
+other three actually produce (this is exactly what happened during the
+v1.1.0 publication ceremony, 2026-08-30 -- see
+`reports-ai/POST_V1_1_RELEASE_REPRODUCIBILITY_HARDENING.md`).
 
 ```console
 git status --short
-test ! -e dist
 python -m venv .release-venv
 .release-venv/bin/python -m pip install --upgrade pip
 .release-venv/bin/python -m pip install 'build>=1.2,<2.0' 'twine>=5.0,<7.0'
-SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)" \
-  .release-venv/bin/python -m build --sdist --wheel
+.release-venv/bin/python scripts/build_release_artifact.py --outdir dist
 ```
 
-The Git status output must be empty. `.release-venv/` and `dist/` are local,
+The Git status output must be empty. The script itself refuses to build if
+`dist/` already exists, derives `SOURCE_DATE_EPOCH` from the exact commit
+checked out at `HEAD` (never from wall-clock "now"), and pins `hatchling`'s
+own build-dependency closure to exact versions via
+`scripts/build-constraints.txt` -- removing both sources of nondeterminism
+found during the v1.1.0 incident. `.release-venv/` and `dist/` are local,
 ignored build state and must never be committed.
+
+## Release build rehearsal (verify against the real build environment)
+
+Before asking for owner approval, trigger a real GitHub Actions build of
+the exact reviewed commit -- not merely a local approximation of one --
+using the safe, non-publishing `release-rehearsal.yml` workflow:
+
+```console
+gh workflow run release-rehearsal.yml --ref main -f ref=<exact RC SHA or tag>
+```
+
+It checks out that exact ref, builds via the identical
+`scripts/build_release_artifact.py` path, and prints the resulting
+wheel/sdist SHA-256 hashes to the run's job summary -- the *actual* bytes a
+real `publish.yml` run from the same ref would produce, since both use the
+same canonical build path, the same pinned build-dependency closure, and
+the same `SOURCE_DATE_EPOCH` derivation. This workflow carries no
+publication capability whatsoever (no `id-token: write`, no `pypi`
+environment, no publish step) -- it cannot upload anything under any input.
+Compare its reported hashes against the locally-built ones from the
+previous section; they must match exactly. Report *these* hashes -- not
+merely a local build's -- in the owner approval request below.
 
 ## Artifact inspection
 
@@ -52,9 +129,14 @@ byte-identical:
 make reproducible-build
 ```
 
-This target derives `SOURCE_DATE_EPOCH` from `HEAD`, builds twice in temporary
-directories, compares artifact names and SHA-256 values, and removes its
-temporary files. It never uploads an artifact.
+This target uses the same canonical `scripts/build_release_artifact.py`
+path, builds twice in temporary directories, compares artifact names and
+SHA-256 values, and removes its temporary files. It never uploads an
+artifact. A passing result proves this build path is internally
+deterministic in the current environment -- it is not, by itself, proof
+that a *different* environment (the actual GitHub Actions runner) will
+produce the same bytes; that is what the release build rehearsal above is
+for.
 
 `make artifact-manifest` emits the version, source commit, source-date epoch,
 Python requirement, filenames, sizes, and SHA-256 values for the local wheel
@@ -67,7 +149,7 @@ exclude reports, `.env` files, key/private-key files, caches, fixtures, local
 configuration, and temporary state. Install the wheel in a second clean virtual
 environment, import `pfsense_mcp.server`, and verify the console entry point
 fails closed without configuration; `make package-check` automates these
-checks.
+checks (via the same canonical build path).
 
 ## Trusted publishing
 
@@ -108,9 +190,10 @@ and the enabling repository variable remain explicit owner-controlled settings.
 The permanent human release gate is immediately before creation of the
 immutable version tag. Before reaching it, complete the full preflight and
 report the exact commit SHA, exact-SHA CI and CodeQL status, release-check,
-artifact verification and hashes, Trusted Publisher identity, `pypi`
-environment, exact enable-variable value, final MCP tool counts, and WRITE
-inactivity.
+artifact verification and hashes -- **from the release build rehearsal
+workflow run against that exact commit, not only from a local build** (see
+above) -- Trusted Publisher identity, `pypi` environment, exact
+enable-variable value, final MCP tool counts, and WRITE inactivity.
 
 Ask exactly: "Approve creation of immutable tag vX.Y.Z and production
 release?" Do not create or move the tag, push it, create the GitHub Release, or
