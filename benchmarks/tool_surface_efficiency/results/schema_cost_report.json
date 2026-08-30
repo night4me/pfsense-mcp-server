@@ -2,10 +2,10 @@
   "deterministic_across_runs": true,
   "distribution": {
     "max_tool_bytes": 3059,
-    "mean_tool_bytes": 517.3,
-    "median_tool_bytes": 445,
+    "mean_tool_bytes": 516.4,
+    "median_tool_bytes": 442.5,
     "min_tool_bytes": 196,
-    "stdev_tool_bytes": 315.6
+    "stdev_tool_bytes": 314.1
   },
   "largest_10": [
     {
@@ -80,12 +80,12 @@
     }
   ],
   "latency": {
-    "startup_to_initialized_seconds": 0.7186,
-    "tools_list_seconds": 0.0201
+    "startup_to_initialized_seconds": 1.7333,
+    "tools_list_seconds": 0.0641
   },
   "memory": {
     "note": "Best-effort RUSAGE_CHILDREN peak RSS (KB) across the whole benchmark process's child processes measured so far -- Linux-specific, approximate (includes Python interpreter startup, not isolated to the MCP server alone).",
-    "ru_maxrss_kb": 81580
+    "ru_maxrss_kb": 81456
   },
   "methodology": {
     "byte_counting": "UTF-8 encoded length of the canonical (sorted-key, no-whitespace) JSON serialization of each tool/the full tools array -- an exact, reproducible byte count, not an estimate.",
@@ -407,6 +407,13 @@
       "name": "pfsense_get_firewall_schedules",
       "name_bytes": 32,
       "total_tool_bytes": 432
+    },
+    {
+      "description_bytes": 266,
+      "input_schema_bytes": 87,
+      "name": "pfsense_get_vpn_wireguard_settings",
+      "name_bytes": 36,
+      "total_tool_bytes": 433
     },
     {
       "description_bytes": 201,
@@ -846,12 +853,12 @@
     }
   ],
   "totals": {
-    "full_tools_list_payload_bytes": 50287,
-    "full_tools_list_payload_estimated_tokens": 12572,
-    "tool_count": 97,
-    "total_description_bytes": 26534,
-    "total_description_estimated_tokens": 6634,
-    "total_input_schema_bytes": 15921,
-    "total_input_schema_estimated_tokens": 3980
+    "full_tools_list_payload_bytes": 50721,
+    "full_tools_list_payload_estimated_tokens": 12680,
+    "tool_count": 98,
+    "total_description_bytes": 26800,
+    "total_description_estimated_tokens": 6700,
+    "total_input_schema_bytes": 16008,
+    "total_input_schema_estimated_tokens": 4002
   }
 }

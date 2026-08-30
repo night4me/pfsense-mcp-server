@@ -14813,6 +14813,79 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "VPN_WIREGUARD_SETTINGS_READ",
+      "client_method": "get_vpn_wireguard_settings",
+      "description": "Get global pfSense WireGuard service settings: enabled state,\n        config-retention-on-uninstall, endpoint hostname re-resolution\n        interval, and interface-group membership mode. Read-only. Does\n        not include tunnel/peer configuration or key material.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/wireguard/settings",
+        "symbol": "VPN_WIREGUARD_SETTINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_vpn_wireguard_settingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_wireguard_settings",
+      "output_schema": {
+        "properties": {
+          "enable": {
+            "title": "Enable",
+            "type": "boolean"
+          },
+          "hide_peers": {
+            "title": "Hide Peers",
+            "type": "boolean"
+          },
+          "hide_secrets": {
+            "title": "Hide Secrets",
+            "type": "boolean"
+          },
+          "interface_group": {
+            "title": "Interface Group",
+            "type": "string"
+          },
+          "keep_conf": {
+            "title": "Keep Conf",
+            "type": "boolean"
+          },
+          "resolve_interval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolve Interval"
+          },
+          "resolve_interval_track": {
+            "title": "Resolve Interval Track",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enable",
+          "keep_conf",
+          "resolve_interval_track",
+          "resolve_interval",
+          "interface_group",
+          "hide_secrets",
+          "hide_peers"
+        ],
+        "title": "WireGuardSettings",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "VPN_WIREGUARD_TUNNEL_ADDRESS_READ",
       "client_method": "get_vpn_wireguard_tunnel_addresses",
       "description": "List WireGuard tunnel address assignments: description and\n        (optionally) the tunnel's own address/subnet mask. Read-only.\n        Requires pfSense-pkg-WireGuard.\n\n        include_identifying_metadata: if True, includes the literal\n        address/mask. Defaults to False.\n\n        limit: maximum number of tunnel addresses to return (1-100,\n        default 100).",

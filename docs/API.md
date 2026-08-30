@@ -2,7 +2,7 @@
 
 Version: 1.0.0 release state
 Profile: `auditor`  
-Registered tools: 95 READ, 2 guidance, 0 WRITE
+Registered tools: 96 READ, 2 guidance, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v1.0.0.json`. It records tool names,
@@ -722,6 +722,18 @@ Common parameters:
 - **Returns:** `list[WireGuardTunnelAddress]`.
 - **Security:** Literal address/mask are omitted by default.
 - **Example:** `{"name":"pfsense_get_vpn_wireguard_tunnel_addresses","arguments":{}}`
+
+### `pfsense_get_vpn_wireguard_settings`
+
+- **Purpose:** Get global pfSense WireGuard service settings: enabled
+  state, config-retention-on-uninstall, endpoint hostname
+  re-resolution interval, and interface-group membership mode.
+  Requires pfSense-pkg-WireGuard.
+- **Parameters:** None.
+- **Returns:** `WireGuardSettings`.
+- **Security:** No identifying metadata. No tunnel/peer configuration
+  or key material.
+- **Example:** `{"name":"pfsense_get_vpn_wireguard_settings","arguments":{}}`
 
 ## Users and API identities
 

@@ -101,6 +101,7 @@ from .models.virtual_ip_apply import VirtualIPApply
 from .models.web_gui_settings import WebGUISettings
 from .models.wireguard_apply import WireGuardApply
 from .models.wireguard_peer_status import WireGuardPeerStatus
+from .models.wireguard_settings import WireGuardSettings
 from .models.wireguard_tunnel_address import WireGuardTunnelAddress
 from .models.wireguard_tunnel_status import WireGuardTunnelStatus
 from .rest_api_client import RestApiClient
@@ -1357,3 +1358,7 @@ class PfSenseClient:
                 data, include_identifying_metadata=include_identifying_metadata
             ),
         )
+
+    def get_vpn_wireguard_settings(self) -> WireGuardSettings:
+        raw = self._rest.get(Endpoints.VPN_WIREGUARD_SETTINGS)
+        return _parse_object_response(raw, "/vpn/wireguard/settings", WireGuardSettings.from_api)

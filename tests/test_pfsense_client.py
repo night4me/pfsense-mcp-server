@@ -9744,3 +9744,110 @@ def test_get_vpn_wireguard_tunnel_addresses_shape_error_does_not_leak_raw_field_
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_vpn_wireguard_tunnel_addresses()
     assert sentinel not in str(excinfo.value)
+
+
+# --- POST_V1_1_FINAL_READ_COVERAGE_AUDIT: WireGuard global settings ---
+
+VPN_WIREGUARD_SETTINGS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_wireguard_settings_response.json"
+
+
+def _vpn_wireguard_settings_body() -> dict:
+    return json.loads(VPN_WIREGUARD_SETTINGS_FIXTURE.read_text())
+
+
+def _vpn_wireguard_settings_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_wireguard_settings_body()
+    transport.register("GET", "/api/v2/vpn/wireguard/settings", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_wireguard_settings_maps_fields():
+    client, _ = _vpn_wireguard_settings_client()
+    raw = _vpn_wireguard_settings_body()["data"]
+    settings = client.get_vpn_wireguard_settings()
+    assert settings.enable == raw["enable"]
+    assert settings.keep_conf == raw["keep_conf"]
+    assert settings.resolve_interval_track == raw["resolve_interval_track"]
+    assert settings.interface_group == raw["interface_group"]
+    assert settings.hide_secrets == raw["hide_secrets"]
+    assert settings.hide_peers == raw["hide_peers"]
+
+
+def test_get_vpn_wireguard_settings_parses_null_resolve_interval():
+    client, _ = _vpn_wireguard_settings_client()
+    settings = client.get_vpn_wireguard_settings()
+    assert settings.resolve_interval is None
+
+
+def test_get_vpn_wireguard_settings_parses_populated_resolve_interval():
+    body = _vpn_wireguard_settings_body()
+    body["data"]["resolve_interval_track"] = False
+    body["data"]["resolve_interval"] = 300
+    client, _ = _vpn_wireguard_settings_client(body)
+    settings = client.get_vpn_wireguard_settings()
+    assert settings.resolve_interval == 300
+
+
+def test_get_vpn_wireguard_settings_only_calls_settings_endpoint():
+    client, transport = _vpn_wireguard_settings_client()
+    client.get_vpn_wireguard_settings()
+    assert transport.calls == [("GET", "/api/v2/vpn/wireguard/settings")]
+
+
+def test_get_vpn_wireguard_settings_response_never_contains_key_material_field_names():
+    """Adversarial: this endpoint must never surface `privatekey`/
+    `presharedkey` (WireGuardTunnel/WireGuardPeer fields) even if a
+    malformed/compromised backend response were to include them --
+    the model only maps the 7 known-safe fields, so any extra key
+    material in the raw payload is silently dropped, never parsed."""
+    body = _vpn_wireguard_settings_body()
+    body["data"]["privatekey"] = "SENTINEL-PRIVATE-KEY"
+    body["data"]["presharedkey"] = "SENTINEL-PSK"
+    client, _ = _vpn_wireguard_settings_client(body)
+    settings = client.get_vpn_wireguard_settings()
+    assert "privatekey" not in settings.model_dump()
+    assert "presharedkey" not in settings.model_dump()
+
+
+def test_get_vpn_wireguard_settings_missing_data_key_raises_shape_error():
+    body = _vpn_wireguard_settings_body()
+    del body["data"]
+    client, _ = _vpn_wireguard_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_settings()
+
+
+def test_get_vpn_wireguard_settings_data_wrong_type_raises_shape_error():
+    body = _vpn_wireguard_settings_body()
+    body["data"] = "not-an-object"
+    client, _ = _vpn_wireguard_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_settings()
+
+
+def test_get_vpn_wireguard_settings_required_field_missing_raises_shape_error():
+    body = _vpn_wireguard_settings_body()
+    del body["data"]["enable"]
+    client, _ = _vpn_wireguard_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_settings()
+
+
+def test_get_vpn_wireguard_settings_invalid_field_type_raises_shape_error():
+    body = _vpn_wireguard_settings_body()
+    body["data"]["enable"] = "not-a-bool"
+    client, _ = _vpn_wireguard_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_settings()
+
+
+def test_get_vpn_wireguard_settings_shape_error_does_not_leak_raw_field_values():
+    body = _vpn_wireguard_settings_body()
+    sentinel = "SENTINEL-SECRET-VALUE"
+    body["data"]["interface_group"] = [sentinel]
+    client, _ = _vpn_wireguard_settings_client(body)
+    with pytest.raises(PfSenseResponseShapeError) as excinfo:
+        client.get_vpn_wireguard_settings()
+    assert sentinel not in str(excinfo.value)

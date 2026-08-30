@@ -915,7 +915,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Which fixed, least-privilege service account to provision/verify: 'write_protected' (default, "
             "the 'pfsense-mcp' account) or 'read_only' (POST-v1.0 addition, the dedicated 'pfsense-mcp-readonly' "
-            "account holding only the 94 READ privileges -- never the WRITE-exclusive one). Each profile has "
+            "account holding only the 95 READ privileges -- never the WRITE-exclusive one). Each profile has "
             "its own entirely separate journal/lock/custody state; running one never touches the other's. "
             "'read_only' writes its newly-provisioned key to PFSENSE_READONLY_SERVICE_API_KEY_FILE, never "
             "PFSENSE_SERVICE_API_KEY_FILE."

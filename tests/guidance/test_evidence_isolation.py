@@ -3,7 +3,7 @@ as test_appliance_identity_isolation.py, extended to evidence.py and
 applicability.py: no production bootstrap import, no Tier 1 import, no
 write transport/client import, no network client, no cache/database, no
 MCP registration, no new endpoint/capability, public contract remains
-95 READ / 0 WRITE, and no regression in ApplianceIdentity.
+96 READ / 0 WRITE, and no regression in ApplianceIdentity.
 """
 
 from __future__ import annotations
@@ -151,7 +151,7 @@ def test_public_contract_remains_95_read_0_write_after_step_2() -> None:
     tools = asyncio.run(mcp.list_tools())
 
     # 2026-08-22: pfsense_get_official_guidance (owner-authorized Candidate A)
-    # is now registered unconditionally alongside the 95 pfSense READ tools --
+    # is now registered unconditionally alongside the 96 pfSense READ tools --
     # accounted for SEPARATELY here, never blended into the READ count, per
     # explicit owner instruction (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md). A second
     # guidance tool, pfsense_get_api_guidance, was added 2026-08-28
@@ -161,8 +161,8 @@ def test_public_contract_remains_95_read_0_write_after_step_2() -> None:
     read_tools = [t for t in tools if t.name in KNOWN_READ_TOOL_NAMES]
     guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 97
-    assert len(read_tools) == 95
+    assert len(tools) == 98
+    assert len(read_tools) == 96
     assert len(guidance_tools) == 2
     assert len(write_tools) == 0
 

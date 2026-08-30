@@ -29,7 +29,7 @@ ALLOWED_PFREST_DOCS_IMPORTER = "src/pfsense_mcp/tools/read/api_guidance.py"
 #: mutation may be imported by this package. `pfsense_mcp.pfsense_client`
 #: is deliberately NOT forbidden -- `appliance_schema.py` legitimately
 #: reuses it for LIVE_APPLIANCE_SCHEMA evidence, the same READ-only,
-#: already-authenticated client every one of the 95 READ tools uses
+#: already-authenticated client every one of the 96 READ tools uses
 #: (mirrors `pfsense_mcp.guidance.appliance_identity`'s own precedent).
 FORBIDDEN_IMPORT_ROOTS = {
     "pfsense_mcp.tier1",

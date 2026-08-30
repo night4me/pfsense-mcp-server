@@ -1485,6 +1485,11 @@
       "get": {
         "description": "<h3>Description:</h3>Reads all existing WireGuard Tunnel Addresses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: WireGuardTunnelAddress<br>**Parent model**: WireGuardTunnel<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-tunnel-addresses-get ]<br>**Required packages**: [ pfSense-pkg-WireGuard ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
+    },
+    "/api/v2/vpn/wireguard/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current WireGuard Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: WireGuardSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-settings-get ]<br>**Required packages**: [ pfSense-pkg-WireGuard ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
     }
   }
 }

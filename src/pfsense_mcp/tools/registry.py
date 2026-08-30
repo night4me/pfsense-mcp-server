@@ -115,6 +115,7 @@ from .read import (
     vpn_ipsec_phase2s,
     vpn_openvpn_csos,
     vpn_openvpn_servers,
+    vpn_wireguard_settings,
     vpn_wireguard_tunnel_addresses,
     wireguard_apply_status,
 )
@@ -231,6 +232,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_vpn_openvpn_csos",
         "pfsense_get_vpn_openvpn_servers",
         "pfsense_get_vpn_wireguard_tunnel_addresses",
+        "pfsense_get_vpn_wireguard_settings",
         "pfsense_get_wireguard_apply_status",
         "pfsense_mcp_info",
     }
@@ -470,6 +472,8 @@ class ToolRegistry:
             self._register_vpn_wireguard_apply_read()
         if Capability.VPN_WIREGUARD_TUNNEL_ADDRESS_READ in self._capabilities:
             self._register_vpn_wireguard_tunnel_address_read()
+        if Capability.VPN_WIREGUARD_SETTINGS_READ in self._capabilities:
+            self._register_vpn_wireguard_settings_read()
 
         # Deliberately NOT gated by any *specific* Capability check (owner
         # instruction, 2026-08-22): a guidance tool is not a pfSense
@@ -1048,6 +1052,11 @@ class ToolRegistry:
     def _register_vpn_wireguard_tunnel_address_read(self) -> None:
         fn = vpn_wireguard_tunnel_addresses.build(self._client)
         wrapped = audit_logged("pfsense_get_vpn_wireguard_tunnel_addresses", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_wireguard_settings_read(self) -> None:
+        fn = vpn_wireguard_settings.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_wireguard_settings", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

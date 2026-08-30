@@ -10,7 +10,7 @@ exact match against this dict. The production runtime path is a plain
 dict lookup, never AST parsing -- this file exists so that lookup never
 has to read/parse this project's own source tree at MCP call time.
 
-94 of the 95 public READ tools appear here; the missing one is
+95 of the 96 public READ tools appear here; the missing one is
 `pfsense_mcp_info` (`LOCAL_ONLY_TOOL_NAMES` in `scripts/public_contract.py`),
 which has no pfSense API call at all and therefore no endpoint to map.
 
@@ -121,6 +121,7 @@ TOOL_ENDPOINT_PATHS: dict[str, tuple[str, str]] = {
     "pfsense_get_vpn_openvpn_csos": ("/vpn/openvpn/csos", "GET"),
     "pfsense_get_vpn_openvpn_servers": ("/vpn/openvpn/servers", "GET"),
     "pfsense_get_vpn_wireguard_tunnel_addresses": ("/vpn/wireguard/tunnel/addresses", "GET"),
+    "pfsense_get_vpn_wireguard_settings": ("/vpn/wireguard/settings", "GET"),
     "pfsense_get_wireguard_apply_status": ("/vpn/wireguard/apply", "GET"),
 }
 

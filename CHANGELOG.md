@@ -7,6 +7,23 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `pfsense_get_vpn_wireguard_settings` READ tool: global WireGuard service
+  settings (enabled state, config-retention-on-uninstall, endpoint
+  hostname re-resolution interval, interface-group membership mode).
+  Result of `POST_V1_1_FINAL_READ_COVERAGE_AUDIT.md`'s source-first sweep
+  of the remaining unexposed pfREST READ surface — 145 other candidate
+  operations were reviewed and explicitly rejected or deferred (secret-
+  bearing, redundant with an already-shipped tool, disproportionate new
+  package-cluster scope, or unbounded free-text log content), this was
+  the sole surviving qualified `SAFE_READ` candidate. Public READ tool
+  count moves from 95 to 96 (98 total incl. 2 guidance tools); the
+  managed `pfsense-mcp-readonly` READ-only privilege set moves from 94
+  to 95. Not yet published to PyPI — README.md's tool-count claims
+  continue to describe the last published baseline (v1.1.0: 95 READ)
+  until the next release's doc sync updates them together.
+
 ## [1.1.0] - 2026-08-30
 
 **Defense-in-depth and onboarding release.** Public MCP tool contract is

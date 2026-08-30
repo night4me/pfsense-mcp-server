@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from public_contract import (
+    PUBLISHED_README_GUIDANCE_COUNT,
+    PUBLISHED_README_READ_COUNT,
     READ_TOOLS,
     ROOT,
     SNAPSHOT,
@@ -19,14 +21,14 @@ def test_public_contract_is_complete_and_security_preserving():
     contract = build_contract()
     tools = contract["tools"]
 
-    # 95 pfSense READ tools + 2 guidance tools (pfsense_get_official_guidance,
+    # 96 pfSense READ tools + 2 guidance tools (pfsense_get_official_guidance,
     # owner-authorized 2026-08-22) -- accounted for separately below, never
-    # blended into "96 READ tools" (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md).
-    assert len(tools) == 97
-    assert len({tool["name"] for tool in tools}) == 97
+    # blended into "97 READ tools" (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md).
+    assert len(tools) == 98
+    assert len({tool["name"] for tool in tools}) == 98
 
     read_tools = [tool for tool in tools if tool["tool_class"] == "read"]
-    assert len(read_tools) == 95
+    assert len(read_tools) == 96
     assert all(tool["name"].startswith("pfsense_get_") or tool["name"] == "pfsense_mcp_info" for tool in read_tools)
     assert all(tool["capability"].endswith("_READ") for tool in read_tools)
 
@@ -72,14 +74,27 @@ def test_contract_descriptions_use_stable_source_docstrings():
 # own `main()` now runs on every invocation (including `make quick` /
 # `make validate`) so a future release can never publish a README whose
 # stated counts disagree with reality.
+#
+# README's counts are checked against PUBLISHED_README_READ_COUNT /
+# PUBLISHED_README_GUIDANCE_COUNT -- the last actually-*published* PyPI
+# baseline -- not against build_contract()'s own live count. As of
+# POST_V1_1_FINAL_READ_COVERAGE_AUDIT.md (owner decision, 2026-08-30)
+# these two can legitimately differ: a new READ tool was added to the
+# SNAPSHOT-approved contract without a version bump/republish, and
+# README's Quick Start instructs `pipx install pfsense-mcp-server`,
+# which still installs the older, already-published tool count.
 
 
-def test_current_readme_agrees_with_the_authoritative_contract():
+def test_current_readme_agrees_with_the_last_published_baseline():
     readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
-    contract = build_contract()
-    read_count = sum(1 for tool in contract["tools"] if tool["tool_class"] == "read")
-    guidance_count = sum(1 for tool in contract["tools"] if tool["tool_class"] == "guidance")
-    assert readme_tool_count_mismatches(readme_text, read_count=read_count, guidance_count=guidance_count) == []
+    assert (
+        readme_tool_count_mismatches(
+            readme_text,
+            read_count=PUBLISHED_README_READ_COUNT,
+            guidance_count=PUBLISHED_README_GUIDANCE_COUNT,
+        )
+        == []
+    )
 
 
 def test_stale_headline_count_is_detected():

@@ -93,10 +93,10 @@ def test_exactly_two_tool_files_have_zero_client_method_calls_and_they_are_the_e
 
 
 def test_ninety_seven_tool_files_exist_matching_the_public_contract() -> None:
-    # 95 pfSense READ tool files + 2 guidance tool files (official_guidance.py,
+    # 96 pfSense READ tool files + 2 guidance tool files (official_guidance.py,
     # owner-authorized 2026-08-22, and api_guidance.py, added 2026-08-28) --
     # all still live under tools/read/.
-    assert len(_tool_files()) == 97
+    assert len(_tool_files()) == 98
 
 
 def test_no_tool_file_uses_getattr_setattr_or_hasattr() -> None:

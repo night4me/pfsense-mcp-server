@@ -27,6 +27,21 @@ SNAPSHOT = ROOT / "tests" / "contracts" / "mcp_public_contract_v1.0.0.json"
 READ_TOOLS = ROOT / "src" / "pfsense_mcp" / "tools" / "read"
 CLIENT_SOURCE = ROOT / "src" / "pfsense_mcp" / "pfsense_client.py"
 
+#: README.md's own tool-count prose deliberately describes the counts as of
+#: the last *published* PyPI release (v1.1.0: 95 READ + 2 guidance = 97),
+#: not necessarily this build's live SNAPSHOT-approved contract -- because
+#: README's Quick Start literally instructs `pipx install pfsense-mcp-server`,
+#: which installs whatever is on PyPI right now, not this checkout's HEAD.
+#: POST_V1_1_FINAL_READ_COVERAGE_AUDIT.md (owner decision, 2026-08-30) added
+#: a new READ tool to the SNAPSHOT-approved contract without a version bump
+#: or republish, so this constant intentionally now differs from the live
+#: contract's own counts until the next real publication's post-publication
+#: doc sync updates README and this constant together in the same commit --
+#: never let this drift silently: whoever does that doc sync must update
+#: this value, not just README's prose.
+PUBLISHED_README_READ_COUNT = 95
+PUBLISHED_README_GUIDANCE_COUNT = 2
+
 # Tools with no PfSenseClient dependency at all — they report local
 # process state and make no pfSense API call. Currently just the one.
 LOCAL_ONLY_TOOL_NAMES: frozenset[str] = frozenset({"pfsense_mcp_info"})
@@ -299,7 +314,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     guidance_count = sum(1 for tool in actual["tools"] if tool["tool_class"] == "guidance")
     readme_path = ROOT / "README.md"
     readme_failures = readme_tool_count_mismatches(
-        readme_path.read_text(encoding="utf-8"), read_count=read_count, guidance_count=guidance_count
+        readme_path.read_text(encoding="utf-8"),
+        read_count=PUBLISHED_README_READ_COUNT,
+        guidance_count=PUBLISHED_README_GUIDANCE_COUNT,
     )
     if readme_failures:
         print("public_contract: README.md tool-count claims disagree with the authoritative contract:")

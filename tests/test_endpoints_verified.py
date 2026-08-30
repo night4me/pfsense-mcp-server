@@ -1204,6 +1204,18 @@ def test_vpn_wireguard_tunnel_addresses_path_suffix_is_the_plural_list_endpoint(
     assert Endpoints.VPN_WIREGUARD_TUNNEL_ADDRESSES.path_suffix == "/vpn/wireguard/tunnel/addresses"
 
 
+def test_vpn_wireguard_settings_is_declared_verified():
+    assert Endpoints.VPN_WIREGUARD_SETTINGS.verified is True
+
+
+def test_vpn_wireguard_settings_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_WIREGUARD_SETTINGS.path_suffix.startswith("/api")
+
+
+def test_vpn_wireguard_settings_path_suffix_is_correct():
+    assert Endpoints.VPN_WIREGUARD_SETTINGS.path_suffix == "/vpn/wireguard/settings"
+
+
 def test_system_schema_openapi_is_verified():
     """pfREST_LIVE_GUIDANCE_ARC (2026-08-28): LAB-verified via an
     authenticated GET against https://pfsense-test.lab.invalid -- 200,

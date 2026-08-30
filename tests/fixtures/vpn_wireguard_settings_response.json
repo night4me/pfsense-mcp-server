@@ -1,0 +1,15 @@
+{
+  "code": 200,
+  "data": {
+    "enable": true,
+    "keep_conf": true,
+    "resolve_interval_track": true,
+    "resolve_interval": null,
+    "interface_group": "all",
+    "hide_secrets": false,
+    "hide_peers": false
+  },
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

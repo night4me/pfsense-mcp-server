@@ -772,3 +772,15 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # POST_V1_1_FINAL_READ_COVERAGE_AUDIT.md Phase 6 -- schema-checked
+    # against the pinned upstream OpenAPI document before implementation
+    # (all 7 fields are bool/int/enum toggles; `hide_secrets`/`hide_peers`
+    # are WebGUI display-preference booleans, not secret values -- this
+    # endpoint never returns private/pre-shared key material). Requires
+    # pfSense-pkg-WireGuard (installed on this LAB, per the already-shipped
+    # WireGuard entries above).
+    VPN_WIREGUARD_SETTINGS = EndpointInfo(
+        path_suffix="/vpn/wireguard/settings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )

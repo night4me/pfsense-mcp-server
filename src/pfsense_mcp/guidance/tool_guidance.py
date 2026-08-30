@@ -272,6 +272,7 @@ _TOOL_RESULT_KIND: dict[str, ResultKind] = {
     "pfsense_get_vpn_openvpn_csos": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_openvpn_servers": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_wireguard_tunnel_addresses": ResultKind.CONFIGURATION,
+    "pfsense_get_vpn_wireguard_settings": ResultKind.CONFIGURATION,
 }
 
 #: Tool-specific caveats, added only where the generic per-kind template

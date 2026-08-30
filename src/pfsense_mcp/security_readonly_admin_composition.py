@@ -231,7 +231,7 @@ def build_readonly_admin_context(
     """Construct one target-bound admin stack for the dedicated
     `read_only` managed service account, without network or mutation.
     Structurally identical to `build_admin_context()` except: the
-    freshness gate is against `read_profile_requirements()` (the 94
+    freshness gate is against `read_profile_requirements()` (the 95
     READ-only privileges, never the write_protected combined set), the
     fixed account is `pfsense-mcp-readonly`, and every mutation closure
     calls `TargetProfile.READ_ONLY`/`security_readonly_bootstrap_
