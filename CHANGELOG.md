@@ -7,6 +7,90 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+**Defense-in-depth and onboarding release.** Public MCP tool contract is
+unchanged from `1.0.0` (95 pfSense READ tools + 2 documentation guidance
+tools, 0 default-reachable WRITE = 97 total). The headline addition is
+**managed READ-only credential provisioning**: a dedicated,
+project-provisioned `pfsense-mcp-readonly` pfSense service account holding
+exactly the 94 READ privileges this project documents — live-LAB-verified
+to receive `HTTP 403 AUTH_AUTHORIZATION_FAILED` when used directly against
+this project's own reviewed WRITE endpoint, i.e. rejected by pfSense
+itself, not only by this server's tool surface. This is the recommended
+path for new `read_only` setups; bring-your-own-key remains fully
+supported, unchanged by default, for existing installations.
+
+### Added
+
+- **Managed READ-only service-account provisioning**
+  (`security_readonly_admin_composition.py`,
+  `security_readonly_bootstrap_recovery.py`,
+  `run_readonly_bootstrap_from_environment()`). Composes the same
+  journal-aware, locking `run_bootstrap()` engine `write_protected`
+  already uses — a fixed, dedicated `pfsense-mcp-readonly` identity,
+  entirely separate namespace/journal/lock/custody state from the
+  `write_protected` `pfsense-mcp` account (structurally incapable of
+  colliding). Reachable via `pfsense-mcp-security bootstrap
+  --target-profile read_only` and `pfsense-mcp-security recover
+  --target-profile read_only`.
+- **Setup-wizard integration for managed READ-only provisioning.** A new
+  "Account" wizard step (read_only postures only) offers "Create a
+  dedicated read-only account [Recommended]" alongside the existing
+  bring-your-own-key option. The managed-vs-BYOK choice
+  (`read_only_account_mode`, `byo`/`managed`) is security-bound into the
+  setup plan, its digest, and the apply-time confirmation token — a
+  confirmed BYOK plan can never be substituted for a managed-provisioning
+  apply, or vice versa, for the identical target/posture.
+  `setup apply --read-only-account-mode managed` composes
+  `run_readonly_bootstrap_from_environment()`.
+- **`pfsense-mcp-security bootstrap`/`recover --target-profile
+  {write_protected,read_only}`** — explicit, additive flag selecting
+  which fixed service account's own journal/lock/custody state a
+  ceremony operates on; defaults to `write_protected` (unchanged
+  behavior for every existing invocation with no flag).
+
+### Fixed
+
+- **Recovery cross-profile isolation.** `run_recovery_from_environment()`
+  previously always inspected the `write_protected` account's journal
+  regardless of which profile's bootstrap actually failed — a managed
+  `read_only` `setup apply` hitting `BLOCKED_PRIOR_OPERATION` would have
+  had its inline recovery inspection silently read the unrelated
+  `pfsense-mcp` journal instead of its own. `run_recovery_from_environment()`
+  and `security_setup_apply.py`'s inline recovery delegation now thread
+  `target_profile` explicitly from the caller that determined which
+  bootstrap composition failed — never inferred or guessed.
+- **Operation-journal account/profile allowlist** now accepts the closed,
+  hardcoded pair set `{("pfsense-mcp", "write_protected"),
+  ("pfsense-mcp-readonly", "read_only")}` instead of a single hardcoded
+  pair — both fields must still match together, exactly as before; no
+  other account/profile combination can ever create a journal record.
+- **`docs/PFSENSE_LEAST_PRIVILEGE_MATRIX.md`** understated the verified
+  pfSense-pkg-RESTAPI version range (still said "through `v2.10.0`, the
+  current latest tag"); updated to record the `v2.10.2` extension
+  alongside the re-verification evidence, mirroring
+  `security_privileges.VERIFIED_PACKAGE_VERSION_MAX`.
+
+### Changed
+
+- **Verified `pfSense-pkg-RESTAPI` version range extended to `v2.10.2`**
+  (from `v2.10.0`). Re-verified directly against pinned source at both
+  `v2.10.1` and `v2.10.2`: the privilege-name slug-generation algorithm
+  is byte-identical to the already-verified `v2.7.7`-`v2.10.0` range, and
+  the authorization check retains the same unconditional ANY-match
+  semantics with no `page-all` special-case bypass. Evidence for these
+  two specific tags, not a guarantee for any future one.
+- **MCP tool-surface architecture reviewed and retained.** An empirical
+  benchmark (60-task corpus, real model trials, protocol/client-capability
+  research) found no measurable selection-accuracy problem with the
+  current 97-tool explicit surface, and found the token-cost concern
+  substantially overstated once prompt caching and existing client-side
+  progressive tool discovery are accounted for. Two non-generic
+  alternative architectures (static grouping, progressive discovery) were
+  designed and benchmarked but not adopted — no production architecture
+  change was made. Generic dispatch was not considered. See
+  `benchmarks/tool_surface_efficiency/` for the full corpus, measurements,
+  and methodology.
+
 ## [1.0.0] - 2026-08-29
 
 First stable release. The public MCP tool contract is unchanged from

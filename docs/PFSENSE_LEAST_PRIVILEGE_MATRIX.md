@@ -447,9 +447,20 @@ private function get_method_priv_name(string $method): string {
 ```
 
 (`pfrest/pfSense-pkg-RESTAPI`, `Core/Endpoint.inc`, confirmed **byte-identical**
-across every tag from `v2.7.7` through `v2.10.0` — the current latest
-tag as of this research pass, 2026-08-17. The algorithm has not changed
-across this project's entire lifetime.)
+across every tag from `v2.7.7` through `v2.10.0` as of this research pass,
+2026-08-17. The algorithm has not changed across this project's entire
+lifetime.
+
+**Extended to `v2.10.2`** (2026-08-29, POST-v1.0 MANAGED READ-ONLY DEFENSE
+IN DEPTH mission): re-verified directly against pinned source at both
+`v2.10.1` and `v2.10.2` before extending — the slug-generation logic above
+is byte-identical to the `v2.10.0` text already cited, and `Core/Auth.inc`'s
+`authorize()` still uses the same unconditional
+`array_intersect($this->required_privileges, $this->client_privileges)`
+ANY-match with no `page-all` special-case bypass in the authorization check
+itself. This is evidence for these two specific tags, not a guarantee for
+any future one — see `security_privileges.VERIFIED_PACKAGE_VERSION_MAX`,
+the single source of truth this document mirrors.)
 
 Concretely: take the endpoint's URL (e.g. `/api/v2/status/system`),
 replace every `/` and `_` with `-`, strip the resulting leading `-`,
