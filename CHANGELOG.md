@@ -7,6 +7,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-30
+
 **Defense-in-depth and onboarding release.** Public MCP tool contract is
 unchanged from `1.0.0` (95 pfSense READ tools + 2 documentation guidance
 tools, 0 default-reachable WRITE = 97 total). The headline addition is

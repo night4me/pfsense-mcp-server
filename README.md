@@ -221,20 +221,26 @@ merely expected to work.
 
 ## Release status
 
-**v1.0.0 is the immutable production baseline, published on PyPI —
+**v1.1.0 is the immutable production baseline, published on PyPI —
 95 pfSense READ tools + 2 documentation guidance tools, 0 WRITE
-tools.** The first stable release: a product-maturity and correctness
-pass over `v0.9.0`, not a capability expansion — see
-`docs/STABILITY.md` for the version-independent stability promise now
-made across the MCP/CLI/config/persisted-state surfaces.
+tools.** A defense-in-depth and onboarding release: managed READ-only
+credential provisioning — a dedicated, project-provisioned
+`pfsense-mcp-readonly` pfSense service account holding exactly 94 READ
+privileges, live-LAB-verified to be rejected by pfSense itself when
+used directly against this project's own reviewed WRITE endpoint — is
+now the setup wizard's recommended path for new `read_only` setups;
+bring-your-own-key remains fully supported, unchanged by default, for
+existing installations. Not a capability expansion — see
+`docs/STABILITY.md` for the version-independent stability promise made
+across the MCP/CLI/config/persisted-state surfaces.
 `pfsense_get_api_guidance` covers the community-maintained pfREST
 package (`pfSense-pkg-RESTAPI`, documented at pfrest.org), kept
 structurally separate from `pfsense_get_official_guidance` (Netgate
 product documentation) — never blended. Evidence is explicitly
 labeled by provenance (`PROJECT_AUTHORED` / `PFREST_UPSTREAM` /
 `LIVE_APPLIANCE_SCHEMA` / `OFFICIAL_NETGATE`); documentation is data,
-never authority. See `CHANGELOG.md`'s `[1.0.0]` entry and
-`docs/ACCEPTANCE_v1.0.0.md` for the complete, independently verified
+never authority. See `CHANGELOG.md`'s `[1.1.0]` entry and
+`docs/ACCEPTANCE_v1.1.0.md` for the complete, independently verified
 evidence — every past release's tag, GitHub Release, and PyPI
 artifact remains unmoved as an accurate historical record.
 

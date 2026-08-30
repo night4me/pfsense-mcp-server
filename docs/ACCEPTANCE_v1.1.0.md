@@ -1,9 +1,27 @@
 # Acceptance — v1.1.0
 
-**Status: release-candidate, not yet tagged, not yet released, not yet
-published to PyPI.** This document records the release-readiness audit
-for the `v1.1.0` candidate. Owner publication authorization is a
-separate, explicit step not covered by this document.
+**Status: published — the `v1.1.0` tag, GitHub Release, and PyPI
+release all point at this commit.** The annotated git tag `v1.1.0` was
+created and pushed pointing at commit
+`c731430887d09403e956dcb1c6bf35a99190fa5a`; the tag's dereferenced
+commit (`refs/tags/v1.1.0^{}`) resolves to exactly that SHA. The
+GitHub Release was published from that tag
+(<https://github.com/night4me/pfsense-mcp-server/releases/tag/v1.1.0>),
+which triggered the established trusted-publishing workflow
+(`.github/workflows/publish.yml`) to PyPI. The published wheel and
+sdist were independently downloaded and their extracted contents
+diffed byte-for-byte against a local build from this same commit —
+zero differences across all files (326 wheel entries, 350 sdist
+entries) — and a Sigstore attestation (verified via PyPI's Integrity
+API) cryptographically binds the published wheel to this exact commit,
+`refs/tags/v1.1.0`, and the `publish.yml` workflow. (The outer archive
+container bytes of the published artifacts differ from the ones built
+locally during RC preparation — a build-environment nondeterminism
+between this project's dev machine and the GitHub Actions runner, not
+a content or source difference; see
+`reports-ai/V1_1_0_PUBLICATION_2026-08-30.md` for the full forensic
+detail.) See that same report for the complete publication-ceremony
+evidence.
 
 ## Release scope
 
