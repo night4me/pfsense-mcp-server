@@ -1,0 +1,24 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "name": "wg0",
+      "enabled": true,
+      "descr": "Site A tunnel",
+      "listenport": "51820",
+      "publickey": "PUBLIC-KEY-PLACEHOLDER-BASE64==",
+      "privatekey": "SYNTHETIC-PRIVATE-KEY-PLACEHOLDER",
+      "mtu": 1420,
+      "addresses": [
+        {
+          "address": "198.51.100.40",
+          "mask": 24,
+          "descr": "primary"
+        }
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

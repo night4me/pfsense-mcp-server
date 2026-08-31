@@ -9709,6 +9709,24 @@ def test_get_vpn_openvpn_servers_includes_identifying_fields_when_requested():
     assert first.wins_server1 == "198.51.100.1"
 
 
+def test_get_vpn_openvpn_servers_never_exposes_tls_key_material():
+    """POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING Phase 6 fix:
+    `tls` (literal TLS-auth/crypt HMAC key material per the upstream
+    schema's own description) must never reach the parsed model, even
+    though the raw fixture response still includes it (as a hostile
+    upstream response would too) -- structural exclusion, not
+    heuristic redaction. Mirrors the `WireGuardTunnel.privatekey`/
+    `WireGuardPeer.presharedkey` adversarial exclusion proof."""
+    client, _ = _vpn_openvpn_servers_client()
+    body = _vpn_openvpn_servers_body()
+    assert body["data"][0]["tls"] == "SYNTHETIC-STATIC-KEY-PLACEHOLDER"
+    servers = client.get_vpn_openvpn_servers(include_identifying_metadata=True)
+    first = next(s for s in servers if s.vpnid == 1)
+    assert not hasattr(first, "tls")
+    assert "tls" not in first.model_dump()
+    assert "SYNTHETIC-STATIC-KEY-PLACEHOLDER" not in first.model_dump_json()
+
+
 def test_get_vpn_openvpn_servers_maps_non_sensitive_fields():
     client, _ = _vpn_openvpn_servers_client()
     servers = client.get_vpn_openvpn_servers()
@@ -10375,3 +10393,336 @@ def test_get_vpn_wireguard_settings_shape_error_does_not_leak_raw_field_values()
     with pytest.raises(PfSenseResponseShapeError) as excinfo:
         client.get_vpn_wireguard_settings()
     assert sentinel not in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# get_vpn_wireguard_tunnels / get_vpn_wireguard_peers / get_vpn_ipsec_phase1s /
+# get_vpn_openvpn_clients -- POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md
+# Phase 3 candidates. Implemented and offline-tested; NOT yet registered as
+# public MCP tools (no live LAB round-trip was available this session -- see
+# each Endpoints entry's own comment in endpoints.py for the full rationale).
+# These tests prove the client-layer parsing/exclusion/redaction contract in
+# advance of a future live-verification ceremony.
+# ---------------------------------------------------------------------------
+
+VPN_WIREGUARD_TUNNELS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_wireguard_tunnels_response.json"
+
+
+def _vpn_wireguard_tunnels_body() -> dict:
+    return json.loads(VPN_WIREGUARD_TUNNELS_FIXTURE.read_text())
+
+
+def _vpn_wireguard_tunnels_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_wireguard_tunnels_body()
+    transport.register("GET", "/api/v2/vpn/wireguard/tunnels?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_wireguard_tunnels_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_wireguard_tunnels_client(body)
+    assert client.get_vpn_wireguard_tunnels() == []
+
+
+def test_get_vpn_wireguard_tunnels_maps_non_sensitive_fields():
+    client, _ = _vpn_wireguard_tunnels_client()
+    tunnels = client.get_vpn_wireguard_tunnels()
+    first = tunnels[0]
+    assert first.name == "wg0"
+    assert first.descr == "Site A tunnel"
+    assert first.listenport == "51820"
+    assert first.publickey == "PUBLIC-KEY-PLACEHOLDER-BASE64=="
+    assert first.mtu == 1420
+
+
+def test_get_vpn_wireguard_tunnels_never_exposes_privatekey_or_addresses():
+    """Adversarial exclusion proof: `privatekey` (secret) and `addresses`
+    (redundant with the dedicated tunnel-addresses tool) must never reach
+    the parsed model, even though the raw fixture response still includes
+    them, matching this project's structural-exclusion discipline."""
+    client, _ = _vpn_wireguard_tunnels_client()
+    body = _vpn_wireguard_tunnels_body()
+    assert body["data"][0]["privatekey"] == "SYNTHETIC-PRIVATE-KEY-PLACEHOLDER"
+    tunnels = client.get_vpn_wireguard_tunnels()
+    first = tunnels[0]
+    assert not hasattr(first, "privatekey")
+    assert not hasattr(first, "addresses")
+    dumped = first.model_dump_json()
+    assert "SYNTHETIC-PRIVATE-KEY-PLACEHOLDER" not in dumped
+    assert "198.51.100.40" not in dumped
+
+
+def test_get_vpn_wireguard_tunnels_only_calls_endpoint_with_default_limit():
+    client, transport = _vpn_wireguard_tunnels_client()
+    client.get_vpn_wireguard_tunnels()
+    assert transport.calls == [("GET", "/api/v2/vpn/wireguard/tunnels?limit=100")]
+
+
+def test_get_vpn_wireguard_tunnels_passes_custom_limit_in_query_string():
+    transport = MockTransport()
+    body = _vpn_wireguard_tunnels_body()
+    transport.register("GET", "/api/v2/vpn/wireguard/tunnels?limit=5", status_code=200, text=json.dumps(body))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    client = PfSenseClient(rest_client)
+    client.get_vpn_wireguard_tunnels(limit=5)
+    assert transport.calls == [("GET", "/api/v2/vpn/wireguard/tunnels?limit=5")]
+
+
+def test_get_vpn_wireguard_tunnels_rejects_zero_limit():
+    client, _ = _vpn_wireguard_tunnels_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_wireguard_tunnels(limit=0)
+
+
+def test_get_vpn_wireguard_tunnels_rejects_limit_above_max():
+    client, _ = _vpn_wireguard_tunnels_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_wireguard_tunnels(limit=101)
+
+
+def test_get_vpn_wireguard_tunnels_missing_data_key_raises_shape_error():
+    body = _vpn_wireguard_tunnels_body()
+    del body["data"]
+    client, _ = _vpn_wireguard_tunnels_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_tunnels()
+
+
+VPN_WIREGUARD_PEERS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_wireguard_peers_response.json"
+
+
+def _vpn_wireguard_peers_body() -> dict:
+    return json.loads(VPN_WIREGUARD_PEERS_FIXTURE.read_text())
+
+
+def _vpn_wireguard_peers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_wireguard_peers_body()
+    transport.register("GET", "/api/v2/vpn/wireguard/peers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_wireguard_peers_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_wireguard_peers_client(body)
+    assert client.get_vpn_wireguard_peers() == []
+
+
+def test_get_vpn_wireguard_peers_omits_identifying_fields_by_default():
+    client, _ = _vpn_wireguard_peers_client()
+    peers = client.get_vpn_wireguard_peers()
+    assert peers[0].endpoint is None
+
+
+def test_get_vpn_wireguard_peers_includes_identifying_fields_when_requested():
+    client, _ = _vpn_wireguard_peers_client()
+    peers = client.get_vpn_wireguard_peers(include_identifying_metadata=True)
+    assert peers[0].endpoint == "203.0.113.10"
+
+
+def test_get_vpn_wireguard_peers_maps_non_sensitive_fields():
+    client, _ = _vpn_wireguard_peers_client()
+    first = client.get_vpn_wireguard_peers()[0]
+    assert first.tun == "wg0"
+    assert first.descr == "Peer 1"
+    assert first.port == "51820"
+    assert first.persistentkeepalive == 25
+    assert first.publickey == "PEER-PUBLIC-KEY-PLACEHOLDER=="
+
+
+def test_get_vpn_wireguard_peers_never_exposes_presharedkey_or_allowedips():
+    client, _ = _vpn_wireguard_peers_client()
+    body = _vpn_wireguard_peers_body()
+    assert body["data"][0]["presharedkey"] == "SYNTHETIC-PRESHARED-KEY-PLACEHOLDER"
+    first = client.get_vpn_wireguard_peers(include_identifying_metadata=True)[0]
+    assert not hasattr(first, "presharedkey")
+    assert not hasattr(first, "allowedips")
+    dumped = first.model_dump_json()
+    assert "SYNTHETIC-PRESHARED-KEY-PLACEHOLDER" not in dumped
+    assert "10.10.10.2" not in dumped
+
+
+def test_get_vpn_wireguard_peers_rejects_zero_limit():
+    client, _ = _vpn_wireguard_peers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_wireguard_peers(limit=0)
+
+
+def test_get_vpn_wireguard_peers_rejects_limit_above_max():
+    client, _ = _vpn_wireguard_peers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_wireguard_peers(limit=101)
+
+
+def test_get_vpn_wireguard_peers_missing_data_key_raises_shape_error():
+    body = _vpn_wireguard_peers_body()
+    del body["data"]
+    client, _ = _vpn_wireguard_peers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_wireguard_peers()
+
+
+VPN_IPSEC_PHASE1S_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_ipsec_phase1s_response.json"
+
+
+def _vpn_ipsec_phase1s_body() -> dict:
+    return json.loads(VPN_IPSEC_PHASE1S_FIXTURE.read_text())
+
+
+def _vpn_ipsec_phase1s_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_ipsec_phase1s_body()
+    transport.register("GET", "/api/v2/vpn/ipsec/phase1s?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_ipsec_phase1s_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_ipsec_phase1s_client(body)
+    assert client.get_vpn_ipsec_phase1s() == []
+
+
+def test_get_vpn_ipsec_phase1s_omits_identifying_fields_by_default():
+    client, _ = _vpn_ipsec_phase1s_client()
+    first = client.get_vpn_ipsec_phase1s()[0]
+    assert first.remote_gateway is None
+    assert first.peerid_data is None
+
+
+def test_get_vpn_ipsec_phase1s_includes_identifying_fields_when_requested():
+    client, _ = _vpn_ipsec_phase1s_client()
+    first = client.get_vpn_ipsec_phase1s(include_identifying_metadata=True)[0]
+    assert first.remote_gateway == "203.0.113.55"
+    assert first.peerid_data == "203.0.113.55"
+
+
+def test_get_vpn_ipsec_phase1s_maps_non_sensitive_fields():
+    client, _ = _vpn_ipsec_phase1s_client()
+    first = client.get_vpn_ipsec_phase1s()[0]
+    assert first.descr == "Site-to-site P1"
+    assert first.iketype == "ikev2"
+    assert first.authentication_method == "pre_shared_key"
+    assert first.rekey_time == 28800
+
+
+def test_get_vpn_ipsec_phase1s_never_exposes_pre_shared_key_or_encryption():
+    client, _ = _vpn_ipsec_phase1s_client()
+    body = _vpn_ipsec_phase1s_body()
+    assert body["data"][0]["pre_shared_key"] == "SYNTHETIC-PSK-PLACEHOLDER"
+    first = client.get_vpn_ipsec_phase1s(include_identifying_metadata=True)[0]
+    assert not hasattr(first, "pre_shared_key")
+    assert not hasattr(first, "encryption")
+    dumped = first.model_dump_json()
+    assert "SYNTHETIC-PSK-PLACEHOLDER" not in dumped
+
+
+def test_get_vpn_ipsec_phase1s_rejects_zero_limit():
+    client, _ = _vpn_ipsec_phase1s_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase1s(limit=0)
+
+
+def test_get_vpn_ipsec_phase1s_rejects_limit_above_max():
+    client, _ = _vpn_ipsec_phase1s_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_ipsec_phase1s(limit=101)
+
+
+def test_get_vpn_ipsec_phase1s_missing_data_key_raises_shape_error():
+    body = _vpn_ipsec_phase1s_body()
+    del body["data"]
+    client, _ = _vpn_ipsec_phase1s_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_ipsec_phase1s()
+
+
+VPN_OPENVPN_CLIENTS_FIXTURE = Path(__file__).parent / "fixtures" / "vpn_openvpn_clients_response.json"
+
+
+def _vpn_openvpn_clients_body() -> dict:
+    return json.loads(VPN_OPENVPN_CLIENTS_FIXTURE.read_text())
+
+
+def _vpn_openvpn_clients_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _vpn_openvpn_clients_body()
+    transport.register("GET", "/api/v2/vpn/openvpn/clients?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_vpn_openvpn_clients_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _vpn_openvpn_clients_client(body)
+    assert client.get_vpn_openvpn_clients() == []
+
+
+def test_get_vpn_openvpn_clients_omits_identifying_fields_by_default():
+    client, _ = _vpn_openvpn_clients_client()
+    first = client.get_vpn_openvpn_clients()[0]
+    assert first.server_addr is None
+    assert first.tunnel_network is None
+    assert first.remote_network == []
+
+
+def test_get_vpn_openvpn_clients_includes_identifying_fields_when_requested():
+    client, _ = _vpn_openvpn_clients_client()
+    first = client.get_vpn_openvpn_clients(include_identifying_metadata=True)[0]
+    assert first.server_addr == "203.0.113.99"
+    assert first.tunnel_network == "198.51.100.0/24"
+    assert first.remote_network == ["203.0.113.0/24"]
+
+
+def test_get_vpn_openvpn_clients_maps_non_sensitive_fields():
+    client, _ = _vpn_openvpn_clients_client()
+    first = client.get_vpn_openvpn_clients()[0]
+    assert first.description == "Synthetic OpenVPN client (offline fixture)"
+    assert first.mode == "p2p_tls"
+    assert first.caref == "68f9c9c1a2b3d"
+    assert first.certref == "68f9c9c1a2b3e"
+    assert first.data_ciphers == ["AES-256-GCM"]
+
+
+def test_get_vpn_openvpn_clients_never_exposes_secrets_or_custom_options():
+    """Adversarial exclusion proof for all 4 excluded fields: `auth_pass`,
+    `proxy_passwd` (literal passwords), `tls` (literal HMAC key material --
+    the same class of secret retroactively removed from the sibling
+    OpenVpnServer model in this same hardening pass), and `custom_options`
+    (free-text raw-config-injection, analogous to HAProxy's `advanced`)."""
+    client, _ = _vpn_openvpn_clients_client()
+    body = _vpn_openvpn_clients_body()
+    assert body["data"][0]["auth_pass"] == "SYNTHETIC-AUTH-PASSWORD-PLACEHOLDER"
+    assert body["data"][0]["proxy_passwd"] == "SYNTHETIC-PROXY-PASSWORD-PLACEHOLDER"
+    assert body["data"][0]["tls"] == "SYNTHETIC-TLS-KEY-PLACEHOLDER"
+    first = client.get_vpn_openvpn_clients(include_identifying_metadata=True)[0]
+    for excluded in ("auth_pass", "proxy_passwd", "tls", "custom_options"):
+        assert not hasattr(first, excluded)
+    dumped = first.model_dump_json()
+    assert "SYNTHETIC-AUTH-PASSWORD-PLACEHOLDER" not in dumped
+    assert "SYNTHETIC-PROXY-PASSWORD-PLACEHOLDER" not in dumped
+    assert "SYNTHETIC-TLS-KEY-PLACEHOLDER" not in dumped
+    assert "10.0.0.0" not in dumped
+
+
+def test_get_vpn_openvpn_clients_rejects_zero_limit():
+    client, _ = _vpn_openvpn_clients_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_clients(limit=0)
+
+
+def test_get_vpn_openvpn_clients_rejects_limit_above_max():
+    client, _ = _vpn_openvpn_clients_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_vpn_openvpn_clients(limit=101)
+
+
+def test_get_vpn_openvpn_clients_missing_data_key_raises_shape_error():
+    body = _vpn_openvpn_clients_body()
+    del body["data"]
+    client, _ = _vpn_openvpn_clients_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_vpn_openvpn_clients()

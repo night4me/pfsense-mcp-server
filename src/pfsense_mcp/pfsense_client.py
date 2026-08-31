@@ -80,6 +80,7 @@ from .models.interface_vlan import InterfaceVlan
 from .models.interfaces import InterfaceStatus
 from .models.ipsec_apply import IPsecApply
 from .models.ipsec_child_sa_status import IPsecChildSaStatus
+from .models.ipsec_phase1 import IPsecPhase1
 from .models.ipsec_phase1_encryption import IPsecPhase1Encryption
 from .models.ipsec_phase2 import IPsecPhase2
 from .models.ipsec_phase2_encryption import IPsecPhase2Encryption
@@ -87,6 +88,7 @@ from .models.ipsec_sa_status import IPsecSaStatus
 from .models.log_settings import LogSettings
 from .models.ntp_settings import NtpSettings
 from .models.ntp_time_server import NtpTimeServer
+from .models.openvpn_client import OpenVPNClient
 from .models.openvpn_client_specific_override import OpenVpnClientSpecificOverride
 from .models.openvpn_client_status import OpenVpnClientStatus
 from .models.openvpn_server import OpenVpnServer
@@ -119,8 +121,10 @@ from .models.traffic_shaper import TrafficShaper
 from .models.virtual_ip_apply import VirtualIPApply
 from .models.web_gui_settings import WebGUISettings
 from .models.wireguard_apply import WireGuardApply
+from .models.wireguard_peer import WireGuardPeer
 from .models.wireguard_peer_status import WireGuardPeerStatus
 from .models.wireguard_settings import WireGuardSettings
+from .models.wireguard_tunnel import WireGuardTunnel
 from .models.wireguard_tunnel_address import WireGuardTunnelAddress
 from .models.wireguard_tunnel_status import WireGuardTunnelStatus
 from .rest_api_client import RestApiClient
@@ -411,6 +415,18 @@ VPN_OPENVPN_CSOS_MAX_LIMIT = 100
 
 VPN_WIREGUARD_TUNNEL_ADDRESSES_MIN_LIMIT = 1
 VPN_WIREGUARD_TUNNEL_ADDRESSES_MAX_LIMIT = 100
+
+VPN_WIREGUARD_TUNNELS_MIN_LIMIT = 1
+VPN_WIREGUARD_TUNNELS_MAX_LIMIT = 100
+
+VPN_WIREGUARD_PEERS_MIN_LIMIT = 1
+VPN_WIREGUARD_PEERS_MAX_LIMIT = 100
+
+VPN_IPSEC_PHASE1S_MIN_LIMIT = 1
+VPN_IPSEC_PHASE1S_MAX_LIMIT = 100
+
+VPN_OPENVPN_CLIENTS_MIN_LIMIT = 1
+VPN_OPENVPN_CLIENTS_MAX_LIMIT = 100
 
 T = TypeVar("T")
 
@@ -1590,3 +1606,61 @@ class PfSenseClient:
     def get_vpn_wireguard_settings(self) -> WireGuardSettings:
         raw = self._rest.get(Endpoints.VPN_WIREGUARD_SETTINGS)
         return _parse_object_response(raw, "/vpn/wireguard/settings", WireGuardSettings.from_api)
+
+    def get_vpn_wireguard_tunnels(self, *, limit: int = 100) -> list[WireGuardTunnel]:
+        if not (VPN_WIREGUARD_TUNNELS_MIN_LIMIT <= limit <= VPN_WIREGUARD_TUNNELS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_WIREGUARD_TUNNELS_MIN_LIMIT} and "
+                f"{VPN_WIREGUARD_TUNNELS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_WIREGUARD_TUNNELS, params={"limit": limit})
+        return _parse_list_response(raw, "/vpn/wireguard/tunnels", WireGuardTunnel.from_api)
+
+    def get_vpn_wireguard_peers(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[WireGuardPeer]:
+        if not (VPN_WIREGUARD_PEERS_MIN_LIMIT <= limit <= VPN_WIREGUARD_PEERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_WIREGUARD_PEERS_MIN_LIMIT} and "
+                f"{VPN_WIREGUARD_PEERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_WIREGUARD_PEERS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/wireguard/peers",
+            lambda data: WireGuardPeer.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_vpn_ipsec_phase1s(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[IPsecPhase1]:
+        if not (VPN_IPSEC_PHASE1S_MIN_LIMIT <= limit <= VPN_IPSEC_PHASE1S_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_IPSEC_PHASE1S_MIN_LIMIT} and "
+                f"{VPN_IPSEC_PHASE1S_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_IPSEC_PHASE1S, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/ipsec/phase1s",
+            lambda data: IPsecPhase1.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
+
+    def get_vpn_openvpn_clients(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[OpenVPNClient]:
+        if not (VPN_OPENVPN_CLIENTS_MIN_LIMIT <= limit <= VPN_OPENVPN_CLIENTS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {VPN_OPENVPN_CLIENTS_MIN_LIMIT} and "
+                f"{VPN_OPENVPN_CLIENTS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.VPN_OPENVPN_CLIENTS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/vpn/openvpn/clients",
+            lambda data: OpenVPNClient.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )

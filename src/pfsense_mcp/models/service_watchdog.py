@@ -1,14 +1,13 @@
-"""Model for the ServiceWatchdog capability endpoint.
+"""Model for the ServiceWatchdog capability endpoint (`GET
+/services/service_watchdogs`).
 
-Field types/nullability were derived from the pinned v2.10 OpenAPI
-schema's `ServiceWatchdog` component (already-captured evidence, not a
-new live call; no secret material present). Requires
-`pfSense-pkg-Service_Watchdog` -- not installed on the LAB used for
-this project's P1 verification passes, so this candidate is
-implemented and offline-tested only; LAB/registration verification is
-deferred until the package is available. No field is redacted: this is
-simple service-monitoring configuration, not address/device-identifying
-data.
+Field types/nullability derived from a freshly-fetched (not cached)
+live `pfrest.org` OpenAPI document during
+POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING Phase 3 qualification.
+All 4 fields (`name`, `description`, `notify`, `enabled`) are plain
+scalar toggles/labels -- no secret material, no address/network data,
+no free-text config-injection field. No exclusion or redaction is
+needed; this is a trivial SAFE_READ candidate.
 """
 
 from __future__ import annotations

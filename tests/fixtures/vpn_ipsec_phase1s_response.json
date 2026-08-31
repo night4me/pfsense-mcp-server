@@ -1,0 +1,49 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "ikeid": 1,
+      "descr": "Site-to-site P1",
+      "disabled": false,
+      "iketype": "ikev2",
+      "mode": null,
+      "protocol": "inet",
+      "interface": "wan",
+      "remote_gateway": "203.0.113.55",
+      "authentication_method": "pre_shared_key",
+      "myid_type": "myaddress",
+      "myid_data": null,
+      "peerid_type": "peeraddress",
+      "peerid_data": "203.0.113.55",
+      "pre_shared_key": "SYNTHETIC-PSK-PLACEHOLDER",
+      "certref": null,
+      "caref": null,
+      "rekey_time": 28800,
+      "reauth_time": 0,
+      "rand_time": 900,
+      "lifetime": 28800,
+      "startaction": "none",
+      "closeaction": "none",
+      "nat_traversal": "on",
+      "gw_duplicates": false,
+      "mobike": false,
+      "splitconn": false,
+      "prfselect_enable": false,
+      "ikeport": "500",
+      "nattport": "4500",
+      "dpd_delay": 10,
+      "dpd_maxfail": 5,
+      "encryption": [
+        {
+          "encryption_algorithm_name": "aes",
+          "encryption_algorithm_keylen": 256,
+          "hash_algorithm": "sha256",
+          "dhgroup": 14
+        }
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

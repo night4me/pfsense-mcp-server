@@ -1,0 +1,24 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "enabled": true,
+      "tun": "wg0",
+      "endpoint": "203.0.113.10",
+      "port": "51820",
+      "descr": "Peer 1",
+      "persistentkeepalive": 25,
+      "publickey": "PEER-PUBLIC-KEY-PLACEHOLDER==",
+      "presharedkey": "SYNTHETIC-PRESHARED-KEY-PLACEHOLDER",
+      "allowedips": [
+        {
+          "address": "10.10.10.2",
+          "mask": 32
+        }
+      ]
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

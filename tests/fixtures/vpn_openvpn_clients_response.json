@@ -1,0 +1,68 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "vpnid": 1,
+      "vpnif": "ovpnc1",
+      "description": "Synthetic OpenVPN client (offline fixture)",
+      "disable": false,
+      "mode": "p2p_tls",
+      "dev_mode": "tun",
+      "protocol": "UDP4",
+      "interface": "wan",
+      "server_addr": "203.0.113.99",
+      "server_port": "1194",
+      "local_port": null,
+      "proxy_addr": null,
+      "proxy_port": null,
+      "proxy_authtype": "none",
+      "proxy_user": null,
+      "proxy_passwd": "SYNTHETIC-PROXY-PASSWORD-PLACEHOLDER",
+      "auth_user": null,
+      "auth_pass": "SYNTHETIC-AUTH-PASSWORD-PLACEHOLDER",
+      "auth_retry_none": false,
+      "tls": "SYNTHETIC-TLS-KEY-PLACEHOLDER",
+      "tls_type": "auth",
+      "tlsauth_keydir": "default",
+      "caref": "68f9c9c1a2b3d",
+      "certref": "68f9c9c1a2b3e",
+      "data_ciphers": [
+        "AES-256-GCM"
+      ],
+      "data_ciphers_fallback": "AES-256-CBC",
+      "digest": "SHA256",
+      "remote_cert_tls": true,
+      "tunnel_network": "198.51.100.0/24",
+      "tunnel_networkv6": null,
+      "remote_network": [
+        "203.0.113.0/24"
+      ],
+      "remote_networkv6": [],
+      "use_shaper": null,
+      "allow_compression": "no",
+      "passtos": false,
+      "route_no_pull": false,
+      "route_no_exec": false,
+      "dns_add": false,
+      "topology": "subnet",
+      "inactive_seconds": 0,
+      "ping_method": "keepalive",
+      "keepalive_interval": 10,
+      "keepalive_timeout": 60,
+      "ping_seconds": 10,
+      "ping_action": "ping_restart",
+      "ping_action_seconds": 60,
+      "custom_options": [
+        "push \"route 10.0.0.0 255.0.0.0\""
+      ],
+      "udp_fast_io": false,
+      "exit_notify": "0",
+      "sndrcvbuf": null,
+      "create_gw": "both",
+      "verbosity_level": 1
+    }
+  ],
+  "message": "",
+  "response_id": "SUCCESS",
+  "status": "ok"
+}

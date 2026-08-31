@@ -1106,6 +1106,18 @@ def test_vpn_ipsec_phase1_encryptions_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_IPSEC_PHASE1_ENCRYPTIONS.path_suffix == "/vpn/ipsec/phase1/encryptions"
 
 
+def test_vpn_ipsec_phase1s_is_not_yet_declared_verified():
+    assert Endpoints.VPN_IPSEC_PHASE1S.verified is False
+
+
+def test_vpn_ipsec_phase1s_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_IPSEC_PHASE1S.path_suffix.startswith("/api")
+
+
+def test_vpn_ipsec_phase1s_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_IPSEC_PHASE1S.path_suffix == "/vpn/ipsec/phase1s"
+
+
 def test_vpn_ipsec_phase2_encryptions_is_declared_verified():
     assert Endpoints.VPN_IPSEC_PHASE2_ENCRYPTIONS.verified is True
 
@@ -1140,6 +1152,18 @@ def test_vpn_openvpn_csos_path_suffix_has_no_api_prefix():
 
 def test_vpn_openvpn_csos_path_suffix_is_the_plural_list_endpoint():
     assert Endpoints.VPN_OPENVPN_CSOS.path_suffix == "/vpn/openvpn/csos"
+
+
+def test_vpn_openvpn_clients_is_not_yet_declared_verified():
+    assert Endpoints.VPN_OPENVPN_CLIENTS.verified is False
+
+
+def test_vpn_openvpn_clients_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_OPENVPN_CLIENTS.path_suffix.startswith("/api")
+
+
+def test_vpn_openvpn_clients_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_OPENVPN_CLIENTS.path_suffix == "/vpn/openvpn/clients"
 
 
 def test_status_logs_settings_is_verified():
@@ -1251,6 +1275,30 @@ def test_vpn_wireguard_apply_path_suffix_has_no_api_prefix():
 
 def test_vpn_wireguard_apply_path_suffix_is_correct():
     assert Endpoints.VPN_WIREGUARD_APPLY.path_suffix == "/vpn/wireguard/apply"
+
+
+def test_vpn_wireguard_tunnels_is_not_yet_declared_verified():
+    assert Endpoints.VPN_WIREGUARD_TUNNELS.verified is False
+
+
+def test_vpn_wireguard_tunnels_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_WIREGUARD_TUNNELS.path_suffix.startswith("/api")
+
+
+def test_vpn_wireguard_tunnels_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_WIREGUARD_TUNNELS.path_suffix == "/vpn/wireguard/tunnels"
+
+
+def test_vpn_wireguard_peers_is_not_yet_declared_verified():
+    assert Endpoints.VPN_WIREGUARD_PEERS.verified is False
+
+
+def test_vpn_wireguard_peers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.VPN_WIREGUARD_PEERS.path_suffix.startswith("/api")
+
+
+def test_vpn_wireguard_peers_path_suffix_is_the_plural_list_endpoint():
+    assert Endpoints.VPN_WIREGUARD_PEERS.path_suffix == "/vpn/wireguard/peers"
 
 
 def test_vpn_wireguard_tunnel_addresses_is_verified():

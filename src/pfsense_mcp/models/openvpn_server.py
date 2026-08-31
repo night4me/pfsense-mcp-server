@@ -2,13 +2,29 @@
 
 Field types/nullability were derived from the pinned v2.10 OpenAPI
 schema's `OpenVPNServer` component (already-captured evidence, not a
-new live call; no secret material present -- no field is marked
-`writeOnly`, unlike the CRL revoked-certificate case). `caref`/
-`certref` are CA/certificate *references* (not the certificate
-material itself), matching this project's established treatment of
-reference IDs as non-secret. `tlsauth_keydir` is re-confirmed (a
-fourth time across sessions) to be a direction-flag enum
-(0/1/bidirectional), not key material.
+new live call). `caref`/`certref` are CA/certificate *references* (not
+the certificate material itself), matching this project's established
+treatment of reference IDs as non-secret. `tlsauth_keydir` is
+re-confirmed (a fourth time across sessions) to be a direction-flag
+enum (0/1/bidirectional), not key material.
+
+SECURITY FIX (POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING, Phase 6):
+`tls` is **never modeled**, not even as a conditionally-redacted field.
+This corrects a prior defect: this component's own schema description
+for `tls` reads "The TLS key this OpenVPN server will use to sign
+control channel packets with an HMAC signature for authentication when
+establishing the tunnel" -- literal HMAC/TLS-auth key material, the
+same class of secret already hard-excluded everywhere else in this
+project (`WireGuardTunnel.privatekey`, `WireGuardPeer.presharedkey`,
+`IPsecPhase1.pre_shared_key`). The field was previously present as a
+plain visible `str | None` and reachable via the already-shipped
+`pfsense_get_vpn_openvpn_servers` tool; the prior docstring's "no field
+is marked `writeOnly`" reasoning was an insufficient signal -- this
+schema does not mark any field `writeOnly` at all, including
+`OpenVPNClient.auth_pass`/`.proxy_passwd`, so `writeOnly` alone cannot
+be trusted as this schema's secret indicator. Field semantics must be
+read from the description text, never inferred from `writeOnly` or the
+field name alone.
 
 `local_network`/`local_networkv6`/`remote_network`/`remote_networkv6`/
 `tunnel_network`/`tunnel_networkv6`/`dns_server1-4`/`ntp_server1-2`/
@@ -111,7 +127,6 @@ class OpenVpnServer(BaseModel):
 
     authmode: list[str]
     interface: str | None
-    tls: str | None
     tls_type: str | None
     tlsauth_keydir: str
     strictusercn: bool | None
@@ -194,7 +209,6 @@ class OpenVpnServer(BaseModel):
             verbosity_level=data["verbosity_level"],
             authmode=data.get("authmode", ["Local Database"]),
             interface=data.get("interface"),
-            tls=data.get("tls"),
             tls_type=data.get("tls_type"),
             tlsauth_keydir=data.get("tlsauth_keydir", "default"),
             strictusercn=data.get("strictusercn"),

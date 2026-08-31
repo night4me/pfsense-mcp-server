@@ -17547,17 +17547,6 @@
                 ],
                 "title": "Strictusercn"
               },
-              "tls": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Tls"
-              },
               "tls_type": {
                 "anyOf": [
                   {
@@ -17706,7 +17695,6 @@
               "verbosity_level",
               "authmode",
               "interface",
-              "tls",
               "tls_type",
               "tlsauth_keydir",
               "strictusercn",

@@ -673,6 +673,16 @@ class Endpoints:
     # pfSense-pkg-Service_Watchdog, confirmed NOT installed on this LAB --
     # implemented and offline-tested only per the package-conditional
     # candidate rule; owner decision required before LAB installation.
+    # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3: this
+    # project's own historical pattern (BIND, HAProxy) always required a
+    # *live* LAB round-trip (HTTP 200, graceful degradation confirmed)
+    # before flipping `verified=True` and registering a tool into the
+    # public MCP surface -- source-only schema qualification has never
+    # been sufficient alone. No live LAB access was available this
+    # session, so this candidate stays implemented-but-unregistered,
+    # exactly as it already was; a future live-verification ceremony is
+    # required before promotion (matching `SERVICES_FREERADIUS_MACS`
+    # immediately above, which is in the identical state).
     SERVICES_SERVICE_WATCHDOGS = EndpointInfo(
         path_suffix="/services/service_watchdogs",
         verified=False,
@@ -902,5 +912,67 @@ class Endpoints:
     HAPROXY_SETTINGS_EMAIL_MAILERS = EndpointInfo(
         path_suffix="/services/haproxy/settings/email_mailers",
         verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3 --
+    # source-qualified against a freshly-fetched (not cached) live
+    # pfrest.org OpenAPI document. `privatekey` excluded (secret key
+    # material, same class as WireGuardPeer.presharedkey). `addresses`
+    # excluded as redundant with the already-shipped
+    # VPN_WIREGUARD_TUNNEL_ADDRESSES tool (which itself applies
+    # include_identifying_metadata redaction). Model, client method, and
+    # offline tests are implemented and passing; `verified` stays False
+    # and this endpoint is deliberately NOT registered into the public
+    # MCP tool surface -- this project's own historical pattern (BIND,
+    # HAProxy) has always required an actual live LAB round-trip before
+    # promotion, which was not available this session. See
+    # SERVICES_SERVICE_WATCHDOGS's comment above for the full rationale.
+    VPN_WIREGUARD_TUNNELS = EndpointInfo(
+        path_suffix="/vpn/wireguard/tunnels",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3.
+    # `presharedkey` excluded (secret key material). `allowedips`
+    # excluded as redundant with the already-shipped
+    # WireGuardPeerStatus.allowed_ips field (status_wireguard_peers).
+    # `endpoint` redacted by default via include_identifying_metadata,
+    # matching WireGuardPeerStatus.endpoint's established convention.
+    # Same not-yet-registered, pending-live-verification status as
+    # VPN_WIREGUARD_TUNNELS above.
+    VPN_WIREGUARD_PEERS = EndpointInfo(
+        path_suffix="/vpn/wireguard/peers",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3.
+    # `pre_shared_key` excluded (secret key material). `encryption`
+    # excluded as redundant with the already-shipped
+    # VPN_IPSEC_PHASE1_ENCRYPTIONS tool. `remote_gateway`/`myid_data`/
+    # `peerid_data` redacted by default via include_identifying_metadata,
+    # matching RoutingStaticRoute.gateway's established convention. Same
+    # not-yet-registered, pending-live-verification status as
+    # VPN_WIREGUARD_TUNNELS above.
+    VPN_IPSEC_PHASE1S = EndpointInfo(
+        path_suffix="/vpn/ipsec/phase1s",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+    )
+    # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3/6.
+    # `auth_pass`/`proxy_passwd` excluded (literal passwords). `tls`
+    # excluded (literal TLS-auth/crypt HMAC key material -- the same
+    # correction retroactively applied to the sibling OpenVpnServer.tls
+    # field in this same hardening pass, see that model's docstring).
+    # `custom_options` excluded (explicitly free-text raw-config-
+    # injection field, analogous to HAProxy's already-excluded
+    # `advanced`/`customaction`). `server_addr`/`proxy_addr`/
+    # `tunnel_network`/`tunnel_networkv6`/`remote_network`/
+    # `remote_networkv6` redacted by default via
+    # include_identifying_metadata, matching OpenVpnServer's identical
+    # fields exactly. Same not-yet-registered, pending-live-verification
+    # status as VPN_WIREGUARD_TUNNELS above.
+    VPN_OPENVPN_CLIENTS = EndpointInfo(
+        path_suffix="/vpn/openvpn/clients",
+        verified=False,
         min_api_version=ApiVersion.V2,
     )
