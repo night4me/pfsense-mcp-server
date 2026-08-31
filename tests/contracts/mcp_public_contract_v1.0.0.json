@@ -11577,6 +11577,95 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "SERVICES_SERVICE_WATCHDOG_READ",
+      "client_method": "get_services_service_watchdogs",
+      "description": "List pfSense Service Watchdog entries: which services are\n        monitored, whether notifications are sent, and whether each\n        entry is enabled. Requires pfSense-pkg-Service_Watchdog.\n        Read-only. No secret material or address data; all 4 fields\n        are plain scalar toggles/labels.\n\n        limit: maximum number of entries to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/service_watchdogs",
+        "symbol": "SERVICES_SERVICE_WATCHDOGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_services_service_watchdogsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_services_service_watchdogs",
+      "output_schema": {
+        "$defs": {
+          "ServiceWatchdog": {
+            "properties": {
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Description"
+              },
+              "enabled": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Enabled"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "notify": {
+                "title": "Notify",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name",
+              "description",
+              "notify",
+              "enabled"
+            ],
+            "title": "ServiceWatchdog",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/ServiceWatchdog"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_services_service_watchdogsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "SERVICES_SSH_READ",
       "client_method": "get_ssh_settings",
       "description": "Get pfSense SSH server settings: enabled state, listening\n        port, agent forwarding, and key-only authentication mode.\n        Read-only.",
@@ -16420,6 +16509,282 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "VPN_IPSEC_PHASE1_READ",
+      "client_method": "get_vpn_ipsec_phase1s",
+      "description": "List IPsec Phase 1 (IKE) tunnel configurations: IKE\n        type/mode/protocol, interface, authentication method, rekey/\n        reauth/lifetime timing, and NAT-traversal/DPD settings.\n        Read-only. Does not include the pre-shared key or the nested\n        encryption-algorithm list (use\n        pfsense_get_vpn_ipsec_phase1_encryptions for the latter).\n\n        include_identifying_metadata: if True, includes the literal\n        remote gateway address and local/remote tunnel identity\n        values. Defaults to False.\n\n        limit: maximum number of Phase 1 entries to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/ipsec/phase1s",
+        "symbol": "VPN_IPSEC_PHASE1S",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_ipsec_phase1sArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_ipsec_phase1s",
+      "output_schema": {
+        "$defs": {
+          "IPsecPhase1": {
+            "properties": {
+              "authentication_method": {
+                "title": "Authentication Method",
+                "type": "string"
+              },
+              "caref": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Caref"
+              },
+              "certref": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Certref"
+              },
+              "closeaction": {
+                "title": "Closeaction",
+                "type": "string"
+              },
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "disabled": {
+                "title": "Disabled",
+                "type": "boolean"
+              },
+              "dpd_delay": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dpd Delay"
+              },
+              "dpd_maxfail": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dpd Maxfail"
+              },
+              "gw_duplicates": {
+                "title": "Gw Duplicates",
+                "type": "boolean"
+              },
+              "ikeid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ikeid"
+              },
+              "ikeport": {
+                "title": "Ikeport",
+                "type": "string"
+              },
+              "iketype": {
+                "title": "Iketype",
+                "type": "string"
+              },
+              "interface": {
+                "title": "Interface",
+                "type": "string"
+              },
+              "lifetime": {
+                "title": "Lifetime",
+                "type": "integer"
+              },
+              "mobike": {
+                "title": "Mobike",
+                "type": "boolean"
+              },
+              "mode": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mode"
+              },
+              "myid_data": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Myid Data"
+              },
+              "myid_type": {
+                "title": "Myid Type",
+                "type": "string"
+              },
+              "nat_traversal": {
+                "title": "Nat Traversal",
+                "type": "string"
+              },
+              "nattport": {
+                "title": "Nattport",
+                "type": "string"
+              },
+              "peerid_data": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Peerid Data"
+              },
+              "peerid_type": {
+                "title": "Peerid Type",
+                "type": "string"
+              },
+              "prfselect_enable": {
+                "title": "Prfselect Enable",
+                "type": "boolean"
+              },
+              "protocol": {
+                "title": "Protocol",
+                "type": "string"
+              },
+              "rand_time": {
+                "title": "Rand Time",
+                "type": "integer"
+              },
+              "reauth_time": {
+                "title": "Reauth Time",
+                "type": "integer"
+              },
+              "rekey_time": {
+                "title": "Rekey Time",
+                "type": "integer"
+              },
+              "remote_gateway": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Remote Gateway"
+              },
+              "splitconn": {
+                "title": "Splitconn",
+                "type": "boolean"
+              },
+              "startaction": {
+                "title": "Startaction",
+                "type": "string"
+              }
+            },
+            "required": [
+              "ikeid",
+              "descr",
+              "disabled",
+              "iketype",
+              "mode",
+              "protocol",
+              "interface",
+              "authentication_method",
+              "myid_type",
+              "peerid_type",
+              "certref",
+              "caref",
+              "rekey_time",
+              "reauth_time",
+              "rand_time",
+              "lifetime",
+              "startaction",
+              "closeaction",
+              "nat_traversal",
+              "gw_duplicates",
+              "mobike",
+              "splitconn",
+              "prfselect_enable",
+              "ikeport",
+              "nattport",
+              "dpd_delay",
+              "dpd_maxfail"
+            ],
+            "title": "IPsecPhase1",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/IPsecPhase1"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_ipsec_phase1sOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "VPN_IPSEC_PHASE2_ENCRYPTION_READ",
       "client_method": "get_vpn_ipsec_phase2_encryptions",
       "description": "List IPsec Phase 2 encryption algorithm capability options.\n        Read-only.\n\n        limit: maximum number of encryption options to return (1-100,\n        default 100).",
@@ -16733,6 +17098,424 @@
           "result"
         ],
         "title": "pfsense_get_vpn_ipsec_phase2sOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_OPENVPN_CLIENT_READ",
+      "client_method": "get_vpn_openvpn_clients",
+      "description": "List OpenVPN client configurations: mode, protocol, device\n        mode, ports, ciphers/digest, certificate references, and\n        keepalive/ping settings. Read-only. Does not include the\n        client's auth password, proxy password, TLS-auth/crypt key\n        material, or free-text custom options.\n\n        include_identifying_metadata: if True, includes the literal\n        server/proxy addresses, tunnel network(s), and remote\n        network(s). Defaults to False.\n\n        limit: maximum number of clients to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/openvpn/clients",
+        "symbol": "VPN_OPENVPN_CLIENTS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_openvpn_clientsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_openvpn_clients",
+      "output_schema": {
+        "$defs": {
+          "OpenVPNClient": {
+            "properties": {
+              "allow_compression": {
+                "title": "Allow Compression",
+                "type": "string"
+              },
+              "auth_retry_none": {
+                "title": "Auth Retry None",
+                "type": "boolean"
+              },
+              "auth_user": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Auth User"
+              },
+              "caref": {
+                "title": "Caref",
+                "type": "string"
+              },
+              "certref": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Certref"
+              },
+              "create_gw": {
+                "title": "Create Gw",
+                "type": "string"
+              },
+              "data_ciphers": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Data Ciphers",
+                "type": "array"
+              },
+              "data_ciphers_fallback": {
+                "title": "Data Ciphers Fallback",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              },
+              "dev_mode": {
+                "title": "Dev Mode",
+                "type": "string"
+              },
+              "digest": {
+                "title": "Digest",
+                "type": "string"
+              },
+              "disable": {
+                "title": "Disable",
+                "type": "boolean"
+              },
+              "dns_add": {
+                "title": "Dns Add",
+                "type": "boolean"
+              },
+              "exit_notify": {
+                "title": "Exit Notify",
+                "type": "string"
+              },
+              "inactive_seconds": {
+                "title": "Inactive Seconds",
+                "type": "integer"
+              },
+              "interface": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Interface"
+              },
+              "keepalive_interval": {
+                "title": "Keepalive Interval",
+                "type": "integer"
+              },
+              "keepalive_timeout": {
+                "title": "Keepalive Timeout",
+                "type": "integer"
+              },
+              "local_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Local Port"
+              },
+              "mode": {
+                "title": "Mode",
+                "type": "string"
+              },
+              "passtos": {
+                "title": "Passtos",
+                "type": "boolean"
+              },
+              "ping_action": {
+                "title": "Ping Action",
+                "type": "string"
+              },
+              "ping_action_seconds": {
+                "title": "Ping Action Seconds",
+                "type": "integer"
+              },
+              "ping_method": {
+                "title": "Ping Method",
+                "type": "string"
+              },
+              "ping_seconds": {
+                "title": "Ping Seconds",
+                "type": "integer"
+              },
+              "protocol": {
+                "title": "Protocol",
+                "type": "string"
+              },
+              "proxy_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Proxy Addr"
+              },
+              "proxy_authtype": {
+                "title": "Proxy Authtype",
+                "type": "string"
+              },
+              "proxy_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Proxy Port"
+              },
+              "proxy_user": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Proxy User"
+              },
+              "remote_cert_tls": {
+                "title": "Remote Cert Tls",
+                "type": "boolean"
+              },
+              "remote_network": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remote Network",
+                "type": "array"
+              },
+              "remote_networkv6": {
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Remote Networkv6",
+                "type": "array"
+              },
+              "route_no_exec": {
+                "title": "Route No Exec",
+                "type": "boolean"
+              },
+              "route_no_pull": {
+                "title": "Route No Pull",
+                "type": "boolean"
+              },
+              "server_addr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Server Addr"
+              },
+              "server_port": {
+                "title": "Server Port",
+                "type": "string"
+              },
+              "sndrcvbuf": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Sndrcvbuf"
+              },
+              "tls_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tls Type"
+              },
+              "tlsauth_keydir": {
+                "title": "Tlsauth Keydir",
+                "type": "string"
+              },
+              "topology": {
+                "title": "Topology",
+                "type": "string"
+              },
+              "tunnel_network": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Network"
+              },
+              "tunnel_networkv6": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Tunnel Networkv6"
+              },
+              "udp_fast_io": {
+                "title": "Udp Fast Io",
+                "type": "boolean"
+              },
+              "use_shaper": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Use Shaper"
+              },
+              "verbosity_level": {
+                "title": "Verbosity Level",
+                "type": "integer"
+              },
+              "vpnid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vpnid"
+              },
+              "vpnif": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Vpnif"
+              }
+            },
+            "required": [
+              "vpnid",
+              "vpnif",
+              "description",
+              "disable",
+              "mode",
+              "dev_mode",
+              "protocol",
+              "server_port",
+              "local_port",
+              "proxy_port",
+              "proxy_authtype",
+              "auth_user",
+              "auth_retry_none",
+              "caref",
+              "certref",
+              "data_ciphers",
+              "data_ciphers_fallback",
+              "digest",
+              "remote_cert_tls",
+              "use_shaper",
+              "allow_compression",
+              "passtos",
+              "route_no_pull",
+              "route_no_exec",
+              "dns_add",
+              "inactive_seconds",
+              "ping_method",
+              "udp_fast_io",
+              "exit_notify",
+              "sndrcvbuf",
+              "create_gw",
+              "verbosity_level",
+              "interface",
+              "proxy_user",
+              "tls_type",
+              "tlsauth_keydir",
+              "topology",
+              "keepalive_interval",
+              "keepalive_timeout",
+              "ping_seconds",
+              "ping_action",
+              "ping_action_seconds"
+            ],
+            "title": "OpenVPNClient",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/OpenVPNClient"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_openvpn_clientsOutput",
         "type": "object"
       },
       "tool_class": "read"
@@ -17744,6 +18527,116 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "VPN_WIREGUARD_PEERS_READ",
+      "client_method": "get_vpn_wireguard_peers",
+      "description": "List WireGuard peer configurations: enabled state, parent\n        tunnel, listen port, description, persistent-keepalive\n        interval, and public key. Requires pfSense-pkg-WireGuard.\n        Read-only. Does not include the peer's pre-shared key or its\n        allowed-IPs list (already exposed, redacted, via\n        pfsense_get_status_wireguard_peers).\n\n        include_identifying_metadata: if True, includes the peer's\n        literal endpoint address. Defaults to False.\n\n        limit: maximum number of peers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/wireguard/peers",
+        "symbol": "VPN_WIREGUARD_PEERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_wireguard_peersArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_wireguard_peers",
+      "output_schema": {
+        "$defs": {
+          "WireGuardPeer": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "enabled": {
+                "title": "Enabled",
+                "type": "boolean"
+              },
+              "endpoint": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Endpoint"
+              },
+              "persistentkeepalive": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persistentkeepalive"
+              },
+              "port": {
+                "title": "Port",
+                "type": "string"
+              },
+              "publickey": {
+                "title": "Publickey",
+                "type": "string"
+              },
+              "tun": {
+                "title": "Tun",
+                "type": "string"
+              }
+            },
+            "required": [
+              "enabled",
+              "tun",
+              "port",
+              "descr",
+              "persistentkeepalive",
+              "publickey"
+            ],
+            "title": "WireGuardPeer",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/WireGuardPeer"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_wireguard_peersOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "VPN_WIREGUARD_SETTINGS_READ",
       "client_method": "get_vpn_wireguard_settings",
       "description": "Get global pfSense WireGuard service settings: enabled state,\n        config-retention-on-uninstall, endpoint hostname re-resolution\n        interval, and interface-group membership mode. Read-only. Does\n        not include tunnel/peer configuration or key material.",
@@ -17899,6 +18792,105 @@
           "result"
         ],
         "title": "pfsense_get_vpn_wireguard_tunnel_addressesOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "VPN_WIREGUARD_TUNNELS_READ",
+      "client_method": "get_vpn_wireguard_tunnels",
+      "description": "List WireGuard tunnel configurations: name, enabled state,\n        description, listen port, public key, and MTU. Requires\n        pfSense-pkg-WireGuard. Read-only. Does not include the\n        tunnel's private key or its embedded addresses list (use\n        pfsense_get_vpn_wireguard_tunnel_addresses for the latter).\n\n        limit: maximum number of tunnels to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/vpn/wireguard/tunnels",
+        "symbol": "VPN_WIREGUARD_TUNNELS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_vpn_wireguard_tunnelsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_vpn_wireguard_tunnels",
+      "output_schema": {
+        "$defs": {
+          "WireGuardTunnel": {
+            "properties": {
+              "descr": {
+                "title": "Descr",
+                "type": "string"
+              },
+              "enabled": {
+                "title": "Enabled",
+                "type": "boolean"
+              },
+              "listenport": {
+                "title": "Listenport",
+                "type": "string"
+              },
+              "mtu": {
+                "title": "Mtu",
+                "type": "integer"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "publickey": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Publickey"
+              }
+            },
+            "required": [
+              "name",
+              "enabled",
+              "descr",
+              "listenport",
+              "publickey",
+              "mtu"
+            ],
+            "title": "WireGuardTunnel",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/WireGuardTunnel"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_vpn_wireguard_tunnelsOutput",
         "type": "object"
       },
       "tool_class": "read"

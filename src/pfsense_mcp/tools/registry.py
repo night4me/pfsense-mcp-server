@@ -100,6 +100,7 @@ from .read import (
     routing_gateway_groups,
     routing_static_routes,
     service_status,
+    services_service_watchdogs,
     ssh_settings,
     status_ipsec_child_sas,
     status_ipsec_sas,
@@ -130,12 +131,16 @@ from .read import (
     user_groups,
     users,
     vpn_ipsec_phase1_encryptions,
+    vpn_ipsec_phase1s,
     vpn_ipsec_phase2_encryptions,
     vpn_ipsec_phase2s,
+    vpn_openvpn_clients,
     vpn_openvpn_csos,
     vpn_openvpn_servers,
+    vpn_wireguard_peers,
     vpn_wireguard_settings,
     vpn_wireguard_tunnel_addresses,
+    vpn_wireguard_tunnels,
     wireguard_apply_status,
 )
 from .write import set_firewall_alias_description
@@ -235,6 +240,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_routing_gateway_groups",
         "pfsense_get_routing_static_routes",
         "pfsense_get_service_status",
+        "pfsense_get_services_service_watchdogs",
         "pfsense_get_ssh_settings",
         "pfsense_get_status_ipsec_child_sas",
         "pfsense_get_status_ipsec_sas",
@@ -265,12 +271,16 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_user_groups",
         "pfsense_get_users",
         "pfsense_get_vpn_ipsec_phase1_encryptions",
+        "pfsense_get_vpn_ipsec_phase1s",
         "pfsense_get_vpn_ipsec_phase2_encryptions",
         "pfsense_get_vpn_ipsec_phase2s",
+        "pfsense_get_vpn_openvpn_clients",
         "pfsense_get_vpn_openvpn_csos",
         "pfsense_get_vpn_openvpn_servers",
+        "pfsense_get_vpn_wireguard_peers",
         "pfsense_get_vpn_wireguard_tunnel_addresses",
         "pfsense_get_vpn_wireguard_settings",
+        "pfsense_get_vpn_wireguard_tunnels",
         "pfsense_get_wireguard_apply_status",
         "pfsense_mcp_info",
     }
@@ -514,6 +524,16 @@ class ToolRegistry:
             self._register_vpn_wireguard_tunnel_address_read()
         if Capability.VPN_WIREGUARD_SETTINGS_READ in self._capabilities:
             self._register_vpn_wireguard_settings_read()
+        if Capability.SERVICES_SERVICE_WATCHDOG_READ in self._capabilities:
+            self._register_services_service_watchdog_read()
+        if Capability.VPN_WIREGUARD_TUNNELS_READ in self._capabilities:
+            self._register_vpn_wireguard_tunnels_read()
+        if Capability.VPN_WIREGUARD_PEERS_READ in self._capabilities:
+            self._register_vpn_wireguard_peers_read()
+        if Capability.VPN_IPSEC_PHASE1_READ in self._capabilities:
+            self._register_vpn_ipsec_phase1_read()
+        if Capability.VPN_OPENVPN_CLIENT_READ in self._capabilities:
+            self._register_vpn_openvpn_client_read()
 
         # Deliberately NOT gated by any *specific* Capability check (owner
         # instruction, 2026-08-22): a guidance tool is not a pfSense
@@ -1184,6 +1204,31 @@ class ToolRegistry:
     def _register_vpn_wireguard_settings_read(self) -> None:
         fn = vpn_wireguard_settings.build(self._client)
         wrapped = audit_logged("pfsense_get_vpn_wireguard_settings", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_services_service_watchdog_read(self) -> None:
+        fn = services_service_watchdogs.build(self._client)
+        wrapped = audit_logged("pfsense_get_services_service_watchdogs", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_wireguard_tunnels_read(self) -> None:
+        fn = vpn_wireguard_tunnels.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_wireguard_tunnels", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_wireguard_peers_read(self) -> None:
+        fn = vpn_wireguard_peers.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_wireguard_peers", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_ipsec_phase1_read(self) -> None:
+        fn = vpn_ipsec_phase1s.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_ipsec_phase1s", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_vpn_openvpn_client_read(self) -> None:
+        fn = vpn_openvpn_clients.build(self._client)
+        wrapped = audit_logged("pfsense_get_vpn_openvpn_clients", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

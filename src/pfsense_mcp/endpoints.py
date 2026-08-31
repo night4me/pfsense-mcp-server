@@ -677,15 +677,16 @@ class Endpoints:
     # project's own historical pattern (BIND, HAProxy) always required a
     # *live* LAB round-trip (HTTP 200, graceful degradation confirmed)
     # before flipping `verified=True` and registering a tool into the
-    # public MCP surface -- source-only schema qualification has never
-    # been sufficient alone. No live LAB access was available this
-    # session, so this candidate stays implemented-but-unregistered,
-    # exactly as it already was; a future live-verification ceremony is
-    # required before promotion (matching `SERVICES_FREERADIUS_MACS`
-    # immediately above, which is in the identical state).
+    # verified=True (2026-08-30, POST_V1_1_FINAL_READ_LIVE_QUALIFICATION
+    # OWNER GO ceremony, live LAB round-trip against
+    # https://pfsense-test.lab.invalid under a temporarily-granted,
+    # then fully rolled-back, single-privilege GET-only credential):
+    # HTTP 200, correct envelope, zero configured watchdog entries at
+    # verification time -- ENDPOINT_VERIFIED only. Promoted into the
+    # public MCP surface in POST_V1_1_FINAL_FIVE_READ_PROMOTION.
     SERVICES_SERVICE_WATCHDOGS = EndpointInfo(
         path_suffix="/services/service_watchdogs",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # verified=True (2026-08-21, P1 Batch I, LAB-only verification
@@ -922,14 +923,15 @@ class Endpoints:
     # VPN_WIREGUARD_TUNNEL_ADDRESSES tool (which itself applies
     # include_identifying_metadata redaction). Model, client method, and
     # offline tests are implemented and passing; `verified` stays False
-    # and this endpoint is deliberately NOT registered into the public
-    # MCP tool surface -- this project's own historical pattern (BIND,
-    # HAProxy) has always required an actual live LAB round-trip before
-    # promotion, which was not available this session. See
-    # SERVICES_SERVICE_WATCHDOGS's comment above for the full rationale.
+    # verified=True (2026-08-30, POST_V1_1_FINAL_READ_LIVE_QUALIFICATION
+    # OWNER GO ceremony) -- same live LAB round-trip and rollback
+    # discipline as SERVICES_SERVICE_WATCHDOGS above: HTTP 200, correct
+    # envelope, zero configured tunnels at verification time --
+    # ENDPOINT_VERIFIED only. Promoted in
+    # POST_V1_1_FINAL_FIVE_READ_PROMOTION.
     VPN_WIREGUARD_TUNNELS = EndpointInfo(
         path_suffix="/vpn/wireguard/tunnels",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3.
@@ -938,11 +940,13 @@ class Endpoints:
     # WireGuardPeerStatus.allowed_ips field (status_wireguard_peers).
     # `endpoint` redacted by default via include_identifying_metadata,
     # matching WireGuardPeerStatus.endpoint's established convention.
-    # Same not-yet-registered, pending-live-verification status as
-    # VPN_WIREGUARD_TUNNELS above.
+    # verified=True (2026-08-30, POST_V1_1_FINAL_READ_LIVE_QUALIFICATION
+    # OWNER GO ceremony) -- same live LAB round-trip and rollback
+    # discipline as VPN_WIREGUARD_TUNNELS above. Promoted in
+    # POST_V1_1_FINAL_FIVE_READ_PROMOTION.
     VPN_WIREGUARD_PEERS = EndpointInfo(
         path_suffix="/vpn/wireguard/peers",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3.
@@ -950,12 +954,14 @@ class Endpoints:
     # excluded as redundant with the already-shipped
     # VPN_IPSEC_PHASE1_ENCRYPTIONS tool. `remote_gateway`/`myid_data`/
     # `peerid_data` redacted by default via include_identifying_metadata,
-    # matching RoutingStaticRoute.gateway's established convention. Same
-    # not-yet-registered, pending-live-verification status as
-    # VPN_WIREGUARD_TUNNELS above.
+    # matching RoutingStaticRoute.gateway's established convention.
+    # verified=True (2026-08-30, POST_V1_1_FINAL_READ_LIVE_QUALIFICATION
+    # OWNER GO ceremony) -- same live LAB round-trip and rollback
+    # discipline as VPN_WIREGUARD_TUNNELS above. Promoted in
+    # POST_V1_1_FINAL_FIVE_READ_PROMOTION.
     VPN_IPSEC_PHASE1S = EndpointInfo(
         path_suffix="/vpn/ipsec/phase1s",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )
     # POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md Phase 3/6.
@@ -969,10 +975,13 @@ class Endpoints:
     # `tunnel_network`/`tunnel_networkv6`/`remote_network`/
     # `remote_networkv6` redacted by default via
     # include_identifying_metadata, matching OpenVpnServer's identical
-    # fields exactly. Same not-yet-registered, pending-live-verification
-    # status as VPN_WIREGUARD_TUNNELS above.
+    # fields exactly.
+    # verified=True (2026-08-30, POST_V1_1_FINAL_READ_LIVE_QUALIFICATION
+    # OWNER GO ceremony) -- same live LAB round-trip and rollback
+    # discipline as VPN_WIREGUARD_TUNNELS above. Promoted in
+    # POST_V1_1_FINAL_FIVE_READ_PROMOTION.
     VPN_OPENVPN_CLIENTS = EndpointInfo(
         path_suffix="/vpn/openvpn/clients",
-        verified=False,
+        verified=True,
         min_api_version=ApiVersion.V2,
     )

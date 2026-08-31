@@ -94,7 +94,7 @@ def test_public_contract_total_is_97():
     registry = ToolRegistry(mcp, client, "test", SUPPORTED_CAPABILITIES_THIS_BUILD)
     registry.register_all()
     tools = asyncio.run(mcp.list_tools())
-    assert len(tools) == 117
+    assert len(tools) == 122
 
 
 # --- query_mode="tool" --------------------------------------------------

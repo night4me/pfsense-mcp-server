@@ -2,10 +2,10 @@
   "deterministic_across_runs": true,
   "distribution": {
     "max_tool_bytes": 3059,
-    "mean_tool_bytes": 525.1,
-    "median_tool_bytes": 486,
+    "mean_tool_bytes": 536.0,
+    "median_tool_bytes": 500.0,
     "min_tool_bytes": 196,
-    "stdev_tool_bytes": 289.8
+    "stdev_tool_bytes": 290.1
   },
   "largest_10": [
     {
@@ -21,6 +21,27 @@
       "name": "pfsense_get_official_guidance",
       "name_bytes": 31,
       "total_tool_bytes": 1223
+    },
+    {
+      "description_bytes": 616,
+      "input_schema_bytes": 243,
+      "name": "pfsense_get_vpn_ipsec_phase1s",
+      "name_bytes": 31,
+      "total_tool_bytes": 943
+    },
+    {
+      "description_bytes": 558,
+      "input_schema_bytes": 245,
+      "name": "pfsense_get_vpn_wireguard_peers",
+      "name_bytes": 33,
+      "total_tool_bytes": 888
+    },
+    {
+      "description_bytes": 554,
+      "input_schema_bytes": 245,
+      "name": "pfsense_get_vpn_openvpn_clients",
+      "name_bytes": 33,
+      "total_tool_bytes": 884
     },
     {
       "description_bytes": 448,
@@ -56,36 +77,15 @@
       "name": "pfsense_get_users",
       "name_bytes": 19,
       "total_tool_bytes": 739
-    },
-    {
-      "description_bytes": 417,
-      "input_schema_bytes": 242,
-      "name": "pfsense_get_vpn_openvpn_csos",
-      "name_bytes": 30,
-      "total_tool_bytes": 738
-    },
-    {
-      "description_bytes": 389,
-      "input_schema_bytes": 256,
-      "name": "pfsense_get_interface_available_interfaces",
-      "name_bytes": 44,
-      "total_tool_bytes": 738
-    },
-    {
-      "description_bytes": 399,
-      "input_schema_bytes": 248,
-      "name": "pfsense_get_status_wireguard_peers",
-      "name_bytes": 36,
-      "total_tool_bytes": 732
     }
   ],
   "latency": {
-    "startup_to_initialized_seconds": 2.0512,
-    "tools_list_seconds": 0.0909
+    "startup_to_initialized_seconds": 0.8842,
+    "tools_list_seconds": 0.0288
   },
   "memory": {
     "note": "Best-effort RUSAGE_CHILDREN peak RSS (KB) across the whole benchmark process's child processes measured so far -- Linux-specific, approximate (includes Python interpreter startup, not isolated to the MCP server alone).",
-    "ru_maxrss_kb": 83376
+    "ru_maxrss_kb": 84144
   },
   "methodology": {
     "byte_counting": "UTF-8 encoded length of the canonical (sorted-key, no-whitespace) JSON serialization of each tool/the full tools array -- an exact, reproducible byte count, not an estimate.",
@@ -647,6 +647,13 @@
       "total_tool_bytes": 615
     },
     {
+      "description_bytes": 381,
+      "input_schema_bytes": 147,
+      "name": "pfsense_get_services_service_watchdogs",
+      "name_bytes": 40,
+      "total_tool_bytes": 616
+    },
+    {
       "description_bytes": 394,
       "input_schema_bytes": 141,
       "name": "pfsense_get_haproxy_backend_acls",
@@ -687,6 +694,13 @@
       "name": "pfsense_get_haproxy_backend_errorfiles",
       "name_bytes": 40,
       "total_tool_bytes": 624
+    },
+    {
+      "description_bytes": 400,
+      "input_schema_bytes": 142,
+      "name": "pfsense_get_vpn_wireguard_tunnels",
+      "name_bytes": 35,
+      "total_tool_bytes": 625
     },
     {
       "description_bytes": 391,
@@ -899,6 +913,27 @@
       "total_tool_bytes": 787
     },
     {
+      "description_bytes": 554,
+      "input_schema_bytes": 245,
+      "name": "pfsense_get_vpn_openvpn_clients",
+      "name_bytes": 33,
+      "total_tool_bytes": 884
+    },
+    {
+      "description_bytes": 558,
+      "input_schema_bytes": 245,
+      "name": "pfsense_get_vpn_wireguard_peers",
+      "name_bytes": 33,
+      "total_tool_bytes": 888
+    },
+    {
+      "description_bytes": 616,
+      "input_schema_bytes": 243,
+      "name": "pfsense_get_vpn_ipsec_phase1s",
+      "name_bytes": 31,
+      "total_tool_bytes": 943
+    },
+    {
       "description_bytes": 969,
       "input_schema_bytes": 159,
       "name": "pfsense_get_official_guidance",
@@ -986,12 +1021,12 @@
     }
   ],
   "totals": {
-    "full_tools_list_payload_bytes": 61561,
-    "full_tools_list_payload_estimated_tokens": 15390,
-    "tool_count": 117,
-    "total_description_bytes": 33525,
-    "total_description_estimated_tokens": 8381,
-    "total_input_schema_bytes": 18568,
-    "total_input_schema_estimated_tokens": 4642
+    "full_tools_list_payload_bytes": 65522,
+    "full_tools_list_payload_estimated_tokens": 16380,
+    "tool_count": 122,
+    "total_description_bytes": 36034,
+    "total_description_estimated_tokens": 9008,
+    "total_input_schema_bytes": 19590,
+    "total_input_schema_estimated_tokens": 4898
   }
 }

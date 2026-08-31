@@ -9,6 +9,28 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Five READ tools promoted from source-first-qualified candidates left
+  implemented-but-unregistered in the prior hardening pass:
+  `pfsense_get_services_service_watchdogs`, `pfsense_get_vpn_wireguard_tunnels`,
+  `pfsense_get_vpn_wireguard_peers`, `pfsense_get_vpn_ipsec_phase1s`, and
+  `pfsense_get_vpn_openvpn_clients`. All 5 were live-verified against the
+  disposable LAB appliance under a temporary, fully-reversed single-purpose
+  privilege grant (`POST_V1_1_FINAL_READ_LIVE_QUALIFICATION.md`'s 2026-08-30
+  OWNER GO ceremony) before promotion, per this project's established
+  verified-before-registered invariant. `WireGuardTunnel.privatekey` and
+  `.addresses`, `WireGuardPeer.presharedkey` and `.allowedips`,
+  `IPsecPhase1.pre_shared_key` and `.encryption`, and
+  `OpenVPNClient.auth_pass`/`.proxy_passwd`/`.tls`/`.custom_options` are all
+  deliberately excluded entirely (secret key/password material or
+  redundant/raw-config-injection fields), matching this project's
+  established structural-field-exclusion precedent; `ServiceWatchdog` has
+  no exclusions (all 4 fields are plain scalar toggles/labels). Public
+  READ tool count moves from 115 to 120 (122 total incl. 2 guidance
+  tools); the managed `pfsense-mcp-readonly` READ-only privilege set
+  moves from 114 to 119. Not yet published to PyPI — README.md's
+  tool-count claims continue to describe the last published baseline
+  (v1.1.0: 95 READ) until the next release's doc sync updates them
+  together. See `POST_V1_1_FINAL_FIVE_READ_PROMOTION.md`.
 - Fourteen HAProxy (load balancer package) READ tools:
   `pfsense_get_haproxy_apply_status`, `pfsense_get_haproxy_backends`,
   `pfsense_get_haproxy_backend_acls`, `pfsense_get_haproxy_backend_errorfiles`,
@@ -84,6 +106,25 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- `pfsense_get_vpn_openvpn_servers`'s response model no longer includes
+  `tls`: literal TLS-auth/crypt HMAC key material, previously modeled and
+  exposed unredacted. The field was not marked `writeOnly` in the schema —
+  a prior review used "no field is marked `writeOnly`" as sufficient
+  evidence a component held no secrets, an invalid inference this same
+  schema disproves (it marks *no* field `writeOnly`, including
+  `OpenVpnServer`'s own sibling `auth_pass`-class fields). Discovered
+  during source-first field-semantics tracing for the new
+  `OpenVPNClient` READ candidate below, by comparing it against this
+  already-shipped, already-published (v1.0.0/v1.1.0) sibling model. This
+  tool has been part of the public MCP contract since commit `ff2231c`
+  (2026-08-06); removing this field is a compatibility-breaking
+  response-shape change, made deliberately because the security benefit
+  of closing a plaintext-key-material exposure channel outweighs
+  preserving an unsafe field. The GET endpoint, capability, and privilege
+  (`api-v2-vpn-openvpn-servers-get`) are unchanged; the remaining fields
+  are unaffected. Public tool/READ/guidance/WRITE counts and the managed
+  privilege count are unchanged (response-shape change only, not a new
+  tool). See `POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING.md`.
 - `pfsense_get_bind_settings`'s response model no longer includes
   `bind_custom_options` or `bind_global_settings`. Both were `Base64Field`-
   typed, unvalidated, unbounded free text in the actual pfSense-pkg-RESTAPI

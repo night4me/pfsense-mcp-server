@@ -1585,6 +1585,31 @@
       "get": {
         "description": "<h3>Description:</h3>Reads all existing WireGuard Tunnel Addresses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: WireGuardTunnelAddress<br>**Parent model**: WireGuardTunnel<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-tunnel-addresses-get ]<br>**Required packages**: [ pfSense-pkg-WireGuard ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
       }
+    },
+    "/api/v2/services/service_watchdogs": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing Service Watchdogs.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: ServiceWatchdog<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-service-watchdogs-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/wireguard/tunnels": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing WireGuard Tunnels.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: WireGuardTunnel<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-tunnels-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/wireguard/peers": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing WireGuard Peers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: WireGuardPeer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-wireguard-peers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/ipsec/phase1s": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing IPsec Phase 1s.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: IPsecPhase1<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-ipsec-phase1s-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/vpn/openvpn/clients": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing OpenVPN Clients.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: OpenVPNClient<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-vpn-openvpn-clients-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
     }
   }
 }

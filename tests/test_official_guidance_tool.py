@@ -540,11 +540,15 @@ def test_no_new_capability_enum_member_was_added_for_guidance():
     Capability.VPN_WIREGUARD_SETTINGS_READ for the new
     pfsense_get_vpn_wireguard_settings READ tool, now 88 after
     POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md added
-    Capability.SERVICES_HAPROXY_READ for the 14 new HAProxy READ tools --
-    a legitimate new pfSense-endpoint capability, not a guidance-tool
-    capability (this test's own actual concern, checked by the second
-    assertion below)."""
-    assert len(READ_CAPABILITIES) == 88
+    Capability.SERVICES_HAPROXY_READ for the 14 new HAProxy READ tools,
+    now 93 after POST_V1_1_FINAL_FIVE_READ_PROMOTION.md added 5 new
+    pfSense-endpoint capabilities (SERVICES_SERVICE_WATCHDOG_READ,
+    VPN_WIREGUARD_TUNNELS_READ, VPN_WIREGUARD_PEERS_READ,
+    VPN_IPSEC_PHASE1_READ, VPN_OPENVPN_CLIENT_READ) for the 5 promoted
+    READ tools -- legitimate new pfSense-endpoint capabilities, not
+    guidance-tool capabilities (this test's own actual concern, checked
+    by the second assertion below)."""
+    assert len(READ_CAPABILITIES) == 93
     assert all(not name.startswith("GUIDANCE") for name in (c.name for c in Capability))
 
 
@@ -678,7 +682,7 @@ def test_public_contract_places_guidance_tool_in_its_own_class():
     assert tool_classes["pfsense_get_api_guidance"] == "guidance"
     read_count = sum(1 for cls in tool_classes.values() if cls == "read")
     guidance_count = sum(1 for cls in tool_classes.values() if cls == "guidance")
-    assert read_count == 115
+    assert read_count == 120
     assert guidance_count == 2
 
 

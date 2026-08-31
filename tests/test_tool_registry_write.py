@@ -178,11 +178,12 @@ def test_all_three_conditions_via_full_register_all_still_exactly_115_read_plus_
         if fn.__name__
         not in ("set_firewall_alias_description_v1", "pfsense_get_official_guidance", "pfsense_get_api_guidance")
     }
-    assert len(read_names) == 115
+    assert len(read_names) == 120
     assert _write_tool_names(mcp) == {"set_firewall_alias_description_v1"}
-    # 115 pfSense READ (101 + 14 HAProxy, POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md)
+    # 120 pfSense READ (101 + 14 HAProxy, POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md;
+    # + 5 POST_V1_1_FINAL_FIVE_READ_PROMOTION.md, 2026-08-31 OWNER GO ceremony)
     # + 2 guidance tools + 1 WRITE tool.
-    assert len(mcp.registered) == 118
+    assert len(mcp.registered) == 123
 
 
 def test_all_three_conditions_produce_no_additional_write_capability_or_tool(monkeypatch):

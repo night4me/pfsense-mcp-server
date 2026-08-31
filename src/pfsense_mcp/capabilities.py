@@ -95,6 +95,11 @@ class Capability(Enum):
     VPN_WIREGUARD_TUNNEL_ADDRESS_READ = auto()
     VPN_WIREGUARD_SETTINGS_READ = auto()
     SERVICES_HAPROXY_READ = auto()
+    SERVICES_SERVICE_WATCHDOG_READ = auto()
+    VPN_WIREGUARD_TUNNELS_READ = auto()
+    VPN_WIREGUARD_PEERS_READ = auto()
+    VPN_IPSEC_PHASE1_READ = auto()
+    VPN_OPENVPN_CLIENT_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -196,6 +201,11 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.VPN_WIREGUARD_TUNNEL_ADDRESS_READ,
         Capability.VPN_WIREGUARD_SETTINGS_READ,
         Capability.SERVICES_HAPROXY_READ,
+        Capability.SERVICES_SERVICE_WATCHDOG_READ,
+        Capability.VPN_WIREGUARD_TUNNELS_READ,
+        Capability.VPN_WIREGUARD_PEERS_READ,
+        Capability.VPN_IPSEC_PHASE1_READ,
+        Capability.VPN_OPENVPN_CLIENT_READ,
     }
 )
 

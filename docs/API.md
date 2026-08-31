@@ -2,7 +2,7 @@
 
 Version: 1.0.0 release state
 Profile: `auditor`  
-Registered tools: 115 READ, 2 guidance, 0 WRITE
+Registered tools: 120 READ, 2 guidance, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v1.0.0.json`. It records tool names,
@@ -571,6 +571,20 @@ Common parameters:
   omitted by default.
 - **Example:** `{"name":"pfsense_get_status_ipsec_child_sas","arguments":{}}`
 
+### `pfsense_get_vpn_ipsec_phase1s`
+
+- **Purpose:** List IPsec Phase 1 (IKE) tunnel configurations: IKE
+  type/mode/protocol, interface, authentication method, rekey/reauth/
+  lifetime timing, and NAT-traversal/DPD settings.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[IPsecPhase1]`.
+- **Security:** Literal remote gateway address and local/remote tunnel
+  identity values are omitted by default. The pre-shared key is never
+  returned under any argument; the nested encryption-algorithm list is
+  excluded (use `pfsense_get_vpn_ipsec_phase1_encryptions`).
+- **Example:** `{"name":"pfsense_get_vpn_ipsec_phase1s","arguments":{}}`
+
 ### `pfsense_get_vpn_ipsec_phase2s`
 
 - **Purpose:** List IPsec Phase 2 entries: mode, protocol,
@@ -627,6 +641,32 @@ Common parameters:
   argument.
 - **Example:** `{"name":"pfsense_get_status_wireguard_peers","arguments":{}}`
 
+### `pfsense_get_vpn_wireguard_tunnels`
+
+- **Purpose:** List WireGuard tunnel configurations: name, enabled
+  state, description, listen port, public key, and MTU. Requires
+  pfSense-pkg-WireGuard.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[WireGuardTunnel]`.
+- **Security:** The private key is never returned under any argument;
+  the embedded addresses list is excluded (use
+  `pfsense_get_vpn_wireguard_tunnel_addresses`).
+- **Example:** `{"name":"pfsense_get_vpn_wireguard_tunnels","arguments":{}}`
+
+### `pfsense_get_vpn_wireguard_peers`
+
+- **Purpose:** List WireGuard peer configurations: enabled state,
+  parent tunnel, listen port, description, persistent-keepalive
+  interval, and public key. Requires pfSense-pkg-WireGuard.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[WireGuardPeer]`.
+- **Security:** Literal endpoint address is omitted by default. The
+  pre-shared key is never returned under any argument; the allowed-IPs
+  list is excluded (already exposed, redacted, via
+  `pfsense_get_status_wireguard_peers`).
+- **Example:** `{"name":"pfsense_get_vpn_wireguard_peers","arguments":{}}`
+
 ### `pfsense_get_status_openvpn_servers`
 
 - **Purpose:** List live OpenVPN server status: mode, port, and nested
@@ -682,6 +722,21 @@ Common parameters:
   `caref`/`certref` are CA/certificate references, never certificate or
   key material.
 - **Example:** `{"name":"pfsense_get_vpn_openvpn_servers","arguments":{}}`
+
+### `pfsense_get_vpn_openvpn_clients`
+
+- **Purpose:** List OpenVPN client configurations: mode, protocol,
+  device mode, ports, ciphers/digest, certificate references, and
+  keepalive/ping settings.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[OpenVPNClient]`.
+- **Security:** Literal server/proxy addresses, tunnel network(s), and
+  remote network(s) are omitted by default. The auth password, proxy
+  password, and TLS-auth/crypt key material are never returned under
+  any argument; free-text custom options are excluded entirely
+  (raw-config-injection risk).
+- **Example:** `{"name":"pfsense_get_vpn_openvpn_clients","arguments":{}}`
 
 ### `pfsense_get_vpn_openvpn_csos`
 
@@ -1140,6 +1195,17 @@ Common parameters:
 - **Returns:** `list[ServiceStatus]`.
 - **Security:** Service inventory reveals attack surface and outage state.
 - **Example:** `{"name":"pfsense_get_service_status","arguments":{"limit":30}}`
+
+### `pfsense_get_services_service_watchdogs`
+
+- **Purpose:** List Service Watchdog entries: which services are
+  monitored, whether notifications are sent, and whether each entry is
+  enabled. Requires pfSense-pkg-Service_Watchdog.
+- **Parameters:** `limit: integer = 100`.
+- **Returns:** `list[ServiceWatchdog]`.
+- **Security:** No secret material or address data; all 4 fields are
+  plain scalar toggles/labels.
+- **Example:** `{"name":"pfsense_get_services_service_watchdogs","arguments":{}}`
 
 ### `pfsense_get_email_notification_settings`
 

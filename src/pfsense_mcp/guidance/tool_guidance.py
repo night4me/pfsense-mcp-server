@@ -287,11 +287,16 @@ _TOOL_RESULT_KIND: dict[str, ResultKind] = {
     "pfsense_get_system_webgui_settings": ResultKind.CONFIGURATION,
     "pfsense_get_user_groups": ResultKind.CONFIGURATION,
     "pfsense_get_users": ResultKind.CONFIGURATION,
+    "pfsense_get_vpn_ipsec_phase1s": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_ipsec_phase2s": ResultKind.CONFIGURATION,
+    "pfsense_get_vpn_openvpn_clients": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_openvpn_csos": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_openvpn_servers": ResultKind.CONFIGURATION,
+    "pfsense_get_vpn_wireguard_peers": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_wireguard_tunnel_addresses": ResultKind.CONFIGURATION,
+    "pfsense_get_vpn_wireguard_tunnels": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_wireguard_settings": ResultKind.CONFIGURATION,
+    "pfsense_get_services_service_watchdogs": ResultKind.CONFIGURATION,
 }
 
 #: Tool-specific caveats, added only where the generic per-kind template
