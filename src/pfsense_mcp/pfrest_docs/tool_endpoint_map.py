@@ -10,7 +10,7 @@ exact match against this dict. The production runtime path is a plain
 dict lookup, never AST parsing -- this file exists so that lookup never
 has to read/parse this project's own source tree at MCP call time.
 
-100 of the 101 public READ tools appear here; the missing one is
+114 of the 115 public READ tools appear here; the missing one is
 `pfsense_mcp_info` (`LOCAL_ONLY_TOOL_NAMES` in `scripts/public_contract.py`),
 which has no pfSense API call at all and therefore no endpoint to map.
 
@@ -74,6 +74,20 @@ TOOL_ENDPOINT_PATHS: dict[str, tuple[str, str]] = {
     "pfsense_get_freeradius_eap": ("/services/freeradius/eap", "GET"),
     "pfsense_get_gateway_status": ("/status/gateways", "GET"),
     "pfsense_get_gateways": ("/routing/gateways", "GET"),
+    "pfsense_get_haproxy_apply_status": ("/services/haproxy/apply", "GET"),
+    "pfsense_get_haproxy_backend_acls": ("/services/haproxy/backend/acls", "GET"),
+    "pfsense_get_haproxy_backend_errorfiles": ("/services/haproxy/backend/errorfiles", "GET"),
+    "pfsense_get_haproxy_backend_servers": ("/services/haproxy/backend/servers", "GET"),
+    "pfsense_get_haproxy_backends": ("/services/haproxy/backends", "GET"),
+    "pfsense_get_haproxy_dns_resolvers": ("/services/haproxy/settings/dns_resolvers", "GET"),
+    "pfsense_get_haproxy_email_mailers": ("/services/haproxy/settings/email_mailers", "GET"),
+    "pfsense_get_haproxy_files": ("/services/haproxy/files", "GET"),
+    "pfsense_get_haproxy_frontend_acls": ("/services/haproxy/frontend/acls", "GET"),
+    "pfsense_get_haproxy_frontend_addresses": ("/services/haproxy/frontend/addresses", "GET"),
+    "pfsense_get_haproxy_frontend_certificates": ("/services/haproxy/frontend/certificates", "GET"),
+    "pfsense_get_haproxy_frontend_error_files": ("/services/haproxy/frontend/error_files", "GET"),
+    "pfsense_get_haproxy_frontends": ("/services/haproxy/frontends", "GET"),
+    "pfsense_get_haproxy_settings": ("/services/haproxy/settings", "GET"),
     "pfsense_get_interface_apply_status": ("/interface/apply", "GET"),
     "pfsense_get_interface_available_interfaces": ("/interface/available_interfaces", "GET"),
     "pfsense_get_interface_bridges": ("/interface/bridges", "GET"),

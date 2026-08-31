@@ -6790,6 +6790,2315 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_apply_status",
+      "description": "Get pfSense HAProxy pending-changes status: whether the\n        running configuration matches the last-applied configuration.\n        Requires pfSense-pkg-haproxy. Read-only.",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/apply",
+        "symbol": "HAPROXY_APPLY",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_haproxy_apply_statusArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_apply_status",
+      "output_schema": {
+        "properties": {
+          "applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied"
+          }
+        },
+        "required": [
+          "applied"
+        ],
+        "title": "HAProxyApplyStatus",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_backend_acls",
+      "description": "List pfSense HAProxy backend ACLs (match conditions) across\n        all backends: name, expression type, comparison value.\n        Requires pfSense-pkg-haproxy. Read-only. Note: when\n        `expression` is `custom`, `value` is arbitrary HAProxy\n        ACL-condition syntax rather than a bounded comparison string.\n\n        limit: maximum number of ACLs to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/backend/acls",
+        "symbol": "HAPROXY_BACKEND_ACLS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_backend_aclsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_backend_acls",
+      "output_schema": {
+        "$defs": {
+          "HAProxyBackendAcl": {
+            "properties": {
+              "casesensitive": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Casesensitive"
+              },
+              "expression": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Expression"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "not_field": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Not Field"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Value"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "name",
+              "expression",
+              "value",
+              "casesensitive",
+              "not_field"
+            ],
+            "title": "HAProxyBackendAcl",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyBackendAcl"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_backend_aclsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_backend_errorfiles",
+      "description": "List pfSense HAProxy backend custom error-file associations\n        across all backends: HTTP status code and the associated file\n        name. Requires pfSense-pkg-haproxy. Read-only. Does not\n        include the error file's own content (use\n        pfsense_get_haproxy_files for the file inventory).\n\n        limit: maximum number of associations to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/backend/errorfiles",
+        "symbol": "HAPROXY_BACKEND_ERRORFILES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_backend_errorfilesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_backend_errorfiles",
+      "output_schema": {
+        "$defs": {
+          "HAProxyBackendErrorFile": {
+            "properties": {
+              "errorcode": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Errorcode"
+              },
+              "errorfile": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Errorfile"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "errorcode",
+              "errorfile"
+            ],
+            "title": "HAProxyBackendErrorFile",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyBackendErrorFile"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_backend_errorfilesOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_backend_servers",
+      "description": "List pfSense HAProxy backend servers across all backends:\n        name, status, address, port, weight, and SSL settings.\n        Requires pfSense-pkg-haproxy. Read-only. Does not include each\n        server's custom pass-through config.\n\n        limit: maximum number of servers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/backend/servers",
+        "symbol": "HAPROXY_BACKEND_SERVERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_backend_serversArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_backend_servers",
+      "output_schema": {
+        "$defs": {
+          "HAProxyBackendServer": {
+            "properties": {
+              "address": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Address"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              },
+              "port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Port"
+              },
+              "serverid": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Serverid"
+              },
+              "ssl": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ssl"
+              },
+              "sslserververify": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Sslserververify"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Status"
+              },
+              "weight": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Weight"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "name",
+              "status",
+              "address",
+              "port",
+              "weight",
+              "ssl",
+              "sslserververify",
+              "serverid"
+            ],
+            "title": "HAProxyBackendServer",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyBackendServer"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_backend_serversOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_backends",
+      "description": "List pfSense HAProxy backends: name, load-balancing\n        algorithm, health-check and persistence settings. Requires\n        pfSense-pkg-haproxy. Read-only. Does not include each\n        backend's stats password, dynamic-cookie key, custom\n        pass-through config, or nested servers/ACLs/actions/error-file\n        associations (use the dedicated pfsense_get_haproxy_backend_*\n        tools for those).\n\n        limit: maximum number of backends to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/backends",
+        "symbol": "HAPROXY_BACKENDS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_backendsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_backends",
+      "output_schema": {
+        "$defs": {
+          "HAProxyBackend": {
+            "properties": {
+              "agent_checks": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Agent Checks"
+              },
+              "agent_inter": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Agent Inter"
+              },
+              "agent_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Agent Port"
+              },
+              "balance": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Balance"
+              },
+              "balance_uridepth": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Balance Uridepth"
+              },
+              "balance_urilen": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Balance Urilen"
+              },
+              "balance_uriwhole": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Balance Uriwhole"
+              },
+              "check_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Check Type"
+              },
+              "checkinter": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Checkinter"
+              },
+              "connection_timeout": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Connection Timeout"
+              },
+              "cookie_attribute_secure": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cookie Attribute Secure"
+              },
+              "email_level": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Email Level"
+              },
+              "email_to": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Email To"
+              },
+              "haproxy_cookie_domains": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Haproxy Cookie Domains"
+              },
+              "haproxy_cookie_maxidle": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Haproxy Cookie Maxidle"
+              },
+              "haproxy_cookie_maxlife": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Haproxy Cookie Maxlife"
+              },
+              "httpcheck_method": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Httpcheck Method"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "log_health_checks": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Log Health Checks"
+              },
+              "monitor_domain": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Monitor Domain"
+              },
+              "monitor_httpversion": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Monitor Httpversion"
+              },
+              "monitor_uri": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Monitor Uri"
+              },
+              "monitor_username": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Monitor Username"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "persist_cookie_cachable": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Cachable"
+              },
+              "persist_cookie_enabled": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Enabled"
+              },
+              "persist_cookie_httponly": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Httponly"
+              },
+              "persist_cookie_mode": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Mode"
+              },
+              "persist_cookie_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Name"
+              },
+              "persist_cookie_postonly": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Postonly"
+              },
+              "persist_cookie_secure": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Cookie Secure"
+              },
+              "persist_stick_cookiename": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Stick Cookiename"
+              },
+              "persist_stick_expire": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Stick Expire"
+              },
+              "persist_stick_length": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Stick Length"
+              },
+              "persist_stick_tablesize": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Stick Tablesize"
+              },
+              "persist_sticky_type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Persist Sticky Type"
+              },
+              "retries": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Retries"
+              },
+              "server_timeout": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Server Timeout"
+              },
+              "stats_admin": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Admin"
+              },
+              "stats_desc": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Desc"
+              },
+              "stats_enabled": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Enabled"
+              },
+              "stats_node": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Node"
+              },
+              "stats_realm": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Realm"
+              },
+              "stats_refresh": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Refresh"
+              },
+              "stats_scope": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Scope"
+              },
+              "stats_uri": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Uri"
+              },
+              "stats_username": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Stats Username"
+              },
+              "strict_transport_security": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Strict Transport Security"
+              },
+              "transparent_clientip": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transparent Clientip"
+              },
+              "transparent_interface": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Transparent Interface"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "balance",
+              "balance_urilen",
+              "balance_uridepth",
+              "balance_uriwhole",
+              "connection_timeout",
+              "server_timeout",
+              "retries",
+              "check_type",
+              "checkinter",
+              "log_health_checks",
+              "httpcheck_method",
+              "monitor_uri",
+              "monitor_httpversion",
+              "monitor_username",
+              "monitor_domain",
+              "agent_checks",
+              "agent_port",
+              "agent_inter",
+              "persist_cookie_enabled",
+              "persist_cookie_name",
+              "persist_cookie_mode",
+              "persist_cookie_cachable",
+              "persist_cookie_postonly",
+              "persist_cookie_httponly",
+              "persist_cookie_secure",
+              "haproxy_cookie_maxidle",
+              "haproxy_cookie_maxlife",
+              "haproxy_cookie_domains",
+              "persist_sticky_type",
+              "persist_stick_expire",
+              "persist_stick_tablesize",
+              "persist_stick_cookiename",
+              "persist_stick_length",
+              "email_level",
+              "email_to",
+              "stats_enabled",
+              "stats_uri",
+              "stats_scope",
+              "stats_realm",
+              "stats_username",
+              "stats_admin",
+              "stats_node",
+              "stats_desc",
+              "stats_refresh",
+              "strict_transport_security",
+              "cookie_attribute_secure",
+              "transparent_clientip",
+              "transparent_interface"
+            ],
+            "title": "HAProxyBackend",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyBackend"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_backendsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_dns_resolvers",
+      "description": "List pfSense HAProxy DNS resolvers: name, server address,\n        and port. Requires pfSense-pkg-haproxy. Read-only. No\n        credential fields exist on this resource.\n\n        limit: maximum number of resolvers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/settings/dns_resolvers",
+        "symbol": "HAPROXY_SETTINGS_DNS_RESOLVERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_dns_resolversArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_dns_resolvers",
+      "output_schema": {
+        "$defs": {
+          "HAProxyDnsResolver": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              },
+              "port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Port"
+              },
+              "server": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Server"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "name",
+              "server",
+              "port"
+            ],
+            "title": "HAProxyDnsResolver",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyDnsResolver"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_dns_resolversOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_email_mailers",
+      "description": "List pfSense HAProxy email mailers (SMTP relay targets for\n        alerts): name, mail-server address, and port. Requires\n        pfSense-pkg-haproxy. Read-only. No SMTP authentication\n        credential fields exist on this resource.\n\n        limit: maximum number of mailers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/settings/email_mailers",
+        "symbol": "HAPROXY_SETTINGS_EMAIL_MAILERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_email_mailersArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_email_mailers",
+      "output_schema": {
+        "$defs": {
+          "HAProxyEmailMailer": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "mailserver": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mailserver"
+              },
+              "mailserverport": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Mailserverport"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "name",
+              "mailserver",
+              "mailserverport"
+            ],
+            "title": "HAProxyEmailMailer",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyEmailMailer"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_email_mailersOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_files",
+      "description": "List pfSense HAProxy managed files (Lua scripts, custom\n        error files, other uploaded files): name and type only.\n        Requires pfSense-pkg-haproxy. Read-only. Does not include file\n        content.\n\n        limit: maximum number of files to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/files",
+        "symbol": "HAPROXY_FILES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_filesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_files",
+      "output_schema": {
+        "$defs": {
+          "HAProxyFile": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Type"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "type"
+            ],
+            "title": "HAProxyFile",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyFile"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_filesOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_frontend_acls",
+      "description": "List pfSense HAProxy frontend ACLs (match conditions)\n        across all frontends: name, expression type, comparison value.\n        Requires pfSense-pkg-haproxy. Read-only. Note: when\n        `expression` is `custom`, `value` is arbitrary HAProxy\n        ACL-condition syntax rather than a bounded comparison string.\n\n        limit: maximum number of ACLs to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/frontend/acls",
+        "symbol": "HAPROXY_FRONTEND_ACLS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_frontend_aclsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_frontend_acls",
+      "output_schema": {
+        "$defs": {
+          "HAProxyFrontendAcl": {
+            "properties": {
+              "casesensitive": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Casesensitive"
+              },
+              "expression": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Expression"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "not_field": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Not Field"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Value"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "name",
+              "expression",
+              "value",
+              "casesensitive",
+              "not_field"
+            ],
+            "title": "HAProxyFrontendAcl",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyFrontendAcl"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_frontend_aclsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_frontend_addresses",
+      "description": "List pfSense HAProxy frontend listen addresses across all\n        frontends: interface/address selection, port, and whether SSL\n        offloading is enabled. Requires pfSense-pkg-haproxy. Read-only.\n        Does not include each address's custom pass-through config.\n\n        limit: maximum number of addresses to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/frontend/addresses",
+        "symbol": "HAPROXY_FRONTEND_ADDRESSES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_frontend_addressesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_frontend_addresses",
+      "output_schema": {
+        "$defs": {
+          "HAProxyFrontendAddress": {
+            "properties": {
+              "extaddr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Extaddr"
+              },
+              "extaddr_custom": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Extaddr Custom"
+              },
+              "extaddr_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Extaddr Port"
+              },
+              "extaddr_ssl": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Extaddr Ssl"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "extaddr",
+              "extaddr_custom",
+              "extaddr_port",
+              "extaddr_ssl"
+            ],
+            "title": "HAProxyFrontendAddress",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyFrontendAddress"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_frontend_addressesOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_frontend_certificates",
+      "description": "List pfSense HAProxy frontend SNI certificate associations\n        across all frontends: a reference ID into the pfSense\n        certificate store per association. Requires\n        pfSense-pkg-haproxy. Read-only. Does not include certificate\n        content/private key material (use pfsense_get_system_certificates\n        for that store).\n\n        limit: maximum number of associations to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/frontend/certificates",
+        "symbol": "HAPROXY_FRONTEND_CERTIFICATES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_frontend_certificatesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_frontend_certificates",
+      "output_schema": {
+        "$defs": {
+          "HAProxyFrontendCertificate": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              },
+              "ssl_certificate": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ssl Certificate"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "ssl_certificate"
+            ],
+            "title": "HAProxyFrontendCertificate",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyFrontendCertificate"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_frontend_certificatesOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_frontend_error_files",
+      "description": "List pfSense HAProxy frontend custom error-file\n        associations across all frontends: HTTP status code and the\n        associated file name. Requires pfSense-pkg-haproxy. Read-only.\n        Does not include the error file's own content (use\n        pfsense_get_haproxy_files for the file inventory).\n\n        limit: maximum number of associations to return (1-100,\n        default 100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/frontend/error_files",
+        "symbol": "HAPROXY_FRONTEND_ERROR_FILES",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_frontend_error_filesArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_frontend_error_files",
+      "output_schema": {
+        "$defs": {
+          "HAProxyFrontendErrorFile": {
+            "properties": {
+              "errorcode": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Errorcode"
+              },
+              "errorfile": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Errorfile"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "parent_id": {
+                "title": "Parent Id",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "parent_id",
+              "errorcode",
+              "errorfile"
+            ],
+            "title": "HAProxyFrontendErrorFile",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyFrontendErrorFile"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_frontend_error_filesOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_frontends",
+      "description": "List pfSense HAProxy frontends: name, description, status,\n        type, backend pool association, and logging settings.\n        Requires pfSense-pkg-haproxy. Read-only. Does not include\n        custom pass-through config or nested\n        addresses/ACLs/actions/certificates/error-file associations\n        (use the dedicated pfsense_get_haproxy_frontend_* tools for\n        those).\n\n        limit: maximum number of frontends to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/frontends",
+        "symbol": "HAPROXY_FRONTENDS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_haproxy_frontendsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_frontends",
+      "output_schema": {
+        "$defs": {
+          "HAProxyFrontend": {
+            "properties": {
+              "backend_serverpool": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Backend Serverpool"
+              },
+              "client_timeout": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Client Timeout"
+              },
+              "descr": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Descr"
+              },
+              "dontlog_normal": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dontlog Normal"
+              },
+              "dontlognull": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Dontlognull"
+              },
+              "forwardfor": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Forwardfor"
+              },
+              "httpclose": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Httpclose"
+              },
+              "id": {
+                "title": "Id",
+                "type": "integer"
+              },
+              "log_detailed": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Log Detailed"
+              },
+              "log_separate_errors": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Log Separate Errors"
+              },
+              "max_connections": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Max Connections"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Name"
+              },
+              "socket_stats": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Socket Stats"
+              },
+              "ssloffloadcert": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ssloffloadcert"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Status"
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Type"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "descr",
+              "status",
+              "max_connections",
+              "type",
+              "backend_serverpool",
+              "socket_stats",
+              "dontlognull",
+              "dontlog_normal",
+              "log_separate_errors",
+              "log_detailed",
+              "client_timeout",
+              "forwardfor",
+              "httpclose",
+              "ssloffloadcert"
+            ],
+            "title": "HAProxyFrontend",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/HAProxyFrontend"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_haproxy_frontendsOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "capability": "SERVICES_HAPROXY_READ",
+      "client_method": "get_haproxy_settings",
+      "description": "Get pfSense HAProxy global settings: enabled state,\n        connection/thread limits, stats and DNS-resolver timing, and\n        logging/SSL-compatibility settings. Requires\n        pfSense-pkg-haproxy. Read-only. `advanced` (raw\n        config-injection-risk free text) and the nested DNS-resolver/\n        email-mailer lists are deliberately excluded (use\n        pfsense_get_haproxy_dns_resolvers/pfsense_get_haproxy_email_mailers\n        instead).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/services/haproxy/settings",
+        "symbol": "HAPROXY_SETTINGS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {},
+        "title": "pfsense_get_haproxy_settingsArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_haproxy_settings",
+      "output_schema": {
+        "properties": {
+          "carpdev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carpdev"
+          },
+          "email_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email From"
+          },
+          "email_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Level"
+          },
+          "email_myhostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Myhostname"
+          },
+          "email_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email To"
+          },
+          "enable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enable"
+          },
+          "enablesync": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enablesync"
+          },
+          "hard_stop_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hard Stop After"
+          },
+          "localstats_refreshtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localstats Refreshtime"
+          },
+          "localstats_sticktable_refreshtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localstats Sticktable Refreshtime"
+          },
+          "localstatsport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localstatsport"
+          },
+          "log_send_hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Send Hostname"
+          },
+          "logfacility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logfacility"
+          },
+          "loglevel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loglevel"
+          },
+          "maxconn": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxconn"
+          },
+          "nbthread": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nbthread"
+          },
+          "remotesyslog": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remotesyslog"
+          },
+          "resolver_holdvalid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolver Holdvalid"
+          },
+          "resolver_retries": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolver Retries"
+          },
+          "resolver_timeoutretry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolver Timeoutretry"
+          },
+          "sslcompatibilitymode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sslcompatibilitymode"
+          },
+          "ssldefaultdhparam": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssldefaultdhparam"
+          },
+          "terminate_on_reload": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminate On Reload"
+          }
+        },
+        "required": [
+          "enable",
+          "maxconn",
+          "nbthread",
+          "terminate_on_reload",
+          "hard_stop_after",
+          "carpdev",
+          "localstatsport",
+          "localstats_refreshtime",
+          "localstats_sticktable_refreshtime",
+          "remotesyslog",
+          "logfacility",
+          "loglevel",
+          "log_send_hostname",
+          "resolver_retries",
+          "resolver_timeoutretry",
+          "resolver_holdvalid",
+          "email_level",
+          "email_myhostname",
+          "email_from",
+          "email_to",
+          "sslcompatibilitymode",
+          "ssldefaultdhparam",
+          "enablesync"
+        ],
+        "title": "HAProxySettings",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "INTERFACE_APPLY_READ",
       "client_method": "get_interface_apply_status",
       "description": "Get pfSense pending interface change status: whether all\n        interfaces are applied, and which (if any) have pending\n        changes. Read-only. Contains no identifying metadata beyond\n        interface names.",

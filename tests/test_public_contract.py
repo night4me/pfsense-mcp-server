@@ -24,11 +24,11 @@ def test_public_contract_is_complete_and_security_preserving():
     # 101 pfSense READ tools + 2 guidance tools (pfsense_get_official_guidance,
     # owner-authorized 2026-08-22) -- accounted for separately below, never
     # blended into "103 READ tools" (GUIDANCE_MCP_EXPOSURE_QUALIFICATION_2026-08-22.md).
-    assert len(tools) == 103
-    assert len({tool["name"] for tool in tools}) == 103
+    assert len(tools) == 117
+    assert len({tool["name"] for tool in tools}) == 117
 
     read_tools = [tool for tool in tools if tool["tool_class"] == "read"]
-    assert len(read_tools) == 101
+    assert len(read_tools) == 115
     assert all(tool["name"].startswith("pfsense_get_") or tool["name"] == "pfsense_mcp_info" for tool in read_tools)
     assert all(tool["capability"].endswith("_READ") for tool in read_tools)
 

@@ -535,13 +535,16 @@ def test_malicious_registry_summary_is_returned_as_inert_data_through_the_real_t
 def test_no_new_capability_enum_member_was_added_for_guidance():
     """READ_CAPABILITIES' own size is the authoritative, source-derived
     check -- unchanged by this task. Was 86 (matching
-    GUIDANCE_COVERAGE_MAPPING_2026-08-22.md's own count), now 87 after
+    GUIDANCE_COVERAGE_MAPPING_2026-08-22.md's own count), then 87 after
     POST_V1_1_FINAL_READ_COVERAGE_AUDIT.md added
     Capability.VPN_WIREGUARD_SETTINGS_READ for the new
-    pfsense_get_vpn_wireguard_settings READ tool -- a legitimate new
-    pfSense-endpoint capability, not a guidance-tool capability (this
-    test's own actual concern, checked by the second assertion below)."""
-    assert len(READ_CAPABILITIES) == 87
+    pfsense_get_vpn_wireguard_settings READ tool, now 88 after
+    POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md added
+    Capability.SERVICES_HAPROXY_READ for the 14 new HAProxy READ tools --
+    a legitimate new pfSense-endpoint capability, not a guidance-tool
+    capability (this test's own actual concern, checked by the second
+    assertion below)."""
+    assert len(READ_CAPABILITIES) == 88
     assert all(not name.startswith("GUIDANCE") for name in (c.name for c in Capability))
 
 
@@ -675,7 +678,7 @@ def test_public_contract_places_guidance_tool_in_its_own_class():
     assert tool_classes["pfsense_get_api_guidance"] == "guidance"
     read_count = sum(1 for cls in tool_classes.values() if cls == "read")
     guidance_count = sum(1 for cls in tool_classes.values() if cls == "guidance")
-    assert read_count == 101
+    assert read_count == 115
     assert guidance_count == 2
 
 

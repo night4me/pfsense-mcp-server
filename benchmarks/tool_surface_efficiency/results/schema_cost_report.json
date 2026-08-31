@@ -2,10 +2,10 @@
   "deterministic_across_runs": true,
   "distribution": {
     "max_tool_bytes": 3059,
-    "mean_tool_bytes": 516.4,
-    "median_tool_bytes": 442.5,
+    "mean_tool_bytes": 525.1,
+    "median_tool_bytes": 486,
     "min_tool_bytes": 196,
-    "stdev_tool_bytes": 314.1
+    "stdev_tool_bytes": 289.8
   },
   "largest_10": [
     {
@@ -80,12 +80,12 @@
     }
   ],
   "latency": {
-    "startup_to_initialized_seconds": 1.7333,
-    "tools_list_seconds": 0.0641
+    "startup_to_initialized_seconds": 2.0512,
+    "tools_list_seconds": 0.0909
   },
   "memory": {
     "note": "Best-effort RUSAGE_CHILDREN peak RSS (KB) across the whole benchmark process's child processes measured so far -- Linux-specific, approximate (includes Python interpreter startup, not isolated to the MCP server alone).",
-    "ru_maxrss_kb": 81456
+    "ru_maxrss_kb": 83376
   },
   "methodology": {
     "byte_counting": "UTF-8 encoded length of the canonical (sorted-key, no-whitespace) JSON serialization of each tool/the full tools array -- an exact, reproducible byte count, not an estimate.",
@@ -106,13 +106,6 @@
       "name": "pfsense_get_system_console",
       "name_bytes": 28,
       "total_tool_bytes": 235
-    },
-    {
-      "description_bytes": 101,
-      "input_schema_bytes": 78,
-      "name": "pfsense_get_bind_settings",
-      "name_bytes": 27,
-      "total_tool_bytes": 247
     },
     {
       "description_bytes": 71,
@@ -276,6 +269,13 @@
       "total_tool_bytes": 334
     },
     {
+      "description_bytes": 174,
+      "input_schema_bytes": 85,
+      "name": "pfsense_get_haproxy_apply_status",
+      "name_bytes": 34,
+      "total_tool_bytes": 336
+    },
+    {
       "description_bytes": 150,
       "input_schema_bytes": 97,
       "name": "pfsense_get_firewall_virtual_ip_apply_status",
@@ -311,6 +311,13 @@
       "total_tool_bytes": 365
     },
     {
+      "description_bytes": 211,
+      "input_schema_bytes": 83,
+      "name": "pfsense_get_bind_sync_settings",
+      "name_bytes": 32,
+      "total_tool_bytes": 370
+    },
+    {
       "description_bytes": 206,
       "input_schema_bytes": 86,
       "name": "pfsense_get_firewall_apply_status",
@@ -330,6 +337,13 @@
       "name": "pfsense_get_interface_apply_status",
       "name_bytes": 36,
       "total_tool_bytes": 380
+    },
+    {
+      "description_bytes": 244,
+      "input_schema_bytes": 78,
+      "name": "pfsense_get_bind_settings",
+      "name_bytes": 27,
+      "total_tool_bytes": 393
     },
     {
       "description_bytes": 196,
@@ -430,6 +444,13 @@
       "total_tool_bytes": 439
     },
     {
+      "description_bytes": 225,
+      "input_schema_bytes": 138,
+      "name": "pfsense_get_bind_access_lists",
+      "name_bytes": 31,
+      "total_tool_bytes": 440
+    },
+    {
       "description_bytes": 210,
       "input_schema_bytes": 146,
       "name": "pfsense_get_dns_resolver_access_lists",
@@ -472,11 +493,25 @@
       "total_tool_bytes": 468
     },
     {
+      "description_bytes": 253,
+      "input_schema_bytes": 142,
+      "name": "pfsense_get_haproxy_dns_resolvers",
+      "name_bytes": 35,
+      "total_tool_bytes": 476
+    },
+    {
       "description_bytes": 232,
       "input_schema_bytes": 182,
       "name": "pfsense_get_system_status",
       "name_bytes": 27,
       "total_tool_bytes": 486
+    },
+    {
+      "description_bytes": 287,
+      "input_schema_bytes": 134,
+      "name": "pfsense_get_haproxy_files",
+      "name_bytes": 27,
+      "total_tool_bytes": 495
     },
     {
       "description_bytes": 265,
@@ -507,6 +542,13 @@
       "total_tool_bytes": 511
     },
     {
+      "description_bytes": 315,
+      "input_schema_bytes": 131,
+      "name": "pfsense_get_bind_views",
+      "name_bytes": 24,
+      "total_tool_bytes": 517
+    },
+    {
       "description_bytes": 312,
       "input_schema_bytes": 133,
       "name": "pfsense_get_dhcp_servers",
@@ -526,6 +568,20 @@
       "name": "pfsense_get_system_certificate_authorities",
       "name_bytes": 44,
       "total_tool_bytes": 529
+    },
+    {
+      "description_bytes": 316,
+      "input_schema_bytes": 142,
+      "name": "pfsense_get_haproxy_email_mailers",
+      "name_bytes": 35,
+      "total_tool_bytes": 540
+    },
+    {
+      "description_bytes": 318,
+      "input_schema_bytes": 144,
+      "name": "pfsense_get_haproxy_backend_servers",
+      "name_bytes": 37,
+      "total_tool_bytes": 546
     },
     {
       "description_bytes": 298,
@@ -549,6 +605,20 @@
       "total_tool_bytes": 562
     },
     {
+      "description_bytes": 351,
+      "input_schema_bytes": 147,
+      "name": "pfsense_get_haproxy_frontend_addresses",
+      "name_bytes": 40,
+      "total_tool_bytes": 585
+    },
+    {
+      "description_bytes": 315,
+      "input_schema_bytes": 198,
+      "name": "pfsense_get_bind_zone_record",
+      "name_bytes": 30,
+      "total_tool_bytes": 590
+    },
+    {
       "description_bytes": 348,
       "input_schema_bytes": 157,
       "name": "pfsense_get_diagnostics_config_history_revisions",
@@ -561,6 +631,34 @@
       "name": "pfsense_get_firewall_rules",
       "name_bytes": 28,
       "total_tool_bytes": 604
+    },
+    {
+      "description_bytes": 451,
+      "input_schema_bytes": 81,
+      "name": "pfsense_get_haproxy_settings",
+      "name_bytes": 30,
+      "total_tool_bytes": 610
+    },
+    {
+      "description_bytes": 411,
+      "input_schema_bytes": 131,
+      "name": "pfsense_get_bind_zones",
+      "name_bytes": 24,
+      "total_tool_bytes": 615
+    },
+    {
+      "description_bytes": 394,
+      "input_schema_bytes": 141,
+      "name": "pfsense_get_haproxy_backend_acls",
+      "name_bytes": 34,
+      "total_tool_bytes": 617
+    },
+    {
+      "description_bytes": 396,
+      "input_schema_bytes": 142,
+      "name": "pfsense_get_haproxy_frontend_acls",
+      "name_bytes": 35,
+      "total_tool_bytes": 621
     },
     {
       "description_bytes": 338,
@@ -582,6 +680,20 @@
       "name": "pfsense_get_system_hasync",
       "name_bytes": 27,
       "total_tool_bytes": 624
+    },
+    {
+      "description_bytes": 389,
+      "input_schema_bytes": 147,
+      "name": "pfsense_get_haproxy_backend_errorfiles",
+      "name_bytes": 40,
+      "total_tool_bytes": 624
+    },
+    {
+      "description_bytes": 391,
+      "input_schema_bytes": 149,
+      "name": "pfsense_get_haproxy_frontend_error_files",
+      "name_bytes": 42,
+      "total_tool_bytes": 630
     },
     {
       "description_bytes": 291,
@@ -619,6 +731,13 @@
       "total_tool_bytes": 662
     },
     {
+      "description_bytes": 427,
+      "input_schema_bytes": 150,
+      "name": "pfsense_get_haproxy_frontend_certificates",
+      "name_bytes": 43,
+      "total_tool_bytes": 669
+    },
+    {
       "description_bytes": 328,
       "input_schema_bytes": 256,
       "name": "pfsense_get_firewall_nat_outbound_mappings",
@@ -631,6 +750,13 @@
       "name": "pfsense_get_vpn_ipsec_phase2s",
       "name_bytes": 31,
       "total_tool_bytes": 684
+    },
+    {
+      "description_bytes": 467,
+      "input_schema_bytes": 138,
+      "name": "pfsense_get_haproxy_frontends",
+      "name_bytes": 31,
+      "total_tool_bytes": 686
     },
     {
       "description_bytes": 350,
@@ -687,6 +813,13 @@
       "name": "pfsense_get_interface_gres",
       "name_bytes": 28,
       "total_tool_bytes": 705
+    },
+    {
+      "description_bytes": 491,
+      "input_schema_bytes": 137,
+      "name": "pfsense_get_haproxy_backends",
+      "name_bytes": 30,
+      "total_tool_bytes": 708
     },
     {
       "description_bytes": 369,
@@ -796,13 +929,6 @@
       "total_tool_bytes": 235
     },
     {
-      "description_bytes": 101,
-      "input_schema_bytes": 78,
-      "name": "pfsense_get_bind_settings",
-      "name_bytes": 27,
-      "total_tool_bytes": 247
-    },
-    {
       "description_bytes": 71,
       "input_schema_bytes": 130,
       "name": "pfsense_get_cron_jobs",
@@ -850,15 +976,22 @@
       "name": "pfsense_get_ssh_settings",
       "name_bytes": 26,
       "total_tool_bytes": 288
+    },
+    {
+      "description_bytes": 83,
+      "input_schema_bytes": 136,
+      "name": "pfsense_get_system_tunables",
+      "name_bytes": 29,
+      "total_tool_bytes": 289
     }
   ],
   "totals": {
-    "full_tools_list_payload_bytes": 50721,
-    "full_tools_list_payload_estimated_tokens": 12680,
-    "tool_count": 98,
-    "total_description_bytes": 26800,
-    "total_description_estimated_tokens": 6700,
-    "total_input_schema_bytes": 16008,
-    "total_input_schema_estimated_tokens": 4002
+    "full_tools_list_payload_bytes": 61561,
+    "full_tools_list_payload_estimated_tokens": 15390,
+    "tool_count": 117,
+    "total_description_bytes": 33525,
+    "total_description_estimated_tokens": 8381,
+    "total_input_schema_bytes": 18568,
+    "total_input_schema_estimated_tokens": 4642
   }
 }

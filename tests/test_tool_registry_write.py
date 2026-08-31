@@ -167,7 +167,7 @@ def test_all_three_conditions_register_exactly_one_write_tool(monkeypatch):
     assert registry._registered_write_names == ["set_firewall_alias_description_v1"]
 
 
-def test_all_three_conditions_via_full_register_all_still_exactly_101_read_plus_one_write(monkeypatch):
+def test_all_three_conditions_via_full_register_all_still_exactly_115_read_plus_one_write(monkeypatch):
     monkeypatch.setattr(registry_module.tier1_write_bridge, "can_construct_write_runtime", lambda: True)
     registry, mcp = _registry(WriteProtectedProfile.capabilities)
     registry.register_all()
@@ -178,10 +178,11 @@ def test_all_three_conditions_via_full_register_all_still_exactly_101_read_plus_
         if fn.__name__
         not in ("set_firewall_alias_description_v1", "pfsense_get_official_guidance", "pfsense_get_api_guidance")
     }
-    assert len(read_names) == 101
+    assert len(read_names) == 115
     assert _write_tool_names(mcp) == {"set_firewall_alias_description_v1"}
-    # 101 pfSense READ + 2 guidance tools + 1 WRITE tool.
-    assert len(mcp.registered) == 104
+    # 115 pfSense READ (101 + 14 HAProxy, POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md)
+    # + 2 guidance tools + 1 WRITE tool.
+    assert len(mcp.registered) == 118
 
 
 def test_all_three_conditions_produce_no_additional_write_capability_or_tool(monkeypatch):

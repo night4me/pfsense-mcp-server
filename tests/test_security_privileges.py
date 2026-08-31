@@ -237,9 +237,10 @@ def test_resolve_privilege_missing_endpoint_fails_closed_never_falls_back_to_sou
 
 def test_read_profile_requirements_has_101_entries_with_exactly_one_local_only():
     requirements = read_profile_requirements()
-    # 101 pfSense READ tools + 2 guidance tools (official_guidance, owner-
-    # authorized 2026-08-22; api_guidance, owner-authorized 2026-08-28) =
-    # 103 entries. Both guidance tools are local-only from this mechanical
+    # 115 pfSense READ tools (101 + 14 HAProxy tools, POST_V1_1_BIND_HAPROXY_
+    # READ_IMPLEMENTATION.md, 2026-08-31) + 2 guidance tools (official_guidance,
+    # owner-authorized 2026-08-22; api_guidance, owner-authorized 2026-08-28) =
+    # 117 entries. Both guidance tools are local-only from this mechanical
     # derivation's point of view for the same reason mcp_info is: neither
     # makes a *direct* client.<method>() call in its own source (each
     # delegates through an indirection -- resolve_appliance_identity(client)
@@ -247,7 +248,7 @@ def test_read_profile_requirements_has_101_entries_with_exactly_one_local_only()
     # api_guidance) -- so both correctly require no pfSense privilege of
     # their own, consistent with neither being gated by the
     # Capability/privilege/profile system at all.
-    assert len(requirements) == 103
+    assert len(requirements) == 117
     local_only = [r for r in requirements if r.url is None]
     assert len(local_only) == 3
     assert {r.tool_name for r in local_only} == {"mcp_info", "official_guidance", "api_guidance"}
@@ -275,10 +276,11 @@ def test_official_guidance_identity_dependency_is_already_in_the_documented_read
 
 
 def test_read_profile_resolves_to_the_currently_verified_100_privileges(live_schema):
+    # 100 -> 114 (+14 HAProxy privileges, POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md).
     resolved = resolve_profile_privileges(live_schema, read_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 100
+    assert len(privileges) == 114
     # Every resolved privilege is source-cross-checked -- the strongest
     # evidence class, since the fixture is real captured schema data.
     assert all(r.evidence_class is EvidenceClass.SOURCE_CROSS_CHECKED for r in resolved)
@@ -288,7 +290,7 @@ def test_write_protected_profile_resolves_to_the_currently_verified_101_privileg
     resolved = resolve_profile_privileges(live_schema, write_protected_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 101
+    assert len(privileges) == 115
 
 
 def test_write_protected_includes_the_write_exclusive_patch_privilege(live_schema):

@@ -9,6 +9,40 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Fourteen HAProxy (load balancer package) READ tools:
+  `pfsense_get_haproxy_apply_status`, `pfsense_get_haproxy_backends`,
+  `pfsense_get_haproxy_backend_acls`, `pfsense_get_haproxy_backend_errorfiles`,
+  `pfsense_get_haproxy_backend_servers`, `pfsense_get_haproxy_files`,
+  `pfsense_get_haproxy_frontends`, `pfsense_get_haproxy_frontend_acls`,
+  `pfsense_get_haproxy_frontend_addresses`,
+  `pfsense_get_haproxy_frontend_certificates`,
+  `pfsense_get_haproxy_frontend_error_files`, `pfsense_get_haproxy_settings`,
+  `pfsense_get_haproxy_dns_resolvers`, and `pfsense_get_haproxy_email_mailers`.
+  Result of `POST_V1_1_HAPROXY_READ_QUALIFICATION.md`'s source-first review
+  of HAProxy's full 30 GET-capable pfREST paths (12 redundant singular
+  forms deferred, 4 header-manipulation endpoints rejected as a plaintext-
+  secret channel) plus its 2026-08-30 live LAB ceremony, which live-
+  verified all 14 candidates with HTTP 200 despite HAProxy never being
+  installed on the LAB (the shared pfREST `read()` path never checks
+  package presence). `HAProxyBackend.stats_password` and
+  `.haproxy_cookie_dynamic_cookie_key` are deliberately excluded (the
+  former is marked `sensitive` but not `write_only` upstream — a genuine
+  plaintext-credential-in-GET-response finding if left unexcluded); every
+  `advanced`/`advanced_bind`/`advanced_backend`/`exaddr_advanced` raw-
+  config field and every nested sub-resource array (`servers`, `acls`,
+  `actions`, `errorfiles`, `a_extaddr`, `ha_acls`, `a_actionitems`,
+  `a_errorfiles`, `ha_certificates`, `dns_resolvers`, `email_mailers`) are
+  likewise deliberately excluded entirely, matching this project's
+  established `SystemRestApiSettings.ha_sync_password`/`BindZone`
+  structural-field-exclusion precedent (`ha_certificates` was found and
+  added during implementation, not in the original qualification's
+  4-field list for `HAProxyFrontend` — a correction, not a weakening).
+  Public READ tool count moves from 101 to 115 (117 total incl. 2
+  guidance tools); the managed `pfsense-mcp-readonly` READ-only privilege
+  set moves from 100 to 114. Not yet published to PyPI — README.md's
+  tool-count claims continue to describe the last published baseline
+  (v1.1.0: 95 READ) until the next release's doc sync updates them
+  together.
 - Five BIND (DNS server package) READ tools: `pfsense_get_bind_access_lists`,
   `pfsense_get_bind_sync_settings`, `pfsense_get_bind_views`,
   `pfsense_get_bind_zones`, and `pfsense_get_bind_zone_record`. Result of

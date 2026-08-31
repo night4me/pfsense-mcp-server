@@ -1,0 +1,337 @@
+{
+  "paths": {
+    "/api/v2/services/haproxy/apply": {
+      "get": {
+        "description": "<h3>Description:</h3>Read pending HAProxy change status.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-apply-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Apply pending HAProxy changes.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyApply<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-apply-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Backend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Backend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Backend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Backend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/acl": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Backend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendACL<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-acl-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Backend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendACL<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-acl-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Backend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendACL<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-acl-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Backend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendACL<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-acl-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/acls": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Backend Access Control Lists using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendACL<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-acls-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Backend Access Control Lists.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendACL<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-acls-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/action": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Backend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendAction<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-action-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Backend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendAction<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-action-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Backend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendAction<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-action-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Backend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendAction<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-action-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/actions": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Backend Actions using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendAction<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-actions-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Backend Actions.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendAction<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-actions-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/error_file": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Backend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendErrorFile<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-error-file-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Backend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendErrorFile<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-error-file-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Backend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendErrorFile<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-error-file-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Backend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendErrorFile<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-error-file-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/errorfiles": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Backend Error Files using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendErrorFile<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-errorfiles-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Backend Error Files.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendErrorFile<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-errorfiles-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/server": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Backend Server.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendServer<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-server-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Backend Server.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendServer<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-server-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Backend Server.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendServer<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-server-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Backend Server.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyBackendServer<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-server-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backend/servers": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Backend Servers using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendServer<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-servers-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Backend Servers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackendServer<br>**Parent model**: HAProxyBackend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backend-servers-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/backends": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Backends using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backends-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Backends.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backends-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "put": {
+        "description": "<h3>Description:</h3>Replaces all existing HAProxy Backends.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyBackend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-backends-put ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/file": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-file-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-file-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-file-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-file-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/files": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Files using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-files-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Files.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-files-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "put": {
+        "description": "<h3>Description:</h3>Replaces all existing HAProxy Files.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFile<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-files-put ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Frontend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Frontend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Frontend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Frontend.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/acl": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Frontend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendACL<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-acl-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Frontend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendACL<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-acl-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Frontend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendACL<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-acl-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Frontend Access Control List.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendACL<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-acl-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/acls": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Frontend Access Control Lists using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendACL<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-acls-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Frontend Access Control Lists.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendACL<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-acls-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/action": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Frontend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAction<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-action-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Frontend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAction<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-action-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Frontend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAction<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-action-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Frontend Action.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAction<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-action-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/actions": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Frontend Actions using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendAction<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-actions-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Frontend Actions.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendAction<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-actions-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/address": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Frontend Address.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAddress<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-address-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Frontend Address.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAddress<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-address-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Frontend Address.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAddress<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-address-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Frontend Address.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendAddress<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-address-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/addresses": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Frontend Addresses using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendAddress<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-addresses-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Frontend Addresses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendAddress<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-addresses-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/certificate": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Frontend Certificates.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendCertificate<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-certificate-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Frontend Certificates.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendCertificate<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-certificate-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Frontend Certificates.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendCertificate<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-certificate-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Frontend Certificates.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendCertificate<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-certificate-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/certificates": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Frontend Certificateses using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendCertificate<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-certificates-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Frontend Certificateses.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendCertificate<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-certificates-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/error_file": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Frontend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendErrorFile<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-error-file-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Frontend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendErrorFile<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-error-file-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Frontend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendErrorFile<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-error-file-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Frontend Error File.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyFrontendErrorFile<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-error-file-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontend/error_files": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Frontend Error Files using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendErrorFile<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-error-files-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Frontend Error Files.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontendErrorFile<br>**Parent model**: HAProxyFrontend<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontend-error-files-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/frontends": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Frontends using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontends-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Frontends.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontends-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "put": {
+        "description": "<h3>Description:</h3>Replaces all existing HAProxy Frontends.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyFrontend<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-frontends-put ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/settings": {
+      "get": {
+        "description": "<h3>Description:</h3>Reads current HAProxy Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxySettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates current HAProxy Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxySettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/settings/dns_resolver": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy DNS Resolver.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyDNSResolver<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-dns-resolver-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy DNS Resolver.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyDNSResolver<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-dns-resolver-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy DNS Resolver.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyDNSResolver<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-dns-resolver-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy DNS Resolver.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyDNSResolver<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-dns-resolver-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/settings/dns_resolvers": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy DNS Resolvers using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyDNSResolver<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-dns-resolvers-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy DNS Resolvers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyDNSResolver<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-dns-resolvers-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/settings/email_mailer": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes an existing HAProxy Email Mailer.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyEmailMailer<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-email-mailer-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads an existing HAProxy Email Mailer.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyEmailMailer<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-email-mailer-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing HAProxy Email Mailer.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyEmailMailer<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-email-mailer-patch ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "post": {
+        "description": "<h3>Description:</h3>Creates a new HAProxy Email Mailer.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: HAProxyEmailMailer<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-email-mailer-post ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/haproxy/settings/email_mailers": {
+      "delete": {
+        "description": "<h3>Description:</h3>Deletes multiple existing HAProxy Email Mailers using a query.<br><br>WARNING: This will delete all objects that match the query, use with caution.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyEmailMailer<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-email-mailers-delete ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      },
+      "get": {
+        "description": "<h3>Description:</h3>Reads all existing HAProxy Email Mailers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: HAProxyEmailMailer<br>**Parent model**: HAProxySettings<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-haproxy-settings-email-mailers-get ]<br>**Required packages**: [ pfSense-pkg-haproxy ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    }
+  }
+}

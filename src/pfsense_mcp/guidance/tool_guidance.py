@@ -161,11 +161,11 @@ class ToolGuidance:
     provenance: Literal["PROJECT_AUTHORED"] = PROVENANCE
 
 
-#: Tool name -> ResultKind, covering every one of the 100 read tools plus
+#: Tool name -> ResultKind, covering every one of the 114 read tools plus
 #: `pfsense_mcp_info` (re-derived and cross-checked against
 #: `scripts/public_contract.py`'s own live output by
 #: `tests/guidance/test_tool_guidance.py::test_every_read_tool_is_classified`
-#: -- this dict is never allowed to silently drift from the real 100-tool
+#: -- this dict is never allowed to silently drift from the real 114-tool
 #: contract). A tool's presence here is a classification of what KIND of
 #: evidence its result is, authored from reading this project's own
 #: model/tool source, never a claim about pfREST/Netgate content.
@@ -176,6 +176,7 @@ _TOOL_RESULT_KIND: dict[str, ResultKind] = {
     "pfsense_get_dns_resolver_apply_status": ResultKind.APPLY_STATUS,
     "pfsense_get_firewall_apply_status": ResultKind.APPLY_STATUS,
     "pfsense_get_firewall_virtual_ip_apply_status": ResultKind.APPLY_STATUS,
+    "pfsense_get_haproxy_apply_status": ResultKind.APPLY_STATUS,
     "pfsense_get_interface_apply_status": ResultKind.APPLY_STATUS,
     "pfsense_get_ipsec_apply_status": ResultKind.APPLY_STATUS,
     "pfsense_get_routing_apply_status": ResultKind.APPLY_STATUS,
@@ -243,6 +244,19 @@ _TOOL_RESULT_KIND: dict[str, ResultKind] = {
     "pfsense_get_firewall_virtual_ips": ResultKind.CONFIGURATION,
     "pfsense_get_freeradius_eap": ResultKind.CONFIGURATION,
     "pfsense_get_gateways": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_backend_acls": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_backend_errorfiles": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_backend_servers": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_backends": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_dns_resolvers": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_email_mailers": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_files": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_frontend_acls": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_frontend_addresses": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_frontend_certificates": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_frontend_error_files": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_frontends": ResultKind.CONFIGURATION,
+    "pfsense_get_haproxy_settings": ResultKind.CONFIGURATION,
     "pfsense_get_interface_bridges": ResultKind.CONFIGURATION,
     "pfsense_get_interface_configs": ResultKind.CONFIGURATION,
     "pfsense_get_interface_gres": ResultKind.CONFIGURATION,
@@ -294,6 +308,10 @@ _TOOL_OVERRIDES: dict[str, str] = {
         "Matching configuration tools: pfsense_get_firewall_rules, pfsense_get_firewall_aliases."
     ),
     "pfsense_get_firewall_virtual_ip_apply_status": "Matching configuration tool: pfsense_get_firewall_virtual_ips.",
+    "pfsense_get_haproxy_apply_status": (
+        "Matching configuration tools: pfsense_get_haproxy_backends, pfsense_get_haproxy_frontends, "
+        "pfsense_get_haproxy_settings."
+    ),
     "pfsense_get_interface_apply_status": "Matching configuration tool: pfsense_get_interface_configs.",
     "pfsense_get_ipsec_apply_status": "Matching configuration tool: pfsense_get_vpn_ipsec_phase2s.",
     "pfsense_get_routing_apply_status": (

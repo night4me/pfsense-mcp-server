@@ -41,7 +41,7 @@ def test_every_read_tool_is_classified():
 
 
 def test_known_tool_names_matches_public_contract_count():
-    assert len(known_tool_names()) == 101
+    assert len(known_tool_names()) == 115
 
 
 @pytest.mark.parametrize("tool_name", sorted(_real_read_tool_names()))
@@ -97,6 +97,7 @@ _APPLY_STATUS_TOOLS = (
     "pfsense_get_dns_resolver_apply_status",
     "pfsense_get_firewall_apply_status",
     "pfsense_get_firewall_virtual_ip_apply_status",
+    "pfsense_get_haproxy_apply_status",
     "pfsense_get_interface_apply_status",
     "pfsense_get_ipsec_apply_status",
     "pfsense_get_routing_apply_status",
@@ -105,7 +106,7 @@ _APPLY_STATUS_TOOLS = (
 
 
 def test_apply_status_cluster_is_fully_classified_and_captures_every_flagged_tool():
-    assert len(_APPLY_STATUS_TOOLS) == 9
+    assert len(_APPLY_STATUS_TOOLS) == 10
     for tool_name in _APPLY_STATUS_TOOLS:
         guidance = get_tool_guidance(tool_name)
         assert guidance.result_kind is ResultKind.APPLY_STATUS

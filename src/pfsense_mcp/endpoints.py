@@ -823,3 +823,84 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # POST_V1_1_HAPROXY_READ_QUALIFICATION.md (source qualification) +
+    # its 2026-08-30 live-ceremony addendum (temporary, fully-reversed
+    # managed-privilege grant, LAB): all 14 of these live-verified HTTP
+    # 200 with HAProxy still absent from LAB (graceful degradation --
+    # `Core/Model.inc::read()` never calls `check_packages()`, the same
+    # framework-wide guarantee already proven for BIND). No secrets, no
+    # privilege aliasing with any HAProxy mutating operation (14 GET vs
+    # 61 distinct mutating privileges, resolve_privilege()-verified via
+    # a live-fetched OpenAPI document, zero overlap). Requires
+    # pfSense-pkg-haproxy (not installed on this LAB; see qualification
+    # report Phase 10 -- not required for security qualification).
+    HAPROXY_APPLY = EndpointInfo(
+        path_suffix="/services/haproxy/apply",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_BACKENDS = EndpointInfo(
+        path_suffix="/services/haproxy/backends",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_BACKEND_ACLS = EndpointInfo(
+        path_suffix="/services/haproxy/backend/acls",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_BACKEND_ERRORFILES = EndpointInfo(
+        path_suffix="/services/haproxy/backend/errorfiles",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_BACKEND_SERVERS = EndpointInfo(
+        path_suffix="/services/haproxy/backend/servers",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_FILES = EndpointInfo(
+        path_suffix="/services/haproxy/files",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_FRONTENDS = EndpointInfo(
+        path_suffix="/services/haproxy/frontends",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_FRONTEND_ACLS = EndpointInfo(
+        path_suffix="/services/haproxy/frontend/acls",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_FRONTEND_ADDRESSES = EndpointInfo(
+        path_suffix="/services/haproxy/frontend/addresses",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_FRONTEND_CERTIFICATES = EndpointInfo(
+        path_suffix="/services/haproxy/frontend/certificates",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_FRONTEND_ERROR_FILES = EndpointInfo(
+        path_suffix="/services/haproxy/frontend/error_files",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_SETTINGS = EndpointInfo(
+        path_suffix="/services/haproxy/settings",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_SETTINGS_DNS_RESOLVERS = EndpointInfo(
+        path_suffix="/services/haproxy/settings/dns_resolvers",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
+    HAPROXY_SETTINGS_EMAIL_MAILERS = EndpointInfo(
+        path_suffix="/services/haproxy/settings/email_mailers",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )

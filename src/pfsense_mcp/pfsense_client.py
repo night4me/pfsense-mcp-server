@@ -56,6 +56,20 @@ from .models.free_radius_eap import FreeRadiusEap
 from .models.free_radius_interface import FreeRADIUSInterface
 from .models.free_radius_mac import FreeRADIUSMAC
 from .models.gateways import GatewayConfig, GatewayStatus
+from .models.haproxy_apply_status import HAProxyApplyStatus
+from .models.haproxy_backend import HAProxyBackend
+from .models.haproxy_backend_acl import HAProxyBackendAcl
+from .models.haproxy_backend_error_file import HAProxyBackendErrorFile
+from .models.haproxy_backend_server import HAProxyBackendServer
+from .models.haproxy_dns_resolver import HAProxyDnsResolver
+from .models.haproxy_email_mailer import HAProxyEmailMailer
+from .models.haproxy_file import HAProxyFile
+from .models.haproxy_frontend import HAProxyFrontend
+from .models.haproxy_frontend_acl import HAProxyFrontendAcl
+from .models.haproxy_frontend_address import HAProxyFrontendAddress
+from .models.haproxy_frontend_certificate import HAProxyFrontendCertificate
+from .models.haproxy_frontend_error_file import HAProxyFrontendErrorFile
+from .models.haproxy_settings import HAProxySettings
 from .models.interface_apply import InterfaceApply
 from .models.interface_bridge import InterfaceBridge
 from .models.interface_config import InterfaceConfig
@@ -173,6 +187,43 @@ BIND_VIEWS_MAX_LIMIT = 100
 
 BIND_ZONES_MIN_LIMIT = 1
 BIND_ZONES_MAX_LIMIT = 100
+
+
+HAPROXY_BACKENDS_MIN_LIMIT = 1
+HAPROXY_BACKENDS_MAX_LIMIT = 100
+
+HAPROXY_BACKEND_ACLS_MIN_LIMIT = 1
+HAPROXY_BACKEND_ACLS_MAX_LIMIT = 100
+
+HAPROXY_BACKEND_ERRORFILES_MIN_LIMIT = 1
+HAPROXY_BACKEND_ERRORFILES_MAX_LIMIT = 100
+
+HAPROXY_BACKEND_SERVERS_MIN_LIMIT = 1
+HAPROXY_BACKEND_SERVERS_MAX_LIMIT = 100
+
+HAPROXY_FILES_MIN_LIMIT = 1
+HAPROXY_FILES_MAX_LIMIT = 100
+
+HAPROXY_FRONTENDS_MIN_LIMIT = 1
+HAPROXY_FRONTENDS_MAX_LIMIT = 100
+
+HAPROXY_FRONTEND_ACLS_MIN_LIMIT = 1
+HAPROXY_FRONTEND_ACLS_MAX_LIMIT = 100
+
+HAPROXY_FRONTEND_ADDRESSES_MIN_LIMIT = 1
+HAPROXY_FRONTEND_ADDRESSES_MAX_LIMIT = 100
+
+HAPROXY_FRONTEND_CERTIFICATES_MIN_LIMIT = 1
+HAPROXY_FRONTEND_CERTIFICATES_MAX_LIMIT = 100
+
+HAPROXY_FRONTEND_ERROR_FILES_MIN_LIMIT = 1
+HAPROXY_FRONTEND_ERROR_FILES_MAX_LIMIT = 100
+
+HAPROXY_SETTINGS_DNS_RESOLVERS_MIN_LIMIT = 1
+HAPROXY_SETTINGS_DNS_RESOLVERS_MAX_LIMIT = 100
+
+HAPROXY_SETTINGS_EMAIL_MAILERS_MIN_LIMIT = 1
+HAPROXY_SETTINGS_EMAIL_MAILERS_MAX_LIMIT = 100
 
 
 DHCP_SERVERS_MIN_LIMIT = 1
@@ -778,6 +829,131 @@ class PfSenseClient:
     def get_bind_zone_record(self, *, parent_id: int, id: int) -> BindZoneRecord:
         raw = self._rest.get(Endpoints.BIND_ZONE_RECORD, params={"parent_id": parent_id, "id": id})
         return _parse_object_response(raw, "/services/bind/zone/record", BindZoneRecord.from_api)
+
+    def get_haproxy_apply_status(self) -> HAProxyApplyStatus:
+        raw = self._rest.get(Endpoints.HAPROXY_APPLY)
+        return _parse_object_response(raw, "/services/haproxy/apply", HAProxyApplyStatus.from_api)
+
+    def get_haproxy_backends(self, *, limit: int = 100) -> list[HAProxyBackend]:
+        if not (HAPROXY_BACKENDS_MIN_LIMIT <= limit <= HAPROXY_BACKENDS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_BACKENDS_MIN_LIMIT} and {HAPROXY_BACKENDS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_BACKENDS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/backends", HAProxyBackend.from_api)
+
+    def get_haproxy_backend_acls(self, *, limit: int = 100) -> list[HAProxyBackendAcl]:
+        if not (HAPROXY_BACKEND_ACLS_MIN_LIMIT <= limit <= HAPROXY_BACKEND_ACLS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_BACKEND_ACLS_MIN_LIMIT} and "
+                f"{HAPROXY_BACKEND_ACLS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_BACKEND_ACLS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/backend/acls", HAProxyBackendAcl.from_api)
+
+    def get_haproxy_backend_errorfiles(self, *, limit: int = 100) -> list[HAProxyBackendErrorFile]:
+        if not (HAPROXY_BACKEND_ERRORFILES_MIN_LIMIT <= limit <= HAPROXY_BACKEND_ERRORFILES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_BACKEND_ERRORFILES_MIN_LIMIT} and "
+                f"{HAPROXY_BACKEND_ERRORFILES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_BACKEND_ERRORFILES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/backend/errorfiles", HAProxyBackendErrorFile.from_api)
+
+    def get_haproxy_backend_servers(self, *, limit: int = 100) -> list[HAProxyBackendServer]:
+        if not (HAPROXY_BACKEND_SERVERS_MIN_LIMIT <= limit <= HAPROXY_BACKEND_SERVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_BACKEND_SERVERS_MIN_LIMIT} and "
+                f"{HAPROXY_BACKEND_SERVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_BACKEND_SERVERS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/backend/servers", HAProxyBackendServer.from_api)
+
+    def get_haproxy_files(self, *, limit: int = 100) -> list[HAProxyFile]:
+        if not (HAPROXY_FILES_MIN_LIMIT <= limit <= HAPROXY_FILES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_FILES_MIN_LIMIT} and {HAPROXY_FILES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_FILES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/files", HAProxyFile.from_api)
+
+    def get_haproxy_frontends(self, *, limit: int = 100) -> list[HAProxyFrontend]:
+        if not (HAPROXY_FRONTENDS_MIN_LIMIT <= limit <= HAPROXY_FRONTENDS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_FRONTENDS_MIN_LIMIT} and {HAPROXY_FRONTENDS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_FRONTENDS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/frontends", HAProxyFrontend.from_api)
+
+    def get_haproxy_frontend_acls(self, *, limit: int = 100) -> list[HAProxyFrontendAcl]:
+        if not (HAPROXY_FRONTEND_ACLS_MIN_LIMIT <= limit <= HAPROXY_FRONTEND_ACLS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_FRONTEND_ACLS_MIN_LIMIT} and "
+                f"{HAPROXY_FRONTEND_ACLS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_FRONTEND_ACLS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/frontend/acls", HAProxyFrontendAcl.from_api)
+
+    def get_haproxy_frontend_addresses(self, *, limit: int = 100) -> list[HAProxyFrontendAddress]:
+        if not (HAPROXY_FRONTEND_ADDRESSES_MIN_LIMIT <= limit <= HAPROXY_FRONTEND_ADDRESSES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_FRONTEND_ADDRESSES_MIN_LIMIT} and "
+                f"{HAPROXY_FRONTEND_ADDRESSES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_FRONTEND_ADDRESSES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/frontend/addresses", HAProxyFrontendAddress.from_api)
+
+    def get_haproxy_frontend_certificates(self, *, limit: int = 100) -> list[HAProxyFrontendCertificate]:
+        if not (HAPROXY_FRONTEND_CERTIFICATES_MIN_LIMIT <= limit <= HAPROXY_FRONTEND_CERTIFICATES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_FRONTEND_CERTIFICATES_MIN_LIMIT} and "
+                f"{HAPROXY_FRONTEND_CERTIFICATES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_FRONTEND_CERTIFICATES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/frontend/certificates", HAProxyFrontendCertificate.from_api)
+
+    def get_haproxy_frontend_error_files(self, *, limit: int = 100) -> list[HAProxyFrontendErrorFile]:
+        if not (HAPROXY_FRONTEND_ERROR_FILES_MIN_LIMIT <= limit <= HAPROXY_FRONTEND_ERROR_FILES_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_FRONTEND_ERROR_FILES_MIN_LIMIT} and "
+                f"{HAPROXY_FRONTEND_ERROR_FILES_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_FRONTEND_ERROR_FILES, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/frontend/error_files", HAProxyFrontendErrorFile.from_api)
+
+    def get_haproxy_settings(self) -> HAProxySettings:
+        raw = self._rest.get(Endpoints.HAPROXY_SETTINGS)
+        return _parse_object_response(raw, "/services/haproxy/settings", HAProxySettings.from_api)
+
+    def get_haproxy_dns_resolvers(self, *, limit: int = 100) -> list[HAProxyDnsResolver]:
+        if not (HAPROXY_SETTINGS_DNS_RESOLVERS_MIN_LIMIT <= limit <= HAPROXY_SETTINGS_DNS_RESOLVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_SETTINGS_DNS_RESOLVERS_MIN_LIMIT} and "
+                f"{HAPROXY_SETTINGS_DNS_RESOLVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_SETTINGS_DNS_RESOLVERS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/settings/dns_resolvers", HAProxyDnsResolver.from_api)
+
+    def get_haproxy_email_mailers(self, *, limit: int = 100) -> list[HAProxyEmailMailer]:
+        if not (HAPROXY_SETTINGS_EMAIL_MAILERS_MIN_LIMIT <= limit <= HAPROXY_SETTINGS_EMAIL_MAILERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {HAPROXY_SETTINGS_EMAIL_MAILERS_MIN_LIMIT} and "
+                f"{HAPROXY_SETTINGS_EMAIL_MAILERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.HAPROXY_SETTINGS_EMAIL_MAILERS, params={"limit": limit})
+        return _parse_list_response(raw, "/services/haproxy/settings/email_mailers", HAProxyEmailMailer.from_api)
 
     def get_ntp_settings(self) -> NtpSettings:
         raw = self._rest.get(Endpoints.NTP_SETTINGS)

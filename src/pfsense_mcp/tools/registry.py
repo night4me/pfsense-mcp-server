@@ -67,6 +67,20 @@ from .read import (
     freeradius_eap,
     gateway_status,
     gateways,
+    haproxy_apply_status,
+    haproxy_backend_acls,
+    haproxy_backend_errorfiles,
+    haproxy_backend_servers,
+    haproxy_backends,
+    haproxy_dns_resolvers,
+    haproxy_email_mailers,
+    haproxy_files,
+    haproxy_frontend_acls,
+    haproxy_frontend_addresses,
+    haproxy_frontend_certificates,
+    haproxy_frontend_error_files,
+    haproxy_frontends,
+    haproxy_settings,
     interface_apply_status,
     interface_available_interfaces,
     interface_bridges,
@@ -190,6 +204,20 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_freeradius_eap",
         "pfsense_get_gateway_status",
         "pfsense_get_gateways",
+        "pfsense_get_haproxy_apply_status",
+        "pfsense_get_haproxy_backend_acls",
+        "pfsense_get_haproxy_backend_errorfiles",
+        "pfsense_get_haproxy_backend_servers",
+        "pfsense_get_haproxy_backends",
+        "pfsense_get_haproxy_dns_resolvers",
+        "pfsense_get_haproxy_email_mailers",
+        "pfsense_get_haproxy_files",
+        "pfsense_get_haproxy_frontend_acls",
+        "pfsense_get_haproxy_frontend_addresses",
+        "pfsense_get_haproxy_frontend_certificates",
+        "pfsense_get_haproxy_frontend_error_files",
+        "pfsense_get_haproxy_frontends",
+        "pfsense_get_haproxy_settings",
         "pfsense_get_interface_apply_status",
         "pfsense_get_interface_available_interfaces",
         "pfsense_get_interface_bridges",
@@ -364,6 +392,8 @@ class ToolRegistry:
             self._register_system_notifications_read()
         if Capability.SERVICES_BIND_READ in self._capabilities:
             self._register_services_bind_read()
+        if Capability.SERVICES_HAPROXY_READ in self._capabilities:
+            self._register_services_haproxy_read()
         if Capability.SERVICES_NTP_READ in self._capabilities:
             self._register_services_ntp_read()
         if Capability.SERVICES_SSH_READ in self._capabilities:
@@ -765,6 +795,73 @@ class ToolRegistry:
         zone_record_fn = bind_zone_record.build(self._client)
         zone_record_wrapped = audit_logged("pfsense_get_bind_zone_record", self._identity)(zone_record_fn)
         self._register_read_tool(zone_record_wrapped)
+
+    def _register_services_haproxy_read(self) -> None:
+        apply_status_fn = haproxy_apply_status.build(self._client)
+        apply_status_wrapped = audit_logged("pfsense_get_haproxy_apply_status", self._identity)(apply_status_fn)
+        self._register_read_tool(apply_status_wrapped)
+
+        backends_fn = haproxy_backends.build(self._client)
+        backends_wrapped = audit_logged("pfsense_get_haproxy_backends", self._identity)(backends_fn)
+        self._register_read_tool(backends_wrapped)
+
+        backend_acls_fn = haproxy_backend_acls.build(self._client)
+        backend_acls_wrapped = audit_logged("pfsense_get_haproxy_backend_acls", self._identity)(backend_acls_fn)
+        self._register_read_tool(backend_acls_wrapped)
+
+        backend_errorfiles_fn = haproxy_backend_errorfiles.build(self._client)
+        backend_errorfiles_wrapped = audit_logged("pfsense_get_haproxy_backend_errorfiles", self._identity)(
+            backend_errorfiles_fn
+        )
+        self._register_read_tool(backend_errorfiles_wrapped)
+
+        backend_servers_fn = haproxy_backend_servers.build(self._client)
+        backend_servers_wrapped = audit_logged("pfsense_get_haproxy_backend_servers", self._identity)(
+            backend_servers_fn
+        )
+        self._register_read_tool(backend_servers_wrapped)
+
+        files_fn = haproxy_files.build(self._client)
+        files_wrapped = audit_logged("pfsense_get_haproxy_files", self._identity)(files_fn)
+        self._register_read_tool(files_wrapped)
+
+        frontends_fn = haproxy_frontends.build(self._client)
+        frontends_wrapped = audit_logged("pfsense_get_haproxy_frontends", self._identity)(frontends_fn)
+        self._register_read_tool(frontends_wrapped)
+
+        frontend_acls_fn = haproxy_frontend_acls.build(self._client)
+        frontend_acls_wrapped = audit_logged("pfsense_get_haproxy_frontend_acls", self._identity)(frontend_acls_fn)
+        self._register_read_tool(frontend_acls_wrapped)
+
+        frontend_addresses_fn = haproxy_frontend_addresses.build(self._client)
+        frontend_addresses_wrapped = audit_logged("pfsense_get_haproxy_frontend_addresses", self._identity)(
+            frontend_addresses_fn
+        )
+        self._register_read_tool(frontend_addresses_wrapped)
+
+        frontend_certificates_fn = haproxy_frontend_certificates.build(self._client)
+        frontend_certificates_wrapped = audit_logged("pfsense_get_haproxy_frontend_certificates", self._identity)(
+            frontend_certificates_fn
+        )
+        self._register_read_tool(frontend_certificates_wrapped)
+
+        frontend_error_files_fn = haproxy_frontend_error_files.build(self._client)
+        frontend_error_files_wrapped = audit_logged("pfsense_get_haproxy_frontend_error_files", self._identity)(
+            frontend_error_files_fn
+        )
+        self._register_read_tool(frontend_error_files_wrapped)
+
+        settings_fn = haproxy_settings.build(self._client)
+        settings_wrapped = audit_logged("pfsense_get_haproxy_settings", self._identity)(settings_fn)
+        self._register_read_tool(settings_wrapped)
+
+        dns_resolvers_fn = haproxy_dns_resolvers.build(self._client)
+        dns_resolvers_wrapped = audit_logged("pfsense_get_haproxy_dns_resolvers", self._identity)(dns_resolvers_fn)
+        self._register_read_tool(dns_resolvers_wrapped)
+
+        email_mailers_fn = haproxy_email_mailers.build(self._client)
+        email_mailers_wrapped = audit_logged("pfsense_get_haproxy_email_mailers", self._identity)(email_mailers_fn)
+        self._register_read_tool(email_mailers_wrapped)
 
     def _register_services_ntp_read(self) -> None:
         fn = ntp_settings.build(self._client)

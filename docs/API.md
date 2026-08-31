@@ -2,7 +2,7 @@
 
 Version: 1.0.0 release state
 Profile: `auditor`  
-Registered tools: 101 READ, 2 guidance, 0 WRITE
+Registered tools: 115 READ, 2 guidance, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v1.0.0.json`. It records tool names,
@@ -942,6 +942,167 @@ Common parameters:
 - **Returns:** `BindZoneRecord`.
 - **Security:** No secrets.
 - **Example:** `{"name":"pfsense_get_bind_zone_record","arguments":{"parent_id":0,"id":0}}`
+
+### `pfsense_get_haproxy_apply_status`
+
+- **Purpose:** Get pfSense HAProxy pending-changes status: whether the
+  running configuration matches the last-applied configuration. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** None.
+- **Returns:** `HAProxyApplyStatus`.
+- **Security:** No identifying metadata.
+- **Example:** `{"name":"pfsense_get_haproxy_apply_status","arguments":{}}`
+
+### `pfsense_get_haproxy_backends`
+
+- **Purpose:** List pfSense HAProxy backends: name, load-balancing
+  algorithm, health-check and persistence settings. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyBackend]`.
+- **Security:** `stats_password` and `haproxy_cookie_dynamic_cookie_key`
+  are deliberately excluded (plaintext-credential fields upstream —
+  `stats_password` is marked `sensitive` but not `write_only`, meaning
+  it would otherwise be returned in cleartext). `advanced` and
+  `advanced_backend` are deliberately excluded (raw config-injection-risk
+  free text). Nested `servers`/`acls`/`actions`/`errorfiles` are
+  deliberately excluded (use the dedicated tools below instead).
+- **Example:** `{"name":"pfsense_get_haproxy_backends","arguments":{}}`
+
+### `pfsense_get_haproxy_backend_acls`
+
+- **Purpose:** List pfSense HAProxy backend ACLs (match conditions) across
+  all backends: name, expression type, comparison value. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyBackendAcl]`.
+- **Security:** No secrets. When `expression` is `custom`, `value` is
+  arbitrary HAProxy ACL-condition syntax rather than a bounded comparison
+  string — a narrower, documented residual risk, not a raw-config splice.
+- **Example:** `{"name":"pfsense_get_haproxy_backend_acls","arguments":{}}`
+
+### `pfsense_get_haproxy_backend_errorfiles`
+
+- **Purpose:** List pfSense HAProxy backend custom error-file associations
+  across all backends: HTTP status code and associated file name.
+  Requires pfSense-pkg-haproxy. Does not include the error file's own
+  content (use `pfsense_get_haproxy_files`).
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyBackendErrorFile]`.
+- **Security:** No secrets; metadata-only mapping.
+- **Example:** `{"name":"pfsense_get_haproxy_backend_errorfiles","arguments":{}}`
+
+### `pfsense_get_haproxy_backend_servers`
+
+- **Purpose:** List pfSense HAProxy backend servers across all backends:
+  name, status, address, port, weight, and SSL settings. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyBackendServer]`.
+- **Security:** `advanced` is deliberately excluded (raw config-injection-
+  risk free text).
+- **Example:** `{"name":"pfsense_get_haproxy_backend_servers","arguments":{}}`
+
+### `pfsense_get_haproxy_files`
+
+- **Purpose:** List pfSense HAProxy managed files (Lua scripts, custom
+  error files, other uploaded files): name and type only. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyFile]`.
+- **Security:** `content` is deliberately excluded (arbitrary, unbounded
+  file/Lua-script content).
+- **Example:** `{"name":"pfsense_get_haproxy_files","arguments":{}}`
+
+### `pfsense_get_haproxy_frontends`
+
+- **Purpose:** List pfSense HAProxy frontends: name, description, status,
+  type, backend pool association, and logging settings. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyFrontend]`.
+- **Security:** `advanced_bind` and `advanced` are deliberately excluded
+  (raw config-injection-risk free text). Nested
+  `a_extaddr`/`ha_acls`/`a_actionitems`/`a_errorfiles`/`ha_certificates`
+  are deliberately excluded (use the dedicated tools below instead).
+- **Example:** `{"name":"pfsense_get_haproxy_frontends","arguments":{}}`
+
+### `pfsense_get_haproxy_frontend_acls`
+
+- **Purpose:** List pfSense HAProxy frontend ACLs (match conditions)
+  across all frontends: name, expression type, comparison value.
+  Requires pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyFrontendAcl]`.
+- **Security:** No secrets. Same `custom`-expression residual risk as
+  `pfsense_get_haproxy_backend_acls`.
+- **Example:** `{"name":"pfsense_get_haproxy_frontend_acls","arguments":{}}`
+
+### `pfsense_get_haproxy_frontend_addresses`
+
+- **Purpose:** List pfSense HAProxy frontend listen addresses across all
+  frontends: interface/address selection, port, and whether SSL
+  offloading is enabled. Requires pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyFrontendAddress]`.
+- **Security:** `exaddr_advanced` is deliberately excluded (raw
+  config-injection-risk free text).
+- **Example:** `{"name":"pfsense_get_haproxy_frontend_addresses","arguments":{}}`
+
+### `pfsense_get_haproxy_frontend_certificates`
+
+- **Purpose:** List pfSense HAProxy frontend SNI certificate associations
+  across all frontends: a reference ID into the pfSense certificate store
+  per association. Requires pfSense-pkg-haproxy. Does not include
+  certificate content or private key material (use
+  `pfsense_get_system_certificates` for that store).
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyFrontendCertificate]`.
+- **Security:** No secrets; a plain reference ID only.
+- **Example:** `{"name":"pfsense_get_haproxy_frontend_certificates","arguments":{}}`
+
+### `pfsense_get_haproxy_frontend_error_files`
+
+- **Purpose:** List pfSense HAProxy frontend custom error-file
+  associations across all frontends: HTTP status code and associated
+  file name. Requires pfSense-pkg-haproxy. Does not include the error
+  file's own content (use `pfsense_get_haproxy_files`).
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyFrontendErrorFile]`.
+- **Security:** No secrets; metadata-only mapping.
+- **Example:** `{"name":"pfsense_get_haproxy_frontend_error_files","arguments":{}}`
+
+### `pfsense_get_haproxy_settings`
+
+- **Purpose:** Get pfSense HAProxy global settings: enabled state,
+  connection/thread limits, stats and DNS-resolver timing, and
+  logging/SSL-compatibility settings. Requires pfSense-pkg-haproxy.
+- **Parameters:** None.
+- **Returns:** `HAProxySettings`.
+- **Security:** `advanced` is deliberately excluded (raw config-injection-
+  risk free text). Nested `dns_resolvers`/`email_mailers` are deliberately
+  excluded (use the dedicated tools below instead).
+- **Example:** `{"name":"pfsense_get_haproxy_settings","arguments":{}}`
+
+### `pfsense_get_haproxy_dns_resolvers`
+
+- **Purpose:** List pfSense HAProxy DNS resolvers: name, server address,
+  and port. Requires pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyDnsResolver]`.
+- **Security:** No credential fields exist on this resource.
+- **Example:** `{"name":"pfsense_get_haproxy_dns_resolvers","arguments":{}}`
+
+### `pfsense_get_haproxy_email_mailers`
+
+- **Purpose:** List pfSense HAProxy email mailers (SMTP relay targets for
+  alerts): name, mail-server address, and port. Requires
+  pfSense-pkg-haproxy.
+- **Parameters:** `limit: integer = 100` (1-100).
+- **Returns:** `list[HAProxyEmailMailer]`.
+- **Security:** No SMTP authentication credential fields exist on this
+  resource.
+- **Example:** `{"name":"pfsense_get_haproxy_email_mailers","arguments":{}}`
 
 ### `pfsense_get_dhcp_server_apply_status`
 
