@@ -1638,8 +1638,7 @@ class PfSenseClient:
     ) -> list[IPsecPhase1]:
         if not (VPN_IPSEC_PHASE1S_MIN_LIMIT <= limit <= VPN_IPSEC_PHASE1S_MAX_LIMIT):
             raise PfSenseRequestValidationError(
-                f"limit must be between {VPN_IPSEC_PHASE1S_MIN_LIMIT} and "
-                f"{VPN_IPSEC_PHASE1S_MAX_LIMIT} (got {limit})."
+                f"limit must be between {VPN_IPSEC_PHASE1S_MIN_LIMIT} and {VPN_IPSEC_PHASE1S_MAX_LIMIT} (got {limit})."
             )
 
         raw = self._rest.get(Endpoints.VPN_IPSEC_PHASE1S, params={"limit": limit})

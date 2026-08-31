@@ -53,7 +53,7 @@
       "ping_action": "ping_restart",
       "ping_action_seconds": 60,
       "custom_options": [
-        "push \"route 10.0.0.0 255.0.0.0\""
+        "push \"route 192.0.2.0 255.255.255.0\""
       ],
       "udp_fast_io": false,
       "exit_notify": "0",

@@ -10542,7 +10542,7 @@ def test_get_vpn_wireguard_peers_never_exposes_presharedkey_or_allowedips():
     assert not hasattr(first, "allowedips")
     dumped = first.model_dump_json()
     assert "SYNTHETIC-PRESHARED-KEY-PLACEHOLDER" not in dumped
-    assert "10.10.10.2" not in dumped
+    assert "198.51.100.2" not in dumped
 
 
 def test_get_vpn_wireguard_peers_rejects_zero_limit():
@@ -10705,7 +10705,7 @@ def test_get_vpn_openvpn_clients_never_exposes_secrets_or_custom_options():
     assert "SYNTHETIC-AUTH-PASSWORD-PLACEHOLDER" not in dumped
     assert "SYNTHETIC-PROXY-PASSWORD-PLACEHOLDER" not in dumped
     assert "SYNTHETIC-TLS-KEY-PLACEHOLDER" not in dumped
-    assert "10.0.0.0" not in dumped
+    assert "192.0.2.0" not in dumped
 
 
 def test_get_vpn_openvpn_clients_rejects_zero_limit():

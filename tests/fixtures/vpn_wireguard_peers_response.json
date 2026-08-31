@@ -12,7 +12,7 @@
       "presharedkey": "SYNTHETIC-PRESHARED-KEY-PLACEHOLDER",
       "allowedips": [
         {
-          "address": "10.10.10.2",
+          "address": "198.51.100.2",
           "mask": 32
         }
       ]
