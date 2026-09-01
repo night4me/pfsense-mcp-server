@@ -1,0 +1,42 @@
+{
+  "code": 200,
+  "status": "ok",
+  "response_id": "SUCCESS",
+  "message": "",
+  "data": [
+    {
+      "refid": "abc123",
+      "type": "ldap",
+      "name": "corp-ldap",
+      "host": "198.51.100.20",
+      "ldap_port": "636",
+      "ldap_urltype": "SSL Encrypted",
+      "ldap_protver": 3,
+      "ldap_timeout": 25,
+      "ldap_caref": "global",
+      "ldap_scope": "subtree",
+      "ldap_basedn": "dc=corp,dc=example,dc=com",
+      "ldap_authcn": "ou=People",
+      "ldap_extended_enabled": false,
+      "ldap_extended_query": null,
+      "ldap_binddn": "cn=svc-bind,dc=corp,dc=example,dc=com",
+      "ldap_bindpw": "SYNTHETIC-LDAP-BINDPW-PLACEHOLDER",
+      "ldap_attr_user": "cn",
+      "ldap_attr_group": "cn",
+      "ldap_attr_member": "member",
+      "ldap_rfc2307": false,
+      "ldap_rfc2307_userdn": false,
+      "ldap_attr_groupobj": "posixGroup",
+      "ldap_pam_groupdn": "cn=shell-users,dc=corp,dc=example,dc=com",
+      "ldap_utf8": false,
+      "ldap_nostrip_at": false,
+      "ldap_allow_unauthenticated": true,
+      "radius_secret": null,
+      "radius_auth_port": "1812",
+      "radius_acct_port": "1813",
+      "radius_protocol": "MSCHAPv2",
+      "radius_timeout": 5,
+      "radius_nasip_attribute": null
+    }
+  ]
+}

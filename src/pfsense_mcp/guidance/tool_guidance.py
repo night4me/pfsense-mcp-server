@@ -285,6 +285,7 @@ _TOOL_RESULT_KIND: dict[str, ResultKind] = {
     "pfsense_get_system_timezone": ResultKind.CONFIGURATION,
     "pfsense_get_system_tunables": ResultKind.CONFIGURATION,
     "pfsense_get_system_webgui_settings": ResultKind.CONFIGURATION,
+    "pfsense_get_user_auth_servers": ResultKind.CONFIGURATION,
     "pfsense_get_user_groups": ResultKind.CONFIGURATION,
     "pfsense_get_users": ResultKind.CONFIGURATION,
     "pfsense_get_vpn_ipsec_phase1s": ResultKind.CONFIGURATION,

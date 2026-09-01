@@ -545,10 +545,12 @@ def test_no_new_capability_enum_member_was_added_for_guidance():
     pfSense-endpoint capabilities (SERVICES_SERVICE_WATCHDOG_READ,
     VPN_WIREGUARD_TUNNELS_READ, VPN_WIREGUARD_PEERS_READ,
     VPN_IPSEC_PHASE1_READ, VPN_OPENVPN_CLIENT_READ) for the 5 promoted
-    READ tools -- legitimate new pfSense-endpoint capabilities, not
-    guidance-tool capabilities (this test's own actual concern, checked
-    by the second assertion below)."""
-    assert len(READ_CAPABILITIES) == 93
+    READ tools, now 94 after POST_V1_1_AUTH_SERVER_BOUNDED_READ_PROMOTION.md
+    added Capability.USER_AUTH_SERVER_READ for the live-qualified
+    pfsense_get_user_auth_servers tool -- legitimate new pfSense-endpoint
+    capabilities, not guidance-tool capabilities (this test's own actual
+    concern, checked by the second assertion below)."""
+    assert len(READ_CAPABILITIES) == 94
     assert all(not name.startswith("GUIDANCE") for name in (c.name for c in Capability))
 
 
@@ -682,7 +684,7 @@ def test_public_contract_places_guidance_tool_in_its_own_class():
     assert tool_classes["pfsense_get_api_guidance"] == "guidance"
     read_count = sum(1 for cls in tool_classes.values() if cls == "read")
     guidance_count = sum(1 for cls in tool_classes.values() if cls == "guidance")
-    assert read_count == 120
+    assert read_count == 121
     assert guidance_count == 2
 
 

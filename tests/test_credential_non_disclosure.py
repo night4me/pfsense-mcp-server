@@ -72,9 +72,9 @@ def test_all_read_tools_have_exact_annotations_without_schema_side_effects():
     # 2026-08-28) -- this test is specifically about the 101 READ tools'
     # annotation shape; each guidance tool's own annotation shape is
     # asserted separately in its own test module.
-    assert len(all_tools) == 122
+    assert len(all_tools) == 123
     tools = [tool for tool in all_tools if tool.name in KNOWN_READ_TOOL_NAMES]
-    assert len(tools) == 120
+    assert len(tools) == 121
     assert all(tool.name.startswith("pfsense_get_") or tool.name == "pfsense_mcp_info" for tool in tools)
     assert {tool.name for tool in tools} == KNOWN_READ_TOOL_NAMES
     for tool in tools:
@@ -96,7 +96,7 @@ def test_auth_keys_tool_input_no_longer_has_disclosure_argument():
     ToolRegistry(mcp, client, "upstream", AuditorProfile.capabilities).register_all()
     tools = asyncio.run(mcp.list_tools())
 
-    assert len(tools) == 122  # 120 pfSense READ tools + 2 guidance tools
+    assert len(tools) == 123  # 121 pfSense READ tools + 2 guidance tools
     auth_keys = next(tool for tool in tools if tool.name == "pfsense_get_auth_keys")
     assert "include_identifying_metadata" not in auth_keys.inputSchema["properties"]
     for field in PROHIBITED_FIELDS:

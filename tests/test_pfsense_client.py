@@ -2254,6 +2254,91 @@ def test_get_user_groups_shape_error_does_not_leak_raw_field_values():
     assert sentinel not in str(excinfo.value)
 
 
+USER_AUTH_SERVERS_FIXTURE = Path(__file__).parent / "fixtures" / "user_auth_servers_response.json"
+
+
+def _user_auth_servers_body() -> dict:
+    return json.loads(USER_AUTH_SERVERS_FIXTURE.read_text())
+
+
+def _user_auth_servers_client(body: dict | None = None) -> tuple[PfSenseClient, MockTransport]:
+    transport = MockTransport()
+    payload = body if body is not None else _user_auth_servers_body()
+    transport.register("GET", "/api/v2/user/auth_servers?limit=100", status_code=200, text=json.dumps(payload))
+    rest_client = RestApiClient(transport, identity="api-mcp-admin", api_version=ApiVersion.V2)
+    return PfSenseClient(rest_client), transport
+
+
+def test_get_user_auth_servers_parses_empty_list():
+    body = {"code": 200, "data": [], "message": "", "response_id": "SUCCESS", "status": "ok"}
+    client, _ = _user_auth_servers_client(body)
+    assert client.get_user_auth_servers() == []
+
+
+def test_get_user_auth_servers_omits_identifying_fields_by_default():
+    client, _ = _user_auth_servers_client()
+    first = client.get_user_auth_servers()[0]
+    assert first.host is None
+    assert first.ldap_binddn is None
+    assert first.ldap_basedn is None
+    assert first.ldap_authcn is None
+    assert first.ldap_pam_groupdn is None
+
+
+def test_get_user_auth_servers_includes_identifying_fields_when_requested():
+    client, _ = _user_auth_servers_client()
+    first = client.get_user_auth_servers(include_identifying_metadata=True)[0]
+    assert first.host == "198.51.100.20"
+    assert first.ldap_binddn == "cn=svc-bind,dc=corp,dc=example,dc=com"
+    assert first.ldap_basedn == "dc=corp,dc=example,dc=com"
+    assert first.ldap_authcn == "ou=People"
+    assert first.ldap_pam_groupdn == "cn=shell-users,dc=corp,dc=example,dc=com"
+
+
+def test_get_user_auth_servers_maps_non_sensitive_fields():
+    client, _ = _user_auth_servers_client()
+    first = client.get_user_auth_servers()[0]
+    assert first.type == "ldap"
+    assert first.name == "corp-ldap"
+    assert first.ldap_urltype == "SSL Encrypted"
+    assert first.ldap_protver == 3
+    assert first.ldap_scope == "subtree"
+    assert first.radius_protocol == "MSCHAPv2"
+
+
+def test_get_user_auth_servers_never_exposes_ldap_bindpw_or_radius_secret():
+    client, _ = _user_auth_servers_client()
+    body = _user_auth_servers_body()
+    assert body["data"][0]["ldap_bindpw"] == "SYNTHETIC-LDAP-BINDPW-PLACEHOLDER"
+    first = client.get_user_auth_servers(include_identifying_metadata=True)[0]
+    assert not hasattr(first, "ldap_bindpw")
+    assert not hasattr(first, "radius_secret")
+    assert "ldap_bindpw" not in type(first).model_fields
+    assert "radius_secret" not in type(first).model_fields
+    dumped = first.model_dump_json()
+    assert "SYNTHETIC-LDAP-BINDPW-PLACEHOLDER" not in dumped
+
+
+def test_get_user_auth_servers_rejects_zero_limit():
+    client, _ = _user_auth_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_user_auth_servers(limit=0)
+
+
+def test_get_user_auth_servers_rejects_limit_above_max():
+    client, _ = _user_auth_servers_client()
+    with pytest.raises(PfSenseRequestValidationError):
+        client.get_user_auth_servers(limit=101)
+
+
+def test_get_user_auth_servers_missing_data_key_raises_shape_error():
+    body = _user_auth_servers_body()
+    del body["data"]
+    client, _ = _user_auth_servers_client(body)
+    with pytest.raises(PfSenseResponseShapeError):
+        client.get_user_auth_servers()
+
+
 STATUS_DHCP_LEASES_FIXTURE = Path(__file__).parent / "fixtures" / "status_dhcp_server_leases_response.json"
 
 

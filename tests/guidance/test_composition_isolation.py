@@ -183,8 +183,8 @@ def test_public_contract_remains_95_read_0_write_after_step_3() -> None:
     read_tools = [t for t in tools if t.name in KNOWN_READ_TOOL_NAMES]
     guidance_tools = [t for t in tools if t.name in KNOWN_GUIDANCE_TOOL_NAMES]
     write_tools = [t for t in tools if not t.annotations.readOnlyHint]
-    assert len(tools) == 122
-    assert len(read_tools) == 120
+    assert len(tools) == 123
+    assert len(read_tools) == 121
     assert len(guidance_tools) == 2
     assert len(write_tools) == 0
 

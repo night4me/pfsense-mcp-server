@@ -237,11 +237,13 @@ def test_resolve_privilege_missing_endpoint_fails_closed_never_falls_back_to_sou
 
 def test_read_profile_requirements_has_101_entries_with_exactly_one_local_only():
     requirements = read_profile_requirements()
-    # 120 pfSense READ tools (101 + 14 HAProxy tools, POST_V1_1_BIND_HAPROXY_
+    # 121 pfSense READ tools (101 + 14 HAProxy tools, POST_V1_1_BIND_HAPROXY_
     # READ_IMPLEMENTATION.md, 2026-08-31; + 5 tools promoted in
-    # POST_V1_1_FINAL_FIVE_READ_PROMOTION.md, 2026-08-31 OWNER GO ceremony) +
-    # 2 guidance tools (official_guidance, owner-authorized 2026-08-22;
-    # api_guidance, owner-authorized 2026-08-28) = 122 entries. Both guidance
+    # POST_V1_1_FINAL_FIVE_READ_PROMOTION.md, 2026-08-31 OWNER GO ceremony;
+    # + 1 tool promoted in POST_V1_1_AUTH_SERVER_BOUNDED_READ_PROMOTION.md,
+    # 2026-09-01 live-qualified) + 2 guidance tools (official_guidance,
+    # owner-authorized 2026-08-22; api_guidance, owner-authorized
+    # 2026-08-28) = 123 entries. Both guidance
     # tools are local-only from this mechanical derivation's point of view
     # for the same reason mcp_info is: neither makes a *direct*
     # client.<method>() call in its own source (each delegates through an
@@ -250,7 +252,7 @@ def test_read_profile_requirements_has_101_entries_with_exactly_one_local_only()
     # api_guidance) -- so both correctly require no pfSense privilege of
     # their own, consistent with neither being gated by the
     # Capability/privilege/profile system at all.
-    assert len(requirements) == 122
+    assert len(requirements) == 123
     local_only = [r for r in requirements if r.url is None]
     assert len(local_only) == 3
     assert {r.tool_name for r in local_only} == {"mcp_info", "official_guidance", "api_guidance"}
@@ -280,11 +282,12 @@ def test_official_guidance_identity_dependency_is_already_in_the_documented_read
 def test_read_profile_resolves_to_the_currently_verified_100_privileges(live_schema):
     # 100 -> 114 (+14 HAProxy privileges, POST_V1_1_BIND_HAPROXY_READ_IMPLEMENTATION.md)
     # -> 119 (+5 privileges, POST_V1_1_FINAL_FIVE_READ_PROMOTION.md, 2026-08-31
-    # OWNER GO ceremony).
+    # OWNER GO ceremony) -> 120 (+1 privilege,
+    # POST_V1_1_AUTH_SERVER_BOUNDED_READ_PROMOTION.md, 2026-09-01 live-qualified).
     resolved = resolve_profile_privileges(live_schema, read_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 119
+    assert len(privileges) == 120
     # Every resolved privilege is source-cross-checked -- the strongest
     # evidence class, since the fixture is real captured schema data.
     assert all(r.evidence_class is EvidenceClass.SOURCE_CROSS_CHECKED for r in resolved)
@@ -294,7 +297,7 @@ def test_write_protected_profile_resolves_to_the_currently_verified_101_privileg
     resolved = resolve_profile_privileges(live_schema, write_protected_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 120
+    assert len(privileges) == 121
 
 
 def test_write_protected_includes_the_write_exclusive_patch_privilege(live_schema):

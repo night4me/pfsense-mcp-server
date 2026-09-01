@@ -16153,6 +16153,417 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
+      "capability": "USER_AUTH_SERVER_READ",
+      "client_method": "get_user_auth_servers",
+      "description": "List authentication server configurations (LDAP/RADIUS):\n        type, connectivity settings, and directory/protocol options.\n        Read-only. Does not include the LDAP bind password or the\n        RADIUS shared secret under any argument.\n\n        include_identifying_metadata: if True, includes the literal\n        server host address and LDAP bind DN/base DN/auth container/\n        PAM group DN. Defaults to False.\n\n        limit: maximum number of servers to return (1-100, default\n        100).",
+      "endpoint": {
+        "method": "GET",
+        "minimum_api_version": "v2",
+        "path_suffix": "/user/auth_servers",
+        "symbol": "USER_AUTH_SERVERS",
+        "verified": true
+      },
+      "input_schema": {
+        "properties": {
+          "include_identifying_metadata": {
+            "default": false,
+            "title": "Include Identifying Metadata",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "pfsense_get_user_auth_serversArguments",
+        "type": "object"
+      },
+      "name": "pfsense_get_user_auth_servers",
+      "output_schema": {
+        "$defs": {
+          "PfSenseAuthServer": {
+            "properties": {
+              "host": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Host"
+              },
+              "ldap_allow_unauthenticated": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Allow Unauthenticated"
+              },
+              "ldap_attr_group": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Attr Group"
+              },
+              "ldap_attr_groupobj": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Attr Groupobj"
+              },
+              "ldap_attr_member": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Attr Member"
+              },
+              "ldap_attr_user": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Attr User"
+              },
+              "ldap_authcn": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ldap Authcn"
+              },
+              "ldap_basedn": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ldap Basedn"
+              },
+              "ldap_binddn": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ldap Binddn"
+              },
+              "ldap_caref": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Caref"
+              },
+              "ldap_extended_enabled": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Extended Enabled"
+              },
+              "ldap_extended_query": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Extended Query"
+              },
+              "ldap_nostrip_at": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Nostrip At"
+              },
+              "ldap_pam_groupdn": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Identifying device metadata. Populated only when include_identifying_metadata=True.",
+                "title": "Ldap Pam Groupdn"
+              },
+              "ldap_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Port"
+              },
+              "ldap_protver": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Protver"
+              },
+              "ldap_rfc2307": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Rfc2307"
+              },
+              "ldap_rfc2307_userdn": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Rfc2307 Userdn"
+              },
+              "ldap_scope": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Scope"
+              },
+              "ldap_timeout": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Timeout"
+              },
+              "ldap_urltype": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Urltype"
+              },
+              "ldap_utf8": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Ldap Utf8"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "radius_acct_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Radius Acct Port"
+              },
+              "radius_auth_port": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Radius Auth Port"
+              },
+              "radius_nasip_attribute": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Radius Nasip Attribute"
+              },
+              "radius_protocol": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Radius Protocol"
+              },
+              "radius_timeout": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Radius Timeout"
+              },
+              "refid": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Refid"
+              },
+              "type": {
+                "title": "Type",
+                "type": "string"
+              }
+            },
+            "required": [
+              "refid",
+              "type",
+              "name",
+              "ldap_port",
+              "ldap_urltype",
+              "ldap_protver",
+              "ldap_timeout",
+              "ldap_caref",
+              "ldap_scope",
+              "ldap_extended_enabled",
+              "ldap_extended_query",
+              "ldap_attr_user",
+              "ldap_attr_group",
+              "ldap_attr_member",
+              "ldap_rfc2307",
+              "ldap_rfc2307_userdn",
+              "ldap_attr_groupobj",
+              "ldap_utf8",
+              "ldap_nostrip_at",
+              "ldap_allow_unauthenticated",
+              "radius_auth_port",
+              "radius_acct_port",
+              "radius_protocol",
+              "radius_timeout",
+              "radius_nasip_attribute"
+            ],
+            "title": "PfSenseAuthServer",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/PfSenseAuthServer"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "pfsense_get_user_auth_serversOutput",
+        "type": "object"
+      },
+      "tool_class": "read"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
       "capability": "USER_GROUP_READ",
       "client_method": "get_user_groups",
       "description": "List pfSense local user groups: name, description, GID,\n        member usernames, privileges, and scope. Read-only.\n\n        limit: maximum number of groups to return (1-100, default\n        100).",

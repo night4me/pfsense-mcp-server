@@ -9,6 +9,30 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `pfsense_get_user_auth_servers` READ tool: authentication server
+  (LDAP/RADIUS) configurations — type, connectivity settings, and
+  directory/protocol options. Live-qualified against the disposable LAB
+  appliance under a temporary, fully-reversed single-purpose privilege
+  grant (`POST_V1_1_AUTH_SERVER_LIVE_QUALIFICATION.md`'s 2026-09-01
+  ceremony: privilege count 94 → 95 → 94, exact-set verified twice on
+  rollback; live GET returned `200`/empty list; 4/4 representative
+  mutating attempts correctly rejected with `403
+  AUTH_AUTHORIZATION_FAILED` before any handler execution) before
+  promotion, per this project's established verified-before-registered
+  invariant. `ldap_bindpw` and `radius_secret` are deliberately excluded
+  entirely (LDAP bind password / RADIUS shared secret material) —
+  re-confirmed as the complete required-exclusion set via an expanded
+  keyword sweep of all 31 upstream schema fields; `host` and the LDAP
+  DN/base-string fields (`ldap_binddn`, `ldap_basedn`, `ldap_authcn`,
+  `ldap_pam_groupdn`) are redacted by default via
+  `include_identifying_metadata`, matching this project's established
+  `IPsecPhase1` precedent. Public READ tool count moves from 120 to 121
+  (123 total incl. 2 guidance tools); the managed
+  `pfsense-mcp-readonly` READ-only privilege set moves from 119 to 120.
+  Not yet published to PyPI — README.md's tool-count claims continue to
+  describe the last published baseline (v1.1.0: 95 READ) until the next
+  release's doc sync updates them together. See
+  `POST_V1_1_AUTH_SERVER_LIVE_QUALIFICATION.md`.
 - Five READ tools promoted from source-first-qualified candidates left
   implemented-but-unregistered in the prior hardening pass:
   `pfsense_get_services_service_watchdogs`, `pfsense_get_vpn_wireguard_tunnels`,

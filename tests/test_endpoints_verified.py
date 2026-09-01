@@ -214,6 +214,18 @@ def test_user_groups_path_suffix_is_correct():
     assert Endpoints.USER_GROUPS.path_suffix == "/user/groups"
 
 
+def test_user_auth_servers_is_declared_verified():
+    assert Endpoints.USER_AUTH_SERVERS.verified is True
+
+
+def test_user_auth_servers_path_suffix_has_no_api_prefix():
+    assert not Endpoints.USER_AUTH_SERVERS.path_suffix.startswith("/api")
+
+
+def test_user_auth_servers_path_suffix_is_correct():
+    assert Endpoints.USER_AUTH_SERVERS.path_suffix == "/user/auth_servers"
+
+
 def test_config_history_revisions_is_declared_verified():
     assert Endpoints.DIAGNOSTICS_CONFIG_HISTORY_REVISIONS.verified is True
 

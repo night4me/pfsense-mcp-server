@@ -2,8 +2,8 @@
   "deterministic_across_runs": true,
   "distribution": {
     "max_tool_bytes": 3059,
-    "mean_tool_bytes": 536.0,
-    "median_tool_bytes": 500.0,
+    "mean_tool_bytes": 538.3,
+    "median_tool_bytes": 504,
     "min_tool_bytes": 196,
     "stdev_tool_bytes": 290.1
   },
@@ -44,6 +44,13 @@
       "total_tool_bytes": 884
     },
     {
+      "description_bytes": 501,
+      "input_schema_bytes": 243,
+      "name": "pfsense_get_user_auth_servers",
+      "name_bytes": 31,
+      "total_tool_bytes": 826
+    },
+    {
       "description_bytes": 448,
       "input_schema_bytes": 250,
       "name": "pfsense_get_status_wireguard_tunnels",
@@ -70,22 +77,15 @@
       "name": "pfsense_mcp_info",
       "name_bytes": 18,
       "total_tool_bytes": 751
-    },
-    {
-      "description_bytes": 439,
-      "input_schema_bytes": 231,
-      "name": "pfsense_get_users",
-      "name_bytes": 19,
-      "total_tool_bytes": 739
     }
   ],
   "latency": {
-    "startup_to_initialized_seconds": 0.8842,
-    "tools_list_seconds": 0.0288
+    "startup_to_initialized_seconds": 0.861,
+    "tools_list_seconds": 0.0281
   },
   "memory": {
     "note": "Best-effort RUSAGE_CHILDREN peak RSS (KB) across the whole benchmark process's child processes measured so far -- Linux-specific, approximate (includes Python interpreter startup, not isolated to the MCP server alone).",
-    "ru_maxrss_kb": 84144
+    "ru_maxrss_kb": 84400
   },
   "methodology": {
     "byte_counting": "UTF-8 encoded length of the canonical (sorted-key, no-whitespace) JSON serialization of each tool/the full tools array -- an exact, reproducible byte count, not an estimate.",
@@ -913,6 +913,13 @@
       "total_tool_bytes": 787
     },
     {
+      "description_bytes": 501,
+      "input_schema_bytes": 243,
+      "name": "pfsense_get_user_auth_servers",
+      "name_bytes": 31,
+      "total_tool_bytes": 826
+    },
+    {
       "description_bytes": 554,
       "input_schema_bytes": 245,
       "name": "pfsense_get_vpn_openvpn_clients",
@@ -1021,12 +1028,12 @@
     }
   ],
   "totals": {
-    "full_tools_list_payload_bytes": 65522,
-    "full_tools_list_payload_estimated_tokens": 16380,
-    "tool_count": 122,
-    "total_description_bytes": 36034,
-    "total_description_estimated_tokens": 9008,
-    "total_input_schema_bytes": 19590,
-    "total_input_schema_estimated_tokens": 4898
+    "full_tools_list_payload_bytes": 66349,
+    "full_tools_list_payload_estimated_tokens": 16587,
+    "tool_count": 123,
+    "total_description_bytes": 36535,
+    "total_description_estimated_tokens": 9134,
+    "total_input_schema_bytes": 19833,
+    "total_input_schema_estimated_tokens": 4958
   }
 }

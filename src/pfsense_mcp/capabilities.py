@@ -100,6 +100,7 @@ class Capability(Enum):
     VPN_WIREGUARD_PEERS_READ = auto()
     VPN_IPSEC_PHASE1_READ = auto()
     VPN_OPENVPN_CLIENT_READ = auto()
+    USER_AUTH_SERVER_READ = auto()
     # Not usable until a separate, explicitly authorized implementation phase:
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
@@ -206,6 +207,7 @@ READ_CAPABILITIES: frozenset[Capability] = frozenset(
         Capability.VPN_WIREGUARD_PEERS_READ,
         Capability.VPN_IPSEC_PHASE1_READ,
         Capability.VPN_OPENVPN_CLIENT_READ,
+        Capability.USER_AUTH_SERVER_READ,
     }
 )
 

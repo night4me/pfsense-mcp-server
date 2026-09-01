@@ -97,7 +97,7 @@ def test_ninety_seven_tool_files_exist_matching_the_public_contract() -> None:
     # owner-authorized 2026-08-22, and api_guidance.py, added 2026-08-28) --
     # all still live under tools/read/. -> 120 READ tool files (+14 HAProxy,
     # +5 POST_V1_1_FINAL_FIVE_READ_PROMOTION.md, 2026-08-31 OWNER GO ceremony).
-    assert len(_tool_files()) == 122
+    assert len(_tool_files()) == 123
 
 
 def test_no_tool_file_uses_getattr_setattr_or_hasattr() -> None:

@@ -133,6 +133,7 @@ TOOL_ENDPOINT_PATHS: dict[str, tuple[str, str]] = {
     "pfsense_get_system_tunables": ("/system/tunables", "GET"),
     "pfsense_get_system_version": ("/system/version", "GET"),
     "pfsense_get_system_webgui_settings": ("/system/webgui/settings", "GET"),
+    "pfsense_get_user_auth_servers": ("/user/auth_servers", "GET"),
     "pfsense_get_user_groups": ("/user/groups", "GET"),
     "pfsense_get_users": ("/users", "GET"),
     "pfsense_get_vpn_ipsec_phase1_encryptions": ("/vpn/ipsec/phase1/encryptions", "GET"),

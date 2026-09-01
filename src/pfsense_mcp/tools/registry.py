@@ -128,6 +128,7 @@ from .read import (
     system_tunables,
     system_version,
     system_webgui_settings,
+    user_auth_servers,
     user_groups,
     users,
     vpn_ipsec_phase1_encryptions,
@@ -268,6 +269,7 @@ KNOWN_READ_TOOL_NAMES: frozenset[str] = frozenset(
         "pfsense_get_system_tunables",
         "pfsense_get_system_version",
         "pfsense_get_system_webgui_settings",
+        "pfsense_get_user_auth_servers",
         "pfsense_get_user_groups",
         "pfsense_get_users",
         "pfsense_get_vpn_ipsec_phase1_encryptions",
@@ -534,6 +536,8 @@ class ToolRegistry:
             self._register_vpn_ipsec_phase1_read()
         if Capability.VPN_OPENVPN_CLIENT_READ in self._capabilities:
             self._register_vpn_openvpn_client_read()
+        if Capability.USER_AUTH_SERVER_READ in self._capabilities:
+            self._register_user_auth_server_read()
 
         # Deliberately NOT gated by any *specific* Capability check (owner
         # instruction, 2026-08-22): a guidance tool is not a pfSense
@@ -1229,6 +1233,11 @@ class ToolRegistry:
     def _register_vpn_openvpn_client_read(self) -> None:
         fn = vpn_openvpn_clients.build(self._client)
         wrapped = audit_logged("pfsense_get_vpn_openvpn_clients", self._identity)(fn)
+        self._register_read_tool(wrapped)
+
+    def _register_user_auth_server_read(self) -> None:
+        fn = user_auth_servers.build(self._client)
+        wrapped = audit_logged("pfsense_get_user_auth_servers", self._identity)(fn)
         self._register_read_tool(wrapped)
 
     def _build_introspection_snapshot(self) -> ServerIntrospection:

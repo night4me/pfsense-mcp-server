@@ -2,7 +2,7 @@
 
 Version: 1.0.0 release state
 Profile: `auditor`  
-Registered tools: 120 READ, 2 guidance, 0 WRITE
+Registered tools: 121 READ, 2 guidance, 0 WRITE
 
 The normalized public contract is checked into
 `tests/contracts/mcp_public_contract_v1.0.0.json`. It records tool names,
@@ -811,6 +811,18 @@ Common parameters:
 - **Security:** Group/privilege inventory is authorization-sensitive but
   contains no password material.
 - **Example:** `{"name":"pfsense_get_user_groups","arguments":{"limit":20}}`
+
+### `pfsense_get_user_auth_servers`
+
+- **Purpose:** List authentication server (LDAP/RADIUS) configurations:
+  type, connectivity settings, and directory/protocol options.
+- **Parameters:** `include_identifying_metadata: boolean = false`;
+  `limit: integer = 100`.
+- **Returns:** `list[PfSenseAuthServer]`.
+- **Security:** Literal server host address and LDAP bind DN/base DN/auth
+  container/PAM group DN are omitted by default. The LDAP bind password
+  and RADIUS shared secret are never returned under any argument.
+- **Example:** `{"name":"pfsense_get_user_auth_servers","arguments":{}}`
 
 ### `pfsense_get_auth_keys`
 

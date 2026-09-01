@@ -131,6 +131,19 @@ class Endpoints:
         verified=True,
         min_api_version=ApiVersion.V2,
     )
+    # verified=True (2026-09-01, POST_V1_1_AUTH_SERVER_LIVE_QUALIFICATION):
+    # HTTP 200, correct envelope, zero configured auth servers at
+    # verification time -- ENDPOINT_VERIFIED only. `ldap_bindpw`/
+    # `radius_secret` excluded (secret bind password / RADIUS shared
+    # secret). `host`/`ldap_binddn`/`ldap_basedn`/`ldap_authcn`/
+    # `ldap_pam_groupdn` redacted by default via
+    # include_identifying_metadata. See PfSenseAuthServer's own docstring
+    # for the complete field-by-field rationale.
+    USER_AUTH_SERVERS = EndpointInfo(
+        path_suffix="/user/auth_servers",
+        verified=True,
+        min_api_version=ApiVersion.V2,
+    )
     DIAGNOSTICS_CONFIG_HISTORY_REVISIONS = EndpointInfo(
         path_suffix="/diagnostics/config_history/revisions",
         verified=True,

@@ -95,6 +95,7 @@ from .models.openvpn_server import OpenVpnServer
 from .models.openvpn_server_connection_status import OpenVpnServerConnectionStatus
 from .models.openvpn_server_route_status import OpenVpnServerRouteStatus
 from .models.openvpn_server_status import OpenVpnServerStatus
+from .models.pf_sense_auth_server import PfSenseAuthServer
 from .models.pf_sense_user import PfSenseUser
 from .models.pf_sense_user_group import PfSenseUserGroup
 from .models.restapi_access_list_entry import RESTAPIAccessListEntry
@@ -171,6 +172,10 @@ CONFIG_HISTORY_REVISIONS_MAX_LIMIT = 100
 
 USER_GROUPS_MIN_LIMIT = 1
 USER_GROUPS_MAX_LIMIT = 100
+
+
+USER_AUTH_SERVERS_MIN_LIMIT = 1
+USER_AUTH_SERVERS_MAX_LIMIT = 100
 
 
 DHCP_LEASES_MIN_LIMIT = 1
@@ -680,6 +685,21 @@ class PfSenseClient:
 
         raw = self._rest.get(Endpoints.USER_GROUPS, params={"limit": limit})
         return _parse_list_response(raw, "/user/groups", PfSenseUserGroup.from_api)
+
+    def get_user_auth_servers(
+        self, *, include_identifying_metadata: bool = False, limit: int = 100
+    ) -> list[PfSenseAuthServer]:
+        if not (USER_AUTH_SERVERS_MIN_LIMIT <= limit <= USER_AUTH_SERVERS_MAX_LIMIT):
+            raise PfSenseRequestValidationError(
+                f"limit must be between {USER_AUTH_SERVERS_MIN_LIMIT} and {USER_AUTH_SERVERS_MAX_LIMIT} (got {limit})."
+            )
+
+        raw = self._rest.get(Endpoints.USER_AUTH_SERVERS, params={"limit": limit})
+        return _parse_list_response(
+            raw,
+            "/user/auth_servers",
+            lambda data: PfSenseAuthServer.from_api(data, include_identifying_metadata=include_identifying_metadata),
+        )
 
     def get_dhcp_leases(self, *, limit: int = 100) -> list[DhcpLease]:
         if not (DHCP_LEASES_MIN_LIMIT <= limit <= DHCP_LEASES_MAX_LIMIT):
