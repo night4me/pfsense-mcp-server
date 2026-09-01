@@ -1030,3 +1030,90 @@ def test_confirm_and_handoff_default_omits_acceptance_context(tmp_path: Path, mo
     executor.execute.assert_called_once()
     _args, kwargs = executor.execute.call_args
     assert kwargs["acceptance_context"] is None
+
+
+# ---------------------------------------------------------------------------
+# ADR-036 W0 gap 4: AliasDescriptionAdapterV1.is_semantically_verified()
+# direct unit coverage -- docs/tier1/specs/capability_adapter_contract.md's
+# I5 ("must compare every field the projection is allowed to change ...
+# and every field the projection forbids from changing ... an
+# implementation that only checks the changed field is incomplete by this
+# contract's definition") had no direct test proving the live adapter
+# actually satisfies it; only a synthetic fake adapter in
+# tests/tier1/test_executor.py exercised the Protocol shape generically.
+# ---------------------------------------------------------------------------
+
+
+def _alias_state_dict(
+    *, name="LAB_ALIAS_TEST", numeric_id=0, alias_type="host", descr="before", address=("192.0.2.10",), detail=("d",)
+):
+    return {
+        "name": name,
+        "id": numeric_id,
+        "type": alias_type,
+        "descr": descr,
+        "address": list(address),
+        "detail": list(detail),
+    }
+
+
+def _alias_intent_dict(*, new_description="after", alias_name="LAB_ALIAS_TEST", digest="a" * 64):
+    return {
+        "operation": SEMANTIC_UNIT,
+        "raw_target_hint": {"alias_name": alias_name},
+        "new_description": new_description,
+        "appliance_target_digest": digest,
+    }
+
+
+def test_is_semantically_verified_true_when_only_description_changed_to_the_intended_value():
+    adapter = AliasDescriptionAdapterV1()
+    pre = _alias_state_dict(descr="before")
+    post = _alias_state_dict(descr="after")
+    intent = _alias_intent_dict(new_description="after")
+    assert adapter.is_semantically_verified(pre, post, intent) is True
+
+
+def test_is_semantically_verified_false_when_description_did_not_change_to_the_intended_value():
+    adapter = AliasDescriptionAdapterV1()
+    pre = _alias_state_dict(descr="before")
+    post = _alias_state_dict(descr="something-else")
+    intent = _alias_intent_dict(new_description="after")
+    assert adapter.is_semantically_verified(pre, post, intent) is False
+
+
+def test_is_semantically_verified_false_when_description_unchanged_despite_intent():
+    """HTTP 2xx alone must never satisfy this -- a post-state identical
+    to pre-state (request silently ignored/no-op'd server-side) is not
+    semantic success even though the transport call itself succeeded."""
+
+    adapter = AliasDescriptionAdapterV1()
+    pre = _alias_state_dict(descr="before")
+    post = _alias_state_dict(descr="before")
+    intent = _alias_intent_dict(new_description="after")
+    assert adapter.is_semantically_verified(pre, post, intent) is False
+
+
+@pytest.mark.parametrize(
+    "drifted_field,drifted_value",
+    [
+        ("name", "DIFFERENT_ALIAS"),
+        ("alias_type", "network"),
+        ("address", ("203.0.113.5",)),
+        ("detail", ("unexpected",)),
+    ],
+)
+def test_is_semantically_verified_false_when_description_correct_but_another_field_also_drifted(
+    drifted_field, drifted_value
+):
+    """The I5 case a naive "only check the changed field" implementation
+    would incorrectly accept: the intended description change did
+    happen, but some other field the projection forbids touching also
+    changed (an unrelated concurrent edit landed in between pre/post
+    reads, or a server-side side effect). Must refuse."""
+
+    adapter = AliasDescriptionAdapterV1()
+    pre = _alias_state_dict(descr="before")
+    post = _alias_state_dict(descr="after", **{drifted_field: drifted_value})
+    intent = _alias_intent_dict(new_description="after")
+    assert adapter.is_semantically_verified(pre, post, intent) is False

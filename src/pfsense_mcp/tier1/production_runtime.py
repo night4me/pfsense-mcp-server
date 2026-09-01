@@ -59,6 +59,37 @@ remains exactly `store.resolve_reconciliation()`, gated by the same pinned
 reconciliation authority configured here -- `ProductionAliasDescriptionRuntime.resolve_reconciliation()`
 below is a one-line forwarding call, not a second implementation.
 
+**ADR-036 W0 gap 3 -- the exact, documented interrupted-state detection
+bound**: an interrupted contract (left `EXECUTING`/`ROLLING_BACK` by a
+process crash) is guaranteed to be discovered and moved to
+`RECONCILIATION` no later than the *next* `build_production_runtime()`
+call -- i.e. before any subsequent execution attempt's own
+authorization/preparation/mutation logic runs at all, since every such
+attempt (`tier1_write_bridge.request_alias_description_change()`)
+unconditionally calls this function first and a fresh `MutationExecutor`
+always reconciles as its first act. Proven at the integration level by
+`tests/tier1/test_production_runtime.py::
+test_restart_reconciles_interrupted_executing_contract`. This closes
+the specific security property that matters (**an interrupted, ambiguous
+contract can never silently permit a second write to proceed** -- the
+same construction path a second attempt requires is the one that
+reconciles the first), but it is deliberately **not a wall-clock bound**:
+if the tool is never invoked again, the interrupted state persists
+un-reconciled, invisible to any monitoring, until it is. Promoting this
+to an eager trigger -- reconciling at MCP server startup or via a
+periodic background check -- was considered and deliberately not done
+in this pass: server-startup reconciliation would require constructing
+a full production Tier1 runtime (live TPM-witness connectivity, all 17
+required environment variables) as part of server boot, a materially
+different and riskier startup-availability tradeoff than this module's
+own "Not imported by `application.py`/`factory.py`/`server.py`"
+boundary (unchanged by this note) already establishes; a periodic
+background reconciler would be new, unreviewed, security-sensitive
+machinery this W0 pass's own scope explicitly warns against introducing
+casually. Both remain legitimate candidates for a separate,
+explicitly-scoped, owner-authorized future decision -- not something
+this pass silently chooses either way.
+
 W3 Slice 3 (ADR-028 product composition): `request_alias_description_change()`
 is the single composed operation tying Slice 2's artifact-exchange
 primitives (`artifact_exchange.py`), Slice 3A's `resume_prepared()` seam

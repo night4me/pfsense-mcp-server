@@ -1,9 +1,26 @@
 # Tier 1 — Capability adapter contract
 
-Status: implementation-ready specification; implementation not authorized.
-Activation gate: Milestone 9 (first capability, separately authorized);
-this document defines the **interface** every future adapter must satisfy,
-not any specific adapter.
+Status: implementation-ready specification for the general interface.
+Milestone 9 has since been separately authorized and shipped for exactly
+one capability (`set_firewall_alias_description_v1`,
+`tier1/alias_description.py::AliasDescriptionAdapterV1`) --
+`AliasDescriptionAdapterV1.is_semantically_verified()` was independently
+re-verified (ADR-036 W0) to satisfy I5 below exactly (compares the one
+projected field against the intended value *and* every non-projected
+field against the pre-state; direct unit coverage:
+`tests/tier1/test_alias_description_execution.py`'s
+`test_is_semantically_verified_*` tests). This document still defines
+the **general interface** every *future* adapter must satisfy -- it is
+not, and does not become, a description of any second adapter's
+implementation merely because the first one now demonstrates the
+pattern works. (This status line was found stale during ADR-036 W0's own
+audit -- several other `docs/tier1/specs/*.md` files, e.g.
+`sealed_executor.md`, still carry the pre-Milestone-9
+"implementation not authorized" framing verbatim despite describing
+components -- `MutationExecutor`, in that case -- that are now real,
+shipped, production code for this one capability. A full sweep of that
+directory's status headers was judged out of this pass's narrow scope
+and is recorded as a follow-up, not silently fixed or silently ignored.)
 Related: [sealed_executor.md](sealed_executor.md) (defines the
 `CapabilityAdapter` Protocol this document explains how to implement
 safely), [adapter_restrictions.md](adapter_restrictions.md) (defines how
