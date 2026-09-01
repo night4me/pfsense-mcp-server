@@ -291,6 +291,34 @@ def readme_tool_count_mismatches(readme_text: str, *, read_count: int, guidance_
     return failures
 
 
+def tool_and_guidance_reference_mismatches(doc_text: str, *, read_count: int) -> list[str]:
+    """Cross-checks docs/TOOL_AND_GUIDANCE_REFERENCE.md's own "current,
+    source-derived" tool-count claim against the authoritative contract.
+
+    Unlike readme_tool_count_mismatches() (which deliberately checks
+    README.md against the *published* PyPI baseline), this page's own
+    header explicitly claims to track current main, not a published
+    release -- so it must be checked against the live read_count, not
+    a pinned constant. This check exists because that claim was found
+    stale (95 vs. 121) after the user/auth_servers promotion; the page
+    also separately claims this count is "enforced mechanically", which
+    this function now makes true.
+    """
+    normalized = re.sub(r"\s+", " ", doc_text)
+    failures: list[str] = []
+
+    read_claim = re.search(r"\*\*(\d+) pfSense READ tools\*\*", normalized)
+    if read_claim is None:
+        failures.append("docs/TOOL_AND_GUIDANCE_REFERENCE.md is missing the '**N pfSense READ tools**' claim")
+    elif int(read_claim.group(1)) != read_count:
+        failures.append(
+            f"docs/TOOL_AND_GUIDANCE_REFERENCE.md says '{read_claim.group(0)}', "
+            f"but the authoritative contract has {read_count} pfSense READ tools"
+        )
+
+    return failures
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update", action="store_true", help="write the current contract after explicit API approval")
@@ -321,6 +349,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if readme_failures:
         print("public_contract: README.md tool-count claims disagree with the authoritative contract:")
         for failure in readme_failures:
+            print(f"  - {failure}")
+        return 1
+    reference_path = ROOT / "docs" / "TOOL_AND_GUIDANCE_REFERENCE.md"
+    reference_failures = tool_and_guidance_reference_mismatches(
+        reference_path.read_text(encoding="utf-8"),
+        read_count=read_count,
+    )
+    if reference_failures:
+        print("public_contract: docs/TOOL_AND_GUIDANCE_REFERENCE.md tool-count claims disagree with the contract:")
+        for failure in reference_failures:
             print(f"  - {failure}")
         return 1
     print(

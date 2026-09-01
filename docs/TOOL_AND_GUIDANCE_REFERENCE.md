@@ -6,7 +6,7 @@ specifically — exactly whose words you're reading when you use them.
 
 ## Public tool counts (current, source-derived)
 
-- **95 pfSense READ tools** — each one calls exactly one fixed pfREST
+- **121 pfSense READ tools** — each one calls exactly one fixed pfREST
   `GET` endpoint through one statically checked client method, gated by
   a named `Capability`. See [the full reference](API.md) and
   [Compatibility](COMPATIBILITY.md) for per-tool detail.

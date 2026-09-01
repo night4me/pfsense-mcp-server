@@ -10,6 +10,7 @@ from public_contract import (
     build_contract,
     main,
     readme_tool_count_mismatches,
+    tool_and_guidance_reference_mismatches,
 )
 
 
@@ -149,3 +150,37 @@ def test_category_table_sum_mismatch_is_detected():
 def test_missing_claims_are_reported_not_silently_skipped():
     failures = readme_tool_count_mismatches("# Empty README\n", read_count=95, guidance_count=2)
     assert len(failures) == 4
+
+
+# ===========================================================================
+# docs/TOOL_AND_GUIDANCE_REFERENCE.md tool-count claim vs the authoritative
+# contract
+# ===========================================================================
+#
+# This is the regression coverage for the B2 hardening-audit finding
+# (POST_V1_1_FINAL_READ_CLOSURE_AND_FULL_HARDENING_2026-09-01.md, Mission 7
+# Part B) that this page's own "current, source-derived" tool-count claim
+# was stale (95 vs. 121) after the user/auth_servers promotion, and its
+# separate "enforced mechanically" claim was false -- nothing checked it.
+# Unlike README.md (checked against the last *published* baseline, see
+# above), this page explicitly claims to track current main, so it is
+# checked against build_contract()'s own live read_count, not a pinned
+# constant.
+
+
+def test_current_reference_doc_agrees_with_the_live_contract():
+    doc_text = (ROOT / "docs" / "TOOL_AND_GUIDANCE_REFERENCE.md").read_text(encoding="utf-8")
+    contract = build_contract()
+    read_count = sum(1 for tool in contract["tools"] if tool["tool_class"] == "read")
+    assert tool_and_guidance_reference_mismatches(doc_text, read_count=read_count) == []
+
+
+def test_stale_reference_doc_read_count_is_detected():
+    doc_text = "## Public tool counts (current, source-derived)\n\n- **95 pfSense READ tools** -- ...\n"
+    failures = tool_and_guidance_reference_mismatches(doc_text, read_count=121)
+    assert any("95 pfSense READ tools" in failure for failure in failures)
+
+
+def test_reference_doc_missing_claim_is_reported_not_silently_skipped():
+    failures = tool_and_guidance_reference_mismatches("# Empty page\n", read_count=121)
+    assert len(failures) == 1
