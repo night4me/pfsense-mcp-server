@@ -106,6 +106,52 @@ class _SyntheticAdapter:
         }
 
 
+class _AdapterMissingSemanticVerification:
+    """ADR-036 W0 gap 4/10: a `CapabilityAdapter`-shaped object that omits
+    `is_semantically_verified` entirely -- not merely one that implements
+    it and returns `False` (see `_SyntheticAdapter(semantically_verified=
+    False)` above), but one that never defines the method at all. Proves
+    the executor cannot accept transport success as mutation success for
+    an adapter that skips this required contract member; structural
+    typing (`Protocol`, mypy-only) doesn't stop a caller who ignores
+    type-checking from wiring one in at runtime. Deliberately does NOT
+    subclass `_SyntheticAdapter`, so nothing is inherited."""
+
+    capability = _CAPABILITY
+    endpoint_symbol = _ENDPOINT_SYMBOL
+    http_method = _HTTP_METHOD
+
+    def __init__(self, *, reads) -> None:
+        self._reads = list(reads)
+        self._read_index = 0
+        self.read_calls: list[object] = []
+
+    def read_target(self, read_client, natural_identity):
+        self.read_calls.append(natural_identity)
+        index = min(self._read_index, len(self._reads) - 1)
+        value = dict(self._reads[index])
+        value.setdefault("id", 7)
+        self._read_index += 1
+        return value
+
+    def natural_identity(self, raw_target):
+        return {"name": raw_target["name"]}
+
+    def fingerprint(self, raw_target):
+        return {"descr": raw_target["descr"], "revision": raw_target["revision"]}
+
+    def transport_locator(self, raw_target):
+        return raw_target["id"]
+
+    def build_request(self, intent, target):
+        return _SyntheticRequest(id=target.numeric_locator, descr=intent["descr"])
+
+    def parse_response(self, raw_response):
+        return {"status_code": raw_response.status_code}
+
+    # Deliberately no is_semantically_verified: that is the point of this test double.
+
+
 class _RaisingWriteClient:
     """Stands in for WriteApiClient in tests that only need to drive
     MutationExecutor._send()'s exception classification -- never a real
@@ -711,6 +757,33 @@ def test_execute_reaches_failed_when_response_not_semantically_verified(tmp_path
 
     assert outcome.state == RecoveryState.FAILED
     assert "not semantically verified" in outcome.detail
+
+
+def test_execute_reaches_reconciliation_when_adapter_lacks_semantic_verification(tmp_path, monkeypatch):
+    """ADR-036 W0 gap 4/10: an adapter that never implements
+    `is_semantically_verified` at all cannot slip transport success
+    through as mutation success. The executor's own AttributeError on
+    calling the missing method is caught by `execute()`'s existing
+    post-send try/except (same as any other post-send verification
+    failure) and lands in RECONCILIATION -- fail-closed-ambiguous,
+    never a verified/success outcome."""
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    adapter = _AdapterMissingSemanticVerification(
+        reads=[
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+        ],
+    )
+    executor = _executor(store, write_client)
+
+    outcome = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert outcome.state == RecoveryState.RECONCILIATION
+    assert "post-send verification failed" in outcome.detail
 
 
 def test_execute_reaches_failed_on_client_error_response(tmp_path, monkeypatch):
