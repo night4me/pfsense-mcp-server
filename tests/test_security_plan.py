@@ -457,11 +457,20 @@ def test_alias_description_write_constants_are_the_single_source_of_the_activati
     constants (pre-Slice-5 duplication-removal refactor); the emitted
     `capability_posture` activation step's `step_id` is literally the same
     object/value as `ALIAS_DESCRIPTION_WRITE_STEP_ID`, never a second,
-    independently-typed copy of the string."""
+    independently-typed copy of the string. ADR-036 W0:
+    `ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS` must likewise match that
+    same step's own `authorization_required` exactly -- if a future edit
+    changes `_milestone_9_activation_step()`'s literal without updating
+    the constant, this assertion (not just the docstring) catches the
+    drift."""
 
     assert security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE is CapabilityPosture.WRITE_PROTECTED
     assert security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE is AnchorAssurance.HARDWARE_WITNESS
     assert security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID == "capability_posture.milestone_9_activation"
+    assert (
+        security_plan.ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS
+        is security_plan.AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION
+    )
 
     env = {**_provisioned_store_env(tmp_path, value=2, handle="0x01500000"), **_WITNESS_ENV}
     _patch_witness_anchor(monkeypatch, _FakeAnchor(2))
@@ -472,6 +481,7 @@ def test_alias_description_write_constants_are_the_single_source_of_the_activati
     )
     activation_step = next(s for s in plan.steps if s.step_id == security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID)
     assert activation_step.step_id == security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID
+    assert activation_step.authorization_required is security_plan.ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS
 
 
 # ---------------------------------------------------------------------------

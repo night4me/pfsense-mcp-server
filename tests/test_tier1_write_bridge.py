@@ -114,6 +114,7 @@ def test_request_alias_description_change_calls_the_composed_runtime_with_the_do
     assert kwargs["target_capability_posture"] is CapabilityPosture.WRITE_PROTECTED
     assert kwargs["target_anchor_assurance"] is AnchorAssurance.HARDWARE_WITNESS
     assert kwargs["requested_step_id"] == "capability_posture.milestone_9_activation"
+    assert kwargs["required_risk_class"] is security_plan.ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS
     expected_plan = generate_security_posture_plan(CapabilityPosture.WRITE_PROTECTED, AnchorAssurance.HARDWARE_WITNESS)
     assert kwargs["requested_plan_digest"] == compute_plan_digest(expected_plan)
     assert kwargs["now"].tzinfo is not None
@@ -170,3 +171,4 @@ def test_bridge_constants_are_sourced_from_security_plan_not_private_duplicates(
     )
     assert tier1_write_bridge._TARGET_ANCHOR_ASSURANCE is security_plan.ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE
     assert tier1_write_bridge._REQUESTED_STEP_ID is security_plan.ALIAS_DESCRIPTION_WRITE_STEP_ID
+    assert tier1_write_bridge._REQUIRED_RISK_CLASS is security_plan.ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS

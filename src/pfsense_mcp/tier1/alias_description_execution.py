@@ -3,6 +3,20 @@
 No production bootstrap imports this module.  It composes existing security
 owners and ends at one call to ``MutationExecutor.execute``; it registers no
 tool, endpoint, policy or capability.
+
+**ADR-036 W0 canonical-gate note**: ``authorize_and_create()``'s own
+signature->expiry->plan/step->risk_class->freshness->consume sequence
+below is the ONE authorization-gate implementation this codebase's sole
+live WRITE capability actually runs -- reachable, via
+``tier1_write_bridge.py``/``production_runtime.py``, from a real
+(currently non-default) MCP tool. ``tier1/execution_coordinator.py``
+composes a similarly-ordered gate sequence but operates on the
+superseded V1 ``PlanAuthorization`` schema and has no analog of this
+method's fresh-re-preparation/execution-intent-digest/numeric-locator
+continuity check -- it is not a semantically equivalent alternative,
+is never imported by any production module (mechanically proven,
+``tests/tier1/test_execution_coordinator_isolation.py``), and is not
+this codebase's canonical gate.
 """
 
 from __future__ import annotations
@@ -16,9 +30,11 @@ from typing import TYPE_CHECKING
 from pfsense_mcp.security_authorization import PLAN_AUTHORIZATION_V2_SCHEMA_VERSION, PlanAuthorizationV2
 from pfsense_mcp.security_authorization_verifier import (
     plan_authorization_v2_authorizes_execution,
+    plan_authorization_v2_satisfies_required_risk_class,
     verify_plan_authorization_v2_signature,
 )
 from pfsense_mcp.security_discovery import AnchorAssurance, CapabilityPosture
+from pfsense_mcp.security_plan import AuthorizationLevel
 from pfsense_mcp.security_plan_freshness import plan_authorization_is_fresh
 
 from .alias_description import (
@@ -124,12 +140,25 @@ class AliasDescriptionExecutionCoreV1:
         authorization: PlanAuthorizationV2,
         requested_plan_digest: str,
         requested_step_id: str,
+        required_risk_class: AuthorizationLevel,
         target_capability_posture: CapabilityPosture,
         target_anchor_assurance: AnchorAssurance,
         now: datetime,
         freshness_env: dict[str, str] | None = None,
     ) -> AuthorizedAliasDescriptionExecution:
-        """Run every non-mutating gate, consume once, then create once."""
+        """Run every non-mutating gate, consume once, then create once.
+
+        `required_risk_class` (ADR-036 W0): the exact `AuthorizationLevel`
+        the specific requested step actually, invariantly requires --
+        caller-derived from `security_plan.py`'s own step catalogue
+        (`ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS` for the one live
+        production capability), never from `authorization`'s own claimed
+        `risk_class` -- the same "independently derive, never trust the
+        artifact's own self-report" discipline `requested_plan_digest`/
+        `requested_step_id` already establish for plan/step identity.
+        `authorization.risk_class` must be at least this rank or the
+        authorization is refused before consumption, exactly like every
+        other pre-consumption gate below."""
 
         try:
             self._validate_inputs(
@@ -138,6 +167,7 @@ class AliasDescriptionExecutionCoreV1:
                 authorization=authorization,
                 requested_plan_digest=requested_plan_digest,
                 requested_step_id=requested_step_id,
+                required_risk_class=required_risk_class,
                 target_capability_posture=target_capability_posture,
                 target_anchor_assurance=target_anchor_assurance,
                 now=now,
@@ -152,6 +182,10 @@ class AliasDescriptionExecutionCoreV1:
                 plan_digest=requested_plan_digest,
                 step_id=requested_step_id,
                 execution_intent_digest=authorized_digest,
+            ):
+                raise BoundExecutionError(_DENIED)
+            if not plan_authorization_v2_satisfies_required_risk_class(
+                authorization, required_risk_class=required_risk_class
             ):
                 raise BoundExecutionError(_DENIED)
             if not self._plan_is_fresh(
@@ -414,6 +448,7 @@ class AliasDescriptionExecutionCoreV1:
         authorization: object,
         requested_plan_digest: object,
         requested_step_id: object,
+        required_risk_class: object,
         target_capability_posture: object,
         target_anchor_assurance: object,
         now: object,
@@ -427,6 +462,7 @@ class AliasDescriptionExecutionCoreV1:
             or requested_plan_digest != authorization.plan_digest
             or not isinstance(requested_step_id, str)
             or not requested_step_id
+            or not isinstance(required_risk_class, AuthorizationLevel)
             or not isinstance(target_capability_posture, CapabilityPosture)
             or not isinstance(target_anchor_assurance, AnchorAssurance)
             or not isinstance(now, datetime)

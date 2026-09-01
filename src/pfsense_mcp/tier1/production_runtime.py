@@ -115,6 +115,7 @@ from pfsense_mcp.capabilities import Capability
 from pfsense_mcp.config import PfSenseConfig, load_api_key, load_config
 from pfsense_mcp.factory import build_pfsense_client, build_write_client
 from pfsense_mcp.security_discovery import AnchorAssurance, CapabilityPosture
+from pfsense_mcp.security_plan import AuthorizationLevel
 from pfsense_mcp.tls import TLSMode
 
 from ..secure_file import open_nofollow, validate_descriptor
@@ -339,6 +340,7 @@ class ProductionAliasDescriptionRuntime:
         *,
         requested_plan_digest: str,
         requested_step_id: str,
+        required_risk_class: AuthorizationLevel,
         target_capability_posture: CapabilityPosture,
         target_anchor_assurance: AnchorAssurance,
         now: datetime,
@@ -430,6 +432,7 @@ class ProductionAliasDescriptionRuntime:
                     authorization=authorization,
                     requested_plan_digest=requested_plan_digest,
                     requested_step_id=requested_step_id,
+                    required_risk_class=required_risk_class,
                     target_capability_posture=target_capability_posture,
                     target_anchor_assurance=target_anchor_assurance,
                     now=now,

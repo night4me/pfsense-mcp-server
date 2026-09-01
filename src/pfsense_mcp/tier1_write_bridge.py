@@ -106,6 +106,7 @@ from enum import Enum
 
 from .models.write_outcome import AliasDescriptionWriteResult
 from .security_plan import (
+    ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS,
     ALIAS_DESCRIPTION_WRITE_STEP_ID,
     ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE,
     ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE,
@@ -120,6 +121,7 @@ __all__ = ["can_construct_write_runtime", "request_alias_description_change"]
 _TARGET_CAPABILITY_POSTURE = ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE
 _TARGET_ANCHOR_ASSURANCE = ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE
 _REQUESTED_STEP_ID = ALIAS_DESCRIPTION_WRITE_STEP_ID
+_REQUIRED_RISK_CLASS = ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS
 
 
 class _WriteProductState(str, Enum):
@@ -181,6 +183,7 @@ def request_alias_description_change(*, alias_name: str, description: str) -> Al
         request,
         requested_plan_digest=_requested_plan_digest(),
         requested_step_id=_REQUESTED_STEP_ID,
+        required_risk_class=_REQUIRED_RISK_CLASS,
         target_capability_posture=_TARGET_CAPABILITY_POSTURE,
         target_anchor_assurance=_TARGET_ANCHOR_ASSURANCE,
         now=datetime.now(timezone.utc),

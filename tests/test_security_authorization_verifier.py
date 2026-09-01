@@ -13,13 +13,17 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from pfsense_mcp.security_authorization import (
+    PlanAuthorizationStepBinding,
     SecurityAuthorizationError,
     build_plan_authorization_payload,
+    build_plan_authorization_v2_payload,
     sign_plan_authorization,
+    sign_plan_authorization_v2,
 )
 from pfsense_mcp.security_authorization_verifier import (
     plan_authorization_authorizes_step,
     plan_authorization_is_current,
+    plan_authorization_v2_satisfies_required_risk_class,
     verify_plan_authorization_signature,
 )
 from pfsense_mcp.security_plan import AuthorizationLevel
@@ -53,6 +57,27 @@ def _authz(plan=None, step_ids=("s1",), *, private_key, authority_id="owner-1"):
         plan, step_ids, authorization_id="authz-1", authority_id=authority_id, issued_at=issued, expires_at=expires
     )
     return sign_plan_authorization(payload, private_key)
+
+
+def _authz_v2(
+    plan=None,
+    *,
+    private_key,
+    step_id: str = "s1",
+    execution_intent_digest: str = "a" * 64,
+    authority_id: str = "owner-1",
+):
+    plan = plan if plan is not None else _plan()
+    issued, expires = _times()
+    payload = build_plan_authorization_v2_payload(
+        plan,
+        (PlanAuthorizationStepBinding(step_id=step_id, execution_intent_digest=execution_intent_digest),),
+        authorization_id="authz-v2-1",
+        authority_id=authority_id,
+        issued_at=issued,
+        expires_at=expires,
+    )
+    return sign_plan_authorization_v2(payload, private_key)
 
 
 # ---------------------------------------------------------------------------
@@ -384,3 +409,56 @@ def test_verify_never_raises_for_ordinary_malformed_authority_input():
     _, other_public_bytes = _keypair()
     other_authorities = _authorities("owner-1", other_public_bytes)
     assert verify_plan_authorization_signature(authz, other_authorities) is False
+
+
+# ---------------------------------------------------------------------------
+# plan_authorization_v2_satisfies_required_risk_class() -- ADR-036 W0
+# ---------------------------------------------------------------------------
+
+
+def test_v2_satisfies_required_risk_class_when_signed_at_exactly_the_required_level():
+    key, _public_bytes = _keypair()
+    plan = _plan(level=AuthorizationLevel.CONFIGURATION_CHANGE)
+    authz = _authz_v2(plan, private_key=key)
+    assert (
+        plan_authorization_v2_satisfies_required_risk_class(
+            authz, required_risk_class=AuthorizationLevel.CONFIGURATION_CHANGE
+        )
+        is True
+    )
+
+
+def test_v2_satisfies_required_risk_class_when_signed_above_the_required_level():
+    key, _public_bytes = _keypair()
+    plan = _plan(level=AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION)
+    authz = _authz_v2(plan, private_key=key)
+    assert (
+        plan_authorization_v2_satisfies_required_risk_class(
+            authz, required_risk_class=AuthorizationLevel.CONFIGURATION_CHANGE
+        )
+        is True
+    )
+
+
+def test_v2_refuses_when_signed_below_the_required_level():
+    key, _public_bytes = _keypair()
+    plan = _plan(level=AuthorizationLevel.CONFIGURATION_CHANGE)
+    authz = _authz_v2(plan, private_key=key)
+    assert (
+        plan_authorization_v2_satisfies_required_risk_class(
+            authz, required_risk_class=AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION
+        )
+        is False
+    )
+
+
+def test_v2_satisfies_required_risk_class_rejects_non_v2_authorization():
+    key, _public_bytes = _keypair()
+    v1_authz = _authz(private_key=key)
+    assert (
+        plan_authorization_v2_satisfies_required_risk_class(
+            v1_authz,
+            required_risk_class=AuthorizationLevel.NONE_REQUIRED,  # type: ignore[arg-type]
+        )
+        is False
+    )

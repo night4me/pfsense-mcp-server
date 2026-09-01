@@ -11,8 +11,10 @@ module:
     machine/WriteEndpoints-family symbols;
   - never defines an execute/apply/consume-shaped method;
   - has exactly the reviewed public surface;
-  - is never imported by any production module -- only by its own
-    tests -- proving Phase D introduces no execution wiring.
+  - is imported only by `tier1/execution_coordinator.py` and
+    `tier1/alias_description_execution.py` (both reviewed exceptions,
+    see `test_no_production_module_imports_security_authorization_verifier`)
+    -- never by any other production module.
 
 Mirrors `tests/test_security_authorization_isolation.py`'s structure.
 """
@@ -68,6 +70,7 @@ _EXPECTED_PUBLIC_SURFACE = {
     "plan_authorization_authorizes_step",
     "plan_authorization_is_current",
     "plan_authorization_v2_authorizes_execution",
+    "plan_authorization_v2_satisfies_required_risk_class",
     "verify_plan_authorization_signature",
     "verify_plan_authorization_v2_signature",
 }
@@ -157,7 +160,11 @@ def test_public_surface_is_exactly_the_reviewed_verifier_api():
 def test_only_imports_security_authorization_and_tier1_ed25519_authority_within_the_package():
     tree = _tree(MODULE_PATH)
     relative_imports = {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.level}
-    assert relative_imports == {"security_authorization", "tier1.ed25519_authority"}
+    # ADR-036 W0: `security_plan` is added so `AuthorizationLevel` is a
+    # named type here, not a bare string -- risk_class enforcement reuses
+    # `security_authorization.authorization_level_at_least()` for the
+    # actual rank comparison; this module adds no ranking logic of its own.
+    assert relative_imports == {"security_authorization", "security_plan", "tier1.ed25519_authority"}
 
 
 def test_no_production_module_imports_security_authorization_verifier():
@@ -166,24 +173,30 @@ def test_no_production_module_imports_security_authorization_verifier():
     module -- Phase D introduces no consumer, only the verification
     primitive itself.
 
-    `tier1/execution_coordinator.py` is the one reviewed exception
-    (ADR-022 Phase E, Slice E2, 2026-08-11): it composes this module's
-    three verification functions as part of its own fixed gate ordering
-    -- see `tests/tier1/test_execution_coordinator_isolation.py`'s own
-    no-production-importer proof that the coordinator itself remains
-    unwired/unconstructed by any production entry point."""
+    `tier1/execution_coordinator.py` (ADR-022 Phase E, Slice E2,
+    2026-08-11) and `tier1/alias_description_execution.py` (ADR-025 B2 /
+    ADR-036 W0) are the two reviewed exceptions: both compose this
+    module's verification functions as part of their own fixed gate
+    ordering. `alias_description_execution.py` imports this module via
+    an absolute (`from pfsense_mcp.security_authorization_verifier import
+    ...`), not relative, statement -- this check now scans for both
+    styles (a prior version of this test only matched `node.level`-truthy
+    relative imports and would have silently missed that absolute import
+    entirely; caught and fixed during ADR-036 W0's own security regression
+    review, not a newly introduced gap)."""
 
-    _ALLOWED_IMPORTERS = {"execution_coordinator.py"}
+    _ALLOWED_IMPORTERS = {"execution_coordinator.py", "alias_description_execution.py"}
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:
             continue
         tree = _tree(path)
         for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.ImportFrom)
-                and node.level
-                and (node.module or "") == "security_authorization_verifier"
-            ):
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            module = node.module or ""
+            is_relative_match = node.level and module == "security_authorization_verifier"
+            is_absolute_match = not node.level and module == "pfsense_mcp.security_authorization_verifier"
+            if is_relative_match or is_absolute_match:
                 importers.append(path.relative_to(ROOT).as_posix())
     assert importers == []

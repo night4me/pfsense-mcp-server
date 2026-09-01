@@ -291,6 +291,7 @@ __all__ = [
     "PlanAuthorizationV2",
     "PlanAuthorizationV2Payload",
     "SecurityAuthorizationError",
+    "authorization_level_at_least",
     "build_deprovision_authorization_payload",
     "build_plan_authorization_payload",
     "build_plan_authorization_v2_payload",
@@ -354,6 +355,24 @@ _AUTHORIZATION_LEVEL_RANK: dict[AuthorizationLevel, int] = {
 _NEVER_PLAN_AUTHORIZATION_LEVELS = frozenset(
     {AuthorizationLevel.SEPARATE_DEPROVISION_AUTHORIZATION, AuthorizationLevel.UNDETERMINED_NOT_IMPLEMENTED}
 )
+
+
+def authorization_level_at_least(level: AuthorizationLevel, *, minimum: AuthorizationLevel) -> bool:
+    """`True` only if `level`'s friction rank (`_AUTHORIZATION_LEVEL_RANK`)
+    is at least `minimum`'s -- never satisfied by a lower-friction level.
+    Fails closed (`False`, never raises) for either argument not being a
+    ranked `AuthorizationLevel` member: `SEPARATE_DEPROVISION_AUTHORIZATION`/
+    `UNDETERMINED_NOT_IMPLEMENTED` (deliberately unranked, see
+    `_NEVER_PLAN_AUTHORIZATION_LEVELS`) or any future member added to the
+    enum without a corresponding rank entry is never silently treated as
+    satisfying, or being satisfiable by, any requirement (ADR-036 W0:
+    "unrecognized risk fails closed"). Pure; no I/O."""
+
+    if not isinstance(level, AuthorizationLevel) or not isinstance(minimum, AuthorizationLevel):
+        return False
+    if level not in _AUTHORIZATION_LEVEL_RANK or minimum not in _AUTHORIZATION_LEVEL_RANK:
+        return False
+    return _AUTHORIZATION_LEVEL_RANK[level] >= _AUTHORIZATION_LEVEL_RANK[minimum]
 
 
 class SecurityAuthorizationError(Exception):

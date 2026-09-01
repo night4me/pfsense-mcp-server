@@ -252,6 +252,7 @@ def _authorize(core, private, request, prepared, authz=None, **changes):
         "authorization": authorization,
         "requested_plan_digest": authorization.plan_digest,
         "requested_step_id": "first.write.alias.description",
+        "required_risk_class": AuthorizationLevel.CONFIGURATION_CHANGE,
         "target_capability_posture": CapabilityPosture.WRITE_PROTECTED,
         "target_anchor_assurance": AnchorAssurance.HARDWARE_WITNESS,
         "now": NOW,
@@ -610,6 +611,7 @@ def test_replay_is_refused_before_second_contract_or_handoff(tmp_path: Path, mon
         "locator-drift",
         "changed-appliance",
         "stale-plan",
+        "risk-downgrade",
     ],
 )
 def test_all_preconsumption_failures_leave_auth_unconsumed_and_zero_handoff(tmp_path: Path, monkeypatch, case: str):
@@ -654,6 +656,15 @@ def test_all_preconsumption_failures_leave_auth_unconsumed_and_zero_handoff(tmp_
         client.netgate_id = "different-installation"
     elif case == "stale-plan":
         monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: False))
+    elif case == "risk-downgrade":
+        # ADR-036 W0: authz is validly signed at CONFIGURATION_CHANGE (what
+        # _plan()'s synthetic step actually declares) but the step being
+        # requested is independently determined to require the strictly
+        # higher INTERACTIVE_HARDWARE_CONFIRMATION -- must refuse before
+        # consumption exactly like every other pre-consumption gate here,
+        # never silently accept a lower-friction authorization for a
+        # higher-friction requirement.
+        changes["required_risk_class"] = AuthorizationLevel.INTERACTIVE_HARDWARE_CONFIRMATION
     with pytest.raises(BoundExecutionError):
         _authorize(core, private, request, prepared, authz=authz, **changes)
     assert consumption.calls == 0
@@ -682,6 +693,7 @@ def test_v1_authorization_is_structurally_ineligible(tmp_path: Path, monkeypatch
             authorization=legacy,  # type: ignore[arg-type]
             requested_plan_digest=legacy.plan_digest,
             requested_step_id="first.write.alias.description",
+            required_risk_class=AuthorizationLevel.CONFIGURATION_CHANGE,
             target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
             target_anchor_assurance=AnchorAssurance.HARDWARE_WITNESS,
             now=NOW,

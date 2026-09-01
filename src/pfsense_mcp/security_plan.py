@@ -167,6 +167,20 @@ class AuthorizationLevel(str, Enum):
     UNDETERMINED_NOT_IMPLEMENTED = "undetermined_not_implemented"
 
 
+#: The exact `AuthorizationLevel` `ALIAS_DESCRIPTION_WRITE_STEP_ID`'s own
+#: step invariantly requires -- `_milestone_9_activation_step()`'s own
+#: docstring states `authorization_required=MILESTONE_9_ACTIVATION_DECISION`
+#: "remain[s] unconditional in both branches" it can be generated under.
+#: Named here so a verifier can independently confirm a `PlanAuthorizationV2`'s
+#: own signed `risk_class` was not downgraded below what this specific step
+#: actually requires (ADR-036 W0), without needing to regenerate a full
+#: plan just to read one step's own field back out of it. Guarded against
+#: drift from `_milestone_9_activation_step()`'s own literal by
+#: `tests/test_security_plan.py::
+#: test_alias_description_write_required_risk_class_matches_the_step_definition`.
+ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS = AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION
+
+
 class SecurityImpact(str, Enum):
     NONE = "none"
     INCREASES_ASSURANCE = "increases_assurance"

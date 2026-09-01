@@ -26,6 +26,7 @@ from pfsense_mcp.security_authorization import (
     PlanAuthorization,
     PlanAuthorizationPayload,
     SecurityAuthorizationError,
+    authorization_level_at_least,
     build_deprovision_authorization_payload,
     build_plan_authorization_payload,
     deprovision_authorization_signing_payload,
@@ -1013,3 +1014,55 @@ def test_deprovision_authorization_rejects_expires_at_not_strictly_after_issued_
             issued_at=authz.issued_at,
             expires_at=authz.issued_at,
         )
+
+
+# ---------------------------------------------------------------------------
+# authorization_level_at_least() -- ADR-036 W0 risk_class rank comparison
+# ---------------------------------------------------------------------------
+
+
+def test_authorization_level_at_least_exact_match_is_satisfied():
+    assert authorization_level_at_least(
+        AuthorizationLevel.CONFIGURATION_CHANGE, minimum=AuthorizationLevel.CONFIGURATION_CHANGE
+    )
+
+
+def test_authorization_level_at_least_higher_rank_is_satisfied():
+    assert authorization_level_at_least(
+        AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION, minimum=AuthorizationLevel.CONFIGURATION_CHANGE
+    )
+
+
+def test_authorization_level_at_least_lower_rank_is_refused():
+    assert not authorization_level_at_least(
+        AuthorizationLevel.CONFIGURATION_CHANGE, minimum=AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION
+    )
+
+
+def test_authorization_level_at_least_none_required_never_satisfies_anything_higher():
+    assert not authorization_level_at_least(
+        AuthorizationLevel.NONE_REQUIRED, minimum=AuthorizationLevel.CONFIGURATION_CHANGE
+    )
+
+
+@pytest.mark.parametrize(
+    "level,minimum",
+    [
+        (AuthorizationLevel.SEPARATE_DEPROVISION_AUTHORIZATION, AuthorizationLevel.NONE_REQUIRED),
+        (AuthorizationLevel.NONE_REQUIRED, AuthorizationLevel.SEPARATE_DEPROVISION_AUTHORIZATION),
+        (AuthorizationLevel.UNDETERMINED_NOT_IMPLEMENTED, AuthorizationLevel.NONE_REQUIRED),
+        (AuthorizationLevel.NONE_REQUIRED, AuthorizationLevel.UNDETERMINED_NOT_IMPLEMENTED),
+    ],
+)
+def test_authorization_level_at_least_fails_closed_for_unranked_members(level, minimum):
+    """`SEPARATE_DEPROVISION_AUTHORIZATION`/`UNDETERMINED_NOT_IMPLEMENTED`
+    are deliberately absent from the rank table -- neither can satisfy,
+    nor be satisfied by, any requirement, regardless of position."""
+
+    assert not authorization_level_at_least(level, minimum=minimum)
+
+
+def test_authorization_level_at_least_rejects_non_enum_values():
+    assert not authorization_level_at_least("configuration_change", minimum=AuthorizationLevel.NONE_REQUIRED)  # type: ignore[arg-type]
+    assert not authorization_level_at_least(AuthorizationLevel.NONE_REQUIRED, minimum="configuration_change")  # type: ignore[arg-type]
+    assert not authorization_level_at_least(None, minimum=AuthorizationLevel.NONE_REQUIRED)  # type: ignore[arg-type]

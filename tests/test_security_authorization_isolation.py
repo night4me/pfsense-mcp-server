@@ -77,6 +77,7 @@ _EXPECTED_PUBLIC_SURFACE = {
     "PlanAuthorizationV2",
     "PlanAuthorizationV2Payload",
     "SecurityAuthorizationError",
+    "authorization_level_at_least",
     "build_deprovision_authorization_payload",
     "build_plan_authorization_payload",
     "build_plan_authorization_v2_payload",

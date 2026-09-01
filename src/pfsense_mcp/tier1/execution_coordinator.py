@@ -2,6 +2,22 @@
 the `ExecutionCoordinator` skeleton, through successful one-time
 authorization consumption -- and nothing past it.
 
+**ADR-036 W0 non-canonical-gate note**: this coordinator operates on
+the V1 `PlanAuthorization` schema (`security_authorization.py`). This
+codebase's one live WRITE capability was later upgraded to the V2
+`PlanAuthorizationV2` schema (ADR-025 Slice B2, execution-intent-digest
+binding) and now also enforces a `risk_class` gate (ADR-036 W0) --
+neither exists here, and this module has no equivalent of
+`AliasDescriptionExecutionCoreV1.authorize_and_create()`'s
+fresh-re-preparation/execution-intent-digest/numeric-locator continuity
+check. It is not a drop-in, semantically-equivalent alternative to that
+method and is not wired to it; `tier1/alias_description_execution.py`'s
+`authorize_and_create()` is this codebase's one canonical, production-
+reachable authorization-gate sequence. Left in place, unmodified and
+unwired, as its own ADR-024-accepted deliverable -- not dead code to
+delete, but also never to be treated as interchangeable with the live
+V2 gate without a full, separately-reviewed schema migration.
+
 **The one invariant this slice establishes**: *an execution attempt may
 reach the consumed state only after all currently available
 pre-execution authorization gates succeed, in this exact order:

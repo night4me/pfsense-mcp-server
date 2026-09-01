@@ -145,17 +145,20 @@ from .security_authorization import (
     PlanAuthorization,
     PlanAuthorizationV2,
     SecurityAuthorizationError,
+    authorization_level_at_least,
     plan_authorization_payload_of,
     plan_authorization_signing_payload,
     plan_authorization_v2_payload_of,
     plan_authorization_v2_signing_payload,
 )
+from .security_plan import AuthorizationLevel
 from .tier1.ed25519_authority import PinnedAuthoritySet
 
 __all__ = [
     "plan_authorization_authorizes_step",
     "plan_authorization_is_current",
     "plan_authorization_v2_authorizes_execution",
+    "plan_authorization_v2_satisfies_required_risk_class",
     "verify_plan_authorization_signature",
     "verify_plan_authorization_v2_signature",
 ]
@@ -242,3 +245,24 @@ def plan_authorization_v2_authorizes_execution(
         binding.step_id == step_id and hmac.compare_digest(binding.execution_intent_digest, execution_intent_digest)
         for binding in authz.authorized_executions
     )
+
+
+def plan_authorization_v2_satisfies_required_risk_class(
+    authz: PlanAuthorizationV2, *, required_risk_class: AuthorizationLevel
+) -> bool:
+    """`True` only if `authz.risk_class`'s friction rank is at least
+    `required_risk_class`'s (ADR-036 W0). A signed authorization's own
+    claimed `risk_class` is never trusted as sufficient by itself --
+    exactly like `plan_authorization_v2_authorizes_execution()`'s
+    `requested_plan_digest`/`requested_step_id` parameters, the caller
+    must independently derive `required_risk_class` from the specific
+    step actually being requested (never from `authz`'s own fields --
+    that would be the same tautology `plan_authorization_v2_authorizes_
+    execution()`'s own docstring already rejects for plan digests) and
+    supply it here. Delegates entirely to `authorization_level_at_least()`
+    for the rank comparison and its fail-closed behavior on an
+    unrecognized level on either side; adds no ranking logic of its own."""
+
+    if not isinstance(authz, PlanAuthorizationV2):
+        return False
+    return authorization_level_at_least(authz.risk_class, minimum=required_risk_class)

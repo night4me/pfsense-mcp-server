@@ -305,6 +305,7 @@ def _call(handles: _RuntimeHandles, request: AliasDescriptionChangeV1 | None = N
         request or _request(),
         requested_plan_digest="",  # overwritten below via authorization's own plan_digest when relevant
         requested_step_id="first.write.alias.description",
+        required_risk_class=AuthorizationLevel.CONFIGURATION_CHANGE,
         target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
         target_anchor_assurance=AnchorAssurance.HARDWARE_WITNESS,
         now=now,
@@ -323,6 +324,7 @@ def _call_with_plan_digest(
         request or _request(),
         requested_plan_digest=authorization.plan_digest,
         requested_step_id=requested_step_id,
+        required_risk_class=AuthorizationLevel.CONFIGURATION_CHANGE,
         target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
         target_anchor_assurance=AnchorAssurance.HARDWARE_WITNESS,
         now=now,
@@ -385,6 +387,7 @@ def _call_requested_with_real_digest(handles: _RuntimeHandles, *, plan_digest: s
         _request(),
         requested_plan_digest=plan_digest,
         requested_step_id="first.write.alias.description",
+        required_risk_class=AuthorizationLevel.CONFIGURATION_CHANGE,
         target_capability_posture=CapabilityPosture.WRITE_PROTECTED,
         target_anchor_assurance=AnchorAssurance.HARDWARE_WITNESS,
         now=now,
