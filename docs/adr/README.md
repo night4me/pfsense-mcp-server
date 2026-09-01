@@ -34,6 +34,7 @@ silently rewrite earlier context.
 | [026](ADR-026-first-write-capability-adapter.md) | First WRITE capability adapter semantic unit | Accepted (2026-08-12, owner) — description-only alias semantic unit and scope-specific evidence matrix; W1/W2/W3 remain separately gated |
 | [027](ADR-027-closed-stage3-execution-port.md) | Closed LAB-T1 Stage 3 execution-port composition | Accepted — thin composition design and narrow reconciliation-observation interface; implementation and live authority remain separate |
 | [028](ADR-028-first-write-product-surface-and-delivery.md) | First-WRITE product surface and delivery architecture | Accepted (2026-08-15, owner) — records the delivery seam (W3-D1), capability/profile activation model (W3-D2), and signing-side CLI trust boundary; W3 implementation (Slices 1-5) remains separately gated slice by slice |
+| [036](ADR-036-tier1-write-safety-contract.md) | Tier1 WRITE Safety Contract — architecture gap closure before any second capability | Proposed — no new WRITE capability authorized; names four gaps (`risk_class` enforcement, duplicate authorization-gate implementations, reconciliation cadence, semantic-postcondition spec) that must close first |
 
 New ADRs should use the next sequence number and contain status, context,
 decision, consequences, alternatives, and references.
