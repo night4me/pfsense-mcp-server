@@ -186,6 +186,17 @@ def _parse_observed_user(data: dict[str, Any], *, operation: str) -> ObservedUse
     except KeyError as exc:
         raise BootstrapProvisioningError(f"{operation}: response 'data' missing expected field {exc}.") from None
 
+    # A pfSense user with no directly-assigned privileges (all effective
+    # privilege coming from group membership) legitimately reports
+    # `priv: null`, not `priv: []` -- observed live against production
+    # (ADR-033 bootstrap pre-flight observation). Normalize only this
+    # exact `None` case to an empty list before the unchanged strict
+    # list-of-strings check below; every other non-list/non-string-list
+    # shape (a bare string, an object, a list containing a non-string
+    # member, etc.) still fails closed exactly as before.
+    if priv is None:
+        priv = []
+
     scope = data.get("scope")
     if (
         not isinstance(user_id, int)

@@ -135,6 +135,87 @@ def test_list_users_missing_field_raises():
         _client(transport).list_users()
 
 
+def test_list_users_null_priv_is_treated_as_empty_privilege_set():
+    """A pfSense user whose effective privileges come entirely from
+    group membership legitimately reports `priv: null`, not `priv: []`
+    -- observed live against production during an ADR-033 read_only
+    bootstrap pre-flight observation. Must be accepted as an empty
+    directly-assigned privilege set, not rejected."""
+
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        _USERS_PATH,
+        status_code=200,
+        text=json.dumps(
+            {"data": [{"id": 2, "name": "api-mcp-admin", "descr": "api-mcp-admin", "priv": None, "disabled": False}]}
+        ),
+    )
+
+    users = _client(transport).list_users()
+
+    assert users == (ObservedUser(id=2, name="api-mcp-admin", descr="api-mcp-admin", priv=frozenset(), disabled=False),)
+
+
+def test_list_users_empty_list_priv_is_accepted_unchanged():
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        _USERS_PATH,
+        status_code=200,
+        text=json.dumps({"data": [{"id": 3, "name": "svc", "descr": "svc", "priv": [], "disabled": False}]}),
+    )
+
+    users = _client(transport).list_users()
+
+    assert users == (ObservedUser(id=3, name="svc", descr="svc", priv=frozenset(), disabled=False),)
+
+
+def test_list_users_valid_string_list_priv_is_accepted_unchanged():
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        _USERS_PATH,
+        status_code=200,
+        text=json.dumps(
+            {"data": [{"id": 4, "name": "svc", "descr": "svc", "priv": ["a-get", "b-get"], "disabled": False}]}
+        ),
+    )
+
+    users = _client(transport).list_users()
+
+    assert users == (ObservedUser(id=4, name="svc", descr="svc", priv=frozenset({"a-get", "b-get"}), disabled=False),)
+
+
+def test_list_users_non_null_non_list_priv_still_raises():
+    """A bare string (or any other non-null, non-list shape) must still
+    fail closed exactly as before -- only literal `None` is normalized."""
+
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        _USERS_PATH,
+        status_code=200,
+        text=json.dumps({"data": [{"id": 5, "name": "svc", "descr": "svc", "priv": "page-all", "disabled": False}]}),
+    )
+
+    with pytest.raises(BootstrapProvisioningError, match="was not a list of strings"):
+        _client(transport).list_users()
+
+
+def test_list_users_priv_list_with_non_string_member_still_raises():
+    transport = MockTransport()
+    transport.register(
+        "GET",
+        _USERS_PATH,
+        status_code=200,
+        text=json.dumps({"data": [{"id": 6, "name": "svc", "descr": "svc", "priv": ["a-get", 1], "disabled": False}]}),
+    )
+
+    with pytest.raises(BootstrapProvisioningError, match="was not a list of strings"):
+        _client(transport).list_users()
+
+
 # --- create_user() ------------------------------------------------------
 
 
