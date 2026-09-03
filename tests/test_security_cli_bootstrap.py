@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 
 from pfsense_mcp import security_cli
-from pfsense_mcp.security_admin_composition import build_admin_context
+from pfsense_mcp.security_admin_composition import PfRestReadOnlyStatus, build_admin_context
 from pfsense_mcp.security_bootstrap_engine import ProvisioningOutcome, ProvisioningResult
 from pfsense_mcp.security_bootstrap_orchestration import (
     BootstrapOrchestrationOutcome,
@@ -147,6 +147,7 @@ def test_bootstrap_json_output_is_valid_and_deterministic(capsys, monkeypatch):
         (BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION, 4),
         (BootstrapOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE, 5),
         (BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR, 6),
+        (BootstrapOrchestrationOutcome.BLOCKED_READ_ONLY_MODE, 7),
     ],
 )
 def test_bootstrap_exit_code_mapping_is_exhaustive_and_distinct(capsys, monkeypatch, outcome, expected_exit):
@@ -266,6 +267,7 @@ def test_end_to_end_main_bootstrap_against_real_environment(real_admin_env, caps
     components = replace(
         context._mutation_components,
         bootstrap_call=lambda: ProvisioningResult(ProvisioningOutcome.ALREADY_SATISFIED, "no-op"),
+        check_pfrest_read_only_call=lambda: PfRestReadOnlyStatus.WRITABLE,
     )
     stubbed_context = replace(context, _mutation_components=components)
     monkeypatch.setattr(

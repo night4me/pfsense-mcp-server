@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pfsense_mcp.security_admin_composition import AdministrativeContext, build_admin_context
+from pfsense_mcp.security_admin_composition import AdministrativeContext, PfRestReadOnlyStatus, build_admin_context
 from pfsense_mcp.security_bootstrap_client import ProvisionedApiKey
 from pfsense_mcp.security_bootstrap_engine import ProvisioningOutcome, ProvisioningResult
 from pfsense_mcp.security_bootstrap_orchestration import (
@@ -102,7 +102,24 @@ def admin_env(tmp_path: Path) -> dict[str, str]:
 
 
 def _with_bootstrap_call(context: AdministrativeContext, call) -> AdministrativeContext:
-    components = replace(context._mutation_components, bootstrap_call=call)
+    """Stubs `bootstrap_call` *and* defaults the read-only pre-flight
+    check to `WRITABLE` (this suite's fixed `admin_env` target is a
+    synthetic, unreachable host, so the real, unstubbed closure would
+    otherwise always fail closed at `BLOCKED_UNVERIFIABLE` before
+    `bootstrap_call` is ever reached) -- see `_with_check_read_only()`
+    for tests that specifically exercise the read-only pre-flight
+    outcome itself."""
+
+    components = replace(
+        context._mutation_components,
+        bootstrap_call=call,
+        check_pfrest_read_only_call=lambda: PfRestReadOnlyStatus.WRITABLE,
+    )
+    return replace(context, _mutation_components=components)
+
+
+def _with_check_read_only(context: AdministrativeContext, status: PfRestReadOnlyStatus) -> AdministrativeContext:
+    components = replace(context._mutation_components, check_pfrest_read_only_call=lambda: status)
     return replace(context, _mutation_components=components)
 
 
@@ -591,8 +608,15 @@ def _make_fake_build(bootstrap_context, resolution_context, admin_env):
         if resolution_operation_id is not None:
             # Exercise the real retry-namespace construction path, not a
             # mock -- proves the retry actually lands at a fresh,
-            # deterministically-derived journal path.
-            return build_admin_context(admin_env, resolution_operation_id=resolution_operation_id)
+            # deterministically-derived journal path. The read-only
+            # pre-flight check is stubbed WRITABLE (this suite's fixed
+            # admin_env target is a synthetic, unreachable host) so the
+            # retry proceeds far enough to exercise the real, unstubbed
+            # bootstrap_call() -- see _with_check_read_only().
+            return _with_check_read_only(
+                build_admin_context(admin_env, resolution_operation_id=resolution_operation_id),
+                PfRestReadOnlyStatus.WRITABLE,
+            )
         return bootstrap_context
 
     return fake_build
@@ -707,7 +731,9 @@ def test_retry_is_not_offered_for_classifications_other_than_recovery_required_n
 
     def spying_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, **kwargs):
         calls.append(operation_type)
-        return real_build(source, operation_type=operation_type, **kwargs)
+        return _with_check_read_only(
+            real_build(source, operation_type=operation_type, **kwargs), PfRestReadOnlyStatus.WRITABLE
+        )
 
     monkeypatch.setattr("pfsense_mcp.security_bootstrap_orchestration.build_admin_context", spying_build)
 

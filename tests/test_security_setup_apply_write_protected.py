@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from pfsense_mcp.security_admin_composition import build_admin_context
+from pfsense_mcp.security_admin_composition import PfRestReadOnlyStatus, build_admin_context
 from pfsense_mcp.security_bootstrap_engine import ProvisioningOutcome, ProvisioningResult
 from pfsense_mcp.security_bootstrap_orchestration import (
     BootstrapOrchestrationOutcome,
@@ -397,6 +397,7 @@ def test_end_to_end_write_protected_apply_against_a_real_admin_context(tmp_path,
     components = replace(
         context._mutation_components,
         bootstrap_call=lambda: ProvisioningResult(ProvisioningOutcome.ALREADY_SATISFIED, "no-op"),
+        check_pfrest_read_only_call=lambda: PfRestReadOnlyStatus.WRITABLE,
     )
     stubbed_context = replace(context, _mutation_components=components)
     monkeypatch.setattr(

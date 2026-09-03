@@ -75,28 +75,43 @@ def test_fingerprint_differs_between_key_and_user_kinds():
 
 def test_fingerprint_is_deterministic_for_unprovisioned_incident_evidence():
     a = UnprovisionedIncidentEvidence(
-        account_username="pfsense-mcp", account_confirmed_absent=True, no_owned_key_confirmed=True,
-        users_checked=3, keys_checked=1,
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=3,
+        keys_checked=1,
     )
     b = UnprovisionedIncidentEvidence(
-        account_username="pfsense-mcp", account_confirmed_absent=True, no_owned_key_confirmed=True,
-        users_checked=3, keys_checked=1,
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=3,
+        keys_checked=1,
     )
     assert object_fingerprint(a) == object_fingerprint(b)
 
 
 def test_fingerprint_for_unprovisioned_incident_evidence_differs_on_any_field_change():
     base = UnprovisionedIncidentEvidence(
-        account_username="pfsense-mcp", account_confirmed_absent=True, no_owned_key_confirmed=True,
-        users_checked=3, keys_checked=1,
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=3,
+        keys_checked=1,
     )
     changed_users_checked = UnprovisionedIncidentEvidence(
-        account_username="pfsense-mcp", account_confirmed_absent=True, no_owned_key_confirmed=True,
-        users_checked=4, keys_checked=1,
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=4,
+        keys_checked=1,
     )
     changed_username = UnprovisionedIncidentEvidence(
-        account_username="pfsense-mcp-readonly", account_confirmed_absent=True, no_owned_key_confirmed=True,
-        users_checked=3, keys_checked=1,
+        account_username="pfsense-mcp-readonly",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=3,
+        keys_checked=1,
     )
     assert object_fingerprint(base) != object_fingerprint(changed_users_checked)
     assert object_fingerprint(base) != object_fingerprint(changed_username)

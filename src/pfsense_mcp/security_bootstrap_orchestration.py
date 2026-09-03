@@ -110,7 +110,13 @@ from enum import Enum
 from pathlib import Path
 
 from .errors import PfSenseMCPError
-from .security_admin_composition import AdminCompositionError, AdministrativeContext, build_admin_context
+from .security_admin_composition import (
+    AdminCompositionError,
+    AdministrativeContext,
+    PfRestReadOnlyStatus,
+    build_admin_context,
+    locate_bootstrap_chain_frontier,
+)
 from .security_bootstrap_client import ProvisionedApiKey
 from .security_bootstrap_engine import ProvisioningOutcome, ProvisioningResult
 from .security_operation_journal import (
@@ -123,7 +129,6 @@ from .security_operation_journal import (
     OperationLockError,
     RestartClassification,
     RestartDecision,
-    derive_resolution_operation_id,
 )
 from .security_readonly_admin_composition import build_readonly_admin_context
 
@@ -175,6 +180,19 @@ class BootstrapOrchestrationOutcome(str, Enum):
     #: a subsequent offline attempt against the same target -- see
     #: `run_bootstrap()`'s module docstring for why.
     PREFLIGHT_DERIVATION_FAILED = "preflight_derivation_failed"
+    #: pfSense's own global REST API "Read Only" mode was confirmed
+    #: enabled, or its status could not be authoritatively verified,
+    #: *before* any journal record was created for this attempt -- zero
+    #: POST/PATCH/DELETE was ever sent. Unlike every other blocked
+    #: outcome above, local state is left exactly as it was before this
+    #: call (no journal created, lock released), so this outcome is
+    #: always naturally, immediately retryable: once the owner manually
+    #: disables Read Only in WebConfigurator (this module never does so
+    #: itself, and never will), the next bootstrap attempt against this
+    #: same namespace is a completely fresh CLEAN_NO_OPERATION start. See
+    #: `_run_locked()`'s own docstring for the exact journal-boundary
+    #: reasoning.
+    BLOCKED_READ_ONLY_MODE = "blocked_read_only_mode"
     #: The engine ran, performed at least one authoritative read (and
     #: possibly a mutation), and did not reach a verified successful
     #: state, or an unexpected exception escaped the engine call. Local
@@ -288,6 +306,23 @@ def run_bootstrap(
         )
 
 
+#: Exact wording required by the pfREST global Read Only pre-flight
+#: security invariant: pfsense-mcp-server may *detect* Read Only, but
+#: must never disable, bypass, or instruct any other path to disable it
+#: -- only the owner, manually, in WebConfigurator. See `_run_locked()`'s
+#: own docstring for the journal-boundary guarantee this pairs with.
+_READ_ONLY_BLOCKED_DETAIL = (
+    "WRITE blocked — owner must disable Read Only in WebConfigurator. pfREST reports its global REST "
+    "API Read Only setting is enabled; pfsense-mcp-server will never disable this automatically. Retry "
+    "bootstrap once the owner has disabled it."
+)
+_READ_ONLY_UNVERIFIABLE_DETAIL = (
+    "WRITE blocked — pfREST Read Only status could not be authoritatively verified before "
+    "provisioning; treated as blocked (fail closed). Resolve connectivity/configuration to the target and "
+    "retry."
+)
+
+
 def _run_locked(
     context: AdministrativeContext,
     *,
@@ -295,6 +330,54 @@ def _run_locked(
     timestamp: str,
     now: Callable[[], str],
 ) -> BootstrapOrchestrationResult:
+    """`operation_id`/`timestamp` are only consumed once the read-only
+    pre-flight check below has already confirmed the target is writable
+    -- see this function's own read-only branch for why the check must
+    run *before* `context._journal.create()`, not merely before the
+    mutating call itself.
+
+    ## Read-only pre-flight journal boundary (Mission II Mission B)
+
+    pfSense's own global REST API "Read Only" mode rejects every
+    non-GET request with HTTP 405 at the server, before any model/write
+    logic runs -- a condition fully discoverable via one GET, cheaper
+    and more precise than discovering it via a failed mutating call.
+    This check therefore runs as the *first* thing inside the acquired
+    lock, strictly before any journal record exists for this attempt
+    (`context._journal.create()` has not yet been called). If the check
+    reports anything other than `WRITABLE`, this function releases the
+    lock it is holding and returns immediately -- **no journal is ever
+    created**, so `context.journal_path` remains exactly as it was
+    before this call.
+
+    This is deliberately different from every other blocked outcome in
+    this module (`PREFLIGHT_DERIVATION_FAILED`, `PROVISIONING_FAILED`),
+    which all leave a journal behind specifically so a human must look
+    before any further attempt (see this module's own top-level
+    docstring). A read-only-mode rejection carries no such ambiguity --
+    it proves definitively that zero mutation was attempted, so leaving
+    no local trace at all is not merely convenient but the *correct*
+    representation of what happened: `classify_restart()`'s own
+    documented behavior means any existing journal, even one that never
+    reached a mutating state, is treated as `RECOVERY_REQUIRED` once
+    `authoritative=None` (this CLI's default) -- creating one here would
+    silently convert an environmental, always-retryable condition into a
+    permanently-blocking incident requiring `recover`, which would be
+    incorrect. A subsequent bootstrap attempt against this exact
+    namespace, once the owner has manually disabled Read Only, is
+    therefore a completely fresh `CLEAN_NO_OPERATION` start with no
+    recovery action required."""
+
+    read_only_status = context._mutation_components.check_pfrest_read_only_call()
+    if read_only_status is not PfRestReadOnlyStatus.WRITABLE:
+        context._lock.release(timestamp=now())
+        detail = (
+            _READ_ONLY_BLOCKED_DETAIL
+            if read_only_status is PfRestReadOnlyStatus.BLOCKED_READ_ONLY
+            else _READ_ONLY_UNVERIFIABLE_DETAIL
+        )
+        return BootstrapOrchestrationResult(BootstrapOrchestrationOutcome.BLOCKED_READ_ONLY_MODE, detail)
+
     binding = context.new_operation_binding(
         operation_id=operation_id, operation_type=AdministrativeOperationType.BOOTSTRAP
     )
@@ -517,63 +600,6 @@ def build_authoritative_restart_observation(context: AdministrativeContext) -> A
     )
 
 
-def _resolved_retry_context(
-    context: AdministrativeContext,
-    *,
-    source: Mapping[str, str],
-    build_context: Callable[..., AdministrativeContext],
-    decision: RestartDecision,
-) -> AdministrativeContext | None:
-    """If `decision` is exactly RECOVERY_REQUIRED with no recovery_action
-    -- the one class of interrupted bootstrap incident RESOLVE_
-    UNPROVISIONED_INCIDENT exists for (see that RecoveryAction's own
-    docstring in security_operation_journal.py) -- check whether a
-    trusted, COMPLETED resolution record already exists for THIS exact
-    incident (bound by both its operation_id and its journal's own MAC,
-    via `derive_resolution_operation_id()`), and if so return a fresh
-    `AdministrativeContext` bound to the retry's own resolution-derived
-    namespace, ready for `run_bootstrap()` to run a brand-new
-    CLEAN_NO_OPERATION attempt against.
-
-    Returns `None` for every other case (wrong classification, no
-    resolution record, untrusted, not completed, bound to a different
-    incident) -- the caller's ordinary `BLOCKED_PRIOR_OPERATION` outcome
-    then applies completely unchanged. This function never mutates
-    anything, never touches the original incident journal, and never
-    weakens `classify_restart()`'s own conservative classification --
-    it only decides which *context* `run_bootstrap()` is handed."""
-
-    if decision.classification is not RestartClassification.RECOVERY_REQUIRED or decision.recovery_action is not None:
-        return None
-    if decision.operation_id is None:
-        return None
-    try:
-        incident_snapshot = context._journal.load()
-    except OperationJournalError:
-        return None
-    expected_resolution_id = derive_resolution_operation_id(
-        incident_operation_id=decision.operation_id, incident_record_mac=incident_snapshot.latest.mac
-    )
-    try:
-        resolution_context = build_context(
-            source, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
-        )
-    except AdminCompositionError:
-        return None
-    snapshot, trusted = resolution_context.status._load_bound_journal()
-    if (
-        not trusted
-        or snapshot is None
-        or snapshot.latest.state is not DurableOperationState.COMPLETED
-        or snapshot.latest.binding.operation_id != expected_resolution_id
-    ):
-        return None
-    try:
-        return build_context(source, resolution_operation_id=expected_resolution_id)
-    except AdminCompositionError:
-        return None
-
-
 def run_bootstrap_from_environment(
     env: Mapping[str, str] | None = None,
     *,
@@ -617,21 +643,19 @@ def run_bootstrap_from_environment(
             BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,
             str(exc),
         )
+    # `locate_bootstrap_chain_frontier()` walks forward (offline,
+    # `authoritative=None`) through however many RESOLVE_UNPROVISIONED_
+    # INCIDENT generations are already resolved and returns the frontier
+    # -- generation 0 itself (this function's prior, unchanged behavior)
+    # whenever nothing has ever been resolved. `run_bootstrap()` below
+    # re-classifies `context` itself (cheap, pure, no network call), so
+    # this is not a second decision source; it only decides which
+    # context that second classification runs against. See that
+    # function's own docstring for the full hop contract.
+    frontier = locate_bootstrap_chain_frontier(context, source=source, build_context=build_admin_context)
+    context = frontier.context
     if authoritative is None and context.journal_path.exists():
         authoritative = build_authoritative_restart_observation(context)
-    decision = context.status.classify(authoritative=authoritative)
-    # `_resolved_retry_context()` is a no-op (returns `None`) for every
-    # classification except the one narrow case an owner-authorized
-    # RESOLVE_UNPROVISIONED_INCIDENT resolution applies to -- see its own
-    # docstring. `run_bootstrap()` below re-classifies `context` itself
-    # (cheap, pure, no network call), so this is not a second decision
-    # source; it only decides which context that second classification
-    # runs against.
-    retry_context = _resolved_retry_context(
-        context, source=source, build_context=build_admin_context, decision=decision
-    )
-    if retry_context is not None:
-        context = retry_context
     return run_bootstrap(
         context,
         authoritative=authoritative,
@@ -676,14 +700,10 @@ def run_readonly_bootstrap_from_environment(
             BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,
             str(exc),
         )
+    frontier = locate_bootstrap_chain_frontier(context, source=source, build_context=build_readonly_admin_context)
+    context = frontier.context
     if authoritative is None and context.journal_path.exists():
         authoritative = build_authoritative_restart_observation(context)
-    decision = context.status.classify(authoritative=authoritative)
-    retry_context = _resolved_retry_context(
-        context, source=source, build_context=build_readonly_admin_context, decision=decision
-    )
-    if retry_context is not None:
-        context = retry_context
     return run_bootstrap(
         context,
         authoritative=authoritative,

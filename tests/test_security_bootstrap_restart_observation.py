@@ -35,7 +35,7 @@ import pytest
 
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.errors import BootstrapProvisioningError
-from pfsense_mcp.security_admin_composition import AdministrativeContext, build_admin_context
+from pfsense_mcp.security_admin_composition import AdministrativeContext, PfRestReadOnlyStatus, build_admin_context
 from pfsense_mcp.security_bootstrap_engine import (
     AccountProvisioningObservation,
     ProvisioningOutcome,
@@ -290,7 +290,18 @@ def _with_observe_restart_state_call(context: AdministrativeContext, call) -> Ad
 
 
 def _with_bootstrap_call(context: AdministrativeContext, call) -> AdministrativeContext:
-    components = replace(context._mutation_components, bootstrap_call=call)
+    """Also defaults the read-only pre-flight check to `WRITABLE` -- this
+    suite's fixed `admin_env` target is a synthetic, unreachable host, so
+    the real, unstubbed closure would otherwise fail closed before
+    `bootstrap_call` is ever reached (see security_bootstrap_orchestration
+    .py's own read-only pre-flight docstring for the journal-boundary
+    reasoning)."""
+
+    components = replace(
+        context._mutation_components,
+        bootstrap_call=call,
+        check_pfrest_read_only_call=lambda: PfRestReadOnlyStatus.WRITABLE,
+    )
     return replace(context, _mutation_components=components)
 
 

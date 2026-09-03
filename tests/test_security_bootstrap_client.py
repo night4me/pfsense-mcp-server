@@ -15,6 +15,7 @@ from pfsense_mcp.errors import BootstrapProvisioningError
 from pfsense_mcp.security_bootstrap_client import (
     BootstrapProvisioningClient,
     ObservedAuthSettings,
+    ObservedRestApiMode,
     ObservedUser,
     ProvisionedApiKey,
 )
@@ -58,6 +59,65 @@ def test_auth_transition_client_operations_are_fixed_and_preserve_sibling_eviden
         b'{"auth_methods":["KeyAuth","BasicAuth"]}',
         b'{"auth_methods":["KeyAuth"]}',
     ]
+
+
+# --- observe_restapi_mode() -- read-only pre-flight primitive --------------
+
+
+def test_observe_restapi_mode_reports_read_only_true():
+    transport = MockTransport()
+    transport.register("GET", _SETTINGS_PATH, status_code=200, text=json.dumps({"data": {"read_only": True}}))
+    client = _client(transport)
+
+    observed = client.observe_restapi_mode()
+
+    assert observed == ObservedRestApiMode(read_only=True)
+    assert transport.calls == [("GET", _SETTINGS_PATH)]
+
+
+def test_observe_restapi_mode_reports_read_only_false():
+    transport = MockTransport()
+    transport.register("GET", _SETTINGS_PATH, status_code=200, text=json.dumps({"data": {"read_only": False}}))
+    client = _client(transport)
+
+    assert client.observe_restapi_mode() == ObservedRestApiMode(read_only=False)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {},
+        {"read_only": None},
+        {"read_only": "true"},
+        {"read_only": 1},
+    ],
+    ids=["missing", "null", "string", "int"],
+)
+def test_observe_restapi_mode_rejects_missing_or_malformed_field(data):
+    transport = MockTransport()
+    transport.register("GET", _SETTINGS_PATH, status_code=200, text=json.dumps({"data": data}))
+    client = _client(transport)
+
+    with pytest.raises(BootstrapProvisioningError):
+        client.observe_restapi_mode()
+
+
+def test_observe_restapi_mode_rejects_non_2xx_status():
+    transport = MockTransport()
+    transport.register("GET", _SETTINGS_PATH, status_code=500, text="")
+    client = _client(transport)
+
+    with pytest.raises(BootstrapProvisioningError):
+        client.observe_restapi_mode()
+
+
+def test_observe_restapi_mode_rejects_non_json_body():
+    transport = MockTransport()
+    transport.register("GET", _SETTINGS_PATH, status_code=200, text="not json")
+    client = _client(transport)
+
+    with pytest.raises(BootstrapProvisioningError):
+        client.observe_restapi_mode()
 
 
 # --- list_users() -----------------------------------------------------
@@ -351,6 +411,12 @@ def test_create_auth_key_non_2xx_raises_without_leaking_body():
 # --- No generic dispatch --------------------------------------------------
 
 
-def test_client_public_surface_is_exactly_four_named_operations():
+def test_client_public_surface_is_exactly_five_named_operations():
     public_methods = {name for name in dir(BootstrapProvisioningClient) if not name.startswith("_")}
-    assert public_methods == {"list_users", "create_user", "update_user_privileges", "create_auth_key"}
+    assert public_methods == {
+        "list_users",
+        "create_user",
+        "update_user_privileges",
+        "create_auth_key",
+        "observe_restapi_mode",
+    }

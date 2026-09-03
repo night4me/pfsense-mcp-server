@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from pfsense_mcp.security_admin_composition import AdministrativeContext, build_admin_context
+from pfsense_mcp.security_admin_composition import AdministrativeContext, PfRestReadOnlyStatus, build_admin_context
 from pfsense_mcp.security_bootstrap_engine import ProvisioningOutcome, ProvisioningResult
 from pfsense_mcp.security_bootstrap_orchestration import (
     BootstrapOrchestrationOutcome,
@@ -79,7 +79,20 @@ def write_protected_admin_env(readonly_admin_env: dict[str, str], tmp_path: Path
 
 
 def _with_bootstrap_call(context: AdministrativeContext, call) -> AdministrativeContext:
-    components = replace(context._mutation_components, bootstrap_call=call)
+    """See test_security_bootstrap_orchestration.py's identical helper
+    for why the read-only pre-flight check is also stubbed WRITABLE
+    here."""
+
+    components = replace(
+        context._mutation_components,
+        bootstrap_call=call,
+        check_pfrest_read_only_call=lambda: PfRestReadOnlyStatus.WRITABLE,
+    )
+    return replace(context, _mutation_components=components)
+
+
+def _with_check_read_only(context: AdministrativeContext, status: PfRestReadOnlyStatus) -> AdministrativeContext:
+    components = replace(context._mutation_components, check_pfrest_read_only_call=lambda: status)
     return replace(context, _mutation_components=components)
 
 
@@ -142,9 +155,7 @@ def test_readonly_and_write_protected_runs_never_share_a_journal_or_lock(
     assert write_protected_snapshot.latest.binding.account_identity == "pfsense-mcp"
 
 
-def test_retry_after_resolution_proceeds_against_the_readonly_accounts_own_namespace(
-    readonly_admin_env, monkeypatch
-):
+def test_retry_after_resolution_proceeds_against_the_readonly_accounts_own_namespace(readonly_admin_env, monkeypatch):
     """Mirrors `test_security_bootstrap_orchestration.py`'s own retry-
     bridge proof, for the dedicated `pfsense-mcp-readonly` account's
     independent namespace -- confirming `_resolved_retry_context()` is
@@ -201,7 +212,10 @@ def test_retry_after_resolution_proceeds_against_the_readonly_accounts_own_names
         if operation_type is AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT:
             return resolution_context
         if resolution_operation_id is not None:
-            return build_readonly_admin_context(readonly_admin_env, resolution_operation_id=resolution_operation_id)
+            return _with_check_read_only(
+                build_readonly_admin_context(readonly_admin_env, resolution_operation_id=resolution_operation_id),
+                PfRestReadOnlyStatus.WRITABLE,
+            )
         return bootstrap_context
 
     monkeypatch.setattr("pfsense_mcp.security_bootstrap_orchestration.build_readonly_admin_context", fake_build)

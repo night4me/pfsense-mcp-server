@@ -95,6 +95,10 @@ _CLIENT_EXPECTED_PUBLIC_SURFACE = {
     "ObservedUser",
     "ObservedApiKey",
     "ObservedAuthSettings",
+    #: Read-only pfREST global "Read Only" mode observation (Mission II
+    #: Mission B bootstrap pre-flight) -- see
+    #: BootstrapProvisioningClient.observe_restapi_mode()'s own docstring.
+    "ObservedRestApiMode",
     "ProvisionedApiKey",
     "BootstrapProvisioningClient",
 }

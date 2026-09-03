@@ -99,6 +99,28 @@ def test_recovery_needed_prints_token_and_execute_command(capsys, monkeypatch):
     assert f"--execute revoke_orphan_key --confirm {'a' * 64}" in out
 
 
+def test_generation_field_surfaces_in_human_and_json_output(capsys, monkeypatch):
+    _canned(
+        monkeypatch,
+        RecoveryOrchestrationResult(
+            RecoveryOrchestrationOutcome.RECOVERY_NEEDED,
+            "resolve needed",
+            operation_id="op-1",
+            recovery_action=RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT,
+            confirmation_token="b" * 64,
+            generation=2,
+        ),
+    )
+
+    main(["recover"])
+    human_out = capsys.readouterr().out
+    assert "Chain generation: 2" in human_out
+
+    main(["recover", "--json"])
+    json_out = capsys.readouterr().out
+    assert json.loads(json_out)["generation"] == 2
+
+
 def test_json_output_is_valid_and_deterministic(capsys, monkeypatch):
     result = RecoveryOrchestrationResult(
         RecoveryOrchestrationOutcome.RECOVERY_COMPLETED,
@@ -364,7 +386,7 @@ def test_end_to_end_main_recover_execute_against_real_environment(real_admin_env
     )
     recovery_context = replace(recovery_context, _mutation_components=components)
 
-    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
         return bootstrap_context if operation_type is AdministrativeOperationType.BOOTSTRAP else recovery_context
 
     monkeypatch.setattr("pfsense_mcp.security_recovery_orchestration.build_admin_context", fake_build)

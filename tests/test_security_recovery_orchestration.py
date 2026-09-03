@@ -187,7 +187,7 @@ def _rig(
     )
     recovery_context = replace(recovery_context, _mutation_components=components)
 
-    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
         return bootstrap_context if operation_type is AdministrativeOperationType.BOOTSTRAP else recovery_context
 
     monkeypatch.setattr("pfsense_mcp.security_recovery_orchestration.build_admin_context", fake_build)
@@ -255,7 +255,7 @@ def test_recovery_required_classification_with_no_recovery_action_is_blocked_not
     )
     resolution_context = replace(resolution_context, _mutation_components=components)
 
-    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
         if operation_type is AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT:
             return resolution_context
         return bootstrap_context
@@ -728,7 +728,7 @@ def _rig_unprovisioned(monkeypatch, admin_env, *, identify_unprovisioned_inciden
     )
     resolution_context = replace(resolution_context, _mutation_components=components)
 
-    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
         if operation_type is AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT:
             return resolution_context
         return bootstrap_context

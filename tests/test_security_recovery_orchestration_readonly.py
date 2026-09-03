@@ -178,7 +178,7 @@ def test_read_only_incident_is_inspected_against_its_own_namespace_and_issues_a_
     )
     readonly_recovery_context = replace(readonly_recovery_context, _mutation_components=components)
 
-    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
         return (
             readonly_bootstrap_context
             if operation_type is AdministrativeOperationType.BOOTSTRAP

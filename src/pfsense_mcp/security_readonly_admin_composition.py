@@ -71,6 +71,7 @@ from .security_admin_composition import (
     AdministrativeContext,
     AdministrativeStatusService,
     AdminTargetBinding,
+    PfRestReadOnlyStatus,
     _FixedMutationComponents,
     _load_admin_api_key,
     _load_schema,
@@ -258,8 +259,14 @@ def build_readonly_admin_context(
     full contract (this module performs no independent verification of
     its own; the same "verify before you build" discipline applies)."""
 
-    if resolution_operation_id is not None and operation_type is not AdministrativeOperationType.BOOTSTRAP:
-        raise AdminCompositionError("resolution_operation_id is only meaningful for a BOOTSTRAP operation_type")
+    if resolution_operation_id is not None and operation_type not in {
+        AdministrativeOperationType.BOOTSTRAP,
+        AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT,
+    }:
+        raise AdminCompositionError(
+            "resolution_operation_id is only meaningful for a BOOTSTRAP or "
+            "RECOVER_UNPROVISIONED_INCIDENT operation_type"
+        )
 
     config = load_readonly_admin_composition_config(source)
     schema, schema_digest = _load_schema(config.schema_file)
@@ -392,6 +399,16 @@ def build_readonly_admin_context(
         finally:
             transport.close()
 
+    def check_read_only() -> PfRestReadOnlyStatus:
+        transport = keyauth_factory()
+        try:
+            mode = BootstrapProvisioningClient(transport, api_version=ApiVersion.V2).observe_restapi_mode()
+        except Exception:  # deliberately broad: any GET/parse failure fails closed, never assumes writable
+            return PfRestReadOnlyStatus.BLOCKED_UNVERIFIABLE
+        finally:
+            transport.close()
+        return PfRestReadOnlyStatus.BLOCKED_READ_ONLY if mode.read_only else PfRestReadOnlyStatus.WRITABLE
+
     def auth_transition_factory() -> AuthMethodTransitionCoordinator:
         return AuthMethodTransitionCoordinator(
             keyauth_transport_factory=keyauth_factory,
@@ -427,6 +444,7 @@ def build_readonly_admin_context(
         identify_orphan_key_candidate=identify_orphan_key,
         identify_dedicated_user_candidate=identify_dedicated_user,
         identify_unprovisioned_incident_evidence_call=identify_unprovisioned_incident,
+        check_pfrest_read_only_call=check_read_only,
         auth_transition_factory=auth_transition_factory,
         observe_restart_state_call=observe_restart_state,
         journal_integrity_key=integrity_key,

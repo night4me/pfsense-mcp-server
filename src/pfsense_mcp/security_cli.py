@@ -203,6 +203,12 @@ _BOOTSTRAP_EXIT_CODES: dict[BootstrapOrchestrationOutcome, int] = {
     BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION: 4,
     BootstrapOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE: 5,
     BootstrapOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR: 6,
+    # Distinct from every code above: proven zero mutation was attempted
+    # and no local state was touched (no journal, lock released) -- see
+    # BootstrapOrchestrationOutcome.BLOCKED_READ_ONLY_MODE's own
+    # docstring. Always naturally, immediately retryable once the owner
+    # manually disables pfREST Read Only in WebConfigurator.
+    BootstrapOrchestrationOutcome.BLOCKED_READ_ONLY_MODE: 7,
 }
 
 # `recover`'s exit-code model, independently numbered from `bootstrap`'s
@@ -641,6 +647,11 @@ def _recover_result_to_dict(result: RecoveryOrchestrationResult) -> dict[str, An
         "detail": result.detail,
         "operation_id": result.operation_id,
         "recovery_action": result.recovery_action.value if result.recovery_action is not None else None,
+        # Which RESOLVE_UNPROVISIONED_INCIDENT chain generation this
+        # result concerns -- 0 is the original, fixed bootstrap
+        # namespace; see RecoveryOrchestrationResult.generation's own
+        # docstring.
+        "generation": result.generation,
         # A derived confirmation artifact, never a credential.
         "confirmation_token": result.confirmation_token,
         "evidence": (
@@ -684,6 +695,8 @@ def _format_recover_human(result: RecoveryOrchestrationResult) -> str:
     ]
     if result.operation_id is not None:
         lines.append(f"Operation id: {result.operation_id}")
+    if result.generation is not None:
+        lines.append(f"Chain generation: {result.generation}")
     if result.recovery_action is not None:
         lines.append(f"Recovery action: {result.recovery_action.value}")
     if result.confirmation_token is not None and result.recovery_action is not None:

@@ -19,6 +19,7 @@ import os
 import stat
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,7 @@ from .security_bootstrap_recovery import (
 from .security_operation_journal import (
     AdministrativeOperationType,
     AuthoritativeRestartObservation,
+    DurableOperationState,
     ExclusiveOperationLock,
     JournalSnapshot,
     LocalArtifactObservation,
@@ -60,6 +62,7 @@ from .security_operation_journal import (
     RestartClassification,
     RestartDecision,
     classify_restart,
+    derive_resolution_operation_id,
 )
 from .security_privileges import (
     EvidenceClass,
@@ -97,6 +100,29 @@ _REQUIRED_ADMIN_VARS = frozenset(
 
 class AdminCompositionError(Exception):
     """Secure administrative composition failed closed."""
+
+
+class PfRestReadOnlyStatus(str, Enum):
+    """Result of the bootstrap read-only pre-flight check (Mission II
+    Mission B) -- never raises; every ambiguity collapses to a blocked
+    value, matching this codebase's established "return a value, never
+    propagate an ambiguous failure" discipline (see e.g.
+    `build_authoritative_restart_observation()`'s own docstring)."""
+
+    #: `GET /system/restapi/settings` was read successfully and reports
+    #: `read_only: false` -- bootstrap may proceed to mutate.
+    WRITABLE = "writable"
+    #: Confirmed `read_only: true` -- pfSense will reject every non-GET
+    #: request with HTTP 405 at the server. A harmless, environmental,
+    #: always-retryable pre-flight rejection (see
+    #: `security_bootstrap_orchestration.py`'s own docstring on the
+    #: journal boundary this status is checked against).
+    BLOCKED_READ_ONLY = "blocked_read_only"
+    #: The GET failed (network/TLS/auth/HTTP error) or the response was
+    #: malformed/ambiguous -- treated identically to a confirmed
+    #: `read_only: true` by every caller: fail closed on any ambiguity,
+    #: never assume the appliance is writable without proof.
+    BLOCKED_UNVERIFIABLE = "blocked_unverifiable"
 
 
 @dataclass(frozen=True)
@@ -165,6 +191,13 @@ class _FixedMutationComponents:
     #: identification callables above, just proving an absence rather
     #: than resolving a candidate object to act on.
     identify_unprovisioned_incident_evidence_call: Callable[[], UnprovisionedIncidentEvidence] = field(repr=False)
+    #: Read-only pre-flight observation of pfSense's own global REST API
+    #: "Read Only" mode (Mission II Mission B). Never raises -- see
+    #: `PfRestReadOnlyStatus`'s own docstring. `security_bootstrap_
+    #: orchestration.py` calls this *before* creating any journal record
+    #: for a new bootstrap attempt, so a confirmed- or unverifiable-
+    #: read-only rejection never advances local state at all.
+    check_pfrest_read_only_call: Callable[[], PfRestReadOnlyStatus] = field(repr=False)
     auth_transition_factory: Callable[[], AuthMethodTransitionCoordinator] = field(repr=False)
     #: Read-only, fresh-live-evidence restart-observation primitive.
     #: Never a mutation -- calls only `list_users()` and the existing
@@ -534,18 +567,31 @@ def build_admin_context(
     see `_namespace()`'s own docstring. This function performs no
     verification of what it's given -- it is a pure construction
     boundary, exactly like every other parameter here. Only
-    `security_recovery_orchestration.py` may pass a non-`None` value, and
-    only after it has itself independently loaded and verified a
-    COMPLETED, correctly-bound RECOVER_UNPROVISIONED_INCIDENT journal
-    record whose own `operation_id` equals the value passed here -- the
-    same "verify before you build" discipline that module's existing
-    `recovery_context = build_context(source, operation_type=...)` call
-    already follows for the two pre-existing recovery actions. Only
-    meaningful when `operation_type` is `BOOTSTRAP`; raises otherwise
-    (a resolution cannot apply to a recovery-typed namespace)."""
+    `security_recovery_orchestration.py`/`security_bootstrap_
+    orchestration.py` (via `locate_bootstrap_chain_frontier()`) may pass
+    a non-`None` value, and only after independently loading and
+    verifying a COMPLETED, correctly-bound RECOVER_UNPROVISIONED_INCIDENT
+    journal record whose own `operation_id` equals the value passed here
+    -- the same "verify before you build" discipline those callers'
+    existing `build_context(source, operation_type=...)` calls already
+    follow for the two pre-existing recovery actions.
 
-    if resolution_operation_id is not None and operation_type is not AdministrativeOperationType.BOOTSTRAP:
-        raise AdminCompositionError("resolution_operation_id is only meaningful for a BOOTSTRAP operation_type")
+    Meaningful when `operation_type` is `BOOTSTRAP` (selects a retry
+    generation's own bootstrap namespace) *or* `RECOVER_UNPROVISIONED_
+    INCIDENT` (selects that same generation's *own* resolution namespace,
+    distinct from generation 0's fixed one -- see `locate_bootstrap_
+    chain_frontier()`'s own docstring for why both operation types share
+    this one parameter); raises for the other two recovery-action types,
+    which never participate in the unprovisioned-incident chain."""
+
+    if resolution_operation_id is not None and operation_type not in {
+        AdministrativeOperationType.BOOTSTRAP,
+        AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT,
+    }:
+        raise AdminCompositionError(
+            "resolution_operation_id is only meaningful for a BOOTSTRAP or "
+            "RECOVER_UNPROVISIONED_INCIDENT operation_type"
+        )
     config = load_admin_composition_config(source)
     schema, schema_digest = _load_schema(config.schema_file)
     resolved = resolve_profile_privileges(schema, write_protected_profile_requirements())
@@ -675,6 +721,16 @@ def build_admin_context(
         finally:
             transport.close()
 
+    def check_read_only() -> PfRestReadOnlyStatus:
+        transport = keyauth_factory()
+        try:
+            mode = BootstrapProvisioningClient(transport, api_version=ApiVersion.V2).observe_restapi_mode()
+        except Exception:  # deliberately broad: any GET/parse failure fails closed, never assumes writable
+            return PfRestReadOnlyStatus.BLOCKED_UNVERIFIABLE
+        finally:
+            transport.close()
+        return PfRestReadOnlyStatus.BLOCKED_READ_ONLY if mode.read_only else PfRestReadOnlyStatus.WRITABLE
+
     def auth_transition_factory() -> AuthMethodTransitionCoordinator:
         return AuthMethodTransitionCoordinator(
             keyauth_transport_factory=keyauth_factory,
@@ -710,6 +766,7 @@ def build_admin_context(
         identify_orphan_key_candidate=identify_orphan_key,
         identify_dedicated_user_candidate=identify_dedicated_user,
         identify_unprovisioned_incident_evidence_call=identify_unprovisioned_incident,
+        check_pfrest_read_only_call=check_read_only,
         auth_transition_factory=auth_transition_factory,
         observe_restart_state_call=observe_restart_state,
         journal_integrity_key=integrity_key,
@@ -726,6 +783,241 @@ def build_admin_context(
     )
 
 
+#: Hard cap on how many RESOLVE_UNPROVISIONED_INCIDENT generations
+#: `locate_bootstrap_chain_frontier()` will ever walk forward through in
+#: one call. Not a defense against a genuine cycle -- each generation's
+#: namespace is a SHA256 hash deterministically derived from its parent
+#: resolution's own HMAC-authenticated `operation_id`
+#: (`derive_resolution_operation_id()`), so an honest chain cannot loop;
+#: forging one would require the owner-controlled journal integrity key,
+#: outside this codebase's threat model (the same trust assumption every
+#: other journal/lock integrity check here already makes). This cap
+#: exists purely so a walk always terminates in bounded time even under
+#: an unanticipated or corrupted on-disk state, and so it is directly
+#: testable without constructing dozens of real generations.
+_MAX_CHAIN_GENERATIONS = 64
+
+
+@dataclass(frozen=True)
+class ChainGenerationSummary:
+    """One inspectable step of a `locate_bootstrap_chain_frontier()`
+    walk -- never used to make a decision itself, only to let a human
+    (via `recover`'s own output) or a test see exactly which generations
+    were visited and why the walk stopped where it did."""
+
+    generation: int
+    operation_id: str | None
+    classification: RestartClassification
+    recovery_action: RecoveryAction | None
+    resolved: bool
+
+
+@dataclass(frozen=True)
+class ChainFrontier:
+    """The result of walking the deterministic incident -> resolution ->
+    retry-namespace chain forward from generation 0 (see
+    `locate_bootstrap_chain_frontier()`)."""
+
+    generation: int
+    #: The `resolution_operation_id` that reached `context`'s own
+    #: namespace -- `None` for generation 0 (the fixed, original
+    #: bootstrap namespace), otherwise the prior generation's completed
+    #: resolution's own `operation_id`. Callers needing to build this
+    #: same generation's *resolution*-typed context (`operation_type=
+    #: RECOVER_UNPROVISIONED_INCIDENT`) pass this exact value as
+    #: `resolution_operation_id` -- see `_namespace()`'s own docstring.
+    resolution_operation_id: str | None
+    context: AdministrativeContext
+    decision: RestartDecision
+    chain: tuple[ChainGenerationSummary, ...]
+
+
+def locate_bootstrap_chain_frontier(
+    context0: AdministrativeContext,
+    *,
+    source: Mapping[str, str],
+    build_context: Callable[..., AdministrativeContext],
+) -> ChainFrontier:
+    """Deterministically, offline, walk forward from generation 0 (the
+    fixed bootstrap namespace `context0` is already built against)
+    through however many RESOLVE_UNPROVISIONED_INCIDENT generations are
+    already resolved, and return the *frontier*: the first generation
+    that is not a completely-resolved link in the chain -- either a
+    fresh, never-attempted namespace, or an incident that still needs
+    attention (of any kind, including the two pre-existing recovery
+    actions, which never chain past their own generation).
+
+    ## Why generation N's resolution shares a namespace parameter with
+    ## generation N's own bootstrap namespace
+
+    Generation N's bootstrap namespace is `_namespace(BOOTSTRAP,
+    resolution_operation_id=R)`, where `R` is generation N-1's own
+    completed resolution's `operation_id` (`None` for generation 0 --
+    today's existing, unchanged fixed namespace). Generation N's own
+    *resolution* -- the RESOLVE_UNPROVISIONED_INCIDENT journal that
+    would close generation N's incident -- reuses that exact same `R` as
+    its `_namespace(RECOVER_UNPROVISIONED_INCIDENT, resolution_
+    operation_id=R)` salt. This keeps generation 0's resolution at
+    today's fixed, singleton namespace (`R=None`, byte-for-byte
+    unchanged -- required so the real, already-completed production
+    incident-0 resolution remains reachable at its existing path), while
+    giving every later generation's resolution a distinct namespace of
+    its own, so a second, third, ... resolution never collides with an
+    earlier one's already-`COMPLETED` journal file.
+
+    ## Hop condition
+
+    A generation is treated as "resolved, keep walking" only when *all*
+    of the following hold, each independently re-verified from the
+    on-disk journal (never cached, never assumed):
+      - this generation's own classification (`authoritative=None`,
+        matching every other offline `recover`/`bootstrap` classify()
+        call) is exactly `RECOVERY_REQUIRED` with `recovery_action is
+        None` -- the one shape RESOLVE_UNPROVISIONED_INCIDENT ever
+        applies to (see `RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT`'s
+        own docstring). Any other classification -- `CLEAN_NO_OPERATION`
+        (fresh, nothing attempted yet), `CLEAN_COMPLETED`/anything else
+        while a real `authoritative` observation is later supplied
+        (checked by this function's own callers, not here),
+        `CORRUPT_OR_UNTRUSTED_LOCAL_STATE`, or `RECOVERY_REQUIRED` with a
+        real `recovery_action` (REVOKE_ORPHAN_KEY/DELETE_DEDICATED_USER,
+        which never chain past their own generation) -- stops the walk
+        immediately, handing that generation back as the frontier.
+      - a resolution journal exists at the namespace this exact
+        generation's incident would derive
+        (`derive_resolution_operation_id(incident_operation_id,
+        incident_record_mac)`, using this generation's own freshly
+        re-loaded `operation_id`/latest-record `mac` -- never a value
+        computed for any other generation), is `trusted` (binding
+        matches the current configuration), and is `COMPLETED`, and its
+        own `operation_id` equals that freshly re-derived value exactly.
+        A resolution computed for a different incident (including an
+        adjacent generation, or a stale/tampered file placed at the
+        wrong path) can never satisfy this -- an attacker or corrupted
+        state cannot forge a match without the trusted integrity key.
+
+    Only once every one of those checks passes does the walk advance:
+    `context` becomes `build_context(source, resolution_operation_id=
+    expected_resolution_id)` (operation_type defaults to `BOOTSTRAP`),
+    `generation` increments, and the loop repeats against the new
+    context. Any failure to independently re-verify a hop (missing
+    resolution, untrusted binding, wrong operation_id, journal load
+    error, `AdminCompositionError` rebuilding a later generation's
+    context, or the `_MAX_CHAIN_GENERATIONS` cap) always just **stops
+    the walk and returns the last safely-confirmed generation** -- never
+    raises past generation 0 and never guesses forward. Under-hopping
+    (stopping too early) is always safe: the caller's existing,
+    unchanged classify()-driven reporting takes over from there. This
+    function never mutates anything, never acquires a lock, and never
+    itself performs a RESOLVE_UNPROVISIONED_INCIDENT resolution -- it
+    only decides which single context/decision downstream callers act
+    on, exactly mirroring the narrower single-hop helper it replaces.
+    """
+
+    context = context0
+    resolution_operation_id: str | None = None
+    generation = 0
+    chain: list[ChainGenerationSummary] = []
+
+    while generation < _MAX_CHAIN_GENERATIONS:
+        decision = context.status.classify(authoritative=None)
+        hoppable = (
+            decision.classification is RestartClassification.RECOVERY_REQUIRED
+            and decision.recovery_action is None
+            and decision.operation_id is not None
+        )
+        if not hoppable:
+            chain.append(
+                ChainGenerationSummary(
+                    generation=generation,
+                    operation_id=decision.operation_id,
+                    classification=decision.classification,
+                    recovery_action=decision.recovery_action,
+                    resolved=False,
+                )
+            )
+            break
+
+        try:
+            incident_snapshot = context._journal.load()
+        except OperationJournalError:
+            chain.append(
+                ChainGenerationSummary(
+                    generation=generation,
+                    operation_id=decision.operation_id,
+                    classification=decision.classification,
+                    recovery_action=decision.recovery_action,
+                    resolved=False,
+                )
+            )
+            break
+
+        incident_operation_id = decision.operation_id
+        if incident_operation_id is None:
+            # `hoppable` already proved this is unreachable -- defensive only,
+            # mirroring security_recovery_orchestration.py's own identical
+            # "classify_restart() never returns RECOVERY_REQUIRED without an
+            # operation_id" guard.
+            break
+        expected_resolution_id = derive_resolution_operation_id(
+            incident_operation_id=incident_operation_id, incident_record_mac=incident_snapshot.latest.mac
+        )
+        try:
+            resolution_context = build_context(
+                source,
+                operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT,
+                resolution_operation_id=resolution_operation_id,
+            )
+        except AdminCompositionError:
+            chain.append(
+                ChainGenerationSummary(
+                    generation=generation,
+                    operation_id=decision.operation_id,
+                    classification=decision.classification,
+                    recovery_action=decision.recovery_action,
+                    resolved=False,
+                )
+            )
+            break
+
+        resolution_snapshot, trusted = resolution_context.status._load_bound_journal()
+        resolved = (
+            trusted
+            and resolution_snapshot is not None
+            and resolution_snapshot.latest.state is DurableOperationState.COMPLETED
+            and resolution_snapshot.latest.binding.operation_id == expected_resolution_id
+        )
+        chain.append(
+            ChainGenerationSummary(
+                generation=generation,
+                operation_id=decision.operation_id,
+                classification=decision.classification,
+                recovery_action=decision.recovery_action,
+                resolved=resolved,
+            )
+        )
+        if not resolved:
+            break
+
+        try:
+            next_context = build_context(source, resolution_operation_id=expected_resolution_id)
+        except AdminCompositionError:
+            break
+
+        context = next_context
+        resolution_operation_id = expected_resolution_id
+        generation += 1
+        decision = context.status.classify(authoritative=None)
+
+    return ChainFrontier(
+        generation=generation,
+        resolution_operation_id=resolution_operation_id,
+        context=context,
+        decision=context.status.classify(authoritative=None),
+        chain=tuple(chain),
+    )
+
+
 __all__ = [
     "AdminCompositionConfig",
     "AdminCompositionError",
@@ -733,6 +1025,10 @@ __all__ = [
     "AdministrativeContext",
     "AdministrativeServiceAvailability",
     "AdministrativeStatusService",
+    "ChainFrontier",
+    "ChainGenerationSummary",
+    "PfRestReadOnlyStatus",
     "build_admin_context",
     "load_admin_composition_config",
+    "locate_bootstrap_chain_frontier",
 ]

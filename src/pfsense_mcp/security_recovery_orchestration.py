@@ -68,7 +68,12 @@ from datetime import UTC, datetime
 from enum import Enum
 
 from .errors import PfSenseMCPError
-from .security_admin_composition import AdminCompositionError, AdministrativeContext, build_admin_context
+from .security_admin_composition import (
+    AdminCompositionError,
+    AdministrativeContext,
+    build_admin_context,
+    locate_bootstrap_chain_frontier,
+)
 from .security_bootstrap_client import ObservedApiKey, ObservedUser
 from .security_bootstrap_recovery import RecoveryDeletionEvidence, UnprovisionedIncidentEvidence
 from .security_operation_journal import (
@@ -171,6 +176,14 @@ class RecoveryOrchestrationResult:
     recovery_action: RecoveryAction | None = None
     confirmation_token: str | None = None
     evidence: RecoveryDeletionEvidence | UnprovisionedIncidentEvidence | None = None
+    #: Which RESOLVE_UNPROVISIONED_INCIDENT chain generation this result
+    #: concerns (0 = the original, fixed bootstrap namespace; N>0 = the
+    #: Nth retry namespace, reached only once every prior generation's
+    #: resolution is independently verified `COMPLETED` -- see
+    #: `locate_bootstrap_chain_frontier()`'s own docstring). `None` only
+    #: when the walk itself never ran (a configuration error building
+    #: generation 0's own context).
+    generation: int | None = None
 
 
 _ACTION_TO_OPERATION_TYPE = {
@@ -232,19 +245,32 @@ def run_recovery_from_environment(
     except AdminCompositionError as exc:
         return RecoveryOrchestrationResult(RecoveryOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR, str(exc))
 
-    decision = bootstrap_context.status.classify(authoritative=None)
+    # Walk the deterministic incident -> resolution -> retry-namespace
+    # chain forward (offline, `authoritative=None`, mirroring `bootstrap`'s
+    # own identical walk in `run_bootstrap_from_environment()`) to find
+    # the current *frontier* generation -- generation 0 itself whenever
+    # nothing has ever been resolved (this function's prior, unchanged
+    # behavior). See `locate_bootstrap_chain_frontier()`'s own docstring
+    # for the full hop contract and why this is always safe to under-hop.
+    frontier = locate_bootstrap_chain_frontier(bootstrap_context, source=source, build_context=build_context)
+    bootstrap_context = frontier.context
+    generation = frontier.generation
+
+    decision = frontier.decision
     if decision.classification is RestartClassification.CORRUPT_OR_UNTRUSTED_LOCAL_STATE:
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE,
             "Local journal, lock, or custody-artifact state for the incident is corrupt or untrusted; "
             "refusing to inspect or execute recovery.",
             operation_id=decision.operation_id,
+            generation=generation,
         )
     if decision.classification is not RestartClassification.RECOVERY_REQUIRED:
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.NO_RECOVERY_NEEDED,
             "No ADR-033 recovery action is currently recorded for this target/account/profile.",
             operation_id=decision.operation_id,
+            generation=generation,
         )
     recovery_action = decision.recovery_action
     if recovery_action is None:
@@ -279,6 +305,7 @@ def run_recovery_from_environment(
             RecoveryOrchestrationOutcome.BLOCKED_CORRUPT_LOCAL_STATE,
             "Recovery is required but no incident operation id was recorded.",
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     try:
@@ -289,18 +316,30 @@ def run_recovery_from_environment(
             f"Could not re-read the incident journal to bind a confirmation token: {exc}",
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
     incident_record_mac = incident_snapshot.latest.mac
 
+    # This generation's own resolution namespace shares the exact
+    # `resolution_operation_id` salt that reached this generation's
+    # bootstrap namespace (`frontier.resolution_operation_id`, `None` for
+    # generation 0) -- see `locate_bootstrap_chain_frontier()`'s own
+    # docstring for why. The two pre-existing recovery actions never
+    # participate in the chain and must keep using the unparametrized
+    # namespace `build_context()` already used for them.
     operation_type = _ACTION_TO_OPERATION_TYPE[recovery_action]
+    resolution_salt = (
+        frontier.resolution_operation_id if recovery_action is RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT else None
+    )
     try:
-        recovery_context = build_context(source, operation_type=operation_type)
+        recovery_context = build_context(source, operation_type=operation_type, resolution_operation_id=resolution_salt)
     except AdminCompositionError as exc:
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.BLOCKED_CONFIGURATION_ERROR,
             str(exc),
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     recovery_decision = recovery_context.status.classify(authoritative=None)
@@ -323,6 +362,7 @@ def run_recovery_from_environment(
                 f"Could not re-read the recovery journal: {exc}",
                 operation_id=incident_operation_id,
                 recovery_action=recovery_action,
+                generation=generation,
             )
         if recovery_snapshot.latest.state is DurableOperationState.COMPLETED:
             return RecoveryOrchestrationResult(
@@ -330,6 +370,7 @@ def run_recovery_from_environment(
                 f"The {recovery_action.value} recovery action for this incident is already recorded complete.",
                 operation_id=incident_operation_id,
                 recovery_action=recovery_action,
+                generation=generation,
             )
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE,
@@ -337,6 +378,7 @@ def run_recovery_from_environment(
             f"({recovery_snapshot.latest.state.value}) requires manual review before any further attempt.",
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     try:
@@ -359,6 +401,7 @@ def run_recovery_from_environment(
             str(exc),
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     binding = RecoveryIncidentBinding(
@@ -379,6 +422,7 @@ def run_recovery_from_environment(
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
             confirmation_token=expected_token,
+            generation=generation,
         )
 
     if execute_action is not recovery_action:
@@ -388,6 +432,7 @@ def run_recovery_from_environment(
             "refusing before any mutation.",
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     if not confirmation_token_matches(confirm_token, binding, integrity_key=integrity_key):
@@ -397,6 +442,7 @@ def run_recovery_from_environment(
             "object/incident; refusing before any mutation.",
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     # RESOLVE_UNPROVISIONED_INCIDENT's own resolution journal must use the
@@ -424,11 +470,17 @@ def run_recovery_from_environment(
             str(exc),
             operation_id=incident_operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     try:
         return _run_recovery_locked(
-            recovery_context, recovery_action=recovery_action, operation_id=operation_id, timestamp=timestamp, now=now
+            recovery_context,
+            recovery_action=recovery_action,
+            operation_id=operation_id,
+            timestamp=timestamp,
+            now=now,
+            generation=generation,
         )
     except OperationJournalError as exc:
         return RecoveryOrchestrationResult(
@@ -436,6 +488,7 @@ def run_recovery_from_environment(
             f"Operation journal error: {exc}",
             operation_id=operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
 
@@ -446,6 +499,7 @@ def _run_recovery_locked(
     operation_id: str,
     timestamp: str,
     now: Callable[[], str],
+    generation: int | None,
 ) -> RecoveryOrchestrationResult:
     operation_type = _ACTION_TO_OPERATION_TYPE[recovery_action]
     binding = context.new_operation_binding(operation_id=operation_id, operation_type=operation_type)
@@ -494,6 +548,7 @@ def _run_recovery_locked(
             "the operation lock is held pending manual investigation.",
             operation_id=operation_id,
             recovery_action=recovery_action,
+            generation=generation,
         )
 
     context._journal.append(
@@ -517,4 +572,5 @@ def _run_recovery_locked(
         operation_id=operation_id,
         recovery_action=recovery_action,
         evidence=evidence,
+        generation=generation,
     )

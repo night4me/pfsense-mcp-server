@@ -40,6 +40,14 @@ operation is a named method with a fixed, hard-coded path.
   another setting or authentication-method set. The separately isolated
   `security_auth_transition.py` coordinator owns fresh-transport,
   at-most-once, bounded-reconnect, and independent-verification semantics.
+- `observe_restapi_mode()` -- `GET /api/v2/system/restapi/settings` (the
+  same fixed resource `_observe_auth_settings_for_transition()` reads),
+  parsing only the `read_only` field. Added for the bootstrap read-only
+  pre-flight check (`security_bootstrap_orchestration.py`): pfSense's own
+  global REST API "Read Only" mode rejects every non-GET request with
+  HTTP 405 at the server, independent of authentication/privilege --
+  bootstrap must know this *before* attempting any mutating call, not
+  discover it via a failed POST/PATCH.
 
 **Payload/response shapes are not guessed.** They are transcribed
 directly from a real, already-executed, already-authorized live
@@ -124,6 +132,18 @@ class ObservedAuthSettings:
 
     auth_methods: frozenset[str]
     unrelated_digest: str
+
+
+@dataclass(frozen=True)
+class ObservedRestApiMode:
+    """The one field the read-only pre-flight check needs from
+    `GET /api/v2/system/restapi/settings` -- pfSense's own global REST
+    API "Read Only" toggle. `read_only=True` means the appliance will
+    reject every non-GET request with HTTP 405 at the server, before
+    any model/write logic runs, regardless of the caller's own
+    authentication or privileges."""
+
+    read_only: bool
 
 
 @dataclass(frozen=True)
@@ -260,6 +280,13 @@ def _parse_auth_settings(data: dict[str, Any], *, operation: str) -> ObservedAut
     return ObservedAuthSettings(auth_methods=frozenset(auth_methods), unrelated_digest=digest)
 
 
+def _parse_restapi_mode(data: dict[str, Any], *, operation: str) -> ObservedRestApiMode:
+    read_only = data.get("read_only")
+    if not isinstance(read_only, bool):
+        raise BootstrapProvisioningError(f"{operation}: response had a missing or malformed 'read_only' field.")
+    return ObservedRestApiMode(read_only=read_only)
+
+
 class BootstrapProvisioningClient:
     """Bound to exactly one `Transport` for its lifetime -- callers
     needing both an admin-authenticated call and a self-service
@@ -322,6 +349,20 @@ class BootstrapProvisioningClient:
         response = self._transport.request("GET", path)
         data = _check_response(response.status_code, response.text, operation="observe_auth_settings")
         return _parse_auth_settings(data, operation="observe_auth_settings")
+
+    def observe_restapi_mode(self) -> ObservedRestApiMode:
+        """`GET /api/v2/system/restapi/settings` -- read-only pre-flight
+        observation of pfSense's own global REST API "Read Only" mode.
+        Raises `BootstrapProvisioningError` on any non-2xx status,
+        non-JSON body, or malformed/missing `read_only` field -- callers
+        that need "fail closed on any ambiguity" semantics (the
+        bootstrap pre-flight check) treat any exception from this method
+        identically to a confirmed `read_only=True`."""
+
+        path = _full_path(_RESTAPI_SETTINGS_PATH, self._api_version)
+        response = self._transport.request("GET", path)
+        data = _check_response(response.status_code, response.text, operation="observe_restapi_mode")
+        return _parse_restapi_mode(data, operation="observe_restapi_mode")
 
     def _enable_basic_auth_for_transition(self) -> None:
         """Send the sole accepted enable payload; selection remains closed."""

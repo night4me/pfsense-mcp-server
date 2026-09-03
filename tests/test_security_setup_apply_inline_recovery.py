@@ -360,7 +360,7 @@ def test_end_to_end_inline_recovery_against_a_real_journal_and_real_candidate(tm
     )
     recovery_context = replace(recovery_context, _mutation_components=recovery_components)
 
-    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
         return bootstrap_context if operation_type is AdministrativeOperationType.BOOTSTRAP else recovery_context
 
     monkeypatch.setattr("pfsense_mcp.security_bootstrap_orchestration.build_admin_context", fake_build)
