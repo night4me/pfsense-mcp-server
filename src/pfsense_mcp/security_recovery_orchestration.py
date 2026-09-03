@@ -233,10 +233,38 @@ def run_recovery_from_environment(
             "refusing to inspect or execute recovery.",
             operation_id=decision.operation_id,
         )
-    if decision.classification is not RestartClassification.RECOVERY_REQUIRED or decision.recovery_action is None:
+    if decision.classification is not RestartClassification.RECOVERY_REQUIRED:
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.NO_RECOVERY_NEEDED,
             "No ADR-033 recovery action is currently recorded for this target/account/profile.",
+            operation_id=decision.operation_id,
+        )
+    if decision.recovery_action is None:
+        # classify_restart() reports RECOVERY_REQUIRED whenever no fresh
+        # authoritative observation is available, for *any* pre-existing
+        # journal -- not only one whose own DurableOperationState reached
+        # the terminal RECOVERY_REQUIRED state (see classify_restart()'s
+        # own docstring/branches). When the journal never reached that
+        # terminal state (e.g. it failed during pre-flight observation,
+        # before any mutation was ever attempted), `recovery_action` is
+        # correctly `None` -- there is no closed orphan-key/dedicated-user
+        # primitive to name, because nothing was created. This must never
+        # be silently reinterpreted as "no recovery needed": that would
+        # contradict classify_restart()'s own conservative intent and let
+        # `bootstrap`'s independent restart check (which blocks on this
+        # exact classification, see BootstrapOrchestrationOutcome
+        # handling) disagree with `recover`'s own inspection about
+        # whether attention is required. Report it as the same ambiguous,
+        # human-review-required state a genuinely incomplete recovery
+        # attempt reports -- never invent a recovery_action that was
+        # never named.
+        return RecoveryOrchestrationResult(
+            RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE,
+            "Recovery attention is required (no fresh authoritative confirmation available for this "
+            "target/account/profile's prior operation), but no closed recovery action is recorded -- "
+            "the underlying operation never reached a state with an applicable orphan-key/dedicated-user "
+            "primitive. This is not automatically retryable; manual review of the incident journal is "
+            "required.",
             operation_id=decision.operation_id,
         )
 

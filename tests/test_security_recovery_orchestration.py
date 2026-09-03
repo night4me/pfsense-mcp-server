@@ -205,6 +205,46 @@ def test_no_recovery_needed_when_bootstrap_journal_is_clean(admin_env, monkeypat
     assert result.confirmation_token is None
 
 
+def test_recovery_required_classification_with_no_recovery_action_is_blocked_not_silently_cleared(
+    admin_env, monkeypatch, now
+):
+    """Reproduces the exact disagreement observed against production
+    (operation_id a41c6a538c60ecd1bcba2dbb97df5152): a bootstrap attempt
+    that fails during pre-flight observation -- before any transition
+    past CREATED -- leaves a journal whose *own* DurableOperationState
+    never reaches RECOVERY_REQUIRED, so its `recovery_action` is
+    legitimately `None`. `classify_restart(authoritative=None)` still
+    reports `RestartClassification.RECOVERY_REQUIRED` for this journal
+    (its own documented conservative behavior: any pre-existing journal,
+    with no fresh authoritative evidence, requires attention) -- exactly
+    the same call `bootstrap`'s own restart check makes, which blocks
+    (`blocked_prior_operation`). Before the fix, `run_recovery_from_
+    environment()` silently collapsed this exact combination into
+    `NO_RECOVERY_NEEDED`, directly contradicting `bootstrap`'s own
+    blocking decision for the identical journal. Must now agree: recovery
+    attention is required, reported as an explicit ambiguous state, never
+    silently cleared and never inventing an action that was never named."""
+
+    bootstrap_context = build_admin_context(admin_env)
+    binding = bootstrap_context.new_operation_binding(
+        operation_id="incident-1", operation_type=AdministrativeOperationType.BOOTSTRAP
+    )
+    bootstrap_context._journal.create(binding, timestamp=T0)
+
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+        return bootstrap_context
+
+    monkeypatch.setattr("pfsense_mcp.security_recovery_orchestration.build_admin_context", fake_build)
+
+    result = run_recovery_from_environment(admin_env, now=now)
+
+    assert result.outcome is RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE
+    assert result.operation_id == "incident-1"
+    assert result.recovery_action is None
+    assert result.confirmation_token is None
+    assert "no closed recovery action is recorded" in result.detail
+
+
 # --- Inspect (surface-only) ---------------------------------------------------
 
 
