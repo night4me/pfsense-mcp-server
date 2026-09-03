@@ -123,6 +123,7 @@ from .security_operation_journal import (
     OperationLockError,
     RestartClassification,
     RestartDecision,
+    derive_resolution_operation_id,
 )
 from .security_readonly_admin_composition import build_readonly_admin_context
 
@@ -516,6 +517,63 @@ def build_authoritative_restart_observation(context: AdministrativeContext) -> A
     )
 
 
+def _resolved_retry_context(
+    context: AdministrativeContext,
+    *,
+    source: Mapping[str, str],
+    build_context: Callable[..., AdministrativeContext],
+    decision: RestartDecision,
+) -> AdministrativeContext | None:
+    """If `decision` is exactly RECOVERY_REQUIRED with no recovery_action
+    -- the one class of interrupted bootstrap incident RESOLVE_
+    UNPROVISIONED_INCIDENT exists for (see that RecoveryAction's own
+    docstring in security_operation_journal.py) -- check whether a
+    trusted, COMPLETED resolution record already exists for THIS exact
+    incident (bound by both its operation_id and its journal's own MAC,
+    via `derive_resolution_operation_id()`), and if so return a fresh
+    `AdministrativeContext` bound to the retry's own resolution-derived
+    namespace, ready for `run_bootstrap()` to run a brand-new
+    CLEAN_NO_OPERATION attempt against.
+
+    Returns `None` for every other case (wrong classification, no
+    resolution record, untrusted, not completed, bound to a different
+    incident) -- the caller's ordinary `BLOCKED_PRIOR_OPERATION` outcome
+    then applies completely unchanged. This function never mutates
+    anything, never touches the original incident journal, and never
+    weakens `classify_restart()`'s own conservative classification --
+    it only decides which *context* `run_bootstrap()` is handed."""
+
+    if decision.classification is not RestartClassification.RECOVERY_REQUIRED or decision.recovery_action is not None:
+        return None
+    if decision.operation_id is None:
+        return None
+    try:
+        incident_snapshot = context._journal.load()
+    except OperationJournalError:
+        return None
+    expected_resolution_id = derive_resolution_operation_id(
+        incident_operation_id=decision.operation_id, incident_record_mac=incident_snapshot.latest.mac
+    )
+    try:
+        resolution_context = build_context(
+            source, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+        )
+    except AdminCompositionError:
+        return None
+    snapshot, trusted = resolution_context.status._load_bound_journal()
+    if (
+        not trusted
+        or snapshot is None
+        or snapshot.latest.state is not DurableOperationState.COMPLETED
+        or snapshot.latest.binding.operation_id != expected_resolution_id
+    ):
+        return None
+    try:
+        return build_context(source, resolution_operation_id=expected_resolution_id)
+    except AdminCompositionError:
+        return None
+
+
 def run_bootstrap_from_environment(
     env: Mapping[str, str] | None = None,
     *,
@@ -561,6 +619,19 @@ def run_bootstrap_from_environment(
         )
     if authoritative is None and context.journal_path.exists():
         authoritative = build_authoritative_restart_observation(context)
+    decision = context.status.classify(authoritative=authoritative)
+    # `_resolved_retry_context()` is a no-op (returns `None`) for every
+    # classification except the one narrow case an owner-authorized
+    # RESOLVE_UNPROVISIONED_INCIDENT resolution applies to -- see its own
+    # docstring. `run_bootstrap()` below re-classifies `context` itself
+    # (cheap, pure, no network call), so this is not a second decision
+    # source; it only decides which context that second classification
+    # runs against.
+    retry_context = _resolved_retry_context(
+        context, source=source, build_context=build_admin_context, decision=decision
+    )
+    if retry_context is not None:
+        context = retry_context
     return run_bootstrap(
         context,
         authoritative=authoritative,
@@ -607,6 +678,12 @@ def run_readonly_bootstrap_from_environment(
         )
     if authoritative is None and context.journal_path.exists():
         authoritative = build_authoritative_restart_observation(context)
+    decision = context.status.classify(authoritative=authoritative)
+    retry_context = _resolved_retry_context(
+        context, source=source, build_context=build_readonly_admin_context, decision=decision
+    )
+    if retry_context is not None:
+        context = retry_context
     return run_bootstrap(
         context,
         authoritative=authoritative,

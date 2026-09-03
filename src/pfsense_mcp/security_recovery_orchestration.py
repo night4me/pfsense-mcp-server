@@ -67,10 +67,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 
-from .errors import BootstrapProvisioningError, PfSenseMCPError
+from .errors import PfSenseMCPError
 from .security_admin_composition import AdminCompositionError, AdministrativeContext, build_admin_context
 from .security_bootstrap_client import ObservedApiKey, ObservedUser
-from .security_bootstrap_recovery import RecoveryDeletionEvidence
+from .security_bootstrap_recovery import RecoveryDeletionEvidence, UnprovisionedIncidentEvidence
 from .security_operation_journal import (
     AdministrativeOperationType,
     AdministrativeTransactionState,
@@ -79,6 +79,7 @@ from .security_operation_journal import (
     OperationLockError,
     RecoveryAction,
     RestartClassification,
+    derive_resolution_operation_id,
 )
 from .security_readonly_admin_composition import build_readonly_admin_context
 from .security_recovery_confirmation import (
@@ -93,6 +94,11 @@ __all__ = [
     "RecoveryOrchestrationError",
     "RecoveryOrchestrationOutcome",
     "RecoveryOrchestrationResult",
+    #: Re-exported so security_cli.py (which must never import
+    #: security_bootstrap_recovery.py directly) can distinguish this
+    #: `RecoveryOrchestrationResult.evidence` shape from
+    #: `RecoveryDeletionEvidence`'s when formatting output.
+    "UnprovisionedIncidentEvidence",
     "run_recovery_from_environment",
 ]
 
@@ -164,12 +170,13 @@ class RecoveryOrchestrationResult:
     operation_id: str | None = None
     recovery_action: RecoveryAction | None = None
     confirmation_token: str | None = None
-    evidence: RecoveryDeletionEvidence | None = None
+    evidence: RecoveryDeletionEvidence | UnprovisionedIncidentEvidence | None = None
 
 
 _ACTION_TO_OPERATION_TYPE = {
     RecoveryAction.REVOKE_ORPHAN_KEY: AdministrativeOperationType.RECOVER_ORPHAN_KEY,
     RecoveryAction.DELETE_DEDICATED_USER: AdministrativeOperationType.RECOVER_DEDICATED_USER,
+    RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT: AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT,
 }
 
 
@@ -239,7 +246,8 @@ def run_recovery_from_environment(
             "No ADR-033 recovery action is currently recorded for this target/account/profile.",
             operation_id=decision.operation_id,
         )
-    if decision.recovery_action is None:
+    recovery_action = decision.recovery_action
+    if recovery_action is None:
         # classify_restart() reports RECOVERY_REQUIRED whenever no fresh
         # authoritative observation is available, for *any* pre-existing
         # journal -- not only one whose own DurableOperationState reached
@@ -248,27 +256,21 @@ def run_recovery_from_environment(
         # terminal state (e.g. it failed during pre-flight observation,
         # before any mutation was ever attempted), `recovery_action` is
         # correctly `None` -- there is no closed orphan-key/dedicated-user
-        # primitive to name, because nothing was created. This must never
-        # be silently reinterpreted as "no recovery needed": that would
-        # contradict classify_restart()'s own conservative intent and let
+        # primitive to name, because nothing was created.
+        #
+        # This is exactly the class of incident RESOLVE_UNPROVISIONED_
+        # INCIDENT exists for -- but naming it here is only a hypothesis,
+        # never a conclusion: the evidence-gathering read below
+        # (`identify_unprovisioned_incident_evidence_call()`) is the actual
+        # gate. If the intended account or an orphan key turns out to
+        # still exist, or any read is ambiguous, that call raises and this
+        # falls through to `BLOCKED_CANDIDATE_NOT_IDENTIFIABLE` a few lines
+        # down -- never silently reinterpreted as "no recovery needed" or
+        # "resolved" without fresh proof. This must never contradict
+        # classify_restart()'s own conservative intent, nor let
         # `bootstrap`'s independent restart check (which blocks on this
-        # exact classification, see BootstrapOrchestrationOutcome
-        # handling) disagree with `recover`'s own inspection about
-        # whether attention is required. Report it as the same ambiguous,
-        # human-review-required state a genuinely incomplete recovery
-        # attempt reports -- never invent a recovery_action that was
-        # never named.
-        return RecoveryOrchestrationResult(
-            RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE,
-            "Recovery attention is required (no fresh authoritative confirmation available for this "
-            "target/account/profile's prior operation), but no closed recovery action is recorded -- "
-            "the underlying operation never reached a state with an applicable orphan-key/dedicated-user "
-            "primitive. This is not automatically retryable; manual review of the incident journal is "
-            "required.",
-            operation_id=decision.operation_id,
-        )
-
-    recovery_action = decision.recovery_action
+        # exact classification) disagree with what `recover` concludes here.
+        recovery_action = RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT
     incident_operation_id = decision.operation_id
     if incident_operation_id is None:
         # classify_restart() never returns RECOVERY_REQUIRED without an
@@ -338,12 +340,20 @@ def run_recovery_from_environment(
         )
 
     try:
-        candidate: ObservedApiKey | ObservedUser
+        candidate: ObservedApiKey | ObservedUser | UnprovisionedIncidentEvidence
         if recovery_action is RecoveryAction.REVOKE_ORPHAN_KEY:
             candidate = recovery_context._mutation_components.identify_orphan_key_candidate()
-        else:
+        elif recovery_action is RecoveryAction.DELETE_DEDICATED_USER:
             candidate = recovery_context._mutation_components.identify_dedicated_user_candidate()
-    except BootstrapProvisioningError as exc:
+        else:
+            candidate = recovery_context._mutation_components.identify_unprovisioned_incident_evidence_call()
+    except Exception as exc:  # deliberately broad: any escape (including a transport-level
+        # failure like a DNS/connect error, not only BootstrapProvisioningError) is treated as
+        # ambiguous rather than propagating uncaught -- matching _run_recovery_locked()'s own
+        # "deliberately broad" mutation-call catch a few lines below, for the identical reason:
+        # this is a read-only network call and every caller of this function (including
+        # security_setup_apply.py's inline recovery delegation) must always get back a
+        # structured RecoveryOrchestrationResult, never an unhandled exception.
         return RecoveryOrchestrationResult(
             RecoveryOrchestrationOutcome.BLOCKED_CANDIDATE_NOT_IDENTIFIABLE,
             str(exc),
@@ -389,7 +399,22 @@ def run_recovery_from_environment(
             recovery_action=recovery_action,
         )
 
-    operation_id = operation_id_factory()
+    # RESOLVE_UNPROVISIONED_INCIDENT's own resolution journal must use the
+    # *deterministic* operation_id derived from the incident it resolves
+    # (`derive_resolution_operation_id()`), never a random one -- that
+    # deterministic binding is exactly what lets a bootstrap retry later
+    # prove, from the resolution journal's own operation_id alone, that it
+    # was computed for *this* incident and no other. The two pre-existing
+    # recovery actions have no such retry-binding requirement (see
+    # `security_bootstrap_recovery.py`'s own docstring on why neither ever
+    # unblocks a bootstrap retry), so they keep using a fresh random id.
+    operation_id = (
+        derive_resolution_operation_id(
+            incident_operation_id=incident_operation_id, incident_record_mac=incident_record_mac
+        )
+        if recovery_action is RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT
+        else operation_id_factory()
+    )
     timestamp = now()
     try:
         recovery_context._lock.acquire(operation_id, timestamp=timestamp)
@@ -440,11 +465,19 @@ def _run_recovery_locked(
         timestamp=now(),
     )
 
-    call = (
-        context._mutation_components.revoke_orphan_key_call
-        if recovery_action is RecoveryAction.REVOKE_ORPHAN_KEY
-        else context._mutation_components.delete_dedicated_user_call
-    )
+    call: Callable[[], RecoveryDeletionEvidence] | Callable[[], UnprovisionedIncidentEvidence]
+    if recovery_action is RecoveryAction.REVOKE_ORPHAN_KEY:
+        call = context._mutation_components.revoke_orphan_key_call
+    elif recovery_action is RecoveryAction.DELETE_DEDICATED_USER:
+        call = context._mutation_components.delete_dedicated_user_call
+    else:
+        # Not a pfSense-side mutation -- a fresh, independent re-read of
+        # the same two-reads-agree evidence the inspect path already
+        # gathered once. Re-verifying immediately before COMPLETED (rather
+        # than trusting the earlier read) matches the same "reread before
+        # committing" discipline `revoke_failed_bootstrap_api_key()`/
+        # `delete_dedicated_recovery_user()` already apply internally.
+        call = context._mutation_components.identify_unprovisioned_incident_evidence_call
     try:
         evidence = call()
     except Exception as exc:  # deliberately broad: any escape is treated as ambiguous, matching run_bootstrap()

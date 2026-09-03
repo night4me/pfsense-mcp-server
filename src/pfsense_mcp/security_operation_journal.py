@@ -56,6 +56,18 @@ class AdministrativeOperationType(str, Enum):
     BOOTSTRAP = "bootstrap"
     RECOVER_ORPHAN_KEY = "recover_orphan_key"
     RECOVER_DEDICATED_USER = "recover_dedicated_user"
+    #: Owner-authorized, evidence-backed closure of a bootstrap incident
+    #: whose journal reached RECOVERY_REQUIRED-classification with no
+    #: closed recovery_action (the underlying journal never itself
+    #: reached a terminal RECOVERY_REQUIRED DurableOperationState --
+    #: e.g. it failed during pre-flight observation or mid-mutation with
+    #: an ambiguous result) *and* fresh authoritative evidence proves the
+    #: intended account/key were never created. Drives its own journal,
+    #: exactly like the other two recovery actions -- never appends to,
+    #: rewrites, or truncates the original bootstrap-typed journal, which
+    #: remains a permanent, immutable incident record. See
+    #: `derive_resolution_operation_id()`.
+    RECOVER_UNPROVISIONED_INCIDENT = "recover_unprovisioned_incident"
 
 
 class DurableOperationState(str, Enum):
@@ -84,6 +96,12 @@ class AdministrativeTransactionState(str, Enum):
 class RecoveryAction(str, Enum):
     REVOKE_ORPHAN_KEY = "revoke_orphan_key"
     DELETE_DEDICATED_USER = "delete_dedicated_user"
+    #: Not a pfSense-side cleanup -- no mutating HTTP call is ever made.
+    #: Records, in a dedicated integrity-protected ledger, that fresh
+    #: authoritative evidence proved the intended account/key were never
+    #: created for one exact, MAC-bound incident. See
+    #: `AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT`.
+    RESOLVE_UNPROVISIONED_INCIDENT = "resolve_unprovisioned_incident"
 
 
 class RestartClassification(str, Enum):
@@ -178,6 +196,44 @@ class RestartDecision:
     classification: RestartClassification
     operation_id: str | None
     recovery_action: RecoveryAction | None = None
+
+
+_RESOLUTION_ID_DOMAIN = b"pfsense-mcp-adr033-resolve-unprovisioned-incident-v1\x00"
+
+
+def derive_resolution_operation_id(*, incident_operation_id: str, incident_record_mac: str) -> str:
+    """Deterministic operation_id for a RECOVER_UNPROVISIONED_INCIDENT-typed
+    journal, bound to one exact incident by both its operation_id *and*
+    its latest journal record's own MAC (an already-integrity-protected
+    digest of that exact incident state). Never random -- calling this
+    twice for the same incident always returns the same id.
+
+    Two independent things get derived from this same deterministic
+    value, both in `security_admin_composition.py`: the resolution
+    ledger's own `operation_id` (see `RECOVER_UNPROVISIONED_INCIDENT`),
+    and -- once that resolution record is COMPLETED -- the *retry*
+    bootstrap attempt's journal/lock namespace (via `_namespace()`'s
+    `resolution_operation_id=` parameter). The retry deliberately does
+    NOT reuse the original incident's fixed bootstrap namespace: that
+    journal file's path is claimed forever once created (`OperationJournal
+    .create()` uses `O_CREAT | O_EXCL`), so no classification value could
+    ever make a second `.create()` there succeed without deleting or
+    overwriting the original incident record, which every invariant here
+    forbids. Deriving the retry's own fresh, distinct namespace from this
+    same value keeps the original journal 100% untouched while still
+    cryptographically proving, from the retry journal's own file name
+    alone, exactly which resolved incident authorized it. A resolution
+    computed for one incident's (operation_id, mac) pair can never match
+    a different incident, even one that reused the same operation_id
+    (impossible by construction) or occurred later in the same namespace
+    (a different mac)."""
+
+    canonical = json.dumps(
+        {"incident_operation_id": incident_operation_id, "incident_record_mac": incident_record_mac},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return hashlib.sha256(_RESOLUTION_ID_DOMAIN + canonical).hexdigest()
 
 
 _ALLOWED: dict[DurableOperationState, frozenset[DurableOperationState]] = {

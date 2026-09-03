@@ -39,9 +39,11 @@ from .security_bootstrap_recovery import (
     RECOVERY_KEY_DESCRIPTION,
     RECOVERY_USER_DESCRIPTION,
     RecoveryDeletionEvidence,
+    UnprovisionedIncidentEvidence,
     delete_dedicated_recovery_user,
     identify_dedicated_recovery_user_candidate,
     identify_orphan_api_key_candidate,
+    identify_unprovisioned_incident_evidence,
     revoke_failed_bootstrap_api_key,
 )
 from .security_operation_journal import (
@@ -156,6 +158,13 @@ class _FixedMutationComponents:
     #: own transport-construction access.
     identify_orphan_key_candidate: Callable[[], ObservedApiKey] = field(repr=False)
     identify_dedicated_user_candidate: Callable[[], ObservedUser] = field(repr=False)
+    #: Read-only, two-independent-reads proof of absence for
+    #: RECOVER_UNPROVISIONED_INCIDENT -- see
+    #: `identify_unprovisioned_incident_evidence()`'s own docstring.
+    #: Never a mutation; shares the same role as the two candidate-
+    #: identification callables above, just proving an absence rather
+    #: than resolving a candidate object to act on.
+    identify_unprovisioned_incident_evidence_call: Callable[[], UnprovisionedIncidentEvidence] = field(repr=False)
     auth_transition_factory: Callable[[], AuthMethodTransitionCoordinator] = field(repr=False)
     #: Read-only, fresh-live-evidence restart-observation primitive.
     #: Never a mutation -- calls only `list_users()` and the existing
@@ -474,6 +483,7 @@ def _namespace(
     config: AdminCompositionConfig,
     *,
     operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+    resolution_operation_id: str | None = None,
 ) -> str:
     payload: dict[str, str] = {
         "target_origin": config.target.base_url,
@@ -492,15 +502,50 @@ def _namespace(
     # is a deliberately terminal DurableOperationState).
     if operation_type is not AdministrativeOperationType.BOOTSTRAP:
         payload["operation_type"] = operation_type.value
+    # `resolution_operation_id`, when given, is likewise omitted unless
+    # present -- every ordinary (non-retry) bootstrap/recovery namespace
+    # is completely unaffected by this parameter's existence. When a
+    # caller supplies it (only `security_recovery_orchestration.py`, after
+    # independently proving a COMPLETED, MAC-bound RECOVER_UNPROVISIONED_
+    # INCIDENT record exists for the incident occupying the plain BOOTSTRAP
+    # namespace -- this function performs no such proof itself, it is a
+    # pure path-derivation primitive), the *retry* attempt gets its own
+    # fresh journal/lock, distinct from the original incident's, so
+    # `OperationJournal.create()`'s `O_CREAT | O_EXCL` semantics can
+    # succeed without ever touching, truncating, or overwriting the
+    # original incident journal (see `derive_resolution_operation_id()`'s
+    # own docstring in security_operation_journal.py for why a
+    # classification-only fix cannot work here).
+    if resolution_operation_id is not None:
+        payload["resolution_operation_id"] = resolution_operation_id
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(b"pfsense-mcp-adr033-admin-namespace-v1\x00" + canonical).hexdigest()
 
 
 def build_admin_context(
-    source: Mapping[str, str], *, operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP
+    source: Mapping[str, str],
+    *,
+    operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+    resolution_operation_id: str | None = None,
 ) -> AdministrativeContext:
-    """Construct one target-bound admin stack without network or mutation."""
+    """Construct one target-bound admin stack without network or mutation.
 
+    `resolution_operation_id` (default `None`, fully backward compatible):
+    see `_namespace()`'s own docstring. This function performs no
+    verification of what it's given -- it is a pure construction
+    boundary, exactly like every other parameter here. Only
+    `security_recovery_orchestration.py` may pass a non-`None` value, and
+    only after it has itself independently loaded and verified a
+    COMPLETED, correctly-bound RECOVER_UNPROVISIONED_INCIDENT journal
+    record whose own `operation_id` equals the value passed here -- the
+    same "verify before you build" discipline that module's existing
+    `recovery_context = build_context(source, operation_type=...)` call
+    already follows for the two pre-existing recovery actions. Only
+    meaningful when `operation_type` is `BOOTSTRAP`; raises otherwise
+    (a resolution cannot apply to a recovery-typed namespace)."""
+
+    if resolution_operation_id is not None and operation_type is not AdministrativeOperationType.BOOTSTRAP:
+        raise AdminCompositionError("resolution_operation_id is only meaningful for a BOOTSTRAP operation_type")
     config = load_admin_composition_config(source)
     schema, schema_digest = _load_schema(config.schema_file)
     resolved = resolve_profile_privileges(schema, write_protected_profile_requirements())
@@ -520,7 +565,7 @@ def build_admin_context(
     _load_admin_api_key(config.target)
     _read_secret_text(config.administrator_password_file, label="Administrator password file")
 
-    namespace = _namespace(config, operation_type=operation_type)
+    namespace = _namespace(config, operation_type=operation_type, resolution_operation_id=resolution_operation_id)
     binding = AdminTargetBinding(
         target_origin=config.target.base_url,
         target_identity=config.target.identity,
@@ -623,6 +668,13 @@ def build_admin_context(
         finally:
             transport.close()
 
+    def identify_unprovisioned_incident() -> UnprovisionedIncidentEvidence:
+        transport = keyauth_factory()
+        try:
+            return identify_unprovisioned_incident_evidence(admin_transport=transport, api_version=ApiVersion.V2)
+        finally:
+            transport.close()
+
     def auth_transition_factory() -> AuthMethodTransitionCoordinator:
         return AuthMethodTransitionCoordinator(
             keyauth_transport_factory=keyauth_factory,
@@ -657,6 +709,7 @@ def build_admin_context(
         delete_dedicated_user_call=delete_call,
         identify_orphan_key_candidate=identify_orphan_key,
         identify_dedicated_user_candidate=identify_dedicated_user,
+        identify_unprovisioned_incident_evidence_call=identify_unprovisioned_incident,
         auth_transition_factory=auth_transition_factory,
         observe_restart_state_call=observe_restart_state,
         journal_integrity_key=integrity_key,

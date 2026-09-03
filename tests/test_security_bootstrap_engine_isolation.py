@@ -122,6 +122,12 @@ _RECOVERY_EXPECTED_PUBLIC_SURFACE = {
     "delete_dedicated_recovery_user",
     "identify_orphan_api_key_candidate",
     "identify_dedicated_recovery_user_candidate",
+    #: RESOLVE_UNPROVISIONED_INCIDENT's own read-only evidence-gathering
+    #: primitive and its sanitized evidence type -- proves absence rather
+    #: than a verified deletion; never makes a mutating call. See
+    #: security_operation_journal.py's own RecoveryAction docstring.
+    "UnprovisionedIncidentEvidence",
+    "identify_unprovisioned_incident_evidence",
 }
 
 _TRANSITION_EXPECTED_PUBLIC_SURFACE = {
@@ -150,6 +156,10 @@ _READONLY_RECOVERY_EXPECTED_PUBLIC_SURFACE = {
     "delete_dedicated_readonly_recovery_user",
     "identify_orphan_readonly_api_key_candidate",
     "identify_dedicated_readonly_recovery_user_candidate",
+    #: See security_bootstrap_recovery.py's own equivalent addition --
+    #: mirrored here for the dedicated read_only account's own namespace.
+    "ReadonlyUnprovisionedIncidentEvidence",
+    "identify_unprovisioned_readonly_incident_evidence",
 }
 
 _ORCHESTRATION_EXPECTED_PUBLIC_SURFACE = {

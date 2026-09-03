@@ -156,6 +156,7 @@ from .security_recovery_orchestration import (
     RecoveryAction,
     RecoveryOrchestrationOutcome,
     RecoveryOrchestrationResult,
+    UnprovisionedIncidentEvidence,
     run_recovery_from_environment,
 )
 from .security_setup_apply import ApplyOutcome, ApplyResult, run_setup_apply_from_environment
@@ -644,15 +645,25 @@ def _recover_result_to_dict(result: RecoveryOrchestrationResult) -> dict[str, An
         "confirmation_token": result.confirmation_token,
         "evidence": (
             {
-                "object_kind": evidence.object_kind,
-                "selected_id": evidence.selected_id,
-                "objects_before": evidence.objects_before,
-                "objects_after": evidence.objects_after,
-                "verified_absent": evidence.verified_absent,
-                "unrelated_objects_preserved": evidence.unrelated_objects_preserved,
+                "account_username": evidence.account_username,
+                "account_confirmed_absent": evidence.account_confirmed_absent,
+                "no_owned_key_confirmed": evidence.no_owned_key_confirmed,
+                "users_checked": evidence.users_checked,
+                "keys_checked": evidence.keys_checked,
             }
-            if evidence is not None
-            else None
+            if isinstance(evidence, UnprovisionedIncidentEvidence)
+            else (
+                {
+                    "object_kind": evidence.object_kind,
+                    "selected_id": evidence.selected_id,
+                    "objects_before": evidence.objects_before,
+                    "objects_after": evidence.objects_after,
+                    "verified_absent": evidence.verified_absent,
+                    "unrelated_objects_preserved": evidence.unrelated_objects_preserved,
+                }
+                if evidence is not None
+                else None
+            )
         ),
         "notes": [
             "Default (no --execute) is read-only inspection only -- makes no pfSense mutation.",
@@ -681,7 +692,12 @@ def _format_recover_human(result: RecoveryOrchestrationResult) -> str:
             f"To execute: pfsense-mcp-security recover --execute {result.recovery_action.value} "
             f"--confirm {result.confirmation_token}"
         )
-    if result.evidence is not None:
+    if isinstance(result.evidence, UnprovisionedIncidentEvidence):
+        lines.append(f"Account: {result.evidence.account_username}")
+        lines.append(f"Account confirmed absent: {result.evidence.account_confirmed_absent}")
+        lines.append(f"No owned key confirmed: {result.evidence.no_owned_key_confirmed}")
+        lines.append(f"Users/keys checked: {result.evidence.users_checked}/{result.evidence.keys_checked}")
+    elif result.evidence is not None:
         lines.append(f"Object kind: {result.evidence.object_kind}")
         lines.append(f"Objects before/after: {result.evidence.objects_before}/{result.evidence.objects_after}")
         lines.append(f"Verified absent: {result.evidence.verified_absent}")

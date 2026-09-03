@@ -41,7 +41,7 @@ from typing import TypeVar
 from .api_version import ApiVersion
 from .errors import BootstrapProvisioningError
 from .security_bootstrap_client import BootstrapProvisioningClient, ObservedApiKey, ObservedUser
-from .security_bootstrap_recovery import RecoveryDeletionEvidence
+from .security_bootstrap_recovery import RecoveryDeletionEvidence, UnprovisionedIncidentEvidence
 from .security_privileges import (
     EvidenceClass,
     distinct_ok_privileges,
@@ -65,6 +65,10 @@ _ObservedObject = TypeVar("_ObservedObject", ObservedApiKey, ObservedUser)
 #: `revoke_orphan_key_call`/`delete_dedicated_user_call` field types
 #: satisfied without widening them.
 ReadonlyRecoveryDeletionEvidence = RecoveryDeletionEvidence
+
+#: Reused verbatim for the same reason as `ReadonlyRecoveryDeletionEvidence`
+#: above -- no account/profile identity baked into the type itself.
+ReadonlyUnprovisionedIncidentEvidence = UnprovisionedIncidentEvidence
 
 
 def _derive_exact_target(schema: dict[str, object]) -> frozenset[str]:
@@ -139,6 +143,12 @@ def _check_no_owned_key(keys: tuple[ObservedApiKey, ...], *, operation: str) -> 
         raise BootstrapProvisioningError(
             f"{operation}: account still owns one or more API keys; no mutation performed."
         )
+
+
+def _check_account_absent(users: tuple[ObservedUser, ...], *, operation: str) -> None:
+    _by_unique_id(users, operation=operation)
+    if _matching_recovery_users(users):
+        raise BootstrapProvisioningError(f"{operation}: the fixed dedicated account exists; no resolution performed.")
 
 
 def identify_orphan_readonly_api_key_candidate(
@@ -293,4 +303,50 @@ def delete_dedicated_readonly_recovery_user(
         objects_after=len(after_users),
         verified_absent=True,
         unrelated_objects_preserved=True,
+    )
+
+
+def identify_unprovisioned_readonly_incident_evidence(
+    *, admin_transport: Transport, api_version: ApiVersion = ApiVersion.V2
+) -> ReadonlyUnprovisionedIncidentEvidence:
+    """Read-only: prove, from two independent fresh reads, that the fixed
+    READ-only dedicated account was never created and owns no orphan key.
+    READ-only counterpart to `identify_unprovisioned_incident_evidence()`
+    in `security_bootstrap_recovery.py`, structurally identical except
+    which fixed account it checks -- same duplication rationale as this
+    module's own docstring. Never makes a mutating call."""
+
+    client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
+
+    first_users = client.list_users()
+    _check_account_absent(first_users, operation="identify_unprovisioned_readonly_incident_evidence")
+    first_keys = client._list_auth_keys_for_recovery()
+    _check_no_owned_key(first_keys, operation="identify_unprovisioned_readonly_incident_evidence")
+
+    second_users = client.list_users()
+    _check_account_absent(second_users, operation="identify_unprovisioned_readonly_incident_evidence")
+    second_keys = client._list_auth_keys_for_recovery()
+    _check_no_owned_key(second_keys, operation="identify_unprovisioned_readonly_incident_evidence")
+
+    if _by_unique_id(first_users, operation="identify_unprovisioned_readonly_incident_evidence") != _by_unique_id(
+        second_users, operation="identify_unprovisioned_readonly_incident_evidence"
+    ):
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_readonly_incident_evidence: authoritative user collection changed "
+            "between reads; no resolution performed."
+        )
+    if _by_unique_id(first_keys, operation="identify_unprovisioned_readonly_incident_evidence") != _by_unique_id(
+        second_keys, operation="identify_unprovisioned_readonly_incident_evidence"
+    ):
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_readonly_incident_evidence: authoritative key collection changed "
+            "between reads; no resolution performed."
+        )
+
+    return ReadonlyUnprovisionedIncidentEvidence(
+        account_username=READONLY_RECOVERY_USERNAME,
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=len(second_users),
+        keys_checked=len(second_keys),
     )

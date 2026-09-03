@@ -40,6 +40,7 @@ from pfsense_mcp.security_operation_journal import (
     OperationLockError,
     RestartClassification,
     RestartDecision,
+    derive_resolution_operation_id,
 )
 
 T0 = "2026-08-23T00:00:00Z"
@@ -530,3 +531,187 @@ def test_from_environment_happy_path_via_patched_construction(admin_env, now, mo
     result = run_bootstrap_from_environment(admin_env, now=now)
 
     assert result.outcome is BootstrapOrchestrationOutcome.COMPLETED
+
+
+# --- Retry after an owner-authorized RESOLVE_UNPROVISIONED_INCIDENT ---------
+
+
+def _create_unresolvable_incident(context: AdministrativeContext, *, operation_id: str = "incident-1") -> None:
+    """Leaves the bootstrap journal stuck at CREATED -- it never reaches
+    its own terminal RECOVERY_REQUIRED state, so `recovery_action` stays
+    `None` (the exact shape a pre-flight-observation failure leaves, and
+    the one class of incident RESOLVE_UNPROVISIONED_INCIDENT exists
+    for)."""
+
+    context._journal.create(
+        context.new_operation_binding(operation_id=operation_id, operation_type=AdministrativeOperationType.BOOTSTRAP),
+        timestamp=T0,
+    )
+
+
+def _complete_resolution_journal(resolution_context: AdministrativeContext, *, operation_id: str) -> None:
+    binding = resolution_context.new_operation_binding(
+        operation_id=operation_id, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+    )
+    resolution_context._journal.create(binding, timestamp=T0)
+    resolution_context._journal.append(
+        operation_id=operation_id,
+        state=DurableOperationState.PRE_SEND_READY,
+        transaction_state=AdministrativeTransactionState.RECOVERY_OBJECT_IDENTIFIED,
+        mutation_index=1,
+        timestamp=T1,
+    )
+    resolution_context._journal.append(
+        operation_id=operation_id,
+        state=DurableOperationState.MUTATION_INTENT_RECORDED,
+        transaction_state=AdministrativeTransactionState.RECOVERY_MUTATION_SENT,
+        mutation_index=1,
+        timestamp="2026-08-23T00:00:02Z",
+    )
+    resolution_context._journal.append(
+        operation_id=operation_id,
+        state=DurableOperationState.FINAL_VERIFICATION_PENDING,
+        transaction_state=AdministrativeTransactionState.RECOVERY_VERIFIED,
+        mutation_index=1,
+        timestamp="2026-08-23T00:00:03Z",
+    )
+    resolution_context._journal.append(
+        operation_id=operation_id,
+        state=DurableOperationState.COMPLETED,
+        transaction_state=AdministrativeTransactionState.RECOVERY_VERIFIED,
+        mutation_index=1,
+        timestamp="2026-08-23T00:00:04Z",
+    )
+
+
+def _make_fake_build(bootstrap_context, resolution_context, admin_env):
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, resolution_operation_id=None):
+        if operation_type is AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT:
+            return resolution_context
+        if resolution_operation_id is not None:
+            # Exercise the real retry-namespace construction path, not a
+            # mock -- proves the retry actually lands at a fresh,
+            # deterministically-derived journal path.
+            return build_admin_context(admin_env, resolution_operation_id=resolution_operation_id)
+        return bootstrap_context
+
+    return fake_build
+
+
+def test_retry_proceeds_when_a_matching_completed_resolution_exists(admin_env, monkeypatch, now):
+    bootstrap_context = build_admin_context(admin_env)
+    _create_unresolvable_incident(bootstrap_context)
+    incident_snapshot = bootstrap_context._journal.load()
+    expected_resolution_id = derive_resolution_operation_id(
+        incident_operation_id="incident-1", incident_record_mac=incident_snapshot.latest.mac
+    )
+
+    resolution_context = build_admin_context(
+        admin_env, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+    )
+    _complete_resolution_journal(resolution_context, operation_id=expected_resolution_id)
+
+    monkeypatch.setattr(
+        "pfsense_mcp.security_bootstrap_orchestration.build_admin_context",
+        _make_fake_build(bootstrap_context, resolution_context, admin_env),
+    )
+
+    result = run_bootstrap_from_environment(admin_env, now=now)
+
+    assert result.outcome is BootstrapOrchestrationOutcome.PROVISIONING_FAILED
+    # PROVISIONING_FAILED here (not COMPLETED) only because the retry
+    # context's bootstrap_call is the real, unstubbed one and there is no
+    # live target to actually contact -- what matters for this test is
+    # that CLEAN_NO_OPERATION applied and a genuinely new attempt was
+    # allowed to start (proven below), not this specific engine outcome.
+    retry_context = build_admin_context(admin_env, resolution_operation_id=expected_resolution_id)
+    assert retry_context.journal_path != bootstrap_context.journal_path
+    assert retry_context.journal_path.exists()
+    retry_snapshot = retry_context._journal.load()
+    assert retry_snapshot.records[0].state is DurableOperationState.CREATED
+
+    # The original incident journal is completely untouched.
+    assert bootstrap_context._journal.load() == incident_snapshot
+
+
+def test_retry_is_not_offered_without_a_matching_resolution(admin_env, monkeypatch, now):
+    bootstrap_context = build_admin_context(admin_env)
+    _create_unresolvable_incident(bootstrap_context)
+    monkeypatch.setattr(
+        "pfsense_mcp.security_bootstrap_orchestration.build_admin_context",
+        lambda source, **kwargs: bootstrap_context,
+    )
+
+    result = run_bootstrap_from_environment(admin_env, now=now)
+
+    assert result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION
+
+
+def test_retry_is_not_offered_for_an_incomplete_resolution(admin_env, monkeypatch, now):
+    bootstrap_context = build_admin_context(admin_env)
+    _create_unresolvable_incident(bootstrap_context)
+    incident_snapshot = bootstrap_context._journal.load()
+    expected_resolution_id = derive_resolution_operation_id(
+        incident_operation_id="incident-1", incident_record_mac=incident_snapshot.latest.mac
+    )
+
+    resolution_context = build_admin_context(
+        admin_env, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+    )
+    # Crashed mid-resolution -- never reached COMPLETED.
+    resolution_context._journal.create(
+        resolution_context.new_operation_binding(
+            operation_id=expected_resolution_id,
+            operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT,
+        ),
+        timestamp=T0,
+    )
+
+    monkeypatch.setattr(
+        "pfsense_mcp.security_bootstrap_orchestration.build_admin_context",
+        _make_fake_build(bootstrap_context, resolution_context, admin_env),
+    )
+
+    result = run_bootstrap_from_environment(admin_env, now=now)
+
+    assert result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION
+
+
+def test_retry_is_not_offered_for_a_resolution_bound_to_a_different_incident(admin_env, monkeypatch, now):
+    bootstrap_context = build_admin_context(admin_env)
+    _create_unresolvable_incident(bootstrap_context)
+
+    resolution_context = build_admin_context(
+        admin_env, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+    )
+    # Completed, but bound to a different (operation_id, mac) pair -- must
+    # never be treated as applicable to *this* incident.
+    _complete_resolution_journal(resolution_context, operation_id="a" * 64)
+
+    monkeypatch.setattr(
+        "pfsense_mcp.security_bootstrap_orchestration.build_admin_context",
+        _make_fake_build(bootstrap_context, resolution_context, admin_env),
+    )
+
+    result = run_bootstrap_from_environment(admin_env, now=now)
+
+    assert result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION
+
+
+def test_retry_is_not_offered_for_classifications_other_than_recovery_required_no_action(admin_env, monkeypatch, now):
+    # Fully clean namespace -- CLEAN_NO_OPERATION already proceeds without
+    # any retry-resolution lookup; confirms `_resolved_retry_context()` is
+    # never even consulted (no resolution-typed build call happens).
+    calls: list[AdministrativeOperationType] = []
+    real_build = build_admin_context
+
+    def spying_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP, **kwargs):
+        calls.append(operation_type)
+        return real_build(source, operation_type=operation_type, **kwargs)
+
+    monkeypatch.setattr("pfsense_mcp.security_bootstrap_orchestration.build_admin_context", spying_build)
+
+    result = run_bootstrap_from_environment(admin_env, now=now)
+
+    assert result.outcome is BootstrapOrchestrationOutcome.PROVISIONING_FAILED
+    assert calls == [AdministrativeOperationType.BOOTSTRAP]

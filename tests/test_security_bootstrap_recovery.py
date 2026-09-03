@@ -16,6 +16,7 @@ from pfsense_mcp.security_bootstrap_recovery import (
     delete_dedicated_recovery_user,
     identify_dedicated_recovery_user_candidate,
     identify_orphan_api_key_candidate,
+    identify_unprovisioned_incident_evidence,
     revoke_failed_bootstrap_api_key,
 )
 from pfsense_mcp.security_privileges import (
@@ -408,3 +409,72 @@ def test_identify_dedicated_recovery_user_candidate_malformed_schema_fails_befor
     with pytest.raises(BootstrapProvisioningError, match="source-cross-checked"):
         identify_dedicated_recovery_user_candidate(admin_transport=transport, schema={})
     assert transport.calls == []
+
+
+# --- identify_unprovisioned_incident_evidence (RESOLVE_UNPROVISIONED_INCIDENT) ---
+
+
+def test_identify_unprovisioned_incident_evidence_confirms_absence_via_two_agreeing_reads():
+    transport = SequenceTransport()
+    unrelated_user = _user(3, name="other-service")
+    unrelated_key = _key(4, username="other-service", descr="unrelated")
+    transport.register("GET", _USERS, _data_list(unrelated_user), _data_list(unrelated_user))
+    transport.register("GET", _KEYS, _data_list(unrelated_key), _data_list(unrelated_key))
+
+    evidence = identify_unprovisioned_incident_evidence(admin_transport=transport)
+
+    assert evidence.account_username == RECOVERY_USERNAME
+    assert evidence.account_confirmed_absent is True
+    assert evidence.no_owned_key_confirmed is True
+    assert evidence.users_checked == 1
+    assert evidence.keys_checked == 1
+    assert transport.calls == [("GET", _USERS), ("GET", _KEYS), ("GET", _USERS), ("GET", _KEYS)]
+
+
+def test_identify_unprovisioned_incident_evidence_refuses_when_account_exists():
+    transport = SequenceTransport()
+    transport.register("GET", _USERS, _data_list(_user()))
+    transport.register("GET", _KEYS, _data_list())
+
+    with pytest.raises(BootstrapProvisioningError, match="the fixed dedicated account exists"):
+        identify_unprovisioned_incident_evidence(admin_transport=transport)
+
+
+def test_identify_unprovisioned_incident_evidence_refuses_when_orphan_key_exists():
+    transport = SequenceTransport()
+    transport.register("GET", _USERS, _data_list())
+    transport.register("GET", _KEYS, _data_list(_key()))
+
+    with pytest.raises(BootstrapProvisioningError, match="still owns"):
+        identify_unprovisioned_incident_evidence(admin_transport=transport)
+
+
+def test_identify_unprovisioned_incident_evidence_refuses_when_user_reads_disagree():
+    transport = SequenceTransport()
+    unrelated_first = _user(3, name="other-service")
+    unrelated_second = _user(5, name="another-service")
+    transport.register("GET", _USERS, _data_list(unrelated_first), _data_list(unrelated_second))
+    transport.register("GET", _KEYS, _data_list(), _data_list())
+
+    with pytest.raises(BootstrapProvisioningError, match="user collection changed between reads"):
+        identify_unprovisioned_incident_evidence(admin_transport=transport)
+
+
+def test_identify_unprovisioned_incident_evidence_refuses_when_key_reads_disagree():
+    transport = SequenceTransport()
+    transport.register("GET", _USERS, _data_list(), _data_list())
+    unrelated_first = _key(4, username="other-service", descr="unrelated")
+    unrelated_second = _key(6, username="another-service", descr="unrelated")
+    transport.register("GET", _KEYS, _data_list(unrelated_first), _data_list(unrelated_second))
+
+    with pytest.raises(BootstrapProvisioningError, match="key collection changed between reads"):
+        identify_unprovisioned_incident_evidence(admin_transport=transport)
+
+
+def test_identify_unprovisioned_incident_evidence_refuses_when_key_ownership_unavailable():
+    transport = SequenceTransport()
+    transport.register("GET", _USERS, _data_list())
+    transport.register("GET", _KEYS, _data_list(_key(username=None)))
+
+    with pytest.raises(BootstrapProvisioningError, match="ownership was unavailable"):
+        identify_unprovisioned_incident_evidence(admin_transport=transport)

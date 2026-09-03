@@ -425,7 +425,7 @@ def test_completed_journal_exact_match_resolves_already_complete(admin_env):
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         second = run_bootstrap_from_environment(admin_env)
 
     assert second.outcome is BootstrapOrchestrationOutcome.ALREADY_COMPLETE
@@ -455,7 +455,7 @@ def test_completed_journal_mismatch_remains_blocked_prior_operation(admin_env, a
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         result = run_bootstrap_from_environment(admin_env)
 
     assert result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION
@@ -479,7 +479,7 @@ def test_completed_journal_read_failure_remains_blocked_prior_operation(admin_en
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         result = run_bootstrap_from_environment(admin_env)
 
     assert result.outcome is BootstrapOrchestrationOutcome.BLOCKED_PRIOR_OPERATION
@@ -516,7 +516,7 @@ def test_explicit_authoritative_override_wins_over_auto_built(admin_env):
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         result = run_bootstrap_from_environment(admin_env, authoritative=explicit)
 
     assert result.outcome is BootstrapOrchestrationOutcome.ALREADY_COMPLETE
@@ -540,7 +540,7 @@ def test_observation_builder_invoked_at_most_once_per_invocation(admin_env):
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         run_bootstrap_from_environment(admin_env)
 
     assert call_count["n"] == 1
@@ -559,7 +559,7 @@ def test_completed_journal_and_clean_completed_touches_neither_lock_nor_journal_
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         run_bootstrap_from_environment(admin_env)
 
     after = context.journal_path.read_bytes()
@@ -597,7 +597,7 @@ def test_mutation_result_unknown_journal_remains_fail_closed_even_with_matching_
     import pfsense_mcp.security_bootstrap_orchestration as orch
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(orch, "build_admin_context", lambda source: fresh)
+        mp.setattr(orch, "build_admin_context", lambda source, **kwargs: fresh)
         second = run_bootstrap_from_environment(admin_env)
 
     assert second.outcome is not BootstrapOrchestrationOutcome.ALREADY_COMPLETE

@@ -24,6 +24,7 @@ from pfsense_mcp.security_operation_journal import (
     RecoveryAction,
     RestartClassification,
     classify_restart,
+    derive_resolution_operation_id,
 )
 
 KEY = b"j" * 32
@@ -453,3 +454,31 @@ def test_binding_scope_rejects_the_readonly_account_with_the_wrong_profile(secur
     values = {**binding().__dict__, "account_identity": "pfsense-mcp-readonly"}
     with pytest.raises(OperationJournalError):
         OperationJournal(secure_dir / "journal", KEY).create(OperationBinding(**values), timestamp=T0)
+
+
+# --- derive_resolution_operation_id ------------------------------------------
+
+
+def test_derive_resolution_operation_id_is_deterministic():
+    a = derive_resolution_operation_id(incident_operation_id="op-1", incident_record_mac="mac-1")
+    b = derive_resolution_operation_id(incident_operation_id="op-1", incident_record_mac="mac-1")
+    assert a == b
+
+
+def test_derive_resolution_operation_id_differs_on_operation_id_change():
+    a = derive_resolution_operation_id(incident_operation_id="op-1", incident_record_mac="mac-1")
+    b = derive_resolution_operation_id(incident_operation_id="op-2", incident_record_mac="mac-1")
+    assert a != b
+
+
+def test_derive_resolution_operation_id_differs_on_mac_change():
+    a = derive_resolution_operation_id(incident_operation_id="op-1", incident_record_mac="mac-1")
+    b = derive_resolution_operation_id(incident_operation_id="op-1", incident_record_mac="mac-2")
+    assert a != b
+
+
+def test_derive_resolution_operation_id_is_a_valid_journal_operation_id():
+    # Must satisfy the same non-empty-string identity requirement
+    # OperationJournal.create() enforces for every operation_id.
+    value = derive_resolution_operation_id(incident_operation_id="op-1", incident_record_mac="mac-1")
+    assert isinstance(value, str) and value

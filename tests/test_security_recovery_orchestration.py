@@ -22,12 +22,13 @@ import pytest
 
 from pfsense_mcp.security_admin_composition import AdministrativeContext, build_admin_context
 from pfsense_mcp.security_bootstrap_client import ObservedApiKey, ObservedUser
-from pfsense_mcp.security_bootstrap_recovery import RecoveryDeletionEvidence
+from pfsense_mcp.security_bootstrap_recovery import RecoveryDeletionEvidence, UnprovisionedIncidentEvidence
 from pfsense_mcp.security_operation_journal import (
     AdministrativeOperationType,
     AdministrativeTransactionState,
     DurableOperationState,
     RecoveryAction,
+    derive_resolution_operation_id,
 )
 from pfsense_mcp.security_recovery_orchestration import (
     RecoveryOrchestrationOutcome,
@@ -218,12 +219,19 @@ def test_recovery_required_classification_with_no_recovery_action_is_blocked_not
     (its own documented conservative behavior: any pre-existing journal,
     with no fresh authoritative evidence, requires attention) -- exactly
     the same call `bootstrap`'s own restart check makes, which blocks
-    (`blocked_prior_operation`). Before the fix, `run_recovery_from_
-    environment()` silently collapsed this exact combination into
+    (`blocked_prior_operation`). Before the original fix, `run_recovery_
+    from_environment()` silently collapsed this exact combination into
     `NO_RECOVERY_NEEDED`, directly contradicting `bootstrap`'s own
-    blocking decision for the identical journal. Must now agree: recovery
-    attention is required, reported as an explicit ambiguous state, never
-    silently cleared and never inventing an action that was never named."""
+    blocking decision for the identical journal.
+
+    Since RESOLVE_UNPROVISIONED_INCIDENT was added, this exact
+    `recovery_action is None` combination is no longer an automatic dead
+    end -- it is the one case that action exists for. But it must still
+    never be treated as automatically resolvable: the fresh evidence-
+    gathering read is the real gate. Here it fails (representing the
+    fixed dedicated account still existing on the target), so the result
+    must be a fail-closed BLOCKED_CANDIDATE_NOT_IDENTIFIABLE -- still
+    never `NO_RECOVERY_NEEDED`, and never a fabricated success."""
 
     bootstrap_context = build_admin_context(admin_env)
     binding = bootstrap_context.new_operation_binding(
@@ -231,18 +239,36 @@ def test_recovery_required_classification_with_no_recovery_action_is_blocked_not
     )
     bootstrap_context._journal.create(binding, timestamp=T0)
 
+    resolution_context = build_admin_context(
+        admin_env, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+    )
+    from pfsense_mcp.errors import BootstrapProvisioningError
+
+    def _raise_still_provisioned():
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_incident_evidence: the fixed dedicated account exists; no resolution performed."
+        )
+
+    components = replace(
+        resolution_context._mutation_components,
+        identify_unprovisioned_incident_evidence_call=_raise_still_provisioned,
+    )
+    resolution_context = replace(resolution_context, _mutation_components=components)
+
     def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+        if operation_type is AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT:
+            return resolution_context
         return bootstrap_context
 
     monkeypatch.setattr("pfsense_mcp.security_recovery_orchestration.build_admin_context", fake_build)
 
     result = run_recovery_from_environment(admin_env, now=now)
 
-    assert result.outcome is RecoveryOrchestrationOutcome.BLOCKED_AMBIGUOUS_RECOVERY_STATE
+    assert result.outcome is RecoveryOrchestrationOutcome.BLOCKED_CANDIDATE_NOT_IDENTIFIABLE
     assert result.operation_id == "incident-1"
-    assert result.recovery_action is None
+    assert result.recovery_action is RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT
     assert result.confirmation_token is None
-    assert "no closed recovery action is recorded" in result.detail
+    assert "the fixed dedicated account exists" in result.detail
 
 
 # --- Inspect (surface-only) ---------------------------------------------------
@@ -675,3 +701,174 @@ def test_no_secret_leaks_into_any_result_detail_across_the_matrix(admin_env, mon
         admin_env, execute_action=RecoveryAction.REVOKE_ORPHAN_KEY, confirm_token=inspect.confirmation_token, now=now
     )
     assert canary not in (result.detail or "")
+
+
+# --- RESOLVE_UNPROVISIONED_INCIDENT ------------------------------------------
+
+
+def _rig_unprovisioned(monkeypatch, admin_env, *, identify_unprovisioned_incident_evidence_call):
+    """Mirrors `_rig()`'s real-context/faked-closure pattern, but for the
+    one recovery action whose triggering condition is a bootstrap journal
+    that never reaches its own terminal RECOVERY_REQUIRED state at all
+    (so `_create_bootstrap_incident()` -- which requires a closed
+    `recovery_action` to write that terminal record -- does not apply)."""
+
+    bootstrap_context = build_admin_context(admin_env)
+    binding = bootstrap_context.new_operation_binding(
+        operation_id="incident-1", operation_type=AdministrativeOperationType.BOOTSTRAP
+    )
+    bootstrap_context._journal.create(binding, timestamp=T0)
+
+    resolution_context = build_admin_context(
+        admin_env, operation_type=AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT
+    )
+    components = replace(
+        resolution_context._mutation_components,
+        identify_unprovisioned_incident_evidence_call=identify_unprovisioned_incident_evidence_call,
+    )
+    resolution_context = replace(resolution_context, _mutation_components=components)
+
+    def fake_build(source, *, operation_type=AdministrativeOperationType.BOOTSTRAP):
+        if operation_type is AdministrativeOperationType.RECOVER_UNPROVISIONED_INCIDENT:
+            return resolution_context
+        return bootstrap_context
+
+    monkeypatch.setattr("pfsense_mcp.security_recovery_orchestration.build_admin_context", fake_build)
+    return bootstrap_context, resolution_context
+
+
+def test_execute_succeeds_for_resolve_unprovisioned_incident_and_closes_its_own_journal(admin_env, monkeypatch, now):
+    evidence = UnprovisionedIncidentEvidence(
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=3,
+        keys_checked=1,
+    )
+    bootstrap_context, resolution_context = _rig_unprovisioned(
+        monkeypatch, admin_env, identify_unprovisioned_incident_evidence_call=lambda: evidence
+    )
+
+    inspect = run_recovery_from_environment(admin_env, now=now)
+    assert inspect.outcome is RecoveryOrchestrationOutcome.RECOVERY_NEEDED
+    assert inspect.recovery_action is RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT
+    assert inspect.confirmation_token is not None
+
+    result = run_recovery_from_environment(
+        admin_env,
+        execute_action=RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT,
+        confirm_token=inspect.confirmation_token,
+        now=now,
+    )
+
+    assert result.outcome is RecoveryOrchestrationOutcome.RECOVERY_COMPLETED
+    assert result.evidence == evidence
+    snapshot = resolution_context._journal.load()
+    assert snapshot.latest.state is DurableOperationState.COMPLETED
+    assert snapshot.latest.transaction_state is AdministrativeTransactionState.RECOVERY_VERIFIED
+    assert resolution_context._lock.inspect().state.value == "released"
+
+    # The resolution journal's own operation_id is deterministically bound
+    # to the exact incident it resolves -- not a random token -- so a
+    # later bootstrap retry can verify the binding from the journal alone.
+    incident_snapshot = bootstrap_context._journal.load()
+    expected_id = derive_resolution_operation_id(
+        incident_operation_id="incident-1", incident_record_mac=incident_snapshot.latest.mac
+    )
+    assert snapshot.latest.binding.operation_id == expected_id
+
+
+def test_execute_for_resolve_unprovisioned_incident_fails_closed_if_account_reappears_before_commit(
+    admin_env, monkeypatch, now
+):
+    """The evidence-gathering read at inspect time is not trusted forever
+    -- execute re-verifies fresh, immediately before COMPLETED. If the
+    account has since been (re-)created, the fresh check must fail and no
+    COMPLETED record may ever be written."""
+
+    from pfsense_mcp.errors import BootstrapProvisioningError
+
+    calls = {"n": 0}
+    absent_evidence = UnprovisionedIncidentEvidence(
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=2,
+        keys_checked=0,
+    )
+
+    def flaky_identify():
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            # Call 1: the inspect-path read, before any token is issued.
+            # Call 2: execute's own re-derivation of the current
+            # candidate/binding, performed before comparing the supplied
+            # token -- both still see the account absent.
+            return absent_evidence
+        # Call 3: _run_recovery_locked()'s own fresh re-verification,
+        # immediately before COMPLETED would be written -- the account
+        # has since reappeared.
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_incident_evidence: the fixed dedicated account exists; no resolution performed."
+        )
+
+    _, resolution_context = _rig_unprovisioned(
+        monkeypatch, admin_env, identify_unprovisioned_incident_evidence_call=flaky_identify
+    )
+
+    inspect = run_recovery_from_environment(admin_env, now=now)
+    assert inspect.outcome is RecoveryOrchestrationOutcome.RECOVERY_NEEDED
+
+    result = run_recovery_from_environment(
+        admin_env,
+        execute_action=RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT,
+        confirm_token=inspect.confirmation_token,
+        now=now,
+    )
+
+    assert result.outcome is RecoveryOrchestrationOutcome.RECOVERY_EXECUTION_FAILED
+    snapshot = resolution_context._journal.load()
+    assert snapshot.latest.state is DurableOperationState.MUTATION_RESULT_UNKNOWN
+    assert resolution_context._lock.inspect().state.value == "active_held"
+
+
+def test_inspect_for_resolve_unprovisioned_incident_refuses_when_account_still_exists(admin_env, monkeypatch, now):
+    from pfsense_mcp.errors import BootstrapProvisioningError
+
+    def _raise():
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_incident_evidence: the fixed dedicated account exists; no resolution performed."
+        )
+
+    _rig_unprovisioned(monkeypatch, admin_env, identify_unprovisioned_incident_evidence_call=_raise)
+
+    result = run_recovery_from_environment(admin_env, now=now)
+
+    assert result.outcome is RecoveryOrchestrationOutcome.BLOCKED_CANDIDATE_NOT_IDENTIFIABLE
+    assert result.recovery_action is RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT
+    assert result.confirmation_token is None
+
+
+def test_resolve_unprovisioned_incident_does_not_touch_the_original_incident_journal(admin_env, monkeypatch, now):
+    evidence = UnprovisionedIncidentEvidence(
+        account_username="pfsense-mcp",
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=1,
+        keys_checked=0,
+    )
+    bootstrap_context, _ = _rig_unprovisioned(
+        monkeypatch, admin_env, identify_unprovisioned_incident_evidence_call=lambda: evidence
+    )
+    before = bootstrap_context._journal.load()
+
+    inspect = run_recovery_from_environment(admin_env, now=now)
+    run_recovery_from_environment(
+        admin_env,
+        execute_action=RecoveryAction.RESOLVE_UNPROVISIONED_INCIDENT,
+        confirm_token=inspect.confirmation_token,
+        now=now,
+    )
+
+    after = bootstrap_context._journal.load()
+    assert after == before

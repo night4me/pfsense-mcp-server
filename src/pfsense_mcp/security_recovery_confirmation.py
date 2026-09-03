@@ -40,6 +40,7 @@ import json
 from dataclasses import dataclass
 
 from .security_bootstrap_client import ObservedApiKey, ObservedUser
+from .security_bootstrap_recovery import UnprovisionedIncidentEvidence
 from .security_operation_journal import RecoveryAction
 
 _TOKEN_DOMAIN = b"pfsense-mcp-adr033-recovery-confirm-v1\x00"
@@ -61,11 +62,18 @@ class RecoveryIncidentBinding:
     incident_record_mac: str
 
 
-def object_fingerprint(observed: ObservedApiKey | ObservedUser) -> str:
+def object_fingerprint(observed: ObservedApiKey | ObservedUser | UnprovisionedIncidentEvidence) -> str:
     """Deterministic, order-independent fingerprint of an object's
     complete non-secret authoritative identity, as actually observed.
     Two reads of the identical object always fingerprint identically;
-    any difference in any field changes the fingerprint."""
+    any difference in any field changes the fingerprint.
+
+    `UnprovisionedIncidentEvidence` is not a pfSense object being
+    revoked/deleted -- it is proof of an *absence*, for
+    RECOVER_UNPROVISIONED_INCIDENT. Fingerprinting it the same way as
+    the other two kinds means the confirmation token this evidence feeds
+    into is bound to it exactly like any other recovery action's token
+    is bound to its own selected object -- no separate mechanism."""
 
     if isinstance(observed, ObservedApiKey):
         payload = {
@@ -76,7 +84,7 @@ def object_fingerprint(observed: ObservedApiKey | ObservedUser) -> str:
             "hash_algo": observed.hash_algo,
             "length_bytes": observed.length_bytes,
         }
-    else:
+    elif isinstance(observed, ObservedUser):
         payload = {
             "kind": "user",
             "id": observed.id,
@@ -85,6 +93,15 @@ def object_fingerprint(observed: ObservedApiKey | ObservedUser) -> str:
             "priv": sorted(observed.priv),
             "disabled": observed.disabled,
             "scope": observed.scope,
+        }
+    else:
+        payload = {
+            "kind": "unprovisioned_incident",
+            "account_username": observed.account_username,
+            "account_confirmed_absent": observed.account_confirmed_absent,
+            "no_owned_key_confirmed": observed.no_owned_key_confirmed,
+            "users_checked": observed.users_checked,
+            "keys_checked": observed.keys_checked,
         }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(canonical).hexdigest()

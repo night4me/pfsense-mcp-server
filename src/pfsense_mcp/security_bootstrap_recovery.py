@@ -52,6 +52,21 @@ class RecoveryDeletionEvidence:
     unrelated_objects_preserved: bool
 
 
+@dataclass(frozen=True)
+class UnprovisionedIncidentEvidence:
+    """Sanitized proof that the fixed dedicated account was never created
+    and owns no orphan key, as of two independent, freshly-taken reads.
+    Contains no credential. `RECOVER_UNPROVISIONED_INCIDENT`'s own
+    read-only counterpart to `RecoveryDeletionEvidence` -- proves an
+    absence rather than a verified deletion."""
+
+    account_username: str
+    account_confirmed_absent: bool
+    no_owned_key_confirmed: bool
+    users_checked: int
+    keys_checked: int
+
+
 def _derive_exact_target(schema: dict[str, object]) -> frozenset[str]:
     resolved = resolve_profile_privileges(schema, write_protected_profile_requirements())
     if not resolved or any(
@@ -120,6 +135,12 @@ def _check_no_owned_key(keys: tuple[ObservedApiKey, ...], *, operation: str) -> 
         raise BootstrapProvisioningError(
             f"{operation}: account still owns one or more API keys; no mutation performed."
         )
+
+
+def _check_account_absent(users: tuple[ObservedUser, ...], *, operation: str) -> None:
+    _by_unique_id(users, operation=operation)
+    if _matching_recovery_users(users):
+        raise BootstrapProvisioningError(f"{operation}: the fixed dedicated account exists; no resolution performed.")
 
 
 def identify_orphan_api_key_candidate(
@@ -274,4 +295,52 @@ def delete_dedicated_recovery_user(
         objects_after=len(after_users),
         verified_absent=True,
         unrelated_objects_preserved=True,
+    )
+
+
+def identify_unprovisioned_incident_evidence(
+    *, admin_transport: Transport, api_version: ApiVersion = ApiVersion.V2
+) -> UnprovisionedIncidentEvidence:
+    """Read-only: prove, from two independent fresh reads, that the fixed
+    dedicated account was never created and owns no orphan key. Raises
+    `BootstrapProvisioningError` (never returns a "maybe") if the account
+    exists, if any read is ambiguous (duplicate IDs, unavailable key
+    ownership), or if the two reads disagree -- the exact same
+    fail-closed discipline `revoke_failed_bootstrap_api_key()`/
+    `delete_dedicated_recovery_user()` already apply to their own
+    candidate-identification reads. Never makes a mutating call."""
+
+    client = BootstrapProvisioningClient(admin_transport, api_version=api_version)
+
+    first_users = client.list_users()
+    _check_account_absent(first_users, operation="identify_unprovisioned_incident_evidence")
+    first_keys = client._list_auth_keys_for_recovery()
+    _check_no_owned_key(first_keys, operation="identify_unprovisioned_incident_evidence")
+
+    second_users = client.list_users()
+    _check_account_absent(second_users, operation="identify_unprovisioned_incident_evidence")
+    second_keys = client._list_auth_keys_for_recovery()
+    _check_no_owned_key(second_keys, operation="identify_unprovisioned_incident_evidence")
+
+    if _by_unique_id(first_users, operation="identify_unprovisioned_incident_evidence") != _by_unique_id(
+        second_users, operation="identify_unprovisioned_incident_evidence"
+    ):
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_incident_evidence: authoritative user collection changed between reads; "
+            "no resolution performed."
+        )
+    if _by_unique_id(first_keys, operation="identify_unprovisioned_incident_evidence") != _by_unique_id(
+        second_keys, operation="identify_unprovisioned_incident_evidence"
+    ):
+        raise BootstrapProvisioningError(
+            "identify_unprovisioned_incident_evidence: authoritative key collection changed between reads; "
+            "no resolution performed."
+        )
+
+    return UnprovisionedIncidentEvidence(
+        account_username=RECOVERY_USERNAME,
+        account_confirmed_absent=True,
+        no_owned_key_confirmed=True,
+        users_checked=len(second_users),
+        keys_checked=len(second_keys),
     )

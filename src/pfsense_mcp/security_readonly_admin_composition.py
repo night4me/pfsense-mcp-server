@@ -107,9 +107,11 @@ from .security_readonly_bootstrap_recovery import (
     READONLY_RECOVERY_KEY_DESCRIPTION,
     READONLY_RECOVERY_USER_DESCRIPTION,
     ReadonlyRecoveryDeletionEvidence,
+    ReadonlyUnprovisionedIncidentEvidence,
     delete_dedicated_readonly_recovery_user,
     identify_dedicated_readonly_recovery_user_candidate,
     identify_orphan_readonly_api_key_candidate,
+    identify_unprovisioned_readonly_incident_evidence,
     revoke_failed_readonly_bootstrap_api_key,
 )
 from .tls import TLSMode, resolve_verify
@@ -205,6 +207,7 @@ def _namespace(
     config: AdminCompositionConfig,
     *,
     operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+    resolution_operation_id: str | None = None,
 ) -> str:
     payload: dict[str, str] = {
         "target_origin": config.target.base_url,
@@ -219,6 +222,11 @@ def _namespace(
     # existing bootstrap namespace/journal/lock path for this account is byte-for-byte unchanged.
     if operation_type is not AdministrativeOperationType.BOOTSTRAP:
         payload["operation_type"] = operation_type.value
+    # `resolution_operation_id`: see security_admin_composition.py::_namespace()'s own docstring --
+    # identical rationale and identical "omitted unless present" discipline, mirrored here for the
+    # dedicated read_only account's own retry-after-resolution namespace.
+    if resolution_operation_id is not None:
+        payload["resolution_operation_id"] = resolution_operation_id
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(b"pfsense-mcp-adr033-admin-namespace-v1\x00" + canonical).hexdigest()
 
@@ -227,6 +235,7 @@ def build_readonly_admin_context(
     source: Mapping[str, str],
     *,
     operation_type: AdministrativeOperationType = AdministrativeOperationType.BOOTSTRAP,
+    resolution_operation_id: str | None = None,
 ) -> AdministrativeContext:
     """Construct one target-bound admin stack for the dedicated
     `read_only` managed service account, without network or mutation.
@@ -242,7 +251,15 @@ def build_readonly_admin_context(
     the same name -- added so `security_recovery_orchestration.py` can
     build this account's own recovery-typed context (a fresh journal
     distinct from its bootstrap journal) instead of only ever being able
-    to build the bootstrap one."""
+    to build the bootstrap one.
+
+    `resolution_operation_id` mirrors `build_admin_context()`'s own
+    parameter of the same name -- see that function's docstring for the
+    full contract (this module performs no independent verification of
+    its own; the same "verify before you build" discipline applies)."""
+
+    if resolution_operation_id is not None and operation_type is not AdministrativeOperationType.BOOTSTRAP:
+        raise AdminCompositionError("resolution_operation_id is only meaningful for a BOOTSTRAP operation_type")
 
     config = load_readonly_admin_composition_config(source)
     schema, schema_digest = _load_schema(config.schema_file)
@@ -261,7 +278,7 @@ def build_readonly_admin_context(
     _load_admin_api_key(config.target)
     _read_secret_text(config.administrator_password_file, label="Administrator password file")
 
-    namespace = _namespace(config, operation_type=operation_type)
+    namespace = _namespace(config, operation_type=operation_type, resolution_operation_id=resolution_operation_id)
     binding = AdminTargetBinding(
         target_origin=config.target.base_url,
         target_identity=config.target.identity,
@@ -366,6 +383,15 @@ def build_readonly_admin_context(
         finally:
             transport.close()
 
+    def identify_unprovisioned_incident() -> ReadonlyUnprovisionedIncidentEvidence:
+        transport = keyauth_factory()
+        try:
+            return identify_unprovisioned_readonly_incident_evidence(
+                admin_transport=transport, api_version=ApiVersion.V2
+            )
+        finally:
+            transport.close()
+
     def auth_transition_factory() -> AuthMethodTransitionCoordinator:
         return AuthMethodTransitionCoordinator(
             keyauth_transport_factory=keyauth_factory,
@@ -400,6 +426,7 @@ def build_readonly_admin_context(
         delete_dedicated_user_call=delete_call,
         identify_orphan_key_candidate=identify_orphan_key,
         identify_dedicated_user_candidate=identify_dedicated_user,
+        identify_unprovisioned_incident_evidence_call=identify_unprovisioned_incident,
         auth_transition_factory=auth_transition_factory,
         observe_restart_state_call=observe_restart_state,
         journal_integrity_key=integrity_key,
