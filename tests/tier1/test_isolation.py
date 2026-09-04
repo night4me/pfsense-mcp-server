@@ -183,10 +183,21 @@ def test_tier1_domain_has_no_transport_or_tool_registration_dependency():
 def test_all_production_write_surfaces_remain_inactive():
     assert EngineerProfile.capabilities == frozenset()
     assert INACTIVE_TIER1_POLICY.rules == frozenset()
-    # Through W3 Slice 3, WriteEndpoints was empty. W3 Slice 4 added
-    # exactly the one accepted first-WRITE entry, governed by ADR-028's
-    # own three-condition activation gate (proved reachable-only-when-
-    # all-three-hold by tests/test_tool_registry_write.py) -- this test's
-    # own job is narrower: prove no *unreviewed additional* entry exists.
+    # Through W3 Slice 3, WriteEndpoints was empty. W3 Slice 4 added the
+    # first accepted WRITE entry, governed by ADR-028's own three-condition
+    # activation gate (proved reachable-only-when-all-three-hold by
+    # tests/test_tool_registry_write.py). ADR-037 Batch 1 (2026-09-04,
+    # owner) added five further entries, none of which are granted to any
+    # profile (EngineerProfile.capabilities == frozenset(), asserted above)
+    # or wired to any tool/production runtime -- this test's own job is
+    # narrower: prove no *unreviewed additional* entry exists beyond the
+    # exact six the owner authorized.
     active = {name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)}
-    assert active == {"FIREWALL_ALIAS_DESCRIPTION"}
+    assert active == {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }

@@ -1,23 +1,47 @@
 from pfsense_mcp.write_endpoints import WriteEndpointInfo, WriteEndpoints
 
+#: ADR-037 Batch 1 (2026-09-04, owner) raised this from one to exactly six
+#: entries -- see write_endpoints.py's own module docstring.
+_EXPECTED_ENTRIES = frozenset(
+    {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }
+)
 
-def test_write_endpoints_has_exactly_the_accepted_entry_in_this_build():
-    # Through W3 Slice 3, WriteEndpoints was empty. W3 Slice 4 added
-    # exactly the one accepted first-WRITE entry -- scripts/write_allow_list_check.py
-    # mechanically enforces this stays exact, not merely non-empty.
-    entries = [name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)]
-    assert entries == ["FIREWALL_ALIAS_DESCRIPTION"]
+
+def test_write_endpoints_has_exactly_the_accepted_entries_in_this_build():
+    entries = {name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)}
+    assert entries == _EXPECTED_ENTRIES
     # verified=True since 2026-08-16 -- see write_endpoints.py's own module
     # docstring for the exact live-evidence chain (ADR-026 rows 6/17/18).
     assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.verified is True
     assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.http_method == "PATCH"
     assert WriteEndpoints.FIREWALL_ALIAS_DESCRIPTION.path_suffix == "/firewall/alias"
+    # Every ADR-037 Batch 1 entry is verified=False -- no LAB evidence yet.
+    for name, path_suffix in (
+        ("NTP_TIME_SERVER_PREFER", "/services/ntp/time_server"),
+        ("NTP_SETTINGS_OBSERVABILITY_TOGGLES", "/services/ntp/settings"),
+        ("LOG_DISPLAY_PREFERENCES", "/status/logs/settings"),
+        ("LOG_RETENTION_SETTINGS", "/status/logs/settings"),
+        ("SYSTEM_TIMEZONE", "/system/timezone"),
+    ):
+        entry = getattr(WriteEndpoints, name)
+        assert entry.verified is False, name
+        assert entry.http_method == "PATCH"
+        assert entry.path_suffix == path_suffix
+        assert entry.reversible is True
+        assert entry.dry_run_supported is True
 
 
 def test_active_entries_matches_the_manual_vars_scan():
     manual = [name for name, value in vars(WriteEndpoints).items() if isinstance(value, WriteEndpointInfo)]
-    assert WriteEndpoints.active_entries() == manual
-    assert WriteEndpoints.active_entries() == ["FIREWALL_ALIAS_DESCRIPTION"]
+    assert set(WriteEndpoints.active_entries()) == set(manual)
+    assert set(WriteEndpoints.active_entries()) == _EXPECTED_ENTRIES
 
 
 def test_write_endpoint_info_is_frozen_and_constructible():

@@ -180,6 +180,24 @@ class AuthorizationLevel(str, Enum):
 #: test_alias_description_write_required_risk_class_matches_the_step_definition`.
 ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS = AuthorizationLevel.MILESTONE_9_ACTIVATION_DECISION
 
+#: Generic aliases for the same four values above -- introduced for
+#: ADR-037 Batch 1 (2026-09-04, owner), whose five new WRITE capabilities
+#: import these instead of the `ALIAS_DESCRIPTION_WRITE_*` names, which
+#: name a specific capability that is not theirs. Not a new step, not a
+#: new target, not a new derivation: `_milestone_9_activation_step()`'s
+#: own docstring already states this step "names the recurring,
+#: PER-OPERATION authorization gate a signed PlanAuthorizationV2
+#: satisfies... per-operation specificity is carried by the separate
+#: `execution_intent_digest` binding (ADR-025 B2), not by this step_id" --
+#: i.e. every WRITE capability in this codebase is always meant to share
+#: this one step_id/posture/anchor/risk-class quadruple. Purely additive;
+#: the original `ALIAS_DESCRIPTION_WRITE_*` names are unchanged and still
+#: used by `tier1_write_bridge.py`.
+MILESTONE_9_WRITE_TARGET_CAPABILITY_POSTURE = ALIAS_DESCRIPTION_WRITE_TARGET_CAPABILITY_POSTURE
+MILESTONE_9_WRITE_TARGET_ANCHOR_ASSURANCE = ALIAS_DESCRIPTION_WRITE_TARGET_ANCHOR_ASSURANCE
+MILESTONE_9_WRITE_STEP_ID = ALIAS_DESCRIPTION_WRITE_STEP_ID
+MILESTONE_9_WRITE_REQUIRED_RISK_CLASS = ALIAS_DESCRIPTION_WRITE_REQUIRED_RISK_CLASS
+
 
 class SecurityImpact(str, Enum):
     NONE = "none"

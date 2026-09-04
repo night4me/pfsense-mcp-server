@@ -15,10 +15,18 @@ def test_production_source_cannot_import_lab_stage3_binding():
 
 
 def test_stage3_binding_does_not_activate_public_write():
-    # W3 Slice 4 added the one accepted first-WRITE WriteEndpoints entry,
-    # unrelated to the lab/stage3 binding this test guards against --
-    # asserts the exact accepted scope, not that WriteEndpoints is empty.
-    assert WriteEndpoints.active_entries() == ["FIREWALL_ALIAS_DESCRIPTION"]
+    # W3 Slice 4 added the first accepted WRITE WriteEndpoints entry, and
+    # ADR-037 Batch 1 (2026-09-04, owner) added five more -- unrelated to
+    # the lab/stage3 binding this test guards against -- asserts the exact
+    # accepted scope, not that WriteEndpoints is empty.
+    assert set(WriteEndpoints.active_entries()) == {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }
     assert Capability.ALIAS_WRITE not in SUPPORTED_CAPABILITIES_THIS_BUILD
     assert Capability.FIREWALL_WRITE not in SUPPORTED_CAPABILITIES_THIS_BUILD
     assert Capability.SERVICE_WRITE not in SUPPORTED_CAPABILITIES_THIS_BUILD

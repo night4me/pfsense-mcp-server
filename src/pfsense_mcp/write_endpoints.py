@@ -1,17 +1,22 @@
 """Mutation allow-list — the single source of truth for which
 (path, HTTP method) pairs this server is ever permitted to write to.
 
-Through W3 Slice 3, empty in this build. W3 Slice 4 (ADR-028) adds the
+Through W3 Slice 3, empty in this build. W3 Slice 4 (ADR-028) added the
 single accepted first-WRITE entry, `FIREWALL_ALIAS_DESCRIPTION` — the
 description-only firewall-alias PATCH ADR-026 selected and ADR-028's
-three-condition activation gate governs. WriteApiClient.execute()/
-send_for_tier1() refuse any MutationPlan/Tier-1 send whose endpoint_symbol
-is not an attribute of WriteEndpoints here, before any network call is
-made. scripts/write_allow_list_check.py mechanically enforces that this
-class has *exactly* this one entry and no more — matching the durable
-owner roadmap ceiling (`reports-ai/AI_CONTEXT.md`): any further
-WriteEndpoints entry is explicitly post-v0.4.0 work requiring a new,
-separate, explicit owner decision.
+three-condition activation gate governs. ADR-037 Batch 1 (2026-09-04,
+owner) added five further entries — `NTP_TIME_SERVER_PREFER`,
+`NTP_SETTINGS_OBSERVABILITY_TOGGLES`, `LOG_DISPLAY_PREFERENCES`,
+`LOG_RETENTION_SETTINGS`, `SYSTEM_TIMEZONE` — each `verified=False`
+pending its own future LAB qualification, each governed by its own
+capability module under `tier1/` (see each module's own docstring for its
+exact field projection). WriteApiClient.execute()/send_for_tier1() refuse
+any MutationPlan/Tier-1 send whose endpoint_symbol is not an attribute of
+WriteEndpoints here, before any network call is made.
+scripts/write_allow_list_check.py mechanically enforces that this class has
+*exactly* these six entries and no more — any further WriteEndpoints entry
+requires a new, separate, explicit owner decision, exactly as this batch
+itself was.
 
 `FIREWALL_ALIAS_DESCRIPTION.verified` is `True`, set 2026-08-16 after
 ADR-026's acceptance matrix rows 6, 17, and 18 (previously the
@@ -70,7 +75,7 @@ class WriteEndpointInfo:
 
 
 class WriteEndpoints:
-    """Exactly one entry in this build. See module docstring."""
+    """Exactly six entries in this build. See module docstring."""
 
     #: ADR-026's selected, narrowest evidenced first-WRITE candidate:
     #: `PATCH /api/v2/firewall/alias`, description field only. `verified`
@@ -91,6 +96,54 @@ class WriteEndpoints:
         # flag has no further effect. Not a second WRITE capability --
         # normal exposure still requires verified=True, unchanged.
         acceptance_eligible=True,
+    )
+
+    #: ADR-037 Batch 1 (2026-09-04, owner) -- five new entries, each
+    #: `verified=False` (no LAB evidence yet; each entry's own capability
+    #: module documents its exact narrow field projection). Raised from
+    #: one active entry to exactly six by an explicit, narrow owner
+    #: authorization -- not a general opening of the allow-list to future
+    #: entries. `scripts/write_allow_list_check.py` still asserts this
+    #: exact six-name set, exact-match, fail-closed.
+    NTP_TIME_SERVER_PREFER = WriteEndpointInfo(
+        path_suffix="/services/ntp/time_server",
+        http_method="PATCH",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+        reversible=True,
+        dry_run_supported=True,
+    )
+    NTP_SETTINGS_OBSERVABILITY_TOGGLES = WriteEndpointInfo(
+        path_suffix="/services/ntp/settings",
+        http_method="PATCH",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+        reversible=True,
+        dry_run_supported=True,
+    )
+    LOG_DISPLAY_PREFERENCES = WriteEndpointInfo(
+        path_suffix="/status/logs/settings",
+        http_method="PATCH",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+        reversible=True,
+        dry_run_supported=True,
+    )
+    LOG_RETENTION_SETTINGS = WriteEndpointInfo(
+        path_suffix="/status/logs/settings",
+        http_method="PATCH",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+        reversible=True,
+        dry_run_supported=True,
+    )
+    SYSTEM_TIMEZONE = WriteEndpointInfo(
+        path_suffix="/system/timezone",
+        http_method="PATCH",
+        verified=False,
+        min_api_version=ApiVersion.V2,
+        reversible=True,
+        dry_run_supported=True,
     )
 
     @classmethod

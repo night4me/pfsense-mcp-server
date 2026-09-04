@@ -293,11 +293,16 @@ def test_read_profile_resolves_to_the_currently_verified_100_privileges(live_sch
     assert all(r.evidence_class is EvidenceClass.SOURCE_CROSS_CHECKED for r in resolved)
 
 
-def test_write_protected_profile_resolves_to_the_currently_verified_101_privileges(live_schema):
+def test_write_protected_profile_resolves_to_the_currently_verified_125_privileges(live_schema):
+    # 120 READ + 5 distinct WRITE privileges (ADR-037 Batch 1, 2026-09-04:
+    # LOG_DISPLAY_PREFERENCES and LOG_RETENTION_SETTINGS share one
+    # privilege, api-v2-status-logs-settings-patch, since both target the
+    # same pfREST endpoint -- 6 WriteEndpoints entries resolve to 5
+    # distinct privilege strings, not 6).
     resolved = resolve_profile_privileges(live_schema, write_protected_profile_requirements())
     assert all(r.ok for r in resolved), [r.error for r in resolved if not r.ok]
     privileges = distinct_ok_privileges(resolved)
-    assert len(privileges) == 121
+    assert len(privileges) == 125
 
 
 def test_write_protected_includes_the_write_exclusive_patch_privilege(live_schema):

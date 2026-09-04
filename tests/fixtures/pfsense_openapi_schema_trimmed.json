@@ -1359,6 +1359,9 @@
     "/api/v2/services/ntp/settings": {
       "get": {
         "description": "<h3>Description:</h3>Reads current NTP Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: NTPSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-ntp-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates current NTP Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: NTPSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-ntp-settings-patch ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/services/ntp/time_servers": {
@@ -1404,6 +1407,9 @@
     "/api/v2/status/logs/settings": {
       "get": {
         "description": "<h3>Description:</h3>Reads current Log Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: LogSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-logs-settings-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates current Log Settings.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: LogSettings<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-status-logs-settings-patch ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/status/openvpn/clients": {
@@ -1514,6 +1520,9 @@
     "/api/v2/system/timezone": {
       "get": {
         "description": "<h3>Description:</h3>Reads the current system timezone.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemTimezone<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-timezone-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
+      },
+      "patch": {
+        "description": "<h3>Description:</h3>Updates the system timezone.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: SystemTimezone<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-system-timezone-patch ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Yes<br>**Utilizes cache**: None"
       }
     },
     "/api/v2/system/tunables": {
@@ -1614,6 +1623,11 @@
     "/api/v2/user/auth_servers": {
       "get": {
         "description": "<h3>Description:</h3>Reads all existing authentication servers.<br><h3>Details:</h3>**Endpoint type**: Plural<br>**Associated model**: AuthServer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-user-auth-servers-get ]<br>**Required packages**: [ None ]<br>**Applies immediately**: No<br>**Utilizes cache**: None"
+      }
+    },
+    "/api/v2/services/ntp/time_server": {
+      "patch": {
+        "description": "<h3>Description:</h3>Updates an existing NTP Time Server.<br><h3>Details:</h3>**Endpoint type**: Singular<br>**Associated model**: NTPTimeServer<br>**Parent model**: None<br>**Requires authentication**: Yes<br>**Supported authentication modes:** [ BasicAuth, JWTAuth, KeyAuth ]<br>**Allowed privileges**: [ page-all, api-v2-services-ntp-time-server-patch ]<br>**Required packages**: [ None ]<br>**Applies immediately**: Not Applicable<br>**Utilizes cache**: None"
       }
     }
   }

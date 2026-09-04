@@ -102,12 +102,20 @@ def test_default_environment_is_read_only_with_no_anchor(monkeypatch):
     assert discovery.capability_posture.value is CapabilityPosture.READ_ONLY
     assert discovery.capability_posture.configured_profile_name == "auditor"
     assert discovery.capability_posture.write_capabilities_active == 0
-    # W3 Slice 4 added the one accepted WriteEndpoints entry -- present
+    # W3 Slice 4 added the first accepted WriteEndpoints entry, and
+    # ADR-037 Batch 1 (2026-09-04, owner) added five more -- present
     # regardless of profile; READ_ONLY posture still correctly resolves
     # here because the default "auditor" profile grants 0 *_WRITE
     # capabilities (see test_capability_posture_resolves_from_evidence_not_configured_name_alone
     # below for the profile-granting case).
-    assert discovery.capability_posture.allow_list_entries == ("FIREWALL_ALIAS_DESCRIPTION",)
+    assert discovery.capability_posture.allow_list_entries == (
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    )
 
     assert discovery.anchor_assurance.value is AnchorAssurance.NONE
     assert discovery.anchor_assurance.evidence_state is AnchorEvidenceState.UNCONFIGURED
@@ -144,7 +152,14 @@ def test_capability_posture_resolves_write_protected_from_the_configured_profile
     assert discovery.value is CapabilityPosture.WRITE_PROTECTED
     assert discovery.configured_profile_name == "write_protected"
     assert discovery.write_capabilities_active == 1
-    assert discovery.allow_list_entries == ("FIREWALL_ALIAS_DESCRIPTION",)
+    assert discovery.allow_list_entries == (
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    )
     assert any("resolved write_protected from evidence" in line for line in discovery.evidence)
 
 

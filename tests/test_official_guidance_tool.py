@@ -523,7 +523,14 @@ def test_malicious_registry_summary_is_returned_as_inert_data_through_the_real_t
     # rather than merely asserted, since this is the exact call path an
     # adversarial registry entry would need to compromise.
     assert frozenset({"set_firewall_alias_description_v1"}) == KNOWN_WRITE_TOOL_NAMES
-    assert WriteEndpoints.active_entries() == ["FIREWALL_ALIAS_DESCRIPTION"]
+    assert set(WriteEndpoints.active_entries()) == {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }
     from pfsense_mcp import tier1_write_bridge
 
     assert tier1_write_bridge.can_construct_write_runtime() is False
@@ -560,7 +567,14 @@ def test_auditor_profile_capabilities_unchanged_by_guidance():
 
 def test_write_reachability_unchanged_by_guidance():
     assert frozenset({"set_firewall_alias_description_v1"}) == KNOWN_WRITE_TOOL_NAMES
-    assert WriteEndpoints.active_entries() == ["FIREWALL_ALIAS_DESCRIPTION"]
+    assert set(WriteEndpoints.active_entries()) == {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }
 
 
 # --- Release-readiness audit Section 10: failure independence ---

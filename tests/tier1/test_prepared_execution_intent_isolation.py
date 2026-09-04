@@ -119,7 +119,26 @@ def test_module_is_not_imported_by_production_construction_sites():
     # authorization_preview_from_preparation()'s own docstring and
     # ADR-028's explicit "do not create a second execution-intent
     # canonicalization implementation" instruction).
-    allowed = {"alias_description.py", "alias_description_execution.py", "artifact_exchange.py"}
+    #
+    # ADR-037 Batch 1 (2026-09-04, owner) adds six further reviewed
+    # construction sites: `write_execution_core.py` (the generic execution
+    # core the five new capabilities share, mirroring
+    # `alias_description_execution.py`'s own reason) and each of the five
+    # capability adapter modules themselves (mirroring
+    # `alias_description.py`'s own reason -- each constructs
+    # `PreparedExecutionIntentV1` inside its own `prepare()`, exactly like
+    # `AliasDescriptionPreparerV1.prepare()` already does).
+    allowed = {
+        "alias_description.py",
+        "alias_description_execution.py",
+        "artifact_exchange.py",
+        "write_execution_core.py",
+        "ntp_time_server_prefer.py",
+        "ntp_settings_observability.py",
+        "log_display_preferences.py",
+        "log_retention_settings.py",
+        "system_timezone_write.py",
+    }
     offenders: list[str] = []
     production = ROOT / "src/pfsense_mcp"
     for path in production.rglob("*.py"):

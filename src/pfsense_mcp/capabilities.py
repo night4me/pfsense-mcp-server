@@ -105,6 +105,17 @@ class Capability(Enum):
     FIREWALL_WRITE = auto()
     ALIAS_WRITE = auto()
     SERVICE_WRITE = auto()
+    # ADR-037 Batch 1 (2026-09-04, owner) -- narrow, per-operation WRITE
+    # capabilities, one per approved field-projection. Deliberately
+    # operation-level (not the coarser FIREWALL_WRITE/SERVICE_WRITE style
+    # above, which predate ADR-037's family model and remain unused
+    # stubs) -- ADR-037 D3 makes capability the authorization unit and
+    # capability *family* a separate, policy-only grouping.
+    NTP_TIME_SERVER_PREFER_WRITE = auto()
+    NTP_SETTINGS_OBSERVABILITY_WRITE = auto()
+    LOG_DISPLAY_PREFERENCES_WRITE = auto()
+    LOG_RETENTION_SETTINGS_WRITE = auto()
+    SYSTEM_TIMEZONE_WRITE = auto()
 
 
 # The complete READ capability set this build implements. Separated from

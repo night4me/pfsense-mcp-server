@@ -82,9 +82,22 @@ def test_no_production_module_imports_the_consumption_store():
     configuration as part of the fixed production runtime -- itself
     still not imported by any `application.py`/`factory.py`/`server.py`
     entry point, see
-    `tests/tier1/test_production_runtime.py::test_no_production_module_imports_production_runtime`."""
+    `tests/tier1/test_production_runtime.py::test_no_production_module_imports_production_runtime`.
 
-    _ALLOWED_IMPORTERS = {"alias_description_execution.py", "execution_coordinator.py", "production_runtime.py"}
+    `tier1/write_execution_core.py` (ADR-037 Batch 1, 2026-09-04) is the
+    fourth reviewed exception: the generic, capability-agnostic execution
+    core the five new Batch 1 capabilities share, mirroring
+    `alias_description_execution.py`'s own reviewed reason exactly -- it
+    composes the consumption store as part of an inert,
+    production-unreachable authorization-to-contract core. No tool,
+    endpoint, or production runtime constructs it."""
+
+    _ALLOWED_IMPORTERS = {
+        "alias_description_execution.py",
+        "execution_coordinator.py",
+        "production_runtime.py",
+        "write_execution_core.py",
+    }
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:

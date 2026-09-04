@@ -405,7 +405,11 @@ def test_fresh_account_completes_full_sequence_write_protected_profile():
 
     assert result.outcome is ProvisioningOutcome.COMPLETED
     assert result.transaction is not None
-    assert len(result.transaction.privileges) == 121
+    # 120 READ + 5 distinct WRITE privileges (ADR-037 Batch 1, 2026-09-04):
+    # see test_security_privileges.py::
+    # test_write_protected_profile_resolves_to_the_currently_verified_125_privileges
+    # for the full breakdown.
+    assert len(result.transaction.privileges) == 125
     assert "api-v2-firewall-alias-patch" in result.transaction.privileges
 
 

@@ -10,10 +10,11 @@ any correctly-gated caller could ever reach.
 Through W3 Slice 3, this asserted the allow-list was empty (no WRITE
 surface existed at all yet). W3 Slice 4 added the single accepted
 first-WRITE entry (`FIREWALL_ALIAS_DESCRIPTION`, the description-only
-alias PATCH) — this script now asserts *exactly* that one entry, no
-more and no fewer, mirroring how `write_capability_check.py` was
-already re-expressed in W3 Slice 1 for the same reason (a fixed
-"expected" set proven exactly, not a permanently-empty invariant).
+alias PATCH). ADR-037 Batch 1 (2026-09-04, owner) raised this to exactly
+six entries — this script now asserts *exactly* those six, no more and no
+fewer, mirroring how `write_capability_check.py` was already re-expressed
+in W3 Slice 1 for the same reason (a fixed "expected" set proven exactly,
+not a permanently-empty invariant, and never a count-only check).
 
 Read-only, no network access — imports the local package only. Exits 0
 (exactly the expected entries) or 1.
@@ -26,10 +27,20 @@ import sys
 from pfsense_mcp.write_endpoints import WriteEndpoints
 
 #: The complete, exact set of endpoint names the durable owner roadmap
-#: decision (single first-WRITE product surface only, through v0.8.0)
-#: currently authorizes. Any entry not in this set — or any expected
-#: entry missing from WriteEndpoints — fails this check.
-EXPECTED_ACTIVE_ENTRIES = frozenset({"FIREWALL_ALIAS_DESCRIPTION"})
+#: decision currently authorizes. Any entry not in this set — or any
+#: expected entry missing from WriteEndpoints — fails this check. Raising
+#: this set beyond six requires a new, separate, explicit owner decision,
+#: exactly as the ADR-037 Batch 1 expansion from one to six was.
+EXPECTED_ACTIVE_ENTRIES = frozenset(
+    {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }
+)
 
 
 def find_write_endpoint_entries() -> list[str]:

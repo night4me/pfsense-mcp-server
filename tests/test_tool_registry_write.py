@@ -193,7 +193,18 @@ def test_all_three_conditions_produce_no_additional_write_capability_or_tool(mon
     registry.register_all()
 
     assert len(registry._registered_write_names) == 1
-    assert WriteEndpoints.active_entries() == ["FIREWALL_ALIAS_DESCRIPTION"]
+    # Registered WRITE *tools* stays at exactly one (this registry only
+    # ever wires the one alias-description tool) even though ADR-037
+    # Batch 1 (2026-09-04, owner) raised the WriteEndpoints allow-list
+    # itself to six entries -- the other five have no tool registered.
+    assert set(WriteEndpoints.active_entries()) == {
+        "FIREWALL_ALIAS_DESCRIPTION",
+        "NTP_TIME_SERVER_PREFER",
+        "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+        "LOG_DISPLAY_PREFERENCES",
+        "LOG_RETENTION_SETTINGS",
+        "SYSTEM_TIMEZONE",
+    }
 
 
 # ---------------------------------------------------------------------------

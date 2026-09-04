@@ -185,7 +185,15 @@ def test_no_production_module_imports_security_authorization_verifier():
     entirely; caught and fixed during ADR-036 W0's own security regression
     review, not a newly introduced gap)."""
 
-    _ALLOWED_IMPORTERS = {"execution_coordinator.py", "alias_description_execution.py"}
+    _ALLOWED_IMPORTERS = {
+        "execution_coordinator.py",
+        "alias_description_execution.py",
+        # ADR-037 Batch 1 (2026-09-04, owner): the generic execution core
+        # the five new Batch 1 capabilities share -- composes the same
+        # verification functions as part of its own fixed gate ordering,
+        # mirroring alias_description_execution.py's own reason exactly.
+        "write_execution_core.py",
+    }
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:
