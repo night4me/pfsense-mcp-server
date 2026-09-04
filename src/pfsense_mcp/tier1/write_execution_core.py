@@ -43,7 +43,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from pfsense_mcp.security_authorization import PLAN_AUTHORIZATION_V2_SCHEMA_VERSION, PlanAuthorizationV2
 from pfsense_mcp.security_authorization_verifier import (
@@ -100,11 +100,41 @@ class PreparedWriteExecutionV1(Protocol):
 
 
 class _PreparerProtocol(Protocol):
-    """The two members `WriteExecutionCoreV1` ever uses on `preparer`."""
+    """The two members `WriteExecutionCoreV1` ever uses on `preparer`.
 
-    adapter: object
+    `adapter` is declared as a read-only `@property`, not a plain settable
+    attribute: every concrete capability preparer (`SystemTimezonePreparerV1`
+    etc.) exposes `adapter` via `@property`, mirroring
+    `write_adapter_support.py`'s own `ConfiguredApplianceTargetLike`/
+    `_TlsModeLike` fix for the identical mypy read-only-vs-settable-attribute
+    issue -- a plain-attribute Protocol member requires the implementation
+    to be settable, which a `@property` deliberately is not. This was never
+    exercised by type-checked code before `tier1/write_batch1_production_
+    runtime.py` (2026-09-04): only test files constructed a real
+    `WriteExecutionCoreV1` with a concrete preparer previously, and `tests/`
+    is not part of this project's mypy gate. Purely a static-typing
+    correction -- Python does not check Protocol conformance at runtime, so
+    this changes no runtime behavior of `authorize_and_create()`/
+    `confirm_and_handoff()`/`resume_prepared()`.
 
-    def prepare(self, request: object) -> PreparedWriteExecutionV1: ...
+    `prepare()`'s `request` parameter is `Any`, not `object`, for the same
+    reason: every concrete preparer's own `prepare()` narrows this
+    parameter to its own capability-specific request type (e.g.
+    `SystemTimezonePreparerV1.prepare(self, request: SystemTimezoneChangeV1)`),
+    which violates parameter contravariance against an `object`-typed
+    Protocol member -- a function that only accepts one narrow type can
+    never structurally substitute for one that must accept every `object`.
+    `Any` is the correct, intentional width here: `_validate_inputs()`
+    below is what actually enforces `isinstance(request, self._request_type)`
+    at runtime, not this Protocol -- the Protocol's own job is only to let
+    `WriteExecutionCoreV1` call `preparer.prepare(request)` generically
+    across capabilities, never to itself narrow or validate `request`'s
+    type."""
+
+    @property
+    def adapter(self) -> object: ...
+
+    def prepare(self, request: Any) -> PreparedWriteExecutionV1: ...
 
 
 @dataclass(frozen=True, slots=True)

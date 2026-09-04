@@ -105,6 +105,21 @@ class WriteEndpoints:
     #: authorization -- not a general opening of the allow-list to future
     #: entries. `scripts/write_allow_list_check.py` still asserts this
     #: exact six-name set, exact-match, fail-closed.
+    #:
+    #: `acceptance_eligible=True` (2026-09-04, owner, post-implementation
+    #: security review): each entry opts into the ADR-029 first-live-
+    #: acceptance path (`tier1/acceptance.py`) -- the same, reviewed
+    #: mechanism `FIREWALL_ALIAS_DESCRIPTION` already used, never a
+    #: shortcut around it. This flag alone grants no reachability of any
+    #: kind: `issue_acceptance_context()` only ever accepts the one
+    #: pinned LAB target, and `tier1/write_batch1_production_runtime.py`
+    #: (the production wiring these five capabilities would actually be
+    #: exercised through) cannot itself be constructed in any environment
+    #: that lacks a reachable TPM-witness anchor and real pinned Ed25519
+    #: authority files -- neither exists in this repository's own CI/dev
+    #: environment. Setting `verified=True` still requires the same full,
+    #: independently-verified live-evidence chain
+    #: `FIREWALL_ALIAS_DESCRIPTION`'s own docstring above describes.
     NTP_TIME_SERVER_PREFER = WriteEndpointInfo(
         path_suffix="/services/ntp/time_server",
         http_method="PATCH",
@@ -112,6 +127,7 @@ class WriteEndpoints:
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
+        acceptance_eligible=True,
     )
     NTP_SETTINGS_OBSERVABILITY_TOGGLES = WriteEndpointInfo(
         path_suffix="/services/ntp/settings",
@@ -120,6 +136,7 @@ class WriteEndpoints:
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
+        acceptance_eligible=True,
     )
     LOG_DISPLAY_PREFERENCES = WriteEndpointInfo(
         path_suffix="/status/logs/settings",
@@ -128,6 +145,7 @@ class WriteEndpoints:
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
+        acceptance_eligible=True,
     )
     LOG_RETENTION_SETTINGS = WriteEndpointInfo(
         path_suffix="/status/logs/settings",
@@ -136,6 +154,7 @@ class WriteEndpoints:
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
+        acceptance_eligible=True,
     )
     SYSTEM_TIMEZONE = WriteEndpointInfo(
         path_suffix="/system/timezone",
@@ -144,6 +163,7 @@ class WriteEndpoints:
         min_api_version=ApiVersion.V2,
         reversible=True,
         dry_run_supported=True,
+        acceptance_eligible=True,
     )
 
     @classmethod

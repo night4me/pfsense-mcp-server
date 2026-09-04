@@ -111,7 +111,15 @@ def test_importing_mcp_entrypoints_never_loads_acceptance_module():
     assert marker not in sys.modules
 
 
-def test_acceptance_eligible_is_exactly_one_endpoint():
+def test_acceptance_eligible_is_exactly_the_six_reviewed_endpoints():
+    """Was `test_acceptance_eligible_is_exactly_one_endpoint` -- ADR-037
+    Batch 1's post-implementation security review (2026-09-04, owner) set
+    `acceptance_eligible=True` on all five new Batch 1 entries, each
+    opting into the same ADR-029 first-live-acceptance path
+    `FIREWALL_ALIAS_DESCRIPTION` already used, never a shortcut around it
+    -- see write_endpoints.py's own docstring for the five entries'
+    exact reasoning. Six is now the complete, exact, reviewed set."""
+
     from pfsense_mcp.write_endpoints import WriteEndpoints
 
     eligible = [
@@ -119,7 +127,16 @@ def test_acceptance_eligible_is_exactly_one_endpoint():
         for name in WriteEndpoints.active_entries()
         if getattr(WriteEndpoints, name).acceptance_eligible  # type: ignore[union-attr]
     ]
-    assert eligible == ["FIREWALL_ALIAS_DESCRIPTION"]
+    assert sorted(eligible) == sorted(
+        [
+            "FIREWALL_ALIAS_DESCRIPTION",
+            "NTP_TIME_SERVER_PREFER",
+            "NTP_SETTINGS_OBSERVABILITY_TOGGLES",
+            "LOG_DISPLAY_PREFERENCES",
+            "LOG_RETENTION_SETTINGS",
+            "SYSTEM_TIMEZONE",
+        ]
+    )
 
 
 def test_acceptance_eligible_endpoint_is_now_verified():

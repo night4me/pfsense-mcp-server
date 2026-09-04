@@ -90,13 +90,25 @@ def test_no_production_module_imports_the_consumption_store():
     `alias_description_execution.py`'s own reviewed reason exactly -- it
     composes the consumption store as part of an inert,
     production-unreachable authorization-to-contract core. No tool,
-    endpoint, or production runtime constructs it."""
+    endpoint, or production runtime constructs it.
+
+    `tier1/write_batch1_production_runtime.py` (ADR-037 acceptance
+    wiring, 2026-09-04) is the fifth reviewed exception, mirroring
+    `production_runtime.py`'s own reason exactly one level up: it
+    constructs a real `SqliteAuthorizationConsumptionStore` from
+    environment-derived configuration as part of the five Batch 1
+    capabilities' fixed acceptance-path runtime -- itself still not
+    imported by any `application.py`/`factory.py`/`server.py` entry
+    point, see
+    `tests/tier1/test_write_batch1_production_runtime.py`'s own
+    construction tests."""
 
     _ALLOWED_IMPORTERS = {
         "alias_description_execution.py",
         "execution_coordinator.py",
         "production_runtime.py",
         "write_execution_core.py",
+        "write_batch1_production_runtime.py",
     }
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
