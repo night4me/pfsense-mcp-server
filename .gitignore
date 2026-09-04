@@ -44,4 +44,10 @@ reports-ai
 *secret*
 *credential*
 !tests/test_credential_non_disclosure.py
+#: Tier1 LAB credential recovery driver + its tests -- reviewed source
+#: containing no secret material (transient password/API key are never
+#: literal, hard-coded, or persisted; see the module's own docstring).
+!src/pfsense_mcp/security_tier1_lab_credential_recovery.py
+!tests/test_security_tier1_lab_credential_recovery.py
+!tests/test_security_tier1_lab_credential_recovery_isolation.py
 .env

@@ -411,12 +411,51 @@ def test_create_auth_key_non_2xx_raises_without_leaking_body():
 # --- No generic dispatch --------------------------------------------------
 
 
-def test_client_public_surface_is_exactly_five_named_operations():
+def test_client_public_surface_is_exactly_six_named_operations():
     public_methods = {name for name in dir(BootstrapProvisioningClient) if not name.startswith("_")}
     assert public_methods == {
         "list_users",
         "create_user",
         "update_user_privileges",
+        "update_user_password",
         "create_auth_key",
         "observe_restapi_mode",
     }
+
+
+# --- update_user_password() -------------------------------------------------
+
+
+def test_update_user_password_sends_minimal_payload_and_parses_response():
+    transport = MockTransport()
+    transport.register(
+        "PATCH",
+        _USER_PATH,
+        status_code=200,
+        text=json.dumps({"data": {"id": 7, "name": "svc", "descr": "d", "priv": ["a", "b"], "disabled": False}}),
+    )
+
+    observed = _client(transport).update_user_password(user_id=7, password="a-generated-transient-value")
+
+    assert observed == ObservedUser(id=7, name="svc", descr="d", priv=frozenset({"a", "b"}), disabled=False)
+    assert transport.calls == [("PATCH", _USER_PATH)]
+    assert transport.request_bodies == [b'{"id": 7, "password": "a-generated-transient-value"}']
+
+
+def test_update_user_password_never_leaks_the_password_on_non_2xx_status():
+    transport = MockTransport()
+    transport.register("PATCH", _USER_PATH, status_code=403, text=json.dumps({"echo": "SHOULD_NOT_LEAK"}))
+
+    with pytest.raises(BootstrapProvisioningError) as excinfo:
+        _client(transport).update_user_password(user_id=7, password="TOP-SECRET-TRANSIENT-PASSWORD")
+
+    assert "TOP-SECRET-TRANSIENT-PASSWORD" not in str(excinfo.value)
+    assert "SHOULD_NOT_LEAK" not in str(excinfo.value)
+
+
+def test_update_user_password_rejects_malformed_response():
+    transport = MockTransport()
+    transport.register("PATCH", _USER_PATH, status_code=200, text="not json")
+
+    with pytest.raises(BootstrapProvisioningError):
+        _client(transport).update_user_password(user_id=7, password="x")

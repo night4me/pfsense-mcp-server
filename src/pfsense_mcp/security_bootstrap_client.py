@@ -417,6 +417,21 @@ class BootstrapProvisioningClient:
         data = _check_response(response.status_code, response.text, operation="update_user_privileges")
         return _parse_observed_user(data, operation="update_user_privileges")
 
+    def update_user_password(self, *, user_id: int, password: str) -> ObservedUser:
+        """`PATCH /api/v2/user` -- resets an existing account's password.
+        Mirrors `update_user_privileges()` exactly (same path, same
+        minimal single-field payload shape, same response parsing).
+        `password` is included in the request body only -- never in any
+        exception message this client raises (`_check_response()` never
+        embeds `response_text`, and this method itself never embeds the
+        payload)."""
+
+        path = _full_path(_USER_PATH, self._api_version)
+        payload = {"id": user_id, "password": password}
+        response = self._transport.request("PATCH", path, body=json.dumps(payload).encode("utf-8"))
+        data = _check_response(response.status_code, response.text, operation="update_user_password")
+        return _parse_observed_user(data, operation="update_user_password")
+
     def create_auth_key(self, *, descr: str) -> ProvisionedApiKey:
         """`POST /api/v2/auth/key` -- self-service API-key generation.
         The bound `Transport` must already be authenticated as the
