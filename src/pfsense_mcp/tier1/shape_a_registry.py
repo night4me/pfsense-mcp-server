@@ -33,10 +33,20 @@ from .ntp_settings_observability import (
 )
 from .ntp_time_server_prefer import NtpTimeServerPreferChangeV1, PreparedNtpTimeServerPreferExecutionV1
 from .system_timezone_write import PreparedSystemTimezoneExecutionV1, SystemTimezoneChangeV1
-from .write_execution_core import WriteExecutionCoreV1
 
 if TYPE_CHECKING:
+    # Deferred to avoid pulling write_execution_core.py -> executor.py ->
+    # write_api_client.py (real pfSense mutation capability) into every
+    # importer of this module -- in particular signing/write_batch1_
+    # signing.py, which must never transitively reach pfSense-capable code
+    # (ADR-028's signing-CLI transport-isolation requirement, previously
+    # fixed for the alias-specific signer via the identical pattern:
+    # extracting a type-hint-only dependency). This module never
+    # constructs a WriteExecutionCoreV1 itself -- core() only returns one
+    # via getattr() against an already-built runtime -- so the real class
+    # is never needed at runtime, only for this one return-type annotation.
     from .write_batch1_production_runtime import ProductionWriteBatch1Runtime
+    from .write_execution_core import WriteExecutionCoreV1
 
 __all__ = ["SHAPE_A_REGISTRATIONS", "ShapeARegistration", "is_registered_capability"]
 

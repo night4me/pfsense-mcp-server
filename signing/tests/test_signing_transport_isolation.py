@@ -16,11 +16,25 @@ module's docstring). This test proves the fix and guards against
 regression: any future change that reintroduces a transitive dependency
 on a pfSense-reaching transport module must fail this test, not be
 discovered by accident during a live provisioning session again.
+
+**Found violated a second time, 2026-09-04**, this time for the
+generalized Shape-A signer (`signing/write_batch1_signing.py`), while
+deriving its dependency closure for the same VMID 100 isolated signer:
+`pfsense_mcp.tier1.shape_a_registry` imported `WriteExecutionCoreV1` from
+`write_execution_core.py` (itself importing `.executor` ->
+`write_api_client.py`) for one method's return-type annotation alone --
+the exact same shape of bug, in a different file, that this test's
+original case already existed to prevent, just not extended to cover the
+newer module. Fixed the same way (deferred to `TYPE_CHECKING`); this
+file now parametrizes over both signer entrypoints so neither can
+regress silently again.
 """
 
 from __future__ import annotations
 
 import sys
+
+import pytest
 
 _FORBIDDEN_MODULES = (
     "pfsense_mcp.write_api_client",
@@ -32,20 +46,21 @@ _FORBIDDEN_MODULES = (
     "pfsense_mcp.transport.mock",
     "pfsense_mcp.tier1.executor",
     "pfsense_mcp.tier1.production_runtime",
+    "pfsense_mcp.tier1.write_execution_core",
+    "pfsense_mcp.tier1.write_batch1_production_runtime",
     "pfsense_mcp.factory",
     "pfsense_mcp.application",
     "pfsense_mcp.server",
 )
 
 
-def test_importing_signing_module_never_loads_a_pfsense_reaching_transport():
+@pytest.mark.parametrize("signing_module", ["signing.alias_description_signing", "signing.write_batch1_signing"])
+def test_importing_signing_module_never_loads_a_pfsense_reaching_transport(signing_module):
     for name in list(sys.modules):
-        if name in _FORBIDDEN_MODULES or (name.startswith("pfsense_mcp.tools")):
+        if name in _FORBIDDEN_MODULES or name.startswith("pfsense_mcp.tools") or name == signing_module:
             del sys.modules[name]
-    if "signing.alias_description_signing" in sys.modules:
-        del sys.modules["signing.alias_description_signing"]
 
-    import signing.alias_description_signing  # noqa: F401
+    __import__(signing_module)
 
     loaded = {name for name in sys.modules if name.startswith("pfsense_mcp")}
     offenders = sorted(name for name in loaded if name in _FORBIDDEN_MODULES or name.startswith("pfsense_mcp.tools"))
