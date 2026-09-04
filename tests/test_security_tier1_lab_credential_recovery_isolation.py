@@ -71,22 +71,28 @@ def test_module_exists():
 
 def test_public_surface_is_exactly_the_reviewed_api():
     tree = _tree()
-    public = {
-        node.name
-        for node in ast.iter_child_nodes(tree)
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and not node.name.startswith("_")
-    } | {
-        node.targets[0].id
-        for node in ast.iter_child_nodes(tree)
-        if isinstance(node, ast.Assign)
-        and len(node.targets) == 1
-        and isinstance(node.targets[0], ast.Name)
-        and not node.targets[0].id.startswith("_")
-    } | {
-        node.target.id
-        for node in ast.iter_child_nodes(tree)
-        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and not node.target.id.startswith("_")
-    }
+    public = (
+        {
+            node.name
+            for node in ast.iter_child_nodes(tree)
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and not node.name.startswith("_")
+        }
+        | {
+            node.targets[0].id
+            for node in ast.iter_child_nodes(tree)
+            if isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and not node.targets[0].id.startswith("_")
+        }
+        | {
+            node.target.id
+            for node in ast.iter_child_nodes(tree)
+            if isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and not node.target.id.startswith("_")
+        }
+    )
     assert public == _EXPECTED_PUBLIC_SURFACE
 
 
