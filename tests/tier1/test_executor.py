@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import replace as _dataclass_replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 from pfsense_mcp.api_version import ApiVersion
 from pfsense_mcp.capabilities import Capability
 from pfsense_mcp.errors import WriteNotAllowedError
+from pfsense_mcp.models.system_rest_api_settings import SystemRestApiSettings
 from pfsense_mcp.tier1.canonical import DigestPurpose, canonical_json, digest_value
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
@@ -18,6 +20,7 @@ from pfsense_mcp.tier1.errors import (
     ContractConflictError,
     ContractNotFoundError,
     ContractValidationError,
+    GlobalReadOnlyBlockedError,
 )
 from pfsense_mcp.tier1.executor import MutationExecutor, ResolvedTransportTarget
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationPolicyError, MutationRule
@@ -356,12 +359,59 @@ def _write_client(monkeypatch, *, verified: bool = True, http_method: str = _HTT
     return client, transport
 
 
-def _executor(store, write_client, *, clock=None) -> MutationExecutor:
+def _pfrest_settings(*, read_only: bool = False) -> SystemRestApiSettings:
+    return SystemRestApiSettings(
+        allow_development_packages=False,
+        allow_pre_releases=False,
+        allowed_interfaces=["lan"],
+        auth_methods=["key"],
+        enabled=True,
+        expose_sensitive_fields=False,
+        ha_sync=False,
+        ha_sync_hosts=[],
+        ha_sync_validate_certs=True,
+        hateoas=False,
+        jwt_exp=3600,
+        keep_backup=True,
+        log_level="info",
+        log_successful_auth=True,
+        login_protection=True,
+        override_sensitive_fields=[],
+        read_only=read_only,
+        represent_interfaces_as="descr",
+    )
+
+
+class _StubReadClient:
+    """Test double standing in for PfSenseClient at the executor's
+    pfREST Read Only gate -- implements only the one method
+    `_require_pfrest_writable()` calls. Every other executor read goes
+    through the adapter's own `read_target()`, which ignores its
+    `read_client` argument entirely in these tests (see
+    `_SyntheticAdapter.read_target`), so this is deliberately not a
+    full PfSenseClient fake. Defaults to WRITABLE (`read_only=False`)
+    so every pre-existing test that never mentions pfREST continues to
+    exercise the exact same post-gate behavior as before this gate
+    existed."""
+
+    def __init__(self, *, read_only: bool = False, error: Exception | None = None) -> None:
+        self._read_only = read_only
+        self._error = error
+        self.calls = 0
+
+    def get_system_restapi_settings(self, *, include_identifying_metadata: bool = False) -> SystemRestApiSettings:
+        self.calls += 1
+        if self._error is not None:
+            raise self._error
+        return _pfrest_settings(read_only=self._read_only)
+
+
+def _executor(store, write_client, *, clock=None, read_client=None) -> MutationExecutor:
     kwargs = {} if clock is None else {"clock": clock}
     return MutationExecutor(
         store=store,
         write_client=write_client,
-        read_client=object(),
+        read_client=read_client if read_client is not None else _StubReadClient(),
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
@@ -606,6 +656,142 @@ def test_execute_happy_path_reaches_verified(tmp_path, monkeypatch):
     )
     assert transport.calls == [("PATCH", "/api/v2/synthetic")]
     assert transport.request_bodies == [b'{"id":7,"descr":"updated-description"}']
+
+
+# -- pfREST global Read Only gate (Mission III) -------------------------
+#
+# _executor()'s default _StubReadClient is WRITABLE (read_only=False), so
+# every test above and below this block that never mentions pfREST is
+# itself already proof that read_only=False preserves the pre-existing
+# sealed execution sequence unchanged -- these tests below only need to
+# cover the *new* branches: blocked, malformed, unreadable, and freshness.
+
+
+def test_execute_blocked_when_pfrest_read_only_is_true(tmp_path, monkeypatch):
+    # Matrix: A -- read_only=true blocks before EXECUTING, before any
+    # mutating client call, before any postcondition/verification path.
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    read_client = _StubReadClient(read_only=True)
+    executor = _executor(store, write_client, read_client=read_client)
+    adapter = _SyntheticAdapter(reads=[])
+
+    with pytest.raises(GlobalReadOnlyBlockedError, match="WebConfigurator"):
+        executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert transport.calls == []
+    assert adapter.read_calls == []
+    assert store.load(contract.contract_id).state == RecoveryState.PREPARED
+    assert read_client.calls == 1
+
+
+def test_execute_blocked_when_pfrest_status_is_malformed(tmp_path, monkeypatch):
+    # Matrix: C -- a response that isn't literally read_only=False (here:
+    # an unexpected type bypassing pydantic entirely, simulating a caller
+    # that hands the gate something other than a genuine SystemRestApi
+    # Settings) fails closed exactly like read_only=True, never treated
+    # as writable by accident.
+    class _Ambiguous:
+        read_only = "unknown"
+
+    class _MalformedReadClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def get_system_restapi_settings(self, *, include_identifying_metadata: bool = False):
+            self.calls += 1
+            return _Ambiguous()
+
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    read_client = _MalformedReadClient()
+    executor = _executor(store, write_client, read_client=read_client)
+    adapter = _SyntheticAdapter(reads=[])
+
+    with pytest.raises(GlobalReadOnlyBlockedError):
+        executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert transport.calls == []
+    assert adapter.read_calls == []
+    assert store.load(contract.contract_id).state == RecoveryState.PREPARED
+    assert read_client.calls == 1
+
+
+def test_execute_blocked_and_no_leakage_when_pfrest_read_fails(tmp_path, monkeypatch):
+    # Matrix: D -- GET failure fails closed, never assumes writable, and
+    # the raised error is a fixed, generic message -- the underlying
+    # exception's own text (which could carry transport/host detail) is
+    # chained via `from exc`, not interpolated into the message shown to
+    # ordinary exception handling/logging.
+    store = _store(tmp_path)
+    contract, intent = _build_contract()
+    _confirm(store, contract)
+    write_client, transport = _write_client(monkeypatch)
+    underlying = ConnectionError("secret-internal-host-detail-should-not-leak")
+    read_client = _StubReadClient(error=underlying)
+    executor = _executor(store, write_client, read_client=read_client)
+    adapter = _SyntheticAdapter(reads=[])
+
+    with pytest.raises(GlobalReadOnlyBlockedError) as excinfo:
+        executor.execute(contract.contract_id, adapter=adapter, intent=intent)
+
+    assert "secret-internal-host-detail-should-not-leak" not in str(excinfo.value)
+    assert excinfo.value.__cause__ is underlying
+    assert transport.calls == []
+    assert adapter.read_calls == []
+    assert store.load(contract.contract_id).state == RecoveryState.PREPARED
+
+
+def test_execute_pfrest_check_is_never_cached_across_executions(tmp_path, monkeypatch):
+    # Matrix: E -- one executor instance (one _read_client) used across
+    # two separate contracts: a prior WRITABLE observation must not be
+    # reused for the second execute() call once the appliance state
+    # (as observed by the stub) has flipped to blocked.
+    store = _store(tmp_path)
+    write_client, transport = _write_client(monkeypatch)
+    transport.register("PATCH", "/api/v2/synthetic", status_code=200, text='{"ok": true}')
+    read_client = _StubReadClient(read_only=False)
+    executor = _executor(store, write_client, read_client=read_client)
+
+    contract_a, intent_a = _build_contract()
+    _confirm(store, contract_a)
+    adapter_a = _SyntheticAdapter(
+        reads=[
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "original-description"},
+            {"name": "synthetic-target.invalid", "revision": "synthetic-1", "descr": "updated-description"},
+        ]
+    )
+    outcome_a = executor.execute(contract_a.contract_id, adapter=adapter_a, intent=intent_a)
+    assert outcome_a.state == RecoveryState.VERIFIED
+    assert read_client.calls == 1
+
+    read_client._read_only = True  # simulate the owner enabling Read Only between attempts
+    # A second, independent contract in the same store/executor: distinct
+    # content (descr/revision) gives it its own valid 64-hex digests/
+    # idempotency_key from _build_contract() itself, and operation_id is
+    # then fixed up via dataclasses.replace() since _build_contract()
+    # hardcodes it -- avoiding the store's own uniqueness constraint on
+    # both columns without hand-crafting an invalid digest string.
+    contract_b, intent_b = _build_contract(
+        contract_id="contract-002",
+        revision="synthetic-2",
+        descr="second-attempt-description",
+        original_descr="second-original",
+    )
+    contract_b = _dataclass_replace(contract_b, operation_id="operation-002")
+    _confirm(store, contract_b)
+    adapter_b = _SyntheticAdapter(reads=[])
+
+    with pytest.raises(GlobalReadOnlyBlockedError):
+        executor.execute(contract_b.contract_id, adapter=adapter_b, intent=intent_b)
+
+    assert read_client.calls == 2  # fresh read taken for the second execution, not reused
+    assert transport.calls == [("PATCH", "/api/v2/synthetic")]  # only contract_a's send happened
+    assert store.load(contract_b.contract_id).state == RecoveryState.PREPARED
 
 
 def test_generic_verified_transition_cannot_omit_post_forward_fingerprint(tmp_path):

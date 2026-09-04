@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from pfsense_mcp.models.firewall_alias import FirewallAlias
 from pfsense_mcp.models.system import SystemStatus
 from pfsense_mcp.models.system_ha_sync import SystemHaSync
+from pfsense_mcp.models.system_rest_api_settings import SystemRestApiSettings
 from pfsense_mcp.security_authorization import (
     PlanAuthorization,
     PlanAuthorizationStepBinding,
@@ -52,6 +53,7 @@ from pfsense_mcp.tier1.errors import (
     BoundExecutionError,
     ContractIntegrityError,
     ContractValidationError,
+    GlobalReadOnlyBlockedError,
     PreparedExecutionIntentError,
 )
 from pfsense_mcp.tier1.executor import ExecutionOutcome, MutationExecutor, ResolvedTransportTarget
@@ -82,6 +84,12 @@ class _ReadClient:
         self.netgate_id: str | None = "netgate-synthetic"
         self.pfhostid: str | None = "pfhost-synthetic"
         self.alias_reads = 0
+        # Mission III: pfREST global Read Only gate -- WRITABLE by
+        # default so every existing execute() test in this file keeps
+        # exercising the exact same post-gate behavior as before the
+        # gate existed. Toggled to True by the one test proving the
+        # gate blocks a real production adapter path.
+        self.pfrest_read_only = False
 
     def get_firewall_aliases(
         self, *, include_identifying_metadata: bool = False, limit: int = 100
@@ -118,6 +126,28 @@ class _ReadClient:
             }
         )
         return SystemHaSync.model_validate(values)
+
+    def get_system_restapi_settings(self, *, include_identifying_metadata: bool = False) -> SystemRestApiSettings:
+        return SystemRestApiSettings(
+            allow_development_packages=False,
+            allow_pre_releases=False,
+            allowed_interfaces=["lan"],
+            auth_methods=["key"],
+            enabled=True,
+            expose_sensitive_fields=False,
+            ha_sync=False,
+            ha_sync_hosts=[],
+            ha_sync_validate_certs=True,
+            hateoas=False,
+            jwt_exp=3600,
+            keep_backup=True,
+            log_level="info",
+            log_successful_auth=True,
+            login_protection=True,
+            override_sensitive_fields=[],
+            read_only=self.pfrest_read_only,
+            represent_interfaces_as="descr",
+        )
 
 
 class _ConsumptionStore(AuthorizationConsumptionStore):
@@ -754,6 +784,34 @@ def test_production_adapter_drift_refuses_before_executor_send(tmp_path: Path, m
     )
     assert outcome.state is RecoveryState.FAILED
     assert write_client.calls == 0
+
+
+def test_production_adapter_blocked_by_pfrest_read_only_before_executor_send(tmp_path: Path, monkeypatch):
+    # Mission III: proves the gate against the real, live-shipped
+    # AliasDescriptionAdapterV1/_sealed_executor wiring -- not only the
+    # synthetic adapter in test_executor.py -- so a stub that defaults
+    # WRITABLE cannot be masking this check for the one capability that
+    # actually exists today (Phase 6 self-review item 10).
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    client.pfrest_read_only = True
+    core, private, store, _consumption, _mock_executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    contract = store.load(handle.contract_id)
+    store.confirm(contract.contract_id, evidence=_confirmation(contract), expected_version=contract.state_version)
+    write_client = _WriteClient(client)
+
+    with pytest.raises(GlobalReadOnlyBlockedError, match="WebConfigurator"):
+        _sealed_executor(store, client, write_client).execute(
+            contract.contract_id,
+            adapter=AliasDescriptionAdapterV1(),
+            intent=_executor_intent(prepared),
+        )
+
+    assert write_client.calls == 0
+    assert store.load(contract.contract_id).state == RecoveryState.PREPARED
 
 
 def test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_remains_available(

@@ -30,7 +30,7 @@ from .anti_rollback import AntiRollbackAnchor
 from .canonical import CanonicalValue, DigestPurpose, digest_value, validate_canonical_value
 from .contract import ProtectedArtifact, RecoveryContract
 from .crypto import ArtifactRole, decrypt_artifact
-from .errors import ContractConflictError, ContractValidationError
+from .errors import ContractConflictError, ContractValidationError, GlobalReadOnlyBlockedError
 from .faults import EffectKnowledge, MutationBoundary, classify_fault
 from .policy import MutationPolicy
 from .state_machine import RecoveryState
@@ -231,6 +231,32 @@ class MutationExecutor:
             lifecycle_locator=resolved_target.numeric_locator,
         )
 
+    def _require_pfrest_writable(self) -> None:
+        """Fail-closed observation of pfSense's own global REST API Read
+        Only setting, taken fresh immediately before the EXECUTING
+        transition -- the last point before a mutating HTTP request can
+        become reachable. Reuses the exact same authoritative read path
+        every other executor read already uses (self._read_client, i.e.
+        `PfSenseClient.get_system_restapi_settings()`) -- never a second,
+        ad-hoc HTTP client, and never a value cached from an earlier
+        call. Only ever observes the setting: nothing here, or anywhere
+        else in this codebase, enables, disables, or bypasses it.
+
+        Any exception (unreadable, malformed, or missing status) fails
+        closed. A successful read that does not prove `read_only is
+        False` also fails closed -- this deliberately treats `True` and
+        any other unexpected value identically, since both must block
+        mutation the same way."""
+
+        try:
+            settings = self._read_client.get_system_restapi_settings()
+        except Exception as exc:
+            raise GlobalReadOnlyBlockedError(
+                "pfREST global Read Only status could not be verified before execution (fail closed)."
+            ) from exc
+        if settings.read_only is not False:
+            raise GlobalReadOnlyBlockedError("WRITE blocked: owner must disable pfREST Read Only in WebConfigurator.")
+
     # -- execute ------------------------------------------------------
 
     def execute(
@@ -247,9 +273,10 @@ class MutationExecutor:
         never by any MCP-reachable path -- see tier1/acceptance.py), the
         one difference is which WriteApiClient method `_send()` calls;
         every check in this method (PREPARED/confirmed/unexpired, policy,
-        binding verification, fingerprint/target/lifecycle-locator
-        re-derivation, fault classification, post-send verification) is
-        identical either way."""
+        binding verification, pfSense's own global REST API Read Only
+        gate, fingerprint/target/lifecycle-locator re-derivation, fault
+        classification, post-send verification) is identical either
+        way."""
 
         contract = self._store.load(contract_id)
         if contract.state != RecoveryState.PREPARED:
@@ -280,6 +307,8 @@ class MutationExecutor:
             target_precondition=target_precondition,
             normalized_intent=intent,
         )
+
+        self._require_pfrest_writable()
 
         executing = self._store.transition(
             contract_id,

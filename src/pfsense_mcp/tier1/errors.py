@@ -111,3 +111,14 @@ class AcceptanceError(Tier1Error):
     to issue or use an AcceptanceExecutionContext -- wrong/ambiguous
     target, wrong endpoint, endpoint not acceptance_eligible, or endpoint
     already verified=True. Fails closed; never inferred as success."""
+
+
+class GlobalReadOnlyBlockedError(Tier1Error):
+    """A fresh, authoritative read of pfSense's own global REST API Read
+    Only setting, taken immediately before the EXECUTING transition, did
+    not prove the appliance writable -- either the setting is enabled,
+    or its state could not be read/parsed at all. Distinct from every
+    other Tier1Error: this is an external appliance-side prerequisite
+    this codebase only ever observes, never an authorization decision
+    this codebase makes itself, and nothing in this codebase enables,
+    disables, or bypasses the setting to satisfy it."""
