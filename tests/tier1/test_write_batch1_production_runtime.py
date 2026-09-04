@@ -421,11 +421,44 @@ def test_batch1_contract_store_and_consumption_store_are_independently_isolated(
         )
 
 
+#: ADR-037 Shape-A acceptance orchestration (2026-09-04) added five
+#: preparer fields and one shared `contract_store` field, additively,
+#: alongside the original five `WriteExecutionCoreV1` fields -- see
+#: `write_batch1_production_runtime.py`'s own `ProductionWriteBatch1Runtime`
+#: docstring for why (the generalized orchestration layer needs the SAME
+#: preparer instance each `WriteExecutionCoreV1` already holds privately,
+#: and the SAME shared store, to build previews/dedup before an
+#: authorization exists -- mirrors `ProductionAliasDescriptionRuntime`
+#: holding its own `_store`/`_preparer` references directly). The five
+#: original `WriteExecutionCoreV1` fields are unchanged.
+_EXPECTED_RUNTIME_FIELD_NAMES = {
+    "ntp_time_server_prefer",
+    "ntp_settings_observability",
+    "log_display_preferences",
+    "log_retention_settings",
+    "system_timezone",
+    "ntp_time_server_prefer_preparer",
+    "ntp_settings_observability_preparer",
+    "log_display_preferences_preparer",
+    "log_retention_settings_preparer",
+    "system_timezone_preparer",
+    "contract_store",
+}
+_EXPECTED_CORE_FIELD_NAMES = {
+    "ntp_time_server_prefer",
+    "ntp_settings_observability",
+    "log_display_preferences",
+    "log_retention_settings",
+    "system_timezone",
+}
+
+
 def test_unregistered_write_endpoint_never_becomes_constructible(tmp_path, monkeypatch):
     """A future, hypothetical sixth `WriteEndpoints` entry -- even one
     that is `acceptance_eligible=True` -- must not automatically appear
     through this generalized runtime: `ProductionWriteBatch1Runtime` has
-    exactly five fixed, named fields, sourced from this module's own
+    exactly the fixed, named fields listed in
+    `_EXPECTED_RUNTIME_FIELD_NAMES`, sourced from this module's own
     hardcoded capability bindings, never from a dynamic scan of
     `WriteEndpoints.active_entries()`. Adding a new WriteEndpoints entry
     changes nothing about what this function returns until a human
@@ -450,13 +483,7 @@ def test_unregistered_write_endpoint_never_becomes_constructible(tmp_path, monke
     env = _full_env(tmp_path)
     runtime = module.build_write_batch1_production_runtime(env)
     assert runtime is not None
-    assert {f.name for f in fields(runtime)} == {
-        "ntp_time_server_prefer",
-        "ntp_settings_observability",
-        "log_display_preferences",
-        "log_retention_settings",
-        "system_timezone",
-    }
+    assert {f.name for f in fields(runtime)} == _EXPECTED_RUNTIME_FIELD_NAMES
 
 
 # ---------------------------------------------------------------------------
@@ -469,14 +496,8 @@ def test_full_construction_succeeds_and_returns_exactly_five_capabilities(tmp_pa
     runtime = module.build_write_batch1_production_runtime(env)
     assert runtime is not None
     field_names = {f.name for f in fields(runtime)}
-    assert field_names == {
-        "ntp_time_server_prefer",
-        "ntp_settings_observability",
-        "log_display_preferences",
-        "log_retention_settings",
-        "system_timezone",
-    }
-    for name in field_names:
+    assert field_names == _EXPECTED_RUNTIME_FIELD_NAMES
+    for name in _EXPECTED_CORE_FIELD_NAMES:
         assert isinstance(getattr(runtime, name), WriteExecutionCoreV1)
 
 

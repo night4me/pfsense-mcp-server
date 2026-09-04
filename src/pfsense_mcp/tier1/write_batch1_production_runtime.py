@@ -192,6 +192,7 @@ from .production_store import (
     read_only_anchor_provisioning_status,
 )
 from .reconciliation_providers import Ed25519ReconciliationVerifier
+from .store import SqliteRecoveryContractStore
 from .system_timezone_write import (
     ENDPOINT_SYMBOL as SYSTEM_TIMEZONE_ENDPOINT_SYMBOL,
 )
@@ -419,6 +420,40 @@ class ProductionWriteBatch1Runtime:
     log_retention_settings: WriteExecutionCoreV1
     system_timezone: WriteExecutionCoreV1
 
+    #: ADR-037 Shape-A acceptance orchestration (2026-09-04): the SAME
+    #: preparer instance each `_core()` call above already constructs and
+    #: gives exclusively to its own `WriteExecutionCoreV1` (`preparer=`
+    #: keyword). `WriteExecutionCoreV1.authorize_and_create()` calls
+    #: `self._preparer.prepare(request)` on its own private copy to
+    #: independently re-verify freshness -- it never exposes that call
+    #: outward. A generalized orchestration layer that needs to build an
+    #: `AuthorizationPreview`/render a semantic review *before* an
+    #: authorization exists must independently call `.prepare(request)`
+    #: itself, exactly like `ProductionAliasDescriptionRuntime` already
+    #: does with its own private `AliasDescriptionPreparerV1` instance --
+    #: these five fields expose that same already-constructed capability,
+    #: additively, without changing the five `WriteExecutionCoreV1` fields
+    #: above or anything about how they were built.
+    ntp_time_server_prefer_preparer: _AnyBatch1Preparer
+    ntp_settings_observability_preparer: _AnyBatch1Preparer
+    log_display_preferences_preparer: _AnyBatch1Preparer
+    log_retention_settings_preparer: _AnyBatch1Preparer
+    system_timezone_preparer: _AnyBatch1Preparer
+
+    #: ADR-037 Shape-A acceptance orchestration: the ONE shared
+    #: `SqliteRecoveryContractStore` every `_core()` call above was built
+    #: with (`contract_store=store`) -- exposed directly here for the same
+    #: reason `ProductionAliasDescriptionRuntime` holds its own `_store`
+    #: reference alongside `execution_core` rather than reaching into the
+    #: execution core's private internals for `find_by_idempotency_key()`/
+    #: `load()`. Identical object across all five capabilities (proven by
+    #: `tests/tier1/test_write_batch1_production_runtime.py`'s own
+    #: single-shared-store assertions) -- this field does not grant any
+    #: capability the five `WriteExecutionCoreV1` fields do not already
+    #: individually enforce; it is the same store, reachable one way
+    #: instead of a private-attribute crossing.
+    contract_store: SqliteRecoveryContractStore
+
 
 def build_write_batch1_production_runtime(
     env: dict[str, str] | None = None,
@@ -488,6 +523,20 @@ def build_write_batch1_production_runtime(
     transport, read_client = build_pfsense_client(pf_config, api_key)
     write_client = build_write_client(pf_config, transport)
 
+    ntp_time_server_prefer_preparer = NtpTimeServerPreferPreparerV1(
+        read_client=read_client, configured_target=appliance_target
+    )
+    ntp_settings_observability_preparer = NtpSettingsObservabilityPreparerV1(
+        read_client=read_client, configured_target=appliance_target
+    )
+    log_display_preferences_preparer = LogDisplayPreferencesPreparerV1(
+        read_client=read_client, configured_target=appliance_target
+    )
+    log_retention_settings_preparer = LogRetentionSettingsPreparerV1(
+        read_client=read_client, configured_target=appliance_target
+    )
+    system_timezone_preparer = SystemTimezonePreparerV1(read_client=read_client, configured_target=appliance_target)
+
     def _core(
         *,
         capability: Capability,
@@ -543,7 +592,7 @@ def build_write_batch1_production_runtime(
             capability=Capability.NTP_TIME_SERVER_PREFER_WRITE,
             endpoint_symbol=NTP_PREFER_ENDPOINT_SYMBOL,
             http_method=NTP_PREFER_HTTP_METHOD,
-            preparer=NtpTimeServerPreferPreparerV1(read_client=read_client, configured_target=appliance_target),
+            preparer=ntp_time_server_prefer_preparer,
             request_type=NtpTimeServerPreferChangeV1,
             prepared_type=PreparedNtpTimeServerPreferExecutionV1,
             contract_id_prefix="ntppref",
@@ -553,7 +602,7 @@ def build_write_batch1_production_runtime(
             capability=Capability.NTP_SETTINGS_OBSERVABILITY_WRITE,
             endpoint_symbol=NTP_OBSERVABILITY_ENDPOINT_SYMBOL,
             http_method=NTP_OBSERVABILITY_HTTP_METHOD,
-            preparer=NtpSettingsObservabilityPreparerV1(read_client=read_client, configured_target=appliance_target),
+            preparer=ntp_settings_observability_preparer,
             request_type=NtpSettingsObservabilityChangeV1,
             prepared_type=PreparedNtpSettingsObservabilityExecutionV1,
             contract_id_prefix="ntpobs",
@@ -563,7 +612,7 @@ def build_write_batch1_production_runtime(
             capability=Capability.LOG_DISPLAY_PREFERENCES_WRITE,
             endpoint_symbol=LOG_DISPLAY_ENDPOINT_SYMBOL,
             http_method=LOG_DISPLAY_HTTP_METHOD,
-            preparer=LogDisplayPreferencesPreparerV1(read_client=read_client, configured_target=appliance_target),
+            preparer=log_display_preferences_preparer,
             request_type=LogDisplayPreferencesChangeV1,
             prepared_type=PreparedLogDisplayPreferencesExecutionV1,
             raw_target_fn=_log_settings_raw_target,
@@ -573,7 +622,7 @@ def build_write_batch1_production_runtime(
             capability=Capability.LOG_RETENTION_SETTINGS_WRITE,
             endpoint_symbol=LOG_RETENTION_ENDPOINT_SYMBOL,
             http_method=LOG_RETENTION_HTTP_METHOD,
-            preparer=LogRetentionSettingsPreparerV1(read_client=read_client, configured_target=appliance_target),
+            preparer=log_retention_settings_preparer,
             request_type=LogRetentionSettingsChangeV1,
             prepared_type=PreparedLogRetentionSettingsExecutionV1,
             contract_id_prefix="logret",
@@ -583,12 +632,18 @@ def build_write_batch1_production_runtime(
             capability=Capability.SYSTEM_TIMEZONE_WRITE,
             endpoint_symbol=SYSTEM_TIMEZONE_ENDPOINT_SYMBOL,
             http_method=SYSTEM_TIMEZONE_HTTP_METHOD,
-            preparer=SystemTimezonePreparerV1(read_client=read_client, configured_target=appliance_target),
+            preparer=system_timezone_preparer,
             request_type=SystemTimezoneChangeV1,
             prepared_type=PreparedSystemTimezoneExecutionV1,
             contract_id_prefix="systz",
             raw_target_fn=_system_timezone_raw_target,
         ),
+        ntp_time_server_prefer_preparer=ntp_time_server_prefer_preparer,
+        ntp_settings_observability_preparer=ntp_settings_observability_preparer,
+        log_display_preferences_preparer=log_display_preferences_preparer,
+        log_retention_settings_preparer=log_retention_settings_preparer,
+        system_timezone_preparer=system_timezone_preparer,
+        contract_store=store,
     )
 
 

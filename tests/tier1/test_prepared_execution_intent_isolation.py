@@ -128,10 +128,18 @@ def test_module_is_not_imported_by_production_construction_sites():
     # `alias_description.py`'s own reason -- each constructs
     # `PreparedExecutionIntentV1` inside its own `prepare()`, exactly like
     # `AliasDescriptionPreparerV1.prepare()` already does).
+    #
+    # ADR-037 Shape-A acceptance orchestration (2026-09-04, owner) adds one
+    # further reviewed construction site: `shape_a_artifact_exchange.py`,
+    # the generalized counterpart to `artifact_exchange.py` above -- calls
+    # the SAME existing `compute_execution_intent_digest()` for the exact
+    # same reason (a non-authorizing preview needs the digest a signer
+    # cross-checks against), never a second implementation.
     allowed = {
         "alias_description.py",
         "alias_description_execution.py",
         "artifact_exchange.py",
+        "shape_a_artifact_exchange.py",
         "write_execution_core.py",
         "ntp_time_server_prefer.py",
         "ntp_settings_observability.py",
