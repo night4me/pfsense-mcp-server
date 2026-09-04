@@ -13,8 +13,11 @@ shipped source, that this module:
     already legitimately perform;
   - never defines an execute/apply/consume-shaped method;
   - has exactly the reviewed public surface;
-  - is never imported by any production module -- only by its own
-    tests -- proving this slice introduces no wiring.
+  - is imported only by `tier1/execution_coordinator.py`,
+    `tier1/alias_description_execution.py`, and
+    `tier1/write_execution_core.py` (three reviewed exceptions, see
+    `test_no_production_module_imports_security_plan_freshness`) --
+    never by any other production module.
 """
 
 from __future__ import annotations
@@ -149,28 +152,50 @@ def test_only_imports_security_discovery_and_security_plan_family_within_the_pac
 
 def test_no_production_module_imports_security_plan_freshness():
     """No MCP tool, security_cli.py, MutationExecutor, or any other
-    production module imports this module except the one reviewed
-    exception below -- Slice E1 introduces the primitive only, never
+    production module imports this module except the three reviewed
+    exceptions below -- Slice E1 introduces the primitive only, never
     wiring it to anything itself.
 
-    `tier1/execution_coordinator.py` is the one reviewed exception
+    `tier1/execution_coordinator.py` is the original reviewed exception
     (ADR-022 Phase E, Slice E2, 2026-08-11): it composes
     `plan_authorization_is_fresh()` as its own freshness gate -- see
     `tests/tier1/test_execution_coordinator_isolation.py`'s own
     no-production-importer proof that the coordinator itself remains
-    unwired/unconstructed by any production entry point."""
+    unwired/unconstructed by any production entry point.
 
-    _ALLOWED_IMPORTERS = {"execution_coordinator.py"}
+    `tier1/alias_description_execution.py` (ADR-025 B2 / ADR-036 W0) and
+    `tier1/write_execution_core.py` (ADR-037 Batch 1, 2026-09-04, owner)
+    are two further reviewed exceptions: both compose
+    `plan_authorization_is_fresh()` as part of their own fixed gate
+    ordering, and both import it via an *absolute*
+    (`from pfsense_mcp.security_plan_freshness import ...`), not
+    relative, statement. A prior version of this check only matched
+    `node.level`-truthy relative imports and was therefore structurally
+    blind to both of these absolute-import call sites -- discovered
+    during the ADR-037 Batch 1 post-implementation security review
+    (2026-09-04) while independently verifying the sibling
+    `test_security_authorization_verifier_isolation.py` check (which
+    had already been fixed for the identical gap during ADR-036 W0's own
+    security regression review, per its own docstring) actually covers
+    this module too. It did not; fixed here to scan for both import
+    styles, mirroring that sibling check exactly."""
+
+    _ALLOWED_IMPORTERS = {
+        "execution_coordinator.py",
+        "alias_description_execution.py",
+        "write_execution_core.py",
+    }
     importers = []
     for path in PRODUCTION_ROOT.rglob("*.py"):
         if path == MODULE_PATH or path.name in _ALLOWED_IMPORTERS:
             continue
         tree = _tree(path)
         for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.ImportFrom)
-                and node.level
-                and (node.module or "").endswith("security_plan_freshness")
-            ):
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            module = node.module or ""
+            is_relative_match = node.level and module == "security_plan_freshness"
+            is_absolute_match = not node.level and module == "pfsense_mcp.security_plan_freshness"
+            if is_relative_match or is_absolute_match:
                 importers.append(path.relative_to(ROOT).as_posix())
     assert importers == []
