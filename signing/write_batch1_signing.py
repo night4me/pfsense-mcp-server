@@ -367,29 +367,53 @@ def _prompt_operator_approval(review: str) -> bool:
 
 
 @dataclass(frozen=True)
-class _SigningConfig:
+class _AuthorizationSigningConfig:
+    """Exactly the env vars `sign-authorization` needs. Deliberately
+    holds no confirmation-side field: an operator running only
+    `sign-authorization` (the ordinary case -- see this module's own
+    docstring on `--directory`-style batch sittings) must never be
+    required to also export `PFSENSE_SIGNING_SHAPE_A_CONFIRMATION_*`
+    just to satisfy an unrelated subcommand's config loader (2026-09-05
+    fix; previously both subcommands shared one `_load_config()`
+    requiring all 7 vars regardless of which command actually ran)."""
+
     artifact_base_directory: Path
     authorization_authority_file: Path
     authorization_private_key_file: Path
+    preview_integrity_key_file: Path
+
+
+@dataclass(frozen=True)
+class _ConfirmationSigningConfig:
+    """Exactly the env vars `sign-confirmation` needs -- the mirror of
+    `_AuthorizationSigningConfig` above, holding no authorization-side
+    field."""
+
+    artifact_base_directory: Path
     confirmation_authority_file: Path
     confirmation_private_key_file: Path
-    preview_integrity_key_file: Path
     pending_integrity_key_file: Path
 
 
-def _load_config() -> _SigningConfig:
-    return _SigningConfig(
+def _load_authorization_config() -> _AuthorizationSigningConfig:
+    return _AuthorizationSigningConfig(
         artifact_base_directory=_required_env_path("PFSENSE_SIGNING_SHAPE_A_ARTIFACT_BASE_DIRECTORY"),
         authorization_authority_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_AUTHORIZATION_AUTHORITY_FILE"),
         authorization_private_key_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_AUTHORIZATION_PRIVATE_KEY_FILE"),
+        preview_integrity_key_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_PREVIEW_INTEGRITY_KEY_FILE"),
+    )
+
+
+def _load_confirmation_config() -> _ConfirmationSigningConfig:
+    return _ConfirmationSigningConfig(
+        artifact_base_directory=_required_env_path("PFSENSE_SIGNING_SHAPE_A_ARTIFACT_BASE_DIRECTORY"),
         confirmation_authority_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_CONFIRMATION_AUTHORITY_FILE"),
         confirmation_private_key_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_CONFIRMATION_PRIVATE_KEY_FILE"),
-        preview_integrity_key_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_PREVIEW_INTEGRITY_KEY_FILE"),
         pending_integrity_key_file=_required_env_path("PFSENSE_SIGNING_SHAPE_A_PENDING_INTEGRITY_KEY_FILE"),
     )
 
 
-def _one_authorization(config: _SigningConfig, capability_symbol: str) -> int:
+def _one_authorization(config: _AuthorizationSigningConfig, capability_symbol: str) -> int:
     paths = artifact_paths_for(config.artifact_base_directory, capability_symbol)
     if not paths.authorization_preview_file.exists():
         print(f"[{capability_symbol}] no authorization preview present -- skipping.")
@@ -422,7 +446,7 @@ def _one_authorization(config: _SigningConfig, capability_symbol: str) -> int:
     return 0
 
 
-def _one_confirmation(config: _SigningConfig, capability_symbol: str) -> int:
+def _one_confirmation(config: _ConfirmationSigningConfig, capability_symbol: str) -> int:
     paths = artifact_paths_for(config.artifact_base_directory, capability_symbol)
     if not paths.confirmation_pending_file.exists():
         print(f"[{capability_symbol}] no pending confirmation present -- skipping.")
@@ -453,7 +477,7 @@ def _one_confirmation(config: _SigningConfig, capability_symbol: str) -> int:
 
 
 def sign_authorization_command(capabilities: list[str]) -> int:
-    config = _load_config()
+    config = _load_authorization_config()
     worst = 0
     for capability_symbol in capabilities:
         _require_capability(capability_symbol)
@@ -462,7 +486,7 @@ def sign_authorization_command(capabilities: list[str]) -> int:
 
 
 def sign_confirmation_command(capabilities: list[str]) -> int:
-    config = _load_config()
+    config = _load_confirmation_config()
     worst = 0
     for capability_symbol in capabilities:
         _require_capability(capability_symbol)
