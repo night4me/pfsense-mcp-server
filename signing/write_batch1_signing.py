@@ -106,7 +106,7 @@ from pfsense_mcp.tier1.anchor_evidence_export import anchor_evidence_export_from
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.confirmation_providers import ACCEPTED_ALGORITHM, Ed25519ConfirmationVerifier, signing_payload
 from pfsense_mcp.tier1.ed25519_authority import PinnedAuthority, PinnedAuthoritySet
-from pfsense_mcp.tier1.errors import ArtifactExchangeError, KeyMaterialError, Tier1Error
+from pfsense_mcp.tier1.errors import ArtifactExchangeError, ConfirmationError, KeyMaterialError, Tier1Error
 from pfsense_mcp.tier1.key_lifecycle import KeyPurpose, load_key_material
 from pfsense_mcp.tier1.shape_a_acceptance_orchestration import artifact_paths_for
 from pfsense_mcp.tier1.shape_a_artifact_exchange import (
@@ -115,6 +115,8 @@ from pfsense_mcp.tier1.shape_a_artifact_exchange import (
     confirmation_evidence_to_bytes,
     load_shape_a_authorization_preview,
     load_shape_a_pending_confirmation_request,
+    load_signed_confirmation_evidence,
+    load_signed_plan_authorization_v2,
     plan_authorization_v2_to_bytes,
     write_secure_new,
 )
@@ -122,7 +124,21 @@ from pfsense_mcp.tier1.shape_a_batch_manifest import (
     build_shape_a_batch_manifest,
     render_shape_a_batch_manifest_review,
 )
+from pfsense_mcp.tier1.shape_a_confirmation_batch_manifest import (
+    build_shape_a_confirmation_batch_manifest,
+    render_shape_a_confirmation_batch_manifest_review,
+)
 from pfsense_mcp.tier1.shape_a_registry import SHAPE_A_REGISTRATIONS, is_registered_capability
+from signing.shape_a_batch_owner_approval import (
+    build_shape_a_batch_owner_approval_payload,
+    shape_a_batch_owner_approval_to_bytes,
+    sign_shape_a_batch_owner_approval,
+)
+from signing.shape_a_confirmation_batch_owner_approval import (
+    build_shape_a_confirmation_batch_owner_approval_payload,
+    shape_a_confirmation_batch_owner_approval_to_bytes,
+    sign_shape_a_confirmation_batch_owner_approval,
+)
 
 __all__ = [
     "SigningError",
@@ -132,6 +148,7 @@ __all__ = [
     "sign_authorization_batch_command",
     "sign_authorization_command",
     "sign_authorization_preview",
+    "sign_confirmation_batch_command",
     "sign_confirmation_command",
     "sign_pending_confirmation",
 ]
@@ -142,23 +159,32 @@ _NONCE_BYTES = 16
 _AUTHORIZATION_ID_BYTES = 16
 _BATCH_ID_BYTES = 16
 _AUTHORIZATION_VALIDITY = timedelta(minutes=5)
-#: 2026-09-05 owner direction: the batch ceremony's own single owner
-#: approval must span (a) the batch-manifest generation/review itself
-#: (seconds, even for the 20-50-capability future batches this exists
-#: for) and (b) a realistic, human-paced window for each resulting
-#: `PlanAuthorizationV2` to actually reach `authorize_and_create()` --
-#: the ONE place its raw `expires_at` is checked
-#: (`write_execution_core.py`) -- and, from there, `confirm_and_handoff()`,
-#: which re-checks the SAME `issued_at`/`expires_at` (copied verbatim
-#: into `AuthorizationProvenance` at admission time, never extended) --
-#: see `docs/tier1/specs/shape_a_batch_manifest_ceremony.md`'s "TTL and
-#: PREPARED-admission analysis" for the full reasoning this constant is
-#: derived from. Deliberately a SEPARATE constant from
+#: 2026-09-05 owner review, re-derived after confirmation batching was
+#: implemented: this window must span (a) the batch-manifest review
+#: itself (seconds, even for a 50-capability batch) and (b) a realistic
+#: window for each resulting `PlanAuthorizationV2` to reach
+#: `authorize_and_create()` -- the ONE place its raw `expires_at` is
+#: checked (`write_execution_core.py`), copied verbatim into
+#: `AuthorizationProvenance` and re-checked, never extended, by
+#: `confirm_and_handoff()`. Originally set to 1 hour under the
+#: assumption that confirming a 50-capability batch might still require
+#: up to 50 separate manual confirmation ceremonies; now that
+#: `sign_confirmation_batch_command()` exists, confirming the whole
+#: batch is itself one owner review -- `authorize_and_create()` calls
+#: are individually non-ceremonial (no human review point, since that
+#: already happened at signing time) and can be scripted in a loop, so
+#: the realistic end-to-end window is: one batch-authorization review +
+#: N scriptable admission calls + one batch-confirmation review, not
+#: N x (admission + confirmation ceremony). 30 minutes is a deliberately
+#: narrower, still-generous value for that reduced scope -- see
+#: `docs/tier1/specs/shape_a_batch_manifest_ceremony.md`'s TTL section
+#: for the full reasoning. Deliberately a SEPARATE constant from
 #: `_AUTHORIZATION_VALIDITY` above: the existing single-capability
 #: `sign-authorization` path (used by `alias_description_signing.py`
 #: too) keeps its unmodified 5-minute window exactly as before -- this
-#: only ever applies to the new `sign-authorization-batch` path.
-_BATCH_AUTHORIZATION_VALIDITY = timedelta(hours=1)
+#: only ever applies to the new `sign-authorization-batch`/
+#: `sign-confirmation-batch` paths.
+_BATCH_AUTHORIZATION_VALIDITY = timedelta(minutes=30)
 
 
 class SigningError(RuntimeError):
@@ -501,6 +527,42 @@ def _build_discovery_from_export(env: dict[str, str]) -> SecurityPostureDiscover
     return SecurityPostureDiscovery(capability_posture=capability_posture, anchor_assurance=anchor_assurance)
 
 
+def _batch_owner_approval_path(base_directory: Path, batch_id: str) -> Path:
+    return base_directory / "_batches" / batch_id / "batch-owner-approval.json"
+
+
+def _describe_existing_authorization(path: Path) -> str:
+    """2026-09-05 owner review: an operator retrying a batch must never
+    wonder whether an "already exists" skip refers to a live artifact or
+    an expired one -- this never archives/overwrites/deletes anything,
+    it only reports what is already on disk. Falls back to no detail
+    (never raises) if the existing file cannot be parsed as a
+    `PlanAuthorizationV2` at all -- reporting is best-effort, not a
+    validity judgment."""
+
+    try:
+        authz = load_signed_plan_authorization_v2(path)
+    except (ArtifactExchangeError, SecurityAuthorizationError):
+        return ""
+    state = "EXPIRED" if datetime.now(timezone.utc) >= authz.expires_at else "still valid"
+    return (
+        f" (existing artifact is {state}: issued_at={authz.issued_at.isoformat()}, "
+        f"expires_at={authz.expires_at.isoformat()})"
+    )
+
+
+def _describe_existing_confirmation(path: Path) -> str:
+    try:
+        evidence = load_signed_confirmation_evidence(path)
+    except (ArtifactExchangeError, ConfirmationError):
+        return ""
+    state = "EXPIRED" if datetime.now(timezone.utc) >= evidence.expires_at else "still valid"
+    return (
+        f" (existing artifact is {state}: issued_at={evidence.issued_at.isoformat()}, "
+        f"expires_at={evidence.expires_at.isoformat()})"
+    )
+
+
 def _one_authorization(
     config: _AuthorizationSigningConfig,
     capability_symbol: str,
@@ -509,9 +571,10 @@ def _one_authorization(
     validity: timedelta = _AUTHORIZATION_VALIDITY,
     discovery: SecurityPostureDiscovery | None = None,
     expected_execution_intent_digest: str | None = None,
+    authorization_id: str | None = None,
 ) -> int:
     """`require_approval=False`/`validity=_BATCH_AUTHORIZATION_VALIDITY`/
-    an explicit `discovery` are used only by
+    an explicit `discovery`/`authorization_id` are used only by
     `sign_authorization_batch_command()`, after its own single manifest-
     level owner approval already covered this exact capability -- the
     ordinary single-capability `sign-authorization` path (via
@@ -520,14 +583,20 @@ def _one_authorization(
     supplied, is compared with `hmac.compare_digest()` against the
     freshly-reloaded preview's own digest -- defense in depth against
     the on-disk preview changing between batch-manifest approval and
-    this capability's turn to sign within the same batch."""
+    this capability's turn to sign within the same batch.
+    `authorization_id`, when supplied, is the exact value the batch
+    owner approval already cryptographically committed to for this
+    capability (2026-09-05 owner review: closes the gap where nothing
+    proved which batch a signed `PlanAuthorizationV2` belonged to) --
+    when omitted, a fresh random one is generated exactly as before."""
 
     paths = artifact_paths_for(config.artifact_base_directory, capability_symbol)
     if not paths.authorization_preview_file.exists():
         print(f"[{capability_symbol}] no authorization preview present -- skipping.")
         return 0
     if paths.authorization_inbox_file.exists():
-        print(f"[{capability_symbol}] a signed authorization already exists -- skipping.")
+        detail = _describe_existing_authorization(paths.authorization_inbox_file)
+        print(f"[{capability_symbol}] a signed authorization already exists -- skipping.{detail}")
         return 0
 
     integrity_key = load_key_material(config.preview_integrity_key_file, purpose=KeyPurpose.INTEGRITY).material
@@ -556,7 +625,7 @@ def _one_authorization(
         preview=preview,
         private_key=private_key,
         authority=authority,
-        authorization_id=f"authz-{secrets.token_hex(_AUTHORIZATION_ID_BYTES)}",
+        authorization_id=authorization_id or f"authz-{secrets.token_hex(_AUTHORIZATION_ID_BYTES)}",
         issued_at=now,
         expires_at=now + validity,
         discovery=discovery,
@@ -566,21 +635,53 @@ def _one_authorization(
     return 0
 
 
-def _one_confirmation(config: _ConfirmationSigningConfig, capability_symbol: str) -> int:
+def _one_confirmation(
+    config: _ConfirmationSigningConfig,
+    capability_symbol: str,
+    *,
+    require_approval: bool = True,
+    expected_contract_id: str | None = None,
+    expected_operation_id: str | None = None,
+    expected_intent_digest: str | None = None,
+) -> int:
+    """`require_approval=False`/the three `expected_*` fields are used
+    only by `sign_confirmation_batch_command()`, after its own single
+    manifest-level owner approval already covered this exact capability
+    -- the ordinary single-capability `sign-confirmation` path
+    (`sign_confirmation_command()`) never passes any of these and is
+    completely unchanged. The `expected_*` checks are defense in depth
+    against the on-disk pending request changing between batch-manifest
+    approval and this capability's turn to sign within the same batch --
+    mirrors `_one_authorization()`'s own `expected_execution_intent_digest`
+    discipline."""
+
     paths = artifact_paths_for(config.artifact_base_directory, capability_symbol)
     if not paths.confirmation_pending_file.exists():
         print(f"[{capability_symbol}] no pending confirmation present -- skipping.")
         return 0
     if paths.confirmation_signed_file.exists():
-        print(f"[{capability_symbol}] a signed confirmation already exists -- skipping.")
+        detail = _describe_existing_confirmation(paths.confirmation_signed_file)
+        print(f"[{capability_symbol}] a signed confirmation already exists -- skipping.{detail}")
         return 0
 
     integrity_key = load_key_material(config.pending_integrity_key_file, purpose=KeyPurpose.INTEGRITY).material
     pending = load_shape_a_pending_confirmation_request(paths.confirmation_pending_file, integrity_key=integrity_key)
+
+    for expected, actual, name in (
+        (expected_contract_id, pending.contract_id, "contract_id"),
+        (expected_operation_id, pending.operation_id, "operation_id"),
+        (expected_intent_digest, pending.intent_digest, "intent_digest"),
+    ):
+        if expected is not None and not hmac.compare_digest(actual, expected):
+            raise SigningError(
+                f"[{capability_symbol}] pending confirmation request's {name} on disk no longer matches "
+                "what the owner approved in the batch manifest -- refusing to sign a substituted artifact"
+            )
+
     authority = _load_pinned_authority_file(config.confirmation_authority_file)
     private_key = _load_private_key(config.confirmation_private_key_file)
 
-    if not _prompt_operator_approval(render_confirmation_review(pending)):
+    if require_approval and not _prompt_operator_approval(render_confirmation_review(pending)):
         print(f"[{capability_symbol}] refused -- no signature produced.")
         return 1
 
@@ -648,6 +749,37 @@ def sign_authorization_batch_command(capabilities: list[str]) -> int:
         print("Batch refused -- no signatures produced.")
         return 1
 
+    # 2026-09-05 owner review: the owner's single `yes` above must
+    # cryptographically bind to the EXACT set of individual
+    # PlanAuthorizationV2 artifacts it authorizes, not merely precede
+    # them procedurally. Each capability's authorization_id is
+    # generated NOW, committed into one signed ShapeABatchOwnerApproval
+    # covering the whole manifest, and only THEN used (never
+    # regenerated) when each individual artifact is actually signed --
+    # see shape_a_batch_owner_approval.py's own docstring for the exact
+    # binding proof this makes possible.
+    authorization_ids = {
+        capability_symbol: f"authz-{secrets.token_hex(_AUTHORIZATION_ID_BYTES)}"
+        for capability_symbol in manifest.capability_symbols
+    }
+    now = datetime.now(timezone.utc)
+    approval_authority = _load_pinned_authority_file(config.authorization_authority_file)
+    approval_private_key = _load_private_key(config.authorization_private_key_file)
+    approval_payload = build_shape_a_batch_owner_approval_payload(
+        manifest,
+        batch_id=manifest.batch_id,
+        authorization_ids=authorization_ids,
+        issued_at=now,
+        expires_at=now + _BATCH_AUTHORIZATION_VALIDITY,
+    )
+    approval = sign_shape_a_batch_owner_approval(
+        approval_payload, authority_id=approval_authority.authority_id, private_key=approval_private_key
+    )
+    approval_path = _batch_owner_approval_path(config.artifact_base_directory, manifest.batch_id)
+    approval_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    write_secure_new(approval_path, shape_a_batch_owner_approval_to_bytes(approval))
+    print(f"Batch owner approval signed and written to {approval_path}")
+
     discovery = _build_discovery_from_export(dict(os.environ))
     expected_digests = {entry.capability_symbol: entry.execution_intent_digest for entry in manifest.entries}
 
@@ -660,6 +792,7 @@ def sign_authorization_batch_command(capabilities: list[str]) -> int:
                 capability_symbol,
                 require_approval=False,
                 validity=_BATCH_AUTHORIZATION_VALIDITY,
+                authorization_id=authorization_ids[capability_symbol],
                 discovery=discovery,
                 expected_execution_intent_digest=expected_digests[capability_symbol],
             ),
@@ -673,6 +806,83 @@ def sign_confirmation_command(capabilities: list[str]) -> int:
     for capability_symbol in capabilities:
         _require_capability(capability_symbol)
         worst = max(worst, _one_confirmation(config, capability_symbol))
+    return worst
+
+
+def _confirmation_batch_owner_approval_path(base_directory: Path, batch_id: str) -> Path:
+    return base_directory / "_batches" / batch_id / "confirmation-batch-owner-approval.json"
+
+
+def sign_confirmation_batch_command(capabilities: list[str]) -> int:
+    """Confirmation-side mirror of `sign_authorization_batch_command()`
+    (2026-09-05 owner direction: implement the scalable confirmation
+    ceremony now, before another real Round-1 attempt). Exactly ONE
+    literal owner `yes`, covering an immutable manifest of N pending
+    confirmation requests, then N individually signed and independently
+    verifiable `ConfirmationEvidence` artifacts. Refuses the WHOLE batch
+    if any capability's pending request is missing or already signed --
+    identical fail-closed discipline to the authorization batch path."""
+
+    if not capabilities:
+        raise SigningError("a batch requires at least one --capability.")
+    if len(set(capabilities)) != len(capabilities):
+        raise SigningError("duplicate --capability values are not permitted in one batch.")
+    for capability_symbol in capabilities:
+        _require_capability(capability_symbol)
+
+    config = _load_confirmation_config()
+    integrity_key = load_key_material(config.pending_integrity_key_file, purpose=KeyPurpose.INTEGRITY).material
+
+    pending_requests = []
+    for capability_symbol in capabilities:
+        paths = artifact_paths_for(config.artifact_base_directory, capability_symbol)
+        if not paths.confirmation_pending_file.exists():
+            raise SigningError(f"[{capability_symbol}] no pending confirmation present -- refusing the whole batch.")
+        if paths.confirmation_signed_file.exists():
+            raise SigningError(
+                f"[{capability_symbol}] a signed confirmation already exists -- refusing the whole batch. "
+                "Retry with only the still-pending capabilities as a new, separately-reviewed batch."
+            )
+        pending_requests.append(
+            load_shape_a_pending_confirmation_request(paths.confirmation_pending_file, integrity_key=integrity_key)
+        )
+
+    manifest = build_shape_a_confirmation_batch_manifest(
+        tuple(pending_requests), batch_id=f"batch-{secrets.token_hex(_BATCH_ID_BYTES)}"
+    )
+
+    if not _prompt_operator_approval(render_shape_a_confirmation_batch_manifest_review(manifest)):
+        print("Batch refused -- no signatures produced.")
+        return 1
+
+    now = datetime.now(timezone.utc)
+    approval_authority = _load_pinned_authority_file(config.confirmation_authority_file)
+    approval_private_key = _load_private_key(config.confirmation_private_key_file)
+    approval_payload = build_shape_a_confirmation_batch_owner_approval_payload(
+        manifest, batch_id=manifest.batch_id, issued_at=now, expires_at=now + _BATCH_AUTHORIZATION_VALIDITY
+    )
+    approval = sign_shape_a_confirmation_batch_owner_approval(
+        approval_payload, authority_id=approval_authority.authority_id, private_key=approval_private_key
+    )
+    approval_path = _confirmation_batch_owner_approval_path(config.artifact_base_directory, manifest.batch_id)
+    approval_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    write_secure_new(approval_path, shape_a_confirmation_batch_owner_approval_to_bytes(approval))
+    print(f"Batch owner approval signed and written to {approval_path}")
+
+    worst = 0
+    for capability_symbol in manifest.capability_symbols:
+        entry = next(entry for entry in manifest.entries if entry.capability_symbol == capability_symbol)
+        worst = max(
+            worst,
+            _one_confirmation(
+                config,
+                capability_symbol,
+                require_approval=False,
+                expected_contract_id=entry.contract_id,
+                expected_operation_id=entry.operation_id,
+                expected_intent_digest=entry.intent_digest,
+            ),
+        )
     return worst
 
 
@@ -694,23 +904,28 @@ def main(argv: list[str] | None = None) -> int:
             action="store_true",
             help="Process every registered Shape-A capability (each still requires its own 'yes').",
         )
-    batch_sub = subparsers.add_parser(
-        "sign-authorization-batch",
-        help=(
+    _BATCH_COMMAND_HELP = {
+        "sign-authorization-batch": (
             "Review and sign an explicit, homogeneous batch of AuthorizationPreviews with exactly ONE "
             "owner approval covering an immutable manifest of all named capabilities."
         ),
-    )
-    batch_sub.add_argument(
-        "--capability",
-        action="append",
-        required=True,
-        help="A registered Shape-A capability symbol to include in this batch. May repeat. No --all-registered "
-        "equivalent exists for this command -- the batch must be an explicit, finite, named set.",
-    )
+        "sign-confirmation-batch": (
+            "Review and sign an explicit batch of PendingConfirmationRequests with exactly ONE "
+            "owner approval covering an immutable manifest of all named capabilities."
+        ),
+    }
+    for name, help_text in _BATCH_COMMAND_HELP.items():
+        batch_sub = subparsers.add_parser(name, help=help_text)
+        batch_sub.add_argument(
+            "--capability",
+            action="append",
+            required=True,
+            help="A registered Shape-A capability symbol to include in this batch. May repeat. No --all-registered "
+            "equivalent exists for this command -- the batch must be an explicit, finite, named set.",
+        )
     args = parser.parse_args(argv)
 
-    if args.command == "sign-authorization-batch":
+    if args.command in _BATCH_COMMAND_HELP:
         capabilities = list(args.capability or [])
     else:
         capabilities = sorted(SHAPE_A_REGISTRATIONS) if args.all_registered else list(args.capability or [])
@@ -718,6 +933,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "sign-authorization-batch":
             return sign_authorization_batch_command(capabilities)
+        if args.command == "sign-confirmation-batch":
+            return sign_confirmation_batch_command(capabilities)
         for capability_symbol in capabilities:
             _require_capability(capability_symbol)
         if args.command == "sign-authorization":

@@ -169,6 +169,34 @@ def test_digest_changes_when_a_capability_execution_intent_digest_changes():
     assert compute_shape_a_batch_manifest_digest(manifest_a) != compute_shape_a_batch_manifest_digest(manifest_b)
 
 
+def test_digest_changes_when_a_capability_projection_changes():
+    """Semantic fields are display-only, but they are still part of what
+    the owner reviews and what the manifest digest commits to -- a
+    "projection changed" attack (the described mutation differs from
+    what was approved) must change the digest even if
+    execution_intent_digest happened to stay the same."""
+
+    previews_a = tuple(_preview(symbol) for symbol in _FIVE_SYMBOLS)
+    changed = _preview(_FIVE_SYMBOLS[-1])
+    previews_b = (
+        *previews_a[:-1],
+        ShapeAAuthorizationPreview(
+            capability_symbol=changed.capability_symbol,
+            semantic_fields=(("field", "a-different-value"),),
+            execution_intent_digest=changed.execution_intent_digest,
+            requested_plan_digest=changed.requested_plan_digest,
+            requested_step_id=changed.requested_step_id,
+            target_capability_posture=changed.target_capability_posture,
+            target_anchor_assurance=changed.target_anchor_assurance,
+            generated_at=changed.generated_at,
+        ),
+    )
+    manifest_a = build_shape_a_batch_manifest(previews_a, batch_id="batch-1")
+    manifest_b = build_shape_a_batch_manifest(previews_b, batch_id="batch-1")
+
+    assert compute_shape_a_batch_manifest_digest(manifest_a) != compute_shape_a_batch_manifest_digest(manifest_b)
+
+
 def test_digest_rejects_wrong_type():
     with pytest.raises(ShapeABatchManifestError, match="Expected ShapeABatchManifest"):
         compute_shape_a_batch_manifest_digest("not a manifest")  # type: ignore[arg-type]

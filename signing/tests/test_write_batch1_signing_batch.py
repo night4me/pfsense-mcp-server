@@ -43,6 +43,11 @@ from pfsense_mcp.tier1.shape_a_artifact_exchange import (
     shape_a_authorization_preview_to_bytes,
     write_secure_new,
 )
+from signing.shape_a_batch_owner_approval import (
+    shape_a_batch_owner_approval_from_bytes,
+    verify_plan_authorization_v2_batch_membership,
+    verify_shape_a_batch_owner_approval_signature,
+)
 from signing.write_batch1_signing import (
     _BATCH_AUTHORIZATION_VALIDITY,
     SigningError,
@@ -451,3 +456,145 @@ def test_ordinary_single_capability_path_is_unaffected(tmp_path, monkeypatch):
     paths = artifact_paths_for(config.artifact_base_directory, "SYSTEM_TIMEZONE")
     authz = load_signed_plan_authorization_v2(paths.authorization_inbox_file)
     assert authz.expires_at - authz.issued_at == _AUTHORIZATION_VALIDITY
+
+
+# ---------------------------------------------------------------------------
+# 2026-09-05 owner review: cryptographic batch-owner-approval binding
+# ---------------------------------------------------------------------------
+
+
+def _find_batch_owner_approval_path(artifact_base_directory: Path) -> Path:
+    matches = list((artifact_base_directory / "_batches").glob("*/batch-owner-approval.json"))
+    assert len(matches) == 1, "expected exactly one batch owner approval artifact"
+    return matches[0]
+
+
+def test_batch_produces_a_verifiable_signed_batch_owner_approval(tmp_path, monkeypatch):
+    env = _fixture(tmp_path, monkeypatch)
+    for symbol in _FIVE_SYMBOLS:
+        _write_preview(tmp_path, env, symbol)
+    _counting_yes(monkeypatch)
+
+    assert sign_authorization_batch_command(list(_FIVE_SYMBOLS)) == 0
+
+    config = _load_authorization_config()
+    authority_data = json.loads(Path(env["PFSENSE_SIGNING_SHAPE_A_AUTHORIZATION_AUTHORITY_FILE"]).read_text())
+    authority = PinnedAuthority(
+        authority_id=authority_data["authority_id"], public_key=bytes.fromhex(authority_data["public_key_hex"])
+    )
+    authorities = PinnedAuthoritySet((authority,))
+
+    approval_path = _find_batch_owner_approval_path(config.artifact_base_directory)
+    approval = shape_a_batch_owner_approval_from_bytes(approval_path.read_bytes())
+
+    assert verify_shape_a_batch_owner_approval_signature(approval, authorities) is True
+    assert {entry.capability_symbol for entry in approval.entries} == set(_FIVE_SYMBOLS)
+    assert approval.expires_at - approval.issued_at == _BATCH_AUTHORIZATION_VALIDITY
+
+
+def test_every_produced_authorization_satisfies_batch_membership_against_its_own_approval(tmp_path, monkeypatch):
+    env = _fixture(tmp_path, monkeypatch)
+    for symbol in _FIVE_SYMBOLS:
+        _write_preview(tmp_path, env, symbol)
+    _counting_yes(monkeypatch)
+
+    assert sign_authorization_batch_command(list(_FIVE_SYMBOLS)) == 0
+
+    config = _load_authorization_config()
+    authority_data = json.loads(Path(env["PFSENSE_SIGNING_SHAPE_A_AUTHORIZATION_AUTHORITY_FILE"]).read_text())
+    authority = PinnedAuthority(
+        authority_id=authority_data["authority_id"], public_key=bytes.fromhex(authority_data["public_key_hex"])
+    )
+    authorities = PinnedAuthoritySet((authority,))
+
+    approval_path = _find_batch_owner_approval_path(config.artifact_base_directory)
+    approval = shape_a_batch_owner_approval_from_bytes(approval_path.read_bytes())
+
+    for symbol in _FIVE_SYMBOLS:
+        paths = artifact_paths_for(config.artifact_base_directory, symbol)
+        authz = load_signed_plan_authorization_v2(paths.authorization_inbox_file)
+        assert (
+            verify_plan_authorization_v2_batch_membership(
+                authz, approval, capability_symbol=symbol, authorities=authorities
+            )
+            is True
+        )
+
+
+def test_authorization_from_one_batch_does_not_satisfy_a_different_batchs_approval(tmp_path, monkeypatch):
+    """Runs two SEPARATE batches (disjoint capability sets, since a real
+    capability can only ever be signed once) and proves an authorization
+    genuinely produced under batch A's approval does not satisfy
+    membership against batch B's approval for a capability A never
+    covered -- and, conversely, that B's approval has no entry at all
+    for a capability only A ever signed."""
+
+    env = _fixture(tmp_path, monkeypatch)
+    for symbol in _FIVE_SYMBOLS:
+        _write_preview(tmp_path, env, symbol)
+    _counting_yes(monkeypatch)
+
+    first_batch = list(_FIVE_SYMBOLS[:2])
+    second_batch = list(_FIVE_SYMBOLS[2:])
+    assert sign_authorization_batch_command(first_batch) == 0
+    assert sign_authorization_batch_command(second_batch) == 0
+
+    config = _load_authorization_config()
+    authority_data = json.loads(Path(env["PFSENSE_SIGNING_SHAPE_A_AUTHORIZATION_AUTHORITY_FILE"]).read_text())
+    authority = PinnedAuthority(
+        authority_id=authority_data["authority_id"], public_key=bytes.fromhex(authority_data["public_key_hex"])
+    )
+    authorities = PinnedAuthoritySet((authority,))
+
+    approval_paths = list((config.artifact_base_directory / "_batches").glob("*/batch-owner-approval.json"))
+    assert len(approval_paths) == 2
+    approvals = [shape_a_batch_owner_approval_from_bytes(path.read_bytes()) for path in approval_paths]
+    approval_covering_first = next(a for a in approvals if first_batch[0] in {e.capability_symbol for e in a.entries})
+    approval_covering_second = next(a for a in approvals if second_batch[0] in {e.capability_symbol for e in a.entries})
+    assert approval_covering_first is not approval_covering_second
+
+    first_capability = first_batch[0]
+    paths = artifact_paths_for(config.artifact_base_directory, first_capability)
+    authz_from_first_batch = load_signed_plan_authorization_v2(paths.authorization_inbox_file)
+
+    # Genuinely belongs to its own batch's approval.
+    assert (
+        verify_plan_authorization_v2_batch_membership(
+            authz_from_first_batch, approval_covering_first, capability_symbol=first_capability, authorities=authorities
+        )
+        is True
+    )
+    # The OTHER batch's approval has no entry for this capability at all,
+    # so membership must fail -- proving an authorization cannot be
+    # laundered into a batch it was never part of.
+    assert (
+        verify_plan_authorization_v2_batch_membership(
+            authz_from_first_batch,
+            approval_covering_second,
+            capability_symbol=first_capability,
+            authorities=authorities,
+        )
+        is False
+    )
+
+
+def test_already_exists_skip_reports_whether_existing_authorization_is_still_valid(tmp_path, monkeypatch, capsys):
+    """2026-09-05 owner review: a retry must never leave an operator
+    wondering whether an "already exists" skip refers to a live or
+    expired artifact."""
+
+    env = _fixture(tmp_path, monkeypatch)
+    _write_preview(tmp_path, env, "SYSTEM_TIMEZONE")
+    _counting_yes(monkeypatch)
+    config = _load_authorization_config()
+
+    assert _one_authorization(config, "SYSTEM_TIMEZONE") == 0
+    capsys.readouterr()
+
+    result = _one_authorization(config, "SYSTEM_TIMEZONE")
+
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "already exists" in captured.out
+    assert "still valid" in captured.out
+    assert "EXPIRED" not in captured.out
