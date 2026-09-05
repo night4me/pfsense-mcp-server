@@ -749,15 +749,23 @@ def sign_authorization_batch_command(capabilities: list[str]) -> int:
         print("Batch refused -- no signatures produced.")
         return 1
 
-    # 2026-09-05 owner review: the owner's single `yes` above must
-    # cryptographically bind to the EXACT set of individual
-    # PlanAuthorizationV2 artifacts it authorizes, not merely precede
-    # them procedurally. Each capability's authorization_id is
-    # generated NOW, committed into one signed ShapeABatchOwnerApproval
-    # covering the whole manifest, and only THEN used (never
-    # regenerated) when each individual artifact is actually signed --
-    # see shape_a_batch_owner_approval.py's own docstring for the exact
-    # binding proof this makes possible.
+    # 2026-09-05 owner review: the owner's single `yes` above approves
+    # only the already-fixed, already-displayed SEMANTIC content of the
+    # manifest (batch_id, manifest_digest, every capability's
+    # execution_intent_digest/projection) -- `authorization_id` does
+    # not exist yet at that point and is never part of what the owner
+    # reviews. Only now, strictly AFTER `yes`, does this process
+    # generate each capability's authorization_id -- a non-semantic,
+    # cryptographically random correlation identifier -- and commit it,
+    # in this same atomic post-approval step, into one signed
+    # ShapeABatchOwnerApproval covering the whole manifest; that exact
+    # value is then used (never regenerated) when each individual
+    # artifact is actually signed below. This still cryptographically
+    # binds the EXACT set of individual PlanAuthorizationV2 artifacts
+    # produced to the manifest the owner approved -- see
+    # shape_a_batch_owner_approval.py's own docstring for the exact
+    # binding proof this makes possible, and its "why a non-semantic
+    # post-approval identifier is sufficient" reasoning.
     authorization_ids = {
         capability_symbol: f"authz-{secrets.token_hex(_AUTHORIZATION_ID_BYTES)}"
         for capability_symbol in manifest.capability_symbols

@@ -21,14 +21,25 @@ completely unaware this artifact type exists.
 
 `PlanAuthorizationV2.authorization_id` is already one of that artifact
 type's own signed-payload fields (`security_authorization.py`'s field
-table: "every field ... participates ... except proof"). The caller
-(`write_batch1_signing.py`) pre-generates each capability's
-`authorization_id` *before* the owner is shown the batch review, and
-this artifact's own signed payload commits, under ONE Ed25519
-signature, to the exact `(capability_symbol, execution_intent_digest,
+table: "every field ... participates ... except proof"). The owner's
+review and `yes` cover only the semantic content of the batch --
+`batch_id`, `manifest_digest`, and every capability's
+`execution_intent_digest`/semantic projection, all fixed and displayed
+*before* the prompt (`ShapeABatchManifest`/`ShapeABatchManifestEntry`
+have no `authorization_id` field at all -- it cannot be part of what is
+reviewed). Only *after* `yes` does the caller (`write_batch1_signing.py`)
+generate each capability's `authorization_id` -- a non-semantic,
+cryptographically random correlation identifier with no meaning of its
+own -- and this artifact's own signed payload then commits, under ONE
+Ed25519 signature produced in that same atomic post-approval step, to
+the exact `(capability_symbol, execution_intent_digest,
 authorization_id)` triple for every capability in the batch, plus an
 independently recomputed `manifest_digest` binding it to the exact
-manifest content the owner read. A verifier holding this approval, an
+manifest content the owner already read. The owner is never asked to
+review or pre-approve `authorization_id` values themselves; the
+property required (2026-09-05 owner trust-boundary decision) is that
+the *semantic* mutation content is immutable and fully shown before
+`yes`, not that the eventual bookkeeping identifiers are. A verifier holding this approval, an
 individual signed `PlanAuthorizationV2`, and the pinned authority that
 signed both can therefore prove the individual artifact belongs to
 exactly this approved batch --

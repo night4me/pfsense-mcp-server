@@ -162,11 +162,20 @@ binding mechanism uses a field `PlanAuthorizationV2` already has —
 `authorization_id` — rather than evolving that shared, already-shipped
 schema:
 
-1. Before the owner is shown the manifest review, the signer pre-generates
-   one `authorization_id` per capability (`authz-{secrets.token_hex(16)}`) —
-   these are never shown to the owner (they are meaningless random tokens,
-   not reviewable content) and never regenerated afterward.
-2. On the owner's single `yes`, `build_shape_a_batch_owner_approval_payload()`
+1. The owner's review and `yes` cover only the manifest's fixed semantic
+   content — `batch_id`, `manifest_digest`, and every capability's
+   `execution_intent_digest`/projection — all already computed and displayed
+   before the prompt. `authorization_id` does not exist yet at that point:
+   `ShapeABatchManifest`/`ShapeABatchManifestEntry` have no such field, so it
+   cannot be part of what is reviewed or approved.
+2. Only *after* the owner's single `yes`, the signer generates one
+   `authorization_id` per capability (`authz-{secrets.token_hex(16)}`) — a
+   non-semantic, cryptographically random correlation identifier, never shown
+   to or reviewed by the owner (2026-09-05 owner trust-boundary decision: the
+   required property is that semantic content is immutable and fully shown
+   pre-`yes`, not that these bookkeeping identifiers are pre-approved — see
+   the "why this is sufficient" note at the end of this section). Then
+   `build_shape_a_batch_owner_approval_payload()`
    builds a payload committing, under one signature, to the exact
    `(capability_symbol, execution_intent_digest, authorization_id)` triple for
    every capability, plus `manifest_digest` — **independently recomputed from
@@ -177,9 +186,10 @@ schema:
    used for the individual `PlanAuthorizationV2` artifacts — one trust root
    for the whole ceremony — producing a `ShapeABatchOwnerApproval`, written to
    `<artifact_base_directory>/_batches/<batch_id>/batch-owner-approval.json`.
-4. Each capability's `PlanAuthorizationV2` is then signed using the
-   **pre-committed** `authorization_id` (via `_one_authorization()`'s new
-   `authorization_id` parameter), never a freshly regenerated one.
+4. Each capability's `PlanAuthorizationV2` is then signed using the exact
+   `authorization_id` just committed into the signed approval above (via
+   `_one_authorization()`'s new `authorization_id` parameter) — the same
+   value, never regenerated a second time.
 
 **The resulting proof.** `verify_plan_authorization_v2_batch_membership(authz,
 approval, capability_symbol=..., authorities=...)` returns `True` only if:
@@ -196,6 +206,27 @@ authorization's `authorization_id` at all (proven by
 `test_authorization_from_one_batch_does_not_satisfy_a_different_batchs_approval`
 and the unit-level
 `test_batch_membership_false_for_cross_batch_authorization_insertion`).
+
+**Why a non-semantic, post-approval `authorization_id` is sufficient.**
+2026-09-05 owner review distinguished two candidate properties: (A) the owner
+approves the exact semantic mutation intents; (B) the owner pre-approves the
+exact identities of the individual authorization artifacts. The design above
+provides only (A) — structurally, since `authorization_id` does not exist at
+approval time. This is sufficient for the intended threat model because
+`authorization_id` carries no semantic content of its own (it is a random
+token with no bearing on which capability or projection it refers to); the
+actual mutation semantics (`capability_symbol`, `execution_intent_digest`,
+`semantic_fields`, `requested_plan_digest`) are fully fixed pre-`yes`, are
+exactly what `manifest_digest` commits to, and are independently re-verified
+against the original, already-reviewed preview file (via
+`expected_execution_intent_digest`) at the moment each individual
+authorization is signed — so the post-`yes` identifier-assignment step cannot
+smuggle in a different semantic mutation under an unchanged capability name.
+The only party choosing the identifier is the same already-trusted signing
+process the owner is trusting to run the rest of the ceremony correctly, in
+one atomic, uninterrupted step immediately following `yes` — there is no
+separate or lower-trust actor, and no window in which a different semantic
+manifest could be substituted under the same approval.
 
 **What this still is not.** Not a new source of authorization — a verifier
 still independently re-checks each `PlanAuthorizationV2`'s own signature,
@@ -223,23 +254,24 @@ unaware this artifact type exists.
    function, unchanged literal-string requirement — no
    `--yes`/`--force`/unattended flag exists or may be added).
 5. On refusal, returns without signing anything.
-6. On approval: pre-generates the N `authorization_id`s, builds and signs the
-   `ShapeABatchOwnerApproval` (§2b) and writes it to disk, then builds the
-   export-based `SecurityPostureDiscovery` **once** (not once per capability —
-   see §5, threat 8) and signs each capability's `PlanAuthorizationV2` via the
-   unchanged `_one_authorization()` body, now called with
-   `require_approval=False` (no second prompt),
+6. On approval: *only now* generates the N `authorization_id`s, builds and
+   signs the `ShapeABatchOwnerApproval` (§2b) and writes it to disk, then
+   builds the export-based `SecurityPostureDiscovery` **once** (not once per
+   capability — see §5, threat 8) and signs each capability's
+   `PlanAuthorizationV2` via the unchanged `_one_authorization()` body, now
+   called with `require_approval=False` (no second prompt),
    `validity=_BATCH_AUTHORIZATION_VALIDITY` (§4), the shared `discovery`, the
-   pre-committed `authorization_id`, and `expected_execution_intent_digest`
-   bound to what the owner actually saw in the manifest (§5, threat 4).
+   `authorization_id` just committed into the signed approval, and
+   `expected_execution_intent_digest` bound to what the owner actually saw in
+   the manifest (§5, threat 4).
 
 The ordinary single-capability `sign-authorization` path
 (`sign_authorization_command()` → `_one_authorization()` with all new
 parameters at their defaults) is **unmodified**: default
 `require_approval=True`, default `validity=_AUTHORIZATION_VALIDITY` (5
 minutes, shared with `alias_description_signing.py`), no expected-digest
-check, no pre-committed `authorization_id` (a fresh random one is generated,
-exactly as before). `test_ordinary_single_capability_path_is_unaffected`
+check, no batch-approval-committed `authorization_id` (a fresh random one is
+generated, exactly as before). `test_ordinary_single_capability_path_is_unaffected`
 proves this.
 
 ## 4. The batch TTL constant
@@ -369,14 +401,17 @@ already-created `RecoveryContract` (own `contract_id`/`operation_id`/
 `intent_digest`), and these are never expected to match across capabilities
 even within one homogeneous batch.
 
-**Binding uses pre-existing identifiers, not a pre-generated one.** Unlike
-`PlanAuthorizationV2.authorization_id` (signer-generated, so it can be
-pre-committed before the prompt), `ConfirmationEvidence.contract_id`/
-`operation_id` are never chosen by the signer — they already exist on the
-already-created `RecoveryContract`, read unchanged from the pending request on
-disk. `ShapeAConfirmationBatchOwnerApproval`'s signed payload therefore
-commits directly to the exact `(capability_symbol, contract_id, operation_id,
-intent_digest)` tuple for every capability, rather than to a pre-generated ID.
+**Binding uses pre-existing identifiers, not a signer-generated one.** Unlike
+`PlanAuthorizationV2.authorization_id` (signer-generated, non-semantic, and
+assigned only *after* the owner's `yes` — see §2b's "why a non-semantic,
+post-approval `authorization_id` is sufficient"), `ConfirmationEvidence.
+contract_id`/`operation_id` are never chosen by the signer at all — they
+already exist on the already-created `RecoveryContract`, read unchanged from
+the pending request on disk, and so are already fixed and already part of
+what the owner reviews. `ShapeAConfirmationBatchOwnerApproval`'s signed
+payload therefore commits directly to the exact `(capability_symbol,
+contract_id, operation_id, intent_digest)` tuple for every capability, rather
+than to any post-approval-generated identifier.
 `verify_confirmation_evidence_batch_membership()` is the exact mirror of
 `verify_plan_authorization_v2_batch_membership()` (§2b), proven by
 `test_every_produced_evidence_satisfies_batch_membership_against_its_own_approval`
