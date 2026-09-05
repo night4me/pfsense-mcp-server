@@ -167,6 +167,7 @@ nav:
           - Adapter restrictions: tier1/specs/adapter_restrictions.md
           - Disposable-lab execution model: tier1/specs/disposable_lab_execution_model.md
           - AnchorEvidenceExport trust boundary: tier1/specs/anchor_evidence_export_trust_boundary.md
+          - Shape-A batch-manifest ceremony: tier1/specs/shape_a_batch_manifest_ceremony.md
   - Release and contributing:
       - Release checklist: RELEASE_CHECKLIST.md
       - Public launch checklist: PUBLIC_LAUNCH_CHECKLIST.md
