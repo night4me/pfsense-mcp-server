@@ -40,10 +40,27 @@ from .reconciliation import (
     ReconciliationOutcome,
     ReconciliationVerifier,
 )
-from .state_machine import RecoveryState, require_transition
+from .state_machine import BLOCKING_IDEMPOTENCY_STATES, RecoveryState, require_transition
 
-_SCHEMA_VERSION = 7
-_LEGACY_SCHEMA_VERSION = 6
+_SCHEMA_VERSION = 8
+_LEGACY_SCHEMA_VERSION_V6 = 6
+_LEGACY_SCHEMA_VERSION_V7 = 7
+#: 2026-09-05 owner-directed retry/idempotency redesign: the exact set of
+#: `RecoveryState` values the active-idempotency partial unique index
+#: covers -- kept as one literal, sorted tuple of wire strings (not a
+#: dynamically-formatted f-string) so the index's own `CREATE INDEX` text
+#: is a fixed, reviewable constant that `_verify_schema()` can compare
+#: byte-for-byte, and so a future addition to `BLOCKING_IDEMPOTENCY_STATES`
+#: is forced to go through an explicit migration bump rather than silently
+#: changing an existing store's enforced constraint on next open.
+_ACTIVE_IDEMPOTENCY_STATES_SQL = ", ".join(
+    f"'{state.value}'" for state in sorted(BLOCKING_IDEMPOTENCY_STATES, key=lambda s: s.value)
+)
+_ACTIVE_IDEMPOTENCY_INDEX_NAME = "ux_contracts_active_idempotency"
+_ACTIVE_IDEMPOTENCY_INDEX_SQL = (
+    f"CREATE UNIQUE INDEX {_ACTIVE_IDEMPOTENCY_INDEX_NAME} ON contracts(idempotency_key) "
+    f"WHERE state IN ({_ACTIVE_IDEMPOTENCY_STATES_SQL})"
+)
 _STORE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
 _RESERVATION_STATES = frozenset(
     {
@@ -67,6 +84,27 @@ _SELECT_ALL_CONTRACTS = (
 _SELECT_CONTRACT_BY_IDEMPOTENCY_KEY = (
     "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
     "target_identity_digest, state, state_version FROM contracts WHERE idempotency_key = ?"
+)
+#: 2026-09-05: the active-only variant `find_by_idempotency_key()` now
+#: uses -- historical (terminal) rows sharing the same key are
+#: deliberately excluded here; `find_historical_by_idempotency_key()`
+#: below is the separately-named API for the full, unfiltered history.
+_BLOCKING_STATES_ORDERED = tuple(sorted((state.value for state in BLOCKING_IDEMPOTENCY_STATES)))
+#: Only literal `?` placeholders -- one per entry of the fixed,
+#: code-defined `_BLOCKING_STATES_ORDERED` tuple above -- are interpolated
+#: here; every actual value is still bound via `execute(sql, params)`
+#: below. Built via plain concatenation (not an f-string) so this reads
+#: unambiguously as placeholder-count derivation, not value interpolation.
+_BLOCKING_STATES_PLACEHOLDERS_SQL = ", ".join("?" for _ in _BLOCKING_STATES_ORDERED)
+_SELECT_BLOCKING_CONTRACT_BY_IDEMPOTENCY_KEY = (
+    "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
+    "target_identity_digest, state, state_version FROM contracts WHERE idempotency_key = ? "
+    "AND state IN (" + _BLOCKING_STATES_PLACEHOLDERS_SQL + ")"  # nosec B608 -- placeholders only, see comment above
+)
+_SELECT_ALL_CONTRACTS_BY_IDEMPOTENCY_KEY = (
+    "SELECT payload, mac, contract_id, operation_id, idempotency_key, "
+    "target_identity_digest, state, state_version FROM contracts WHERE idempotency_key = ? "
+    "ORDER BY contract_id"
 )
 _CONTRACT_FIELDS = frozenset(
     {
@@ -378,7 +416,12 @@ class SqliteRecoveryContractStore:
             raise ContractIntegrityError("Recovery store schema does not match the required version.")
         expected_unique = {
             "metadata": {("key",)},
-            "contracts": {("contract_id",), ("operation_id",), ("idempotency_key",)},
+            # idempotency_key is deliberately absent here (2026-09-05):
+            # since v8 it is enforced by the partial unique index checked
+            # explicitly below, not a plain column-level UNIQUE -- a
+            # historical contract may legitimately share this value with
+            # at most one currently-active one.
+            "contracts": {("contract_id",), ("operation_id",)},
             "target_reservations": {("target_identity_digest",), ("contract_id",)},
             "audit_events": {("contract_id", "state_version")},
             "anchor_state": {("key",)},
@@ -388,10 +431,15 @@ class SqliteRecoveryContractStore:
             actual = {
                 tuple(row[2] for row in connection.execute(f"PRAGMA index_info({index[1]})"))
                 for index in connection.execute(f"PRAGMA index_list({table})")
-                if index[2]
+                if index[2] and index[1] != _ACTIVE_IDEMPOTENCY_INDEX_NAME
             }
             if actual != expected:
                 raise ContractIntegrityError("Recovery store schema uniqueness constraints are invalid.")
+        active_idempotency_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = ?", (_ACTIVE_IDEMPOTENCY_INDEX_NAME,)
+        ).fetchone()
+        if active_idempotency_sql is None or active_idempotency_sql[0] != _ACTIVE_IDEMPOTENCY_INDEX_SQL:
+            raise ContractIntegrityError("Recovery store active-idempotency partial index is invalid.")
         expected_foreign_key = (("contracts", "contract_id", "contract_id", "CASCADE"),)
         for table in ("target_reservations", "audit_events"):
             actual_foreign_keys = tuple(
@@ -411,7 +459,7 @@ class SqliteRecoveryContractStore:
                 CREATE TABLE IF NOT EXISTS contracts (
                     contract_id TEXT PRIMARY KEY,
                     operation_id TEXT NOT NULL UNIQUE,
-                    idempotency_key TEXT NOT NULL UNIQUE,
+                    idempotency_key TEXT NOT NULL,
                     target_identity_digest TEXT NOT NULL,
                     state TEXT NOT NULL,
                     state_version INTEGER NOT NULL,
@@ -450,22 +498,48 @@ class SqliteRecoveryContractStore:
                 );
                 """
             )
-            self._verify_schema(connection)
+            # Only attempt the partial index when `contracts` actually has
+            # the column it indexes -- a pre-existing, incompatible/
+            # malformed database (e.g. a `contracts` table missing this
+            # column entirely) must fall through untouched to
+            # _verify_schema()'s own column-shape check below, which
+            # raises a clean ContractIntegrityError; attempting the index
+            # unconditionally here would instead crash with a raw
+            # sqlite3.OperationalError before that clean rejection runs.
+            contracts_columns = {row[1] for row in connection.execute("PRAGMA table_info(contracts)")}
+            if "idempotency_key" in contracts_columns:
+                connection.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {_ACTIVE_IDEMPOTENCY_INDEX_NAME} "
+                                    f"ON contracts(idempotency_key) WHERE state IN ({_ACTIVE_IDEMPOTENCY_STATES_SQL})")
+            # Read metadata's raw schema_version BEFORE _verify_schema()
+            # runs below: metadata's own shape has never changed across
+            # v6/v7/v8, so this read is safe pre-verification, and a
+            # pre-existing v7 store's `contracts` table still has its OLD
+            # DDL shape at this point (`CREATE TABLE IF NOT EXISTS`/
+            # `CREATE UNIQUE INDEX IF NOT EXISTS` above are no-ops against
+            # an already-existing table/index name) -- the DDL rebuild
+            # migration below is what actually changes it, and must run
+            # before _verify_schema() would otherwise reject the old shape.
             existing = dict(connection.execute("SELECT key, value FROM metadata"))
             expected = {"schema_version": str(_SCHEMA_VERSION), "store_id": self._store_id}
-            legacy = {"schema_version": str(_LEGACY_SCHEMA_VERSION), "store_id": self._store_id}
-            if existing == legacy:
+            legacy_v6 = {"schema_version": str(_LEGACY_SCHEMA_VERSION_V6), "store_id": self._store_id}
+            legacy_v7 = {"schema_version": str(_LEGACY_SCHEMA_VERSION_V7), "store_id": self._store_id}
+            if existing == legacy_v6:
                 try:
                     connection.execute("BEGIN IMMEDIATE")
                     self._migrate_v6_contract_payloads(connection)
                     connection.execute(
-                        "UPDATE metadata SET value = ? WHERE key = 'schema_version'", (str(_SCHEMA_VERSION),)
+                        "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
+                        (str(_LEGACY_SCHEMA_VERSION_V7),),
                     )
                     connection.commit()
                 except Exception:
                     connection.rollback()
                     raise
+                existing = legacy_v7
+            if existing == legacy_v7:
+                self._migrate_v7_idempotency_partial_index(connection)
                 existing = expected
+            self._verify_schema(connection)
             if existing and existing != expected:
                 raise ContractIntegrityError("Recovery store metadata does not match this build or store identity.")
             if not existing:
@@ -498,6 +572,74 @@ class SqliteRecoveryContractStore:
                 "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
                 (migrated, self._mac(migrated), contract_id),
             )
+
+    def _migrate_v7_idempotency_partial_index(self, connection: sqlite3.Connection) -> None:
+        """2026-09-05 owner-directed retry/idempotency redesign: rebuilds
+        `contracts` to drop the column-level `UNIQUE(idempotency_key)`
+        and replace it with the active-state partial unique index
+        (`_ACTIVE_IDEMPOTENCY_INDEX_SQL`) -- SQLite has no `ALTER TABLE
+        DROP CONSTRAINT`, so this uses SQLite's own documented
+        rebuild-table technique: create the new shape under a temporary
+        name, copy every row unchanged, drop the old table, rename the
+        new one into place, then add the partial index. No row's
+        `payload`/`mac`/`contract_id`/`operation_id`/`idempotency_key`/
+        `state`/`state_version` is altered by this migration -- only the
+        schema's enforcement *scope* for `idempotency_key` changes, from
+        "unique across the whole table" to "unique among rows whose
+        state is not yet fully, confidently resolved."
+
+        Foreign keys are disabled for the duration (SQLite's own
+        documented requirement for a drop/rename affecting a
+        FK-referenced table name; must happen before BEGIN, per SQLite's
+        own restriction against toggling this pragma mid-transaction) and
+        explicitly re-checked via `PRAGMA foreign_key_check` before
+        commit -- `target_reservations`/`audit_events` reference
+        `contracts(contract_id)` by table name, which is unaffected by
+        the rebuild (the name `contracts` exists again, pointing at the
+        new table, once the rename completes); no row in either
+        referencing table is touched by this migration at all."""
+
+        connection.execute("PRAGMA foreign_keys = OFF")
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                """
+                CREATE TABLE contracts_v8_migration (
+                    contract_id TEXT PRIMARY KEY,
+                    operation_id TEXT NOT NULL UNIQUE,
+                    idempotency_key TEXT NOT NULL,
+                    target_identity_digest TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    state_version INTEGER NOT NULL,
+                    payload BLOB NOT NULL,
+                    mac TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                "INSERT INTO contracts_v8_migration "
+                "(contract_id, operation_id, idempotency_key, target_identity_digest, state, state_version, "
+                "payload, mac) "
+                "SELECT contract_id, operation_id, idempotency_key, target_identity_digest, state, state_version, "
+                "payload, mac FROM contracts"
+            )
+            connection.execute("DROP TABLE contracts")
+            connection.execute("ALTER TABLE contracts_v8_migration RENAME TO contracts")
+            connection.execute(_ACTIVE_IDEMPOTENCY_INDEX_SQL)
+            violations = list(connection.execute("PRAGMA foreign_key_check(target_reservations)")) + list(
+                connection.execute("PRAGMA foreign_key_check(audit_events)")
+            )
+            if violations:
+                raise ContractIntegrityError(
+                    "Recovery store foreign key integrity failed after active-idempotency schema migration."
+                )
+            connection.execute("UPDATE metadata SET value = ? WHERE key = 'schema_version'", (str(_SCHEMA_VERSION),))
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.execute("PRAGMA foreign_keys = ON")
 
     def _mac(self, *components: bytes) -> str:
         """Length-frame the store ID and every component before HMAC'ing,
@@ -684,35 +826,140 @@ class SqliteRecoveryContractStore:
         return contract
 
     def find_by_idempotency_key(self, idempotency_key: str) -> RecoveryContract | None:
-        """Authoritative lookup keyed by `idempotency_key` (`NOT NULL
-        UNIQUE` in the schema -- at most one contract can ever exist for a
-        given key) rather than `contract_id`. The minimum store seam W3
-        Slice 3 needs to discover an already-existing contract for the
-        same prepared intent (ADR-028's re-invocation/deduplication
-        requirement) without a new persistent store, workflow database, or
-        identity concept -- `idempotency_key` already is the durable
-        identity `_create_contract()` derives and the schema already
-        indexes uniquely.
+        """Authoritative lookup for the single currently-*blocking*
+        (unresolved/actionable) contract for `idempotency_key`, if any --
+        NOT "the one contract for this key" (since 2026-09-05, multiple
+        historical rows may legitimately share a key; see
+        `BLOCKING_IDEMPOTENCY_STATES`). The active-state partial unique
+        index guarantees at most one row can ever match this query's
+        `state IN (<blocking states>)` filter for a given key, so this
+        remains a single-row lookup in practice -- just narrower than
+        before. The minimum store seam W3 Slice 3 needs to discover an
+        already-in-flight/unresolved contract for the same prepared
+        intent (ADR-028's re-invocation/deduplication requirement)
+        without a new persistent store, workflow database, or identity
+        concept -- `idempotency_key` already is the durable identity
+        `_create_contract()` derives.
 
-        Returns `None`, never raises, when no contract exists for this
-        key -- "no match" is a legitimate outcome here, not a fault. A
-        contract that *is* found is fully verified exactly like `load()`
-        -- integrity MAC, target reservation, and audit-trail continuity
-        -- before being returned. Read-only: performs no repair, infers no
-        authority, and creates no entitlement. Draws no conclusion about
-        the returned contract's *state* -- a caller must still check
-        `.state` itself; this method cannot turn a `FAILED`, terminal, or
-        `RECONCILIATION` contract into `PREPARED`."""
+        Returns `None`, never raises, when no *blocking* contract exists
+        for this key -- this is the common, expected outcome once a
+        historical attempt has been moved to a permitted terminal state
+        (e.g. via `expire_prepared()`), not a fault. A contract that *is*
+        found is fully verified exactly like `load()` -- integrity MAC,
+        target reservation, and audit-trail continuity -- before being
+        returned. Read-only: performs no repair, infers no authority, and
+        creates no entitlement.
+
+        Callers needing the *full* history for this key (terminal rows
+        included) must use `find_historical_by_idempotency_key()`
+        instead -- this method never silently returns an arbitrary
+        terminal row in place of "no blocking contract exists"."""
 
         with self._connect() as connection:
-            row = connection.execute(_SELECT_CONTRACT_BY_IDEMPOTENCY_KEY, (idempotency_key,)).fetchone()
+            row = connection.execute(
+                _SELECT_BLOCKING_CONTRACT_BY_IDEMPOTENCY_KEY, (idempotency_key, *_BLOCKING_STATES_ORDERED)
+            ).fetchone()
             if row is None:
                 return None
             contract = self._decode_row(row)
             if contract.idempotency_key != idempotency_key:
                 raise ContractIntegrityError("Stored Recovery Contract identity does not match its index.")
+            if contract.state.value not in _BLOCKING_STATES_ORDERED:
+                raise ContractIntegrityError("Recovery store active-idempotency query returned a non-blocking row.")
             self._verify_related_state(connection, contract)
         return contract
+
+    def find_historical_by_idempotency_key(self, idempotency_key: str) -> tuple[RecoveryContract, ...]:
+        """The separately-named, explicit "full history" counterpart to
+        `find_by_idempotency_key()` -- returns every contract (any state,
+        terminal or blocking) that has ever shared this semantic
+        idempotency identity, ordered by `contract_id`. Empty tuple, never
+        `None`/raise, when no contract exists for this key at all. Every
+        returned contract is individually integrity-verified exactly like
+        `load()`. Read-only, no repair, no entitlement -- purely an audit/
+        inspection API; callers deciding whether a *fresh* attempt may be
+        created must use `find_by_idempotency_key()`, never this method,
+        since this one deliberately does not distinguish blocking from
+        permitted rows for the caller."""
+
+        with self._connect() as connection:
+            rows = connection.execute(_SELECT_ALL_CONTRACTS_BY_IDEMPOTENCY_KEY, (idempotency_key,)).fetchall()
+            contracts = []
+            for row in rows:
+                contract = self._decode_row(row)
+                if contract.idempotency_key != idempotency_key:
+                    raise ContractIntegrityError("Stored Recovery Contract identity does not match its index.")
+                self._verify_related_state(connection, contract)
+                contracts.append(contract)
+        return tuple(contracts)
+
+    def expire_prepared(self, contract_id: str, *, expected_version: int, now: datetime) -> RecoveryContract:
+        """2026-09-05 owner-directed retry/idempotency redesign: the
+        narrow, explicit, owner/operator-invoked housekeeping transition
+        that closes out a `PREPARED` contract whose own authorization/
+        contract validity window has lapsed without confirmation or
+        execution ever beginning -- freeing its `idempotency_key` for a
+        freshly, independently authorized retry attempt (via the
+        active-state partial unique index above) while permanently
+        preserving this contract's own row and full audit-event history
+        unchanged. Never deletes anything. Never automatic -- there is no
+        background sweep, timer, or caller-supplied default that invokes
+        this; every call is an explicit, individually-reasoned operator
+        decision about one specific `contract_id`.
+
+        Requires, all fail-closed (raises `ContractConflictError`,
+        matching `transition()`'s own discipline, if any do not hold):
+        - the contract is currently `PREPARED` (not `PREPARING`,
+          `EXECUTING`, or any other state -- this method touches no other
+          state);
+        - `not contract.is_confirmed` -- a `PREPARED` contract that
+          somehow already carries confirmation evidence is a materially
+          different, more sensitive situation (something reached
+          `confirm()` but never got as far as a state transition) that
+          deserves manual `RECONCILIATION`-style attention, never a quiet
+          administrative close-out;
+        - the contract is genuinely `is_expired(now)` -- this method
+          never closes out a contract that could still be legitimately
+          confirmed/executed;
+        - `expected_version` matches the contract's current
+          `state_version` -- the same optimistic-concurrency guard every
+          other transition in this store already uses, making two
+          concurrent `expire_prepared()` calls for the same contract
+          safe (the second cleanly fails, never double-transitions).
+
+        Purely local: delegates to the already-existing, unmodified
+        `transition(..., target_state=RecoveryState.EXPIRED)` call this
+        store has supported since before this change (state_machine.py's
+        `LEGAL_TRANSITIONS` already permits `PREPARED -> EXPIRED`; the
+        only thing that was ever missing was a named, precondition-
+        checked entry point). `transition()`'s own anti-rollback-anchor
+        gate (`before_executing_transition()`) only fires when
+        `target_state == RecoveryState.EXECUTING` -- structurally
+        unreachable here, so this method makes zero witness/anchor
+        contact and zero pfSense contact, matching the audit finding this
+        design responds to (a `PREPARED` contract that never began
+        execution structurally cannot have contacted pfSense, regardless
+        of any unrelated witness-advance/contract-row crash history --
+        see this store's own crash-window characterization test)."""
+
+        contract = self.load(contract_id)
+        if contract.state is not RecoveryState.PREPARED:
+            raise ContractConflictError("Recovery Contract is not PREPARED; expire_prepared() refuses.")
+        if contract.is_confirmed:
+            raise ContractConflictError(
+                "Recovery Contract already carries confirmation evidence; expire_prepared() refuses "
+                "-- this requires manual reconciliation, not administrative close-out."
+            )
+        if not contract.is_expired(now=now):
+            raise ContractConflictError("Recovery Contract has not yet expired; expire_prepared() refuses.")
+        if contract.state_version != expected_version:
+            raise ContractConflictError("Recovery Contract state changed before expire_prepared() could act.")
+        return self.transition(
+            contract_id,
+            expected_state=RecoveryState.PREPARED,
+            expected_version=expected_version,
+            target_state=RecoveryState.EXPIRED,
+        )
 
     def confirm(self, contract_id: str, *, evidence: ConfirmationEvidence, expected_version: int) -> RecoveryContract:
         current = self.load(contract_id)

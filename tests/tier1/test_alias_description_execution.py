@@ -977,7 +977,12 @@ def test_schema_v6_contract_migrates_without_inferred_provenance(tmp_path: Path,
     migrated = reopened.load(legacy.contract_id)
     assert migrated.authorization_provenance is None
     with sqlite3.connect(database) as connection:
-        assert dict(connection.execute("SELECT key, value FROM metadata"))["schema_version"] == "7"
+        # 2026-09-05: a v6 store now migrates all the way to the current
+        # schema version (8) on a single reopen -- v6->v7 (this test's
+        # actual regression target: no inferred provenance) chains
+        # straight into v7->v8 (the active-idempotency partial index),
+        # rather than stopping at v7.
+        assert dict(connection.execute("SELECT key, value FROM metadata"))["schema_version"] == "8"
         migrated_payload = json.loads(connection.execute("SELECT payload FROM contracts").fetchone()[0])
     assert migrated_payload["authorization_provenance"] is None
 
