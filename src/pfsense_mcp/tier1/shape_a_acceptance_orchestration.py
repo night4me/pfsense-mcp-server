@@ -266,6 +266,20 @@ class ShapeAAcceptanceOrchestrator:
                 authorization = load_signed_plan_authorization_v2(self._paths.authorization_inbox_file)
             except ArtifactExchangeError:
                 return ProductOutcome(ProductOutcomeState.REFUSED)
+            # 2026-09-05 owner-directed retry/idempotency redesign, Slice 2:
+            # parity with production_runtime.py's own
+            # request_alias_description_change() -- see that method's
+            # identical comment for the full rationale. `existing is None`
+            # here means no currently-blocking contract, but terminal
+            # historical attempts may still exist; never silently reuse
+            # the fixed-inbox artifact that was already consumed for one
+            # of them.
+            for historical in self._store.find_historical_by_idempotency_key(idempotency_key):
+                if (
+                    historical.authorization_provenance is not None
+                    and historical.authorization_provenance.authorization_id == authorization.authorization_id
+                ):
+                    return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=historical.contract_id)
             try:
                 handle = self._core.authorize_and_create(
                     request,

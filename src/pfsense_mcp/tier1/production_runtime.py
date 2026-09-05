@@ -456,6 +456,26 @@ class ProductionAliasDescriptionRuntime:
                 authorization = load_signed_plan_authorization_v2(self._authorization_inbox_file)
             except ArtifactExchangeError:
                 return ProductOutcome(ProductOutcomeState.REFUSED)
+            # 2026-09-05 owner-directed retry/idempotency redesign, Slice 2:
+            # `existing is None` here means no currently-blocking contract
+            # exists, but one or more terminal historical attempts may --
+            # FAILED/ROLLED_BACK/EXPIRED no longer authorize a retry on
+            # their own, and the artifact still sitting in the fixed inbox
+            # may be the exact one already consumed for one of them. Never
+            # silently reuse it: refuse closed unless this artifact's own
+            # authorization_id is demonstrably different from every
+            # historical attempt's recorded provenance. This is necessary
+            # because the fixed-inbox artifact-exchange convention (never
+            # auto-deleted, checked idempotently) has no other signal for
+            # "this is the same stale artifact" short of the durable
+            # consumption store, which authorize_and_create() below would
+            # only catch AFTER attempting it.
+            for historical in self._store.find_historical_by_idempotency_key(idempotency_key):
+                if (
+                    historical.authorization_provenance is not None
+                    and historical.authorization_provenance.authorization_id == authorization.authorization_id
+                ):
+                    return ProductOutcome(ProductOutcomeState.REFUSED, contract_id=historical.contract_id)
             try:
                 handle = self.execution_core.authorize_and_create(
                     request,

@@ -621,7 +621,14 @@ def test_replay_is_refused_before_second_contract_or_handoff(tmp_path: Path, mon
     first = _authorize(core, private, request, prepared, authz=authz)
     with pytest.raises(BoundExecutionError):
         _authorize(core, private, request, prepared, authz=authz)
-    assert consumption.calls == 2
+    # 2026-09-05 owner-directed retry/idempotency redesign, Slice 2: the
+    # first contract is still PREPARED (currently blocking), so the second
+    # attempt is now refused by the pre-consumption active-idempotency
+    # preflight -- before try_consume() is ever reached a second time, not
+    # merely before contract creation. consumption.calls stays at 1 (only
+    # the first, successful consumption); it is no longer attempted for
+    # the collision itself.
+    assert consumption.calls == 1
     assert tuple(contract.contract_id for contract in store.all_contracts()) == (first.contract_id,)
     executor.execute.assert_not_called()
 

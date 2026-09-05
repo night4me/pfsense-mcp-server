@@ -277,6 +277,18 @@ class WriteExecutionCoreV1:
             ):
                 raise BoundExecutionError(_DENIED)
 
+            # 2026-09-05 owner-directed retry/idempotency redesign, Slice 2:
+            # refuse BEFORE try_consume() if a currently-blocking contract
+            # already exists for this exact semantic idempotency identity --
+            # never burn a fresh authorization on a collision the caller
+            # could have avoided. This is a preflight, not a race guard: the
+            # store's own active-idempotency partial unique index at INSERT
+            # time (create_authorized(), below) remains the sole authoritative
+            # defense against a concurrent attempt racing between this check
+            # and that INSERT.
+            if self._store.find_by_idempotency_key(self._derive_idempotency(fresh).idempotency_key) is not None:
+                raise BoundExecutionError(_DENIED)
+
             expires_at = min(now + self._contract_validity, authorization.expires_at)
             provenance = AuthorizationProvenance(
                 schema_version=AUTHORIZATION_PROVENANCE_SCHEMA_VERSION,

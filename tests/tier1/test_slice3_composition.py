@@ -782,6 +782,48 @@ def test_existing_non_prepared_contract_refuses_without_reauthorizing(tmp_path):
     assert len(second_handles.store.all_contracts()) == 1
 
 
+def test_fresh_authorization_succeeds_after_historical_failure(tmp_path):
+    """2026-09-05 owner-directed retry/idempotency redesign, Slice 2: the
+    positive counterpart to the refusal test immediately above -- a
+    terminal (FAILED) historical contract does not itself authorize a
+    retry, but does not permanently block one either. Once a genuinely
+    fresh, never-before-seen authorization artifact is presented for the
+    identical semantic intent, the composition layer must create a fresh
+    contract rather than treat the historical row as still active."""
+
+    client, authz_private, authorities, confirm_public, _confirm_private = _fixture(tmp_path)
+    first_handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
+    authorization_inbox_file, _pending, _signed, _preview = _paths(tmp_path)
+    first_authorization = _authorization(authz_private, _authorized_intent_digest(client))
+    write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(first_authorization))
+    first = _call_with_plan_digest(first_handles, first_authorization)
+    assert first.state is ProductOutcomeState.AWAITING_CONFIRMATION
+
+    first_handles.store.transition(
+        first.contract_id,
+        expected_state=RecoveryState.PREPARED,
+        expected_version=first_handles.store.load(first.contract_id).state_version,
+        target_state=RecoveryState.FAILED,
+    )
+
+    # A genuinely fresh authorization (a new random authorization_id, see
+    # _authorization()'s own os.urandom()-derived default) replaces the
+    # stale artifact in the fixed inbox.
+    second_authorization = _authorization(authz_private, _authorized_intent_digest(client))
+    assert second_authorization.authorization_id != first_authorization.authorization_id
+    authorization_inbox_file.unlink()
+    write_secure_new(authorization_inbox_file, plan_authorization_v2_to_bytes(second_authorization))
+
+    second_handles = _new_runtime(tmp_path, client, authorities=authorities, confirm_public=confirm_public)
+    outcome = _call_with_plan_digest(second_handles, second_authorization)
+
+    assert outcome.state is ProductOutcomeState.AWAITING_CONFIRMATION
+    assert outcome.contract_id != first.contract_id
+    assert second_handles.consumption.calls == 1
+    assert {c.contract_id for c in second_handles.store.all_contracts()} == {first.contract_id, outcome.contract_id}
+    assert second_handles.store.load(first.contract_id).state is RecoveryState.FAILED
+
+
 # --------------------------------------------------------------------------
 # Confirmation-phase adversarial cases
 # --------------------------------------------------------------------------
