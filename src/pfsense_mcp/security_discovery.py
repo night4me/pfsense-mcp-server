@@ -62,14 +62,31 @@ from __future__ import annotations
 
 import os
 import ssl
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
 
 import httpx
 
 from .capabilities import Capability
 from .errors import ConfigurationError
 from .profiles import get_profile
+from .security_posture_types import (
+    AnchorAssurance as AnchorAssurance,
+)
+from .security_posture_types import (
+    AnchorAssuranceDiscovery as AnchorAssuranceDiscovery,
+)
+from .security_posture_types import (
+    AnchorEvidenceState as AnchorEvidenceState,
+)
+from .security_posture_types import (
+    CapabilityPosture as CapabilityPosture,
+)
+from .security_posture_types import (
+    CapabilityPostureDiscovery as CapabilityPostureDiscovery,
+)
+from .security_posture_types import (
+    SecurityPostureDiscovery as SecurityPostureDiscovery,
+)
 from .tier1.anti_rollback import AnchorProvisioningStatus
 from .tier1.anti_rollback_tpm_witness import TpmHostWitnessAnchor
 from .tier1.errors import AnchorUnavailableError, Tier1ConfigurationError, Tier1Error
@@ -83,82 +100,13 @@ _WITNESS_CLIENT_CERT_VAR = "PFSENSE_TIER1_WITNESS_CLIENT_CERT_FILE"
 _WITNESS_CLIENT_KEY_VAR = "PFSENSE_TIER1_WITNESS_CLIENT_KEY_FILE"
 _WITNESS_SERVER_CA_VAR = "PFSENSE_TIER1_WITNESS_SERVER_CA_FILE"
 
-
-class CapabilityPosture(str, Enum):
-    """The accepted `ADR-021` capability-posture axis. Deliberately only
-    these two values -- never collapsed with anchor assurance into a
-    three-level ladder (`ADR-021`'s own rejected Model A)."""
-
-    READ_ONLY = "read_only"
-    WRITE_PROTECTED = "write_protected"
-
-
-class AnchorAssurance(str, Enum):
-    """The accepted `ADR-021` anchor-assurance axis. `SOFTWARE` is a
-    real value in the model but is never resolved by this module today --
-    `docs/SECURITY_POSTURE_PROVISIONING.md` records that no
-    remote-witness backend exists anywhere in this repository yet
-    (Phase G, unimplemented); reporting it here would assert a
-    capability that cannot currently be verified."""
-
-    NONE = "none"
-    SOFTWARE = "software"
-    HARDWARE_WITNESS = "hardware_witness"
-    UNKNOWN = "unknown"
-
-
-class AnchorEvidenceState(str, Enum):
-    """Finer-grained evidence trail behind `AnchorAssurance`'s coarse
-    value -- required so discovery can distinguish "nothing configured"
-    from "configured but not provisioned" from "provisioned but the
-    live witness could not be verified", per `ADR-021` Phase B's own
-    "do not infer ACTIVE merely because files or configuration exist"
-    requirement."""
-
-    UNCONFIGURED = "unconfigured"
-    CONFIGURATION_INVALID = "configuration_invalid"
-    CONFIGURED_NOT_CREATED = "configured_not_created"
-    STORE_ERROR = "store_error"
-    CONFIGURED_UNPROVISIONED = "configured_unprovisioned"
-    PROVISIONED_UNVERIFIED = "provisioned_unverified"
-    PROVISIONED_UNREACHABLE = "provisioned_unreachable"
-    PROVISIONED_VERIFIED = "provisioned_verified"
-    PROVISIONED_MISMATCH = "provisioned_mismatch"
-
-
-@dataclass(frozen=True)
-class CapabilityPostureDiscovery:
-    value: CapabilityPosture
-    configured_profile_name: str
-    configured_profile_valid: bool
-    write_capabilities_active: int
-    write_capabilities_total: int
-    allow_list_entries: tuple[str, ...]
-    evidence: tuple[str, ...] = field(default_factory=tuple)
-
-
-@dataclass(frozen=True)
-class AnchorAssuranceDiscovery:
-    value: AnchorAssurance
-    evidence_state: AnchorEvidenceState
-    store_configured: bool
-    store_exists: bool | None
-    seeded: bool | None
-    complete: bool | None
-    handle: str | None
-    baseline: int | None
-    provisioned_at: str | None
-    witness_configured: bool
-    witness_reachable: bool | None
-    witness_value: int | None
-    witness_matches_baseline: bool | None
-    evidence: tuple[str, ...] = field(default_factory=tuple)
-
-
-@dataclass(frozen=True)
-class SecurityPostureDiscovery:
-    capability_posture: CapabilityPostureDiscovery
-    anchor_assurance: AnchorAssuranceDiscovery
+# CapabilityPosture, AnchorAssurance, AnchorEvidenceState,
+# CapabilityPostureDiscovery, AnchorAssuranceDiscovery, and
+# SecurityPostureDiscovery now live in security_posture_types.py (see
+# that module's own docstring for why) and are re-exported above via
+# the explicit `as X` form mypy's `no_implicit_reexport` requires --
+# every existing caller continues to import them from this module
+# unchanged; only their definition site moved.
 
 
 def discover_capability_posture(env: dict[str, str] | None = None) -> CapabilityPostureDiscovery:

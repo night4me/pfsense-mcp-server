@@ -127,13 +127,28 @@ def test_never_imports_write_or_execution_capable_modules():
 
 def test_public_surface_is_exactly_the_reviewed_discovery_api():
     """The smaller and more exact this set, the easier the module stays
-    auditable as "read-only discovery data model, nothing else"."""
+    auditable as "read-only discovery data model, nothing else".
+
+    Six of the reviewed names (`CapabilityPosture`, `AnchorAssurance`,
+    `AnchorEvidenceState`, `CapabilityPostureDiscovery`,
+    `AnchorAssuranceDiscovery`, `SecurityPostureDiscovery`) moved to
+    `security_posture_types.py` (2026-09-05, ADR-021/022 amendment) and
+    are re-exported here via the explicit `from X import Y as Y` form --
+    counted as part of this module's own public surface exactly as if
+    still locally defined, since every existing caller still imports
+    them from `security_discovery` unchanged."""
 
     tree = _tree(DISCOVERY_MODULE_PATH)
     top_level_public_names = {
         node.name
         for node in ast.iter_child_nodes(tree)
         if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and not node.name.startswith("_")
+    } | {
+        alias.asname
+        for node in ast.iter_child_nodes(tree)
+        if isinstance(node, ast.ImportFrom) and node.module == "security_posture_types"
+        for alias in node.names
+        if alias.asname == alias.name
     }
     assert top_level_public_names == _EXPECTED_PUBLIC_SURFACE
 

@@ -76,6 +76,7 @@ _EXPECTED_PUBLIC_SURFACE = {
     "PlanStep",
     "SecurityPosturePlan",
     "generate_security_posture_plan",
+    "generate_security_posture_plan_from_discovery",
 }
 
 _NEVER_EMITTED_ENUM_LITERALS = {

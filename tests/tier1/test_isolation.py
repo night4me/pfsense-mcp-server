@@ -112,6 +112,20 @@ def test_tier1_is_not_imported_outside_its_inert_package():
     # exactly. See tests/test_security_setup_plan_digest_isolation.py
     # for the matching stronger, dedicated tests, including that this is
     # the *only* pfsense_mcp.tier1 submodule this file ever imports.
+    #
+    # security_discovery_export.py is the eighth such exception
+    # (2026-09-05, ADR-021/022 amendment: off-runtime anchor-assurance
+    # discovery for the isolated Batch-1 signer from a signed
+    # `AnchorEvidenceExport`, never from the runtime RecoveryContract
+    # store). Deliberately a separate module from security_discovery.py
+    # -- see its own module docstring -- so that its only
+    # pfsense_mcp.tier1 imports are `tier1.anchor_evidence_export`,
+    # `tier1.anti_rollback_tpm_witness.TpmHostWitnessAnchor` (read-only,
+    # calls only `.read()`, never `.advance()`), `tier1.ed25519_authority
+    # .PinnedAuthoritySet`, and `tier1.errors` -- never `tier1.
+    # production_store`/`sqlite3`, never a store or contract key of any
+    # kind. See tests/test_security_discovery_export_isolation.py for the
+    # matching stronger, dedicated tests.
     exempt = {
         "tier1_anchor_check.py",
         "security_discovery.py",
@@ -120,6 +134,7 @@ def test_tier1_is_not_imported_outside_its_inert_package():
         "security_authorization_verifier.py",
         "tier1_write_bridge.py",
         "security_setup_plan_digest.py",
+        "security_discovery_export.py",
     }
     production = ROOT / "src/pfsense_mcp"
     offenders = [

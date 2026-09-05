@@ -779,15 +779,13 @@ def _block_for_mismatch(step: PlanStep) -> PlanStep:
     )
 
 
-def generate_security_posture_plan(
-    target_capability_posture: CapabilityPosture,
-    target_anchor_assurance: AnchorAssurance,
-    env: dict[str, str] | None = None,
-) -> SecurityPosturePlan:
-    """Read-only. Calls `discover_security_posture()` exactly once, then
-    performs only pure computation. Never provisions, activates,
-    deactivates, repairs, mutates, or reconfigures anything -- see this
-    module's own docstring for the full mutation-free argument.
+def _coerce_and_validate_targets(
+    target_capability_posture: CapabilityPosture, target_anchor_assurance: AnchorAssurance
+) -> tuple[CapabilityPosture, AnchorAssurance]:
+    """Shared by both plan-generation entry points below, so a malformed
+    or evidence-only target is rejected identically regardless of which
+    evidence source (live store-backed discovery or an authenticated
+    `AnchorEvidenceExport`) the plan is generated from.
 
     `AnchorAssurance.UNKNOWN` is evidence-only (returned by discovery to
     mean "could not determine"); it is never a legal *target* and is
@@ -817,7 +815,74 @@ def generate_security_posture_plan(
             "'could not determine', never a legitimate target selection."
         )
 
+    return target_capability_posture, target_anchor_assurance
+
+
+def generate_security_posture_plan(
+    target_capability_posture: CapabilityPosture,
+    target_anchor_assurance: AnchorAssurance,
+    env: dict[str, str] | None = None,
+) -> SecurityPosturePlan:
+    """Read-only. Calls `discover_security_posture()` exactly once, then
+    performs only pure computation. Never provisions, activates,
+    deactivates, repairs, mutates, or reconfigures anything -- see this
+    module's own docstring for the full mutation-free argument.
+
+    Everything past evidence collection is delegated to
+    `_build_plan_from_discovery()`, which `generate_security_posture_
+    plan_from_discovery()` (below) also calls -- the exact same pure
+    computation runs regardless of whether the evidence came from the
+    live runtime store or an authenticated `AnchorEvidenceExport`, so
+    `compute_plan_digest()` is guaranteed byte-identical for equivalent
+    evidence (2026-09-05, ADR-021/022 amendment for the isolated
+    Batch-1 signer)."""
+
+    target_capability_posture, target_anchor_assurance = _coerce_and_validate_targets(
+        target_capability_posture, target_anchor_assurance
+    )
     current = discover_security_posture(env)
+    return _build_plan_from_discovery(current, target_capability_posture, target_anchor_assurance)
+
+
+def generate_security_posture_plan_from_discovery(
+    current: SecurityPostureDiscovery,
+    target_capability_posture: CapabilityPosture,
+    target_anchor_assurance: AnchorAssurance,
+) -> SecurityPosturePlan:
+    """The off-runtime counterpart to `generate_security_posture_plan()`
+    for an isolated verifier (the Batch-1 signer) that has already
+    independently produced a `SecurityPostureDiscovery` -- from
+    `security_discovery_export.discover_anchor_assurance_from_export()`
+    plus `security_discovery.discover_capability_posture()` -- rather
+    than from `discover_security_posture()`'s own store-backed read.
+
+    Never calls `discover_security_posture()` or anything else that
+    could reach the runtime RecoveryContract store: `current` is
+    accepted as an already-computed value, entirely the caller's
+    responsibility to have obtained legitimately. Delegates to the
+    exact same `_build_plan_from_discovery()` `generate_security_
+    posture_plan()` uses -- no second digest algorithm, no
+    signer-specific plan schema; a `current` with digest-relevant
+    fields (`capability_posture.value`, `anchor_assurance.{value,
+    evidence_state, baseline, witness_value, provisioned_at}`) equal to
+    what the store-backed path would have produced yields a
+    byte-identical `compute_plan_digest()` result."""
+
+    target_capability_posture, target_anchor_assurance = _coerce_and_validate_targets(
+        target_capability_posture, target_anchor_assurance
+    )
+    return _build_plan_from_discovery(current, target_capability_posture, target_anchor_assurance)
+
+
+def _build_plan_from_discovery(
+    current: SecurityPostureDiscovery,
+    target_capability_posture: CapabilityPosture,
+    target_anchor_assurance: AnchorAssurance,
+) -> SecurityPosturePlan:
+    """Pure computation over an already-collected `SecurityPostureDiscovery`
+    plus already-coerced/validated targets -- no I/O, no discovery call
+    of its own. The sole shared body behind both `generate_security_
+    posture_plan()` and `generate_security_posture_plan_from_discovery()`."""
 
     validity, validity_evidence = _evaluate_target_validity(target_capability_posture, target_anchor_assurance)
     notes = (_PLAN_IS_NOT_AUTHORIZATION_NOTE,)
