@@ -121,7 +121,7 @@ to self-attestation with zero security value — the signer would merely be
 re-asserting its own prior belief, defeating the reason
 `AnchorEvidenceExport` exists at all.
 
-### Candidate 3 — The TPM host witness daemon (192.168.1.39) gains a signing role
+### Candidate 3 — The TPM host witness daemon (`192.0.2.39`) gains a signing role
 
 Rejected for now, not permanently. The daemon's role today is strictly
 `GET /anchor/read` (open to any mTLS-trusted client) and `POST /anchor/
