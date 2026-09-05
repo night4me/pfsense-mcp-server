@@ -105,10 +105,15 @@ and unexpired. Prompt text or an agent boolean is not owner authentication.
 | RECONCILIATION | VERIFIED / FAILED / ROLLING_BACK / ROLLED_BACK / ROLLBACK_FAILED | recorded operator conclusion | manual only |
 
 Every other transition is illegal. FAILED, ROLLED_BACK, ROLLBACK_FAILED, and
-EXPIRED do not reopen. State/version compare-and-set, idempotency uniqueness,
-and canonical-target reservation are atomic with value-free transition audit.
-The generic store refuses all manual-only edges; a separately reviewed resolver
-must authenticate evidence and record the conclusion before using one.
+EXPIRED do not reopen. State/version compare-and-set and canonical-target
+reservation are atomic with value-free transition audit. Idempotency
+uniqueness (ADR-038) is scoped to contracts whose real-world outcome is not
+yet resolved (`state_machine.blocks_fresh_idempotency_attempt()`) -- a FAILED,
+ROLLED_BACK, or EXPIRED historical contract may coexist with a fresh,
+independently authorized contract sharing its `idempotency_key`, though it
+never authorizes that fresh contract on its own. The generic store refuses
+all manual-only edges; a separately reviewed resolver must authenticate
+evidence and record the conclusion before using one.
 
 ## Persistence and integrity
 
@@ -117,10 +122,16 @@ must authenticate evidence and record the conclusion before using one.
 - HMAC binds the complete canonical record to one store ID. The key is supplied
   externally, is at least 256 bits, and is never stored in the database.
 - Store schema v6 requires `lifecycle_locator`; legacy v5 records fail closed
-  rather than inferring a guard.
+  rather than inferring a guard. Store schema v8 (ADR-038) replaces the
+  column-level `idempotency_key` uniqueness constraint with a partial unique
+  index scoped to unresolved-outcome states; a v7->v8 migration rebuilds the
+  table without altering any row's payload, MAC, or state.
 - SQLite uses durable transactions and owner-only directory/file permissions.
-- Duplicated operation/idempotency identities and conflicting target
-  reservations fail closed.
+- Duplicated operation identities and conflicting target reservations fail
+  closed unconditionally. Duplicated idempotency identities fail closed only
+  while a currently-unresolved (blocking) contract exists for that identity
+  (ADR-038); a duplicate against a FAILED/ROLLED_BACK/EXPIRED historical
+  contract is permitted.
 - HMAC and denormalized index columns are cross-checked on every load/scan.
 - Startup verifies exact column types/nullability, primary and unique keys, and
   cascading foreign keys; matching column names alone are insufficient.
