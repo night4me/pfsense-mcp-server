@@ -677,6 +677,11 @@ exact authorization wording only when real and imminent).
 - [`SECURITY_POSTURE_PROVISIONING.md`](../SECURITY_POSTURE_PROVISIONING.md) —
   companion specification (per-axis state machine detail, affected
   code inventory, phased implementation plan)
+- [`ADR-022`'s 2026-09-05 amendment](ADR-022-execution-authorization-boundary.md#amendment-2026-09-05-off-runtime-anchor-assurance-verification-via-anchorevidenceexport) —
+  adds an off-runtime, `AnchorEvidenceExport`-based anchor-assurance
+  discovery path for an isolated verifier (`security_discovery_export.py`);
+  this ADR's own `discover_anchor_assurance()`/`discover_security_posture()`
+  are unmodified by it
 - [`ROADMAP.md`](../ROADMAP.md) — "Operator setup and security
   postures" entry this ADR formalizes
 - `reports-ai/reviews/WITNESS_DAEMON_DEPLOYMENT_CONVERGENCE_REVIEW_2026-08-10.md` —

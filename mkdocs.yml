@@ -166,6 +166,7 @@ nav:
           - Capability adapter contract: tier1/specs/capability_adapter_contract.md
           - Adapter restrictions: tier1/specs/adapter_restrictions.md
           - Disposable-lab execution model: tier1/specs/disposable_lab_execution_model.md
+          - AnchorEvidenceExport trust boundary: tier1/specs/anchor_evidence_export_trust_boundary.md
   - Release and contributing:
       - Release checklist: RELEASE_CHECKLIST.md
       - Public launch checklist: PUBLIC_LAUNCH_CHECKLIST.md
