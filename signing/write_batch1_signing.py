@@ -90,13 +90,18 @@ from pfsense_mcp.security_authorization import (
     sign_plan_authorization_v2,
 )
 from pfsense_mcp.security_authorization_verifier import verify_plan_authorization_v2_signature
+from pfsense_mcp.security_discovery import discover_capability_posture
+from pfsense_mcp.security_discovery_export import discover_anchor_assurance_from_export
 from pfsense_mcp.security_plan import (
     MILESTONE_9_WRITE_STEP_ID,
     MILESTONE_9_WRITE_TARGET_ANCHOR_ASSURANCE,
     MILESTONE_9_WRITE_TARGET_CAPABILITY_POSTURE,
     generate_security_posture_plan,
+    generate_security_posture_plan_from_discovery,
 )
 from pfsense_mcp.security_plan_digest import compute_plan_digest
+from pfsense_mcp.security_posture_types import SecurityPostureDiscovery
+from pfsense_mcp.tier1.anchor_evidence_export import anchor_evidence_export_from_bytes
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.confirmation_providers import ACCEPTED_ALGORITHM, Ed25519ConfirmationVerifier, signing_payload
 from pfsense_mcp.tier1.ed25519_authority import PinnedAuthority, PinnedAuthoritySet
@@ -301,7 +306,22 @@ def sign_authorization_preview(
     issued_at: datetime,
     expires_at: datetime,
     env: dict[str, str] | None = None,
+    discovery: SecurityPostureDiscovery | None = None,
 ) -> PlanAuthorizationV2:
+    """`discovery`, when supplied (2026-09-05, ADR-021/022 amendment),
+    is an already-independently-derived `SecurityPostureDiscovery` --
+    e.g. from `_build_discovery_from_export()`, itself from a signed
+    `AnchorEvidenceExport` -- used in place of a fresh store-backed
+    `discover_security_posture()` read. This is the isolated signer's
+    own path: it never holds a copy of the runtime `RecoveryContract`
+    store, so it cannot call `generate_security_posture_plan()`
+    (`env=None`/`env=os.environ` path) at all. `generate_security_
+    posture_plan_from_discovery()` runs the exact same pure plan-
+    construction body either way, so `compute_plan_digest()` is
+    unaffected by which path supplied the evidence -- see
+    `tests/test_security_plan_from_discovery.py`. `env` is ignored
+    when `discovery` is supplied."""
+
     if preview.capability_symbol != capability_symbol:
         raise SigningError(
             f"authorization preview names capability {preview.capability_symbol!r}, "
@@ -314,9 +334,14 @@ def sign_authorization_preview(
     if preview.requested_step_id != MILESTONE_9_WRITE_STEP_ID:
         raise SigningError("authorization preview names an unsupported step_id")
 
-    plan = generate_security_posture_plan(
-        MILESTONE_9_WRITE_TARGET_CAPABILITY_POSTURE, MILESTONE_9_WRITE_TARGET_ANCHOR_ASSURANCE, env
-    )
+    if discovery is not None:
+        plan = generate_security_posture_plan_from_discovery(
+            discovery, MILESTONE_9_WRITE_TARGET_CAPABILITY_POSTURE, MILESTONE_9_WRITE_TARGET_ANCHOR_ASSURANCE
+        )
+    else:
+        plan = generate_security_posture_plan(
+            MILESTONE_9_WRITE_TARGET_CAPABILITY_POSTURE, MILESTONE_9_WRITE_TARGET_ANCHOR_ASSURANCE, env
+        )
     if not plan.safe_to_proceed:
         raise SigningError(
             "independently-derived security posture is not currently safe to proceed -- "
@@ -413,6 +438,45 @@ def _load_confirmation_config() -> _ConfirmationSigningConfig:
     )
 
 
+_ANCHOR_EVIDENCE_EXPORT_FILE_VAR = "PFSENSE_SIGNING_ANCHOR_EVIDENCE_EXPORT_FILE"
+_POSTURE_EVIDENCE_AUTHORITY_FILE_VAR = "PFSENSE_SIGNING_POSTURE_EVIDENCE_AUTHORITY_FILE"
+_EXPECTED_STORE_ID_VAR = "PFSENSE_SIGNING_EXPECTED_STORE_ID"
+_ANCHOR_EVIDENCE_EXPORT_MAX_BYTES = 8192
+
+
+def _build_discovery_from_export(env: dict[str, str]) -> SecurityPostureDiscovery | None:
+    """Opt-in, env-var-gated: builds a `SecurityPostureDiscovery` from a
+    signed `AnchorEvidenceExport` instead of the runtime store, for the
+    isolated signer (2026-09-05, ADR-021/022 amendment). Returns `None`
+    (meaning: use the ordinary store-backed path) when none of the
+    three vars are set -- existing alias-signer behavior is completely
+    unaffected. Fails closed (raises `SigningError`) on a partial
+    configuration -- never silently falls back to the store path when
+    the operator's intent was clearly the export path."""
+
+    export_file = env.get(_ANCHOR_EVIDENCE_EXPORT_FILE_VAR)
+    authority_file = env.get(_POSTURE_EVIDENCE_AUTHORITY_FILE_VAR)
+    expected_store_id = env.get(_EXPECTED_STORE_ID_VAR)
+    if not export_file and not authority_file and not expected_store_id:
+        return None
+    if not export_file or not authority_file or not expected_store_id:
+        raise SigningError(
+            f"AnchorEvidenceExport signing configuration is partial -- {_ANCHOR_EVIDENCE_EXPORT_FILE_VAR}, "
+            f"{_POSTURE_EVIDENCE_AUTHORITY_FILE_VAR}, and {_EXPECTED_STORE_ID_VAR} are required together."
+        )
+
+    raw_export = _read_secure(Path(export_file), max_bytes=_ANCHOR_EVIDENCE_EXPORT_MAX_BYTES)
+    export = anchor_evidence_export_from_bytes(raw_export)
+    posture_evidence_authority = _load_pinned_authority_file(Path(authority_file))
+    authorities = PinnedAuthoritySet((posture_evidence_authority,))
+
+    anchor_assurance = discover_anchor_assurance_from_export(
+        export, authorities=authorities, expected_store_id=expected_store_id, now=datetime.now(timezone.utc), env=env
+    )
+    capability_posture = discover_capability_posture(env)
+    return SecurityPostureDiscovery(capability_posture=capability_posture, anchor_assurance=anchor_assurance)
+
+
 def _one_authorization(config: _AuthorizationSigningConfig, capability_symbol: str) -> int:
     paths = artifact_paths_for(config.artifact_base_directory, capability_symbol)
     if not paths.authorization_preview_file.exists():
@@ -426,6 +490,7 @@ def _one_authorization(config: _AuthorizationSigningConfig, capability_symbol: s
     preview = load_shape_a_authorization_preview(paths.authorization_preview_file, integrity_key=integrity_key)
     authority = _load_pinned_authority_file(config.authorization_authority_file)
     private_key = _load_private_key(config.authorization_private_key_file)
+    discovery = _build_discovery_from_export(dict(os.environ))
 
     if not _prompt_operator_approval(render_authorization_review(preview)):
         print(f"[{capability_symbol}] refused -- no signature produced.")
@@ -440,6 +505,7 @@ def _one_authorization(config: _AuthorizationSigningConfig, capability_symbol: s
         authorization_id=f"authz-{secrets.token_hex(_AUTHORIZATION_ID_BYTES)}",
         issued_at=now,
         expires_at=now + _AUTHORIZATION_VALIDITY,
+        discovery=discovery,
     )
     write_secure_new(paths.authorization_inbox_file, plan_authorization_v2_to_bytes(authz))
     print(f"[{capability_symbol}] signed PlanAuthorizationV2 written to {paths.authorization_inbox_file}")
