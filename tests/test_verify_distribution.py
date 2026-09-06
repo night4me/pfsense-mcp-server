@@ -44,6 +44,15 @@ def test_member_policy_allows_security_regression_test_name():
     validate_member_name("project/tests/test_credential_non_disclosure.py")
 
 
+def test_member_policy_allows_tier1_lab_credential_recovery_module():
+    validate_member_name("project/src/pfsense_mcp/security_tier1_lab_credential_recovery.py")
+
+
+def test_member_policy_still_rejects_other_credential_like_filenames():
+    with pytest.raises(DistributionVerificationError, match="credential-like filename"):
+        validate_member_name("project/src/pfsense_mcp/some_other_credential_helper.py")
+
+
 @pytest.mark.parametrize("path", [b"/home/operator/project", b"/Users/operator/project"])
 def test_member_content_rejects_machine_specific_home_paths(path):
     with pytest.raises(DistributionVerificationError, match="machine-specific home path"):

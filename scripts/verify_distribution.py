@@ -32,7 +32,17 @@ _FORBIDDEN_COMPONENTS = {
 }
 _FORBIDDEN_SUFFIXES = {".bak", ".db", ".key", ".log", ".p12", ".pfx", ".pyc", ".sqlite", ".sqlite3"}
 _FORBIDDEN_FILENAMES = {".coverage", "agents.md", "id_dsa", "id_ecdsa", "id_ed25519", "id_rsa"}
-_APPROVED_SECURITY_TEST = "test_credential_non_disclosure.py"
+_APPROVED_CREDENTIAL_LIKE_FILENAMES = frozenset(
+    {
+        "test_credential_non_disclosure.py",
+        # security_tier1_lab_credential_recovery.py is a LAB-only credential
+        # *recovery* driver: it contains recovery logic, not embedded
+        # credential material, and is intentionally distributed with the
+        # package. This exact-filename exception does not widen the general
+        # secret/credential heuristic for any other file.
+        "security_tier1_lab_credential_recovery.py",
+    }
+)
 _PRIVATE_KEY_TYPES = (b"", b"RSA ", b"EC ", b"OPENSSH ")
 _LOCAL_HOME_MARKERS = (b"/home/", b"/Users/")
 
@@ -61,7 +71,7 @@ def validate_member_name(raw_name: str) -> PurePosixPath:
         raise DistributionVerificationError(f"environment file in distribution: {raw_name!r}")
     if PurePosixPath(filename).suffix in _FORBIDDEN_SUFFIXES:
         raise DistributionVerificationError(f"prohibited file type in distribution: {raw_name!r}")
-    if filename != _APPROVED_SECURITY_TEST and ("secret" in filename or "credential" in filename):
+    if filename not in _APPROVED_CREDENTIAL_LIKE_FILENAMES and ("secret" in filename or "credential" in filename):
         raise DistributionVerificationError(f"credential-like filename in distribution: {raw_name!r}")
     return path
 
