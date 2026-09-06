@@ -2870,6 +2870,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#amendment-2026-09-05-off-runtime-anchor-assurance-verification-via-anchorevidenceexport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amendment (2026-09-05): off-runtime anchor-assurance verification via AnchorEvidenceExport
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#references" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3294,6 +3305,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -3657,6 +3672,62 @@
     
   
     Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/anchor_evidence_export_trust_boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnchorEvidenceExport trust boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/shape_a_batch_manifest_ceremony/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
   
 
     
@@ -5086,6 +5157,17 @@
     <span class="md-ellipsis">
       
         Architectural consistency review (owner request, 2026-08-11)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amendment-2026-09-05-off-runtime-anchor-assurance-verification-via-anchorevidenceexport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amendment (2026-09-05): off-runtime anchor-assurance verification via AnchorEvidenceExport
       
     </span>
   </a>
@@ -6597,6 +6679,92 @@ all four checks (fresh <code>plan_digest</code> match, unexpired, unconsumed,
 passing freshness re-check) unconditionally; persistence only affects
 how long an artifact remains <em>eligible</em> to attempt those checks, never
 substitutes for any of them.</p>
+<h2 id="amendment-2026-09-05-off-runtime-anchor-assurance-verification-via-anchorevidenceexport">Amendment (2026-09-05): off-runtime anchor-assurance verification via <code>AnchorEvidenceExport</code><a class="headerlink" href="#amendment-2026-09-05-off-runtime-anchor-assurance-verification-via-anchorevidenceexport" title="Permanent link">&para;</a></h2>
+<p>Prompted by a real Round-1 Batch-1 authorization-signing failure: the
+isolated Batch-1 signer's freshly re-derived <code>PlanDigest</code> did not match
+an authorization preview's own copy. Forensic reconciliation proved the
+cause was an environment-completeness gap in the signing instructions
+given to the signer (missing <code>PFSENSE_TIER1_STORE_PATH</code>/<code>_KEY_FILE</code>/
+<code>PFSENSE_TIER1_WITNESS_*</code> env vars), not a real security-state drift and
+not a code regression — but it surfaced a genuine architectural gap: the
+signer's <em>only</em> way to independently re-derive anchor assurance was
+holding a periodically-stale copy of the runtime <code>RecoveryContract</code>
+store plus its integrity key, which is broader trust than the signer's
+actual job requires. This amendment records the narrow fix, reviewed
+and approved by the owner ("OWNER DECISION — APPROVED WITH
+TRUST-BOUNDARY CONSTRAINTS," 2026-09-05) as an amendment to this ADR
+(and, for its discovery-model implications, <code>ADR-021</code>) rather than a new
+ADR, per <code>ADR-022</code>'s own precedent of extending, not reopening, existing
+execution-boundary decisions. See
+<a href="../../tier1/specs/anchor_evidence_export_trust_boundary/"><code>docs/tier1/specs/anchor_evidence_export_trust_boundary.md</code></a>
+for the full design record, including the candidate key-custody analysis.</p>
+<p>This amendment makes the following 7 points explicit:</p>
+<ol>
+<li><strong>Runtime discovery is unchanged.</strong> <code>security_discovery.
+   discover_anchor_assurance()</code>/<code>discover_security_posture()</code> (<code>ADR-021</code>
+   Phase B) are not modified by this amendment — same store read, same
+   witness client, same <code>AnchorAssuranceDiscovery</code> construction. The new
+   <code>security_discovery_export.discover_anchor_assurance_from_export()</code>
+   is an <strong>additional</strong>, off-runtime-only path for an isolated verifier,
+   never a replacement for or a variant on the runtime path.</li>
+<li><strong>The off-runtime verifier consumes an authenticated equivalent of
+   the same evidence, never a lesser substitute.</strong> A signed
+   <code>AnchorEvidenceExport</code> (<code>tier1/anchor_evidence_export.py</code>) carries
+   exactly <code>schema_version, store_id, handle, baseline, provisioned_at,
+   issued_at, expires_at</code> — the precise fields <code>evidence_fingerprint_
+   payload()</code> (below) actually consumes, no more. The signer still
+   performs its own live TPM witness read and cross-checks it against
+   the export's claimed baseline; it never trusts the export's baseline
+   as sufficient on its own.</li>
+<li><strong>Canonical <code>PlanDigest</code> semantics are unchanged.</strong>
+   <code>compute_plan_digest()</code>/<code>_plan_payload()</code>/<code>evidence_fingerprint_
+   payload()</code> (<code>security_plan_digest.py</code>) are not modified. There is no
+   second digest algorithm and no signer-specific plan or digest schema.
+   <code>security_plan.generate_security_posture_plan_from_discovery()</code> is a
+   new entry point that delegates to the exact same pure
+   <code>_build_plan_from_discovery()</code> body <code>generate_security_posture_
+   plan()</code> already used — proven, not merely asserted, to produce a
+   byte-identical <code>compute_plan_digest()</code> result for digest-relevant-
+   equivalent store-based and export-based evidence
+   (<code>tests/test_security_plan_from_discovery.py</code>).</li>
+<li><strong>Trusting a preview's own claimed <code>requested_plan_digest</code> remains
+   forbidden.</strong> This was true before this amendment
+   (<code>sign_authorization_preview()</code> in <code>signing/write_batch1_signing.py</code>
+   already independently recomputes the digest and refuses on
+   mismatch — the exact mechanism that correctly failed closed in the
+   Round-1 incident this amendment responds to) and remains true after
+   it: an <code>AnchorEvidenceExport</code> changes <em>what evidence the signer's own
+   independent recomputation is grounded in</em>, never <em>whether</em> the
+   signer independently recomputes at all.</li>
+<li><strong>Replicating the runtime <code>RecoveryContract</code> store, its encryption
+   key, or its integrity key onto the signer remains forbidden.</strong> This
+   is the specific practice this amendment eliminates the <em>need</em> for,
+   not merely a restated existing rule — <code>discover_anchor_assurance_
+   from_export()</code> never imports <code>production_store.py</code> or <code>sqlite3</code>,
+   proven by dedicated AST isolation tests
+   (<code>tests/test_security_discovery_export_isolation.py</code>).</li>
+<li><strong>A signer's witness-client identity must not be advance-authorized.</strong>
+   The signer performs only a read-only <code>GET /anchor/read</code> witness call,
+   identical in shape to the runtime's own read-only witness use, and
+   must never be present in the witness daemon's <code>WITNESS_ADVANCE_
+   CLIENT_FINGERPRINTS</code> allow-list. This amendment does not itself
+   verify the signer's live daemon configuration (that is an
+   owner-only, Proxmox-host-side check — see the trust-boundary spec's
+   own Non-goals) but records the requirement explicitly so it cannot be
+   silently assumed satisfied.</li>
+<li><strong>Provisioning a real posture-evidence signing authority is an owner
+   gate, not an implementation detail.</strong> No code in this amendment
+   creates, copies, installs, or reads a real (non-test, non-ephemeral)
+   private key for the posture-evidence authority.
+   <code>sign_anchor_evidence_export()</code> exists and is exercised only by tests
+   with synthetic, ephemeral keys. Where the real key should eventually
+   live is recorded as an open decision, with a recommendation, in the
+   trust-boundary spec above — this amendment implements the mechanism,
+   not the key-custody decision.</li>
+</ol>
+<p>No change to <code>PlanAuthorization</code>/<code>PlanAuthorizationV2</code>, the three-point
+freshness/TOCTOU model, per-step authorization, the destructive-operation
+separation, or any other already-accepted content in this ADR.</p>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../ADR-021-security-posture-provisioning/"><code>ADR-021</code></a> — the planning

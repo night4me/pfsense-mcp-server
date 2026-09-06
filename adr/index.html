@@ -2777,6 +2777,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -3140,6 +3144,62 @@
     
   
     Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/anchor_evidence_export_trust_boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnchorEvidenceExport trust boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/shape_a_batch_manifest_ceremony/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
   
 
     
@@ -4285,6 +4345,21 @@ silently rewrite earlier context.</p>
 <td><a href="ADR-028-first-write-product-surface-and-delivery/">028</a></td>
 <td>First-WRITE product surface and delivery architecture</td>
 <td>Accepted (2026-08-15, owner) — records the delivery seam (W3-D1), capability/profile activation model (W3-D2), and signing-side CLI trust boundary; W3 implementation (Slices 1-5) remains separately gated slice by slice</td>
+</tr>
+<tr>
+<td><a href="ADR-036-tier1-write-safety-contract/">036</a></td>
+<td>Tier1 WRITE Safety Contract — architecture gap closure before any second capability</td>
+<td>Proposed — no new WRITE capability authorized; names four gaps (<code>risk_class</code> enforcement, duplicate authorization-gate implementations, reconciliation cadence, semantic-postcondition spec) that must close first</td>
+</tr>
+<tr>
+<td><a href="ADR-037-write-programme-architecture/">037</a></td>
+<td>WRITE Programme Architecture — capability families, existence-transition executor, risk scaling</td>
+<td>Accepted (2026-09-04, owner) — architecture only, no new WRITE capability authorized; re-derives the full 451-operation mutation inventory, classifies every operation (verified three times: an owner acceptance re-review, a narrow amendment pass correcting its findings, then a clean acceptance review confirming 26 stated criteria), and identifies that 148 operations (32.8%, create/delete-shaped) require a not-yet-designed second sealed executor before implementation</td>
+</tr>
+<tr>
+<td><a href="ADR-038-expired-prepared-retry-semantics/">038</a></td>
+<td>Expired/terminal-PREPARED retry semantics — active-scoped idempotency uniqueness, <code>expire_prepared()</code>, composition-layer stale-artifact refusal</td>
+<td>Accepted (2026-09-05, owner). Implemented — <code>idempotency_key</code> uniqueness narrows from whole-table to blocking-<code>RecoveryState</code> scope only; a FAILED/ROLLED_BACK/EXPIRED historical contract no longer permanently blocks a fresh, independently-authorized retry, but never authorizes one on its own. <code>expire_prepared()</code> remains a local-only store primitive with no CLI/MCP/operator exposure.</td>
 </tr>
 </tbody>
 </table>

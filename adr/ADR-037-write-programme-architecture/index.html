@@ -1,0 +1,5101 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/adr/ADR-037-write-programme-architecture/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ADR-037: WRITE Programme Architecture — Capability Families, Existence-Transition Executor, and Risk Scaling - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adr-037-write-programme-architecture-capability-families-existence-transition-executor-and-risk-scaling" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ADR-037: WRITE Programme Architecture — Capability Families, Existence-Transition Executor, and Risk Scaling
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../GETTING_STARTED/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../INSTALLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_SETUP_WIZARD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security setup wizard (pfsense-mcp-security)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect your MCP client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../COMPATIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../STABILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability & compatibility contract (v1.0.0)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool & guidance reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Per-client config examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (implemented, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../tier1/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-034 README Mermaid to static-SVG PyPI compatibility patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-035 pfREST live documentation guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/anchor_evidence_export_trust_boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnchorEvidenceExport trust boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tier1/specs/shape_a_batch_manifest_ceremony/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.7.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.8.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.8.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.9.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v1.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v1.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ACCEPTANCE_v1.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v1.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#d1-successor-adr-not-an-adr-036-amendment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D1 — Successor ADR, not an ADR-036 amendment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d2-a-second-sealed-executor-for-existence-transition-operations-never-a-modification-to-the-shared-mutationexecutor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D2 — A second sealed executor for existence-transition operations, never a modification to the shared MutationExecutor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d22-execution-shape-classification-owner-architecture-review-re-derived-not-assumed-from-http-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D2.2 — Execution-shape classification (owner architecture review, re-derived, not assumed from HTTP method)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d3-capability-families-replace-write_protected-every-implemented-write-privilege" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D3 — Capability families replace "write_protected == every implemented WRITE privilege"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d4-permanent-exclusions-are-never-assignable-to-any-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D4 — Permanent exclusions are never assignable to any family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d5-risk-classification-gets-a-second-explicit-dimension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D5 — Risk classification gets a second, explicit dimension
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-negotiable-invariants-preserved-by-this-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-negotiable invariants preserved by this decision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Consequences">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#positive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Positive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#negative" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Negative
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amendment-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amendment record
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Amendment record">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#second-amendment-pass-2026-09-04-narrow-following-the-owner-acceptance-re-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Second amendment pass (2026-09-04, narrow, following the owner acceptance re-review)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/adr/ADR-037-write-programme-architecture.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="adr-037-write-programme-architecture-capability-families-existence-transition-executor-and-risk-scaling">ADR-037: WRITE Programme Architecture — Capability Families, Existence-Transition Executor, and Risk Scaling<a class="headerlink" href="#adr-037-write-programme-architecture-capability-families-existence-transition-executor-and-risk-scaling" title="Permanent link">&para;</a></h1>
+<ul>
+<li><strong>Status:</strong> <strong>Accepted (2026-09-04, owner)</strong> — architecture-only. This
+  ADR authorizes no new WRITE capability, no executor code, and no
+  adapter; it freezes the programme's architecture (capability-family
+  model, execution-shape classification, existence-transition executor
+  design, risk tagging) for future, separately-gated implementation
+  work. See "Acceptance record" below for the clean review that led to
+  this status change.</li>
+<li><strong>Date:</strong> 2026-09-04 (drafted, then amended twice, same day: once per
+  an owner architecture re-review, once per a follow-up narrow
+  amendment pass correcting that review's own findings, then accepted
+  following a clean acceptance review — see "Amendment record" and
+  "Acceptance record" below.)</li>
+</ul>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>ADR-036 closed a specific, historically-scoped body of work: four
+architecture gaps in the machinery the one already-shipped WRITE
+capability (<code>set_firewall_alias_description_v1</code>) depends on, plus (this
+session) a runtime-wide pfREST Read Only gate. Its own text is explicit
+that it does not authorize a second capability, and does not decide
+whether WRITE scope should expand at all — "an explicit, separate
+product decision this design mission does not make."</p>
+<p>The owner has since stated a programme-level destination: eventually
+account for, and where safe implement, the complete pfREST mutation
+surface — not as one mission, not by bypassing ADR-036, preserving the
+existing discipline (explicit authorization, narrow named capabilities,
+independent review, exhaustive tests, LAB qualification where
+appropriate). This ADR is the architecture layer that destination
+requires before any second capability is built. The full supporting
+analysis (re-derived 451-operation inventory, classification, capability
+families, risk tags, postcondition/recovery feasibility) lives in the
+companion report, <code>reports-ai/WRITE_PROGRAMME_ARCHITECTURE_2026-09-04.md</code>
+(gitignored, external, mirroring how ADR-036 references its own
+companion threat-model report).</p>
+<p>Two findings from that analysis drive this ADR's decisions:</p>
+<ol>
+<li><strong>Privilege atomicity.</strong> <code>security_privileges.py</code>'s existing,
+   already-accepted <code>resolve_privilege()</code> resolves 450 of the 451
+   mutating operations to their own distinct, narrow pfSense privilege
+   string. Grouping operations into project-level "capability families"
+   is therefore a pure policy layer this project fully controls — it
+   never has to fight or widen what pfSense itself would enforce.</li>
+<li><strong>The existence-transition gap.</strong> <code>MutationExecutor.execute()</code>/
+   <code>rollback()</code>'s verification flow requires the pre-mutation
+   authoritative read to find exactly one existing match — a hard
+   requirement for the shape <code>firewall/alias.descr</code> has (mutate a field
+   on a persistently-existing object). There is no way for the current
+   <code>CapabilityAdapter</code> contract to represent "confirmed absent" as a
+   legitimate observation rather than a refusal. The owner's architecture
+   review (below) replaced the original rough "POST/DELETE ≈ 299 ops"
+   estimate with an exact, method-independent classification, corrected
+   a second time in a follow-up amendment pass after six individual
+   operations were found misclassified by their HTTP method/path shape
+   alone (verified against each operation's actual OpenAPI description
+   text): <strong>148 operations (73 create-shaped + 75 delete-shaped)
+   genuinely need this new primitive; the remainder of what looked like
+   create/delete by HTTP method alone turned out to be secret-lifecycle,
+   runtime-action, non-mutating, or bulk-shaped and does not belong in
+   this gap at all</strong> — see "Execution-shape classification" below.</li>
+</ol>
+<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
+<h3 id="d1-successor-adr-not-an-adr-036-amendment">D1 — Successor ADR, not an ADR-036 amendment<a class="headerlink" href="#d1-successor-adr-not-an-adr-036-amendment" title="Permanent link">&para;</a></h3>
+<p>This ADR stands alone rather than amending ADR-036, to keep ADR-036 as
+the closed, auditable W0 record it already is. See the companion
+report's Step 3 for full rationale.</p>
+<h3 id="d2-a-second-sealed-executor-for-existence-transition-operations-never-a-modification-to-the-shared-mutationexecutor">D2 — A second sealed executor for existence-transition operations, never a modification to the shared <code>MutationExecutor</code><a class="headerlink" href="#d2-a-second-sealed-executor-for-existence-transition-operations-never-a-modification-to-the-shared-mutationexecutor" title="Permanent link">&para;</a></h3>
+<p>Per ADR-014's own "Future migration path": <em>"If a future capability
+genuinely cannot fit the single-executor model... that is a signal to
+design a second, equally sealed executor variant with its own ADR — not
+to weaken this executor's guarantees to accommodate an exception."</em>
+Create/delete-shaped operations are exactly that signal. This ADR
+authorizes, as a <strong>future, separately-designed</strong> artifact — not
+implemented here — a new spec, <code>docs/tier1/specs/sealed_existence_executor.md</code>,
+following <code>sealed_executor.md</code>'s own "designed, reviewed, frozen, then
+implemented" discipline, before any create/delete-shaped capability
+(including the DNS resolver host override candidate this programme
+originally considered) is built. The existing <code>MutationExecutor</code> and its
+one live capability are <strong>not</strong> touched by this decision, and Shape A
+(existing-target update) continues to be served by <code>MutationExecutor</code>
+exactly as it is today — this ADR does not propose migrating it.</p>
+<p><strong>D2.1 — Refined executor shape (owner architecture review, 2026-09-04).</strong>
+The review explicitly required treating CREATE and DELETE as
+independent questions rather than assuming they share one executor
+merely because both fall outside today's implementation. Finding: they
+are not independent in the way that matters most — <strong>each shape's
+rollback is a live instance of the other shape's forward operation</strong>
+(rolling back a create means deleting what was created; rolling back a
+delete means re-creating what was removed, from the preserved
+pre-deletion snapshot). Two fully separate, independently-implemented
+executor classes would therefore either duplicate the "perform a
+create-shaped send and verify it" logic inside <code>DeleteExecutor.rollback()</code>
+and the mirror inside <code>CreateExecutor.rollback()</code> — exactly the
+"multiplies the amount of security-critical code that must be kept
+consistent across N copies" risk ADR-014 itself used to reject
+per-capability executors — or import from each other, which is worse.</p>
+<p><strong>Recommendation: one class, <code>ExistenceTransitionExecutor</code>, exposing two
+distinctly-named, distinctly-typed public entry points, <code>create()</code> and
+<code>delete()</code></strong> — structurally the same pattern <code>MutationExecutor</code> already
+uses for its own two related-but-different operations, <code>execute()</code> and
+<code>rollback()</code>. <code>create()</code> accepts only a <code>CreationAdapter</code>-shaped Protocol
+(whose <code>read_target()</code> may return a typed <code>ConfirmedAbsent</code> sentinel);
+<code>delete()</code> accepts only a <code>DeletionAdapter</code>-shaped Protocol (whose
+<code>read_target()</code>'s <em>post</em>-mutation call may return that same sentinel).
+Each method's own rollback path reuses the class's own other primitive
+internally — never duplicated, never adapter-visible, never a second
+place either primitive is implemented. This is deliberately <strong>not</strong> a
+single <code>execute(direction=...)</code> method with a runtime discriminator flag
+(rejected: a mismatched flag/adapter-shape pairing would be a real,
+avoidable bug class; two distinctly-named/-typed methods make the shape
+structural rather than a value a caller could get wrong).</p>
+<p><strong>Precondition/postcondition/binding algebra per shape</strong> (all three
+share the existing store, state machine, <code>WriteApiClient</code>, crypto, and
+canonical-digest infrastructure unchanged; <code>contract.verify_bindings()</code>
+itself needs zero changes for any shape — it already just digests and
+compares whatever canonical <code>target_precondition</code> value the adapter
+computes, and shape B's "confirmed absent" marker is just another
+canonical value to digest, the same mechanism, not a new one):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>A — UPDATE</strong> (live, <code>MutationExecutor</code>)</th>
+<th><strong>B — CREATE</strong> (<code>ExistenceTransitionExecutor.create()</code>)</th>
+<th><strong>C — DELETE</strong> (<code>ExistenceTransitionExecutor.delete()</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Canonical precondition</td>
+<td>Fresh fingerprint of the existing object</td>
+<td>Fresh, TOCTOU-safe proof of <strong>absence</strong> at the natural identity (canonical marker, not a real snapshot)</td>
+<td>Fresh fingerprint of the existing object (identical to A)</td>
+</tr>
+<tr>
+<td>Canonical postcondition</td>
+<td>Fresh fingerprint shows exactly the intended field(s) changed, nothing else</td>
+<td>Fresh read finds exactly one match whose fields equal the intended create payload; server-assigned locator bound only now</td>
+<td>Fresh read finds <strong>zero</strong> matches (same <code>ConfirmedAbsent</code> sentinel as B's precondition, used at the opposite point in the flow)</td>
+</tr>
+<tr>
+<td>Plan/authorization binding</td>
+<td>Existing <code>PlanAuthorizationV2</code>/<code>verify_bindings()</code>, unchanged</td>
+<td>Same, unchanged — the digest just covers a different canonical value</td>
+<td>Same, unchanged</td>
+</tr>
+<tr>
+<td>Confirmation binding</td>
+<td>Existing <code>ConfirmationEvidence</code>, unchanged</td>
+<td>Same, unchanged</td>
+<td>Same, unchanged</td>
+</tr>
+<tr>
+<td>Fresh pre-send verification</td>
+<td>Re-read, compare fingerprint to contract</td>
+<td>Re-read, re-confirm absence (TOCTOU: another admin could have created it since PREPARE)</td>
+<td>Re-read, compare fingerprint to contract (identical to A)</td>
+</tr>
+<tr>
+<td>pfREST Read Only gate placement</td>
+<td>Immediately before <code>EXECUTING</code>, after binding verification (Mission III) — but <strong>only inside <code>execute()</code></strong>; verified directly against source that <code>MutationExecutor.rollback()</code> does <strong>not</strong> call <code>_require_pfrest_writable()</code> at all today. This is presently harmless only because <code>rollback()</code> has zero production call sites (nothing wires it to any live MCP tool)</td>
+<td>Must independently call the gate before <em>every</em> mutating send this class can issue, including the internal reuse of <code>create()</code>'s primitive inside <code>delete()</code>'s rollback path and vice versa. <strong>Not</strong> "inherited automatically" — the pattern being mirrored (<code>MutationExecutor</code>) does not itself demonstrate correct rollback-path gate coverage, so nothing about it can be assumed true by imitation. Because this design makes rollback genuinely reachable for the first time (unlike today's dead <code>rollback()</code>), <code>sealed_existence_executor.md</code> must explicitly specify and test gate placement on every entry point as its own reviewed requirement, not infer it from <code>MutationExecutor</code>'s existing shape</td>
+<td>Same explicit, independently-specified requirement as CREATE's column — every entry point, including inverse-transition reuse, crosses the gate before send</td>
+</tr>
+<tr>
+<td><code>EXECUTING</code> transition placement</td>
+<td>After the gate, before the one send</td>
+<td>Identical</td>
+<td>Identical</td>
+</tr>
+<tr>
+<td>Sole mutating transport boundary</td>
+<td>One <code>WriteApiClient.send_for_tier1()</code> call</td>
+<td>One call, same client, same chokepoint</td>
+<td>One call, same client, same chokepoint</td>
+</tr>
+<tr>
+<td>Semantic verification</td>
+<td><code>is_semantically_verified(pre, post, intent)</code></td>
+<td>Same signature; <code>pre</code> is the <code>ConfirmedAbsent</code> sentinel, <code>post</code> is the newly-read real object</td>
+<td>Same signature; <code>pre</code> is the real pre-state, <code>post</code> is the <code>ConfirmedAbsent</code> sentinel</td>
+</tr>
+<tr>
+<td>Mutation-result-unknown handling</td>
+<td>→ <code>RECONCILIATION</code>, never blind retry</td>
+<td>→ <code>RECONCILIATION</code>; <strong>discover before retry</strong> — never blindly replay the POST (POST is not naturally idempotent; a replay could create a second object). Reconciliation resolution re-reads by natural identity (reusing the existing <code>observe_reconciliation_target()</code> pattern, which already re-reads by identity, not locator) — zero matches means the create did not happen; exactly one match means it did (bind its locator now); more than one is genuine ambiguity requiring manual resolution, never auto-picked</td>
+<td>→ <code>RECONCILIATION</code>. Reread first: absence proves the delete succeeded (safe to mark verified even after a transport-ambiguous send); continued existence permits only the explicitly-defined recovery path, never a blind retry; a <em>read failure</em> (as opposed to a clean zero-match read) must never be interpreted as absence — it raises and routes to <code>RECONCILIATION</code> exactly like today's read-failure handling, never conflated with <code>ConfirmedAbsent</code></td>
+</tr>
+<tr>
+<td>Recovery classification</td>
+<td><code>FAILED</code> (proven zero effect) / <code>RECONCILIATION</code> (ambiguous) — unchanged terminal states</td>
+<td>Same two terminals, same meanings</td>
+<td>Same two terminals, same meanings</td>
+</tr>
+<tr>
+<td>Replay rules</td>
+<td>Never retried automatically (existing)</td>
+<td>Never retried automatically; additionally never assumed idempotent (POST)</td>
+<td>Never retried automatically; DELETE against an already-absent target is naturally idempotent at the transport level (typically 4xx/zero-effect), which is <em>why</em> C's ambiguous-handling can safely treat a clean zero-match reread as proof of success rather than needing discovery machinery</td>
+</tr>
+<tr>
+<td>Idempotency assumptions</td>
+<td>Existing <code>derive_idempotency_key()</code> + store uniqueness constraint, unchanged</td>
+<td>An in-flight or unresolved create contract for the same natural identity must be discoverable by a <em>fresh</em> PREPARE-time precondition check for a second contract attempt — no new mechanism, a direct consequence of "PREPARE only ever binds to a fresh read"</td>
+<td>Unchanged from A's existing idempotency posture</td>
+</tr>
+<tr>
+<td>Audit/journal semantics</td>
+<td><code>store.transition()</code>/<code>_insert_audit()</code>, unchanged</td>
+<td>Same mechanism — <code>RecoveryState</code> is already generic over contract lifecycle, not update-specific; no new schema</td>
+<td>Same mechanism</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rollback/gate invariants (owner amendment pass, 2026-09-04), stated
+explicitly rather than left implicit:</strong></p>
+<ul>
+<li>Every independently callable mutation entry point on
+  <code>ExistenceTransitionExecutor</code> — <code>create()</code>, <code>delete()</code>, and each's
+  internal reuse of the other's primitive for its own rollback — must
+  cross the pfREST writable gate before any network mutation. No entry
+  point is exempt by virtue of being "internal" or "rollback."</li>
+<li>Internal reuse of create/delete logic for rollback must not bypass
+  that gate, or any other gate below. Rollback is <strong>not</strong> an alternate
+  authorization path — it is the same sealed send chokepoint, reached a
+  second time under the same rules, not a side door.</li>
+<li>Authorization (plan binding), confirmation binding, replay protection,
+  risk-class binding, endpoint binding, and privilege binding remain
+  independently required on every path, exactly as they already are for
+  <code>MutationExecutor.execute()</code> — none of these are satisfied "once" and
+  then assumed to hold for a later internal reuse.</li>
+<li><code>sealed_existence_executor.md</code>, when written, must specify gate
+  placement explicitly and include a direct test proving every entry
+  point (including the rollback-reuse paths) fails closed when
+  <code>read_only=true</code> — inheriting the placement by assumption from
+  <code>MutationExecutor</code>'s shape is exactly the mistake this amendment
+  corrects, since that shape does not itself prove full coverage (see
+  the gate-placement table row above).</li>
+</ul>
+<p>This reduces the design surface from "a wholesale new architecture" to
+"one new class following an already-proven two-method pattern, one new
+adapter Protocol pair, and one new sentinel type (<code>ConfirmedAbsent</code>)" —
+still real, still security-critical, still not implemented here.</p>
+<h3 id="d22-execution-shape-classification-owner-architecture-review-re-derived-not-assumed-from-http-method">D2.2 — Execution-shape classification (owner architecture review, re-derived, not assumed from HTTP method)<a class="headerlink" href="#d22-execution-shape-classification-owner-architecture-review-re-derived-not-assumed-from-http-method" title="Permanent link">&para;</a></h3>
+<p>Per the review's explicit instruction not to assume <code>POST == CREATE</code>,
+<code>DELETE == simple deletion</code>, or <code>PATCH/PUT == ordinary update</code>: every one
+of the 451 operations was re-classified by inspecting its actual path
+semantics (secret/credential involvement and runtime-action framing
+checked <em>before</em> falling through to a method-informed shape), independently
+of the companion report's original cluster-level pass.</p>
+<p><strong>Corrected in a follow-up amendment pass (2026-09-04)</strong> after the first
+classification pass's own numbers were themselves found to contain six
+misclassified operations — caught only by reading each operation's
+actual OpenAPI description text, not by the script's path/method
+heuristics alone:</p>
+<ul>
+<li><code>DELETE /diagnostics/arp_table</code> (bare) and <code>DELETE /system/restapi/access_list</code>:
+  both take only <code>limit</code>/<code>offset</code>/<code>query</code> params, no <code>id</code> — genuinely
+  bulk/filtered deletes ("Deletes multiple existing ARP Table Entries
+  using a query"), moved from Shape C into the bulk bucket. The
+  classifier's original plural-path-suffix heuristic missed both since
+  neither path segment is plural-spelled; corrected to key on parameter
+  shape (presence of an <code>id</code>) instead, which is the semantically
+  correct signal and was verified against every Shape C row.</li>
+<li><code>DELETE /diagnostics/table</code>: has an <code>id</code> param but its description
+  reads "Flushes all entries in a specified table. Please note this
+  does not delete the table itself, only its entries" — a runtime
+  action on live/volatile contents, not a delete of the config resource
+  itself; confirms the original classification, now on real evidence
+  rather than a path-keyword guess.</li>
+<li><code>DELETE /firewall/state</code> (bare, singular): description explicitly
+  states "the firewall state table changes very quickly which may
+  result in the state's <code>id</code> suddenly changing... use caution" and
+  recommends the bulk/query endpoint instead — targets live
+  connection-tracking state whose identity can change independent of
+  any API action, which structurally breaks Shape C's TOCTOU
+  precondition-rebinding model for this specific resource. Moved to
+  runtime/action shape.</li>
+<li><code>POST /status/service</code>: description reads "Triggers a start, stop or
+  restart action for an existing Service" — a runtime action despite
+  the POST method. Moved from Shape B to runtime/action.</li>
+<li><code>POST /system/enum</code>: description reads "Enumerate all possible
+  choices for a given model field" — not a mutation at all despite
+  appearing in the mutating-methods inventory; a read-like introspection
+  query the schema happens to expose via POST. Moved out of Shape B into
+  a new, explicit "does not fit" sub-reason (non-mutating anomaly, not
+  bulk-shaped) rather than force-classified into any A/B/C/runtime/secret
+  bucket.</li>
+<li><code>POST /vpn/openvpn/client_export</code> (bare): description reads "Export
+  an OpenVPN Client configuration" — distinct from its sibling
+  <code>/client_export/config</code> (a stored export-preferences object, ordinary
+  CRUD); this bare endpoint is the action that actually emits the
+  client bundle, which for OpenVPN client export includes the client's
+  private key and certificate. Moved from Shape B to credential/secret-lifecycle.</li>
+</ul>
+<p>Full corrected dataset: <code>mutation_universe_execution_shapes.json</code>
+(scratchpad), produced by the corrected classification script with each
+override individually justified in code comments, not merely asserted.</p>
+<table>
+<thead>
+<tr>
+<th>Execution shape</th>
+<th style="text-align: right;">Count</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A — existing-target update</strong></td>
+<td style="text-align: right;">100</td>
+<td><code>PATCH</code>, plus non-bulk single-object <code>PUT</code> — unaffected by the correction pass</td>
+</tr>
+<tr>
+<td><strong>B — create/absent-to-existing</strong></td>
+<td style="text-align: right;">73</td>
+<td><code>POST</code> that is genuinely a create, secret/runtime/non-mutating exclusions removed (net −3 from the correction pass: <code>status/service</code>, <code>system/enum</code>, <code>vpn/openvpn/client_export</code> bare)</td>
+</tr>
+<tr>
+<td><strong>C — delete/existing-to-absent</strong></td>
+<td style="text-align: right;">75</td>
+<td><code>DELETE</code> on a single, identified object, verified to have a genuine <code>id</code>-shaped parameter for every row (net −3: two moved to bulk, one moved to runtime/action)</td>
+</tr>
+<tr>
+<td><strong>Runtime/action shape</strong></td>
+<td style="text-align: right;">25</td>
+<td><code>apply</code> triggers (8), <code>halt_system</code>/<code>reboot</code>/<code>package*</code>/<code>update</code> (5), <code>ping</code>/<code>wake_on_lan</code> (2), the one <code>restapi/settings/sync</code> HA-sync trigger (1), OpenVPN kill-connection/CARP-maintenance-mode/config-history-revert (3), <code>diagnostics/table</code> flush (1), <code>firewall/state</code> kill (1, corrected), <code>status/service</code> start/stop/restart (1, corrected) — net +2</td>
+</tr>
+<tr>
+<td><strong>Credential/secret-lifecycle shape</strong></td>
+<td style="text-align: right;">69</td>
+<td><code>certificate*</code>/<code>certificate_authority*</code>/<code>crl*</code> (22), <code>user*</code>/<code>auth_server*</code> (14), <code>auth/key</code>/<code>jwt</code> (4), FreeRADIUS <code>user</code> accounts (5), HAProxy frontend <code>certificate</code> bindings (4), ACME <code>certificate*</code> actions (13) and <code>account_key*</code> (6), OpenVPN client-export action (1, corrected) — net +1</td>
+</tr>
+<tr>
+<td><strong>Does not safely fit any currently proposed executor</strong></td>
+<td style="text-align: right;">107</td>
+<td>Bulk-delete-all (73, net +2: <code>arp_table</code> bare + <code>restapi/access_list</code> bare corrected in) + bulk-collection-replace <code>PUT</code> (33) + non-mutating schema anomaly (1, <code>system/enum</code>, corrected in) — structurally excluded by ADR-014/<code>sealed_executor.md</code>'s own G4 invariant ("no adapter-driven loops... every method signature takes one target/one intent") for the bulk subset, and simply out of scope for the non-mutating anomaly; a bulk-operation architecture is out of scope for both <code>MutationExecutor</code> and the proposed <code>ExistenceTransitionExecutor</code></td>
+</tr>
+<tr>
+<td><strong>Rejected/redundant/source-unsupported</strong></td>
+<td style="text-align: right;">2</td>
+<td><code>graphql</code> (<code>REJECT_GENERIC_DISPATCH</code>), <code>diagnostics/command_prompt</code> (<code>REJECT_COMMAND_EXECUTION</code>); no <code>SOURCE_UNSUPPORTED</code> operations found this pass (all 451 resolved cleanly against the cached schema); no <code>REDUNDANT</code> operations positively identified at this pass's granularity (recorded as an incompleteness, not assumed empty)</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>451</strong></td>
+<td>Every operation accounted for exactly once at this layer; risk/family tags (D3/D5 below) remain orthogonal, layered on top, never double-counted here</td>
+</tr>
+</tbody>
+</table>
+<p>This supersedes both the original companion report's rougher "POST+DELETE
+≈ 299 operations, ~66%" estimate and the first (uncorrected)
+classification pass's 154-operation figure: the verified count of
+operations that actually need the new existence-transition primitive is
+<strong>148</strong> (73 + 75, <strong>32.8%</strong> of the inventory) — update+create+delete
+together account for <strong>248 operations (55.0%)</strong> of the full 451. A
+materially smaller, more precisely scoped gap than the original rough
+estimate, because a large share of what looked like create/delete by
+HTTP method alone is actually secret-lifecycle, runtime-action,
+non-mutating, or bulk-shaped and was never going to fit a two-shape
+executor regardless of how CREATE/DELETE themselves were designed.</p>
+<p><strong>The 450/451 privilege-resolution exception, independently re-verified:</strong>
+<code>POST /system/restapi/settings/sync</code> is the sole operation with no
+narrow pfSense privilege (requires <code>page-all</code> only). It classifies as
+<strong>runtime/action shape</strong>, not create-shaped, confirming it was never a
+candidate for <code>ExistenceTransitionExecutor.create()</code> in the first place —
+this operation remains excluded at the <code>Capability</code> enum level (D4)
+regardless of which executor architecture is eventually built.</p>
+<h3 id="d3-capability-families-replace-write_protected-every-implemented-write-privilege">D3 — Capability families replace "<code>write_protected</code> == every implemented WRITE privilege"<a class="headerlink" href="#d3-capability-families-replace-write_protected-every-implemented-write-privilege" title="Permanent link">&para;</a></h3>
+<p><code>write_protected</code> must never default to granting every implemented WRITE
+family. An installation grants an explicit, named subset of families
+(see the companion report's Step 5 table). No pfSense-side privilege
+constraint is weakened or widened by this grouping (the privilege-
+atomicity finding, Context above). <code>Capability</code>/<code>MutationPolicy</code>/<code>MutationRule</code> require no new
+mechanism — only new rule population per family as each family's
+adapters are actually built. <strong>A family is a policy/least-privilege
+grouping only, never itself an authorization mechanism</strong>: membership in
+a granted family determines whether <code>MutationPolicy.authorize()</code> has a
+matching rule at all, but every other gate downstream of that — sealed
+plan/confirmation binding, the fresh precondition re-read, the pfREST
+Read Only gate, semantic postcondition verification — still runs in
+full for every single call, exactly as it does today for <code>alias_write</code>;
+no family, however broadly granted, skips or weakens any of these.</p>
+<p><strong>Secret-lifecycle and structural exclusions cannot be overridden by a
+broad package/cluster name (owner amendment pass, 2026-09-04).</strong> A
+family such as <code>service_settings_write</code> may legitimately span an entire
+top-level product/package cluster (e.g. FreeRADIUS, HAProxy, ACME) for
+its ordinary settings operations, but <strong>operation-level exclusion always
+wins over cluster-level family membership</strong>: <code>services/freeradius/user*</code>,
+<code>services/haproxy/*/certificate*</code>, <code>services/acme/certificate*</code>, and
+<code>services/acme/*account_key*</code> remain permanently excluded from
+<code>service_settings_write</code> (or any family) even though <code>freeradius</code>,
+<code>haproxy</code>, and <code>acme</code> are otherwise legitimate family members — see D4's
+now-explicit enumeration. Bulk operations (D2.2's "does not fit" bucket)
+remain outside the family architecture entirely regardless of which
+cluster they belong to, for the same reason they're outside the
+executor architecture (ADR-014/<code>sealed_executor.md</code> G4). Runtime/action
+operations are independently classified from both update/create/delete
+shapes and from families — a family granting, say, <code>dns_write</code> does not
+imply anything about the <code>services/dns_resolver/apply</code> runtime-action
+trigger, which is a distinct classification requiring its own separate
+authorization decision if ever built.</p>
+<h3 id="d4-permanent-exclusions-are-never-assignable-to-any-family">D4 — Permanent exclusions are never assignable to any family<a class="headerlink" href="#d4-permanent-exclusions-are-never-assignable-to-any-family" title="Permanent link">&para;</a></h3>
+<p><code>system/certificate*</code>/<code>certificate_authority*</code>/<code>crl*</code>, <code>user/*</code>,
+<code>auth/*</code>, <code>diagnostics/command_prompt</code>, <code>graphql</code>,
+<code>system/package*</code>/<code>update</code>/<code>restapi/access_list</code>/<code>restapi/settings/sync</code>,
+<code>diagnostics/halt_system</code>/<code>reboot</code> remain excluded at the <code>Capability</code>
+enum level entirely — never merely left out of a default grant. This
+matches the existing <code>WriteEndpoints</code>-exact-catalogue enforcement
+pattern (<code>scripts/write_allow_list_check.py</code>) and ADR-036's own
+non-negotiable invariant list.</p>
+<p><strong>Extended (owner amendment pass, 2026-09-04)</strong> to close a gap the
+earlier list left open: it named only the <code>system/</code>, <code>user/</code>, <code>auth/</code>
+prefixed secret-lifecycle operations, but D2.2's own classification
+includes 28 further secret-lifecycle operations sharing a top-level
+cluster name with an otherwise-legitimate family. Explicitly also
+excluded, regardless of <code>service_settings_write</code> or any other family's
+otherwise-legitimate claim to the same top-level cluster:
+<code>services/freeradius/user</code>/<code>users</code> (5 operations — RADIUS account
+credentials); <code>services/haproxy/frontend/certificate</code>/<code>certificates</code>
+(4 operations — TLS certificate bindings); <code>services/acme/certificate</code>/
+<code>certificate/action</code>/<code>certificate/domain</code>/<code>certificate/issue</code>/
+<code>certificate/renew</code>/<code>certificates</code> (13 operations); <code>services/acme/
+account_key</code>/<code>account_key/register</code>/<code>account_keys</code> (6 operations — the
+ACME account's own private key). <code>vpn/openvpn/client_export</code> (bare, the
+credential-emitting export action specifically, not its sibling
+<code>/client_export/config</code> preferences-object CRUD) is likewise excluded.</p>
+<h3 id="d5-risk-classification-gets-a-second-explicit-dimension">D5 — Risk classification gets a second, explicit dimension<a class="headerlink" href="#d5-risk-classification-gets-a-second-explicit-dimension" title="Permanent link">&para;</a></h3>
+<p><code>AuthorizationLevel</code> (confirmation friction) remains unchanged and
+correct as-is. A new, per-<em>family</em> (not per-operation) failure-mode tag
+set is added for architecture/sequencing decisions: Lockout, Routing
+loss, DNS/DHCP outage, Firewall exposure, Credential compromise, VPN
+disruption, Cert/key destruction, Service interruption (see companion
+report's Step 6 table). No family's ceremony may be weaker than
+<code>alias_write</code>'s already-live one. Families tagged Lockout or Routing
+loss require a documented recovery path that does not itself depend on
+the management channel the operation could sever, before
+implementation — not designed by this ADR, recorded as a prerequisite.</p>
+<h2 id="non-negotiable-invariants-preserved-by-this-decision">Non-negotiable invariants preserved by this decision<a class="headerlink" href="#non-negotiable-invariants-preserved-by-this-decision" title="Permanent link">&para;</a></h2>
+<p><strong>Overlapping with, and extending, ADR-036's own list — not literally
+identical (corrected, owner amendment pass, 2026-09-04).</strong> The prior
+draft of this section claimed identity with ADR-036's list; that
+overclaimed precision. ADR-036's list additionally names two items this
+list does not restate verbatim: <code>read_only</code> default posture and managed
+<code>read_only</code> least privilege (both are properties of the default READ-only
+profile, orthogonal to this WRITE-programme ADR, and remain untouched by
+it) and <strong>"optional stronger TPM/witness assurance"</strong> — this one <em>is</em>
+directly WRITE-relevant (ADR-036 W0 Gap 1 ties <code>risk_class</code> enforcement
+to required anchor assurance) and is not restated here by omission, not
+by design: this ADR does not alter, weaken, or remove TPM/witness
+assurance in any way. It remains exactly as ADR-036 left it — an existing,
+optional, <code>AnchorAssurance</code>-graded mechanism, constructor-injected into
+whichever executor(s) are built (<code>MutationExecutor</code> today,
+<code>ExistenceTransitionExecutor</code> in the future, per its own
+<code>anti_rollback_anchor</code> parameter, unchanged) — and D5's risk-tagged
+families (particularly Lockout/Routing-loss-tagged ones) are exactly the
+kind of family where a future, separately-authorized decision to require
+<code>hardware_witness</code> assurance would be the natural extension of ADR-036's
+own W0 Gap 1 pattern. This ADR does not make that decision; it does not
+need to, and does not foreclose it either.</p>
+<p>Zero
+default-reachable WRITE; no generic HTTP/path dispatcher (<code>graphql</code>
+permanently <code>REJECT_GENERIC_DISPATCH</code>); no arbitrary shell/command
+capability (<code>diagnostics/command_prompt</code> permanently
+<code>REJECT_COMMAND_EXECUTION</code>); explicit, reviewed <code>Capability</code>/
+<code>WriteEndpoints</code> catalogue only; canonical endpoint/method derivation;
+canonical risk-class derivation (D5); canonical privilege derivation
+(<code>resolve_privilege()</code>, the privilege-atomicity finding); sealed
+authorization; confirmation binding; <strong>no MCP caller/agent can select
+which endpoint, HTTP method, privilege, risk class, or executor
+(<code>MutationExecutor</code> vs. <code>ExistenceTransitionExecutor.create()</code>/
+<code>.delete()</code>) a given call reaches</strong> — each registered MCP tool is wired,
+at project registration time, to exactly one specific adapter and
+exactly one specific executor entry point, identically to how
+<code>alias_write</code>'s one tool is wired today; nothing about a caller's
+arguments ever chooses that binding; the pfREST Read Only owner gate (this session's Mission III,
+inherited automatically by every future capability since it lives in
+the shared executor(s), not per-adapter); precondition/fingerprint
+verification; semantic postcondition verification; bounded recovery;
+fail-closed transport-ambiguity handling; least privilege. None of these
+are weakened, extended, or reinterpreted by this ADR.</p>
+<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
+<h3 id="positive">Positive<a class="headerlink" href="#positive" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A concrete, falsifiable classification exists for all 451 currently-known
+  mutating operations — zero left unclassified — replacing "chase WRITE
+  coverage" with a reviewable, bounded programme.</li>
+<li>The existence-transition gap is identified and named before any code
+  is written against it, rather than discovered mid-implementation of a
+  real capability.</li>
+<li>Capability families give installations genuine least-privilege choice
+  once many WRITE capabilities exist, rather than an all-or-nothing
+  <code>write_protected</code> toggle.</li>
+</ul>
+<h3 id="negative">Negative<a class="headerlink" href="#negative" title="Permanent link">&para;</a></h3>
+<ul>
+<li>This ADR authorizes no new capability itself — real WRITE surface
+  growth still requires, per family/operation, the same one-capability-
+  at-a-time rigor <code>firewall/alias.descr</code> received (own mission, own LAB
+  qualification, own adversarial test matrix).</li>
+<li>The existence-transition executor is real, non-trivial, security-critical
+  design work not yet done — 148 operations (32.8% of the inventory, see
+  D2.2) remain blocked on it, not on risk classification alone.</li>
+</ul>
+<h2 id="alternatives-considered">Alternatives considered<a class="headerlink" href="#alternatives-considered" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Extend <code>MutationExecutor.execute()</code> in place with a <code>target_lifecycle</code>
+  branch for create/delete:</strong> rejected — directly contradicts ADR-014's
+  own explicit guidance not to weaken the shared executor's guarantees
+  to accommodate a shape it wasn't designed for, and would touch the
+  live capability's own code path for no benefit to that capability.</li>
+<li><strong>Amend ADR-036 instead of a successor ADR:</strong> rejected — would blur
+  ADR-036's own closed, historically-scoped W0 record (see companion
+  report Step 3).</li>
+<li><strong><code>write_protected</code> grants everything implemented:</strong> rejected —
+  becomes unsafe and unreviewable once dozens of families exist; no
+  privilege-atomicity reason requires it.</li>
+<li><strong>Two fully independent executor classes, <code>CreateMutationExecutor</code> and
+  <code>DeleteMutationExecutor</code>, sharing no code:</strong> rejected — each shape's
+  rollback is a live instance of the other shape's forward operation, so
+  full independence would force either duplicated create/delete-send
+  logic (a real, avoidable security-critical duplication risk) or one
+  class importing the other, which is worse. See D2.1.</li>
+<li><strong>One executor with a runtime <code>direction: CREATE | DELETE</code> discriminator
+  instead of two named methods:</strong> rejected — a mismatched discriminator
+  and adapter shape is an avoidable bug class; <code>create()</code>/<code>delete()</code> as
+  distinctly-named, distinctly-typed methods make the shape structural,
+  mirroring <code>MutationExecutor</code>'s own existing <code>execute()</code>/<code>rollback()</code>
+  pattern rather than inventing a new one. See D2.1.</li>
+</ul>
+<h2 id="amendment-record">Amendment record<a class="headerlink" href="#amendment-record" title="Permanent link">&para;</a></h2>
+<p>Amended 2026-09-04, same day as the initial draft, following an owner
+architecture review of this Proposed ADR. Status remains <strong>Proposed</strong> —
+the review explicitly declined to accept it. Changes made:</p>
+<ol>
+<li>D2 refined from a provisionally-named, unspecified "second sealed
+   executor" into a concretely-designed <code>ExistenceTransitionExecutor</code>
+   with named <code>create()</code>/<code>delete()</code> methods, full precondition/
+   postcondition/binding algebra per shape (D2.1), and explicit
+   ambiguous-result/replay/idempotency rules distinguishing CREATE
+   (discover-before-retry, not idempotent) from DELETE (reread-first,
+   naturally idempotent, read-failure ≠ absence).</li>
+<li>D2.2 added: exact execution-shape classification (not HTTP-method-based)
+   replacing the original ~66%/299-operation estimate with a precise
+   154-operation (34%) figure for what genuinely needs the new
+   executor, and separating out runtime-action (23), secret-lifecycle
+   (68), and bulk-shaped-and-out-of-scope (104) operations that had been
+   folded into the rougher estimate.</li>
+<li>Two additional rejected alternatives recorded (two independent
+   executor classes; a runtime direction-discriminator flag).</li>
+<li>Context section's gap-size claim corrected to match D2.2.</li>
+</ol>
+<p>No change to D1, D3, D4, D5, or the non-negotiable invariants list in
+this first pass — the owner re-review that followed this amendment
+found concrete, fixable issues in exactly those sections, addressed in
+the second amendment pass below.</p>
+<h3 id="second-amendment-pass-2026-09-04-narrow-following-the-owner-acceptance-re-review">Second amendment pass (2026-09-04, narrow, following the owner acceptance re-review)<a class="headerlink" href="#second-amendment-pass-2026-09-04-narrow-following-the-owner-acceptance-re-review" title="Permanent link">&para;</a></h3>
+<p>The re-review's decision was REVISE, not ACCEPT, with a minimum required
+amendment set. All five items were addressed:</p>
+<ol>
+<li><strong>D2.1 pfREST gate-inheritance claim corrected.</strong> Verified directly
+   against <code>executor.py</code> source that <code>MutationExecutor.rollback()</code> does
+   not call <code>_require_pfrest_writable()</code> (only <code>execute()</code> does) —
+   presently harmless only because <code>rollback()</code> has zero production call
+   sites. The prior "identical placement, inherited automatically"
+   wording is replaced with an explicit statement that this must be
+   independently specified and tested for every <code>ExistenceTransitionExecutor</code>
+   entry point, not assumed from <code>MutationExecutor</code>'s own shape. Five
+   explicit rollback/gate invariants added.</li>
+<li><strong>D4 secret-lifecycle exclusions extended</strong> to name all 28 previously-
+   unlisted operations (<code>services/freeradius/user*</code>,
+   <code>services/haproxy/*/certificate*</code>, <code>services/acme/certificate*</code>/
+   <code>*account_key*</code>) and D3 gained explicit wording that operation-level
+   exclusion always wins over cluster-level family membership, even for
+   families spanning an entire product/package (FreeRADIUS/HAProxy/ACME).</li>
+<li><strong>Stale "~2/3"/"roughly two-thirds" figures corrected</strong> in Context,
+   Consequences &gt; Negative, and (separately) <code>docs/adr/README.md</code>'s
+   index row, to match D2.2's verified 148-operation/32.8% figure.</li>
+<li><strong>"Identical to ADR-036's own list" corrected</strong> to acknowledge
+   overlap-not-identity, and TPM/witness assurance explicitly addressed
+   (unchanged, out of scope for this ADR, remains available for a future
+   risk-tagged-family decision per ADR-036's own W0 Gap 1 pattern).</li>
+<li><strong>Classification defects corrected at the data level</strong>, not merely
+   caveated: re-inspecting each flagged operation's actual OpenAPI
+   description text (not just path/method shape) found and fixed six
+   misclassified operations (<code>diagnostics/arp_table</code> bare,
+   <code>system/restapi/access_list</code> bare, <code>firewall/state</code> bare,
+   <code>status/service</code>, <code>system/enum</code>, <code>vpn/openvpn/client_export</code> bare).
+   The classifier's DELETE bulk-detection rule was corrected from a
+   plural-path-suffix heuristic to the semantically correct signal
+   (presence of an <code>id</code>-shaped parameter), verified against every Shape
+   C row (zero remaining rows lack an <code>id</code>). D2.2's full table, the
+   148-operation gap figure, and every dependent count/percentage were
+   re-derived from the corrected dataset, not patched by hand.</li>
+</ol>
+<p>No further amendment required to D1 or D5 — the re-review found no fault
+with either.</p>
+<h2 id="acceptance-record">Acceptance record<a class="headerlink" href="#acceptance-record" title="Permanent link">&para;</a></h2>
+<p><strong>2026-09-04, owner.</strong> A clean acceptance review (not another exploratory
+pass) independently re-read this ADR in full, ADR-036's relevant
+invariants, ADR-014's sealed-executor-evolution language, current
+<code>MutationExecutor.execute()</code>/<code>rollback()</code>, the <code>AnchorAssurance</code>/
+<code>anti_rollback_anchor</code> interfaces, and the corrected classification
+evidence — verifying every claim against source rather than trusting the
+prior amendment passes' own summaries. One editorial-only issue found and
+fixed (a stray "diagnostics/" prefix on two <code>firewall/state</code> references
+in D2.2/Amendment record — not a normative claim, corrected narrowly).
+All 26 stated acceptance criteria passed on independent verification,
+including: the 451-operation total, the 100/73/75/25/69/107/2
+execution-shape counts, the 148-operation/32.8% CREATE+DELETE gap, the
+248-operation/55.0% update+create+delete total, correct bulk/runtime
+classification of <code>/diagnostics/arp_table</code> and <code>/diagnostics/table</code>,
+secret-lifecycle exclusion completeness and its precedence over
+cluster-level family membership, the pfREST Read Only gate invariant's
+explicitness for every future <code>ExistenceTransitionExecutor</code> entry point
+(including rollback-reuse), rollback's status as the same sealed
+chokepoint rather than an alternate authorization path, preserved
+TPM/hardware-witness assurance (independently confirmed against
+<code>security_discovery.py</code>'s real <code>AnchorAssurance.HARDWARE_WITNESS</code>), and
+ADR-036's historical W0 scope remaining fully intact and untouched. No
+genuinely blocking contradiction was found. Status changed from Proposed
+to <strong>Accepted</strong> on this basis — architecture only, per the Status line
+above; every deferred item (<code>sealed_existence_executor.md</code>, per-cluster
+schema qualification, bulk-operation architecture, lockout-safe recovery
+design, and any real capability's own LAB qualification) remains exactly
+as deferred as it was before acceptance, each requiring its own separate
+authorization before implementation.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../ADR-014-sealed-executor-interface/">ADR-014</a></li>
+<li><a href="../ADR-033-pfsense-least-privilege-bootstrap-architecture/">ADR-033</a></li>
+<li><a href="../ADR-036-tier1-write-safety-contract/">ADR-036</a></li>
+<li><code>reports-ai/WRITE_PROGRAMME_ARCHITECTURE_2026-09-04.md</code> (gitignored,
+  external — the full inventory/classification/family/risk analysis
+  this ADR summarizes)</li>
+<li><code>reports-ai/POST_READ_CLOSURE_WRITE_ARCHITECTURE_THREAT_MODEL.md</code>
+  (gitignored, external — ADR-036's own companion report, re-verified
+  and extended by this ADR's companion report)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -2932,6 +2932,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -3295,6 +3299,62 @@
     
   
     Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/anchor_evidence_export_trust_boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnchorEvidenceExport trust boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tier1/specs/shape_a_batch_manifest_ceremony/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
   
 
     
@@ -4715,10 +4775,15 @@ and unexpired. Prompt text or an agent boolean is not owner authentication.</p>
 </tbody>
 </table>
 <p>Every other transition is illegal. FAILED, ROLLED_BACK, ROLLBACK_FAILED, and
-EXPIRED do not reopen. State/version compare-and-set, idempotency uniqueness,
-and canonical-target reservation are atomic with value-free transition audit.
-The generic store refuses all manual-only edges; a separately reviewed resolver
-must authenticate evidence and record the conclusion before using one.</p>
+EXPIRED do not reopen. State/version compare-and-set and canonical-target
+reservation are atomic with value-free transition audit. Idempotency
+uniqueness (ADR-038) is scoped to contracts whose real-world outcome is not
+yet resolved (<code>state_machine.blocks_fresh_idempotency_attempt()</code>) -- a FAILED,
+ROLLED_BACK, or EXPIRED historical contract may coexist with a fresh,
+independently authorized contract sharing its <code>idempotency_key</code>, though it
+never authorizes that fresh contract on its own. The generic store refuses
+all manual-only edges; a separately reviewed resolver must authenticate
+evidence and record the conclusion before using one.</p>
 <h2 id="persistence-and-integrity">Persistence and integrity<a class="headerlink" href="#persistence-and-integrity" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Persistent records contain protected artifacts, never plaintext target,
@@ -4726,10 +4791,16 @@ must authenticate evidence and record the conclusion before using one.</p>
 <li>HMAC binds the complete canonical record to one store ID. The key is supplied
   externally, is at least 256 bits, and is never stored in the database.</li>
 <li>Store schema v6 requires <code>lifecycle_locator</code>; legacy v5 records fail closed
-  rather than inferring a guard.</li>
+  rather than inferring a guard. Store schema v8 (ADR-038) replaces the
+  column-level <code>idempotency_key</code> uniqueness constraint with a partial unique
+  index scoped to unresolved-outcome states; a v7-&gt;v8 migration rebuilds the
+  table without altering any row's payload, MAC, or state.</li>
 <li>SQLite uses durable transactions and owner-only directory/file permissions.</li>
-<li>Duplicated operation/idempotency identities and conflicting target
-  reservations fail closed.</li>
+<li>Duplicated operation identities and conflicting target reservations fail
+  closed unconditionally. Duplicated idempotency identities fail closed only
+  while a currently-unresolved (blocking) contract exists for that identity
+  (ADR-038); a duplicate against a FAILED/ROLLED_BACK/EXPIRED historical
+  contract is permitted.</li>
 <li>HMAC and denormalized index columns are cross-checked on every load/scan.</li>
 <li>Startup verifies exact column types/nullability, primary and unique keys, and
   cascading foreign keys; matching column names alone are insufficient.</li>

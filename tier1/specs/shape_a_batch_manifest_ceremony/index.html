@@ -1,0 +1,4995 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A security-focused local MCP server exposing strongly typed READ tools for pfSense, plus the design documentation for its inert v0.3.0 Tier 1 WRITE-safety framework.">
+      
+      
+      
+        <link rel="canonical" href="https://night4me.github.io/pfsense-mcp-server/tier1/specs/shape_a_batch_manifest_ceremony/">
+      
+      
+        <link rel="prev" href="../anchor_evidence_export_trust_boundary/">
+      
+      
+        <link rel="next" href="../../../RELEASE_CHECKLIST/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Shape-A batch-manifest ceremony - pfsense-mcp-server</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tier-1-shape-a-batch-manifest-ceremony" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="pfsense-mcp-server" class="md-header__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pfsense-mcp-server
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Shape-A batch-manifest ceremony
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="pfsense-mcp-server" class="md-nav__button md-logo" aria-label="pfsense-mcp-server" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    pfsense-mcp-server
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/night4me/pfsense-mcp-server" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    night4me/pfsense-mcp-server
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../GETTING_STARTED/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../INSTALLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_SETUP_WIZARD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security setup wizard (pfsense-mcp-security)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MCP_CLIENT_CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Connect your MCP client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CONFIGURATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../COMPATIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../STABILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stability & compatibility contract (v1.0.0)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TOOL_AND_GUIDANCE_REFERENCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tool & guidance reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/examples/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Per-client config examples (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../THREAT_MODEL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_TEST_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security test catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../WRITE_ENDPOINT_RISK_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writable-endpoint risk matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PFSENSE_LEAST_PRIVILEGE_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pfSense least-privilege matrix (READ + WRITE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ADR033_PHASE_D_LAB_RUNBOOK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 controlled LAB provisioning runbook (not authorized/live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SECURITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability reporting (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP tool reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API_REVIEW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future-major API review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture (current production)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture (current production)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ARCHITECTURE_DIAGRAMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagrams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../RECOVERY_CONTRACT_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recovery Contract specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../OFFICIAL_GUIDANCE_LAYER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Official guidance layer (implemented, curated corpus, wired via pfsense_get_official_guidance, ADR-017)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../VERSION_AWARE_GUIDANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version-aware Official Guidance (implemented, ADR-018)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../API_SURFACE_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API surface, capability discovery and extension (design only, ADR-019)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../SECURITY_POSTURE_PROVISIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security posture provisioning (design only, ADR-021)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../EXECUTION_AUTHORIZATION_BOUNDARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution-authorization boundary (design only, ADR-022)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tier 1 — future WRITE safety framework (inert)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../WRITE_TIER0_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRITE Tier 0 (inert infrastructure)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../NEXUS_COMPATIBILITY_MATRIX/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nexus compatibility matrix (research only, Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V0.3.0_MILESTONE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0 milestone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../IMPLEMENTATION_ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 implementation roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PHASE_5_READINESS_REVIEW_2026-08/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase 5 readiness review (2026-08)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_ACTIVATION_DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tier 1 activation decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../TIER1_LAB_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Decision Records
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture Decision Records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-001-read-only-production-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 READ-only production architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-002-strongly-typed-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Strongly typed boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-003-get-only-transport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 GET-only transport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-004-capability-profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-004 Capability profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-005-inert-tier-0-write-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-005 Inert Tier 0 WRITE infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-006-recovery-contract-philosophy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-006 Recovery Contract philosophy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-007-security-first-public-schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-007 Security-first public schemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-008-fail-closed-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-008 Fail-closed configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-009-protected-artifact-encryption-provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-009 Protected-artifact encryption provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-010-key-lifecycle-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-010 Key lifecycle and delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-011-whole-store-anti-rollback-anchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-011 Whole-store anti-rollback anchor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-012-confirmation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-012 Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-013-reconciliation-authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-013 Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-014-sealed-executor-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-014 Sealed executor interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-015-rate-and-blast-radius-defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-015 Rate and blast-radius defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-016-alias-candidate-lab-authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-016 Alias-candidate lab authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-017-official-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-017 Official guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-018-version-aware-guidance-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-018 Version-aware Official Guidance resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-019-api-surface-capability-discovery-and-extension-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-019 API surface, capability discovery and extension architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-020-milestone-0-first-write-capability-candidate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-020 Milestone 0 first WRITE capability candidate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-021-security-posture-provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-021 Security posture provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-022-execution-authorization-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-022 Execution-authorization boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-023-authorization-verification-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-023 Authorization-verification boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-024-execution-authorization-coordination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-024 Execution-authorization coordination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-025-authorization-recovery-contract-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-025 Authorization-to-RecoveryContract binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-026-first-write-capability-adapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-026 First WRITE capability adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-027-closed-stage3-execution-port/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-027 Closed LAB-T1 Stage 3 execution-port composition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-028-first-write-product-surface-and-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-028 First-WRITE product surface and delivery architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-029-first-live-acceptance-execution-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-029 First-live-acceptance execution boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-030-dual-pfsense-api-backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-030 Dual pfSense API backend architecture (research only, Nexus Phase A)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-031-backend-target-identity-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-031 Backend/target identity security boundary (invariant only, Nexus Phase B)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-032-nexus-read-transport-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-032 Nexus READ transport architecture (design Phase E, offline-implemented Phase F, not wired/not live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-033-pfsense-least-privilege-bootstrap-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-033 pfSense least-privilege bootstrap architecture (offline implementation only, not live/wired)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-034-mermaid-pypi-compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-034 README Mermaid to static-SVG PyPI compatibility patch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/ADR-035-pfrest-live-guidance-layer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-035 pfREST live documentation guidance layer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_13" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subsystem specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Subsystem specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../protected_artifact_encryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protected artifact encryption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../key_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whole_store_anti_rollback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole-store anti-rollback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anti_rollback_tpm_host_witness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anti-rollback TPM host-witness backend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../production_store_bootstrap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production store bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../confirmation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confirmation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconciliation_authority/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconciliation authority
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rate_blast_radius_policy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate and blast-radius policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sealed_executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sealed executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capability_adapter_contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability adapter contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adapter_restrictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapter restrictions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../disposable_lab_execution_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anchor_evidence_export_trust_boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnchorEvidenceExport trust boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background-the-incident-this-responds-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background — the incident this responds to
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-ttl-authorization-lifecycle-findings-owners-seven-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. TTL / authorization-lifecycle findings (owner's seven questions)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-batch-manifest-schema-and-canonicalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Batch-manifest schema and canonicalization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2b-cryptographic-batch-owner-approval-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2b. Cryptographic batch-owner-approval binding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-owner-review-semantics-authorization-batch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Owner-review semantics (authorization batch)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-batch-ttl-constant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The batch TTL constant
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-threat-failure-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Threat / failure analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-confirmation-batch-semantics-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Confirmation batch semantics — implemented
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-restoration-semantics-deferred" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Restoration semantics — deferred
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-retry-semantics-for-expiredpartial-batch-artifacts-explicit-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Retry semantics for expired/partial batch artifacts — explicit answers
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release and contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release and contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../RELEASE_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PUBLIC_LAUNCH_CHECKLIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public launch checklist
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../PYPI_RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PyPI release procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DEPENDENCY_POLICY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../BENCHMARKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/night4me/pfsense-mcp-server/blob/main/SUPPORT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support (GitHub)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../READ_BACKLOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    READ backlog (historical)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptance records
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acceptance records
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.2.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.2.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.3.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.3.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.4.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.4.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.4.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.5.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.5.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.5.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.7.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.7.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.7.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.8.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.8.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v0.9.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v0.9.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v1.0.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v1.0.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ACCEPTANCE_v1.1.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v1.1.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background-the-incident-this-responds-to" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background — the incident this responds to
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-ttl-authorization-lifecycle-findings-owners-seven-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. TTL / authorization-lifecycle findings (owner's seven questions)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-batch-manifest-schema-and-canonicalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Batch-manifest schema and canonicalization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2b-cryptographic-batch-owner-approval-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2b. Cryptographic batch-owner-approval binding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-owner-review-semantics-authorization-batch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Owner-review semantics (authorization batch)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-batch-ttl-constant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The batch TTL constant
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-threat-failure-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Threat / failure analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-confirmation-batch-semantics-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Confirmation batch semantics — implemented
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-restoration-semantics-deferred" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Restoration semantics — deferred
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-retry-semantics-for-expiredpartial-batch-artifacts-explicit-answers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Retry semantics for expired/partial batch artifacts — explicit answers
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/night4me/pfsense-mcp-server/edit/main/docs/tier1/specs/shape_a_batch_manifest_ceremony.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tier-1-shape-a-batch-manifest-ceremony">Tier 1 — Shape-A batch-manifest ceremony<a class="headerlink" href="#tier-1-shape-a-batch-manifest-ceremony" title="Permanent link">&para;</a></h1>
+<p>Status: mechanism implemented for <strong>both</strong> authorization and confirmation
+signing — <code>ShapeABatchManifest</code>/<code>ShapeABatchOwnerApproval</code>/
+<code>sign_authorization_batch_command()</code>/<code>sign-authorization-batch</code>, and
+<code>ShapeAConfirmationBatchManifest</code>/<code>ShapeAConfirmationBatchOwnerApproval</code>/
+<code>sign_confirmation_batch_command()</code>/<code>sign-confirmation-batch</code>. Restoration
+batching is <strong>not implemented</strong> — see "Restoration semantics". No real
+signing has occurred under this mechanism against production evidence;
+everything below is proven with synthetic keys/evidence in tests only.</p>
+<p>Related: <code>ADR-037</code> (Batch-1 write capabilities), <code>ADR-022</code> (execution
+authorization boundary), <a href="../anchor_evidence_export_trust_boundary/">anchor_evidence_export_trust_boundary.md</a>
+(the discovery mechanism this ceremony reuses unmodified),
+<code>src/pfsense_mcp/tier1/shape_a_batch_manifest.py</code>,
+<code>src/pfsense_mcp/tier1/shape_a_confirmation_batch_manifest.py</code> (both pure
+schema/canonicalization, no signing-crypto imports, so both stay under
+<code>src/pfsense_mcp/tier1/</code>), <code>signing/shape_a_batch_owner_approval.py</code>,
+<code>signing/shape_a_confirmation_batch_owner_approval.py</code> (both need
+<code>security_authorization</code>/<code>security_authorization_verifier</code>, so both live
+under <code>signing/</code> instead — see §2b's "Why this lives in signing/" note),
+<code>signing/write_batch1_signing.py</code>.</p>
+<h2 id="background-the-incident-this-responds-to">Background — the incident this responds to<a class="headerlink" href="#background-the-incident-this-responds-to" title="Permanent link">&para;</a></h2>
+<p>2026-09-05: Round-1 Batch-1 authorization signing required five separate,
+literal, interactively-typed <code>yes</code> responses — one full review-and-approve
+ceremony per capability, even though all five previews shared one
+<code>requested_plan_digest</code>/<code>requested_step_id</code> (one security-posture check
+governs the whole batch by construction — see <code>sign_authorization_preview()</code>'s
+own re-derivation-and-cross-check logic, unchanged). The owner's own explicit
+direction: future homogeneous batches are expected to contain 20–50 WRITE
+capabilities, and repeating that ceremony once per capability does not scale.
+The instruction was explicit that human authorization must not be removed —
+only its <em>granularity</em> changes, from capability-by-capability approval to
+exact-batch approval.</p>
+<p>A first implementation (commit <code>068a25a</code>) built <code>ShapeABatchManifest</code> with a
+"digest for display/audit only" and no cryptographic link from an individual
+signed <code>PlanAuthorizationV2</code> back to the batch it was approved as part of. A
+second owner review of that commit identified this as a real gap — see
+"Independent review of 068a25a" below — which §2b closes.</p>
+<h2 id="1-ttl-authorization-lifecycle-findings-owners-seven-questions">1. TTL / authorization-lifecycle findings (owner's seven questions)<a class="headerlink" href="#1-ttl-authorization-lifecycle-findings-owners-seven-questions" title="Permanent link">&para;</a></h2>
+<p>These were established by direct reading of
+<code>src/pfsense_mcp/tier1/write_execution_core.py</code>,
+<code>src/pfsense_mcp/security_plan_freshness.py</code>, and
+<code>src/pfsense_mcp/security_authorization_verifier.py</code> — not assumed.</p>
+<ol>
+<li><strong>Where is <code>PlanAuthorizationV2</code> expiry checked?</strong> Exactly once, inside
+   <code>authorize_and_create()</code>: <code>authorization.issued_at &lt;= now &lt; authorization.expires_at</code>.
+   No other function in <code>write_execution_core.py</code> re-derives this check
+   against the live <code>PlanAuthorizationV2</code> object.</li>
+<li><strong>Does <code>authorize_and_create()</code> accept a still-valid authorization into a
+   persistent PREPARED contract?</strong> Yes. On success it copies
+   <code>authorization.issued_at</code>/<code>authorization.expires_at</code> verbatim into the new
+   <code>RecoveryContract</code>'s <code>AuthorizationProvenance</code> (fields
+   <code>authorization_issued_at</code>/<code>authorization_expires_at</code>), and separately caps
+   the contract's own <code>expires_at = min(now + self._contract_validity,
+   authorization.expires_at)</code>.</li>
+<li><strong>Does later expiry of the original authorization matter once admitted to
+   PREPARED?</strong> The raw <code>PlanAuthorizationV2</code> object is not reinspected after
+   admission — but its <em>copied</em> timestamps are: both <code>confirm_and_handoff()</code>
+   and <code>resume_prepared()</code> re-check <code>now</code> against the same
+   <code>authorization_issued_at</code>/<code>authorization_expires_at</code> window stored in
+   <code>AuthorizationProvenance</code>. <strong>PREPARED admission does not reset or extend
+   the deadline.</strong> Confirmation must still land before the <em>original</em>
+   authorization's <code>expires_at</code>.</li>
+<li><strong>Must confirmation occur before authorization expiry, or only admission
+   into PREPARED?</strong> Both, transitively — admission requires the check in (1),
+   and confirmation independently re-checks the same window copied in (2).
+   There is no path that admits after expiry, and no path that confirms after
+   the copied <code>expires_at</code> even if admission happened earlier.</li>
+<li><strong>What must be replaced/archived/consumed before retrying expired
+   authorizations?</strong> Nothing needs archiving — an authorization that was
+   never passed to <code>authorize_and_create()</code> leaves no trace in any persistent
+   store; it simply becomes unusable JSON on disk. A fresh
+   <code>PlanAuthorizationV2</code> (new <code>authorization_id</code>, fresh <code>issued_at</code>/
+   <code>expires_at</code>) can be signed against the same untouched preview at any time,
+   provided the freshly re-derived plan digest still matches. See §8 for the
+   full retry-semantics writeup this finding grounds.</li>
+<li><strong>Can the five untouched previews safely receive fresh authorizations
+   with new IDs/timestamps if bindings/posture remain valid?</strong> Yes — nothing
+   in <code>sign_authorization_preview()</code> or <code>authorize_and_create()</code> binds a
+   preview to a specific prior <code>authorization_id</code>; the preview is immutable
+   input, re-verified fresh (integrity MAC, plan-digest cross-check) on every
+   signing attempt.</li>
+<li><strong>Is the current 5-minute TTL appropriate if admission is immediate?</strong>
+   No single universal number is — the constant exists to substitute for a
+   freshness recheck that <code>confirm_and_handoff()</code> does <strong>not</strong> perform (only
+   <code>authorize_and_create()</code> calls <code>_plan_is_fresh()</code>); a wider TTL trades a
+   longer window of "posture might have silently changed since signing" for
+   the ability to complete a large batch during one realistic human ceremony.
+   This directly motivates §4's separate constant for the batch path only —
+   the existing single-capability path is unaffected.</li>
+</ol>
+<p><strong>Conclusion driving the design below:</strong> none of <code>MutationExecutor</code>,
+<code>write_execution_core.py</code>, or <code>executor.py</code> need to change. The batch problem
+is entirely a signer/ceremony-layer UX problem — the per-capability
+<code>PlanAuthorizationV2</code> verification, binding, and freshness semantics are
+untouched and individually re-verifiable exactly as before.</p>
+<h2 id="2-batch-manifest-schema-and-canonicalization">2. Batch-manifest schema and canonicalization<a class="headerlink" href="#2-batch-manifest-schema-and-canonicalization" title="Permanent link">&para;</a></h2>
+<p><code>ShapeABatchManifest</code> (<code>shape_a_batch_manifest.py</code>) is a <strong>derived, read-only,
+non-cryptographically-signed</strong> view over N already-integrity-verified
+<code>ShapeAAuthorizationPreview</code> objects. It is never a new source of truth and
+never itself authorizes anything — approving it only triggers the <em>existing</em>
+per-capability signing path (<code>sign_authorization_preview()</code>), once per
+capability, exactly as it already worked. (<code>ShapeAConfirmationBatchManifest</code>
+is its confirmation-side mirror — see §6.)</p>
+<p>Fields: <code>schema_version</code> (<code>SHAPE_A_BATCH_MANIFEST_SCHEMA_VERSION = 1</code>),
+<code>batch_id</code> (caller-supplied, random per invocation —
+<code>batch-{secrets.token_hex(16)}</code>), <code>capability_symbols</code> (canonical sorted
+order), <code>entries</code> (one <code>ShapeABatchManifestEntry</code> per capability:
+<code>capability_symbol</code>, <code>execution_intent_digest</code>, <code>semantic_fields</code>),
+<code>requested_plan_digest</code>, <code>requested_step_id</code>, <code>target_capability_posture</code>,
+<code>target_anchor_assurance</code> — the last four values are hoisted once, since
+homogeneity is a <strong>construction invariant</strong>, not merely a display fact:</p>
+<ul>
+<li><strong>Non-empty, explicit input only.</strong> No <code>--all-registered</code> equivalent
+  anywhere in the batch construction or CLI path. <code>capabilities</code> must be a
+  finite, caller-supplied list.</li>
+<li><strong>No duplicates.</strong> Refused before any other check.</li>
+<li><strong>Homogeneity required.</strong> Every preview must share the exact same
+  <code>requested_plan_digest</code>, <code>requested_step_id</code>, <code>target_capability_posture</code>,
+  and <code>target_anchor_assurance</code>, or the whole manifest construction is
+  refused. This is deliberate, not a limitation to lift later — it is what
+  makes "one posture check governs the whole batch" true rather than merely
+  displayed.</li>
+<li><strong>Canonical ordering.</strong> Always sorted by <code>capability_symbol</code>, computed by
+  the manifest builder, regardless of input order — so re-ordering the input
+  list can never change what is reviewed, signed, or digested.</li>
+<li><strong>Bounded size.</strong> <code>_MAX_BATCH_SIZE = 200</code> — comfortably above the owner's
+  stated 20–50 capability range, refused beyond that as a sanity bound, not a
+  tuned production limit.</li>
+<li><strong>Deterministic digest.</strong> <code>compute_shape_a_batch_manifest_digest()</code> is a
+  domain-separated SHA-256 over the canonical JSON payload
+  (<code>_MANIFEST_DIGEST_DOMAIN = b"pfsense-mcp-shape-a-batch-manifest-v1\0"</code>),
+  which now feeds directly into <code>ShapeABatchOwnerApproval</code>'s own signed
+  payload (§2b) — no longer display/audit only.</li>
+</ul>
+<h2 id="2b-cryptographic-batch-owner-approval-binding">2b. Cryptographic batch-owner-approval binding<a class="headerlink" href="#2b-cryptographic-batch-owner-approval-binding" title="Permanent link">&para;</a></h2>
+<p><strong>Independent review of <code>068a25a</code> — primary finding.</strong> That commit's own
+report described the manifest digest as "for display/audit only." Direct
+inspection confirmed this was a real gap: <code>PlanAuthorizationV2</code>'s signed
+payload (<code>build_plan_authorization_v2_payload()</code>) contains no <code>batch_id</code>,
+<code>manifest_digest</code>, or any other field naming which batch (if any) the owner
+approved before this specific artifact was signed. The only link was
+procedural — "the signer loop produced this after the prompt" — which a
+verifier examining artifacts after the fact, without having watched the
+signer run, cannot check at all. The rest of <code>068a25a</code>'s design (homogeneity,
+canonical ordering, fail-closed missing/already-signed handling,
+<code>expected_execution_intent_digest</code> defense in depth) had no defects found on
+review; only this one property was missing.</p>
+<p><strong>Fix: <code>ShapeABatchOwnerApproval</code></strong> (<code>shape_a_batch_owner_approval.py</code>). The
+binding mechanism uses a field <code>PlanAuthorizationV2</code> already has —
+<code>authorization_id</code> — rather than evolving that shared, already-shipped
+schema:</p>
+<ol>
+<li>The owner's review and <code>yes</code> cover only the manifest's fixed semantic
+   content — <code>batch_id</code>, <code>manifest_digest</code>, and every capability's
+   <code>execution_intent_digest</code>/projection — all already computed and displayed
+   before the prompt. <code>authorization_id</code> does not exist yet at that point:
+   <code>ShapeABatchManifest</code>/<code>ShapeABatchManifestEntry</code> have no such field, so it
+   cannot be part of what is reviewed or approved.</li>
+<li>Only <em>after</em> the owner's single <code>yes</code>, the signer generates one
+   <code>authorization_id</code> per capability (<code>authz-{secrets.token_hex(16)}</code>) — a
+   non-semantic, cryptographically random correlation identifier, never shown
+   to or reviewed by the owner (2026-09-05 owner trust-boundary decision: the
+   required property is that semantic content is immutable and fully shown
+   pre-<code>yes</code>, not that these bookkeeping identifiers are pre-approved — see
+   the "why this is sufficient" note at the end of this section). Then
+   <code>build_shape_a_batch_owner_approval_payload()</code>
+   builds a payload committing, under one signature, to the exact
+   <code>(capability_symbol, execution_intent_digest, authorization_id)</code> triple for
+   every capability, plus <code>manifest_digest</code> — <strong>independently recomputed from
+   the manifest itself</strong>, never accepted as a caller-supplied value, so a
+   caller cannot forge approval for content that was never actually built via
+   <code>build_shape_a_batch_manifest()</code>.</li>
+<li>The payload is signed with the same authorization authority/private key
+   used for the individual <code>PlanAuthorizationV2</code> artifacts — one trust root
+   for the whole ceremony — producing a <code>ShapeABatchOwnerApproval</code>, written to
+   <code>&lt;artifact_base_directory&gt;/_batches/&lt;batch_id&gt;/batch-owner-approval.json</code>.</li>
+<li>Each capability's <code>PlanAuthorizationV2</code> is then signed using the exact
+   <code>authorization_id</code> just committed into the signed approval above (via
+   <code>_one_authorization()</code>'s new <code>authorization_id</code> parameter) — the same
+   value, never regenerated a second time.</li>
+</ol>
+<p><strong>The resulting proof.</strong> <code>verify_plan_authorization_v2_batch_membership(authz,
+approval, capability_symbol=..., authorities=...)</code> returns <code>True</code> only if:
+<code>approval</code>'s own signature verifies; <code>authz</code>'s own signature verifies
+(<code>verify_plan_authorization_v2_signature()</code>, unchanged); <code>approval</code> has
+exactly one entry for <code>capability_symbol</code>; that entry's <code>authorization_id</code>
+equals <code>authz.authorization_id</code> (itself one of <code>authz</code>'s own signed-payload
+fields); and <code>approval.requested_plan_digest == authz.plan_digest</code>. Because
+both signatures come from the same authority key, an attacker cannot forge
+either half independently, and a genuinely-signed authorization from one
+batch's approval can never satisfy membership against a <em>different</em> batch's
+approval — that approval's own signature simply does not cover this
+authorization's <code>authorization_id</code> at all (proven by
+<code>test_authorization_from_one_batch_does_not_satisfy_a_different_batchs_approval</code>
+and the unit-level
+<code>test_batch_membership_false_for_cross_batch_authorization_insertion</code>).</p>
+<p><strong>Why a non-semantic, post-approval <code>authorization_id</code> is sufficient.</strong>
+2026-09-05 owner review distinguished two candidate properties: (A) the owner
+approves the exact semantic mutation intents; (B) the owner pre-approves the
+exact identities of the individual authorization artifacts. The design above
+provides only (A) — structurally, since <code>authorization_id</code> does not exist at
+approval time. This is sufficient for the intended threat model because
+<code>authorization_id</code> carries no semantic content of its own (it is a random
+token with no bearing on which capability or projection it refers to); the
+actual mutation semantics (<code>capability_symbol</code>, <code>execution_intent_digest</code>,
+<code>semantic_fields</code>, <code>requested_plan_digest</code>) are fully fixed pre-<code>yes</code>, are
+exactly what <code>manifest_digest</code> commits to, and are independently re-verified
+against the original, already-reviewed preview file (via
+<code>expected_execution_intent_digest</code>) at the moment each individual
+authorization is signed — so the post-<code>yes</code> identifier-assignment step cannot
+smuggle in a different semantic mutation under an unchanged capability name.
+The only party choosing the identifier is the same already-trusted signing
+process the owner is trusting to run the rest of the ceremony correctly, in
+one atomic, uninterrupted step immediately following <code>yes</code> — there is no
+separate or lower-trust actor, and no window in which a different semantic
+manifest could be substituted under the same approval.</p>
+<p><strong>What this still is not.</strong> Not a new source of authorization — a verifier
+still independently re-checks each <code>PlanAuthorizationV2</code>'s own signature,
+freshness, plan-digest match, and risk-class binding exactly as before; batch
+membership is one additional fact a verifier <em>can</em> check, never a substitute
+for any existing one. Not consumed by <code>authorize_and_create()</code>/
+<code>confirm_and_handoff()</code> at all — <code>write_execution_core.py</code> remains completely
+unaware this artifact type exists.</p>
+<h2 id="3-owner-review-semantics-authorization-batch">3. Owner-review semantics (authorization batch)<a class="headerlink" href="#3-owner-review-semantics-authorization-batch" title="Permanent link">&para;</a></h2>
+<p><code>sign_authorization_batch_command(capabilities)</code>:</p>
+<ol>
+<li>Validates the capability list (non-empty, no duplicates, each registered)
+   — fails closed before touching any file.</li>
+<li>Loads every named preview, refusing the <strong>whole batch</strong> if any preview is
+   missing or if any capability already has a signed
+   <code>authorization-inbox.json</code> — there is no partial-batch admission.</li>
+<li>Builds the manifest (<code>build_shape_a_batch_manifest()</code>), which independently
+   re-derives and enforces canonical order and homogeneity.</li>
+<li>Shows <code>render_shape_a_batch_manifest_review()</code> — every capability, its
+   <code>execution_intent_digest</code>, its semantic fields, the manifest digest, and
+   the shared plan digest/step id/posture/assurance targets — and asks for
+   <strong>exactly one</strong> literal <code>yes</code> (<code>_prompt_operator_approval()</code>, unchanged
+   function, unchanged literal-string requirement — no
+   <code>--yes</code>/<code>--force</code>/unattended flag exists or may be added).</li>
+<li>On refusal, returns without signing anything.</li>
+<li>On approval: <em>only now</em> generates the N <code>authorization_id</code>s, builds and
+   signs the <code>ShapeABatchOwnerApproval</code> (§2b) and writes it to disk, then
+   builds the export-based <code>SecurityPostureDiscovery</code> <strong>once</strong> (not once per
+   capability — see §5, threat 8) and signs each capability's
+   <code>PlanAuthorizationV2</code> via the unchanged <code>_one_authorization()</code> body, now
+   called with <code>require_approval=False</code> (no second prompt),
+   <code>validity=_BATCH_AUTHORIZATION_VALIDITY</code> (§4), the shared <code>discovery</code>, the
+   <code>authorization_id</code> just committed into the signed approval, and
+   <code>expected_execution_intent_digest</code> bound to what the owner actually saw in
+   the manifest (§5, threat 4).</li>
+</ol>
+<p>The ordinary single-capability <code>sign-authorization</code> path
+(<code>sign_authorization_command()</code> → <code>_one_authorization()</code> with all new
+parameters at their defaults) is <strong>unmodified</strong>: default
+<code>require_approval=True</code>, default <code>validity=_AUTHORIZATION_VALIDITY</code> (5
+minutes, shared with <code>alias_description_signing.py</code>), no expected-digest
+check, no batch-approval-committed <code>authorization_id</code> (a fresh random one is
+generated, exactly as before). <code>test_ordinary_single_capability_path_is_unaffected</code>
+proves this.</p>
+<h2 id="4-the-batch-ttl-constant">4. The batch TTL constant<a class="headerlink" href="#4-the-batch-ttl-constant" title="Permanent link">&para;</a></h2>
+<p><code>_BATCH_AUTHORIZATION_VALIDITY = timedelta(minutes=30)</code> — a separate constant
+from <code>_AUTHORIZATION_VALIDITY = timedelta(minutes=5)</code>, used <strong>only</strong> by the
+two batch commands. <strong>Re-derived</strong> from the original <code>timedelta(hours=1)</code>
+after confirmation batching (§6) was implemented:</p>
+<p>The 1-hour value was originally chosen under the assumption that confirming a
+50-capability batch might still require up to 50 separate manual confirmation
+ceremonies — the exact bottleneck this whole redesign exists to remove.  Now
+that <code>sign_confirmation_batch_command()</code> exists, confirming the whole batch is
+itself one owner review, not N. The realistic end-to-end window between a
+batch authorization's <code>yes</code> and the corresponding batch confirmation's <code>yes</code>
+is: one batch-authorization review (seconds) + N individually scriptable
+<code>authorize_and_create()</code> admission calls (non-ceremonial — no human review
+point, since that already happened at signing time, so an operator can loop
+them) + one batch-confirmation review (a few minutes to read, comparable in
+order of magnitude to reading one preview). 30 minutes is a deliberately
+narrower, still-generous value for that reduced scope — not a value derived
+from a formal timing model (no more than the original 5-minute single-capability
+constant was), but a considered reduction now that the N-manual-ceremonies
+case it originally hedged against no longer exists. The existing 5-minute
+single-capability path is completely untouched by this change.</p>
+<h2 id="5-threat-failure-analysis">5. Threat / failure analysis<a class="headerlink" href="#5-threat-failure-analysis" title="Permanent link">&para;</a></h2>
+<p>Each item states the attack/failure and the mechanism that fails it closed,
+with the proving test named where one exists.</p>
+<ol>
+<li><strong>Substitution of one capability after approval.</strong> Not reachable —
+   <code>manifest.capability_symbols</code> is fixed at manifest-construction time
+   (before the prompt); the signing loop iterates exactly that tuple. There
+   is no code path that re-reads the CLI's <code>capabilities</code> argument after the
+   prompt. <code>ShapeABatchOwnerApproval</code>'s own signature additionally makes this
+   cryptographically checkable after the fact (§2b).</li>
+<li><strong>Removal/addition/reordering attacks.</strong> Reordering the input list cannot
+   change canonical order (§2, <code>test_canonical_ordering_is_independent_of_input_order</code>).
+   Adding a capability requires a brand new <code>sign_authorization_batch_command()</code>
+   invocation — a new manifest, a new review, a new <code>yes</code>. Both manifest and
+   approval dataclasses are frozen (<code>test_manifest_is_frozen</code>).</li>
+<li><strong>Projection substitution</strong> (the <em>content</em>, i.e. <code>semantic_fields</code>, of what
+   a capability would do changes between manifest build and signing). The
+   manifest digest — now cryptographically bound via <code>ShapeABatchOwnerApproval</code>
+   — covers <code>semantic_fields</code> (<code>test_digest_changes_when_a_capability_projection_changes</code>);
+   <code>execution_intent_digest</code> is the field actually enforced at signing time
+   via <code>expected_execution_intent_digest</code>/<code>hmac.compare_digest()</code> inside
+   <code>_one_authorization()</code> (see (4)).</li>
+<li><strong>execution_intent_digest substitution.</strong>
+   <code>test_one_authorization_rejects_a_substituted_execution_intent_digest</code>
+   proves a mismatch raises <code>SigningError</code> and signs nothing for that
+   capability.</li>
+<li><strong>Batch digest changed.</strong> Any change to <code>manifest_digest</code>, <code>batch_id</code>, or
+   any entry's <code>authorization_id</code>/<code>execution_intent_digest</code> breaks
+   <code>ShapeABatchOwnerApproval</code>'s own signature
+   (<code>test_verify_fails_when_a_signed_field_is_tampered</code>,
+   <code>test_verify_fails_when_an_entry_authorization_id_is_tampered</code>).</li>
+<li><strong>Authorization from Batch A inserted into Batch B.</strong>
+   <code>test_authorization_from_one_batch_does_not_satisfy_a_different_batchs_approval</code>
+   proves a genuinely-signed authorization from batch A's approval fails
+   <code>verify_plan_authorization_v2_batch_membership()</code> against batch B's
+   approval — the different approval's own signature does not cover that
+   <code>authorization_id</code> at all.</li>
+<li><strong>Confirmation from Batch A inserted into Batch B.</strong>
+   <code>test_evidence_from_one_batch_does_not_satisfy_a_different_batchs_approval</code>
+   proves the confirmation-side mirror of (6).</li>
+<li><strong>Replay of an old batch approval.</strong> Each <code>sign_authorization_batch_command()</code>
+   call builds a fresh manifest with a fresh random <code>batch_id</code> and prompts a
+   fresh literal <code>input()</code> call — there is no code path anywhere that accepts
+   a previously-produced <code>ShapeABatchOwnerApproval</code> file as authorization to
+   skip the prompt or to sign additional/different capabilities; the CLI only
+   ever <em>writes</em> this artifact, never reads one back in as an input.</li>
+<li><strong>Expired authorization replaced with fresh authorization without a fresh
+   <code>yes</code>.</strong> <code>test_expired_authorization_cannot_be_replaced_without_a_fresh_yes</code>
+   proves that even a caller attempting <code>require_approval=False</code> directly
+   cannot overwrite an existing <code>authorization-inbox.json</code> — the file's mere
+   presence refuses the write (<code>write_secure_new()</code>'s <code>O_EXCL</code> discipline),
+   regardless of whether the existing artifact has since expired.</li>
+<li><strong>Signer crash midway through N artifacts / retry after partial output.</strong>
+    Each <code>_one_authorization()</code> call is independently atomic; a retry with the
+    <em>original full</em> list is refused (<code>already exists</code>); the documented safe
+    retry is a fresh, smaller batch of only the still-pending capabilities —
+    <code>test_partial_retry_is_safe_with_only_the_remaining_capabilities</code> proves
+    both halves. See §8 for the full retry-semantics writeup.</li>
+<li><strong>One output tampered after batch signing.</strong>
+    <code>test_tampering_a_signed_authorization_after_batch_signing_breaks_its_signature</code>
+    proves a post-signing edit to any signed field breaks
+    <code>verify_plan_authorization_v2_signature()</code>.</li>
+<li><strong>Stale posture evidence during a batch.</strong>
+    <code>test_stale_posture_during_batch_fails_the_whole_batch_before_any_signature</code>
+    proves a stale/tampered preview fails the whole batch closed (via the
+    preview's own integrity-MAC or plan-digest cross-check, either of which
+    refuses before any signature is produced), not partway through.</li>
+<li><strong>Witness changes during a batch.</strong> The shared <code>discovery</code> is built
+    exactly once per batch invocation
+    (<code>test_shared_discovery_is_built_exactly_once_per_batch</code>), before the
+    signing loop begins — every capability in one approved batch sees the
+    identical posture snapshot, so a witness value that changed mid-batch
+    cannot produce inconsistent postures within one approval.</li>
+<li><strong>Mixed risk classes / mixed <code>requested_plan_digest</code> / mixed target
+    posture/anchor assurance.</strong> Impossible by construction —
+    <code>build_shape_a_batch_manifest()</code> refuses any batch whose previews do not
+    share one <code>requested_plan_digest</code>/<code>requested_step_id</code>/
+    <code>target_capability_posture</code>/<code>target_anchor_assurance</code>
+    (<code>test_refuses_heterogeneous_batch</code>, parametrized over all four fields);
+    <code>risk_class</code> is itself derived from <code>plan.steps</code>, so one shared
+    <code>requested_step_id</code> implies one shared risk class.</li>
+<li><strong>Duplicate capability entries.</strong> Refused explicitly before any preview is
+    even loaded (<code>test_refuses_duplicate_capability_symbol</code>,
+    <code>test_batch_refuses_duplicate_capability_in_the_list</code>).</li>
+<li><strong>Partial admission into PREPARED state.</strong> Out of scope for this ceremony
+    — <code>authorize_and_create()</code> is a separate, later, per-capability step this
+    module never calls. Nothing here creates or touches a <code>RecoveryContract</code>.</li>
+</ol>
+<h2 id="6-confirmation-batch-semantics-implemented">6. Confirmation batch semantics — implemented<a class="headerlink" href="#6-confirmation-batch-semantics-implemented" title="Permanent link">&para;</a></h2>
+<p><code>ShapeAConfirmationBatchManifest</code>/<code>ShapeAConfirmationBatchOwnerApproval</code>
+(<code>shape_a_confirmation_batch_manifest.py</code>/
+<code>shape_a_confirmation_batch_owner_approval.py</code>) mirror §2/§2b exactly, with
+one deliberate difference in homogeneity predicate and binding mechanism:</p>
+<p><strong>Homogeneity is <code>expected_authority_id</code>/<code>expected_algorithm</code> only</strong> — never a
+shared digest. Unlike authorization previews, pending confirmation requests
+have no equivalent shared fact: each is intrinsically bound to its own
+already-created <code>RecoveryContract</code> (own <code>contract_id</code>/<code>operation_id</code>/
+<code>intent_digest</code>), and these are never expected to match across capabilities
+even within one homogeneous batch.</p>
+<p><strong>Binding uses pre-existing identifiers, not a signer-generated one.</strong> Unlike
+<code>PlanAuthorizationV2.authorization_id</code> (signer-generated, non-semantic, and
+assigned only <em>after</em> the owner's <code>yes</code> — see §2b's "why a non-semantic,
+post-approval <code>authorization_id</code> is sufficient"), <code>ConfirmationEvidence.
+contract_id</code>/<code>operation_id</code> are never chosen by the signer at all — they
+already exist on the already-created <code>RecoveryContract</code>, read unchanged from
+the pending request on disk, and so are already fixed and already part of
+what the owner reviews. <code>ShapeAConfirmationBatchOwnerApproval</code>'s signed
+payload therefore commits directly to the exact <code>(capability_symbol,
+contract_id, operation_id, intent_digest)</code> tuple for every capability, rather
+than to any post-approval-generated identifier.
+<code>verify_confirmation_evidence_batch_membership()</code> is the exact mirror of
+<code>verify_plan_authorization_v2_batch_membership()</code> (§2b), proven by
+<code>test_every_produced_evidence_satisfies_batch_membership_against_its_own_approval</code>
+and <code>test_evidence_from_one_batch_does_not_satisfy_a_different_batchs_approval</code>.</p>
+<p><code>sign_confirmation_batch_command(capabilities)</code> mirrors §3 exactly: refuses
+the whole batch on any missing/already-signed pending request, builds and
+reviews the manifest, requires exactly one <code>yes</code>, signs and writes the batch
+owner approval, then loops <code>_one_confirmation()</code> with
+<code>require_approval=False</code> and the three <code>expected_contract_id</code>/
+<code>expected_operation_id</code>/<code>expected_intent_digest</code> defense-in-depth checks
+(mirroring <code>_one_authorization()</code>'s <code>expected_execution_intent_digest</code>). The
+ordinary single-capability <code>sign-confirmation</code> path
+(<code>sign_confirmation_command()</code>) is unmodified —
+<code>test_ordinary_single_capability_confirmation_path_is_unaffected</code> proves this.</p>
+<p>This closes the gap the owner explicitly flagged in the prior pass ("do not
+merely move the 20–50 manual-approval bottleneck from authorization to
+confirmation") — confirming a 50-capability batch is now also exactly one
+owner review.</p>
+<h2 id="7-restoration-semantics-deferred">7. Restoration semantics — deferred<a class="headerlink" href="#7-restoration-semantics-deferred" title="Permanent link">&para;</a></h2>
+<p>Restoration remains, unconditionally, a separate owner decision derived from
+fresh, observed post-mutation state — this ceremony does not, and must not,
+pre-authorize unknown restoration intents as part of a mutation batch. A
+future restoration batch may reuse this same one-review/one-<code>yes</code> pattern
+once its exact, fresh intents are known and reviewable, following the same
+manifest/digest/homogeneity/cryptographic-binding discipline documented above
+— but building that manifest type is out of scope until a real restoration
+scenario defines what its homogeneity predicate should be.</p>
+<h2 id="8-retry-semantics-for-expiredpartial-batch-artifacts-explicit-answers">8. Retry semantics for expired/partial batch artifacts — explicit answers<a class="headerlink" href="#8-retry-semantics-for-expiredpartial-batch-artifacts-explicit-answers" title="Permanent link">&para;</a></h2>
+<p>Answering the owner's five specific sub-questions directly, grounded in §1's
+findings and the fail-closed design of both batch commands:</p>
+<ol>
+<li><strong>Are expired artifacts archived, atomically replaced, or consumed?</strong>
+   None of the three. An authorization/confirmation that was never passed to
+   <code>authorize_and_create()</code>/consumed downstream leaves no trace in any
+   persistent store — it simply becomes inert JSON on disk. Nothing in this
+   codebase automates moving, renaming, or deleting it (deliberately — "do
+   not simply delete security artifacts ad hoc"); §414's stale-vs-fresh
+   messaging (<code>_describe_existing_authorization()</code>/
+   <code>_describe_existing_confirmation()</code>) tells an operator which case they are
+   looking at without ever mutating the file.</li>
+<li><strong>How is accidental overwrite of a still-valid authorization prevented?</strong>
+   <code>write_secure_new()</code>'s <code>O_EXCL</code> — a create-only open that fails if the
+   target already exists — makes overwrite structurally impossible, expired
+   or not; <code>test_expired_authorization_cannot_be_replaced_without_a_fresh_yes</code>
+   proves this holds even against a caller that supplies
+   <code>require_approval=False</code> directly.</li>
+<li><strong>How can stale and fresh artifacts never be confused?</strong> Every artifact
+   carries its own <code>issued_at</code>/<code>expires_at</code>; a verifier must always
+   independently recompute freshness (mirroring <code>authorize_and_create()</code>'s own
+   <code>_plan_is_fresh()</code>/expiry check) rather than trust file presence alone. The
+   stale-vs-fresh messaging (item 1) surfaces this at the CLI layer too.</li>
+<li><strong>How is partial prior batch output detected?</strong> The precondition check in
+   both <code>sign_authorization_batch_command()</code> and
+   <code>sign_confirmation_batch_command()</code> refuses the <strong>whole</strong> batch if <em>any</em>
+   named capability already has a signed artifact — there is no partial
+   admission, so a retry with the original full list always surfaces partial
+   completion immediately as a refusal rather than silently re-approving the
+   already-done subset.</li>
+<li><strong>How does a retry receive a new batch/review identity, and how can
+   retries never replay an old owner approval?</strong> Every invocation of either
+   batch command generates a fresh random <code>batch_id</code>
+   (<code>secrets.token_hex(_BATCH_ID_BYTES)</code>) and requires a fresh literal
+   <code>input()</code> call — there is no persisted approval token, session, or flag
+   that could be replayed across invocations; the owner's <code>yes</code> exists only
+   as one function call inside one process's lifetime.</li>
+</ol>
+<p>The five real Round-1 <code>authorization-inbox.json</code> artifacts (<code>fb48b55</code>-era,
+signed under the pre-batch single-capability ceremony) were never passed to
+<code>authorize_and_create()</code> and have since passed their original 5-minute
+<code>expires_at</code>; per (1) above, nothing in this pass touched, archived, or
+replaced them — they remain exactly as the owner's prior "allow them to
+expire naturally" instruction left them.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.indexes", "content.code.copy", "content.action.edit", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

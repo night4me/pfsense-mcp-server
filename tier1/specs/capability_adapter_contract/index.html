@@ -2777,6 +2777,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -3352,6 +3356,62 @@
     
   
     Disposable-lab execution model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anchor_evidence_export_trust_boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnchorEvidenceExport trust boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shape_a_batch_manifest_ceremony/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shape-A batch-manifest ceremony
   
 
     
@@ -4519,10 +4579,27 @@
 
 
 <h1 id="tier-1-capability-adapter-contract">Tier 1 — Capability adapter contract<a class="headerlink" href="#tier-1-capability-adapter-contract" title="Permanent link">&para;</a></h1>
-<p>Status: implementation-ready specification; implementation not authorized.
-Activation gate: Milestone 9 (first capability, separately authorized);
-this document defines the <strong>interface</strong> every future adapter must satisfy,
-not any specific adapter.
+<p>Status: implementation-ready specification for the general interface.
+Milestone 9 has since been separately authorized and shipped for exactly
+one capability (<code>set_firewall_alias_description_v1</code>,
+<code>tier1/alias_description.py::AliasDescriptionAdapterV1</code>) --
+<code>AliasDescriptionAdapterV1.is_semantically_verified()</code> was independently
+re-verified (ADR-036 W0) to satisfy I5 below exactly (compares the one
+projected field against the intended value <em>and</em> every non-projected
+field against the pre-state; direct unit coverage:
+<code>tests/tier1/test_alias_description_execution.py</code>'s
+<code>test_is_semantically_verified_*</code> tests). This document still defines
+the <strong>general interface</strong> every <em>future</em> adapter must satisfy -- it is
+not, and does not become, a description of any second adapter's
+implementation merely because the first one now demonstrates the
+pattern works. (This status line was found stale during ADR-036 W0's own
+audit -- several other <code>docs/tier1/specs/*.md</code> files, e.g.
+<code>sealed_executor.md</code>, still carry the pre-Milestone-9
+"implementation not authorized" framing verbatim despite describing
+components -- <code>MutationExecutor</code>, in that case -- that are now real,
+shipped, production code for this one capability. A full sweep of that
+directory's status headers was judged out of this pass's narrow scope
+and is recorded as a follow-up, not silently fixed or silently ignored.)
 Related: <a href="../sealed_executor/">sealed_executor.md</a> (defines the
 <code>CapabilityAdapter</code> Protocol this document explains how to implement
 safely), <a href="../adapter_restrictions/">adapter_restrictions.md</a> (defines how
