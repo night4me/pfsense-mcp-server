@@ -10,6 +10,7 @@ from pfsense_mcp.tier1.errors import ConfirmationError, ContractConflictError
 from pfsense_mcp.tier1.reconciliation import ReconciliationEvidence, ReconciliationOutcome
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 _VALID_RECONCILIATION_PROOF = b"synthetic-valid-reconciliation-proof"
@@ -76,6 +77,7 @@ def _to_reconciliation(store, contract, *, rollback=False):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     current = executing
     if rollback:
@@ -266,4 +268,5 @@ def test_rollback_failed_outcome_keeps_target_reserved(tmp_path, contract_factor
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )

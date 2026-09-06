@@ -28,6 +28,7 @@ from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from pfsense_mcp.tier1.crypto import ArtifactRole, build_nonce, encrypt_artifact
 from pfsense_mcp.tier1.executor import CapabilityAdapter, MutationExecutor
+from pfsense_mcp.tier1.shape_a_registry import WRITE_CAPABILITY_SECURITY_CLASS
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 
@@ -131,6 +132,7 @@ def prepare_contract(
         operation_id=operation_id,
         idempotency_key=idempotency_key,
         capability=adapter.capability,
+        security_class=WRITE_CAPABILITY_SECURITY_CLASS[adapter.capability],
         endpoint_symbol=adapter.endpoint_symbol,
         http_method=adapter.http_method,
         target_identity_digest=target_digest,

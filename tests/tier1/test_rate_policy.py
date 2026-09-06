@@ -10,6 +10,7 @@ from pfsense_mcp.tier1.errors import RateLimitExceededError
 from pfsense_mcp.tier1.rate_policy import RateLimits, RatePolicy
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 
@@ -91,6 +92,7 @@ def test_no_rate_policy_configured_preserves_existing_behavior(tmp_path, contrac
         expected_state=RecoveryState.PREPARED,
         expected_version=first.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     # A second contract for the SAME target can also reach PREPARED with no policy configured.
     second = contract_factory(contract_id="contract-002", operation_id="operation-002", intent={"enabled": False})
@@ -131,6 +133,7 @@ def test_global_in_flight_limit_is_enforced_at_executing(tmp_path, contract_fact
         expected_state=RecoveryState.PREPARED,
         expected_version=first.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     second = _confirmed(
@@ -142,6 +145,7 @@ def test_global_in_flight_limit_is_enforced_at_executing(tmp_path, contract_fact
             expected_state=RecoveryState.PREPARED,
             expected_version=second.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
     # Refusal must be pre-send: the contract stays PREPARED, never partially EXECUTING.
     assert store.load(second.contract_id).state == RecoveryState.PREPARED
@@ -177,6 +181,7 @@ def test_cooldown_blocks_immediate_reprepare_and_expires(tmp_path, contract_fact
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     store.mark_execution_verified(
         executing.contract_id,
@@ -211,6 +216,7 @@ def test_reconciliation_lockout_blocks_all_new_prepares(tmp_path, contract_facto
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     store.transition(
         executing.contract_id,

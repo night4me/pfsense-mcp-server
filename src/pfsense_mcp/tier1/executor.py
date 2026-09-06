@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import hmac
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Protocol
@@ -43,6 +43,7 @@ from .store import SqliteRecoveryContractStore
 # lives in transport_target.py so capability adapters can use it without
 # importing this file (see that module's docstring for why).
 from .transport_target import ResolvedTransportTarget as ResolvedTransportTarget
+from .write_security_class import EXECUTION_POLICIES, WriteSecurityClass
 
 if TYPE_CHECKING:
     # ADR-029: type-checking only -- see write_api_client.py's identical
@@ -151,16 +152,36 @@ class MutationExecutor:
         policy: MutationPolicy,
         anti_rollback_anchor: AntiRollbackAnchor | None,
         encryption_key: bytes,
+        capability_security_classes: Mapping[Capability, WriteSecurityClass],
         clock: Clock = _utc_now,
     ) -> None:
         if not callable(clock):
             raise ContractValidationError("Mutation executor clock is invalid.")
+        if not isinstance(capability_security_classes, Mapping) or not capability_security_classes:
+            raise ContractValidationError("Mutation executor capability security class registry is invalid.")
+        if not all(
+            isinstance(key, Capability) and isinstance(value, WriteSecurityClass)
+            for key, value in capability_security_classes.items()
+        ):
+            raise ContractValidationError("Mutation executor capability security class registry is invalid.")
         self._store = store
         self._write_client = write_client
         self._read_client = read_client
         self._policy = policy
         self._anti_rollback_anchor = anti_rollback_anchor
         self._encryption_key = encryption_key
+        # 2026-09-06 two-tier WRITE security model, Phase 1: the
+        # authoritative, static, closed capability -> security_class
+        # registry (`shape_a_registry.WRITE_CAPABILITY_SECURITY_CLASS`,
+        # or an equivalent closed mapping) -- passed in already-resolved
+        # by the trusted construction site, never derived or looked up
+        # here from anything caller/request/contract-supplied. Used, per
+        # `execute()` call, to (a) fail closed before any transport/
+        # witness activity if a contract's own persisted `security_class`
+        # disagrees with this registry for its `capability`, and (b)
+        # select the `ExecutionSecurityPolicy` that governs this specific
+        # EXECUTING transition's witness participation.
+        self._capability_security_classes = dict(capability_security_classes)
         self._clock = clock
         # A newly-constructed executor never serves a call against an
         # unreconciled store (sealed_executor.md Lifecycle step 4).
@@ -284,6 +305,37 @@ class MutationExecutor:
         if not contract.is_confirmed or contract.is_expired(now=self._now()):
             raise ContractConflictError("Recovery Contract is unconfirmed or expired.")
 
+        # 2026-09-06 two-tier WRITE security model, Phase 1: the
+        # registry is authoritative. Checked here -- before policy
+        # authorization, before pfREST-writable, before any adapter/
+        # transport call, before EXECUTING -- so a mismatch produces
+        # zero network calls, zero transport WRITE, and zero witness
+        # participation, structurally (this contract never reaches the
+        # `target_state == EXECUTING` branch of `store.transition()`,
+        # which is the only place witness/anchor contact can occur).
+        # `contract.security_class` (an audit/cross-check value only) is
+        # never consulted to select the policy below -- only to detect
+        # disagreement with the registry, which alone selects it.
+        registry_class = self._capability_security_classes.get(contract.capability)
+        if registry_class is None or registry_class != contract.security_class:
+            failed = self._store.transition(
+                contract_id,
+                expected_state=RecoveryState.PREPARED,
+                expected_version=contract.state_version,
+                target_state=RecoveryState.FAILED,
+                event_type="security_class_mismatch",
+            )
+            return ExecutionOutcome(
+                contract_id=failed.contract_id,
+                state=failed.state,
+                detail=(
+                    "Recovery Contract refused before execution: persisted security_class does not match "
+                    "the authoritative capability registry. No transport call, witness contact, or "
+                    "EXECUTING transition occurred."
+                ),
+            )
+        execution_policy = EXECUTION_POLICIES[registry_class]
+
         self._policy.authorize(
             capability=adapter.capability, endpoint_symbol=adapter.endpoint_symbol, http_method=adapter.http_method
         )
@@ -315,6 +367,7 @@ class MutationExecutor:
             expected_state=RecoveryState.PREPARED,
             expected_version=contract.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=execution_policy,
         )
 
         try:

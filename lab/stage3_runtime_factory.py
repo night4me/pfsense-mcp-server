@@ -20,6 +20,7 @@ from pfsense_mcp.pfsense_client import PfSenseClient
 from pfsense_mcp.rest_api_client import RestApiClient
 from pfsense_mcp.tier1.executor import MutationExecutor
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
+from pfsense_mcp.tier1.shape_a_registry import WRITE_CAPABILITY_SECURITY_CLASS
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 from pfsense_mcp.transport.http import HttpTransport
 from pfsense_mcp.write_api_client import WriteApiClient
@@ -243,6 +244,7 @@ def build_fixed_lab_stage3_runtime() -> _FixedLabStage3Runtime:
             ),
             anti_rollback_anchor=None,
             encryption_key=encryption_key,
+            capability_security_classes=WRITE_CAPABILITY_SECURITY_CLASS,
         )
     except Exception:
         transport.close()

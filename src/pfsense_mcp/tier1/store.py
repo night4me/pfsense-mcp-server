@@ -19,6 +19,7 @@ from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from pfsense_mcp.capabilities import Capability
 
@@ -41,10 +42,20 @@ from .reconciliation import (
     ReconciliationVerifier,
 )
 from .state_machine import BLOCKING_IDEMPOTENCY_STATES, RecoveryState, require_transition
+from .write_security_class import ExecutionSecurityPolicy, WriteSecurityClass
 
-_SCHEMA_VERSION = 8
+_SCHEMA_VERSION = 9
 _LEGACY_SCHEMA_VERSION_V6 = 6
 _LEGACY_SCHEMA_VERSION_V7 = 7
+#: 2026-09-06 owner-authorized two-tier WRITE security model, Phase 1:
+#: the exact structural shape `_migrate_v7_idempotency_partial_index()`
+#: already produced before this change -- the active-idempotency partial
+#: index exists, but no contract payload yet carries `security_class`.
+#: Kept as its own fixed literal (never `_SCHEMA_VERSION` itself, which
+#: now means v9) so that method's own internal schema_version write stays
+#: correct regardless of how many payload-only migrations are layered on
+#: top of it in the future.
+_LEGACY_SCHEMA_VERSION_V8 = 8
 #: 2026-09-05 owner-directed retry/idempotency redesign: the exact set of
 #: `RecoveryState` values the active-idempotency partial unique index
 #: covers -- kept as one literal, sorted tuple of wire strings (not a
@@ -124,6 +135,7 @@ _CONTRACT_FIELDS = frozenset(
         "protected_snapshot",
         "protected_target_identity",
         "rollback_plan_version",
+        "security_class",
         "snapshot_digest",
         "state",
         "state_version",
@@ -133,7 +145,23 @@ _CONTRACT_FIELDS = frozenset(
         "authorization_provenance",
     }
 )
-_LEGACY_CONTRACT_FIELDS = _CONTRACT_FIELDS - {"authorization_provenance"}
+#: 2026-09-06 two-tier WRITE security model, Phase 1: the exact
+#: pre-Phase-1 (v8) payload shape -- every field the current build
+#: writes except `security_class`, which did not exist yet. Used only by
+#: `_migrate_v8_security_class()`'s own narrow, dedicated parse; the
+#: normal runtime parser (`_contract_from_payload()`) never accepts this
+#: shape -- a row still missing `security_class` after this store's
+#: schema_version has advanced to 9 is an integrity failure, not a value
+#: to silently default.
+_CONTRACT_FIELDS_V8 = _CONTRACT_FIELDS - {"security_class"}
+#: The true, original v6 shape (predates both `authorization_provenance`
+#: and `security_class`) -- unchanged in meaning from before this change;
+#: `_migrate_v6_contract_payloads()`'s own validation still checks
+#: against exactly this set, and `_contract_from_payload()` still
+#: tolerates it (assigning the fixed HIGH_ASSURANCE_TIER1 literal, never
+#: inferred) purely because that method's own reuse of the shared parser
+#: predates this change and is left undisturbed.
+_LEGACY_CONTRACT_FIELDS = _CONTRACT_FIELDS - {"authorization_provenance", "security_class"}
 
 
 def _utc_now() -> datetime:
@@ -238,6 +266,7 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
         "protected_snapshot": _artifact_to_dict(contract.protected_snapshot),
         "protected_target_identity": _artifact_to_dict(contract.protected_target_identity),
         "rollback_plan_version": contract.rollback_plan_version,
+        "security_class": contract.security_class.value,
         "snapshot_digest": contract.snapshot_digest,
         "state": contract.state.value,
         "state_version": contract.state_version,
@@ -249,36 +278,58 @@ def _contract_payload(contract: RecoveryContract) -> bytes:
     return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
+def _recovery_contract_from_fields(value: dict[str, Any], *, security_class: WriteSecurityClass) -> RecoveryContract:
+    """Shared field-mapping core. `security_class` is always supplied by
+    the caller -- this function never reads it out of `value` and never
+    supplies a default itself, so every call site's own choice (parsed
+    from a current-shape payload, or a fixed migration literal) is the
+    only source of truth, never implicit here."""
+
+    return RecoveryContract(
+        contract_id=value["contract_id"],
+        operation_id=value["operation_id"],
+        idempotency_key=value["idempotency_key"],
+        capability=Capability[value["capability"]],
+        security_class=security_class,
+        endpoint_symbol=value["endpoint_symbol"],
+        http_method=value["http_method"],
+        target_identity_digest=value["target_identity_digest"],
+        target_fingerprint=value["target_fingerprint"],
+        intent_digest=value["intent_digest"],
+        lifecycle_locator=value["lifecycle_locator"],
+        snapshot_digest=value["snapshot_digest"],
+        rollback_plan_version=value["rollback_plan_version"],
+        created_at=datetime.fromisoformat(value["created_at"]),
+        expires_at=datetime.fromisoformat(value["expires_at"]),
+        state=RecoveryState(value["state"]),
+        state_version=value["state_version"],
+        protected_target_identity=_artifact_from_dict(value["protected_target_identity"]),
+        protected_intent=_artifact_from_dict(value["protected_intent"]),
+        protected_snapshot=_artifact_from_dict(value["protected_snapshot"]),
+        confirmation_digest=value["confirmation_digest"],
+        confirmed_at=datetime.fromisoformat(value["confirmed_at"]) if value["confirmed_at"] else None,
+        verified_target_fingerprint=value["verified_target_fingerprint"],
+        authorization_provenance=_provenance_from_dict(value.get("authorization_provenance")),
+    )
+
+
 def _contract_from_payload(payload: bytes) -> RecoveryContract:
     try:
         value = json.loads(payload, object_pairs_hook=_strict_object)
-        if not isinstance(value, dict) or set(value) not in {_CONTRACT_FIELDS, _LEGACY_CONTRACT_FIELDS}:
+        fields = frozenset(value) if isinstance(value, dict) else None
+        if fields == _CONTRACT_FIELDS:
+            security_class = WriteSecurityClass(value["security_class"])
+        elif fields == _LEGACY_CONTRACT_FIELDS:
+            # True v6 shape (predates security_class entirely) --
+            # reached only via _migrate_v6_contract_payloads()'s own
+            # reuse of this parser on a raw, not-yet-upgraded row.
+            # Assigns the fixed HIGH_ASSURANCE_TIER1 literal, never
+            # inferred, never STANDARD -- the only class that has ever
+            # existed or been reviewed prior to this Phase 1 change.
+            security_class = WriteSecurityClass.HIGH_ASSURANCE_TIER1
+        else:
             raise ContractIntegrityError("Stored Recovery Contract fields are invalid.")
-        return RecoveryContract(
-            contract_id=value["contract_id"],
-            operation_id=value["operation_id"],
-            idempotency_key=value["idempotency_key"],
-            capability=Capability[value["capability"]],
-            endpoint_symbol=value["endpoint_symbol"],
-            http_method=value["http_method"],
-            target_identity_digest=value["target_identity_digest"],
-            target_fingerprint=value["target_fingerprint"],
-            intent_digest=value["intent_digest"],
-            lifecycle_locator=value["lifecycle_locator"],
-            snapshot_digest=value["snapshot_digest"],
-            rollback_plan_version=value["rollback_plan_version"],
-            created_at=datetime.fromisoformat(value["created_at"]),
-            expires_at=datetime.fromisoformat(value["expires_at"]),
-            state=RecoveryState(value["state"]),
-            state_version=value["state_version"],
-            protected_target_identity=_artifact_from_dict(value["protected_target_identity"]),
-            protected_intent=_artifact_from_dict(value["protected_intent"]),
-            protected_snapshot=_artifact_from_dict(value["protected_snapshot"]),
-            confirmation_digest=value["confirmation_digest"],
-            confirmed_at=datetime.fromisoformat(value["confirmed_at"]) if value["confirmed_at"] else None,
-            verified_target_fingerprint=value["verified_target_fingerprint"],
-            authorization_provenance=_provenance_from_dict(value.get("authorization_provenance")),
-        )
+        return _recovery_contract_from_fields(value, security_class=security_class)
     except (KeyError, TypeError, ValueError, UnicodeDecodeError, ContractValidationError) as exc:
         raise ContractIntegrityError("Stored Recovery Contract is invalid.") from exc
 
@@ -525,6 +576,7 @@ class SqliteRecoveryContractStore:
             expected = {"schema_version": str(_SCHEMA_VERSION), "store_id": self._store_id}
             legacy_v6 = {"schema_version": str(_LEGACY_SCHEMA_VERSION_V6), "store_id": self._store_id}
             legacy_v7 = {"schema_version": str(_LEGACY_SCHEMA_VERSION_V7), "store_id": self._store_id}
+            legacy_v8 = {"schema_version": str(_LEGACY_SCHEMA_VERSION_V8), "store_id": self._store_id}
             if existing == legacy_v6:
                 try:
                     connection.execute("BEGIN IMMEDIATE")
@@ -540,6 +592,19 @@ class SqliteRecoveryContractStore:
                 existing = legacy_v7
             if existing == legacy_v7:
                 self._migrate_v7_idempotency_partial_index(connection)
+                existing = legacy_v8
+            if existing == legacy_v8:
+                try:
+                    connection.execute("BEGIN IMMEDIATE")
+                    self._migrate_v8_security_class(connection)
+                    connection.execute(
+                        "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
+                        (str(_SCHEMA_VERSION),),
+                    )
+                    connection.commit()
+                except Exception:
+                    connection.rollback()
+                    raise
                 existing = expected
             self._verify_schema(connection)
             if existing and existing != expected:
@@ -635,13 +700,65 @@ class SqliteRecoveryContractStore:
                 raise ContractIntegrityError(
                     "Recovery store foreign key integrity failed after active-idempotency schema migration."
                 )
-            connection.execute("UPDATE metadata SET value = ? WHERE key = 'schema_version'", (str(_SCHEMA_VERSION),))
+            connection.execute(
+                "UPDATE metadata SET value = ? WHERE key = 'schema_version'", (str(_LEGACY_SCHEMA_VERSION_V8),)
+            )
             connection.commit()
         except Exception:
             connection.rollback()
             raise
         finally:
             connection.execute("PRAGMA foreign_keys = ON")
+
+    def _migrate_v8_security_class(self, connection: sqlite3.Connection) -> None:
+        """2026-09-06 owner-authorized two-tier WRITE security model,
+        Phase 1: adds the immutable `security_class` field to every
+        existing contract's canonical payload. Every legacy row -- with
+        zero exception, and with zero inference from capability/
+        endpoint/anything else -- receives the fixed literal
+        `HIGH_ASSURANCE_TIER1`: the only class that existed, was
+        reviewed, or was ever exercised before this change. Never
+        `STANDARD_SEALED_WRITE`.
+
+        `contract_id`/`state`/`state_version`/`idempotency_key`/
+        `target_identity_digest` (the indexed, non-payload columns) are
+        read but never written by this migration. `audit_events` is
+        never touched -- this migration writes no new audit_events row
+        and modifies no existing one; the full historical audit trail
+        (including any authorization/confirmation provenance already
+        folded into a row's own payload) survives byte-for-byte except
+        for the one new payload field and its necessarily-recomputed mac.
+
+        Idempotent per row: a row already carrying `security_class`
+        (this can legitimately happen for a row that was simultaneously a
+        true v6 payload -- `_migrate_v6_contract_payloads()`'s own reuse
+        of `_contract_from_payload()` already assigns the identical fixed
+        HIGH_ASSURANCE_TIER1 literal for that shape, ahead of this
+        method ever running) is left completely untouched -- its
+        `payload`/`mac` are not rewritten a second time."""
+
+        rows = connection.execute("SELECT contract_id, payload, mac FROM contracts").fetchall()
+        for contract_id, payload, supplied_mac in rows:
+            if not isinstance(payload, bytes) or not hmac.compare_digest(str(supplied_mac), self._mac(payload)):
+                raise ContractIntegrityError("Legacy Recovery Contract failed integrity verification.")
+            try:
+                legacy_value = json.loads(payload, object_pairs_hook=_strict_object)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                raise ContractIntegrityError("Legacy Recovery Contract is invalid.") from None
+            if not isinstance(legacy_value, dict):
+                raise ContractIntegrityError("Legacy Recovery Contract fields are invalid.")
+            if set(legacy_value) == _CONTRACT_FIELDS:
+                continue
+            if set(legacy_value) != _CONTRACT_FIELDS_V8:
+                raise ContractIntegrityError("Legacy Recovery Contract fields are invalid.")
+            contract = _recovery_contract_from_fields(
+                legacy_value, security_class=WriteSecurityClass.HIGH_ASSURANCE_TIER1
+            )
+            migrated = _contract_payload(contract)
+            connection.execute(
+                "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
+                (migrated, self._mac(migrated), contract_id),
+            )
 
     def _mac(self, *components: bytes) -> str:
         """Length-frame the store ID and every component before HMAC'ing,
@@ -1155,7 +1272,28 @@ class SqliteRecoveryContractStore:
         expected_state: RecoveryState,
         expected_version: int,
         target_state: RecoveryState,
+        execution_policy: ExecutionSecurityPolicy | None = None,
+        event_type: str = "state_transition",
     ) -> RecoveryContract:
+        """`execution_policy` is consulted only when `target_state ==
+        EXECUTING`, and only to decide witness/anchor participation
+        (`ExecutionSecurityPolicy.participates_in_witness()`) -- required
+        (fail closed) in that one case, ignored otherwise. It is always
+        supplied by the caller from a fresh, authoritative-registry-keyed
+        lookup (`MutationExecutor.execute()`), never derived here from
+        the contract's own persisted `security_class` -- this store never
+        re-derives or trusts a contract's self-reported class for policy
+        selection, matching the accepted architecture's "registry is
+        authoritative, persisted value is audit-only" invariant.
+
+        `event_type` lets one narrow, specific caller (the pre-EXECUTING
+        `security_class_mismatch` pre-send refusal) record a durable,
+        MAC-protected, machine-readable reason distinct from this
+        method's ordinary `"state_transition"` default -- every existing
+        caller is unaffected."""
+
+        if not isinstance(event_type, str) or not event_type:
+            raise ContractValidationError("Recovery Contract transition event type is invalid.")
         require_transition(expected_state, target_state)
         if target_state == RecoveryState.VERIFIED:
             raise ContractConflictError("VERIFIED requires an atomically sealed post-forward fingerprint.")
@@ -1174,16 +1312,18 @@ class SqliteRecoveryContractStore:
         if target_state == RecoveryState.EXECUTING:
             if not current.is_confirmed or current.is_expired(now=instant):
                 raise ContractConflictError("Recovery Contract is unconfirmed or expired.")
+            if execution_policy is None:
+                raise ContractValidationError("EXECUTING transition requires an explicit execution security policy.")
             if self._anti_rollback_anchor is not None or self._rate_policy is not None:
                 with self._connect() as connection:
                     connection.execute("BEGIN IMMEDIATE")
-                    if self._anti_rollback_anchor is not None:
+                    if self._anti_rollback_anchor is not None and execution_policy.participates_in_witness():
                         self._high_water_mark.before_executing_transition(self._anti_rollback_anchor, connection)
                     if self._rate_policy is not None:
                         self._rate_policy.check_execute_allowed(connection, now=instant)
                     connection.commit()
         updated = replace(current, state=target_state, state_version=current.state_version + 1)
-        return self._replace(current, updated, event_type="state_transition")
+        return self._replace(current, updated, event_type=event_type)
 
     def mark_execution_verified(
         self,

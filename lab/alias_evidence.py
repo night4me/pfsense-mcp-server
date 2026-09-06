@@ -27,6 +27,7 @@ from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.contract import RecoveryContract
 from pfsense_mcp.tier1.executor import MutationExecutor, ResolvedTransportTarget
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
+from pfsense_mcp.tier1.shape_a_registry import WRITE_CAPABILITY_SECURITY_CLASS
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 from pfsense_mcp.transport.http import HttpTransport
@@ -311,6 +312,7 @@ def run_description_cycle(
                 policy=MutationPolicy(frozenset({MutationRule(Capability.ALIAS_WRITE, ENDPOINT_SYMBOL, HTTP_METHOD)})),
                 anti_rollback_anchor=None,
                 encryption_key=encryption_key,
+                capability_security_classes=WRITE_CAPABILITY_SECURITY_CLASS,
             )
             forward = executor.execute(contract.contract_id, adapter=adapter, intent=intent)
             if forward.state is not RecoveryState.VERIFIED:

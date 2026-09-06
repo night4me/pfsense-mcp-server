@@ -59,6 +59,7 @@ from .errors import BoundExecutionError
 from .executor import ExecutionOutcome, MutationExecutor
 from .key_lifecycle import KeyRecord, NonceCounter
 from .prepared_execution_intent import compute_execution_intent_digest
+from .write_security_class import WriteSecurityClass
 
 if TYPE_CHECKING:
     # ADR-029: type-checking only -- see write_api_client.py's identical
@@ -568,6 +569,13 @@ class AliasDescriptionExecutionCoreV1:
             operation_id=operation_id,
             idempotency_key=derived.idempotency_key,
             capability=intent.capability,
+            # 2026-09-06 two-tier WRITE security model, Phase 1: the
+            # alias-description capability is not part of this phase's
+            # STANDARD review and remains permanently HIGH_ASSURANCE_
+            # TIER1 -- a fixed literal here, not looked up from any
+            # registry, mirroring this method's other alias-specific
+            # hardcoded literals (contract_id/operation_id prefixes).
+            security_class=WriteSecurityClass.HIGH_ASSURANCE_TIER1,
             endpoint_symbol=intent.endpoint_symbol,
             http_method=intent.http_method,
             target_identity_digest=derived.target_identity_digest,

@@ -26,6 +26,7 @@ from pfsense_mcp.tier1.executor import MutationExecutor, ResolvedTransportTarget
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationPolicyError, MutationRule
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy, WriteSecurityClass
 from pfsense_mcp.transport.mock import MockTransport
 from pfsense_mcp.write_api_client import TransportConnectionError, TransportTimeoutError, WriteApiClient
 from pfsense_mcp.write_endpoints import WriteEndpointInfo, WriteEndpoints
@@ -208,6 +209,7 @@ def _build_contract(
     revision: str = "synthetic-1",
     descr: str = "updated-description",
     original_descr: str = "original-description",
+    security_class: WriteSecurityClass = WriteSecurityClass.HIGH_ASSURANCE_TIER1,
 ) -> tuple[RecoveryContract, dict]:
     created = now or datetime.now(timezone.utc)
     identity_source = _identity_source(revision=revision, descr=original_descr)
@@ -238,6 +240,7 @@ def _build_contract(
         operation_id="operation-001",
         idempotency_key=idempotency,
         capability=_CAPABILITY,
+        security_class=security_class,
         endpoint_symbol=_ENDPOINT_SYMBOL,
         http_method=_HTTP_METHOD,
         target_identity_digest=target_digest,
@@ -290,6 +293,7 @@ def _verified(store: SqliteRecoveryContractStore, contract: RecoveryContract) ->
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     verified_fingerprint = digest_value(
         DigestPurpose.TARGET_FINGERPRINT,
@@ -311,6 +315,7 @@ def _forward_reconciliation(store: SqliteRecoveryContractStore, contract: Recove
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     return store.transition(
         contract.contract_id,
@@ -406,7 +411,9 @@ class _StubReadClient:
         return _pfrest_settings(read_only=self._read_only)
 
 
-def _executor(store, write_client, *, clock=None, read_client=None) -> MutationExecutor:
+def _executor(
+    store, write_client, *, clock=None, read_client=None, capability_security_classes=None
+) -> MutationExecutor:
     kwargs = {} if clock is None else {"clock": clock}
     return MutationExecutor(
         store=store,
@@ -415,6 +422,11 @@ def _executor(store, write_client, *, clock=None, read_client=None) -> MutationE
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes=(
+            capability_security_classes
+            if capability_security_classes is not None
+            else {_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1}
+        ),
         **kwargs,
     )
 
@@ -606,6 +618,7 @@ def test_reconciliation_observation_after_executor_reconstruction_is_fresh(tmp_p
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     write_client = _RaisingWriteClient(RuntimeError("mutation must not be called"))
 
@@ -803,6 +816,7 @@ def test_generic_verified_transition_cannot_omit_post_forward_fingerprint(tmp_pa
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     with pytest.raises(ContractConflictError, match="post-forward fingerprint"):
@@ -837,6 +851,7 @@ def test_execute_refuses_when_policy_does_not_authorize(tmp_path, monkeypatch):
         policy=MutationPolicy(frozenset()),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
     )
 
     with pytest.raises(MutationPolicyError):
@@ -1549,6 +1564,7 @@ def test_default_executor_clock_reads_real_utc_wall_clock_time(tmp_path):
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
     )
     before = datetime.now(timezone.utc)
     observed = executor._now()
@@ -1567,6 +1583,7 @@ def test_injected_frozen_clock_is_used_verbatim(tmp_path):
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
         clock=lambda: frozen,
     )
     assert executor._now() == frozen
@@ -1629,6 +1646,7 @@ def test_executor_clock_rejects_non_callable():
             policy=_policy(),
             anti_rollback_anchor=None,
             encryption_key=_ENCRYPTION_KEY,
+            capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
             clock="not-callable",
         )
 
@@ -1643,6 +1661,7 @@ def test_executor_now_fails_closed_on_naive_datetime(tmp_path):
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
         clock=lambda: datetime(2020, 1, 1),  # naive, no tzinfo
     )
     with pytest.raises(ContractValidationError, match="must return UTC"):
@@ -1660,6 +1679,7 @@ def test_executor_now_fails_closed_on_non_utc_timezone(tmp_path):
         policy=_policy(),
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
         clock=lambda: datetime(2020, 1, 1, tzinfo=non_utc),
     )
     with pytest.raises(ContractValidationError, match="must return UTC"):

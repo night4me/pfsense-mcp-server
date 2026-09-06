@@ -17,6 +17,7 @@ from pfsense_mcp.tier1.errors import (
 )
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 
@@ -102,6 +103,7 @@ def test_no_anchor_configured_preserves_existing_behavior(tmp_path, contract_fac
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     assert executing.state == RecoveryState.EXECUTING
 
@@ -116,6 +118,7 @@ def test_anchor_ahead_proceeds_normally(tmp_path, contract_factory):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     assert executing.state == RecoveryState.EXECUTING
     assert anchor.advance_calls == [1]
@@ -132,6 +135,7 @@ def test_anchor_unavailable_refuses_executing(tmp_path, contract_factory):
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
     assert store.load(confirmed.contract_id).state == RecoveryState.PREPARED
 
@@ -151,6 +155,7 @@ def test_anchor_conflict_refuses_executing(tmp_path, contract_factory):
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
     assert store.load(confirmed.contract_id).state == RecoveryState.PREPARED
 
@@ -176,6 +181,7 @@ def test_whole_store_rollback_is_detected_when_anchor_configured(tmp_path, contr
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     os.replace(old_copy, tmp_path / "contracts.sqlite3")
 
@@ -191,6 +197,7 @@ def test_whole_store_rollback_is_detected_when_anchor_configured(tmp_path, contr
             expected_state=RecoveryState.PREPARED,
             expected_version=second_confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -209,6 +216,7 @@ def test_anchor_reset_backward_is_also_detected(tmp_path, contract_factory):
         expected_state=RecoveryState.PREPARED,
         expected_version=first.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     assert anchor.value == 1
 
@@ -222,6 +230,7 @@ def test_anchor_reset_backward_is_also_detected(tmp_path, contract_factory):
             expected_state=RecoveryState.PREPARED,
             expected_version=second.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -251,6 +260,7 @@ def test_anchor_with_preexisting_nonzero_history_refuses_first_use(tmp_path, con
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -263,6 +273,7 @@ def test_high_water_mark_rejects_tampered_value(tmp_path, contract_factory):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
@@ -340,6 +351,7 @@ def test_seed_accepts_realistic_nonzero_nonone_baseline(tmp_path, contract_facto
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     assert executing.state == RecoveryState.EXECUTING
     assert anchor.advance_calls == [seeded_value + 1]

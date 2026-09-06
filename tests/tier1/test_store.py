@@ -20,6 +20,7 @@ from pfsense_mcp.tier1.errors import (
 )
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 
@@ -348,6 +349,7 @@ def test_stale_version_and_duplicate_execution_are_refused(tmp_path, contract_fa
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     with pytest.raises(ContractConflictError):
@@ -356,6 +358,7 @@ def test_stale_version_and_duplicate_execution_are_refused(tmp_path, contract_fa
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
     assert store.load(executing.contract_id).state == RecoveryState.EXECUTING
 
@@ -372,6 +375,7 @@ def test_same_target_cannot_be_acquired_concurrently(tmp_path, contract_factory)
         expected_state=RecoveryState.PREPARED,
         expected_version=first.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     with pytest.raises(ContractConflictError, match="reserved"):
@@ -380,6 +384,7 @@ def test_same_target_cannot_be_acquired_concurrently(tmp_path, contract_factory)
             expected_state=RecoveryState.PREPARED,
             expected_version=second.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -401,6 +406,7 @@ def test_atomic_target_reservation_allows_only_one_thread(tmp_path, contract_fac
                 expected_state=RecoveryState.PREPARED,
                 expected_version=contract.state_version,
                 target_state=RecoveryState.EXECUTING,
+                execution_policy=HighAssuranceTier1ExecutionPolicy(),
             )
         except ContractConflictError:
             outcomes.append("refused")
@@ -437,6 +443,7 @@ def test_different_targets_can_be_acquired_without_false_conflict(tmp_path, cont
             expected_state=RecoveryState.PREPARED,
             expected_version=contract.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
         outcomes.append(contract.contract_id)
 
@@ -490,6 +497,7 @@ def test_expired_or_unconfirmed_contract_cannot_execute(tmp_path, contract_facto
             expected_state=RecoveryState.PREPARED,
             expected_version=unconfirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
     current = [datetime.now(timezone.utc)]
@@ -503,6 +511,7 @@ def test_expired_or_unconfirmed_contract_cannot_execute(tmp_path, contract_facto
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -687,6 +696,7 @@ def test_tampered_index_cannot_hide_interrupted_contract(tmp_path, contract_fact
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
         connection.execute(
@@ -749,6 +759,7 @@ def test_transition_fault_rolls_back_record_audit_and_reservation(tmp_path, cont
             expected_state=RecoveryState.PREPARED,
             expected_version=confirmed.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
     loaded = store.load(confirmed.contract_id)
@@ -764,6 +775,7 @@ def test_restart_moves_interrupted_execution_to_reconciliation(tmp_path, contrac
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     restarted = _store(tmp_path)
@@ -782,6 +794,7 @@ def test_restart_moves_interrupted_execution_to_reconciliation(tmp_path, contrac
             expected_state=RecoveryState.PREPARED,
             expected_version=competing.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -793,6 +806,7 @@ def test_missing_or_stale_target_reservation_fails_integrity(tmp_path, contract_
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     with sqlite3.connect(tmp_path / "contracts.sqlite3") as connection:
         connection.execute("DELETE FROM target_reservations WHERE contract_id = ?", (executing.contract_id,))
@@ -808,6 +822,7 @@ def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     verified = store.mark_execution_verified(
         executing.contract_id,
@@ -834,6 +849,7 @@ def test_interrupted_rollback_keeps_target_locked(tmp_path, contract_factory):
             expected_state=RecoveryState.PREPARED,
             expected_version=competing.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
     assert rolling_back.target_identity_digest == reconciled.target_identity_digest
 
@@ -847,6 +863,7 @@ def test_verified_transition_requires_exact_typed_lifecycle_locator(tmp_path, co
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     with pytest.raises(ContractConflictError, match="incarnation continuity"):
@@ -868,6 +885,7 @@ def test_rollback_completion_requires_exact_typed_lifecycle_locator(tmp_path, co
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     verified = store.mark_execution_verified(
         executing.contract_id,
@@ -899,6 +917,7 @@ def test_generic_transition_cannot_claim_rollback_success(tmp_path, contract_fac
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     verified = store.mark_execution_verified(
         executing.contract_id,
@@ -930,6 +949,7 @@ def test_restart_preserves_verified_b_and_lifecycle_guard_for_rollback(tmp_path,
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     expected_b = "b" * 64
     store.mark_execution_verified(
@@ -972,6 +992,7 @@ def test_verified_releases_target_and_later_rollback_refuses_on_conflict(tmp_pat
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     verified = store.mark_execution_verified(
         executing.contract_id,
@@ -989,6 +1010,7 @@ def test_verified_releases_target_and_later_rollback_refuses_on_conflict(tmp_pat
         expected_state=RecoveryState.PREPARED,
         expected_version=competing.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     assert competing_executing.target_identity_digest == verified.target_identity_digest
 
@@ -1009,6 +1031,7 @@ def test_failed_rollback_keeps_target_locked(tmp_path, contract_factory):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     verified = store.mark_execution_verified(
         executing.contract_id,
@@ -1040,6 +1063,7 @@ def test_failed_rollback_keeps_target_locked(tmp_path, contract_factory):
             expected_state=RecoveryState.PREPARED,
             expected_version=competing.state_version,
             target_state=RecoveryState.EXECUTING,
+            execution_policy=HighAssuranceTier1ExecutionPolicy(),
         )
 
 
@@ -1051,6 +1075,7 @@ def test_generic_store_transition_cannot_claim_manual_reconciliation(tmp_path, c
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     reconciled = store.transition(
         executing.contract_id,

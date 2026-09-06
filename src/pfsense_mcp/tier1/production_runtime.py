@@ -192,6 +192,7 @@ from .production_store import (
 )
 from .reconciliation import ReconciliationEvidence
 from .reconciliation_providers import Ed25519ReconciliationVerifier
+from .shape_a_registry import WRITE_CAPABILITY_SECURITY_CLASS
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
@@ -822,6 +823,7 @@ def build_production_runtime(env: dict[str, str] | None = None) -> ProductionAli
         policy=policy,
         anti_rollback_anchor=anchor,
         encryption_key=encryption_key_record.material,
+        capability_security_classes=WRITE_CAPABILITY_SECURITY_CLASS,
     )
     execution_core = AliasDescriptionExecutionCoreV1(
         preparer=preparer,

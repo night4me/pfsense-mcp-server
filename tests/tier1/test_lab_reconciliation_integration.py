@@ -24,6 +24,7 @@ from pfsense_mcp.tier1.errors import ConfirmationError, ContractConflictError, C
 from pfsense_mcp.tier1.reconciliation import ReconciliationOutcome
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 _INTEGRITY_KEY = b"stage3-integration-integrity-key!"
 _A = "a" * 64
@@ -100,6 +101,7 @@ def _uncertain(store, contract, *, rollback=False):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     current = executing
     if rollback:

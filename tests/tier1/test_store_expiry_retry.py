@@ -17,6 +17,7 @@ from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.errors import ContractConflictError
 from pfsense_mcp.tier1.state_machine import BLOCKING_IDEMPOTENCY_STATES, RecoveryState, blocks_fresh_idempotency_attempt
 from pfsense_mcp.tier1.store import _ACTIVE_IDEMPOTENCY_INDEX_NAME, SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 _KEY = b"synthetic-test-integrity-key-32bytes!"
 _NOW = datetime(2026, 9, 5, 12, 0, 0, tzinfo=timezone.utc)
@@ -87,6 +88,7 @@ def _drive_to_terminal(store, contract, target_state):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     if target_state is RecoveryState.FAILED:
         return store.transition(
@@ -553,7 +555,7 @@ def test_migration_from_v7_preserves_every_historical_contract_and_audit_event(t
         schema_version = verify_connection.execute(
             "SELECT value FROM metadata WHERE key = 'schema_version'"
         ).fetchone()[0]
-        assert schema_version == "8"
+        assert schema_version == "9"
         index_row = verify_connection.execute(
             "SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (_ACTIVE_IDEMPOTENCY_INDEX_NAME,)
         ).fetchone()
@@ -619,4 +621,4 @@ def test_migration_is_idempotent_reopening_an_already_migrated_store_does_not_re
     loaded = second_open.load(contract.contract_id)
     assert loaded.state is RecoveryState.PREPARING
     with sqlite3.connect(path) as connection:
-        assert connection.execute("SELECT value FROM metadata WHERE key = 'schema_version'").fetchone()[0] == "8"
+        assert connection.execute("SELECT value FROM metadata WHERE key = 'schema_version'").fetchone()[0] == "9"

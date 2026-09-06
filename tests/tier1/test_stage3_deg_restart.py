@@ -1,6 +1,7 @@
 from lab.stage3_deg import OfflineRestartHarness
 from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.state_machine import RecoveryState
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 
 
 class _Verifier:
@@ -41,6 +42,7 @@ def test_restart_harness_reopens_real_store_and_reconciles_executing(tmp_path, c
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
 
     fresh_store = harness.reconstruct_store()

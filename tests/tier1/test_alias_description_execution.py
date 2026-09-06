@@ -62,6 +62,7 @@ from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
 from pfsense_mcp.tier1.prepared_execution_intent import compute_execution_intent_digest
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy, WriteSecurityClass
 from pfsense_mcp.tls import TLSMode
 from pfsense_mcp.transport.base import TransportResponse, TransportTimeoutError
 from tests.test_security_plan_digest import _synthetic_plan, _synthetic_step
@@ -316,6 +317,7 @@ def _sealed_executor(store, client, write_client) -> MutationExecutor:
         ),
         anti_rollback_anchor=None,
         encryption_key=b"e" * 32,
+        capability_security_classes={AliasDescriptionAdapterV1.capability: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
         # Same frozen NOW the store above is already constructed with
         # (_store()'s own clock=lambda: NOW) -- without this, execute()'s
         # expiry check fell through to real wall-clock time regardless of
@@ -841,6 +843,7 @@ def test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_r
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     client.aliases[0] = client.aliases[0].model_copy(update={"descr": "after"})
     adapter = AliasDescriptionAdapterV1()
@@ -883,6 +886,7 @@ def test_production_adapter_rollback_conflict_refuses_and_post_expiry_recovery_r
         expected_state=RecoveryState.PREPARED,
         expected_version=second_confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     second_client.aliases[0] = second_client.aliases[0].model_copy(update={"descr": "after"})
     second_verified_fingerprint = digest_value(
@@ -969,6 +973,7 @@ def test_schema_v6_contract_migrates_without_inferred_provenance(tmp_path: Path,
         ).fetchone()[0]
         value = json.loads(payload)
         del value["authorization_provenance"]
+        del value["security_class"]
         legacy_payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
         mac = hmac.new(
             b"i" * 32,
@@ -983,15 +988,18 @@ def test_schema_v6_contract_migrates_without_inferred_provenance(tmp_path: Path,
     reopened = _store(tmp_path)
     migrated = reopened.load(legacy.contract_id)
     assert migrated.authorization_provenance is None
+    assert migrated.security_class == WriteSecurityClass.HIGH_ASSURANCE_TIER1
     with sqlite3.connect(database) as connection:
-        # 2026-09-05: a v6 store now migrates all the way to the current
-        # schema version (8) on a single reopen -- v6->v7 (this test's
-        # actual regression target: no inferred provenance) chains
-        # straight into v7->v8 (the active-idempotency partial index),
-        # rather than stopping at v7.
-        assert dict(connection.execute("SELECT key, value FROM metadata"))["schema_version"] == "8"
+        # A v6 store now migrates all the way to the current schema
+        # version (9) on a single reopen -- v6->v7 (this test's actual
+        # regression target: no inferred provenance) chains into v7->v8
+        # (the active-idempotency partial index) and then v8->v9 (the
+        # fixed HIGH_ASSURANCE_TIER1 security_class literal), rather than
+        # stopping at an intermediate version.
+        assert dict(connection.execute("SELECT key, value FROM metadata"))["schema_version"] == "9"
         migrated_payload = json.loads(connection.execute("SELECT payload FROM contracts").fetchone()[0])
     assert migrated_payload["authorization_provenance"] is None
+    assert migrated_payload["security_class"] == "high_assurance_tier1"
 
 
 def test_provenance_survives_reopen_and_hmac_tamper_fails(tmp_path: Path, monkeypatch):

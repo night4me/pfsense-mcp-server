@@ -192,6 +192,7 @@ from .production_store import (
     read_only_anchor_provisioning_status,
 )
 from .reconciliation_providers import Ed25519ReconciliationVerifier
+from .shape_a_registry import WRITE_CAPABILITY_SECURITY_CLASS
 from .store import SqliteRecoveryContractStore
 from .system_timezone_write import (
     ENDPOINT_SYMBOL as SYSTEM_TIMEZONE_ENDPOINT_SYMBOL,
@@ -556,8 +557,10 @@ def build_write_batch1_production_runtime(
             policy=policy,
             anti_rollback_anchor=anchor,
             encryption_key=encryption_key_record.material,
+            capability_security_classes=WRITE_CAPABILITY_SECURITY_CLASS,
         )
         return WriteExecutionCoreV1(
+            security_class=WRITE_CAPABILITY_SECURITY_CLASS[capability],
             request_type=request_type,
             prepared_type=prepared_type,
             contract_id_prefix=contract_id_prefix,

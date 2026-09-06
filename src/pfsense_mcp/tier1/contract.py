@@ -12,6 +12,7 @@ from pfsense_mcp.capabilities import Capability
 from .canonical import DigestPurpose, digest_value
 from .errors import ContractBindingError, ContractValidationError
 from .state_machine import RecoveryState
+from .write_security_class import WriteSecurityClass
 
 _HEX_64 = re.compile(r"[0-9a-f]{64}")
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
@@ -114,6 +115,20 @@ class RecoveryContract:
     operation_id: str
     idempotency_key: str
     capability: Capability
+    #: 2026-09-06 owner-authorized two-tier WRITE security model, Phase 1:
+    #: the immutable, canonical, HMAC-protected classification this
+    #: contract was created under. Required (no default) -- every
+    #: construction site must supply it explicitly, sourced only from the
+    #: authoritative static capability/adapter registration
+    #: (`shape_a_registry.WRITE_CAPABILITY_SECURITY_CLASS`), never
+    #: inferred here. This field is a durable audit/cross-check value
+    #: only: `MutationExecutor.execute()` always re-derives the
+    #: authoritative class fresh from the registry, keyed by
+    #: `contract.capability`, and refuses (PREPARED -> FAILED,
+    #: `security_class_mismatch`) before any transport/witness activity
+    #: if the two ever disagree. It is never itself consulted to select
+    #: or downgrade an execution policy.
+    security_class: WriteSecurityClass
     endpoint_symbol: str
     http_method: str
     target_identity_digest: str
@@ -140,6 +155,8 @@ class RecoveryContract:
             raise ContractValidationError("Recovery Contract identifier is invalid.")
         if not isinstance(self.capability, Capability) or not self.capability.name.endswith("_WRITE"):
             raise ContractValidationError("Recovery Contract capability must be a WRITE capability.")
+        if not isinstance(self.security_class, WriteSecurityClass):
+            raise ContractValidationError("Recovery Contract security class is invalid.")
         if not isinstance(self.http_method, str) or self.http_method not in _MUTATING_METHODS:
             raise ContractValidationError("Recovery Contract HTTP method is not mutating and allow-listed.")
         digests = (

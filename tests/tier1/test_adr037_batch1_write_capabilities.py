@@ -109,6 +109,7 @@ from pfsense_mcp.tier1.ntp_time_server_prefer import (
 )
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
 from pfsense_mcp.tier1.prepared_execution_intent import compute_execution_intent_digest
+from pfsense_mcp.tier1.shape_a_registry import SHAPE_A_REGISTRATIONS, WRITE_CAPABILITY_SECURITY_CLASS
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
 from pfsense_mcp.tier1.system_timezone_write import (
@@ -132,6 +133,7 @@ from pfsense_mcp.tier1.write_adapter_support import (
     read_appliance_target_digest,
 )
 from pfsense_mcp.tier1.write_execution_core import WriteExecutionCoreV1
+from pfsense_mcp.tier1.write_security_class import WriteSecurityClass
 from pfsense_mcp.tls import TLSMode
 from pfsense_mcp.transport.base import TransportResponse, TransportTimeoutError
 from pfsense_mcp.write_endpoints import WriteEndpoints
@@ -374,6 +376,15 @@ def _confirmation(contract) -> ConfirmationEvidence:
     )
 
 
+#: Reverse lookup, derived from the real registry (single source of
+#: truth) -- `_core()` below already receives `contract_id_prefix`, which
+#: uniquely identifies one of the five Batch1 capabilities, so this
+#: avoids adding a new parameter to `_core()`'s own signature (and thus
+#: every one of its call sites) purely to carry a value already
+#: recoverable from the real `SHAPE_A_REGISTRATIONS`.
+_PREFIX_TO_SECURITY_CLASS = {reg.contract_id_prefix: reg.security_class for reg in SHAPE_A_REGISTRATIONS.values()}
+
+
 def _core(
     tmp_path: Path,
     *,
@@ -408,6 +419,12 @@ def _core(
         executor=executor,
         encryption_key=KeyRecord("enc-w1", 0, b"e" * 32, KeyPurpose.ENCRYPTION),
         nonce_counter=counter,
+        # Falls back to HIGH_ASSURANCE_TIER1 for any synthetic/test-only
+        # prefix not in the real registry (e.g. test_write_execution_
+        # core_parity.py's own "parity" fixture, which reuses this
+        # helper) -- a safe, conservative default for tests not
+        # specifically exercising STANDARD_SEALED_WRITE classification.
+        security_class=_PREFIX_TO_SECURITY_CLASS.get(contract_id_prefix, WriteSecurityClass.HIGH_ASSURANCE_TIER1),
     )
     return core, private, store
 
@@ -422,6 +439,7 @@ def _sealed_executor(
         policy=MutationPolicy(frozenset({MutationRule(capability, endpoint_symbol, http_method)})),
         anti_rollback_anchor=None,
         encryption_key=b"e" * 32,
+        capability_security_classes={capability: WRITE_CAPABILITY_SECURITY_CLASS[capability]},
         clock=lambda: NOW,
     )
 

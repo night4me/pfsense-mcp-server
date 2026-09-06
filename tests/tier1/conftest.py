@@ -8,6 +8,7 @@ from pfsense_mcp.capabilities import Capability
 from pfsense_mcp.tier1.canonical import DigestPurpose, digest_value
 from pfsense_mcp.tier1.contract import ProtectedArtifact, RecoveryContract, derive_idempotency_key
 from pfsense_mcp.tier1.state_machine import RecoveryState
+from pfsense_mcp.tier1.write_security_class import WriteSecurityClass
 
 
 @pytest.fixture
@@ -22,6 +23,7 @@ def contract_factory():
         lifecycle_locator: int = 7,
         intent: object = None,
         now: datetime | None = None,
+        security_class: WriteSecurityClass = WriteSecurityClass.HIGH_ASSURANCE_TIER1,
     ) -> RecoveryContract:
         created = now or datetime.now(timezone.utc)
         identity = target_identity if target_identity is not None else {"name": "synthetic-target.invalid"}
@@ -53,6 +55,7 @@ def contract_factory():
             operation_id=operation_id,
             idempotency_key=idempotency,
             capability=Capability.ALIAS_WRITE,
+            security_class=security_class,
             endpoint_symbol="SYNTHETIC_ENDPOINT",
             http_method="PATCH",
             target_identity_digest=target_digest,

@@ -71,6 +71,7 @@ from .errors import BoundExecutionError
 from .executor import ExecutionOutcome, MutationExecutor
 from .key_lifecycle import KeyRecord, NonceCounter
 from .prepared_execution_intent import PreparedExecutionIntentV1, compute_execution_intent_digest
+from .write_security_class import WriteSecurityClass
 
 if TYPE_CHECKING:
     from .acceptance import AcceptanceExecutionContext
@@ -186,6 +187,7 @@ class WriteExecutionCoreV1:
         executor: MutationExecutor,
         encryption_key: KeyRecord,
         nonce_counter: NonceCounter,
+        security_class: WriteSecurityClass,
         contract_validity: timedelta = timedelta(minutes=5),
     ) -> None:
         if encryption_key.retired or encryption_key.purpose.value != "encryption":
@@ -198,6 +200,8 @@ class WriteExecutionCoreV1:
             raise BoundExecutionError(_DENIED)
         if not callable(raw_target_fn):
             raise BoundExecutionError(_DENIED)
+        if not isinstance(security_class, WriteSecurityClass):
+            raise BoundExecutionError(_DENIED)
         self._request_type = request_type
         self._prepared_type = prepared_type
         self._contract_id_prefix = contract_id_prefix
@@ -209,6 +213,16 @@ class WriteExecutionCoreV1:
         self._executor = executor
         self._encryption_key = encryption_key
         self._nonce_counter = nonce_counter
+        # 2026-09-06 two-tier WRITE security model, Phase 1: the fixed
+        # classification this ONE capability's contracts are always
+        # created under -- supplied once, at construction, by the
+        # trusted call site from `shape_a_registry.WRITE_CAPABILITY_
+        # SECURITY_CLASS`, never caller/request-selectable. Written
+        # verbatim onto every `RecoveryContract` this core creates
+        # (`_create_contract()` below); the authoritative source of
+        # truth for policy selection remains the registry, consulted
+        # fresh by `MutationExecutor.execute()`, never this field alone.
+        self._security_class = security_class
         self._contract_validity = contract_validity
         self._owner_token = object()
         self._pending: dict[str, _PendingExecution] = {}
@@ -577,6 +591,7 @@ class WriteExecutionCoreV1:
             operation_id=operation_id,
             idempotency_key=derived.idempotency_key,
             capability=intent.capability,
+            security_class=self._security_class,
             endpoint_symbol=intent.endpoint_symbol,
             http_method=intent.http_method,
             target_identity_digest=derived.target_identity_digest,

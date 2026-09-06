@@ -40,6 +40,7 @@ from pfsense_mcp.tier1.reconciliation import ReconciliationEvidence, Reconciliat
 from pfsense_mcp.tier1.reconciliation_providers import signing_payload as reconciliation_signing_payload
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 from pfsense_mcp.write_endpoints import WriteEndpoints
 
 # NOTE: every pfsense_mcp.tier1 import this file needs is collected here,
@@ -497,6 +498,7 @@ def test_restart_reconciles_interrupted_executing_contract(tmp_path, contract_fa
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     assert executing.state is RecoveryState.EXECUTING
 
@@ -532,6 +534,7 @@ def _drive_to_reconciliation(setup_store, contract):
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     return setup_store.transition(
         contract.contract_id,
