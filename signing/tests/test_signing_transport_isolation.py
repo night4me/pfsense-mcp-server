@@ -54,7 +54,15 @@ _FORBIDDEN_MODULES = (
 )
 
 
-@pytest.mark.parametrize("signing_module", ["signing.alias_description_signing", "signing.write_batch1_signing"])
+@pytest.mark.parametrize(
+    "signing_module",
+    [
+        "signing.alias_description_signing",
+        "signing.write_batch1_signing",
+        "signing.anchor_evidence_export_signing",
+        "signing.standard_sealed_write_signing",
+    ],
+)
 def test_importing_signing_module_never_loads_a_pfsense_reaching_transport(signing_module):
     for name in list(sys.modules):
         if name in _FORBIDDEN_MODULES or name.startswith("pfsense_mcp.tools") or name == signing_module:
