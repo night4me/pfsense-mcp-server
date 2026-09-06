@@ -218,9 +218,7 @@ def test_fresh_authorization_is_refused_while_a_blocking_contract_exists(tmp_pat
     first = _authorize(core, private, request, prepared, authz=first_authz)
     assert store.load(first.contract_id).state is RecoveryState.PREPARED  # still blocking -- never failed/expired
 
-    second_authz = _authorization(
-        private, compute_execution_intent_digest(prepared.intent), authorization_id="authz-b"
-    )
+    second_authz = _authorization(private, compute_execution_intent_digest(prepared.intent), authorization_id="authz-b")
     calls_before = consumption.calls
     with pytest.raises(BoundExecutionError):
         _authorize(core, private, request, prepared, authz=second_authz)
@@ -310,9 +308,7 @@ def test_multiple_terminal_historical_attempts_still_allow_exactly_one_fresh_ret
 
     # a fourth, equally fresh authorization is refused while the third
     # (blocking, PREPARED) contract still stands
-    fourth_authz = _authorization(
-        private, compute_execution_intent_digest(prepared.intent), authorization_id="authz-4"
-    )
+    fourth_authz = _authorization(private, compute_execution_intent_digest(prepared.intent), authorization_id="authz-4")
     with pytest.raises(BoundExecutionError):
         _authorize(core, private, request, prepared, authz=fourth_authz)
     assert "authz-4" not in consumption.consumed

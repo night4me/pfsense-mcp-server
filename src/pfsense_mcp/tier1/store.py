@@ -508,8 +508,10 @@ class SqliteRecoveryContractStore:
             # sqlite3.OperationalError before that clean rejection runs.
             contracts_columns = {row[1] for row in connection.execute("PRAGMA table_info(contracts)")}
             if "idempotency_key" in contracts_columns:
-                connection.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {_ACTIVE_IDEMPOTENCY_INDEX_NAME} "
-                                    f"ON contracts(idempotency_key) WHERE state IN ({_ACTIVE_IDEMPOTENCY_STATES_SQL})")
+                connection.execute(
+                    f"CREATE UNIQUE INDEX IF NOT EXISTS {_ACTIVE_IDEMPOTENCY_INDEX_NAME} "
+                    f"ON contracts(idempotency_key) WHERE state IN ({_ACTIVE_IDEMPOTENCY_STATES_SQL})"
+                )
             # Read metadata's raw schema_version BEFORE _verify_schema()
             # runs below: metadata's own shape has never changed across
             # v6/v7/v8, so this read is safe pre-verification, and a
