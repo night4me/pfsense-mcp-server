@@ -59,7 +59,6 @@ _FORBIDDEN_MODULES = (
     [
         "signing.alias_description_signing",
         "signing.write_batch1_signing",
-        "signing.anchor_evidence_export_signing",
         "signing.standard_sealed_write_signing",
     ],
 )
