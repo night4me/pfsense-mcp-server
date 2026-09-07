@@ -45,6 +45,7 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Protocol
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -302,11 +303,24 @@ def verify_sealed_write_approval(
     check happens before the signature check is trusted as sufficient
     -- an attacker who can produce *some* validly-signed approval for a
     *different* contract/version/class/intent/target must still fail
-    here."""
+    here.
+
+    2026-09-07 owner-directed Phase 2 hardening: also refuses, before
+    any signature check, an approval naming any `authority_id` other
+    than the one dedicated `STANDARD_SEALED_WRITE_APPROVAL_AUTHORITY_ID`
+    -- a defensive invariant enforced centrally here, so this property
+    holds even if some future caller mistakenly supplies a
+    `PinnedAuthoritySet` scoped more broadly than the single STANDARD
+    authority (e.g. one also containing a HIGH_ASSURANCE authority for
+    an unrelated reason). Domain-separated signing content already made
+    cross-authority forgery impossible in practice; this makes the
+    restriction structural rather than incidental."""
 
     if not isinstance(approval, SealedWriteApproval):
         return False
     if not isinstance(now, datetime) or not _is_utc(now):
+        return False
+    if approval.authority_id != STANDARD_SEALED_WRITE_APPROVAL_AUTHORITY_ID:
         return False
     if (
         approval.contract_id != contract_id
@@ -319,6 +333,30 @@ def verify_sealed_write_approval(
     if not (approval.issued_at <= now < approval.expires_at):
         return False
     return verify_sealed_write_approval_signature(approval, authorities)
+
+
+class StandardSealedWriteApprovalSource(Protocol):
+    """The one, narrow seam by which `MutationExecutor` (2026-09-07
+    owner-authorized Phase 2 enforcement) obtains a STANDARD_SEALED_WRITE
+    contract's owner-approval evidence. An implementation only ever
+    *reads* whatever a trusted, non-caller-controlled location already
+    holds -- it never signs, never generates an approval, never contacts
+    a signer process, and is never given anything caller/request-
+    supplied to select what it reads (that is the whole point: the
+    executor cannot be tricked into consulting an attacker-chosen file
+    or a different contract's approval by anything in `execute()`'s own
+    public parameters).
+
+    Returns `None` if no approval is currently available for this
+    `contract_id` -- treated identically to "approval invalid" by the
+    caller, never as an error. Binding-field verification (contract_id/
+    state_version/security_class/execution_intent_digest/target_identity/
+    expiry/signature) is always performed separately by
+    `verify_sealed_write_approval()`; a source that returns a structurally
+    valid but non-matching or expired approval is not itself a defect --
+    the composite check downstream is what actually enforces safety."""
+
+    def load(self, contract_id: str) -> "SealedWriteApproval | None": ...
 
 
 def sealed_write_approval_to_bytes(approval: SealedWriteApproval) -> bytes:
@@ -400,6 +438,7 @@ __all__ = [
     "SealedWriteApproval",
     "SealedWriteApprovalError",
     "SealedWriteApprovalPayload",
+    "StandardSealedWriteApprovalSource",
     "build_sealed_write_approval_payload",
     "sealed_write_approval_from_bytes",
     "sealed_write_approval_payload_of",

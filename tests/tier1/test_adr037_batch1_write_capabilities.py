@@ -109,6 +109,12 @@ from pfsense_mcp.tier1.ntp_time_server_prefer import (
 )
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
 from pfsense_mcp.tier1.prepared_execution_intent import compute_execution_intent_digest
+from pfsense_mcp.tier1.sealed_write_approval import (
+    STANDARD_SEALED_WRITE_APPROVAL_AUTHORITY_ID,
+    SealedWriteApproval,
+    build_sealed_write_approval_payload,
+    sign_sealed_write_approval,
+)
 from pfsense_mcp.tier1.shape_a_registry import SHAPE_A_REGISTRATIONS, WRITE_CAPABILITY_SECURITY_CLASS
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
@@ -429,6 +435,58 @@ def _core(
     return core, private, store
 
 
+class _AutoApprovingSealedWriteApprovalSource:
+    """Test-only `StandardSealedWriteApprovalSource`: signs a fresh,
+    correctly-bound `SealedWriteApproval` on demand by reading whatever
+    contract `execute()` is asking about straight from the same store,
+    using a synthetic Ed25519 key. Exists ONLY so these pre-existing
+    Batch 1 round-trip/adversarial tests -- which exercise other
+    mechanisms (pfREST-writable gate, ambiguous-transport classification,
+    full round trip) -- can continue to reach those mechanisms unchanged
+    now that STANDARD_SEALED_WRITE execution additionally requires an
+    approval (2026-09-07 owner-authorized Phase 2). Never a stand-in for
+    a real, human-gated approval ceremony; never used by anything this
+    file doesn't construct itself."""
+
+    def __init__(self, store, private_key: Ed25519PrivateKey) -> None:
+        self._store = store
+        self._private_key = private_key
+
+    def load(self, contract_id: str) -> SealedWriteApproval:
+        contract = self._store.load(contract_id)
+        payload = build_sealed_write_approval_payload(
+            contract_id=contract.contract_id,
+            state_version=contract.state_version,
+            security_class=contract.security_class,
+            execution_intent_digest=contract.intent_digest,
+            target_identity_digest=contract.target_identity_digest,
+            issued_at=NOW - timedelta(minutes=1),
+            expires_at=NOW + timedelta(minutes=10),
+        )
+        return sign_sealed_write_approval(
+            payload, authority_id=STANDARD_SEALED_WRITE_APPROVAL_AUTHORITY_ID, private_key=self._private_key
+        )
+
+
+def _standard_sealed_write_approval_wiring(store, capability: Capability) -> dict[str, object]:
+    """Returns the two `MutationExecutor` keyword arguments needed for a
+    STANDARD_SEALED_WRITE capability to pass the Phase 2 approval gate,
+    or `{}` for a HIGH_ASSURANCE_TIER1 capability (which never consults
+    them at all)."""
+
+    if WRITE_CAPABILITY_SECURITY_CLASS[capability] != WriteSecurityClass.STANDARD_SEALED_WRITE:
+        return {}
+    private_key = Ed25519PrivateKey.generate()
+    public_key = private_key.public_key().public_bytes_raw()
+    authorities = PinnedAuthoritySet(
+        (PinnedAuthority(authority_id=STANDARD_SEALED_WRITE_APPROVAL_AUTHORITY_ID, public_key=public_key),)
+    )
+    return {
+        "standard_sealed_write_approval_authorities": authorities,
+        "standard_sealed_write_approval_source": _AutoApprovingSealedWriteApprovalSource(store, private_key),
+    }
+
+
 def _sealed_executor(
     store, client, write_client, capability: Capability, endpoint_symbol: str, http_method: str
 ) -> MutationExecutor:
@@ -438,6 +496,7 @@ def _sealed_executor(
         read_client=client,
         policy=MutationPolicy(frozenset({MutationRule(capability, endpoint_symbol, http_method)})),
         anti_rollback_anchor=None,
+        **_standard_sealed_write_approval_wiring(store, capability),
         encryption_key=b"e" * 32,
         capability_security_classes={capability: WRITE_CAPABILITY_SECURITY_CLASS[capability]},
         clock=lambda: NOW,

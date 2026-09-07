@@ -30,9 +30,11 @@ from .anti_rollback import AntiRollbackAnchor
 from .canonical import CanonicalValue, DigestPurpose, digest_value, validate_canonical_value
 from .contract import ProtectedArtifact, RecoveryContract
 from .crypto import ArtifactRole, decrypt_artifact
+from .ed25519_authority import PinnedAuthoritySet
 from .errors import ContractConflictError, ContractValidationError, GlobalReadOnlyBlockedError
 from .faults import EffectKnowledge, MutationBoundary, classify_fault
 from .policy import MutationPolicy
+from .sealed_write_approval import StandardSealedWriteApprovalSource, verify_sealed_write_approval
 from .state_machine import RecoveryState
 from .store import SqliteRecoveryContractStore
 
@@ -153,6 +155,8 @@ class MutationExecutor:
         anti_rollback_anchor: AntiRollbackAnchor | None,
         encryption_key: bytes,
         capability_security_classes: Mapping[Capability, WriteSecurityClass],
+        standard_sealed_write_approval_authorities: PinnedAuthoritySet | None = None,
+        standard_sealed_write_approval_source: StandardSealedWriteApprovalSource | None = None,
         clock: Clock = _utc_now,
     ) -> None:
         if not callable(clock):
@@ -164,6 +168,10 @@ class MutationExecutor:
             for key, value in capability_security_classes.items()
         ):
             raise ContractValidationError("Mutation executor capability security class registry is invalid.")
+        if standard_sealed_write_approval_authorities is not None and not isinstance(
+            standard_sealed_write_approval_authorities, PinnedAuthoritySet
+        ):
+            raise ContractValidationError("Mutation executor STANDARD approval authority set is invalid.")
         self._store = store
         self._write_client = write_client
         self._read_client = read_client
@@ -182,6 +190,24 @@ class MutationExecutor:
         # select the `ExecutionSecurityPolicy` that governs this specific
         # EXECUTING transition's witness participation.
         self._capability_security_classes = dict(capability_security_classes)
+        # 2026-09-07 owner-authorized Phase 2 (STANDARD_SEALED_WRITE
+        # approval enforcement): both `None` by default -- the safe,
+        # fail-closed state. Every STANDARD_SEALED_WRITE contract's
+        # `execute()` attempt refuses (PREPARED -> FAILED,
+        # `sealed_write_approval_rejected`) unless BOTH a pinned STANDARD
+        # authority set and an approval source are supplied at
+        # construction time by a trusted runtime-factory call site --
+        # never derived, constructed, or widened here, and never
+        # consulted at all for a HIGH_ASSURANCE_TIER1 contract (see the
+        # `registry_class == WriteSecurityClass.STANDARD_SEALED_WRITE`
+        # gate in `execute()` below). No production runtime factory
+        # supplies these yet (2026-09-07): real STANDARD execution
+        # remains impossible in production until a later, separately
+        # owner-authorized phase wires a concrete evidence source and a
+        # provisioned STANDARD authority file in -- this phase only
+        # implements and tests the enforcement mechanism itself.
+        self._standard_sealed_write_approval_authorities = standard_sealed_write_approval_authorities
+        self._standard_sealed_write_approval_source = standard_sealed_write_approval_source
         self._clock = clock
         # A newly-constructed executor never serves a call against an
         # unreconciled store (sealed_executor.md Lifecycle step 4).
@@ -199,6 +225,43 @@ class MutationExecutor:
         if instant.tzinfo is None or instant.utcoffset() != timezone.utc.utcoffset(instant):
             raise ContractValidationError("Mutation executor clock must return UTC.")
         return instant
+
+    def _verify_standard_sealed_write_approval(self, contract: RecoveryContract) -> bool:
+        """`execute()`'s one STANDARD_SEALED_WRITE-only gate (2026-09-07
+        owner-authorized Phase 2). Never raises -- any failure mode
+        (missing authorities/source, a source that raises, a missing
+        approval, or a structurally-valid-but-non-matching/expired/
+        wrong-authority approval) collapses to `False`, which `execute()`
+        treats identically: PREPARED -> FAILED, zero network/witness
+        activity, never EXECUTING. `contract` is always the fresh,
+        already-loaded, already-registry-consistent contract `execute()`
+        holds at this point -- `state_version`/`intent_digest`/
+        `target_identity_digest` are read directly off it, never off
+        anything the approval itself claims or anything this call's own
+        arguments supply, so a stale or cross-contract approval cannot
+        pass by asserting its own binding fields."""
+
+        if (
+            self._standard_sealed_write_approval_authorities is None
+            or self._standard_sealed_write_approval_source is None
+        ):
+            return False
+        try:
+            approval = self._standard_sealed_write_approval_source.load(contract.contract_id)
+        except Exception:
+            return False
+        if approval is None:
+            return False
+        return verify_sealed_write_approval(
+            approval,
+            authorities=self._standard_sealed_write_approval_authorities,
+            now=self._now(),
+            contract_id=contract.contract_id,
+            state_version=contract.state_version,
+            security_class=contract.security_class,
+            execution_intent_digest=contract.intent_digest,
+            target_identity_digest=contract.target_identity_digest,
+        )
 
     def observe_reconciliation_target(
         self, contract_id: str, *, adapter: CapabilityAdapter
@@ -335,6 +398,40 @@ class MutationExecutor:
                 ),
             )
         execution_policy = EXECUTION_POLICIES[registry_class]
+
+        # 2026-09-07 owner-authorized Phase 2: STANDARD_SEALED_WRITE
+        # execution additionally requires a valid, already-signed,
+        # human-gated SealedWriteApproval -- checked here, still before
+        # policy authorization/pfREST-writable/any adapter or transport
+        # call/EXECUTING, so a rejected approval produces the same zero
+        # network/zero witness/never-EXECUTING guarantee as the
+        # security_class mismatch check above. Never consulted at all
+        # for HIGH_ASSURANCE_TIER1 (`registry_class` is the sole input;
+        # nothing about `contract`/`intent`/this call's own arguments can
+        # make this branch run for a capability the registry classifies
+        # HIGH) -- a valid STANDARD approval is therefore structurally
+        # irrelevant to a HIGH capability's authorization, never a
+        # downgrade path.
+        if (
+            registry_class == WriteSecurityClass.STANDARD_SEALED_WRITE
+            and not self._verify_standard_sealed_write_approval(contract)
+        ):
+            failed = self._store.transition(
+                contract_id,
+                expected_state=RecoveryState.PREPARED,
+                expected_version=contract.state_version,
+                target_state=RecoveryState.FAILED,
+                event_type="sealed_write_approval_rejected",
+            )
+            return ExecutionOutcome(
+                contract_id=failed.contract_id,
+                state=failed.state,
+                detail=(
+                    "Recovery Contract refused before execution: no valid STANDARD_SEALED_WRITE owner "
+                    "approval was present. No transport call, witness contact, or EXECUTING transition "
+                    "occurred."
+                ),
+            )
 
         self._policy.authorize(
             capability=adapter.capability, endpoint_symbol=adapter.endpoint_symbol, http_method=adapter.http_method
