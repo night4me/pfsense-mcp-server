@@ -20,6 +20,7 @@ from pfsense_mcp.tier1.confirmation import ConfirmationEvidence
 from pfsense_mcp.tier1.policy import MutationPolicy, MutationRule
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import WriteSecurityClass
 from pfsense_mcp.transport.mock import MockTransport
 from pfsense_mcp.write_api_client import WriteApiClient
 from pfsense_mcp.write_endpoints import WriteEndpointInfo, WriteEndpoints
@@ -118,6 +119,7 @@ def _executor(store, write_client):
         policy=policy,
         anti_rollback_anchor=None,
         encryption_key=_ENCRYPTION_KEY,
+        capability_security_classes={_CAPABILITY: WriteSecurityClass.HIGH_ASSURANCE_TIER1},
     )
 
 

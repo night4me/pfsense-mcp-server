@@ -24,6 +24,7 @@ from pfsense_mcp.capabilities import SUPPORTED_CAPABILITIES_THIS_BUILD, Capabili
 from pfsense_mcp.tier1.canonical import CanonicalValue
 from pfsense_mcp.tier1.state_machine import RecoveryState
 from pfsense_mcp.tier1.store import SqliteRecoveryContractStore
+from pfsense_mcp.tier1.write_security_class import HighAssuranceTier1ExecutionPolicy
 from pfsense_mcp.transport.base import TransportResponse
 from pfsense_mcp.write_endpoints import WriteEndpoints
 
@@ -146,6 +147,7 @@ def _reconciliation_contract(paths: dict[str, Path]) -> str:
         expected_state=RecoveryState.PREPARED,
         expected_version=confirmed.state_version,
         target_state=RecoveryState.EXECUTING,
+        execution_policy=HighAssuranceTier1ExecutionPolicy(),
     )
     store.transition(
         contract.contract_id,

@@ -1002,6 +1002,71 @@ def test_schema_v6_contract_migrates_without_inferred_provenance(tmp_path: Path,
     assert migrated_payload["security_class"] == "high_assurance_tier1"
 
 
+def test_genuine_v8_contract_with_real_provenance_migrates_preserving_it(tmp_path: Path, monkeypatch):
+    """2026-09-07 owner-authorized Phase 2 hardening: the previously
+    identified migration test gap. The only test exercising
+    `_migrate_v8_security_class()`'s actual field-injection branch
+    (`test_schema_v6_contract_migrates_without_inferred_provenance`,
+    above) deliberately strips `authorization_provenance` to simulate a
+    v6-origin row, so it never proves the realistic case -- a real
+    off-host-authorized PREPARED contract created under the pre-Phase-1
+    codebase, which already HAD `authorization_provenance`, just not yet
+    `security_class` -- correctly preserves that non-null provenance
+    (and every other field) through the v8 -> v9 step. Constructs a real
+    contract via the full `authorize_and_create()` flow (never hand-
+    built), then strips ONLY `security_class` from its persisted payload
+    to produce a genuinely v8-shaped row."""
+
+    monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
+    client = _ReadClient()
+    core, private, store, _consumption, _executor = _core(tmp_path, client)
+    request = AliasDescriptionChangeV1(alias_name="LAB_ALIAS_TEST", description="after")
+    prepared = _preparer(client).prepare(request)
+    handle = _authorize(core, private, request, prepared)
+    original = store.load(handle.contract_id)
+    assert isinstance(original.authorization_provenance, AuthorizationProvenance)
+
+    database = tmp_path / "contracts.sqlite3"
+    with sqlite3.connect(database) as connection:
+        payload = connection.execute(
+            "SELECT payload FROM contracts WHERE contract_id = ?", (original.contract_id,)
+        ).fetchone()[0]
+        value = json.loads(payload)
+        assert value["authorization_provenance"] is not None  # genuinely v8-native, not v6-derived
+        del value["security_class"]
+        v8_payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        mac = hmac.new(
+            b"i" * 32,
+            frame_str("w1-synthetic") + frame_bytes(v8_payload),
+            hashlib.sha256,
+        ).hexdigest()
+        connection.execute(
+            "UPDATE contracts SET payload = ?, mac = ? WHERE contract_id = ?",
+            (v8_payload, mac, original.contract_id),
+        )
+        connection.execute("UPDATE metadata SET value = '8' WHERE key = 'schema_version'")
+
+    reopened = _store(tmp_path)
+    migrated = reopened.load(original.contract_id)
+
+    assert migrated.security_class == WriteSecurityClass.HIGH_ASSURANCE_TIER1
+    assert migrated.authorization_provenance == original.authorization_provenance
+    assert migrated.contract_id == original.contract_id
+    assert migrated.state == original.state
+    assert migrated.state_version == original.state_version
+    assert migrated.idempotency_key == original.idempotency_key
+
+    with sqlite3.connect(database) as connection:
+        assert dict(connection.execute("SELECT key, value FROM metadata"))["schema_version"] == "9"
+        migrated_payload = json.loads(
+            connection.execute(
+                "SELECT payload FROM contracts WHERE contract_id = ?", (original.contract_id,)
+            ).fetchone()[0]
+        )
+    assert migrated_payload["security_class"] == "high_assurance_tier1"
+    assert migrated_payload["authorization_provenance"] is not None
+
+
 def test_provenance_survives_reopen_and_hmac_tamper_fails(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(AliasDescriptionExecutionCoreV1, "_plan_is_fresh", staticmethod(lambda **_kwargs: True))
     client = _ReadClient()
