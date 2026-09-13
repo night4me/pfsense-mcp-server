@@ -127,13 +127,24 @@ EXPECTED_STARTING_PRIVILEGES: frozenset[str] = frozenset(
 #: Starting set plus the temporary self-service-key-minting privilege.
 TEMPORARY_PRIVILEGES: frozenset[str] = EXPECTED_STARTING_PRIVILEGES | {BOOTSTRAP_ONLY_PRIVILEGE}
 
-#: The exact 12-privilege steady-state set this ceremony leaves the
+#: The exact 13-privilege steady-state set this ceremony leaves the
 #: account in: the original 4, plus 4 new READ and 4 new WRITE
 #: privileges for the 5 ADR-037 Batch 1 capabilities (LOG_DISPLAY_
 #: PREFERENCES and LOG_RETENTION_SETTINGS share one READ/one WRITE
 #: privilege -- both operate on the same `/status/logs/settings`
-#: resource). Derived from live evidence, not guessed -- see the
-#: 2026-09-04 recovery-preparation report.
+#: resource), plus one further narrow READ privilege for the pfREST
+#: Read-Only-mode preflight itself. Derived from live evidence, not
+#: guessed -- see the 2026-09-04 recovery-preparation report for the
+#: first 12; `api-v2-system-restapi-settings-get` was added 2026-09-13
+#: to reconcile this constant with the account's already-correct live
+#: state -- the owner had separately granted this single narrow
+#: privilege directly through the pfSense GUI (to unblock
+#: `GET /api/v2/system/restapi/settings`, required by the universal
+#: pfREST Read-Only gate), which this ceremony's `FINAL_PRIVILEGES`
+#: constant had not yet been updated to reflect. `page-all` remains
+#: neither present nor required; no `*-patch` privilege for this
+#: endpoint is included here, since only the GET privilege was ever
+#: independently authorized.
 FINAL_PRIVILEGES: frozenset[str] = EXPECTED_STARTING_PRIVILEGES | {
     "api-v2-services-ntp-time-servers-get",
     "api-v2-services-ntp-settings-get",
@@ -143,6 +154,7 @@ FINAL_PRIVILEGES: frozenset[str] = EXPECTED_STARTING_PRIVILEGES | {
     "api-v2-services-ntp-settings-patch",
     "api-v2-status-logs-settings-patch",
     "api-v2-system-timezone-patch",
+    "api-v2-system-restapi-settings-get",
 }
 
 #: The one file this ceremony must never overwrite -- the stale,
@@ -162,7 +174,7 @@ class RecoveryOutcome(str, Enum):
     PRESTATE_MISMATCH = "prestate_mismatch"
     #: The full ceremony completed: password reset, temporary privilege
     #: granted and later revoked, new key minted and written, final
-    #: 12-privilege set independently re-verified.
+    #: 13-privilege set independently re-verified.
     COMPLETED = "completed"
     #: A step in the ceremony failed. See `transaction.failure_detail`
     #: for exactly which step and what (if anything) was left behind.
@@ -428,7 +440,7 @@ def _run_ceremony(
             )
             return _failed_result(transaction)
 
-        # Step G: restore the account to the exact final 12-privilege
+        # Step G: restore the account to the exact final 13-privilege
         # set in one PATCH (full-replace semantics), removing the
         # temporary bootstrap privilege in the same call.
         try:
@@ -452,7 +464,7 @@ def _run_ceremony(
         if verified is None:
             transaction = transaction.fail(
                 "post-finalization verification failed: cannot confirm the account holds exactly the final "
-                "12-privilege set with the temporary bootstrap privilege removed -- treat the temporary "
+                "13-privilege set with the temporary bootstrap privilege removed -- treat the temporary "
                 "privilege as still present until manually confirmed. A usable API key was already minted and "
                 f"written to {new_key_output_path}."
             )

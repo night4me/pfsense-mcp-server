@@ -94,9 +94,25 @@ following are true:
 2. The live Tier 1/Batch 1 store has been migrated to schema v9
    (owner-approved, on the actual production/LAB store — only isolated
    test stores have been migrated so far).
-3. The LAB `GET /api/v2/system/restapi/settings -> 403` least-privilege
-   issue is resolved (unrelated to this model, but the universal pfREST
-   Read-Only gate cannot pass while it stands, for either tier).
+
+**Resolved (2026-09-13):** an earlier revision of this list carried a
+third item — the LAB `GET /api/v2/system/restapi/settings -> 403`
+least-privilege issue, which blocked the universal pfREST Read-Only
+gate for either tier. Root cause (PROVEN via live account-state
+comparison, not inferred): the `pfsense_mcp_tier1_lab` account's
+2026-09-04 recovery ceremony
+(`security_tier1_lab_credential_recovery.py`'s `FINAL_PRIVILEGES`)
+encoded a 12-privilege set that did not include
+`api-v2-system-restapi-settings-get`; the owner subsequently granted
+that single narrow privilege to the live account directly through the
+pfSense GUI, so the live account held 13 privileges while the tracked
+recovery constant remained stale at 12. `FINAL_PRIVILEGES` has been
+updated to the correct 13-privilege set to match the already-correct
+live state. `GET /api/v2/system/restapi/settings` now returns `200`
+for this account, `read_only` is observable as `false`, and `page-all`
+is neither present nor required. No pfREST authorization architecture
+defect was found — this was an account/documentation staleness issue
+only.
 
 This model does not, and will not without a separate owner decision,
 broaden the `STANDARD_SEALED_WRITE` eligible set beyond

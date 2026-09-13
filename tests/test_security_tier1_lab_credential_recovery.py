@@ -155,6 +155,73 @@ def _recover(admin, tmp_path, *, self_transport=None, target_label=TARGET_LABEL,
     )
 
 
+# --- FINAL_PRIVILEGES exact-set reconciliation (2026-09-13) -----------------
+
+#: The 12 privileges intended before the 2026-09-13 reconciliation --
+#: the original 4 `EXPECTED_STARTING_PRIVILEGES` plus the 8 ADR-037
+#: Batch 1 READ/WRITE privileges. Kept here, independent of the
+#: module's own constant, so a future accidental change to any of
+#: these 12 is caught by comparison rather than by trusting the same
+#: constant back at itself.
+_ORIGINAL_TWELVE_PRIVILEGES: frozenset[str] = frozenset(
+    {
+        "api-v2-firewall-aliases-get",
+        "api-v2-firewall-alias-patch",
+        "api-v2-status-system-get",
+        "api-v2-system-hasync-get",
+        "api-v2-services-ntp-time-servers-get",
+        "api-v2-services-ntp-settings-get",
+        "api-v2-status-logs-settings-get",
+        "api-v2-system-timezone-get",
+        "api-v2-services-ntp-time-server-patch",
+        "api-v2-services-ntp-settings-patch",
+        "api-v2-status-logs-settings-patch",
+        "api-v2-system-timezone-patch",
+    }
+)
+
+
+def test_final_privileges_is_the_intended_thirteen_privilege_set():
+    """2026-09-13 LAB recovery-spec reconciliation: the live
+    `pfsense_mcp_tier1_lab` account was proven (root-cause audit,
+    read-only LAB verification) to already correctly hold
+    `api-v2-system-restapi-settings-get` in addition to the 12
+    privileges this ceremony previously tracked -- granted by the
+    owner directly through the pfSense GUI, not by this module. This
+    test proves the tracked constant now matches that already-correct
+    live state, exactly, with no broadening beyond the one intended
+    addition."""
+
+    assert len(FINAL_PRIVILEGES) == 13
+    assert "api-v2-system-restapi-settings-get" in FINAL_PRIVILEGES
+    assert "page-all" not in FINAL_PRIVILEGES
+    # Only the GET privilege was independently authorized; adding the
+    # PATCH privilege for this endpoint is explicitly out of scope.
+    assert "api-v2-system-restapi-settings-patch" not in FINAL_PRIVILEGES
+    # The other 12 privileges are byte-for-byte unchanged by this
+    # reconciliation -- exactly one privilege was added, nothing else.
+    assert _ORIGINAL_TWELVE_PRIVILEGES | {"api-v2-system-restapi-settings-get"} == FINAL_PRIVILEGES
+
+
+def test_recovery_still_converges_to_the_exact_final_privilege_set(tmp_path):
+    """Fail-closed/exact-set semantics are unaffected by the
+    reconciliation: the ceremony still full-replaces to precisely
+    `FINAL_PRIVILEGES` (now 13 privileges) and still requires exact
+    equality on the independent post-finalization re-read -- no
+    wildcard or superset matching was introduced."""
+
+    admin = _FakeAdminTransport()
+    _seed_valid_starting_user(admin)
+
+    result = _recover(admin, tmp_path)
+
+    assert result.outcome is RecoveryOutcome.COMPLETED
+    assert len(admin.users[1]["priv"]) == 13
+    assert set(admin.users[1]["priv"]) == FINAL_PRIVILEGES
+    assert result.transaction is not None
+    assert result.transaction.privileges == FINAL_PRIVILEGES
+
+
 # --- Happy path -------------------------------------------------------------
 
 
