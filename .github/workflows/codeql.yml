@@ -23,7 +23,7 @@ jobs:
       - uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
         with:
           languages: python
-      - uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
+      - uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4
         with:
           # This repository is PUBLIC, so GitHub Code Scanning is free
           # regardless of GitHub Advanced Security licensing (that
