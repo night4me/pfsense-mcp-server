@@ -202,7 +202,7 @@ skips = ["*/tls.py", "src/pfsense_mcp/tls.py"]
 # section). 1.31.0 is the known-good, directly-verified ceiling: an
 # isolated build at that exact resolution was confirmed to emit
 # Metadata-Version: 2.4.
-requires = ["hatchling>=1.25,<1.32"]
+requires = ["hatchling>=1.25,<1.33"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
